@@ -1,0 +1,10 @@
+project_id = "vzpxpzxqnrucpiwzuvbm"
+
+[functions.send-otp]
+verify_jwt = false
+
+[functions.verify-otp]
+verify_jwt = false
+
+[functions.create-donation-checkout]
+verify_jwt = false
