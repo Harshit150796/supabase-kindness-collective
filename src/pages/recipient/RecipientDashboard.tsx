@@ -17,7 +17,7 @@ interface LoyaltyCard {
 }
 
 interface Verification {
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | string;
 }
 
 export default function RecipientDashboard() {

@@ -10,9 +10,28 @@ import HowItWorks from "./pages/HowItWorks";
 import FAQ from "./pages/FAQ";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import RecipientDashboard from "./pages/recipient/RecipientDashboard";
 import DonationSuccess from "./pages/DonationSuccess";
 import DonationCancelled from "./pages/DonationCancelled";
+
+// Recipient pages
+import RecipientDashboard from "./pages/recipient/RecipientDashboard";
+import RecipientCoupons from "./pages/recipient/RecipientCoupons";
+import RecipientHistory from "./pages/recipient/RecipientHistory";
+import RecipientLoyaltyCard from "./pages/recipient/RecipientLoyaltyCard";
+import RecipientVerification from "./pages/recipient/RecipientVerification";
+
+// Donor pages
+import DonorDashboard from "./pages/donor/DonorDashboard";
+import DonorDonate from "./pages/donor/DonorDonate";
+import DonorImpact from "./pages/donor/DonorImpact";
+import DonorHistory from "./pages/donor/DonorHistory";
+
+// Admin pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminVerifications from "./pages/admin/AdminVerifications";
+import AdminCoupons from "./pages/admin/AdminCoupons";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -35,9 +54,27 @@ const AppRoutes = () => (
     <Route path="/auth" element={<Auth />} />
     <Route path="/donation-success" element={<DonationSuccess />} />
     <Route path="/donation-cancelled" element={<DonationCancelled />} />
+    
+    {/* Recipient Routes */}
     <Route path="/recipient" element={<ProtectedRoute allowedRoles={['recipient']}><RecipientDashboard /></ProtectedRoute>} />
-    <Route path="/donor" element={<ProtectedRoute allowedRoles={['donor']}><RecipientDashboard /></ProtectedRoute>} />
-    <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><RecipientDashboard /></ProtectedRoute>} />
+    <Route path="/recipient/coupons" element={<ProtectedRoute allowedRoles={['recipient']}><RecipientCoupons /></ProtectedRoute>} />
+    <Route path="/recipient/history" element={<ProtectedRoute allowedRoles={['recipient']}><RecipientHistory /></ProtectedRoute>} />
+    <Route path="/recipient/loyalty-card" element={<ProtectedRoute allowedRoles={['recipient']}><RecipientLoyaltyCard /></ProtectedRoute>} />
+    <Route path="/recipient/verification" element={<ProtectedRoute allowedRoles={['recipient']}><RecipientVerification /></ProtectedRoute>} />
+    
+    {/* Donor Routes */}
+    <Route path="/donor" element={<ProtectedRoute allowedRoles={['donor']}><DonorDashboard /></ProtectedRoute>} />
+    <Route path="/donor/donate" element={<ProtectedRoute allowedRoles={['donor']}><DonorDonate /></ProtectedRoute>} />
+    <Route path="/donor/impact" element={<ProtectedRoute allowedRoles={['donor']}><DonorImpact /></ProtectedRoute>} />
+    <Route path="/donor/history" element={<ProtectedRoute allowedRoles={['donor']}><DonorHistory /></ProtectedRoute>} />
+    
+    {/* Admin Routes */}
+    <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+    <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute>} />
+    <Route path="/admin/verifications" element={<ProtectedRoute allowedRoles={['admin']}><AdminVerifications /></ProtectedRoute>} />
+    <Route path="/admin/coupons" element={<ProtectedRoute allowedRoles={['admin']}><AdminCoupons /></ProtectedRoute>} />
+    <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={['admin']}><AdminAnalytics /></ProtectedRoute>} />
+    
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
