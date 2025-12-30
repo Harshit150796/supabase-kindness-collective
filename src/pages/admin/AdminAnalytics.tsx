@@ -9,8 +9,8 @@ interface Analytics {
   totalDonors: number;
   totalRecipients: number;
   totalCoupons: number;
-  claimedCoupons: number;
-  usedCoupons: number;
+  reservedCoupons: number;
+  redeemedCoupons: number;
 }
 
 export default function AdminAnalytics() {
@@ -19,8 +19,8 @@ export default function AdminAnalytics() {
     totalDonors: 0,
     totalRecipients: 0,
     totalCoupons: 0,
-    claimedCoupons: 0,
-    usedCoupons: 0
+    reservedCoupons: 0,
+    redeemedCoupons: 0
   });
 
   useEffect(() => {
@@ -28,21 +28,21 @@ export default function AdminAnalytics() {
   }, []);
 
   const fetchAnalytics = async () => {
-    const [usersResult, couponsResult] = await Promise.all([
-      supabase.from('profiles').select('role'),
+    const [rolesResult, couponsResult] = await Promise.all([
+      supabase.from('user_roles').select('role'),
       supabase.from('coupons').select('status')
     ]);
 
-    const users = usersResult.data || [];
+    const roles = rolesResult.data || [];
     const coupons = couponsResult.data || [];
 
     setAnalytics({
-      totalUsers: users.length,
-      totalDonors: users.filter(u => u.role === 'donor').length,
-      totalRecipients: users.filter(u => u.role === 'recipient').length,
+      totalUsers: roles.length,
+      totalDonors: roles.filter(r => r.role === 'donor').length,
+      totalRecipients: roles.filter(r => r.role === 'recipient').length,
       totalCoupons: coupons.length,
-      claimedCoupons: coupons.filter(c => c.status === 'claimed').length,
-      usedCoupons: coupons.filter(c => c.status === 'used').length
+      reservedCoupons: coupons.filter(c => c.status === 'reserved').length,
+      redeemedCoupons: coupons.filter(c => c.status === 'redeemed').length
     });
   };
 
@@ -75,29 +75,29 @@ export default function AdminAnalytics() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">{analytics.totalCoupons}</div>
-              <p className="text-xs text-muted-foreground">Donated coupons</p>
+              <p className="text-xs text-muted-foreground">Available coupons</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Claimed Coupons</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Reserved Coupons</CardTitle>
               <TrendingUp className="w-4 h-4 text-emerald-light" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{analytics.claimedCoupons}</div>
+              <div className="text-2xl font-bold text-foreground">{analytics.reservedCoupons}</div>
               <p className="text-xs text-muted-foreground">By recipients</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Used Coupons</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Redeemed Coupons</CardTitle>
               <DollarSign className="w-4 h-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{analytics.usedCoupons}</div>
-              <p className="text-xs text-muted-foreground">Redeemed successfully</p>
+              <div className="text-2xl font-bold text-foreground">{analytics.redeemedCoupons}</div>
+              <p className="text-xs text-muted-foreground">Used successfully</p>
             </CardContent>
           </Card>
 
@@ -109,10 +109,10 @@ export default function AdminAnalytics() {
             <CardContent>
               <div className="text-2xl font-bold text-foreground">
                 {analytics.totalCoupons > 0 
-                  ? Math.round((analytics.usedCoupons / analytics.totalCoupons) * 100) 
+                  ? Math.round((analytics.redeemedCoupons / analytics.totalCoupons) * 100) 
                   : 0}%
               </div>
-              <p className="text-xs text-muted-foreground">Coupons used vs donated</p>
+              <p className="text-xs text-muted-foreground">Coupons redeemed vs total</p>
             </CardContent>
           </Card>
         </div>

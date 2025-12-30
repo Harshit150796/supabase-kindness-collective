@@ -4,16 +4,17 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Gift, Search, Store } from 'lucide-react';
+import { Gift, Search, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Coupon {
   id: string;
   title: string;
-  store_name: string;
   code: string;
   status: string;
-  is_active: boolean;
+  value: number;
+  category_id: string | null;
+  partner_id: string | null;
   created_at: string;
 }
 
@@ -29,7 +30,7 @@ export default function AdminCoupons() {
   const fetchCoupons = async () => {
     const { data } = await supabase
       .from('coupons')
-      .select('*')
+      .select('id, title, code, status, value, category_id, partner_id, created_at')
       .order('created_at', { ascending: false });
 
     setCoupons(data || []);
@@ -38,8 +39,18 @@ export default function AdminCoupons() {
 
   const filteredCoupons = coupons.filter(coupon =>
     coupon.title.toLowerCase().includes(search.toLowerCase()) ||
-    coupon.store_name.toLowerCase().includes(search.toLowerCase())
+    coupon.code.toLowerCase().includes(search.toLowerCase())
   );
+
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case 'available': return 'default';
+      case 'reserved': return 'secondary';
+      case 'redeemed': return 'outline';
+      case 'expired': return 'destructive';
+      default: return 'default';
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -77,16 +88,13 @@ export default function AdminCoupons() {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-foreground">{coupon.title}</p>
-                        <Badge variant={coupon.status === 'available' ? 'default' : 'secondary'}>
+                        <Badge variant={getStatusVariant(coupon.status)}>
                           {coupon.status}
                         </Badge>
-                        {!coupon.is_active && (
-                          <Badge variant="destructive">Inactive</Badge>
-                        )}
                       </div>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Store className="w-3 h-3" />
-                        {coupon.store_name}
+                        <Tag className="w-3 h-3" />
+                        Value: ${coupon.value}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Created {format(new Date(coupon.created_at), 'MMM d, yyyy')}

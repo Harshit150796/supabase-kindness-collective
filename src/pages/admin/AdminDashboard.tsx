@@ -10,7 +10,7 @@ interface AdminStats {
   totalUsers: number;
   pendingVerifications: number;
   totalCoupons: number;
-  activeCoupons: number;
+  availableCoupons: number;
 }
 
 export default function AdminDashboard() {
@@ -19,7 +19,7 @@ export default function AdminDashboard() {
     totalUsers: 0,
     pendingVerifications: 0,
     totalCoupons: 0,
-    activeCoupons: 0
+    availableCoupons: 0
   });
 
   useEffect(() => {
@@ -30,14 +30,14 @@ export default function AdminDashboard() {
     const [usersResult, verificationsResult, couponsResult] = await Promise.all([
       supabase.from('profiles').select('id', { count: 'exact' }),
       supabase.from('recipient_verifications').select('id', { count: 'exact' }).eq('status', 'pending'),
-      supabase.from('coupons').select('id, is_active', { count: 'exact' })
+      supabase.from('coupons').select('id, status', { count: 'exact' })
     ]);
 
     setStats({
       totalUsers: usersResult.count || 0,
       pendingVerifications: verificationsResult.count || 0,
       totalCoupons: couponsResult.count || 0,
-      activeCoupons: couponsResult.data?.filter(c => c.is_active).length || 0
+      availableCoupons: couponsResult.data?.filter(c => c.status === 'available').length || 0
     });
   };
 
@@ -104,12 +104,12 @@ export default function AdminDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Active Coupons</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Available Coupons</CardTitle>
               <BarChart className="w-4 h-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stats.activeCoupons}</div>
-              <p className="text-xs text-muted-foreground">Currently available</p>
+              <div className="text-2xl font-bold text-foreground">{stats.availableCoupons}</div>
+              <p className="text-xs text-muted-foreground">Ready to claim</p>
             </CardContent>
           </Card>
         </div>
