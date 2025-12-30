@@ -7,17 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Users, Search, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 
-interface Profile {
+interface UserWithRole {
   id: string;
   email: string;
   full_name: string | null;
-  role: string;
-  is_verified: boolean;
   created_at: string;
+  user_id: string;
+  roles: string[];
 }
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState<Profile[]>([]);
+  const [users, setUsers] = useState<UserWithRole[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -26,12 +26,24 @@ export default function AdminUsers() {
   }, []);
 
   const fetchUsers = async () => {
-    const { data } = await supabase
+    // Fetch profiles
+    const { data: profiles } = await supabase
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false });
 
-    setUsers(data || []);
+    // Fetch all user roles
+    const { data: allRoles } = await supabase
+      .from('user_roles')
+      .select('user_id, role');
+
+    // Map roles to users
+    const usersWithRoles = (profiles || []).map(profile => ({
+      ...profile,
+      roles: allRoles?.filter(r => r.user_id === profile.user_id).map(r => r.role) || []
+    }));
+
+    setUsers(usersWithRoles);
     setLoading(false);
   };
 
@@ -76,14 +88,14 @@ export default function AdminUsers() {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-foreground">{user.full_name || 'No name'}</p>
-                        <Badge variant={user.role === 'admin' ? 'default' : user.role === 'donor' ? 'secondary' : 'outline'}>
-                          {user.role}
-                        </Badge>
-                        {user.is_verified && (
-                          <Badge variant="outline" className="text-emerald-light border-emerald-light">
-                            Verified
+                        {user.roles.map(role => (
+                          <Badge 
+                            key={role} 
+                            variant={role === 'admin' ? 'default' : role === 'donor' ? 'secondary' : 'outline'}
+                          >
+                            {role}
                           </Badge>
-                        )}
+                        ))}
                       </div>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <Mail className="w-3 h-3" />

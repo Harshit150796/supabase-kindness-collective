@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       coupon_claims: {
         Row: {
           claimed_at: string
@@ -56,55 +80,121 @@ export type Database = {
       coupons: {
         Row: {
           category: string | null
+          category_id: string | null
           code: string
           created_at: string
           description: string | null
-          discount_value: string | null
-          donor_id: string
+          discount_percent: number | null
           expiry_date: string | null
           id: string
-          is_active: boolean
+          min_purchase: number | null
+          partner_id: string | null
+          redeemed_at: string | null
+          redeemed_by: string | null
+          reserved_at: string | null
+          reserved_by: string | null
           status: Database["public"]["Enums"]["coupon_status"]
           store_name: string
           title: string
           updated_at: string
+          value: number | null
         }
         Insert: {
           category?: string | null
+          category_id?: string | null
           code: string
           created_at?: string
           description?: string | null
-          discount_value?: string | null
-          donor_id: string
+          discount_percent?: number | null
           expiry_date?: string | null
           id?: string
-          is_active?: boolean
+          min_purchase?: number | null
+          partner_id?: string | null
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          reserved_at?: string | null
+          reserved_by?: string | null
           status?: Database["public"]["Enums"]["coupon_status"]
           store_name: string
           title: string
           updated_at?: string
+          value?: number | null
         }
         Update: {
           category?: string | null
+          category_id?: string | null
           code?: string
           created_at?: string
           description?: string | null
-          discount_value?: string | null
-          donor_id?: string
+          discount_percent?: number | null
           expiry_date?: string | null
           id?: string
-          is_active?: boolean
+          min_purchase?: number | null
+          partner_id?: string | null
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          reserved_at?: string | null
+          reserved_by?: string | null
           status?: Database["public"]["Enums"]["coupon_status"]
           store_name?: string
           title?: string
           updated_at?: string
+          value?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "coupons_donor_id_fkey"
-            columns: ["donor_id"]
+            foreignKeyName: "coupons_category_id_fkey"
+            columns: ["category_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupons_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donations: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string
+          donor_id: string
+          id: string
+          is_anonymous: boolean | null
+          message: string | null
+          region: string | null
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          donor_id: string
+          id?: string
+          is_anonymous?: boolean | null
+          message?: string | null
+          region?: string | null
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          donor_id?: string
+          id?: string
+          is_anonymous?: boolean | null
+          message?: string | null
+          region?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donations_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
         ]
@@ -204,37 +294,73 @@ export type Database = {
         }
         Relationships: []
       }
+      partners: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
+          city: string | null
+          country: string | null
           created_at: string
           email: string
           full_name: string | null
           id: string
-          is_verified: boolean
-          role: Database["public"]["Enums"]["user_role"]
+          phone: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           email: string
           full_name?: string | null
           id?: string
-          is_verified?: boolean
-          role?: Database["public"]["Enums"]["user_role"]
+          phone?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
-          is_verified?: boolean
-          role?: Database["public"]["Enums"]["user_role"]
+          phone?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -242,39 +368,101 @@ export type Database = {
       }
       recipient_verifications: {
         Row: {
+          admin_notes: string | null
+          annual_income: number | null
           documents_url: string | null
+          government_id_url: string | null
+          household_size: number | null
           id: string
+          income_document_url: string | null
           notes: string | null
+          organization_contact: string | null
+          organization_name: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string | null
           submitted_at: string | null
           user_id: string
           verification_type: string | null
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
+          admin_notes?: string | null
+          annual_income?: number | null
           documents_url?: string | null
+          government_id_url?: string | null
+          household_size?: number | null
           id?: string
+          income_document_url?: string | null
           notes?: string | null
+          organization_contact?: string | null
+          organization_name?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string | null
           submitted_at?: string | null
           user_id: string
           verification_type?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
+          admin_notes?: string | null
+          annual_income?: number | null
           documents_url?: string | null
+          government_id_url?: string | null
+          household_size?: number | null
           id?: string
+          income_document_url?: string | null
           notes?: string | null
+          organization_contact?: string | null
+          organization_name?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string | null
           submitted_at?: string | null
           user_id?: string
           verification_type?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: []
+      }
+      redemption_history: {
+        Row: {
+          coupon_id: string | null
+          id: string
+          points_earned: number | null
+          redeemed_at: string
+          savings_amount: number | null
+          user_id: string
+        }
+        Insert: {
+          coupon_id?: string | null
+          id?: string
+          points_earned?: number | null
+          redeemed_at?: string
+          savings_amount?: number | null
+          user_id: string
+        }
+        Update: {
+          coupon_id?: string | null
+          id?: string
+          points_earned?: number | null
+          redeemed_at?: string
+          savings_amount?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redemption_history_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -302,6 +490,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_otps: { Args: never; Returns: undefined }
       generate_card_number: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -312,8 +501,10 @@ export type Database = {
       }
     }
     Enums: {
-      coupon_status: "available" | "claimed" | "expired" | "used"
+      app_role: "admin" | "donor" | "recipient"
+      coupon_status: "available" | "reserved" | "redeemed" | "expired"
       user_role: "recipient" | "donor" | "admin"
+      verification_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -441,8 +632,10 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      coupon_status: ["available", "claimed", "expired", "used"],
+      app_role: ["admin", "donor", "recipient"],
+      coupon_status: ["available", "reserved", "redeemed", "expired"],
       user_role: ["recipient", "donor", "admin"],
+      verification_status: ["pending", "approved", "rejected"],
     },
   },
 } as const

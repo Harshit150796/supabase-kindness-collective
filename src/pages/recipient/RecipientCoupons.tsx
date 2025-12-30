@@ -7,18 +7,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Gift, Store, Calendar, Search, Tag } from 'lucide-react';
+import { Gift, Calendar, Search, Tag, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Coupon {
   id: string;
   title: string;
-  store_name: string;
   code: string;
-  category: string | null;
-  discount_value: string | null;
   description: string | null;
+  value: number;
+  discount_percent: number | null;
   expiry_date: string | null;
+  category_id: string | null;
 }
 
 export default function RecipientCoupons() {
@@ -36,9 +36,8 @@ export default function RecipientCoupons() {
   const fetchCoupons = async () => {
     const { data } = await supabase
       .from('coupons')
-      .select('*')
+      .select('id, title, code, description, value, discount_percent, expiry_date, category_id')
       .eq('status', 'available')
-      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     setCoupons(data || []);
@@ -48,28 +47,19 @@ export default function RecipientCoupons() {
   const handleClaim = async (couponId: string) => {
     setClaiming(couponId);
     try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user!.id)
-        .single();
-
-      if (!profile) throw new Error('Profile not found');
-
-      // Insert claim
-      const { error: claimError } = await supabase
-        .from('coupon_claims')
-        .insert({ coupon_id: couponId, recipient_id: profile.id });
-
-      if (claimError) throw claimError;
-
-      // Update coupon status
-      await supabase
+      // Update coupon status to reserved
+      const { error } = await supabase
         .from('coupons')
-        .update({ status: 'claimed' })
+        .update({ 
+          status: 'reserved',
+          reserved_by: user!.id,
+          reserved_at: new Date().toISOString()
+        })
         .eq('id', couponId);
 
-      toast({ title: 'Success!', description: 'Coupon claimed successfully.' });
+      if (error) throw error;
+
+      toast({ title: 'Success!', description: 'Coupon reserved successfully.' });
       fetchCoupons();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -80,8 +70,7 @@ export default function RecipientCoupons() {
 
   const filteredCoupons = coupons.filter(coupon =>
     coupon.title.toLowerCase().includes(search.toLowerCase()) ||
-    coupon.store_name.toLowerCase().includes(search.toLowerCase()) ||
-    coupon.category?.toLowerCase().includes(search.toLowerCase())
+    coupon.description?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -95,7 +84,7 @@ export default function RecipientCoupons() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search by store, title, or category..."
+            placeholder="Search coupons..."
             className="pl-10"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -120,14 +109,11 @@ export default function RecipientCoupons() {
                   <div className="flex items-start justify-between">
                     <div>
                       <CardTitle className="text-lg">{coupon.title}</CardTitle>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                        <Store className="w-3 h-3" />
-                        {coupon.store_name}
-                      </p>
                     </div>
-                    {coupon.discount_value && (
-                      <Badge variant="secondary">{coupon.discount_value}</Badge>
-                    )}
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <DollarSign className="w-3 h-3" />
+                      {coupon.value}
+                    </Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -135,10 +121,10 @@ export default function RecipientCoupons() {
                     <p className="text-sm text-muted-foreground">{coupon.description}</p>
                   )}
                   <div className="flex flex-wrap gap-2">
-                    {coupon.category && (
+                    {coupon.discount_percent && (
                       <Badge variant="outline" className="text-xs">
                         <Tag className="w-3 h-3 mr-1" />
-                        {coupon.category}
+                        {coupon.discount_percent}% off
                       </Badge>
                     )}
                     {coupon.expiry_date && (
@@ -153,7 +139,7 @@ export default function RecipientCoupons() {
                     onClick={() => handleClaim(coupon.id)}
                     disabled={claiming === coupon.id}
                   >
-                    {claiming === coupon.id ? 'Claiming...' : 'Claim Coupon'}
+                    {claiming === coupon.id ? 'Reserving...' : 'Reserve Coupon'}
                   </Button>
                 </CardContent>
               </Card>

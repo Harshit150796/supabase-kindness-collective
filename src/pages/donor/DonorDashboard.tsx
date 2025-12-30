@@ -3,13 +3,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Gift, DollarSign, TrendingUp, Heart, ArrowRight, Users } from 'lucide-react';
 
 interface DonorStats {
   totalDonated: number;
-  couponsCreated: number;
+  donationsCount: number;
   peopleHelped: number;
 }
 
@@ -18,7 +17,7 @@ export default function DonorDashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DonorStats>({
     totalDonated: 0,
-    couponsCreated: 0,
+    donationsCount: 0,
     peopleHelped: 0
   });
   const [loading, setLoading] = useState(true);
@@ -30,32 +29,24 @@ export default function DonorDashboard() {
   }, [user]);
 
   const fetchStats = async () => {
-    // Get profile id first
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('user_id', user!.id)
-      .single();
+    // Get donations by this donor
+    const { data: donations } = await supabase
+      .from('donations')
+      .select('id, amount')
+      .eq('donor_id', user!.id);
 
-    if (profile) {
-      // Get coupons created by this donor
-      const { data: coupons } = await supabase
-        .from('coupons')
-        .select('id')
-        .eq('donor_id', profile.id);
+    // Get redemption history count (approximation for people helped)
+    const { count: redemptionsCount } = await supabase
+      .from('redemption_history')
+      .select('id', { count: 'exact' });
 
-      // Get claims on donor's coupons
-      const { data: claims } = await supabase
-        .from('coupon_claims')
-        .select('coupon_id')
-        .in('coupon_id', coupons?.map(c => c.id) || []);
+    const totalAmount = donations?.reduce((sum, d) => sum + Number(d.amount), 0) || 0;
 
-      setStats({
-        totalDonated: 0, // Would come from donations table
-        couponsCreated: coupons?.length || 0,
-        peopleHelped: claims?.length || 0
-      });
-    }
+    setStats({
+      totalDonated: totalAmount,
+      donationsCount: donations?.length || 0,
+      peopleHelped: redemptionsCount || 0
+    });
     setLoading(false);
   };
 
@@ -82,12 +73,12 @@ export default function DonorDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Coupons Created</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Donations Made</CardTitle>
               <Gift className="w-4 h-4 text-gold" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stats.couponsCreated}</div>
-              <p className="text-xs text-muted-foreground">Active donations</p>
+              <div className="text-2xl font-bold text-foreground">{stats.donationsCount}</div>
+              <p className="text-xs text-muted-foreground">Total donations</p>
             </CardContent>
           </Card>
 
