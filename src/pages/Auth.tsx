@@ -103,7 +103,10 @@ export default function Auth() {
         await sendOTP(email);
         setPendingSignupData({ email, password, fullName, role });
         setAuthStep('otp');
-        toast.success('Verification code sent to your email!');
+        toast.success('OTP sent to your email!', {
+          description: `Check ${email} for your 6-digit verification code`,
+          duration: 5000,
+        });
       } else {
         const { error } = await signIn(email, password);
         if (error) {
@@ -139,7 +142,10 @@ export default function Auth() {
           toast.error(error.message);
         }
       } else {
-        toast.success('Account created successfully!');
+        toast.success('Account created successfully!', {
+          description: 'Welcome to CouponDonation! Redirecting to your dashboard...',
+          duration: 4000,
+        });
       }
     } catch (error: any) {
       toast.error(error.message || 'Failed to create account');

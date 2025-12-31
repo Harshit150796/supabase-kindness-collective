@@ -104,7 +104,10 @@ export function OTPVerification({ email, onVerified, onBack }: OTPVerificationPr
       if (error) throw error;
 
       if (data.success) {
-        toast.success('New verification code sent!');
+        toast.success('New code sent!', {
+          description: `Check ${email} for your verification code`,
+          duration: 4000,
+        });
         setCountdown(60);
         setOtp(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
