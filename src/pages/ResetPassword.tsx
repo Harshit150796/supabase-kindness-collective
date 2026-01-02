@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +28,7 @@ const passwordSchema = z.object({
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user, roles, rolesLoaded } = useAuth();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,6 +46,21 @@ export default function ResetPassword() {
       setTokenValid(true);
     }
   }, [token]);
+
+  // Redirect to dashboard after successful login
+  useEffect(() => {
+    if (success && user && rolesLoaded && roles.length > 0) {
+      if (roles.includes('admin')) {
+        navigate('/admin');
+      } else if (roles.includes('donor')) {
+        navigate('/donor');
+      } else if (roles.includes('recipient')) {
+        navigate('/recipient');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [success, user, roles, rolesLoaded, navigate]);
 
   const validateForm = () => {
     try {
@@ -77,10 +94,24 @@ export default function ResetPassword() {
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
 
-      setSuccess(true);
       toast.success('Password updated successfully!');
       
-      setTimeout(() => navigate('/auth'), 2000);
+      // Auto sign-in with the new password
+      if (data.email) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: password,
+        });
+        
+        if (signInError) {
+          console.error('Auto sign-in failed:', signInError);
+          toast.info('Please sign in with your new password');
+          navigate('/auth');
+          return;
+        }
+      }
+      
+      setSuccess(true);
     } catch (error: any) {
       console.error('Password reset error:', error);
       toast.error(error.message || 'Failed to update password');
@@ -115,8 +146,9 @@ export default function ResetPassword() {
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
                 <h2 className="text-xl font-semibold text-foreground">Password Updated!</h2>
                 <p className="text-muted-foreground">
-                  Your password has been reset successfully. Redirecting to sign in...
+                  Your password has been reset successfully. Signing you in...
                 </p>
+                <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
               </div>
             </CardContent>
           ) : !tokenValid ? (
