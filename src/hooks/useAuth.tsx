@@ -9,6 +9,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   roles: AppRole[];
+  rolesLoaded: boolean;
   signUp: (email: string, password: string, fullName: string, role: AppRole) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -22,8 +23,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  const [rolesLoaded, setRolesLoaded] = useState(false);
 
   const fetchUserRoles = async (userId: string) => {
+    setRolesLoaded(false);
     const { data, error } = await supabase
       .from('user_roles')
       .select('role')
@@ -32,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!error && data) {
       setRoles(data.map(r => r.role as AppRole));
     }
+    setRolesLoaded(true);
   };
 
   useEffect(() => {
@@ -46,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }, 0);
         } else {
           setRoles([]);
+          setRolesLoaded(true);
         }
         setLoading(false);
       }
@@ -106,12 +111,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setRoles([]);
+    setRolesLoaded(false);
   };
 
   const hasRole = (role: AppRole) => roles.includes(role);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, roles, signUp, signIn, signOut, hasRole }}>
+    <AuthContext.Provider value={{ user, session, loading, roles, rolesLoaded, signUp, signIn, signOut, hasRole }}>
       {children}
     </AuthContext.Provider>
   );
