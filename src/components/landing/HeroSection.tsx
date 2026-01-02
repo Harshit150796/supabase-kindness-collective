@@ -39,7 +39,7 @@ export function HeroSection() {
   const progress = (featuredStory.amountRaised / featuredStory.goal) * 100;
 
   return (
-    <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+    <section className="relative min-h-[85vh] md:min-h-[90vh] flex items-center overflow-hidden">
       {/* Subtle background */}
       <div className="absolute inset-0 bg-gradient-to-b from-secondary/50 via-background to-background" />
       
@@ -63,48 +63,48 @@ export function HeroSection() {
         </div>
       ))}
 
-      <div className="container mx-auto px-4 py-16 relative z-10">
+      <div className="container mx-auto px-4 py-12 md:py-16 relative z-10">
         <div className="max-w-4xl mx-auto">
           {/* Main Content */}
-          <div className="text-center mb-10">
+          <div className="text-center mb-8 md:mb-10">
             {/* Trust badge */}
-            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-2 rounded-full mb-6">
+            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-3 md:px-4 py-1.5 md:py-2 rounded-full mb-4 md:mb-6">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
               </span>
-              <span className="text-sm font-medium text-primary">Trusted by 50,000+ donors worldwide</span>
+              <span className="text-xs md:text-sm font-medium text-primary">Trusted by 50,000+ donors worldwide</span>
             </div>
 
             {/* Headline - Specific & Impact-focused */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 text-foreground">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 md:mb-6 text-foreground">
               <AnimatedCounter end={15000} /> families fed this month.
               <br />
               <span className="text-primary">Help us reach 20,000.</span>
             </h1>
 
             {/* Subheadline */}
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+            <p className="text-base md:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 md:mb-8 px-2">
               Your donation becomes real grocery coupons for families in need. 
               100% transparent. 95% goes directly to recipients.
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-4">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center mb-4 px-4 sm:px-0">
               <Button 
                 size="lg" 
-                className="text-lg px-8 py-6 gap-2"
+                className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 gap-2 w-full sm:w-auto"
                 onClick={() => navigate('/auth?mode=signup&role=donor')}
               >
                 Start Donating
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
               </Button>
               <Button 
                 size="lg" 
-                className="text-lg px-8 py-6 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto"
                 onClick={() => navigate('/auth?mode=signup&role=recipient')}
               >
-                <UserPlus className="w-5 h-5" />
+                <UserPlus className="w-4 h-4 md:w-5 md:h-5" />
                 Apply as Recipient
               </Button>
             </div>
@@ -113,7 +113,7 @@ export function HeroSection() {
             <div className="flex justify-center">
               <Button 
                 variant="ghost"
-                className="gap-2 text-muted-foreground hover:text-foreground"
+                className="gap-2 text-muted-foreground hover:text-foreground text-sm md:text-base"
                 onClick={() => navigate('/how-it-works')}
               >
                 <Play className="w-4 h-4" />
@@ -123,38 +123,38 @@ export function HeroSection() {
           </div>
 
           {/* Featured Story Card */}
-          <Card className="max-w-2xl mx-auto mt-12 overflow-hidden border-border/50 shadow-lg">
+          <Card className="max-w-2xl mx-auto mt-8 md:mt-12 overflow-hidden border-border/50 shadow-lg">
             <div className="flex flex-col sm:flex-row">
-              <div className="sm:w-48 h-48 sm:h-auto relative overflow-hidden flex-shrink-0">
+              <div className="h-48 sm:w-48 sm:h-auto relative overflow-hidden flex-shrink-0">
                 <img 
                   src={featuredStory.image}
                   alt={featuredStory.name}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute top-3 left-3">
-                  <span className="px-2.5 py-1 rounded-full bg-background/90 text-foreground text-xs font-medium">
+                  <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full bg-background/90 text-foreground text-xs font-medium">
                     Featured Story
                   </span>
                 </div>
               </div>
               
-              <div className="flex-1 p-5">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
-                  <MapPin className="w-3.5 h-3.5" />
+              <div className="flex-1 p-4 md:p-5">
+                <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm mb-1.5 md:mb-2">
+                  <MapPin className="w-3 h-3 md:w-3.5 md:h-3.5" />
                   <span>{featuredStory.location}</span>
                 </div>
                 
-                <h3 className="text-lg font-semibold text-foreground mb-2">
+                <h3 className="text-base md:text-lg font-semibold text-foreground mb-1.5 md:mb-2">
                   {featuredStory.name}'s family received groceries for 3 months
                 </h3>
                 
-                <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                <p className="text-muted-foreground text-xs md:text-sm mb-3 md:mb-4 line-clamp-2">
                   "{featuredStory.story}"
                 </p>
                 
                 {/* Progress */}
-                <div className="space-y-2">
-                  <Progress value={progress} className="h-2" />
+                <div className="space-y-1.5 md:space-y-2">
+                  <Progress value={progress} className="h-1.5 md:h-2" />
                   <div className="flex justify-between text-xs">
                     <span className="text-foreground font-medium">
                       ${featuredStory.amountRaised.toLocaleString()} raised
