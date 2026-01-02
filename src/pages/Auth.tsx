@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { OTPVerification } from '@/components/auth/OTPVerification';
+import { PasswordInput } from '@/components/auth/PasswordInput';
+import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import logo from '@/assets/logo.png';
 
 const authSchema = z.object({
@@ -26,7 +28,7 @@ type AuthStep = 'form' | 'otp';
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, signIn, signUp, hasRole, loading: authLoading } = useAuth();
+  const { user, signIn, signUp, hasRole, loading: authLoading, rolesLoaded } = useAuth();
   
   const [mode, setMode] = useState<'signin' | 'signup'>(
     searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
@@ -48,14 +50,14 @@ export default function Auth() {
   } | null>(null);
 
   useEffect(() => {
-    if (user && !authLoading) {
+    if (user && !authLoading && rolesLoaded) {
       // Redirect based on role
       if (hasRole('admin')) navigate('/admin');
       else if (hasRole('donor')) navigate('/donor');
       else if (hasRole('recipient')) navigate('/recipient');
       else navigate('/');
     }
-  }, [user, authLoading, hasRole, navigate]);
+  }, [user, authLoading, rolesLoaded, hasRole, navigate]);
 
   const validateForm = () => {
     try {
@@ -277,13 +279,13 @@ export default function Auth() {
 
                       <div className="space-y-2">
                         <Label htmlFor="password">Password</Label>
-                        <Input
+                        <PasswordInput
                           id="password"
-                          type="password"
                           placeholder="••••••••"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                         />
+                        {mode === 'signup' && <PasswordStrengthIndicator password={password} />}
                         {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                       </div>
 
