@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -26,32 +26,24 @@ const passwordSchema = z.object({
 
 export default function ResetPassword() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [canReset, setCanReset] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
-  const [checkingSession, setCheckingSession] = useState(true);
+  const [tokenValid, setTokenValid] = useState<boolean | null>(null);
+
+  const token = searchParams.get('token');
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setCanReset(true);
-        setCheckingSession(false);
-      }
-    });
-
-    // Also check if there's already a session (user might have clicked link)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setCanReset(true);
-      }
-      setCheckingSession(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    // Check if token exists in URL
+    if (!token) {
+      setTokenValid(false);
+    } else {
+      setTokenValid(true);
+    }
+  }, [token]);
 
   const validateForm = () => {
     try {
@@ -74,21 +66,20 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm() || !token) return;
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
+      const { data, error } = await supabase.functions.invoke('verify-password-reset', {
+        body: { token, password },
+      });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
 
       setSuccess(true);
       toast.success('Password updated successfully!');
       
-      // Sign out and redirect to auth page
-      await supabase.auth.signOut();
       setTimeout(() => navigate('/auth'), 2000);
     } catch (error: any) {
       console.error('Password reset error:', error);
@@ -98,7 +89,7 @@ export default function ResetPassword() {
     }
   };
 
-  if (checkingSession) {
+  if (tokenValid === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -128,7 +119,7 @@ export default function ResetPassword() {
                 </p>
               </div>
             </CardContent>
-          ) : !canReset ? (
+          ) : !tokenValid ? (
             <CardContent className="pt-6">
               <div className="text-center space-y-4">
                 <AlertCircle className="w-16 h-16 text-destructive mx-auto" />
