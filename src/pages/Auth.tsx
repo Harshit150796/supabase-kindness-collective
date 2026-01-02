@@ -126,39 +126,48 @@ export default function Auth() {
   const handleOTPVerified = async () => {
     if (!pendingSignupData) return;
 
-    const targetRole = pendingSignupData.role;
+    const { email: signupEmail, password: signupPassword, fullName: signupFullName, role: targetRole } = pendingSignupData;
     setLoading(true);
+    
     try {
-      const { error } = await signUp(
-        pendingSignupData.email,
-        pendingSignupData.password,
-        pendingSignupData.fullName,
+      // Step 1: Create the account
+      const { error: signupError } = await signUp(
+        signupEmail,
+        signupPassword,
+        signupFullName,
         targetRole
       );
 
-      if (error) {
-        if (error.message.includes('already registered')) {
+      if (signupError) {
+        if (signupError.message.includes('already registered')) {
           toast.error('This email is already registered. Please sign in instead.');
           setAuthStep('form');
           setMode('signin');
-        } else {
-          toast.error(error.message);
+          return;
         }
-      } else {
-        toast.success('Account created successfully!', {
-          description: 'Welcome to CouponDonation! Redirecting to your dashboard...',
-          duration: 4000,
-        });
-        // Explicitly navigate based on selected role - don't rely on useEffect
-        setTimeout(() => {
-          if (targetRole === 'donor') {
-            navigate('/donor');
-          } else {
-            navigate('/recipient');
-          }
-        }, 500);
+        throw signupError;
       }
+
+      // Step 2: Sign in immediately after signup to establish session
+      const { error: signinError } = await signIn(signupEmail, signupPassword);
+      
+      if (signinError) {
+        console.error('Auto sign-in after signup failed:', signinError);
+        // Account was created, but auto-login failed - user can sign in manually
+        toast.success('Account created! Please sign in with your credentials.');
+        setAuthStep('form');
+        setMode('signin');
+        return;
+      }
+
+      toast.success('Account created successfully!', {
+        description: 'Welcome to CouponDonation!',
+        duration: 3000,
+      });
+      
+      // Navigation will happen via useEffect when rolesLoaded becomes true
     } catch (error: any) {
+      console.error('Signup flow error:', error);
       toast.error(error.message || 'Failed to create account');
     } finally {
       setLoading(false);
