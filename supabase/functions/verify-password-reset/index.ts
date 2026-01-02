@@ -48,7 +48,7 @@ const handler = async (req: Request): Promise<Response> => {
       .maybeSingle();
 
     if (tokenError || !tokenData) {
-      console.log("Invalid or expired token:", token);
+      console.log("Invalid or expired token attempted");
       return new Response(
         JSON.stringify({ error: "Invalid or expired reset link. Please request a new one." }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }

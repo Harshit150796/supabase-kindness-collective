@@ -18,7 +18,7 @@ import logo from '@/assets/logo.png';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   fullName: z.string().min(2, 'Name must be at least 2 characters').optional(),
 });
 
