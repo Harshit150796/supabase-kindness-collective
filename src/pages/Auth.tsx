@@ -124,13 +124,14 @@ export default function Auth() {
   const handleOTPVerified = async () => {
     if (!pendingSignupData) return;
 
+    const targetRole = pendingSignupData.role;
     setLoading(true);
     try {
       const { error } = await signUp(
         pendingSignupData.email,
         pendingSignupData.password,
         pendingSignupData.fullName,
-        pendingSignupData.role
+        targetRole
       );
 
       if (error) {
@@ -146,6 +147,14 @@ export default function Auth() {
           description: 'Welcome to CouponDonation! Redirecting to your dashboard...',
           duration: 4000,
         });
+        // Explicitly navigate based on selected role - don't rely on useEffect
+        setTimeout(() => {
+          if (targetRole === 'donor') {
+            navigate('/donor');
+          } else {
+            navigate('/recipient');
+          }
+        }, 500);
       }
     } catch (error: any) {
       toast.error(error.message || 'Failed to create account');
