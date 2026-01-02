@@ -134,9 +134,24 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     if (!emailResponse.ok) {
-      const errorData = await emailResponse.json();
-      console.error("Resend API error:", errorData);
-      throw new Error("Failed to send email");
+      let errorData: any = null;
+      try {
+        errorData = await emailResponse.json();
+      } catch {
+        // ignore json parse errors
+      }
+
+      const message =
+        errorData?.message ||
+        errorData?.error ||
+        `Resend API request failed (status ${emailResponse.status})`;
+
+      console.error("Resend API error:", errorData ?? { status: emailResponse.status, message });
+
+      return new Response(JSON.stringify({ error: message }), {
+        status: typeof errorData?.statusCode === "number" ? errorData.statusCode : emailResponse.status || 502,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
     const emailData = await emailResponse.json();
