@@ -104,55 +104,55 @@ export function BrandLeaderboard() {
   }, [donationIndex]);
 
   return (
-    <section className="py-24 bg-secondary/30">
+    <section className="py-16 md:py-24 bg-secondary/30">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 bg-gold/10 border border-gold/20 px-4 py-2 rounded-full mb-6">
-            <Trophy className="w-4 h-4 text-gold" />
-            <span className="text-sm font-medium text-gold">Live Leaderboard</span>
-            <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+        <div className="text-center max-w-3xl mx-auto mb-8 md:mb-12">
+          <div className="inline-flex items-center gap-2 bg-gold/10 border border-gold/20 px-3 md:px-4 py-1.5 md:py-2 rounded-full mb-4 md:mb-6">
+            <Trophy className="w-3.5 h-3.5 md:w-4 md:h-4 text-gold" />
+            <span className="text-xs md:text-sm font-medium text-gold">Live Leaderboard</span>
+            <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-primary rounded-full animate-pulse" />
           </div>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-base md:text-lg text-muted-foreground px-4">
             Watch real-time donations driving real change.
           </p>
         </div>
 
-        <div className="max-w-5xl mx-auto space-y-8">
+        <div className="max-w-5xl mx-auto space-y-6 md:space-y-8">
           {/* Top Donors - Now First */}
           <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Crown className="w-5 h-5 text-gold" />
+            <h3 className="text-base md:text-lg font-semibold text-foreground mb-3 md:mb-4 flex items-center gap-2 px-1">
+              <Crown className="w-4 h-4 md:w-5 md:h-5 text-gold" />
               Top Donors This Month
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
               {topBrands.map((brand) => {
                 const brandInfo = brandLogos[brand.name];
                 return (
                   <Card 
                     key={brand.rank}
-                    className={`p-5 flex items-center gap-4 transition-all duration-300 hover:shadow-card-hover ${
+                    className={`p-4 md:p-5 flex items-center gap-3 md:gap-4 transition-all duration-300 hover:shadow-card-hover ${
                       brand.rank === 1 ? 'border-gold/50 bg-gold/5' : ''
                     }`}
                   >
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ${
+                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center overflow-hidden ${
                       brand.rank === 1 ? 'bg-gold/10 ring-2 ring-gold/30' : 'bg-muted'
                     }`}>
                       <img 
                         src={brandInfo?.logo} 
                         alt={brand.name}
-                        className="w-8 h-8 object-contain"
+                        className="w-6 h-6 md:w-8 md:h-8 object-contain"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-muted-foreground">#{brand.rank}</span>
-                        <span className="font-bold text-foreground truncate">{brand.name}</span>
+                        <span className="text-xs md:text-sm font-medium text-muted-foreground">#{brand.rank}</span>
+                        <span className="font-bold text-sm md:text-base text-foreground truncate">{brand.name}</span>
                         {brand.rank === 1 && <span className="text-sm">👑</span>}
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xl font-bold text-foreground">{brand.amount}</span>
-                        <div className="flex items-center gap-1 text-primary text-sm">
+                        <span className="text-lg md:text-xl font-bold text-foreground">{brand.amount}</span>
+                        <div className="flex items-center gap-1 text-primary text-xs md:text-sm">
                           <TrendingUp className="w-3 h-3" />
                           <span className="font-medium">{brand.change}</span>
                         </div>
@@ -165,90 +165,92 @@ export function BrandLeaderboard() {
           </div>
 
           {/* Live Donation Tracking - Now Second */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-foreground">Live Donation Tracking</h3>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+          <Card className="p-4 md:p-6">
+            <div className="flex items-center justify-between mb-4 md:mb-6">
+              <h3 className="text-base md:text-lg font-semibold text-foreground">Live Donation Tracking</h3>
+              <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-primary rounded-full animate-pulse" />
                 Real-time
               </div>
             </div>
 
-            {/* Vertical Bar Chart with Logos */}
-            <div className="h-[320px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  data={leaderboardData} 
-                  margin={{ top: 30, right: 10, bottom: 70, left: 10 }}
-                >
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={<CustomXAxisTick />}
-                    interval={0}
-                    height={70}
-                  />
-                  <YAxis hide />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted)/0.3)' }} />
-                  <Bar 
-                    dataKey="donations" 
-                    radius={[8, 8, 0, 0]}
-                    barSize={48}
+            {/* Vertical Bar Chart with Logos - Scrollable on mobile */}
+            <div className="h-[280px] md:h-[320px] overflow-x-auto">
+              <div className="min-w-[500px] md:min-w-0 h-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart 
+                    data={leaderboardData} 
+                    margin={{ top: 30, right: 10, bottom: 70, left: 10 }}
                   >
-                    <LabelList dataKey="donations" content={<CustomLabel />} />
-                    {leaderboardData.map((entry, index) => {
-                      const brand = brandLogos[entry.name];
-                      return (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={brand?.color || 'hsl(var(--primary))'}
-                          className="transition-all duration-500 hover:opacity-80"
-                          style={{
-                            filter: index === 0 ? 'drop-shadow(0 4px 12px rgba(255, 48, 8, 0.3))' : 'none'
-                          }}
-                        />
-                      );
-                    })}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+                    <XAxis 
+                      dataKey="name" 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={<CustomXAxisTick />}
+                      interval={0}
+                      height={70}
+                    />
+                    <YAxis hide />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted)/0.3)' }} />
+                    <Bar 
+                      dataKey="donations" 
+                      radius={[8, 8, 0, 0]}
+                      barSize={48}
+                    >
+                      <LabelList dataKey="donations" content={<CustomLabel />} />
+                      {leaderboardData.map((entry, index) => {
+                        const brand = brandLogos[entry.name];
+                        return (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={brand?.color || 'hsl(var(--primary))'}
+                            className="transition-all duration-500 hover:opacity-80"
+                            style={{
+                              filter: index === 0 ? 'drop-shadow(0 4px 12px rgba(255, 48, 8, 0.3))' : 'none'
+                            }}
+                          />
+                        );
+                      })}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
             {/* Live Donation Ticker */}
-            <div className="mt-4 pt-4 border-t border-border">
+            <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-border">
               <div 
                 key={donationIndex}
-                className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10 animate-fade-in"
+                className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg bg-primary/5 border border-primary/10 animate-fade-in"
               >
-                <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center flex-shrink-0 border border-border">
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-background flex items-center justify-center flex-shrink-0 border border-border">
                   <img 
                     src={brandLogos[latestDonation.brand]?.logo}
                     alt={latestDonation.brand}
-                    className="w-6 h-6 object-contain"
+                    className="w-5 h-5 md:w-6 md:h-6 object-contain"
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm">
                     <span className="font-medium text-foreground truncate">{latestDonation.name}</span>
-                    <span className="text-muted-foreground">donated</span>
+                    <span className="text-muted-foreground hidden sm:inline">donated</span>
                     <span className="font-bold text-primary">${latestDonation.amount}</span>
                   </div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <span>to {latestDonation.brand}</span>
-                    <span>•</span>
-                    <Clock className="w-3 h-3" />
-                    <span>{latestDonation.time}</span>
+                    <span className="truncate">to {latestDonation.brand}</span>
+                    <span className="hidden sm:inline">•</span>
+                    <Clock className="w-3 h-3 hidden sm:inline" />
+                    <span className="hidden sm:inline">{latestDonation.time}</span>
                   </div>
                 </div>
-                <Heart className="w-4 h-4 text-primary animate-pulse" />
+                <Heart className="w-4 h-4 text-primary animate-pulse flex-shrink-0" />
               </div>
             </div>
 
             {/* Footer Stats */}
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-              <span className="text-sm text-muted-foreground">Total this month</span>
-              <span className="text-xl font-bold text-foreground">$1.9M+</span>
+            <div className="flex items-center justify-between mt-3 md:mt-4 pt-3 md:pt-4 border-t border-border">
+              <span className="text-xs md:text-sm text-muted-foreground">Total this month</span>
+              <span className="text-lg md:text-xl font-bold text-foreground">$1.9M+</span>
             </div>
           </Card>
         </div>
