@@ -24,6 +24,7 @@ const authSchema = z.object({
 
 type AppRole = 'donor' | 'recipient';
 type AuthStep = 'form' | 'otp';
+type AuthView = 'auth' | 'forgot-password';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -42,6 +43,8 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; fullName?: string }>({});
   const [authStep, setAuthStep] = useState<AuthStep>('form');
+  const [authView, setAuthView] = useState<AuthView>('auth');
+  const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
   const [pendingSignupData, setPendingSignupData] = useState<{
     email: string;
     password: string;
@@ -180,6 +183,39 @@ export default function Auth() {
     setPendingSignupData(null);
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setErrors({ email: 'Please enter your email' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      setForgotPasswordSent(true);
+      toast.success('Reset link sent!', {
+        description: 'Check your email for the password reset link',
+      });
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      toast.error(error.message || 'Failed to send reset link');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackToAuth = () => {
+    setAuthView('auth');
+    setForgotPasswordSent(false);
+    setErrors({});
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -200,7 +236,53 @@ export default function Auth() {
         </div>
 
         <Card className="border-border">
-          {authStep === 'otp' && pendingSignupData ? (
+          {authView === 'forgot-password' ? (
+            <CardContent className="pt-6">
+              {forgotPasswordSent ? (
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                    <Gift className="w-8 h-8 text-primary" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-foreground">Check Your Email</h2>
+                  <p className="text-muted-foreground">
+                    If an account exists for <strong>{email}</strong>, you'll receive a password reset link shortly.
+                  </p>
+                  <Button variant="outline" onClick={handleBackToAuth} className="mt-4">
+                    Back to Sign In
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <h2 className="text-xl font-semibold text-foreground">Forgot Password?</h2>
+                    <p className="text-muted-foreground text-sm mt-1">
+                      Enter your email and we'll send you a reset link
+                    </p>
+                  </div>
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="forgot-email">Email</Label>
+                      <Input
+                        id="forgot-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
+                      {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      Send Reset Link
+                    </Button>
+                    <Button type="button" variant="ghost" onClick={handleBackToAuth} className="w-full">
+                      Back to Sign In
+                    </Button>
+                  </form>
+                </div>
+              )}
+            </CardContent>
+          ) : authStep === 'otp' && pendingSignupData ? (
             <CardContent className="pt-6">
               <OTPVerification
                 email={pendingSignupData.email}
@@ -287,7 +369,18 @@ export default function Auth() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="password">Password</Label>
+                          {mode === 'signin' && (
+                            <button
+                              type="button"
+                              onClick={() => setAuthView('forgot-password')}
+                              className="text-sm text-primary hover:underline"
+                            >
+                              Forgot Password?
+                            </button>
+                          )}
+                        </div>
                         <PasswordInput
                           id="password"
                           placeholder="••••••••"

@@ -13,6 +13,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import DonationSuccess from "./pages/DonationSuccess";
 import DonationCancelled from "./pages/DonationCancelled";
+import ResetPassword from "./pages/ResetPassword";
 
 // Recipient pages
 import RecipientDashboard from "./pages/recipient/RecipientDashboard";
@@ -53,6 +54,7 @@ const AppRoutes = () => (
     <Route path="/how-it-works" element={<HowItWorks />} />
     <Route path="/faq" element={<FAQ />} />
     <Route path="/auth" element={<Auth />} />
+    <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/donation-success" element={<DonationSuccess />} />
     <Route path="/donation-cancelled" element={<DonationCancelled />} />
     
