@@ -95,7 +95,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Password reset successful for:", tokenData.email);
 
     return new Response(
-      JSON.stringify({ success: true, message: "Password updated successfully" }),
+      JSON.stringify({ success: true, message: "Password updated successfully", email: tokenData.email }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
