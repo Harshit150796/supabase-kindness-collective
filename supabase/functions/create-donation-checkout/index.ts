@@ -23,7 +23,32 @@ serve(async (req) => {
     }
 
     // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const rawStripeKey = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
+    const stripeKey = rawStripeKey
+      .trim()
+      // Guard against users pasting quoted values like "sk_live_..."
+      .replace(/^['"]|['"]$/g, "");
+
+    if (!stripeKey) {
+      throw new Error(
+        "Missing STRIPE_SECRET_KEY. Add it in Supabase → Project Settings → Functions → Secrets."
+      );
+    }
+
+    // Common mistake: copying a masked key from an error message (contains ***).
+    if (stripeKey.includes("*")) {
+      throw new Error(
+        "STRIPE_SECRET_KEY looks masked (contains '*'). Paste the full secret key from Stripe (starts with sk_...)."
+      );
+    }
+
+    if (!stripeKey.startsWith("sk_")) {
+      throw new Error(
+        "Invalid STRIPE_SECRET_KEY: must be a Stripe Secret Key (starts with 'sk_'), not a publishable key (pk_...)."
+      );
+    }
+
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2025-08-27.basil",
     });
 
