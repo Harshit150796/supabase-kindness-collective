@@ -1,8 +1,9 @@
-import { ArrowRight, MapPin, Users, Heart } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight, MapPin, Users, Heart } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { impactStories } from '@/data/impactStories';
+import { cn } from '@/lib/utils';
 
 const categoryLabels = {
   family: 'Feed a Family',
@@ -18,7 +19,25 @@ const categoryColors = {
   community: 'bg-blue-500/10 text-blue-600'
 };
 
+const STORIES_PER_PAGE = 4;
+
 export function ImpactStories() {
+  const [currentPage, setCurrentPage] = useState(0);
+  const totalPages = Math.ceil(impactStories.length / STORIES_PER_PAGE);
+  
+  const currentStories = impactStories.slice(
+    currentPage * STORIES_PER_PAGE,
+    (currentPage + 1) * STORIES_PER_PAGE
+  );
+
+  const goToPrevious = () => {
+    setCurrentPage((prev) => Math.max(0, prev - 1));
+  };
+
+  const goToNext = () => {
+    setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
+  };
+
   return (
     <section className="py-20 bg-secondary/30">
       <div className="container mx-auto px-4">
@@ -37,8 +56,8 @@ export function ImpactStories() {
         </div>
 
         {/* Stories Grid */}
-        <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-          {impactStories.map((story) => {
+        <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto transition-opacity duration-300">
+          {currentStories.map((story) => {
             const progress = (story.amountRaised / story.goal) * 100;
             
             return (
@@ -102,12 +121,54 @@ export function ImpactStories() {
           })}
         </div>
 
-        {/* CTA */}
-        <div className="text-center mt-10">
-          <Button variant="outline" size="lg" className="gap-2">
-            View All Stories
-            <ArrowRight className="w-4 h-4" />
-          </Button>
+        {/* Custom Pagination Navigation */}
+        <div className="flex items-center justify-center gap-4 mt-10">
+          {/* Previous Button */}
+          <button
+            onClick={goToPrevious}
+            disabled={currentPage === 0}
+            className={cn(
+              "w-14 h-14 rounded-xl border border-border/50 bg-background shadow-sm flex items-center justify-center transition-all duration-200",
+              currentPage === 0
+                ? "opacity-40 cursor-not-allowed"
+                : "hover:bg-muted hover:border-border hover:shadow-md"
+            )}
+            aria-label="Previous stories"
+          >
+            <ChevronLeft className="w-5 h-5 text-foreground" />
+          </button>
+
+          {/* Pill Pagination Indicator */}
+          <div className="bg-muted/50 rounded-full px-5 py-3 flex items-center gap-2">
+            {Array.from({ length: totalPages }).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentPage(index)}
+                className={cn(
+                  "rounded-full transition-all duration-300",
+                  currentPage === index
+                    ? "w-8 h-3 bg-primary"
+                    : "w-3 h-3 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                )}
+                aria-label={`Go to page ${index + 1}`}
+              />
+            ))}
+          </div>
+
+          {/* Next Button */}
+          <button
+            onClick={goToNext}
+            disabled={currentPage === totalPages - 1}
+            className={cn(
+              "w-14 h-14 rounded-xl border border-border/50 bg-background shadow-sm flex items-center justify-center transition-all duration-200",
+              currentPage === totalPages - 1
+                ? "opacity-40 cursor-not-allowed"
+                : "hover:bg-muted hover:border-border hover:shadow-md"
+            )}
+            aria-label="Next stories"
+          >
+            <ChevronRight className="w-5 h-5 text-foreground" />
+          </button>
         </div>
       </div>
     </section>

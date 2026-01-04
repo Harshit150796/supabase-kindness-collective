@@ -9,6 +9,8 @@ export interface ImpactStory {
   donorsCount: number;
   amountRaised: number;
   goal: number;
+  dateHelped?: string;
+  verified?: boolean;
 }
 
 export const impactStories: ImpactStory[] = [
@@ -22,7 +24,9 @@ export const impactStories: ImpactStory[] = [
     category: 'family',
     donorsCount: 234,
     amountRaised: 1850,
-    goal: 2000
+    goal: 2000,
+    dateHelped: 'December 2025',
+    verified: true
   },
   {
     id: '2',
@@ -34,7 +38,9 @@ export const impactStories: ImpactStory[] = [
     category: 'emergency',
     donorsCount: 412,
     amountRaised: 3200,
-    goal: 3500
+    goal: 3500,
+    dateHelped: 'November 2025',
+    verified: true
   },
   {
     id: '3',
@@ -46,7 +52,9 @@ export const impactStories: ImpactStory[] = [
     category: 'child',
     donorsCount: 189,
     amountRaised: 2400,
-    goal: 2400
+    goal: 2400,
+    dateHelped: 'October 2025',
+    verified: true
   },
   {
     id: '4',
@@ -58,7 +66,65 @@ export const impactStories: ImpactStory[] = [
     category: 'community',
     donorsCount: 567,
     amountRaised: 8500,
-    goal: 10000
+    goal: 10000,
+    dateHelped: 'Ongoing',
+    verified: true
+  },
+  {
+    id: '5',
+    name: 'Sarah T.',
+    location: 'Denver, CO',
+    image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&crop=face',
+    story: "After fleeing domestic violence, I had nothing. The clothing and grocery coupons helped me rebuild my life and regain my independence. Forever grateful.",
+    impact: 'Fresh start package',
+    category: 'emergency',
+    donorsCount: 156,
+    amountRaised: 1200,
+    goal: 1500,
+    dateHelped: 'January 2026',
+    verified: true
+  },
+  {
+    id: '6',
+    name: 'James & Family',
+    location: 'Seattle, WA',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
+    story: "When I was laid off during the holidays, feeding four kids seemed impossible. The holiday meal coupons meant we could still have a proper Christmas dinner together.",
+    impact: 'Holiday meals for 4 kids',
+    category: 'family',
+    donorsCount: 298,
+    amountRaised: 1650,
+    goal: 1800,
+    dateHelped: 'December 2025',
+    verified: true
+  },
+  {
+    id: '7',
+    name: 'Sunshine After School',
+    location: 'Miami, FL',
+    image: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=400&h=400&fit=crop',
+    story: "We run an after-school program for 50 underprivileged children. The snack and meal coupons ensure no child goes hungry while learning and growing with us.",
+    impact: '50 children fed daily',
+    category: 'child',
+    donorsCount: 423,
+    amountRaised: 4200,
+    goal: 5000,
+    dateHelped: 'Ongoing',
+    verified: true
+  },
+  {
+    id: '8',
+    name: 'Rosa M.',
+    location: 'San Antonio, TX',
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop&crop=face',
+    story: "As an elderly widow on fixed income, choosing between medicine and food was my reality. These coupons lifted that burden and gave me peace of mind.",
+    impact: '6 months of groceries',
+    category: 'family',
+    donorsCount: 187,
+    amountRaised: 2100,
+    goal: 2100,
+    dateHelped: 'November 2025',
+    verified: true
   }
 ];
 
