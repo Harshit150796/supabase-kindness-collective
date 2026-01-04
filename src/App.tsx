@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import DonationSuccess from "./pages/DonationSuccess";
 import DonationCancelled from "./pages/DonationCancelled";
 import ResetPassword from "./pages/ResetPassword";
+import Stories from "./pages/Stories";
 
 // Recipient pages
 import RecipientDashboard from "./pages/recipient/RecipientDashboard";
@@ -57,6 +58,7 @@ const AppRoutes = () => (
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/donation-success" element={<DonationSuccess />} />
     <Route path="/donation-cancelled" element={<DonationCancelled />} />
+    <Route path="/stories" element={<Stories />} />
     
     {/* Recipient Routes */}
     <Route path="/recipient" element={<ProtectedRoute allowedRoles={['recipient']}><RecipientDashboard /></ProtectedRoute>} />
