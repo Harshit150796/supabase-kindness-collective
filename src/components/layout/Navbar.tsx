@@ -50,6 +50,12 @@ export function Navbar() {
               About Us
             </Link>
             <Link 
+              to="/stories" 
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Stories
+            </Link>
+            <Link 
               to="/how-it-works" 
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
@@ -123,6 +129,13 @@ export function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
             >
               About Us
+            </Link>
+            <Link 
+              to="/stories" 
+              className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Stories
             </Link>
             <Link 
               to="/how-it-works" 
