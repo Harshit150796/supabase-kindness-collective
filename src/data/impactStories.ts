@@ -65,8 +65,9 @@ Three months later, I found a new job. The first thing I did was set up a monthl
     verified: true,
     familySize: 4,
     galleryImages: [
-      'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop'
+      'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?w=800&h=600&fit=crop', // mother grocery shopping
+      'https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=800&h=600&fit=crop', // family dinner table
+      'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=800&h=600&fit=crop' // fresh groceries
     ],
     updates: [
       {
@@ -121,6 +122,10 @@ Carlos is recovering now. It's been a long road, but we're getting there. The fo
     dateHelped: 'November 2025',
     verified: true,
     familySize: 4,
+    galleryImages: [
+      'https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?w=800&h=600&fit=crop', // hospital visit
+      'https://images.unsplash.com/photo-1504439468489-c8920d796a29?w=800&h=600&fit=crop' // medical recovery
+    ],
     updates: [
       {
         date: '2025-11-30',
@@ -167,6 +172,10 @@ My kids' health improved. Their grades improved. And I finally felt like I was d
     dateHelped: 'October 2025',
     verified: true,
     familySize: 4,
+    galleryImages: [
+      'https://images.unsplash.com/photo-1536640712-4d4c36ff0e4e?w=800&h=600&fit=crop', // dad with kids
+      'https://images.unsplash.com/photo-1484665754804-74b091211472?w=800&h=600&fit=crop' // kids eating healthy
+    ],
     updates: [
       {
         date: '2025-10-31',
@@ -211,6 +220,11 @@ We've seen a 40% increase in the number of families we can help since partnering
     goal: 10000,
     dateHelped: 'Ongoing',
     verified: true,
+    galleryImages: [
+      'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop', // community food distribution
+      'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800&h=600&fit=crop', // volunteers helping
+      'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=800&h=600&fit=crop' // donation boxes
+    ],
     updates: [
       {
         date: '2025-12-20',
@@ -257,6 +271,10 @@ Six months later, I have my own apartment, a job, and most importantly, my freed
     dateHelped: 'January 2026',
     verified: true,
     familySize: 3,
+    galleryImages: [
+      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop', // new apartment
+      'https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=800&h=600&fit=crop' // fresh start healthy food
+    ],
     updates: [
       {
         date: '2026-01-05',
@@ -297,6 +315,10 @@ I'm still job hunting, but the support from CouponDonation has taken the pressur
     dateHelped: 'December 2025',
     verified: true,
     familySize: 6,
+    galleryImages: [
+      'https://images.unsplash.com/photo-1543353071-087092ec393a?w=800&h=600&fit=crop', // holiday dinner
+      'https://images.unsplash.com/photo-1606567595334-d39972c85dfd?w=800&h=600&fit=crop' // family Christmas
+    ],
     updates: [
       {
         date: '2025-12-26',
@@ -343,6 +365,11 @@ Our goal is to expand to serve 100 children by next year. With continued support
     goal: 5000,
     dateHelped: 'Ongoing',
     verified: true,
+    galleryImages: [
+      'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&h=600&fit=crop', // kids learning
+      'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?w=800&h=600&fit=crop', // after school activities
+      'https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&h=600&fit=crop' // children eating snacks
+    ],
     updates: [
       {
         date: '2025-12-15',
@@ -390,6 +417,10 @@ My health has stabilized. My doctor is pleased with my progress. And I no longer
     dateHelped: 'November 2025',
     verified: true,
     familySize: 1,
+    galleryImages: [
+      'https://images.unsplash.com/photo-1517483000871-1dbf64a6e1c6?w=800&h=600&fit=crop', // senior at home
+      'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&h=600&fit=crop' // medication and health
+    ],
     updates: [
       {
         date: '2025-11-30',
