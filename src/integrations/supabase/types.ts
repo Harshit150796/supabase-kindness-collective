@@ -166,7 +166,7 @@ export type Database = {
           created_at: string
           currency: string | null
           donor_email: string | null
-          donor_id: string
+          donor_id: string | null
           id: string
           is_anonymous: boolean | null
           message: string | null
@@ -186,7 +186,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           donor_email?: string | null
-          donor_id: string
+          donor_id?: string | null
           id?: string
           is_anonymous?: boolean | null
           message?: string | null
@@ -206,7 +206,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           donor_email?: string | null
-          donor_id?: string
+          donor_id?: string | null
           id?: string
           is_anonymous?: boolean | null
           message?: string | null
