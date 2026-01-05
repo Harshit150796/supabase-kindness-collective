@@ -47,22 +47,24 @@ export function ImpactStories() {
           <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
             Real Stories, Real Impact
           </span>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-              Meet the Families You're Helping
-            </h2>
-            <Link 
-              to="/stories" 
-              className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1 hover:underline underline-offset-4"
-            >
-              View all
-              <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Meet the Families You're Helping
+          </h2>
           <p className="text-muted-foreground text-lg">
             Every donation creates a story of hope. These are real families whose lives 
             have been changed by generous donors like you.
           </p>
+        </div>
+
+        {/* View All Link - Top Right */}
+        <div className="flex justify-end max-w-5xl mx-auto mb-4">
+          <Link 
+            to="/stories" 
+            className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1 hover:underline underline-offset-4"
+          >
+            View all
+            <ChevronRight className="w-4 h-4" />
+          </Link>
         </div>
 
         {/* Stories Grid */}
