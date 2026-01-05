@@ -1,21 +1,43 @@
-import { useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Heart, Utensils, Home, Gift } from 'lucide-react';
+import { CheckCircle, Heart, Utensils, Home, Gift, History } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function DonationSuccess() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const amount = searchParams.get('amount') || '50';
   const meals = searchParams.get('meals') || '100';
   const goldCoins = parseInt(amount) * 10;
+  const [countdown, setCountdown] = useState(10);
 
   useEffect(() => {
     // Scroll to top on mount
     window.scrollTo(0, 0);
   }, []);
+
+  // Auto-redirect for logged-in users
+  useEffect(() => {
+    if (!user) return;
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          navigate('/donor/history');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [user, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -85,19 +107,39 @@ export default function DonationSuccess() {
           </p>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button asChild className="flex-1">
-              <Link to="/">
-                <Home className="w-4 h-4 mr-2" />
-                Return Home
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="flex-1">
-              <Link to="/auth?mode=signup&role=donor">
-                Create Account
-              </Link>
-            </Button>
-          </div>
+          {user ? (
+            <div className="space-y-3">
+              <Button asChild className="w-full">
+                <Link to="/donor/history">
+                  <History className="w-4 h-4 mr-2" />
+                  View Your Donations
+                </Link>
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Redirecting to your donation history in {countdown}s...
+              </p>
+              <Button asChild variant="outline" className="w-full">
+                <Link to="/">
+                  <Home className="w-4 h-4 mr-2" />
+                  Return Home
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button asChild className="flex-1">
+                <Link to="/">
+                  <Home className="w-4 h-4 mr-2" />
+                  Return Home
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="flex-1">
+                <Link to="/auth?mode=signup&role=donor">
+                  Create Account
+                </Link>
+              </Button>
+            </div>
+          )}
         </Card>
       </main>
 

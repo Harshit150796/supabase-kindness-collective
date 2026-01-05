@@ -4,7 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Gift, DollarSign, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Gift, DollarSign, Calendar, CreditCard, Receipt, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Donation {
@@ -14,12 +15,30 @@ interface Donation {
   is_anonymous: boolean;
   created_at: string;
   region: string | null;
+  stripe_session_id: string | null;
+  stripe_payment_intent_id: string | null;
+  payment_method: string | null;
+  stripe_fee: number | null;
+  net_amount: number | null;
+  currency: string | null;
+  receipt_url: string | null;
+  brand_partner: string | null;
+  status: string | null;
 }
+
+const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  completed: { label: 'Completed', variant: 'default' },
+  refunded: { label: 'Refunded', variant: 'destructive' },
+  partially_refunded: { label: 'Partial Refund', variant: 'outline' },
+  failed: { label: 'Failed', variant: 'destructive' },
+  expired: { label: 'Expired', variant: 'secondary' },
+};
 
 export default function DonorHistory() {
   const { user } = useAuth();
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) fetchHistory();
@@ -36,12 +55,16 @@ export default function DonorHistory() {
     setLoading(false);
   };
 
+  const toggleExpand = (id: string) => {
+    setExpandedId(expandedId === id ? null : id);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Donation History</h1>
-          <p className="text-muted-foreground">All your donations</p>
+          <p className="text-muted-foreground">All your donations with full transaction details</p>
         </div>
 
         {loading ? (
@@ -56,39 +79,127 @@ export default function DonorHistory() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {donations.map((donation) => (
-              <Card key={donation.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-foreground flex items-center gap-1">
-                          <DollarSign className="w-4 h-4" />
-                          ${donation.amount}
-                        </h3>
-                        {donation.is_anonymous && (
-                          <Badge variant="secondary">Anonymous</Badge>
+            {donations.map((donation) => {
+              const isExpanded = expandedId === donation.id;
+              const status = statusConfig[donation.status || 'completed'] || statusConfig.completed;
+
+              return (
+                <Card key={donation.id} className="overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 flex-1">
+                        {/* Header Row */}
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h3 className="font-semibold text-foreground flex items-center gap-1">
+                            <DollarSign className="w-4 h-4" />
+                            ${donation.amount.toFixed(2)}
+                            <span className="text-xs text-muted-foreground uppercase ml-1">
+                              {donation.currency || 'USD'}
+                            </span>
+                          </h3>
+                          <Badge variant={status.variant}>{status.label}</Badge>
+                          {donation.is_anonymous && (
+                            <Badge variant="secondary">Anonymous</Badge>
+                          )}
+                        </div>
+
+                        {/* Meta Row */}
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            {format(new Date(donation.created_at), 'MMM d, yyyy h:mm a')}
+                          </span>
+                          {donation.payment_method && (
+                            <span className="flex items-center gap-1">
+                              <CreditCard className="w-4 h-4" />
+                              {donation.payment_method}
+                            </span>
+                          )}
+                          {donation.brand_partner && (
+                            <span className="text-primary font-medium">{donation.brand_partner}</span>
+                          )}
+                        </div>
+
+                        {/* Fee Breakdown */}
+                        {donation.stripe_fee !== null && donation.net_amount !== null && (
+                          <div className="flex items-center gap-4 text-sm">
+                            <span className="text-muted-foreground">
+                              Fee: <span className="text-foreground">${donation.stripe_fee.toFixed(2)}</span>
+                            </span>
+                            <span className="text-muted-foreground">
+                              Net: <span className="text-emerald-600 font-medium">${donation.net_amount.toFixed(2)}</span>
+                            </span>
+                          </div>
+                        )}
+
+                        {donation.message && (
+                          <p className="text-sm text-muted-foreground italic">
+                            "{donation.message}"
+                          </p>
+                        )}
+
+                        {/* Expandable Details */}
+                        {isExpanded && (
+                          <div className="mt-4 pt-4 border-t border-border space-y-2 text-sm">
+                            {donation.stripe_session_id && (
+                              <p className="text-muted-foreground">
+                                <span className="font-medium text-foreground">Session ID:</span>{' '}
+                                <code className="text-xs bg-muted px-1 py-0.5 rounded">{donation.stripe_session_id}</code>
+                              </p>
+                            )}
+                            {donation.stripe_payment_intent_id && (
+                              <p className="text-muted-foreground">
+                                <span className="font-medium text-foreground">Payment ID:</span>{' '}
+                                <code className="text-xs bg-muted px-1 py-0.5 rounded">{donation.stripe_payment_intent_id}</code>
+                              </p>
+                            )}
+                            {donation.region && (
+                              <p className="text-muted-foreground">
+                                <span className="font-medium text-foreground">Region:</span> {donation.region}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {format(new Date(donation.created_at), 'MMM d, yyyy')}
-                        </span>
-                        {donation.region && (
-                          <span>{donation.region}</span>
+
+                      {/* Actions */}
+                      <div className="flex flex-col items-end gap-2 ml-4">
+                        {donation.receipt_url && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                          >
+                            <a href={donation.receipt_url} target="_blank" rel="noopener noreferrer">
+                              <Receipt className="w-4 h-4 mr-1" />
+                              Receipt
+                              <ExternalLink className="w-3 h-3 ml-1" />
+                            </a>
+                          </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleExpand(donation.id)}
+                        >
+                          {isExpanded ? (
+                            <>
+                              <ChevronUp className="w-4 h-4 mr-1" />
+                              Less
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="w-4 h-4 mr-1" />
+                              More
+                            </>
+                          )}
+                        </Button>
                       </div>
-                      {donation.message && (
-                        <p className="text-sm text-muted-foreground mt-2">
-                          "{donation.message}"
-                        </p>
-                      )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>

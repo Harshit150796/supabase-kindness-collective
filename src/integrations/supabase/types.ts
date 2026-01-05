@@ -161,33 +161,63 @@ export type Database = {
       donations: {
         Row: {
           amount: number
+          brand_partner: string | null
           category_id: string | null
           created_at: string
+          currency: string | null
+          donor_email: string | null
           donor_id: string
           id: string
           is_anonymous: boolean | null
           message: string | null
+          net_amount: number | null
+          payment_method: string | null
+          receipt_url: string | null
           region: string | null
+          status: string | null
+          stripe_fee: number | null
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
         }
         Insert: {
           amount: number
+          brand_partner?: string | null
           category_id?: string | null
           created_at?: string
+          currency?: string | null
+          donor_email?: string | null
           donor_id: string
           id?: string
           is_anonymous?: boolean | null
           message?: string | null
+          net_amount?: number | null
+          payment_method?: string | null
+          receipt_url?: string | null
           region?: string | null
+          status?: string | null
+          stripe_fee?: number | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
         }
         Update: {
           amount?: number
+          brand_partner?: string | null
           category_id?: string | null
           created_at?: string
+          currency?: string | null
+          donor_email?: string | null
           donor_id?: string
           id?: string
           is_anonymous?: boolean | null
           message?: string | null
+          net_amount?: number | null
+          payment_method?: string | null
+          receipt_url?: string | null
           region?: string | null
+          status?: string | null
+          stripe_fee?: number | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
         }
         Relationships: [
           {
