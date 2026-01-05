@@ -121,7 +121,11 @@ Deno.serve(async (req) => {
         // Treat "anonymous" or empty as null
         const donorId = (rawDonorId && rawDonorId !== "anonymous" && rawDonorId.trim() !== "") ? rawDonorId : null;
         const brandPartner = metadata.brand_partner || metadata.brand_name || null;
-        const donorEmail = session.customer_details?.email || metadata.donor_email || null;
+        // Prioritize account email from metadata over Stripe receipt email
+        const rawMetadataEmail = metadata.donor_email || null;
+        const donorEmail = (rawMetadataEmail && rawMetadataEmail.trim() !== "") 
+          ? rawMetadataEmail 
+          : (session.customer_details?.email || null);
 
         // Insert into donations table
         const { error: insertError } = await supabase.from("donations").insert({
