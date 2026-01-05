@@ -56,17 +56,6 @@ export function ImpactStories() {
           </p>
         </div>
 
-        {/* View All Link - Top Right */}
-        <div className="flex justify-end max-w-5xl mx-auto mb-4">
-          <Link 
-            to="/stories" 
-            className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1 hover:underline underline-offset-4"
-          >
-            View all
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-
         {/* Stories Grid */}
         <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto transition-opacity duration-300">
           {currentStories.map((story) => {
@@ -131,6 +120,17 @@ export function ImpactStories() {
               </Card>
             );
           })}
+        </div>
+
+        {/* View All Link - Bottom Right */}
+        <div className="flex justify-end max-w-5xl mx-auto mt-4 mb-2">
+          <Link 
+            to="/stories" 
+            className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1 hover:underline underline-offset-4"
+          >
+            View all
+            <ChevronRight className="w-4 h-4" />
+          </Link>
         </div>
 
         {/* Custom Pagination Navigation */}
