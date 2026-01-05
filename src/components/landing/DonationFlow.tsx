@@ -86,6 +86,7 @@ export function DonationFlow() {
             brandName: selectedBrandData?.name || '',
             brandId: selectedBrand || '',
             userId: user?.id || null,
+            userEmail: user?.email || null,
           },
         });
 

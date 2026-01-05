@@ -13,9 +13,9 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, brandName, brandId, userId } = await req.json();
+    const { amount, brandName, brandId, userId, userEmail } = await req.json();
     
-    console.log("Creating donation checkout session:", { amount, brandName, brandId, userId: userId || 'anonymous' });
+    console.log("Creating donation checkout session:", { amount, brandName, brandId, userId: userId || 'anonymous', userEmail: userEmail || 'guest' });
 
     // Validate amount
     if (!amount || amount < 5 || amount > 500) {
@@ -85,6 +85,7 @@ serve(async (req) => {
         brand_name: brandName || "",
         brand_id: brandId || "",
         donor_id: userId || "",
+        donor_email: userEmail || "",
       },
       payment_intent_data: {
         metadata: {

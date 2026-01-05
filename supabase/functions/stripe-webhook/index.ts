@@ -165,9 +165,14 @@ async function handleSuccessfulPayment(
 
   // Extract metadata
   const metadata = session.metadata || {};
-  const donorId = metadata.donor_id || null;
+  const rawDonorId = metadata.donor_id || null;
+  // Treat empty string as null
+  const donorId = (rawDonorId && rawDonorId.trim() !== "") ? rawDonorId : null;
   const brandPartner = metadata.brand_name || null;
-  const donorEmail = session.customer_details?.email || metadata.donor_email || null;
+  // Prioritize account email from metadata over Stripe receipt email
+  const donorEmail = (metadata.donor_email && metadata.donor_email.trim() !== "") 
+    ? metadata.donor_email 
+    : (session.customer_details?.email || null);
 
   // Insert donation record
   const donationData: any = {
