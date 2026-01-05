@@ -269,59 +269,61 @@ function StoryCard({ story }: { story: ImpactStory }) {
   const progressPercent = (story.amountRaised / story.goal) * 100;
 
   return (
-    <div className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-      {/* Image */}
-      <div className="relative h-48 overflow-hidden">
-        <img 
-          src={story.image} 
-          alt={story.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-        <div className="absolute top-3 left-3">
-          <Badge className={`${categoryColors[story.category]} border`}>
-            {categoryLabels[story.category]}
-          </Badge>
+    <Link to={`/story/${story.id}`} className="block">
+      <div className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+        {/* Image */}
+        <div className="relative h-48 overflow-hidden">
+          <img 
+            src={story.image} 
+            alt={story.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+          <div className="absolute top-3 left-3">
+            <Badge className={`${categoryColors[story.category]} border`}>
+              {categoryLabels[story.category]}
+            </Badge>
+          </div>
+          {story.verified && (
+            <div className="absolute top-3 right-3">
+              <div className="bg-primary/90 text-primary-foreground rounded-full p-1.5">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            </div>
+          )}
         </div>
-        {story.verified && (
-          <div className="absolute top-3 right-3">
-            <div className="bg-primary/90 text-primary-foreground rounded-full p-1.5">
-              <CheckCircle2 className="w-4 h-4" />
+
+        {/* Content */}
+        <div className="p-5">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+            <MapPin className="w-3.5 h-3.5" />
+            <span>{story.location}</span>
+            <span className="text-border">•</span>
+            <Calendar className="w-3.5 h-3.5" />
+            <span>{story.dateHelped}</span>
+          </div>
+          
+          <h3 className="font-semibold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">{story.name}</h3>
+          <p className="text-muted-foreground text-sm line-clamp-2 mb-4">{story.story}</p>
+
+          {/* Impact Badge */}
+          <div className="bg-primary/5 rounded-lg px-3 py-2 mb-4">
+            <p className="text-sm text-primary font-medium">{story.impact}</p>
+          </div>
+
+          {/* Progress */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">${story.amountRaised.toLocaleString()} raised</span>
+              <span className="font-medium text-foreground">${story.goal.toLocaleString()} goal</span>
+            </div>
+            <Progress value={progressPercent} className="h-2" />
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Users className="w-3 h-3" />
+              <span>{story.donorsCount} donors</span>
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="p-5">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-          <MapPin className="w-3.5 h-3.5" />
-          <span>{story.location}</span>
-          <span className="text-border">•</span>
-          <Calendar className="w-3.5 h-3.5" />
-          <span>{story.dateHelped}</span>
-        </div>
-        
-        <h3 className="font-semibold text-lg text-foreground mb-2">{story.name}</h3>
-        <p className="text-muted-foreground text-sm line-clamp-2 mb-4">{story.story}</p>
-
-        {/* Impact Badge */}
-        <div className="bg-primary/5 rounded-lg px-3 py-2 mb-4">
-          <p className="text-sm text-primary font-medium">{story.impact}</p>
-        </div>
-
-        {/* Progress */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">${story.amountRaised.toLocaleString()} raised</span>
-            <span className="font-medium text-foreground">${story.goal.toLocaleString()} goal</span>
-          </div>
-          <Progress value={progressPercent} className="h-2" />
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Users className="w-3 h-3" />
-            <span>{story.donorsCount} donors</span>
-          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

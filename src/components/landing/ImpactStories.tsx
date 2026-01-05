@@ -62,62 +62,63 @@ export function ImpactStories() {
             const progress = (story.amountRaised / story.goal) * 100;
             
             return (
-              <Card 
-                key={story.id} 
-                className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-border/50"
-              >
-                <div className="flex flex-col sm:flex-row">
-                  {/* Image */}
-                  <div className="sm:w-40 h-48 sm:h-auto relative overflow-hidden flex-shrink-0">
-                    <img 
-                      src={story.image} 
-                      alt={story.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute top-3 left-3">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${categoryColors[story.category]}`}>
-                        {categoryLabels[story.category]}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Content */}
-                  <div className="flex-1 p-5">
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
-                      <MapPin className="w-3.5 h-3.5" />
-                      <span>{story.location}</span>
-                    </div>
-                    
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
-                      {story.name}
-                    </h3>
-                    
-                    <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-3">
-                      "{story.story}"
-                    </p>
-                    
-                    {/* Impact Badge */}
-                    <div className="inline-flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-4">
-                      <Heart className="w-3.5 h-3.5" />
-                      {story.impact}
-                    </div>
-                    
-                    {/* Progress */}
-                    <div className="space-y-2">
-                      <Progress value={progress} className="h-2" />
-                      <div className="flex justify-between text-xs">
-                        <span className="text-foreground font-medium">
-                          ${story.amountRaised.toLocaleString()} raised
-                        </span>
-                        <span className="flex items-center gap-1 text-muted-foreground">
-                          <Users className="w-3 h-3" />
-                          {story.donorsCount} donors
+              <Link to={`/story/${story.id}`} key={story.id} className="block">
+                <Card 
+                  className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-border/50 cursor-pointer"
+                >
+                  <div className="flex flex-col sm:flex-row">
+                    {/* Image */}
+                    <div className="sm:w-40 h-48 sm:h-auto relative overflow-hidden flex-shrink-0">
+                      <img 
+                        src={story.image} 
+                        alt={story.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute top-3 left-3">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${categoryColors[story.category]}`}>
+                          {categoryLabels[story.category]}
                         </span>
                       </div>
                     </div>
+                    
+                    {/* Content */}
+                    <div className="flex-1 p-5">
+                      <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span>{story.location}</span>
+                      </div>
+                      
+                      <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+                        {story.name}
+                      </h3>
+                      
+                      <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-3">
+                        "{story.story}"
+                      </p>
+                      
+                      {/* Impact Badge */}
+                      <div className="inline-flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-4">
+                        <Heart className="w-3.5 h-3.5" />
+                        {story.impact}
+                      </div>
+                      
+                      {/* Progress */}
+                      <div className="space-y-2">
+                        <Progress value={progress} className="h-2" />
+                        <div className="flex justify-between text-xs">
+                          <span className="text-foreground font-medium">
+                            ${story.amountRaised.toLocaleString()} raised
+                          </span>
+                          <span className="flex items-center gap-1 text-muted-foreground">
+                            <Users className="w-3 h-3" />
+                            {story.donorsCount} donors
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </Link>
             );
           })}
         </div>
