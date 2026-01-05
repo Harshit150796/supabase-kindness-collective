@@ -7,6 +7,7 @@ import { brandList, popularBrands } from '@/data/brandLogos';
 import { BrandSelectorModal } from './BrandSelectorModal';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 // Payment method icons as SVG components for brand accuracy
 const PaymentMethodIcons = () => (
@@ -60,6 +61,7 @@ const getImpactMessage = (amount: number) => {
 };
 
 export function DonationFlow() {
+  const { user } = useAuth();
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [amount, setAmount] = useState(50);
   const [step, setStep] = useState(1);
@@ -83,6 +85,7 @@ export function DonationFlow() {
             amount,
             brandName: selectedBrandData?.name || '',
             brandId: selectedBrand || '',
+            userId: user?.id || null,
           },
         });
 

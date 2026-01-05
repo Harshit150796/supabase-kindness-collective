@@ -115,10 +115,12 @@ Deno.serve(async (req) => {
         const amount = (session.amount_total || 0) / 100;
         const currency = session.currency || "usd";
 
-        // Extract metadata
+        // Extract metadata - handle both old (user_id) and new (donor_id) field names
         const metadata = session.metadata || {};
-        const donorId = metadata.donor_id || null;
-        const brandPartner = metadata.brand_partner || null;
+        const rawDonorId = metadata.donor_id || metadata.user_id || null;
+        // Treat "anonymous" or empty as null
+        const donorId = (rawDonorId && rawDonorId !== "anonymous" && rawDonorId.trim() !== "") ? rawDonorId : null;
+        const brandPartner = metadata.brand_partner || metadata.brand_name || null;
         const donorEmail = session.customer_details?.email || metadata.donor_email || null;
 
         // Insert into donations table
