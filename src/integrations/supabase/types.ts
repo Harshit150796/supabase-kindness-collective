@@ -229,6 +229,62 @@ export type Database = {
           },
         ]
       }
+      gift_codes: {
+        Row: {
+          amount: number
+          claimed_at: string | null
+          claimed_by: string | null
+          code: string
+          created_at: string | null
+          donation_id: string | null
+          donor_id: string | null
+          donor_name: string | null
+          expires_at: string | null
+          id: string
+          message: string | null
+          recipient_email: string | null
+          status: string | null
+        }
+        Insert: {
+          amount: number
+          claimed_at?: string | null
+          claimed_by?: string | null
+          code: string
+          created_at?: string | null
+          donation_id?: string | null
+          donor_id?: string | null
+          donor_name?: string | null
+          expires_at?: string | null
+          id?: string
+          message?: string | null
+          recipient_email?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: number
+          claimed_at?: string | null
+          claimed_by?: string | null
+          code?: string
+          created_at?: string | null
+          donation_id?: string | null
+          donor_id?: string | null
+          donor_name?: string | null
+          expires_at?: string | null
+          id?: string
+          message?: string | null
+          recipient_email?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_codes_donation_id_fkey"
+            columns: ["donation_id"]
+            isOneToOne: false
+            referencedRelation: "donations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_cards: {
         Row: {
           card_number: string
