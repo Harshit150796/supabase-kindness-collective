@@ -102,10 +102,10 @@ export function HeroSection() {
               <Button 
                 size="lg" 
                 className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto"
-                onClick={() => navigate('/apply')}
+                onClick={() => navigate('/auth?mode=signup&role=recipient')}
               >
                 <UserPlus className="w-4 h-4 md:w-5 md:h-5" />
-                Apply for Help
+                Apply as Recipient
               </Button>
             </div>
             

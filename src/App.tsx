@@ -16,8 +16,6 @@ import DonationCancelled from "./pages/DonationCancelled";
 import ResetPassword from "./pages/ResetPassword";
 import Stories from "./pages/Stories";
 import StoryDetail from "./pages/StoryDetail";
-import Apply from "./pages/Apply";
-import RedeemGift from "./pages/RedeemGift";
 
 // Recipient pages
 import RecipientDashboard from "./pages/recipient/RecipientDashboard";
@@ -63,8 +61,6 @@ const AppRoutes = () => (
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/donation-success" element={<DonationSuccess />} />
     <Route path="/donation-cancelled" element={<DonationCancelled />} />
-    <Route path="/apply" element={<Apply />} />
-    <Route path="/redeem/:code" element={<RedeemGift />} />
     
     {/* Recipient Routes */}
     <Route path="/recipient" element={<ProtectedRoute allowedRoles={['recipient']}><RecipientDashboard /></ProtectedRoute>} />
