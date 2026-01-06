@@ -54,11 +54,11 @@ const stepConfig = [
   },
   {
     headline: "Tell us who needs the coupons",
-    subtext: "This information helps us understand your needs better.",
+    subtext: "This helps us understand your needs better and personalize your experience.",
   },
   {
-    headline: "Tell us how much you need monthly",
-    subtext: "Set a goal that matches your needs.",
+    headline: "Set your monthly goal",
+    subtext: "Tell us how much assistance you need each month.",
   },
 ];
 
@@ -68,6 +68,7 @@ const ApplyRecipient = () => {
   const { user } = useAuth();
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -120,15 +121,16 @@ const ApplyRecipient = () => {
 
   const handleContinue = () => {
     if (currentStep < 3) {
+      setDirection("forward");
       setCurrentStep(currentStep + 1);
     } else if (currentStep === 3) {
-      // Show auth modal
       setShowAuthModal(true);
     }
   };
 
   const handleBack = () => {
     if (currentStep > 1) {
+      setDirection("backward");
       setCurrentStep(currentStep - 1);
     }
   };
@@ -137,7 +139,6 @@ const ApplyRecipient = () => {
     setIsSubmitting(true);
 
     try {
-      // Create account with recipient role
       const redirectUrl = `${window.location.origin}/`;
       
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -155,7 +156,6 @@ const ApplyRecipient = () => {
       if (signUpError) throw signUpError;
 
       if (signUpData.user) {
-        // Add recipient role
         const { error: roleError } = await supabase.from("user_roles").insert({
           user_id: signUpData.user.id,
           role: "recipient",
@@ -165,7 +165,6 @@ const ApplyRecipient = () => {
           console.error("Role creation error:", roleError);
         }
 
-        // Create recipient application/verification record
         const { error: verificationError } = await supabase
           .from("recipient_verifications")
           .insert({
@@ -179,7 +178,6 @@ const ApplyRecipient = () => {
           console.error("Verification creation error:", verificationError);
         }
 
-        // Clear storage
         localStorage.removeItem(STORAGE_KEY);
 
         toast({
@@ -216,6 +214,7 @@ const ApplyRecipient = () => {
         continueDisabled={!canContinue()}
         showBack={currentStep > 1}
         progress={progress}
+        direction={direction}
       >
         {currentStep === 1 && (
           <LocationCategoryStep

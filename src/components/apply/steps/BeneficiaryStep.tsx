@@ -1,4 +1,4 @@
-import { User, Users, Building2 } from "lucide-react";
+import { User, Users, Building2, Check } from "lucide-react";
 
 interface BeneficiaryStepProps {
   beneficiaryType: string;
@@ -32,12 +32,12 @@ export const BeneficiaryStep = ({
 }: BeneficiaryStepProps) => {
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-foreground">
-        Who are you applying for?
+      <h2 className="text-xl font-semibold text-foreground animate-fade-in">
+        Who are you fundraising for?
       </h2>
 
-      <div className="space-y-4">
-        {beneficiaryOptions.map((option) => {
+      <div className="space-y-4 stagger-children">
+        {beneficiaryOptions.map((option, index) => {
           const Icon = option.icon;
           const isSelected = beneficiaryType === option.id;
 
@@ -45,54 +45,75 @@ export const BeneficiaryStep = ({
             <button
               key={option.id}
               onClick={() => setBeneficiaryType(option.id)}
+              style={{ animationDelay: `${index * 0.08}s` }}
               className={`
-                w-full p-6 rounded-xl border-2 text-left transition-all duration-200
-                flex items-start gap-4
+                selection-card w-full p-6 rounded-2xl border-2 text-left
+                flex items-start gap-5 group
                 ${isSelected
-                  ? "bg-accent/10 border-accent shadow-sm"
-                  : "bg-card border-border hover:border-primary/50 hover:shadow-sm"
+                  ? "selected"
+                  : "bg-card border-border/60"
                 }
               `}
             >
+              {/* Icon container */}
               <div
                 className={`
-                  w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0
-                  ${isSelected ? "bg-accent/20" : "bg-secondary"}
+                  w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0
+                  transition-all duration-300
+                  ${isSelected 
+                    ? "bg-primary shadow-lg shadow-primary/20" 
+                    : "bg-secondary group-hover:bg-primary/10"
+                  }
                 `}
               >
                 <Icon
-                  className={`w-6 h-6 ${isSelected ? "text-accent" : "text-muted-foreground"}`}
+                  className={`w-6 h-6 transition-all duration-300 ${
+                    isSelected 
+                      ? "text-primary-foreground scale-110" 
+                      : "text-muted-foreground group-hover:text-primary"
+                  }`}
                 />
               </div>
               
-              <div className="flex-1">
+              {/* Text content */}
+              <div className="flex-1 min-w-0">
                 <h3
-                  className={`text-lg font-semibold mb-1 ${
+                  className={`text-lg font-semibold mb-1.5 transition-colors ${
                     isSelected ? "text-foreground" : "text-foreground"
                   }`}
                 >
                   {option.title}
                 </h3>
-                <p className="text-muted-foreground text-sm">
+                <p className={`text-sm leading-relaxed ${
+                  isSelected ? "text-muted-foreground" : "text-muted-foreground"
+                }`}>
                   {option.description}
                 </p>
               </div>
 
-              {/* Radio indicator */}
+              {/* Selection indicator */}
               <div
                 className={`
-                  w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1
-                  ${isSelected ? "border-accent" : "border-border"}
+                  w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1
+                  transition-all duration-300
+                  ${isSelected 
+                    ? "border-primary bg-primary" 
+                    : "border-border/80 group-hover:border-primary/50"
+                  }
                 `}
               >
                 {isSelected && (
-                  <div className="w-3 h-3 rounded-full bg-accent" />
+                  <Check className="w-4 h-4 text-primary-foreground animate-check-pop" />
                 )}
               </div>
             </button>
           );
         })}
       </div>
+      
+      <p className="text-sm text-muted-foreground pt-2 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+        This helps us understand how to best support your needs
+      </p>
     </div>
   );
 };
