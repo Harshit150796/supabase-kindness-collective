@@ -423,6 +423,84 @@ export type Database = {
         }
         Relationships: []
       }
+      recipient_applications: {
+        Row: {
+          admin_notes: string | null
+          application_type: string
+          assistance_type: string
+          campaign_photos: string[] | null
+          campaign_title: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          email: string
+          full_name: string
+          funding_goal: number | null
+          household_size: number | null
+          id: string
+          password_hash: string | null
+          phone: string | null
+          photo_url: string | null
+          referral_source: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          story: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          application_type: string
+          assistance_type: string
+          campaign_photos?: string[] | null
+          campaign_title?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email: string
+          full_name: string
+          funding_goal?: number | null
+          household_size?: number | null
+          id?: string
+          password_hash?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          referral_source?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          story: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          application_type?: string
+          assistance_type?: string
+          campaign_photos?: string[] | null
+          campaign_title?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          funding_goal?: number | null
+          household_size?: number | null
+          id?: string
+          password_hash?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          referral_source?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          story?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       recipient_verifications: {
         Row: {
           admin_notes: string | null

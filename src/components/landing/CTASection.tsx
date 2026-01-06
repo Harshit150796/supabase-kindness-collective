@@ -13,24 +13,20 @@ export function CTASection() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gold/5 rounded-full blur-3xl" />
 
       <div className="container mx-auto px-4 relative">
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {/* For Donors */}
-          <Card className="p-8 md:p-10 bg-primary text-primary-foreground border-0 hover:shadow-emerald transition-shadow">
-            <div className="w-14 h-14 rounded-2xl bg-primary-foreground/20 flex items-center justify-center mb-6">
-              <Heart className="w-7 h-7" />
+          <Card className="p-6 md:p-8 bg-primary text-primary-foreground border-0 hover:shadow-emerald transition-shadow">
+            <div className="w-12 h-12 rounded-2xl bg-primary-foreground/20 flex items-center justify-center mb-5">
+              <Heart className="w-6 h-6" />
             </div>
-            <h3 className="text-2xl md:text-3xl font-bold mb-4">For Donors</h3>
-            <p className="text-primary-foreground/80 mb-8 leading-relaxed">
-              Start your giving journey today. Every donation earns Gold Coins and creates real impact for families in need.
+            <h3 className="text-xl md:text-2xl font-bold mb-3">For Donors</h3>
+            <p className="text-primary-foreground/80 mb-6 leading-relaxed text-sm">
+              Start your giving journey today. Every donation creates real impact for families in need.
             </p>
-            <div className="flex items-center gap-4 mb-8">
-              <div className="flex items-center gap-2">
-                <Coins className="w-5 h-5" />
-                <span className="text-sm">Earn Gold Coins</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                <span className="text-sm">15K+ Families Helped</span>
+            <div className="flex items-center gap-3 mb-6 text-sm">
+              <div className="flex items-center gap-1.5">
+                <Coins className="w-4 h-4" />
+                <span>Earn Gold Coins</span>
               </div>
             </div>
             <Button 
@@ -40,31 +36,52 @@ export function CTASection() {
               onClick={() => navigate('/auth?mode=signup&role=donor')}
             >
               Start Donating
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </Card>
+
+          {/* For Recipients - NEW */}
+          <Card className="p-6 md:p-8 border-2 border-emerald-500/20 bg-emerald-500/5 hover:shadow-lg transition-shadow">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-5">
+              <Users className="w-6 h-6 text-emerald-600" />
+            </div>
+            <h3 className="text-xl md:text-2xl font-bold mb-3 text-foreground">Need Help?</h3>
+            <p className="text-muted-foreground mb-6 leading-relaxed text-sm">
+              Apply to receive grocery coupons or start a fundraising campaign for your family.
+            </p>
+            <div className="flex items-center gap-3 mb-6 text-sm text-foreground">
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg">🛒</span>
+                <span>Grocery Coupons</span>
+              </div>
+            </div>
+            <Button 
+              size="lg"
+              className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={() => navigate('/apply')}
+            >
+              Apply Now
+              <ArrowRight className="w-4 h-4" />
             </Button>
           </Card>
 
           {/* For Companies */}
-          <Card className="p-8 md:p-10 border-2 border-gold/20 bg-card hover:shadow-gold transition-shadow">
-            <div className="w-14 h-14 rounded-2xl bg-gold/10 flex items-center justify-center mb-6">
-              <Building2 className="w-7 h-7 text-gold" />
+          <Card className="p-6 md:p-8 border-2 border-gold/20 bg-card hover:shadow-gold transition-shadow">
+            <div className="w-12 h-12 rounded-2xl bg-gold/10 flex items-center justify-center mb-5">
+              <Building2 className="w-6 h-6 text-gold" />
             </div>
-            <h3 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">For Companies</h3>
-            <p className="text-muted-foreground mb-8 leading-relaxed">
-              Partner with us to amplify your social impact. Join DoorDash, Uber, and 50+ brands making a difference.
+            <h3 className="text-xl md:text-2xl font-bold mb-3 text-foreground">For Companies</h3>
+            <p className="text-muted-foreground mb-6 leading-relaxed text-sm">
+              Partner with us to amplify your social impact. Join 50+ brands making a difference.
             </p>
-            <div className="flex items-center gap-4 mb-8 text-foreground">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🚗</span>
-                <span className="text-sm">DoorDash</span>
+            <div className="flex items-center gap-3 mb-6 text-sm text-foreground">
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg">🚗</span>
+                <span>DoorDash</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🛒</span>
-                <span className="text-sm">Walmart</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🚕</span>
-                <span className="text-sm">Uber</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg">🛒</span>
+                <span>Walmart</span>
               </div>
             </div>
             <Button 
@@ -74,7 +91,7 @@ export function CTASection() {
               onClick={() => navigate('/about')}
             >
               Partner With Us
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4" />
             </Button>
           </Card>
         </div>
