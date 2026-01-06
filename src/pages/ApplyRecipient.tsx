@@ -4,7 +4,14 @@ import { ApplyLayout } from "@/components/apply/ApplyLayout";
 import { LocationCategoryStep } from "@/components/apply/steps/LocationCategoryStep";
 import { BeneficiaryStep } from "@/components/apply/steps/BeneficiaryStep";
 import { GoalStep } from "@/components/apply/steps/GoalStep";
-import { AuthModal } from "@/components/apply/AuthModal";
+import { MediaStep } from "@/components/apply/steps/MediaStep";
+import { StoryStep } from "@/components/apply/steps/StoryStep";
+import { TitleStep } from "@/components/apply/steps/TitleStep";
+import { ReviewStep } from "@/components/apply/steps/ReviewStep";
+import { AccountStep } from "@/components/apply/steps/AccountStep";
+import { SuccessScreen } from "@/components/apply/SuccessScreen";
+import { ShareScreen } from "@/components/apply/ShareScreen";
+import { ShareModal } from "@/components/apply/ShareModal";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -16,11 +23,17 @@ interface ApplicationData {
   beneficiaryType: string;
   monthlyGoal: string;
   smartMatching: boolean;
+  coverPhoto: File | null;
+  coverPhotoPreview: string;
+  story: string;
+  isLongTerm: boolean | null;
+  title: string;
+  titleSource: "suggested" | "custom";
 }
 
 const STORAGE_KEY = "recipient_application_data";
 
-const loadFromStorage = (): ApplicationData => {
+const loadFromStorage = (): Omit<ApplicationData, "coverPhoto"> => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -36,10 +49,15 @@ const loadFromStorage = (): ApplicationData => {
     beneficiaryType: "",
     monthlyGoal: "",
     smartMatching: true,
+    coverPhotoPreview: "",
+    story: "",
+    isLongTerm: null,
+    title: "",
+    titleSource: "suggested",
   };
 };
 
-const saveToStorage = (data: ApplicationData) => {
+const saveToStorage = (data: Omit<ApplicationData, "coverPhoto">) => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (e) {
@@ -60,7 +78,29 @@ const stepConfig = [
     headline: "Set your monthly goal",
     subtext: "Tell us how much assistance you need each month.",
   },
+  {
+    headline: "Add media",
+    subtext: "Using a bright and clear photo helps donors connect to your story right away.",
+  },
+  {
+    headline: "Tell donors your story",
+    subtext: "",
+  },
+  {
+    headline: "Give your request a title",
+    subtext: "We've created a few titles from your story. Select one or write your own.",
+  },
+  {
+    headline: "Review your request",
+    subtext: "Let's make sure your request is complete.",
+  },
+  {
+    headline: "Create your account",
+    subtext: "Set up your account to submit your request.",
+  },
 ];
+
+type ScreenState = "form" | "success" | "share";
 
 const ApplyRecipient = () => {
   const navigate = useNavigate();
@@ -69,8 +109,9 @@ const ApplyRecipient = () => {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [screenState, setScreenState] = useState<ScreenState>("form");
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Form state
   const [country, setCountry] = useState("us");
@@ -79,6 +120,17 @@ const ApplyRecipient = () => {
   const [beneficiaryType, setBeneficiaryType] = useState("");
   const [monthlyGoal, setMonthlyGoal] = useState("");
   const [smartMatching, setSmartMatching] = useState(true);
+  const [coverPhoto, setCoverPhoto] = useState<File | null>(null);
+  const [coverPhotoPreview, setCoverPhotoPreview] = useState("");
+  const [story, setStory] = useState("");
+  const [isLongTerm, setIsLongTerm] = useState<boolean | null>(null);
+  const [title, setTitle] = useState("");
+  const [titleSource, setTitleSource] = useState<"suggested" | "custom">("suggested");
+
+  // Account step state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
 
   // Load saved data on mount
   useEffect(() => {
@@ -89,6 +141,11 @@ const ApplyRecipient = () => {
     setBeneficiaryType(saved.beneficiaryType);
     setMonthlyGoal(saved.monthlyGoal);
     setSmartMatching(saved.smartMatching);
+    setCoverPhotoPreview(saved.coverPhotoPreview);
+    setStory(saved.story);
+    setIsLongTerm(saved.isLongTerm);
+    setTitle(saved.title);
+    setTitleSource(saved.titleSource);
   }, []);
 
   // Save to storage when data changes
@@ -100,10 +157,15 @@ const ApplyRecipient = () => {
       beneficiaryType,
       monthlyGoal,
       smartMatching,
+      coverPhotoPreview,
+      story,
+      isLongTerm,
+      title,
+      titleSource,
     });
-  }, [country, zipCode, category, beneficiaryType, monthlyGoal, smartMatching]);
+  }, [country, zipCode, category, beneficiaryType, monthlyGoal, smartMatching, coverPhotoPreview, story, isLongTerm, title, titleSource]);
 
-  const totalSteps = 4;
+  const totalSteps = 8;
   const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
 
   const canContinue = () => {
@@ -114,17 +176,27 @@ const ApplyRecipient = () => {
         return beneficiaryType;
       case 3:
         return monthlyGoal && parseInt(monthlyGoal) > 0;
+      case 4:
+        return true; // Media is optional
+      case 5:
+        return story.trim().split(/\s+/).length >= 20; // At least 20 words
+      case 6:
+        return title.trim().length > 0;
+      case 7:
+        return true; // Review step
+      case 8:
+        return email && password.length >= 8 && fullName;
       default:
         return false;
     }
   };
 
   const handleContinue = () => {
-    if (currentStep < 3) {
+    if (currentStep < 8) {
       setDirection("forward");
       setCurrentStep(currentStep + 1);
-    } else if (currentStep === 3) {
-      setShowAuthModal(true);
+    } else if (currentStep === 8) {
+      handleSubmit();
     }
   };
 
@@ -135,7 +207,36 @@ const ApplyRecipient = () => {
     }
   };
 
-  const handleAuthSubmit = async (email: string, password: string, fullName: string) => {
+  const handleSkip = () => {
+    if (currentStep === 4) {
+      // Skip media step
+      setDirection("forward");
+      setCurrentStep(5);
+    }
+  };
+
+  const goToStep = (step: number) => {
+    setDirection(step > currentStep ? "forward" : "backward");
+    setCurrentStep(step);
+  };
+
+  const handleGoogleAuth = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/recipient/dashboard`,
+      },
+    });
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubmit = async () => {
     setIsSubmitting(true);
 
     try {
@@ -170,7 +271,7 @@ const ApplyRecipient = () => {
           .insert({
             user_id: signUpData.user.id,
             verification_type: beneficiaryType,
-            notes: `Category: ${category}, Monthly goal: $${monthlyGoal}, Smart matching: ${smartMatching}`,
+            notes: `Category: ${category}, Monthly goal: $${monthlyGoal}, Smart matching: ${smartMatching}, Title: ${title}, Long-term: ${isLongTerm}`,
             status: "pending",
           });
 
@@ -185,8 +286,7 @@ const ApplyRecipient = () => {
           description: "Please check your email to verify your account.",
         });
 
-        setShowAuthModal(false);
-        navigate("/auth");
+        setScreenState("success");
       }
     } catch (error: any) {
       console.error("Signup error:", error);
@@ -200,58 +300,143 @@ const ApplyRecipient = () => {
     }
   };
 
+  const handleSuccessComplete = () => {
+    setScreenState("share");
+  };
+
+  const handleShareComplete = () => {
+    navigate("/auth");
+  };
+
+  // Render success screen
+  if (screenState === "success") {
+    return <SuccessScreen onComplete={handleSuccessComplete} />;
+  }
+
+  // Render share screen
+  if (screenState === "share") {
+    return (
+      <>
+        <ShareScreen
+          onShare={() => setShowShareModal(true)}
+          onSkip={handleShareComplete}
+        />
+        <ShareModal
+          open={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          shareUrl={`${window.location.origin}/stories/new-request`}
+          title={title || "My Coupon Request"}
+        />
+      </>
+    );
+  }
+
   const config = stepConfig[currentStep - 1];
+  const isMediaStep = currentStep === 4;
+  const isReviewStep = currentStep === 7;
 
   return (
-    <>
-      <ApplyLayout
-        step={currentStep}
-        totalSteps={totalSteps}
-        headline={config.headline}
-        subtext={config.subtext}
-        onBack={handleBack}
-        onContinue={handleContinue}
-        continueDisabled={!canContinue()}
-        showBack={currentStep > 1}
-        progress={progress}
-        direction={direction}
-      >
-        {currentStep === 1 && (
-          <LocationCategoryStep
-            country={country}
-            setCountry={setCountry}
-            zipCode={zipCode}
-            setZipCode={setZipCode}
-            category={category}
-            setCategory={setCategory}
-          />
-        )}
+    <ApplyLayout
+      step={currentStep}
+      totalSteps={totalSteps}
+      headline={config.headline}
+      subtext={config.subtext}
+      onBack={handleBack}
+      onContinue={handleContinue}
+      continueDisabled={!canContinue() || isSubmitting}
+      continueLabel={currentStep === 8 ? (isSubmitting ? "Submitting..." : "Submit Request") : "Continue"}
+      showBack={currentStep > 1}
+      progress={progress}
+      direction={direction}
+      showSkip={isMediaStep}
+      onSkip={handleSkip}
+      hideStepIndicator={isReviewStep}
+    >
+      {currentStep === 1 && (
+        <LocationCategoryStep
+          country={country}
+          setCountry={setCountry}
+          zipCode={zipCode}
+          setZipCode={setZipCode}
+          category={category}
+          setCategory={setCategory}
+        />
+      )}
 
-        {currentStep === 2 && (
-          <BeneficiaryStep
-            beneficiaryType={beneficiaryType}
-            setBeneficiaryType={setBeneficiaryType}
-          />
-        )}
+      {currentStep === 2 && (
+        <BeneficiaryStep
+          beneficiaryType={beneficiaryType}
+          setBeneficiaryType={setBeneficiaryType}
+        />
+      )}
 
-        {currentStep === 3 && (
-          <GoalStep
-            monthlyGoal={monthlyGoal}
-            setMonthlyGoal={setMonthlyGoal}
-            smartMatching={smartMatching}
-            setSmartMatching={setSmartMatching}
-            category={category}
-          />
-        )}
-      </ApplyLayout>
+      {currentStep === 3 && (
+        <GoalStep
+          monthlyGoal={monthlyGoal}
+          setMonthlyGoal={setMonthlyGoal}
+          smartMatching={smartMatching}
+          setSmartMatching={setSmartMatching}
+          category={category}
+        />
+      )}
 
-      <AuthModal
-        open={showAuthModal}
-        onOpenChange={setShowAuthModal}
-        onContinue={handleAuthSubmit}
-        loading={isSubmitting}
-      />
-    </>
+      {currentStep === 4 && (
+        <MediaStep
+          coverPhoto={coverPhoto}
+          setCoverPhoto={setCoverPhoto}
+          coverPhotoPreview={coverPhotoPreview}
+          setCoverPhotoPreview={setCoverPhotoPreview}
+        />
+      )}
+
+      {currentStep === 5 && (
+        <StoryStep
+          story={story}
+          setStory={setStory}
+          isLongTerm={isLongTerm}
+          setIsLongTerm={setIsLongTerm}
+          category={category}
+        />
+      )}
+
+      {currentStep === 6 && (
+        <TitleStep
+          title={title}
+          setTitle={setTitle}
+          titleSource={titleSource}
+          setTitleSource={setTitleSource}
+          category={category}
+        />
+      )}
+
+      {currentStep === 7 && (
+        <ReviewStep
+          coverPhotoPreview={coverPhotoPreview}
+          title={title}
+          story={story}
+          category={category}
+          beneficiaryType={beneficiaryType}
+          monthlyGoal={monthlyGoal}
+          onEditMedia={() => goToStep(4)}
+          onEditTitle={() => goToStep(6)}
+          onEditStory={() => goToStep(5)}
+          onEditDetails={() => goToStep(1)}
+        />
+      )}
+
+      {currentStep === 8 && (
+        <AccountStep
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          fullName={fullName}
+          setFullName={setFullName}
+          onGoogleAuth={handleGoogleAuth}
+          isLoading={isSubmitting}
+        />
+      )}
+    </ApplyLayout>
   );
 };
 

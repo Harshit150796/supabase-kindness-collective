@@ -15,6 +15,10 @@ interface ApplyLayoutProps {
   showBack?: boolean;
   progress: number;
   direction?: "forward" | "backward";
+  showSkip?: boolean;
+  onSkip?: () => void;
+  skipLabel?: string;
+  hideStepIndicator?: boolean;
 }
 
 export const ApplyLayout = ({
@@ -30,6 +34,10 @@ export const ApplyLayout = ({
   showBack = true,
   progress,
   direction = "forward",
+  showSkip = false,
+  onSkip,
+  skipLabel = "Skip for now",
+  hideStepIndicator = false,
 }: ApplyLayoutProps) => {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row animate-fade-in">
@@ -64,14 +72,16 @@ export const ApplyLayout = ({
           </Link>
 
           {/* Step Indicator with animation */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold animate-scale-in">
-              {step}
+          {!hideStepIndicator && (
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold animate-scale-in">
+                {step}
+              </div>
+              <p className="text-muted-foreground text-sm font-medium">
+                of {totalSteps}
+              </p>
             </div>
-            <p className="text-muted-foreground text-sm font-medium">
-              of {totalSteps}
-            </p>
-          </div>
+          )}
 
           {/* Headline with gradient text option */}
           <h1 
@@ -154,13 +164,24 @@ export const ApplyLayout = ({
             )}
           </div>
           
-          <button
-            onClick={onContinue}
-            disabled={continueDisabled}
-            className="bg-primary text-primary-foreground font-semibold px-10 py-3.5 rounded-full hover:bg-primary/90 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 press-effect"
-          >
-            {continueLabel}
-          </button>
+          <div className="flex items-center gap-4">
+            {showSkip && onSkip && (
+              <button
+                onClick={onSkip}
+                className="text-muted-foreground hover:text-foreground font-medium transition-colors"
+              >
+                {skipLabel}
+              </button>
+            )}
+            
+            <button
+              onClick={onContinue}
+              disabled={continueDisabled}
+              className="bg-primary text-primary-foreground font-semibold px-10 py-3.5 rounded-full hover:bg-primary/90 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 press-effect"
+            >
+              {continueLabel}
+            </button>
+          </div>
         </div>
 
         {/* Progress Bar - Mobile - Enhanced */}
