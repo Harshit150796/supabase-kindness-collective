@@ -19,6 +19,8 @@ interface ApplyLayoutProps {
   onSkip?: () => void;
   skipLabel?: string;
   hideStepIndicator?: boolean;
+  isAuthenticated?: boolean;
+  userEmail?: string;
 }
 
 export const ApplyLayout = ({
@@ -38,6 +40,8 @@ export const ApplyLayout = ({
   onSkip,
   skipLabel = "Skip for now",
   hideStepIndicator = false,
+  isAuthenticated = false,
+  userEmail,
 }: ApplyLayoutProps) => {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row animate-fade-in">
@@ -127,17 +131,32 @@ export const ApplyLayout = ({
 
       {/* Right Panel - Form Section */}
       <div className="lg:w-[58%] bg-card flex flex-col min-h-[60vh] lg:min-h-screen shadow-[-10px_0_40px_-15px_rgba(0,0,0,0.05)]">
-        {/* Sign In Link */}
+        {/* Auth Status */}
         <div className="p-6 lg:p-10 flex justify-end">
-          <Link 
-            to="/auth" 
-            className="text-primary hover:text-primary/80 font-medium transition-all hover:translate-x-1 inline-flex items-center gap-1"
-          >
-            Sign in
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
+          {isAuthenticated ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground truncate max-w-[200px]">{userEmail}</span>
+              <Link 
+                to="/profile" 
+                className="text-primary hover:text-primary/80 font-medium transition-all hover:translate-x-1 inline-flex items-center gap-1"
+              >
+                My Account
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+          ) : (
+            <Link 
+              to="/auth" 
+              className="text-primary hover:text-primary/80 font-medium transition-all hover:translate-x-1 inline-flex items-center gap-1"
+            >
+              Sign in
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          )}
         </div>
 
         {/* Form Content with animation */}
