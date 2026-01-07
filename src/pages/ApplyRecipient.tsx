@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApplyLayout } from "@/components/apply/ApplyLayout";
 import { LocationCategoryStep } from "@/components/apply/steps/LocationCategoryStep";
@@ -17,6 +17,11 @@ import { OTPVerification } from "@/components/auth/OTPVerification";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import {
+  saveScopedDraft,
+  loadScopedDraft,
+  clearScopedDraft,
+} from "@/lib/draftStorage";
 
 interface ApplicationData {
   country: string;
@@ -33,54 +38,19 @@ interface ApplicationData {
   titleSource: "suggested" | "custom";
 }
 
-const STORAGE_KEY = "recipient_application_data";
-
-const loadFromStorage = (): Omit<ApplicationData, "coverPhoto"> => {
-  const defaults = {
-    country: "us",
-    zipCode: "",
-    category: "",
-    beneficiaryType: "",
-    monthlyGoal: "",
-    smartMatching: true,
-    coverPhotoPreview: "",
-    story: "",
-    isLongTerm: null,
-    title: "",
-    titleSource: "suggested" as const,
-  };
-  
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return {
-        ...defaults,
-        ...parsed,
-        story: parsed.story || "",
-        title: parsed.title || "",
-        country: parsed.country || "us",
-        zipCode: parsed.zipCode || "",
-        category: parsed.category || "",
-        beneficiaryType: parsed.beneficiaryType || "",
-        monthlyGoal: parsed.monthlyGoal || "",
-        coverPhotoPreview: parsed.coverPhotoPreview || "",
-        titleSource: parsed.titleSource || "suggested",
-      };
-    }
-  } catch (e) {
-    console.error("Failed to load application data from storage");
-  }
-  return defaults;
-};
-
-const saveToStorage = (data: Omit<ApplicationData, "coverPhoto">) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {
-    console.error("Failed to save application data to storage");
-  }
-};
+const getDefaults = (): Omit<ApplicationData, "coverPhoto"> => ({
+  country: "us",
+  zipCode: "",
+  category: "",
+  beneficiaryType: "",
+  monthlyGoal: "",
+  smartMatching: true,
+  coverPhotoPreview: "",
+  story: "",
+  isLongTerm: null,
+  title: "",
+  titleSource: "suggested" as const,
+});
 
 const stepConfig = [
   {
@@ -135,6 +105,9 @@ const ApplyRecipient = () => {
   const { toast } = useToast();
   const { user, signUp, signIn, loading: authLoading } = useAuth();
 
+  // Track the previous user ID to detect user changes
+  const prevUserIdRef = useRef<string | null | undefined>(undefined);
+
   // Determine if user is already authenticated
   const isAuthenticated = !!user && !authLoading;
   const userEmail = user?.email || "";
@@ -149,6 +122,7 @@ const ApplyRecipient = () => {
   const [screenState, setScreenState] = useState<ScreenState>("form");
   const [showShareModal, setShowShareModal] = useState(false);
   const [createdFundraiserId, setCreatedFundraiserId] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
 
   // Form state
   const [country, setCountry] = useState("us");
@@ -169,38 +143,93 @@ const ApplyRecipient = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
 
-  // Load saved data on mount
-  useEffect(() => {
-    const saved = loadFromStorage();
-    setCountry(saved.country);
-    setZipCode(saved.zipCode);
-    setCategory(saved.category);
-    setBeneficiaryType(saved.beneficiaryType);
-    setMonthlyGoal(saved.monthlyGoal);
-    setSmartMatching(saved.smartMatching);
-    setCoverPhotoPreview(saved.coverPhotoPreview);
-    setStory(saved.story);
-    setIsLongTerm(saved.isLongTerm);
-    setTitle(saved.title);
-    setTitleSource(saved.titleSource);
-  }, []);
+  // Reset form to defaults
+  const resetForm = () => {
+    const defaults = getDefaults();
+    setCountry(defaults.country);
+    setZipCode(defaults.zipCode);
+    setCategory(defaults.category);
+    setBeneficiaryType(defaults.beneficiaryType);
+    setMonthlyGoal(defaults.monthlyGoal);
+    setSmartMatching(defaults.smartMatching);
+    setCoverPhotoPreview("");
+    setCoverPhoto(null);
+    setStory(defaults.story);
+    setIsLongTerm(defaults.isLongTerm);
+    setTitle(defaults.title);
+    setTitleSource(defaults.titleSource);
+    setCurrentStep(1);
+  };
 
-  // Save to storage when data changes
+  // Load saved data on mount and when user changes
   useEffect(() => {
-    saveToStorage({
+    // Skip if auth is still loading
+    if (authLoading) return;
+
+    const currentUserId = user?.id ?? null;
+
+    // Detect user change (including logout)
+    if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== currentUserId) {
+      // User changed - reset form and clear cover photo preview
+      resetForm();
+      setCoverPhotoPreview("");
+      setCoverPhoto(null);
+    }
+
+    prevUserIdRef.current = currentUserId;
+
+    // Load draft for current user scope
+    const saved = loadScopedDraft(currentUserId);
+    if (saved) {
+      setCountry((saved.country as string) || "us");
+      setZipCode((saved.zipCode as string) || "");
+      setCategory((saved.category as string) || "");
+      setBeneficiaryType((saved.beneficiaryType as string) || "");
+      setMonthlyGoal((saved.monthlyGoal as string) || "");
+      setSmartMatching(saved.smartMatching !== false);
+      // Don't restore coverPhotoPreview for security - user must re-upload
+      setStory((saved.story as string) || "");
+      setIsLongTerm(saved.isLongTerm as boolean | null);
+      setTitle((saved.title as string) || "");
+      setTitleSource((saved.titleSource as "suggested" | "custom") || "suggested");
+    }
+
+    setInitialized(true);
+  }, [user?.id, authLoading]);
+
+  // Save to storage when data changes (scoped to user)
+  useEffect(() => {
+    if (!initialized) return;
+
+    const userId = user?.id ?? null;
+    
+    // Don't persist coverPhotoPreview for security
+    saveScopedDraft(userId, {
       country,
       zipCode,
       category,
       beneficiaryType,
       monthlyGoal,
       smartMatching,
-      coverPhotoPreview,
       story,
       isLongTerm,
       title,
       titleSource,
     });
-  }, [country, zipCode, category, beneficiaryType, monthlyGoal, smartMatching, coverPhotoPreview, story, isLongTerm, title, titleSource]);
+  }, [
+    initialized,
+    user?.id,
+    country,
+    zipCode,
+    category,
+    beneficiaryType,
+    monthlyGoal,
+    smartMatching,
+    story,
+    isLongTerm,
+    title,
+    titleSource,
+  ]);
 
   const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
 
@@ -249,7 +278,8 @@ const ApplyRecipient = () => {
       const fundraiserData = await createFundraiserForUser(user.id);
       setCreatedFundraiserId(fundraiserData.id);
 
-      localStorage.removeItem(STORAGE_KEY);
+      // Clear the draft for this user
+      clearScopedDraft(user.id);
 
       toast({
         title: "Fundraiser created!",
@@ -442,9 +472,11 @@ const ApplyRecipient = () => {
       if (currentUser) {
         const fundraiserData = await createFundraiserForUser(currentUser.id);
         setCreatedFundraiserId(fundraiserData.id);
+        
+        // Clear drafts after successful submission
+        clearScopedDraft(currentUser.id);
+        clearScopedDraft(null); // Also clear any anonymous draft
       }
-
-      localStorage.removeItem(STORAGE_KEY);
 
       toast({
         title: "Application submitted!",
@@ -492,7 +524,9 @@ const ApplyRecipient = () => {
         const fundraiserData = await createFundraiserForUser(currentUser.id);
         setCreatedFundraiserId(fundraiserData.id);
 
-        localStorage.removeItem(STORAGE_KEY);
+        // Clear drafts
+        clearScopedDraft(currentUser.id);
+        clearScopedDraft(null);
 
         toast({
           title: "Fundraiser created!",
@@ -504,8 +538,8 @@ const ApplyRecipient = () => {
     } catch (error: any) {
       console.error("Sign in error:", error);
       toast({
-        title: "Sign in failed",
-        description: error.message || "Invalid email or password",
+        title: "Error",
+        description: error.message || "Failed to sign in. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -513,98 +547,29 @@ const ApplyRecipient = () => {
     }
   };
 
-  const handleBackFromOTP = () => {
-    setScreenState("form");
-  };
-
-  const handleSuccessComplete = () => {
+  const handleSuccessContinue = () => {
     setScreenState("share");
   };
 
-  const handleShareComplete = () => {
+  const handleGoToDashboard = () => {
     if (createdFundraiserId) {
       navigate(`/fundraiser/${createdFundraiserId}`);
     } else {
-      navigate("/my-fundraisers");
+      navigate("/recipient/dashboard");
     }
   };
 
-  // Render sign-in prompt for existing users
-  if (screenState === "signin-prompt") {
-    return (
-      <SignInPrompt
-        email={email}
-        onSignIn={handleSignInAndContinue}
-        onUseNewEmail={() => {
-          setEmail("");
-          setPassword("");
-          setScreenState("form");
-        }}
-        isLoading={isSubmitting}
-      />
-    );
-  }
-
-  // Render OTP verification screen
-  if (screenState === "otp") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <OTPVerification
-            email={email}
-            onVerified={handleOTPVerified}
-            onBack={handleBackFromOTP}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // Render success screen
-  if (screenState === "success") {
-    return <SuccessScreen onComplete={handleSuccessComplete} />;
-  }
-
-  // Render share screen
-  if (screenState === "share") {
-    const shareUrl = createdFundraiserId 
-      ? `${window.location.origin}/fundraiser/${createdFundraiserId}`
-      : `${window.location.origin}/my-fundraisers`;
-    
-    return (
-      <>
-        <ShareScreen
-          onShare={() => setShowShareModal(true)}
-          onSkip={handleShareComplete}
-        />
-        <ShareModal
-          open={showShareModal}
-          onClose={() => setShowShareModal(false)}
-          shareUrl={shareUrl}
-          title={title || "My Coupon Request"}
-        />
-      </>
-    );
-  }
-
-  // Get appropriate config - for authenticated users on step 7, update headline
-  const getStepConfig = () => {
-    const config = stepConfig[currentStep - 1];
-    if (isAuthenticated && currentStep === 7) {
+  // Get step config based on current step (adjust headline for authenticated users on review step)
+  const getStepConfig = (step: number) => {
+    if (isAuthenticated && step === 7) {
       return {
-        ...config,
-        headline: "Review and submit",
-        subtext: "Let's make sure your request is complete before submitting.",
+        headline: "Review and submit your request",
+        subtext: "Let's make sure your request is complete.",
       };
     }
-    return config;
+    return stepConfig[step - 1] || stepConfig[0];
   };
 
-  const config = getStepConfig();
-  const isMediaStep = currentStep === 4;
-  const isReviewStep = currentStep === 7;
-
-  // Determine continue button label
   const getContinueLabel = () => {
     if (isAuthenticated && currentStep === 7) {
       return isSubmitting ? "Submitting..." : "Submit Fundraiser";
@@ -615,110 +580,164 @@ const ApplyRecipient = () => {
     return "Continue";
   };
 
-  return (
-    <ApplyLayout
-      step={currentStep}
-      totalSteps={totalSteps}
-      headline={config.headline}
-      subtext={config.subtext}
-      onBack={handleBack}
-      onContinue={handleContinue}
-      continueDisabled={!canContinue() || isSubmitting}
-      continueLabel={getContinueLabel()}
-      showBack={currentStep > 1}
-      progress={progress}
-      direction={direction}
-      showSkip={isMediaStep}
-      onSkip={handleSkip}
-      hideStepIndicator={isReviewStep}
-      isAuthenticated={isAuthenticated}
-      userEmail={userEmail}
-    >
-      {currentStep === 1 && (
-        <LocationCategoryStep
-          country={country}
-          setCountry={setCountry}
-          zipCode={zipCode}
-          setZipCode={setZipCode}
-          category={category}
-          setCategory={setCategory}
-        />
-      )}
-
-      {currentStep === 2 && (
-        <BeneficiaryStep
-          beneficiaryType={beneficiaryType}
-          setBeneficiaryType={setBeneficiaryType}
-        />
-      )}
-
-      {currentStep === 3 && (
-        <GoalStep
-          monthlyGoal={monthlyGoal}
-          setMonthlyGoal={setMonthlyGoal}
-          smartMatching={smartMatching}
-          setSmartMatching={setSmartMatching}
-          category={category}
-        />
-      )}
-
-      {currentStep === 4 && (
-        <MediaStep
-          coverPhoto={coverPhoto}
-          setCoverPhoto={setCoverPhoto}
-          coverPhotoPreview={coverPhotoPreview}
-          setCoverPhotoPreview={setCoverPhotoPreview}
-        />
-      )}
-
-      {currentStep === 5 && (
-        <StoryStep
-          story={story}
-          setStory={setStory}
-          isLongTerm={isLongTerm}
-          setIsLongTerm={setIsLongTerm}
-          category={category}
-        />
-      )}
-
-      {currentStep === 6 && (
-        <TitleStep
-          title={title}
-          setTitle={setTitle}
-          titleSource={titleSource}
-          setTitleSource={setTitleSource}
-          category={category}
-        />
-      )}
-
-      {currentStep === 7 && (
-        <ReviewStep
-          coverPhotoPreview={coverPhotoPreview}
-          title={title}
-          story={story}
-          category={category}
-          beneficiaryType={beneficiaryType}
-          monthlyGoal={monthlyGoal}
-          onEditMedia={() => goToStep(4)}
-          onEditTitle={() => goToStep(6)}
-          onEditStory={() => goToStep(5)}
-          onEditDetails={() => goToStep(1)}
-        />
-      )}
-
-      {currentStep === 8 && !isAuthenticated && (
-        <AccountStep
+  // Render OTP verification screen
+  if (screenState === "otp") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <OTPVerification
           email={email}
-          setEmail={setEmail}
-          password={password}
-          setPassword={setPassword}
-          fullName={fullName}
-          setFullName={setFullName}
-          onGoogleAuth={handleGoogleAuth}
+          onVerified={handleOTPVerified}
+          onBack={() => setScreenState("form")}
+        />
+      </div>
+    );
+  }
+
+  // Render sign-in prompt for existing users
+  if (screenState === "signin-prompt") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <SignInPrompt
+          email={email}
+          onSignIn={handleSignInAndContinue}
+          onUseNewEmail={() => setScreenState("form")}
           isLoading={isSubmitting}
         />
-      )}
-    </ApplyLayout>
+      </div>
+    );
+  }
+
+  // Render success screen
+  if (screenState === "success") {
+    return (
+      <SuccessScreen
+        onComplete={handleSuccessContinue}
+      />
+    );
+  }
+
+  // Render share screen
+  if (screenState === "share") {
+    return (
+      <ShareScreen
+        onShare={() => setShowShareModal(true)}
+        onSkip={handleGoToDashboard}
+      />
+    );
+  }
+
+  const config = getStepConfig(currentStep);
+
+  return (
+    <>
+      <ApplyLayout
+        step={currentStep}
+        totalSteps={totalSteps}
+        headline={config.headline}
+        subtext={config.subtext}
+        showBack={currentStep > 1}
+        showSkip={currentStep === 4}
+        continueDisabled={!canContinue()}
+        onBack={handleBack}
+        onContinue={handleContinue}
+        onSkip={handleSkip}
+        progress={progress}
+        continueLabel={getContinueLabel()}
+        isAuthenticated={isAuthenticated}
+        userEmail={userEmail}
+      >
+        {currentStep === 1 && (
+          <LocationCategoryStep
+            country={country}
+            setCountry={setCountry}
+            zipCode={zipCode}
+            setZipCode={setZipCode}
+            category={category}
+            setCategory={setCategory}
+          />
+        )}
+
+        {currentStep === 2 && (
+          <BeneficiaryStep
+            beneficiaryType={beneficiaryType}
+            setBeneficiaryType={setBeneficiaryType}
+          />
+        )}
+
+        {currentStep === 3 && (
+          <GoalStep
+            monthlyGoal={monthlyGoal}
+            setMonthlyGoal={setMonthlyGoal}
+            smartMatching={smartMatching}
+            setSmartMatching={setSmartMatching}
+            category={category}
+          />
+        )}
+
+        {currentStep === 4 && (
+          <MediaStep
+            coverPhoto={coverPhoto}
+            setCoverPhoto={setCoverPhoto}
+            coverPhotoPreview={coverPhotoPreview}
+            setCoverPhotoPreview={setCoverPhotoPreview}
+          />
+        )}
+
+        {currentStep === 5 && (
+          <StoryStep
+            story={story}
+            setStory={setStory}
+            isLongTerm={isLongTerm}
+            setIsLongTerm={setIsLongTerm}
+            category={category}
+          />
+        )}
+
+        {currentStep === 6 && (
+          <TitleStep
+            title={title}
+            setTitle={setTitle}
+            titleSource={titleSource}
+            setTitleSource={setTitleSource}
+            category={category}
+          />
+        )}
+
+        {currentStep === 7 && (
+          <ReviewStep
+            coverPhotoPreview={coverPhotoPreview}
+            title={title}
+            story={story}
+            category={category}
+            beneficiaryType={beneficiaryType}
+            monthlyGoal={monthlyGoal}
+            onEditMedia={() => goToStep(4)}
+            onEditTitle={() => goToStep(6)}
+            onEditStory={() => goToStep(5)}
+            onEditDetails={() => goToStep(1)}
+          />
+        )}
+
+        {currentStep === 8 && !isAuthenticated && (
+          <AccountStep
+            email={email}
+            setEmail={setEmail}
+            password={password}
+            setPassword={setPassword}
+            fullName={fullName}
+            setFullName={setFullName}
+            onGoogleAuth={handleGoogleAuth}
+          />
+        )}
+      </ApplyLayout>
+
+      <ShareModal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        title={title}
+        shareUrl={createdFundraiserId ? `${window.location.origin}/fundraiser/${createdFundraiserId}` : ""}
+      />
+    </>
   );
 };
 

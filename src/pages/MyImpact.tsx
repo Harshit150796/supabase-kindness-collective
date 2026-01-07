@@ -29,8 +29,15 @@ const MyImpact = () => {
   }, [user, loading, navigate]);
 
   useEffect(() => {
+    // Clear data when user changes or logs out to prevent cross-account data flash
+    setDonations([]);
+    setLoadingData(true);
+
     const fetchDonations = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoadingData(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from("donations")

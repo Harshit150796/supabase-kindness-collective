@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { clearAllDrafts, clearAnonymousDrafts } from '@/lib/draftStorage';
 
 type AppRole = 'admin' | 'donor' | 'recipient';
 
@@ -24,6 +25,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [rolesLoaded, setRolesLoaded] = useState(false);
+  
+  // Track previous user ID to detect user changes
+  const prevUserIdRef = useRef<string | null | undefined>(undefined);
 
   const fetchUserRoles = async (userId: string) => {
     setRolesLoaded(false);
@@ -41,6 +45,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        const newUserId = session?.user?.id ?? null;
+        const prevUserId = prevUserIdRef.current;
+        
+        // Detect logout - clear all drafts for security
+        if (event === 'SIGNED_OUT') {
+          clearAllDrafts();
+        }
+        
+        // Detect user change (different user signed in)
+        if (prevUserId !== undefined && prevUserId !== null && newUserId !== null && prevUserId !== newUserId) {
+          // Different user signed in - clear anonymous drafts
+          clearAnonymousDrafts();
+        }
+        
+        prevUserIdRef.current = newUserId;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -57,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      prevUserIdRef.current = session?.user?.id ?? null;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
