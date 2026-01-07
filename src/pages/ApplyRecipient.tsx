@@ -35,15 +35,7 @@ interface ApplicationData {
 const STORAGE_KEY = "recipient_application_data";
 
 const loadFromStorage = (): Omit<ApplicationData, "coverPhoto"> => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      return JSON.parse(saved);
-    }
-  } catch (e) {
-    console.error("Failed to load application data from storage");
-  }
-  return {
+  const defaults = {
     country: "us",
     zipCode: "",
     category: "",
@@ -54,8 +46,32 @@ const loadFromStorage = (): Omit<ApplicationData, "coverPhoto"> => {
     story: "",
     isLongTerm: null,
     title: "",
-    titleSource: "suggested",
+    titleSource: "suggested" as const,
   };
+  
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Ensure all string values are never undefined
+      return {
+        ...defaults,
+        ...parsed,
+        story: parsed.story || "",
+        title: parsed.title || "",
+        country: parsed.country || "us",
+        zipCode: parsed.zipCode || "",
+        category: parsed.category || "",
+        beneficiaryType: parsed.beneficiaryType || "",
+        monthlyGoal: parsed.monthlyGoal || "",
+        coverPhotoPreview: parsed.coverPhotoPreview || "",
+        titleSource: parsed.titleSource || "suggested",
+      };
+    }
+  } catch (e) {
+    console.error("Failed to load application data from storage");
+  }
+  return defaults;
 };
 
 const saveToStorage = (data: Omit<ApplicationData, "coverPhoto">) => {
@@ -180,9 +196,13 @@ const ApplyRecipient = () => {
       case 4:
         return true; // Media is optional
       case 5:
-        return story.trim().split(/\s+/).length >= 20; // At least 20 words
+        // Add null check before calling trim()
+        const storyText = story || "";
+        return storyText.trim().split(/\s+/).filter(Boolean).length >= 20;
       case 6:
-        return title.trim().length > 0;
+        // Add null check before calling trim()
+        const titleText = title || "";
+        return titleText.trim().length > 0;
       case 7:
         return true; // Review step
       case 8:

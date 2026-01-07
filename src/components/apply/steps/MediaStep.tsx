@@ -1,5 +1,9 @@
 import { useState, useRef } from "react";
 import { ImagePlus, X, Upload } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 interface MediaStepProps {
   coverPhoto: File | null;
@@ -16,6 +20,31 @@ export const MediaStep = ({
 }: MediaStepProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const validateFile = (file: File): boolean => {
+    // Validate file type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a JPEG, PNG, WebP, or GIF image.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        title: "File too large",
+        description: "Please upload an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -31,7 +60,7 @@ export const MediaStep = ({
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith("image/")) {
+    if (file) {
       handleFile(file);
     }
   };
@@ -44,6 +73,10 @@ export const MediaStep = ({
   };
 
   const handleFile = (file: File) => {
+    if (!validateFile(file)) {
+      return;
+    }
+    
     setCoverPhoto(file);
     const reader = new FileReader();
     reader.onloadend = () => {
