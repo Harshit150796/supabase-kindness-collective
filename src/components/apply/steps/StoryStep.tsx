@@ -19,7 +19,8 @@ export const StoryStep = ({
   const [isFocused, setIsFocused] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
 
-  const wordCount = story.trim() ? story.trim().split(/\s+/).length : 0;
+  const storyText = story || "";
+  const wordCount = storyText.trim() ? storyText.trim().split(/\s+/).length : 0;
   const minWords = 50;
   const progress = Math.min((wordCount / minWords) * 100, 100);
 
