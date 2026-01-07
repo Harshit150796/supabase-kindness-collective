@@ -38,8 +38,15 @@ const MyFundraisers = () => {
   }, [user, loading, navigate]);
 
   useEffect(() => {
+    // Clear data when user changes or logs out to prevent cross-account data flash
+    setFundraisers([]);
+    setLoadingData(true);
+
     const fetchFundraisers = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoadingData(false);
+        return;
+      }
 
       // Try to fetch from new fundraisers table first
       const { data, error } = await supabase

@@ -74,6 +74,11 @@ const FundraiserDashboard = () => {
       return;
     }
 
+    // Clear data when user changes to prevent cross-account data flash
+    setFundraiser(null);
+    setDonations([]);
+    setLoading(true);
+
     if (user && id) {
       fetchFundraiser();
       fetchDonations();
