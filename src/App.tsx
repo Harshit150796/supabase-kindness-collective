@@ -105,11 +105,11 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AuthProvider>
-            <ErrorBoundary>
+          <ErrorBoundary>
+            <AuthProvider>
               <AppRoutes />
-            </ErrorBoundary>
-          </AuthProvider>
+            </AuthProvider>
+          </ErrorBoundary>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
