@@ -12,6 +12,7 @@ import { AccountStep } from "@/components/apply/steps/AccountStep";
 import { SuccessScreen } from "@/components/apply/SuccessScreen";
 import { ShareScreen } from "@/components/apply/ShareScreen";
 import { ShareModal } from "@/components/apply/ShareModal";
+import { OTPVerification } from "@/components/auth/OTPVerification";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -100,12 +101,12 @@ const stepConfig = [
   },
 ];
 
-type ScreenState = "form" | "success" | "share";
+type ScreenState = "form" | "otp" | "success" | "share";
 
 const ApplyRecipient = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, signUp, signIn } = useAuth();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
@@ -196,7 +197,7 @@ const ApplyRecipient = () => {
       setDirection("forward");
       setCurrentStep(currentStep + 1);
     } else if (currentStep === 8) {
-      handleSubmit();
+      handleSendOTP();
     }
   };
 
@@ -236,40 +237,65 @@ const ApplyRecipient = () => {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSendOTP = async () => {
+    setIsSubmitting(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('send-otp', {
+        body: { email },
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Verification code sent",
+          description: `Check ${email} for your 6-digit code`,
+        });
+        setScreenState("otp");
+      } else {
+        throw new Error(data.error || "Failed to send verification code");
+      }
+    } catch (error: any) {
+      console.error("Send OTP error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send verification code",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOTPVerified = async () => {
     setIsSubmitting(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      // Use the unified signUp from useAuth with BOTH roles
+      const { error: signUpError, user: newUser } = await signUp(
         email,
         password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: fullName,
-            role: "recipient",
-          },
-        },
-      });
+        fullName,
+        'recipient', // Primary role
+        ['donor']    // Additional role - user can also donate
+      );
 
       if (signUpError) throw signUpError;
 
-      if (signUpData.user) {
-        const { error: roleError } = await supabase.from("user_roles").insert({
-          user_id: signUpData.user.id,
-          role: "recipient",
-        });
+      // Sign in immediately after signup
+      const { error: signInError } = await signIn(email, password);
+      if (signInError) throw signInError;
 
-        if (roleError) {
-          console.error("Role creation error:", roleError);
-        }
+      // Get the current user
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
 
+      if (currentUser) {
+        // Create the verification/application record
         const { error: verificationError } = await supabase
           .from("recipient_verifications")
           .insert({
-            user_id: signUpData.user.id,
+            user_id: currentUser.id,
             verification_type: beneficiaryType,
             notes: `Category: ${category}, Monthly goal: $${monthlyGoal}, Smart matching: ${smartMatching}, Title: ${title}, Long-term: ${isLongTerm}`,
             status: "pending",
@@ -278,16 +304,16 @@ const ApplyRecipient = () => {
         if (verificationError) {
           console.error("Verification creation error:", verificationError);
         }
-
-        localStorage.removeItem(STORAGE_KEY);
-
-        toast({
-          title: "Application submitted!",
-          description: "Please check your email to verify your account.",
-        });
-
-        setScreenState("success");
       }
+
+      localStorage.removeItem(STORAGE_KEY);
+
+      toast({
+        title: "Application submitted!",
+        description: "Your account has been created successfully.",
+      });
+
+      setScreenState("success");
     } catch (error: any) {
       console.error("Signup error:", error);
       toast({
@@ -295,9 +321,14 @@ const ApplyRecipient = () => {
         description: error.message || "Failed to create account. Please try again.",
         variant: "destructive",
       });
+      setScreenState("form"); // Go back to form on error
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleBackFromOTP = () => {
+    setScreenState("form");
   };
 
   const handleSuccessComplete = () => {
@@ -305,8 +336,23 @@ const ApplyRecipient = () => {
   };
 
   const handleShareComplete = () => {
-    navigate("/auth");
+    navigate("/my-fundraisers");
   };
+
+  // Render OTP verification screen
+  if (screenState === "otp") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <OTPVerification
+            email={email}
+            onVerified={handleOTPVerified}
+            onBack={handleBackFromOTP}
+          />
+        </div>
+      </div>
+    );
+  }
 
   // Render success screen
   if (screenState === "success") {
@@ -344,7 +390,7 @@ const ApplyRecipient = () => {
       onBack={handleBack}
       onContinue={handleContinue}
       continueDisabled={!canContinue() || isSubmitting}
-      continueLabel={currentStep === 8 ? (isSubmitting ? "Submitting..." : "Submit Request") : "Continue"}
+      continueLabel={currentStep === 8 ? (isSubmitting ? "Sending code..." : "Continue") : "Continue"}
       showBack={currentStep > 1}
       progress={progress}
       direction={direction}

@@ -1,12 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { Coins, Menu, X, User, LogOut } from 'lucide-react';
+import { Coins, Menu, X, User, LogOut, Megaphone, Heart, Settings } from 'lucide-react';
 import { useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import logo from '@/assets/logo.png';
@@ -79,13 +80,35 @@ export function Navbar() {
                     My Account
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => navigate(getDashboardLink())}>
-                    Dashboard
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <User className="w-4 h-4 mr-3" />
+                    Profile
                   </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem onClick={() => navigate('/my-fundraisers')}>
+                    <Megaphone className="w-4 h-4 mr-3" />
+                    Your fundraisers
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/my-impact')}>
+                    <Heart className="w-4 h-4 mr-3" />
+                    Your impact
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <Settings className="w-4 h-4 mr-3" />
+                    Account settings
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator />
+                  
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
+                    <LogOut className="w-4 h-4 mr-3" />
+                    Sign out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -156,17 +179,35 @@ export function Navbar() {
                 <>
                   <Button 
                     variant="outline" 
-                    className="w-full" 
-                    onClick={() => { navigate(getDashboardLink()); setMobileMenuOpen(false); }}
+                    className="w-full justify-start gap-2" 
+                    onClick={() => { navigate('/my-fundraisers'); setMobileMenuOpen(false); }}
                   >
-                    Dashboard
+                    <Megaphone className="w-4 h-4" />
+                    Your fundraisers
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start gap-2" 
+                    onClick={() => { navigate('/my-impact'); setMobileMenuOpen(false); }}
+                  >
+                    <Heart className="w-4 h-4" />
+                    Your impact
                   </Button>
                   <Button 
                     variant="ghost" 
-                    className="w-full text-destructive" 
+                    className="w-full justify-start gap-2" 
+                    onClick={() => { navigate('/profile'); setMobileMenuOpen(false); }}
+                  >
+                    <User className="w-4 h-4" />
+                    Profile
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full text-destructive justify-start gap-2" 
                     onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
                   >
-                    Sign Out
+                    <LogOut className="w-4 h-4" />
+                    Sign out
                   </Button>
                 </>
               ) : (
