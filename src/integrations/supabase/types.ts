@@ -167,6 +167,7 @@ export type Database = {
           currency: string | null
           donor_email: string | null
           donor_id: string | null
+          fundraiser_id: string | null
           id: string
           is_anonymous: boolean | null
           message: string | null
@@ -187,6 +188,7 @@ export type Database = {
           currency?: string | null
           donor_email?: string | null
           donor_id?: string | null
+          fundraiser_id?: string | null
           id?: string
           is_anonymous?: boolean | null
           message?: string | null
@@ -207,6 +209,7 @@ export type Database = {
           currency?: string | null
           donor_email?: string | null
           donor_id?: string | null
+          fundraiser_id?: string | null
           id?: string
           is_anonymous?: boolean | null
           message?: string | null
@@ -227,7 +230,74 @@ export type Database = {
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "donations_fundraiser_id_fkey"
+            columns: ["fundraiser_id"]
+            isOneToOne: false
+            referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      fundraisers: {
+        Row: {
+          amount_raised: number | null
+          beneficiary_type: string
+          category: string
+          country: string | null
+          cover_photo_url: string | null
+          created_at: string | null
+          donors_count: number | null
+          id: string
+          is_long_term: boolean | null
+          monthly_goal: number
+          status: string | null
+          story: string
+          title: string
+          unique_slug: string | null
+          updated_at: string | null
+          user_id: string
+          zip_code: string | null
+        }
+        Insert: {
+          amount_raised?: number | null
+          beneficiary_type: string
+          category: string
+          country?: string | null
+          cover_photo_url?: string | null
+          created_at?: string | null
+          donors_count?: number | null
+          id?: string
+          is_long_term?: boolean | null
+          monthly_goal: number
+          status?: string | null
+          story: string
+          title: string
+          unique_slug?: string | null
+          updated_at?: string | null
+          user_id: string
+          zip_code?: string | null
+        }
+        Update: {
+          amount_raised?: number | null
+          beneficiary_type?: string
+          category?: string
+          country?: string | null
+          cover_photo_url?: string | null
+          created_at?: string | null
+          donors_count?: number | null
+          id?: string
+          is_long_term?: boolean | null
+          monthly_goal?: number
+          status?: string | null
+          story?: string
+          title?: string
+          unique_slug?: string | null
+          updated_at?: string | null
+          user_id?: string
+          zip_code?: string | null
+        }
+        Relationships: []
       }
       gift_codes: {
         Row: {
