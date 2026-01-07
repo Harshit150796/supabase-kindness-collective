@@ -5,16 +5,24 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Megaphone, Users, DollarSign, Calendar, ExternalLink } from "lucide-react";
+import { Plus, Megaphone, Users, DollarSign, Calendar, ExternalLink, Share2, Eye, Heart } from "lucide-react";
 
 interface Fundraiser {
   id: string;
-  submitted_at: string | null;
-  verification_type: string;
+  title: string;
+  story: string;
+  category: string;
+  beneficiary_type: string;
+  monthly_goal: number;
+  cover_photo_url: string | null;
   status: string;
-  notes: string | null;
+  amount_raised: number;
+  donors_count: number;
+  unique_slug: string | null;
+  created_at: string;
 }
 
 const MyFundraisers = () => {
@@ -33,11 +41,12 @@ const MyFundraisers = () => {
     const fetchFundraisers = async () => {
       if (!user) return;
 
+      // Try to fetch from new fundraisers table first
       const { data, error } = await supabase
-        .from("recipient_verifications")
-        .select("id, submitted_at, verification_type, status, notes")
+        .from("fundraisers")
+        .select("*")
         .eq("user_id", user.id)
-        .order("submitted_at", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (!error && data) {
         setFundraisers(data);
@@ -52,27 +61,22 @@ const MyFundraisers = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "approved":
-        return <Badge className="bg-primary/10 text-primary">Active</Badge>;
+      case "active":
+        return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Active</Badge>;
       case "pending":
-        return <Badge className="bg-gold/10 text-gold">Pending Review</Badge>;
-      case "rejected":
-        return <Badge variant="destructive">Not Approved</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">Under Review</Badge>;
+      case "paused":
+        return <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">Paused</Badge>;
+      case "completed":
+        return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Completed</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
-  const parseNotes = (notes: string | null) => {
-    if (!notes) return {};
-    const parts: Record<string, string> = {};
-    notes.split(", ").forEach((part) => {
-      const [key, value] = part.split(": ");
-      if (key && value) {
-        parts[key.toLowerCase()] = value;
-      }
-    });
-    return parts;
+  const getProgressPercentage = (raised: number, goal: number) => {
+    if (!goal) return 0;
+    return Math.min((raised / goal) * 100, 100);
   };
 
   if (loading || loadingData) {
@@ -125,48 +129,88 @@ const MyFundraisers = () => {
           ) : (
             <div className="space-y-4">
               {fundraisers.map((fundraiser) => {
-                const details = parseNotes(fundraiser.notes);
+                const progress = getProgressPercentage(fundraiser.amount_raised, fundraiser.monthly_goal);
+                
                 return (
-                  <Card key={fundraiser.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-lg">
-                            {details.title || `${fundraiser.verification_type} Assistance`}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                            <Calendar className="w-3.5 h-3.5" />
-                            Created {fundraiser.submitted_at ? new Date(fundraiser.submitted_at).toLocaleDateString() : 'recently'}
-                          </p>
+                  <Card 
+                    key={fundraiser.id} 
+                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => navigate(`/fundraiser/${fundraiser.id}`)}
+                  >
+                    <CardContent className="p-0">
+                      <div className="flex flex-col md:flex-row">
+                        {/* Cover image */}
+                        <div className="w-full md:w-48 h-32 md:h-auto flex-shrink-0">
+                          {fundraiser.cover_photo_url ? (
+                            <img 
+                              src={fundraiser.cover_photo_url} 
+                              alt={fundraiser.title}
+                              className="w-full h-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-tr-none"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
+                              <Heart className="w-8 h-8 text-primary/30" />
+                            </div>
+                          )}
                         </div>
-                        {getStatusBadge(fundraiser.status)}
+                        
+                        {/* Content */}
+                        <div className="flex-1 p-5">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <h3 className="font-semibold text-lg text-foreground line-clamp-1">
+                                {fundraiser.title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                <Calendar className="w-3.5 h-3.5" />
+                                Created {new Date(fundraiser.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            {getStatusBadge(fundraiser.status)}
+                          </div>
+                          
+                          {/* Progress bar */}
+                          <div className="mb-3">
+                            <div className="flex items-center justify-between text-sm mb-1.5">
+                              <span className="font-medium text-foreground">
+                                ${fundraiser.amount_raised.toLocaleString()} raised
+                              </span>
+                              <span className="text-muted-foreground">
+                                ${fundraiser.monthly_goal.toLocaleString()} goal
+                              </span>
+                            </div>
+                            <Progress value={progress} className="h-2" />
+                          </div>
+                          
+                          {/* Stats & Actions */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Users className="w-4 h-4" />
+                                {fundraiser.donors_count} donor{fundraiser.donors_count !== 1 ? "s" : ""}
+                              </span>
+                              <span className="capitalize">{fundraiser.category}</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => window.open(`${window.location.origin}/fundraiser/${fundraiser.id}`, "_blank")}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => navigate(`/fundraiser/${fundraiser.id}`)}
+                              >
+                                <Share2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-3 gap-4 mb-4">
-                        <div className="flex items-center gap-2 text-sm">
-                          <DollarSign className="w-4 h-4 text-primary" />
-                          <span className="text-muted-foreground">Goal:</span>
-                          <span className="font-medium">${details["monthly goal"] || "0"}/mo</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Users className="w-4 h-4 text-primary" />
-                          <span className="text-muted-foreground">Category:</span>
-                          <span className="font-medium capitalize">{details.category || "General"}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Megaphone className="w-4 h-4 text-primary" />
-                          <span className="text-muted-foreground">For:</span>
-                          <span className="font-medium capitalize">{fundraiser.verification_type}</span>
-                        </div>
-                      </div>
-                      
-                      {fundraiser.status === "approved" && (
-                        <Button variant="outline" size="sm" className="gap-2">
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          View public page
-                        </Button>
-                      )}
                     </CardContent>
                   </Card>
                 );

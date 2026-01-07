@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Check } from "lucide-react";
+import { Check, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface SuccessScreenProps {
   onComplete: () => void;
@@ -8,19 +9,38 @@ interface SuccessScreenProps {
 export const SuccessScreen = ({ onComplete }: SuccessScreenProps) => {
   const [showCheckmark, setShowCheckmark] = useState(false);
   const [showText, setShowText] = useState(false);
+  const [showButton, setShowButton] = useState(false);
 
   useEffect(() => {
     // Stagger the animations
     const checkTimer = setTimeout(() => setShowCheckmark(true), 200);
     const textTimer = setTimeout(() => setShowText(true), 700);
-    const completeTimer = setTimeout(() => onComplete(), 2500);
+    const buttonTimer = setTimeout(() => setShowButton(true), 1200);
+    
+    // Auto-advance after 3.5 seconds (gives time for button to appear)
+    const completeTimer = setTimeout(() => {
+      try {
+        onComplete();
+      } catch (error) {
+        console.error("Error in onComplete:", error);
+      }
+    }, 3500);
 
     return () => {
       clearTimeout(checkTimer);
       clearTimeout(textTimer);
+      clearTimeout(buttonTimer);
       clearTimeout(completeTimer);
     };
   }, [onComplete]);
+
+  const handleContinue = () => {
+    try {
+      onComplete();
+    } catch (error) {
+      console.error("Error in manual continue:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
@@ -83,6 +103,26 @@ export const SuccessScreen = ({ onComplete }: SuccessScreenProps) => {
         >
           Your request has been submitted
         </p>
+
+        {/* Manual continue button (fallback) */}
+        <div 
+          className={`
+            mt-8 transition-all duration-500 ease-out
+            ${showButton 
+              ? "opacity-100 translate-y-0" 
+              : "opacity-0 translate-y-4"
+            }
+          `}
+        >
+          <Button 
+            onClick={handleContinue}
+            size="lg"
+            className="gap-2"
+          >
+            Continue
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );

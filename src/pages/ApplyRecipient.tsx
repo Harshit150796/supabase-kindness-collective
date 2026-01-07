@@ -119,6 +119,17 @@ const stepConfig = [
 
 type ScreenState = "form" | "otp" | "success" | "share";
 
+// Generate a unique slug from title
+const generateUniqueSlug = (title: string): string => {
+  const baseSlug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .slice(0, 40);
+  const randomSuffix = Math.random().toString(36).substring(2, 8);
+  return `${baseSlug}-${randomSuffix}`;
+};
+
 const ApplyRecipient = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -129,6 +140,7 @@ const ApplyRecipient = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [screenState, setScreenState] = useState<ScreenState>("form");
   const [showShareModal, setShowShareModal] = useState(false);
+  const [createdFundraiserId, setCreatedFundraiserId] = useState<string | null>(null);
 
   // Form state
   const [country, setCountry] = useState("us");
@@ -311,7 +323,32 @@ const ApplyRecipient = () => {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
 
       if (currentUser) {
-        // Create the verification/application record
+        // Create the fundraiser record in the new fundraisers table
+        const { data: fundraiserData, error: fundraiserError } = await supabase
+          .from("fundraisers")
+          .insert({
+            user_id: currentUser.id,
+            title: title,
+            story: story,
+            category: category,
+            beneficiary_type: beneficiaryType,
+            monthly_goal: parseFloat(monthlyGoal),
+            is_long_term: isLongTerm || false,
+            unique_slug: generateUniqueSlug(title),
+            country: country,
+            zip_code: zipCode,
+            status: "pending",
+          })
+          .select()
+          .single();
+
+        if (fundraiserError) {
+          console.error("Fundraiser creation error:", fundraiserError);
+        } else if (fundraiserData) {
+          setCreatedFundraiserId(fundraiserData.id);
+        }
+
+        // Also create the verification/application record for admin review
         const { error: verificationError } = await supabase
           .from("recipient_verifications")
           .insert({
@@ -356,7 +393,12 @@ const ApplyRecipient = () => {
   };
 
   const handleShareComplete = () => {
-    navigate("/my-fundraisers");
+    // Navigate to the fundraiser dashboard if we have an ID, otherwise my-fundraisers
+    if (createdFundraiserId) {
+      navigate(`/fundraiser/${createdFundraiserId}`);
+    } else {
+      navigate("/my-fundraisers");
+    }
   };
 
   // Render OTP verification screen
@@ -381,6 +423,10 @@ const ApplyRecipient = () => {
 
   // Render share screen
   if (screenState === "share") {
+    const shareUrl = createdFundraiserId 
+      ? `${window.location.origin}/fundraiser/${createdFundraiserId}`
+      : `${window.location.origin}/my-fundraisers`;
+    
     return (
       <>
         <ShareScreen
@@ -390,7 +436,7 @@ const ApplyRecipient = () => {
         <ShareModal
           open={showShareModal}
           onClose={() => setShowShareModal(false)}
-          shareUrl={`${window.location.origin}/stories/new-request`}
+          shareUrl={shareUrl}
           title={title || "My Coupon Request"}
         />
       </>

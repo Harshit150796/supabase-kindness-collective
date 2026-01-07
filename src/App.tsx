@@ -21,6 +21,7 @@ import MyFundraisers from "./pages/MyFundraisers";
 import MyImpact from "./pages/MyImpact";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import FundraiserDashboard from "./pages/FundraiserDashboard";
 
 // Recipient pages
 import RecipientDashboard from "./pages/recipient/RecipientDashboard";
@@ -69,6 +70,7 @@ const AppRoutes = () => (
     <Route path="/apply" element={<ApplyRecipient />} />
     <Route path="/my-fundraisers" element={<MyFundraisers />} />
     <Route path="/my-impact" element={<MyImpact />} />
+    <Route path="/fundraiser/:id" element={<FundraiserDashboard />} />
     <Route path="/profile" element={<Profile />} />
     <Route path="/settings" element={<Settings />} />
     
