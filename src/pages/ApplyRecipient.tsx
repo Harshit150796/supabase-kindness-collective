@@ -133,7 +133,15 @@ const generateUniqueSlug = (title: string): string => {
 const ApplyRecipient = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, signUp, signIn } = useAuth();
+  const { user, signUp, signIn, loading: authLoading } = useAuth();
+
+  // Determine if user is already authenticated
+  const isAuthenticated = !!user && !authLoading;
+  const userEmail = user?.email || "";
+  const userName = user?.user_metadata?.full_name || userEmail.split("@")[0];
+
+  // Dynamic total steps: 7 for authenticated users (skip account creation), 8 for guests
+  const totalSteps = isAuthenticated ? 7 : 8;
 
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
@@ -156,7 +164,7 @@ const ApplyRecipient = () => {
   const [title, setTitle] = useState("");
   const [titleSource, setTitleSource] = useState<"suggested" | "custom">("suggested");
 
-  // Account step state
+  // Account step state (only used for non-authenticated users)
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -194,7 +202,6 @@ const ApplyRecipient = () => {
     });
   }, [country, zipCode, category, beneficiaryType, monthlyGoal, smartMatching, coverPhotoPreview, story, isLongTerm, title, titleSource]);
 
-  const totalSteps = 8;
   const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
 
   const canContinue = () => {
@@ -214,19 +221,65 @@ const ApplyRecipient = () => {
         const titleText = title || "";
         return titleText.trim().length > 0;
       case 7:
-        return true; // Review step
+        return true; // Review step - also final step for authenticated users
       case 8:
+        // Only reached by non-authenticated users
         return email && password.length >= 8 && fullName;
       default:
         return false;
     }
   };
 
+  // Handler for authenticated user submission (skips account creation)
+  const handleAuthenticatedSubmit = async () => {
+    setIsSubmitting(true);
+
+    try {
+      if (!user) throw new Error("User not found");
+
+      // Ensure user has recipient role
+      await supabase
+        .from('user_roles')
+        .upsert(
+          { user_id: user.id, role: 'recipient' as const },
+          { onConflict: 'user_id,role' }
+        );
+
+      // Create the fundraiser
+      const fundraiserData = await createFundraiserForUser(user.id);
+      setCreatedFundraiserId(fundraiserData.id);
+
+      localStorage.removeItem(STORAGE_KEY);
+
+      toast({
+        title: "Fundraiser created!",
+        description: "Your fundraiser has been submitted successfully.",
+      });
+
+      setScreenState("success");
+    } catch (error: any) {
+      console.error("Submit error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleContinue = () => {
-    if (currentStep < 8) {
+    // For authenticated users, step 7 is the final step - submit directly
+    if (isAuthenticated && currentStep === 7) {
+      handleAuthenticatedSubmit();
+      return;
+    }
+
+    if (currentStep < totalSteps) {
       setDirection("forward");
       setCurrentStep(currentStep + 1);
-    } else if (currentStep === 8) {
+    } else if (currentStep === 8 && !isAuthenticated) {
       handleSendOTP();
     }
   };
@@ -534,9 +587,33 @@ const ApplyRecipient = () => {
     );
   }
 
-  const config = stepConfig[currentStep - 1];
+  // Get appropriate config - for authenticated users on step 7, update headline
+  const getStepConfig = () => {
+    const config = stepConfig[currentStep - 1];
+    if (isAuthenticated && currentStep === 7) {
+      return {
+        ...config,
+        headline: "Review and submit",
+        subtext: "Let's make sure your request is complete before submitting.",
+      };
+    }
+    return config;
+  };
+
+  const config = getStepConfig();
   const isMediaStep = currentStep === 4;
   const isReviewStep = currentStep === 7;
+
+  // Determine continue button label
+  const getContinueLabel = () => {
+    if (isAuthenticated && currentStep === 7) {
+      return isSubmitting ? "Submitting..." : "Submit Fundraiser";
+    }
+    if (currentStep === 8) {
+      return isSubmitting ? "Sending code..." : "Continue";
+    }
+    return "Continue";
+  };
 
   return (
     <ApplyLayout
@@ -547,13 +624,15 @@ const ApplyRecipient = () => {
       onBack={handleBack}
       onContinue={handleContinue}
       continueDisabled={!canContinue() || isSubmitting}
-      continueLabel={currentStep === 8 ? (isSubmitting ? "Sending code..." : "Continue") : "Continue"}
+      continueLabel={getContinueLabel()}
       showBack={currentStep > 1}
       progress={progress}
       direction={direction}
       showSkip={isMediaStep}
       onSkip={handleSkip}
       hideStepIndicator={isReviewStep}
+      isAuthenticated={isAuthenticated}
+      userEmail={userEmail}
     >
       {currentStep === 1 && (
         <LocationCategoryStep
@@ -627,7 +706,7 @@ const ApplyRecipient = () => {
         />
       )}
 
-      {currentStep === 8 && (
+      {currentStep === 8 && !isAuthenticated && (
         <AccountStep
           email={email}
           setEmail={setEmail}
