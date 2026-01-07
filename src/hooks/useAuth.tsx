@@ -167,8 +167,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
+  
+  // During ErrorBoundary recovery, context might briefly be undefined
+  // Return a safe "loading" state instead of throwing
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    return {
+      user: null,
+      session: null,
+      loading: true,
+      roles: [] as AppRole[],
+      rolesLoaded: false,
+      signUp: async () => ({ error: new Error('Auth not ready') as Error }),
+      signIn: async () => ({ error: new Error('Auth not ready') as Error }),
+      signOut: async () => {},
+      hasRole: () => false,
+    };
   }
+  
   return context;
 }
