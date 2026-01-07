@@ -12,33 +12,23 @@ export const SuccessScreen = ({ onComplete }: SuccessScreenProps) => {
   const [showButton, setShowButton] = useState(false);
 
   useEffect(() => {
-    // Stagger the animations
+    // Stagger the animations - NO auto-advance to prevent race conditions
     const checkTimer = setTimeout(() => setShowCheckmark(true), 200);
     const textTimer = setTimeout(() => setShowText(true), 700);
-    const buttonTimer = setTimeout(() => setShowButton(true), 1200);
-    
-    // Auto-advance after 3.5 seconds (gives time for button to appear)
-    const completeTimer = setTimeout(() => {
-      try {
-        onComplete();
-      } catch (error) {
-        console.error("Error in onComplete:", error);
-      }
-    }, 3500);
+    const buttonTimer = setTimeout(() => setShowButton(true), 1000);
 
     return () => {
       clearTimeout(checkTimer);
       clearTimeout(textTimer);
       clearTimeout(buttonTimer);
-      clearTimeout(completeTimer);
     };
-  }, [onComplete]);
+  }, []);
 
   const handleContinue = () => {
     try {
       onComplete();
     } catch (error) {
-      console.error("Error in manual continue:", error);
+      console.error("Error in continue:", error);
     }
   };
 
@@ -101,10 +91,10 @@ export const SuccessScreen = ({ onComplete }: SuccessScreenProps) => {
             }
           `}
         >
-          Your request has been submitted
+          Your fundraiser has been created
         </p>
 
-        {/* Manual continue button (fallback) */}
+        {/* Always visible continue button */}
         <div 
           className={`
             mt-8 transition-all duration-500 ease-out
@@ -119,7 +109,7 @@ export const SuccessScreen = ({ onComplete }: SuccessScreenProps) => {
             size="lg"
             className="gap-2"
           >
-            Continue
+            Continue to share your fundraiser
             <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
