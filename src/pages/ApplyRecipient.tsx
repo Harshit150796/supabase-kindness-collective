@@ -12,6 +12,7 @@ import { AccountStep } from "@/components/apply/steps/AccountStep";
 import { SuccessScreen } from "@/components/apply/SuccessScreen";
 import { ShareScreen } from "@/components/apply/ShareScreen";
 import { ShareModal } from "@/components/apply/ShareModal";
+import { SignInPrompt } from "@/components/apply/SignInPrompt";
 import { OTPVerification } from "@/components/auth/OTPVerification";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,7 +54,6 @@ const loadFromStorage = (): Omit<ApplicationData, "coverPhoto"> => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Ensure all string values are never undefined
       return {
         ...defaults,
         ...parsed,
@@ -117,7 +117,7 @@ const stepConfig = [
   },
 ];
 
-type ScreenState = "form" | "otp" | "success" | "share";
+type ScreenState = "form" | "otp" | "success" | "share" | "signin-prompt";
 
 // Generate a unique slug from title
 const generateUniqueSlug = (title: string): string => {
@@ -208,11 +208,9 @@ const ApplyRecipient = () => {
       case 4:
         return true; // Media is optional
       case 5:
-        // Add null check before calling trim()
         const storyText = story || "";
         return storyText.trim().split(/\s+/).filter(Boolean).length >= 20;
       case 6:
-        // Add null check before calling trim()
         const titleText = title || "";
         return titleText.trim().length > 0;
       case 7:
@@ -242,7 +240,6 @@ const ApplyRecipient = () => {
 
   const handleSkip = () => {
     if (currentStep === 4) {
-      // Skip media step
       setDirection("forward");
       setCurrentStep(5);
     }
@@ -269,10 +266,65 @@ const ApplyRecipient = () => {
     }
   };
 
+  // Helper function to create fundraiser for a user
+  const createFundraiserForUser = async (userId: string) => {
+    const { data: fundraiserData, error: fundraiserError } = await supabase
+      .from("fundraisers")
+      .insert({
+        user_id: userId,
+        title: title,
+        story: story,
+        category: category,
+        beneficiary_type: beneficiaryType,
+        monthly_goal: parseFloat(monthlyGoal),
+        is_long_term: isLongTerm || false,
+        unique_slug: generateUniqueSlug(title),
+        country: country,
+        zip_code: zipCode,
+        status: "pending",
+      })
+      .select()
+      .single();
+
+    if (fundraiserError) {
+      console.error("Fundraiser creation error:", fundraiserError);
+      throw fundraiserError;
+    }
+
+    // Also create the verification/application record for admin review
+    await supabase.from("recipient_verifications").insert({
+      user_id: userId,
+      verification_type: beneficiaryType,
+      notes: `Category: ${category}, Monthly goal: $${monthlyGoal}, Smart matching: ${smartMatching}, Title: ${title}, Long-term: ${isLongTerm}`,
+      status: "pending",
+    });
+
+    return fundraiserData;
+  };
+
   const handleSendOTP = async () => {
     setIsSubmitting(true);
     
     try {
+      // First check if email already exists
+      const { data: checkData, error: checkError } = await supabase.functions.invoke('check-email-exists', {
+        body: { email },
+      });
+
+      if (checkError) {
+        console.error("Email check error:", checkError);
+        // Continue anyway - will handle at signup
+      } else if (checkData?.exists) {
+        toast({
+          title: "Account already exists",
+          description: "Please sign in with your existing account to continue.",
+        });
+        setScreenState("signin-prompt");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Email doesn't exist, send OTP for new account
       const { data, error } = await supabase.functions.invoke('send-otp', {
         body: { email },
       });
@@ -305,15 +357,27 @@ const ApplyRecipient = () => {
 
     try {
       // Use the unified signUp from useAuth with BOTH roles
-      const { error: signUpError, user: newUser } = await signUp(
+      const { error: signUpError } = await signUp(
         email,
         password,
         fullName,
-        'recipient', // Primary role
-        ['donor']    // Additional role - user can also donate
+        'recipient',
+        ['donor']
       );
 
-      if (signUpError) throw signUpError;
+      if (signUpError) {
+        // Check if it's a "user already exists" error
+        if (signUpError.message?.includes('already registered') || 
+            signUpError.message?.includes('already exists')) {
+          toast({
+            title: "Account already exists",
+            description: "Please sign in with your existing account.",
+          });
+          setScreenState("signin-prompt");
+          return;
+        }
+        throw signUpError;
+      }
 
       // Sign in immediately after signup
       const { error: signInError } = await signIn(email, password);
@@ -323,44 +387,8 @@ const ApplyRecipient = () => {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
 
       if (currentUser) {
-        // Create the fundraiser record in the new fundraisers table
-        const { data: fundraiserData, error: fundraiserError } = await supabase
-          .from("fundraisers")
-          .insert({
-            user_id: currentUser.id,
-            title: title,
-            story: story,
-            category: category,
-            beneficiary_type: beneficiaryType,
-            monthly_goal: parseFloat(monthlyGoal),
-            is_long_term: isLongTerm || false,
-            unique_slug: generateUniqueSlug(title),
-            country: country,
-            zip_code: zipCode,
-            status: "pending",
-          })
-          .select()
-          .single();
-
-        if (fundraiserError) {
-          console.error("Fundraiser creation error:", fundraiserError);
-        } else if (fundraiserData) {
-          setCreatedFundraiserId(fundraiserData.id);
-        }
-
-        // Also create the verification/application record for admin review
-        const { error: verificationError } = await supabase
-          .from("recipient_verifications")
-          .insert({
-            user_id: currentUser.id,
-            verification_type: beneficiaryType,
-            notes: `Category: ${category}, Monthly goal: $${monthlyGoal}, Smart matching: ${smartMatching}, Title: ${title}, Long-term: ${isLongTerm}`,
-            status: "pending",
-          });
-
-        if (verificationError) {
-          console.error("Verification creation error:", verificationError);
-        }
+        const fundraiserData = await createFundraiserForUser(currentUser.id);
+        setCreatedFundraiserId(fundraiserData.id);
       }
 
       localStorage.removeItem(STORAGE_KEY);
@@ -378,7 +406,55 @@ const ApplyRecipient = () => {
         description: error.message || "Failed to create account. Please try again.",
         variant: "destructive",
       });
-      setScreenState("form"); // Go back to form on error
+      setScreenState("form");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSignInAndContinue = async (signInPassword: string) => {
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await signIn(email, signInPassword);
+      if (error) throw error;
+
+      // Get current user
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+      if (currentUser) {
+        // Ensure user has recipient role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .upsert(
+            { user_id: currentUser.id, role: 'recipient' as const },
+            { onConflict: 'user_id,role' }
+          );
+        
+        if (roleError) {
+          console.error("Role upsert error:", roleError);
+        }
+
+        // Create the fundraiser for this existing user
+        const fundraiserData = await createFundraiserForUser(currentUser.id);
+        setCreatedFundraiserId(fundraiserData.id);
+
+        localStorage.removeItem(STORAGE_KEY);
+
+        toast({
+          title: "Fundraiser created!",
+          description: "Your fundraiser has been submitted successfully.",
+        });
+
+        setScreenState("success");
+      }
+    } catch (error: any) {
+      console.error("Sign in error:", error);
+      toast({
+        title: "Sign in failed",
+        description: error.message || "Invalid email or password",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -393,13 +469,28 @@ const ApplyRecipient = () => {
   };
 
   const handleShareComplete = () => {
-    // Navigate to the fundraiser dashboard if we have an ID, otherwise my-fundraisers
     if (createdFundraiserId) {
       navigate(`/fundraiser/${createdFundraiserId}`);
     } else {
       navigate("/my-fundraisers");
     }
   };
+
+  // Render sign-in prompt for existing users
+  if (screenState === "signin-prompt") {
+    return (
+      <SignInPrompt
+        email={email}
+        onSignIn={handleSignInAndContinue}
+        onUseNewEmail={() => {
+          setEmail("");
+          setPassword("");
+          setScreenState("form");
+        }}
+        isLoading={isSubmitting}
+      />
+    );
+  }
 
   // Render OTP verification screen
   if (screenState === "otp") {

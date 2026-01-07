@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.backfill-stripe-donations]
 verify_jwt = false
+
+[functions.check-email-exists]
+verify_jwt = false
