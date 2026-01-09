@@ -92,7 +92,7 @@ const MyImpact = () => {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Total donated</p>
-                    <p className="text-2xl font-bold text-foreground">${(totalDonated / 100).toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-foreground">${totalDonated.toFixed(2)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -106,7 +106,7 @@ const MyImpact = () => {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Net impact</p>
-                    <p className="text-2xl font-bold text-foreground">${(totalNetImpact / 100).toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-foreground">${totalNetImpact.toFixed(2)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -175,11 +175,11 @@ const MyImpact = () => {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-foreground">
-                          ${(donation.amount / 100).toFixed(2)}
+                          ${donation.amount.toFixed(2)}
                         </p>
                         {donation.net_amount && (
                           <p className="text-xs text-muted-foreground">
-                            ${(donation.net_amount / 100).toFixed(2)} to recipient
+                            ${donation.net_amount.toFixed(2)} to recipient
                           </p>
                         )}
                       </div>
