@@ -94,7 +94,7 @@ export function HeroSection() {
               <Button 
                 size="lg" 
                 className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 gap-2 w-full sm:w-auto"
-                onClick={() => navigate('/auth?mode=signup&role=donor')}
+                onClick={() => navigate('/donate')}
               >
                 Start Donating
                 <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />

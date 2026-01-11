@@ -37,7 +37,7 @@ export function CTASection() {
               size="lg"
               variant="secondary"
               className="w-full gap-2"
-              onClick={() => navigate('/auth?mode=signup&role=donor')}
+              onClick={() => navigate('/donate')}
             >
               Start Donating
               <ArrowRight className="w-5 h-5" />

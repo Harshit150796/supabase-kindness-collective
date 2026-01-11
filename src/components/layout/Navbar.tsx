@@ -124,7 +124,7 @@ export function Navbar() {
                 </Button>
                 <Button 
                   size="sm" 
-                  onClick={() => navigate('/auth?mode=signup&role=donor')}
+                  onClick={() => navigate('/donate')}
                   className="gap-2 shadow-emerald hover:shadow-gold transition-shadow"
                 >
                   <Coins className="w-4 h-4" />
@@ -221,7 +221,7 @@ export function Navbar() {
                   </Button>
                   <Button 
                     className="w-full gap-2" 
-                    onClick={() => { navigate('/auth?mode=signup&role=donor'); setMobileMenuOpen(false); }}
+                    onClick={() => { navigate('/donate'); setMobileMenuOpen(false); }}
                   >
                     <Coins className="w-4 h-4" />
                     Start Donating
