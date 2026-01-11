@@ -137,7 +137,7 @@ export function DonationFlow() {
   const selectedBrandData = brandList.find(b => b.name.toLowerCase().replace(/\s+/g, '') === selectedBrand);
 
   return (
-    <section className="py-20 relative overflow-hidden bg-secondary/20">
+    <section id="donation-flow" className="py-20 relative overflow-hidden bg-secondary/20">
       <div className="container mx-auto px-4 relative">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">

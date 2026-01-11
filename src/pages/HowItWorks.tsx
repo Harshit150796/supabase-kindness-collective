@@ -59,7 +59,7 @@ export default function HowItWorks() {
                 </div>
               ))}
             </div>
-            <Button size="lg" onClick={() => navigate('/auth?mode=signup&role=donor')}>
+            <Button size="lg" onClick={() => navigate('/donate')}>
               Start Donating Today
             </Button>
           </div>

@@ -143,7 +143,7 @@ export default function About() {
               <Button 
                 size="lg" 
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                onClick={() => navigate('/auth?mode=signup&role=donor')}
+                onClick={() => navigate('/donate')}
               >
                 Start Donating
                 <ChevronRight className="w-4 h-4 ml-1" />
