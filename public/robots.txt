@@ -1,3 +1,24 @@
+# Sitemap location
+Sitemap: https://coupondonation.com/sitemap.xml
+
+# Allow all crawlers access to public pages
+User-agent: *
+Allow: /
+
+# Block protected/authenticated pages
+Disallow: /donor/
+Disallow: /recipient/
+Disallow: /admin/
+Disallow: /profile
+Disallow: /settings
+Disallow: /my-fundraisers
+Disallow: /my-impact
+Disallow: /fundraiser/
+Disallow: /donation-success
+Disallow: /donation-cancelled
+Disallow: /reset-password
+
+# Allow specific social/search crawlers
 User-agent: Googlebot
 Allow: /
 
@@ -8,7 +29,4 @@ User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
-Allow: /
-
-User-agent: *
 Allow: /
