@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Gift, DollarSign, Calendar, CreditCard, Receipt, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
+import { Gift, DollarSign, Calendar, CreditCard, Receipt, ExternalLink, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Donation {
@@ -38,22 +38,81 @@ export default function DonorHistory() {
   const { user } = useAuth();
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user) fetchHistory();
-  }, [user]);
+  const fetchHistory = useCallback(async (showRefreshIndicator = false) => {
+    if (!user) return;
+    
+    if (showRefreshIndicator) setRefreshing(true);
 
-  const fetchHistory = async () => {
     const { data } = await supabase
       .from('donations')
       .select('*')
-      .eq('donor_id', user!.id)
+      .eq('donor_id', user.id)
       .order('created_at', { ascending: false });
 
     setDonations(data || []);
     setLoading(false);
-  };
+    setRefreshing(false);
+  }, [user]);
+
+  // Initial fetch
+  useEffect(() => {
+    if (user) fetchHistory();
+  }, [user, fetchHistory]);
+
+  // Refetch when page becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user) {
+        fetchHistory(true);
+      }
+    };
+
+    const handleFocus = () => {
+      if (user) fetchHistory(true);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user, fetchHistory]);
+
+  // Real-time subscription for instant updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('donor-history-donations')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'donations',
+        filter: `donor_id=eq.${user.id}`,
+      }, (payload) => {
+        setDonations(prev => [payload.new as Donation, ...prev]);
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'donations',
+        filter: `donor_id=eq.${user.id}`,
+      }, (payload) => {
+        setDonations(prev => prev.map(d => 
+          d.id === payload.new.id ? payload.new as Donation : d
+        ));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
@@ -62,9 +121,21 @@ export default function DonorHistory() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Donation History</h1>
-          <p className="text-muted-foreground">All your donations with full transaction details</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Donation History</h1>
+            <p className="text-muted-foreground">All your donations with full transaction details</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => fetchHistory(true)}
+            disabled={refreshing}
+            className="gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
         {loading ? (

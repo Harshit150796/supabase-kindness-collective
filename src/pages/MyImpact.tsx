@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, DollarSign, Users, TrendingUp, Gift, Calendar } from "lucide-react";
+import { Heart, DollarSign, TrendingUp, Gift, Calendar, RefreshCw } from "lucide-react";
 
 interface Donation {
   id: string;
@@ -21,6 +21,28 @@ const MyImpact = () => {
   const { user, loading } = useAuth();
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchDonations = useCallback(async (showRefreshIndicator = false) => {
+    if (!user) {
+      setLoadingData(false);
+      return;
+    }
+
+    if (showRefreshIndicator) setRefreshing(true);
+
+    const { data, error } = await supabase
+      .from("donations")
+      .select("*")
+      .eq("donor_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setDonations(data);
+    }
+    setLoadingData(false);
+    setRefreshing(false);
+  }, [user]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -28,37 +50,60 @@ const MyImpact = () => {
     }
   }, [user, loading, navigate]);
 
+  // Initial fetch and reset on user change
   useEffect(() => {
-    // Clear data when user changes or logs out to prevent cross-account data flash
     setDonations([]);
     setLoadingData(true);
-
-    const fetchDonations = async () => {
-      if (!user) {
-        setLoadingData(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("donations")
-        .select("*")
-        .eq("donor_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (!error && data) {
-        setDonations(data);
-      }
-      setLoadingData(false);
-    };
 
     if (user) {
       fetchDonations();
     }
+  }, [user, fetchDonations]);
+
+  // Refetch when page becomes visible (user returns from Stripe)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user) {
+        fetchDonations(true);
+      }
+    };
+
+    const handleFocus = () => {
+      if (user) fetchDonations(true);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user, fetchDonations]);
+
+  // Real-time subscription for instant updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('my-impact-donations')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'donations',
+        filter: `donor_id=eq.${user.id}`,
+      }, (payload) => {
+        setDonations(prev => [payload.new as Donation, ...prev]);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const totalDonated = donations.reduce((sum, d) => sum + (d.amount || 0), 0);
   const totalNetImpact = donations.reduce((sum, d) => sum + (d.net_amount || d.amount || 0), 0);
-  const peopleHelped = new Set(donations.map((d) => d.id)).size; // Simplified
 
   if (loading || loadingData) {
     return (
@@ -75,11 +120,23 @@ const MyImpact = () => {
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Your impact</h1>
-            <p className="text-muted-foreground mt-1">
-              See the difference your donations are making
-            </p>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Your impact</h1>
+              <p className="text-muted-foreground mt-1">
+                See the difference your donations are making
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => fetchDonations(true)}
+              disabled={refreshing}
+              className="gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
           </div>
 
           {/* Impact Stats */}

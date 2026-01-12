@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Gift, DollarSign, TrendingUp, Heart, ArrowRight, Users, Clock } from 'lucide-react';
+import { Gift, DollarSign, TrendingUp, Heart, ArrowRight, Users, Clock, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface DonorStats {
@@ -32,19 +33,18 @@ export default function DonorDashboard() {
   });
   const [recentDonations, setRecentDonations] = useState<RecentDonation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      fetchStats();
-    }
-  }, [user]);
+  const fetchStats = useCallback(async (showRefreshIndicator = false) => {
+    if (!user) return;
 
-  const fetchStats = async () => {
+    if (showRefreshIndicator) setRefreshing(true);
+
     // Get donations by this donor
     const { data: donations } = await supabase
       .from('donations')
       .select('id, amount, created_at, status, brand_partner')
-      .eq('donor_id', user!.id)
+      .eq('donor_id', user.id)
       .order('created_at', { ascending: false });
 
     // Get redemption history count (approximation for people helped)
@@ -64,14 +64,86 @@ export default function DonorDashboard() {
     // Set recent donations (last 5)
     setRecentDonations(donations?.slice(0, 5) || []);
     setLoading(false);
-  };
+    setRefreshing(false);
+  }, [user]);
+
+  // Initial fetch
+  useEffect(() => {
+    if (user) {
+      fetchStats();
+    }
+  }, [user, fetchStats]);
+
+  // Refetch when page becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user) {
+        fetchStats(true);
+      }
+    };
+
+    const handleFocus = () => {
+      if (user) fetchStats(true);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user, fetchStats]);
+
+  // Real-time subscription for instant updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('donor-dashboard-donations')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'donations',
+        filter: `donor_id=eq.${user.id}`,
+      }, (payload) => {
+        const newDonation = payload.new as RecentDonation;
+        // Update recent donations
+        setRecentDonations(prev => [newDonation, ...prev.slice(0, 4)]);
+        // Update stats
+        if (newDonation.status === 'completed' || !newDonation.status) {
+          setStats(prev => ({
+            ...prev,
+            totalDonated: prev.totalDonated + Number(newDonation.amount),
+            donationsCount: prev.donationsCount + 1
+          }));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Donor Dashboard</h1>
-          <p className="text-muted-foreground">Track your impact and contributions</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Donor Dashboard</h1>
+            <p className="text-muted-foreground">Track your impact and contributions</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => fetchStats(true)}
+            disabled={refreshing}
+            className="gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
         {/* Stats Grid */}

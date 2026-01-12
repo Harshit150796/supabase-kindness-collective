@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Heart, Users, Gift, TrendingUp, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Heart, Gift, TrendingUp, DollarSign, RefreshCw } from 'lucide-react';
 
 export default function DonorImpact() {
   const { user } = useAuth();
@@ -13,17 +14,19 @@ export default function DonorImpact() {
     couponsReserved: 0,
     couponsRedeemed: 0
   });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    if (user) fetchImpact();
-  }, [user]);
+  const fetchImpact = useCallback(async (showRefreshIndicator = false) => {
+    if (!user) return;
 
-  const fetchImpact = async () => {
+    if (showRefreshIndicator) setRefreshing(true);
+
     // Get donations by this donor
     const { data: donations } = await supabase
       .from('donations')
       .select('id, amount')
-      .eq('donor_id', user!.id);
+      .eq('donor_id', user.id);
 
     // Get coupon stats
     const { data: coupons } = await supabase
@@ -38,21 +41,87 @@ export default function DonorImpact() {
       couponsReserved: coupons?.filter(c => c.status === 'reserved').length || 0,
       couponsRedeemed: coupons?.filter(c => c.status === 'redeemed').length || 0
     });
-  };
+    setLoading(false);
+    setRefreshing(false);
+  }, [user]);
+
+  // Initial fetch
+  useEffect(() => {
+    if (user) fetchImpact();
+  }, [user, fetchImpact]);
+
+  // Refetch when page becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user) {
+        fetchImpact(true);
+      }
+    };
+
+    const handleFocus = () => {
+      if (user) fetchImpact(true);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user, fetchImpact]);
+
+  // Real-time subscription for instant updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('donor-impact-donations')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'donations',
+        filter: `donor_id=eq.${user.id}`,
+      }, (payload) => {
+        const newDonation = payload.new as { amount: number };
+        setStats(prev => ({
+          ...prev,
+          totalDonations: prev.totalDonations + 1,
+          totalAmount: prev.totalAmount + Number(newDonation.amount)
+        }));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Your Impact</h1>
-          <p className="text-muted-foreground">See how your donations are making a difference</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Your Impact</h1>
+            <p className="text-muted-foreground">See how your donations are making a difference</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => fetchImpact(true)}
+            disabled={refreshing}
+            className="gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
             <CardContent className="p-6 text-center">
               <DollarSign className="w-8 h-8 text-primary mx-auto mb-2" />
-              <p className="text-3xl font-bold text-foreground">${stats.totalAmount}</p>
+              <p className="text-3xl font-bold text-foreground">${stats.totalAmount.toFixed(2)}</p>
               <p className="text-sm text-muted-foreground">Total Donated</p>
             </CardContent>
           </Card>
