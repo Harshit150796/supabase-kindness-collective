@@ -11,7 +11,7 @@ import { ReviewStep } from "@/components/apply/steps/ReviewStep";
 import { AccountStep } from "@/components/apply/steps/AccountStep";
 import { SuccessScreen } from "@/components/apply/SuccessScreen";
 import { ShareScreen } from "@/components/apply/ShareScreen";
-import { ShareModal } from "@/components/apply/ShareModal";
+
 import { SignInPrompt } from "@/components/apply/SignInPrompt";
 import { OTPVerification } from "@/components/auth/OTPVerification";
 import { useAuth } from "@/hooks/useAuth";
@@ -120,7 +120,7 @@ const ApplyRecipient = () => {
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [screenState, setScreenState] = useState<ScreenState>("form");
-  const [showShareModal, setShowShareModal] = useState(false);
+  
   const [createdFundraiserId, setCreatedFundraiserId] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
 
@@ -551,6 +551,14 @@ const ApplyRecipient = () => {
     setScreenState("share");
   };
 
+  const handleGoToDashboardWithShare = () => {
+    if (createdFundraiserId) {
+      navigate(`/fundraiser/${createdFundraiserId}?share=true`);
+    } else {
+      navigate("/recipient/dashboard");
+    }
+  };
+
   const handleGoToDashboard = () => {
     if (createdFundraiserId) {
       navigate(`/fundraiser/${createdFundraiserId}`);
@@ -620,7 +628,7 @@ const ApplyRecipient = () => {
   if (screenState === "share") {
     return (
       <ShareScreen
-        onShare={() => setShowShareModal(true)}
+        onGoToDashboard={handleGoToDashboardWithShare}
         onSkip={handleGoToDashboard}
       />
     );
@@ -731,12 +739,7 @@ const ApplyRecipient = () => {
         )}
       </ApplyLayout>
 
-      <ShareModal
-        open={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        title={title}
-        shareUrl={createdFundraiserId ? `${window.location.origin}/fundraiser/${createdFundraiserId}` : ""}
-      />
+      {/* ShareModal removed - now handled by FundraiserDashboard */}
     </>
   );
 };

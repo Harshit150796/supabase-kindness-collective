@@ -1,11 +1,11 @@
 import { Megaphone } from "lucide-react";
 
 interface ShareScreenProps {
-  onShare: () => void;
+  onGoToDashboard: () => void;
   onSkip: () => void;
 }
 
-export const ShareScreen = ({ onShare, onSkip }: ShareScreenProps) => {
+export const ShareScreen = ({ onGoToDashboard, onSkip }: ShareScreenProps) => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-primary p-6 animate-fade-in">
       <div className="flex flex-col items-center text-center max-w-md">
@@ -21,7 +21,7 @@ export const ShareScreen = ({ onShare, onSkip }: ShareScreenProps) => {
           className="text-3xl lg:text-4xl font-bold text-white mb-4 animate-fade-in"
           style={{ animationDelay: "0.2s" }}
         >
-          Your coupon request is ready to share.
+          Your fundraiser is ready to share.
         </h1>
 
         {/* Subtitle */}
@@ -38,10 +38,10 @@ export const ShareScreen = ({ onShare, onSkip }: ShareScreenProps) => {
           style={{ animationDelay: "0.4s" }}
         >
           <button
-            onClick={onShare}
+            onClick={onGoToDashboard}
             className="w-full py-4 px-6 bg-gold text-charcoal font-semibold rounded-full hover:bg-gold/90 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg press-effect"
           >
-            Share request
+            Share Fundraiser
           </button>
           
           <button

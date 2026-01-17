@@ -17,6 +17,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Stories from "./pages/Stories";
 import StoryDetail from "./pages/StoryDetail";
 import ApplyRecipient from "./pages/ApplyRecipient";
+import PublicFundraiser from "./pages/PublicFundraiser";
 import MyFundraisers from "./pages/MyFundraisers";
 import MyImpact from "./pages/MyImpact";
 import Profile from "./pages/Profile";
@@ -64,6 +65,7 @@ const AppRoutes = () => (
     <Route path="/faq" element={<FAQ />} />
     <Route path="/stories" element={<Stories />} />
     <Route path="/story/:id" element={<StoryDetail />} />
+    <Route path="/f/:slug" element={<PublicFundraiser />} />
     <Route path="/auth" element={<Auth />} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/donation-success" element={<DonationSuccess />} />

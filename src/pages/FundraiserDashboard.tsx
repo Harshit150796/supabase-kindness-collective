@@ -83,6 +83,14 @@ const FundraiserDashboard = () => {
       fetchFundraiser();
       fetchDonations();
     }
+
+    // Auto-open share modal if ?share=true is present
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('share') === 'true') {
+      setShowShareModal(true);
+      // Clean up URL without refresh
+      window.history.replaceState({}, '', `/fundraiser/${id}`);
+    }
   }, [user, authLoading, id]);
 
   const fetchFundraiser = async () => {
