@@ -245,7 +245,7 @@ const ApplyRecipient = () => {
         return true; // Media is optional
       case 5:
         const storyText = story || "";
-        return storyText.trim().split(/\s+/).filter(Boolean).length >= 20;
+        return storyText.trim().split(/\s+/).filter(Boolean).length >= 10;
       case 6:
         const titleText = title || "";
         return titleText.trim().length > 0;
