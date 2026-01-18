@@ -4,6 +4,7 @@ Sitemap: https://coupondonation.com/sitemap.xml
 # Allow all crawlers access to public pages
 User-agent: *
 Allow: /
+Allow: /f/
 
 # Block protected/authenticated pages
 Disallow: /donor/
@@ -17,6 +18,9 @@ Disallow: /fundraiser/
 Disallow: /donation-success
 Disallow: /donation-cancelled
 Disallow: /reset-password
+
+# Block streaming overlays (for OBS only)
+Disallow: /overlay/
 
 # Allow specific social/search crawlers
 User-agent: Googlebot
