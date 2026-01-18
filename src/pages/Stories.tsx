@@ -5,6 +5,7 @@ import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -14,6 +15,8 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { impactStories, ImpactStory } from '@/data/impactStories';
+import { useFundraisers } from '@/hooks/useFundraisers';
+import { FundraiserCard } from '@/components/stories/FundraiserCard';
 import { 
   Heart, 
   Users, 
@@ -25,7 +28,9 @@ import {
   Calendar,
   CheckCircle2,
   TrendingUp,
-  Coins
+  Coins,
+  Sparkles,
+  PlusCircle
 } from 'lucide-react';
 
 const categoryLabels: Record<string, string> = {
@@ -72,6 +77,9 @@ const communityStats = {
 
 export default function Stories() {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
+  
+  // Fetch real fundraisers from database
+  const { data: fundraisers, isLoading: fundraisersLoading } = useFundraisers();
 
   const filteredStories = activeCategory === 'all' 
     ? impactStories 
@@ -106,10 +114,10 @@ export default function Stories() {
             Real Stories, Real Impact
           </Badge>
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Meet the Families You're Helping
+            Discover Fundraisers & Success Stories
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Every donation creates a ripple of hope. Discover the stories of families whose lives have been transformed through the generosity of donors like you.
+            Support active fundraisers in your community or get inspired by families whose lives have been transformed through generous donors like you.
           </p>
         </div>
 
@@ -145,27 +153,95 @@ export default function Stories() {
           </div>
         </div>
 
-        {/* Category Filter */}
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
-          {categories.map((category) => (
-            <Button
-              key={category}
-              variant={activeCategory === category ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setActiveCategory(category)}
-              className="capitalize"
-            >
-              {category === 'all' ? 'All Stories' : categoryLabels[category]}
-            </Button>
-          ))}
-        </div>
+        {/* Active Fundraisers Section */}
+        <section className="mb-16">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <h2 className="text-2xl font-bold text-foreground">Active Fundraisers</h2>
+              </div>
+              <p className="text-muted-foreground">
+                Support real campaigns from families in need
+              </p>
+            </div>
+            <Link to="/apply">
+              <Button variant="outline" className="gap-2">
+                <PlusCircle className="w-4 h-4" />
+                Start a Fundraiser
+              </Button>
+            </Link>
+          </div>
 
-        {/* Stories Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-          {filteredStories.map((story) => (
-            <StoryCard key={story.id} story={story} />
-          ))}
-        </div>
+          {fundraisersLoading ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-card rounded-2xl border border-border overflow-hidden">
+                  <Skeleton className="h-48 w-full" />
+                  <div className="p-5 space-y-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-6 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-2 w-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : fundraisers && fundraisers.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {fundraisers.map((fundraiser) => (
+                <FundraiserCard key={fundraiser.id} fundraiser={fundraiser} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-muted/30 rounded-2xl border border-dashed border-border">
+              <Sparkles className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">Be the First to Start a Fundraiser</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                No active fundraisers yet. Start your own and receive support from generous donors in our community.
+              </p>
+              <Link to="/apply">
+                <Button className="gap-2">
+                  <PlusCircle className="w-4 h-4" />
+                  Start Your Fundraiser
+                </Button>
+              </Link>
+            </div>
+          )}
+        </section>
+
+        {/* Success Stories Section */}
+        <section className="mb-16">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+            <h2 className="text-2xl font-bold text-foreground">Success Stories</h2>
+          </div>
+          <p className="text-muted-foreground mb-8">
+            Inspiring stories from families who reached their goals
+          </p>
+
+          {/* Category Filter */}
+          <div className="flex flex-wrap gap-2 mb-8">
+            {categories.map((category) => (
+              <Button
+                key={category}
+                variant={activeCategory === category ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActiveCategory(category)}
+                className="capitalize"
+              >
+                {category === 'all' ? 'All Stories' : categoryLabels[category]}
+              </Button>
+            ))}
+          </div>
+
+          {/* Stories Grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredStories.map((story) => (
+              <StoryCard key={story.id} story={story} />
+            ))}
+          </div>
+        </section>
 
         {/* Top Donors Section */}
         <section className="mb-16">
