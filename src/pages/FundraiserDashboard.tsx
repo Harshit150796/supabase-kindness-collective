@@ -477,6 +477,9 @@ const FundraiserDashboard = () => {
         onClose={() => setShowShareModal(false)}
         shareUrl={shareUrl}
         title={fundraiser.title}
+        slug={fundraiser.unique_slug || undefined}
+        amountRaised={fundraiser.amount_raised}
+        goalAmount={fundraiser.monthly_goal}
       />
     </div>
   );

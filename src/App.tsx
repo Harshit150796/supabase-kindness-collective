@@ -18,6 +18,9 @@ import Stories from "./pages/Stories";
 import StoryDetail from "./pages/StoryDetail";
 import ApplyRecipient from "./pages/ApplyRecipient";
 import PublicFundraiser from "./pages/PublicFundraiser";
+import ProgressBarOverlay from "./pages/overlays/ProgressBarOverlay";
+import DonationAlertOverlay from "./pages/overlays/DonationAlertOverlay";
+import QRCodeOverlay from "./pages/overlays/QRCodeOverlay";
 import MyFundraisers from "./pages/MyFundraisers";
 import MyImpact from "./pages/MyImpact";
 import Profile from "./pages/Profile";
@@ -65,7 +68,12 @@ const AppRoutes = () => (
     <Route path="/faq" element={<FAQ />} />
     <Route path="/stories" element={<Stories />} />
     <Route path="/story/:id" element={<StoryDetail />} />
-    <Route path="/f/:slug" element={<PublicFundraiser />} />
+          <Route path="/f/:slug" element={<PublicFundraiser />} />
+          
+          {/* OBS/Streaming Overlay Routes */}
+          <Route path="/overlay/progress/:slug" element={<ProgressBarOverlay />} />
+          <Route path="/overlay/alerts/:slug" element={<DonationAlertOverlay />} />
+          <Route path="/overlay/qr/:slug" element={<QRCodeOverlay />} />
     <Route path="/auth" element={<Auth />} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/donation-success" element={<DonationSuccess />} />
