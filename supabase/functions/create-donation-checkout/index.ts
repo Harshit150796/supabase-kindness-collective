@@ -55,13 +55,41 @@ serve(async (req) => {
     // Calculate impact for metadata
     const mealsProvided = amount * 2;
     
-    console.log("Guest checkout mode - no customer prefill for privacy");
+    // Extract fraud prevention data from request headers
+    const userAgent = req.headers.get("user-agent") || "unknown";
+    const ipAddress = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() 
+      || req.headers.get("cf-connecting-ip") 
+      || req.headers.get("x-real-ip") 
+      || "unknown";
+    
+    console.log("Creating checkout with fraud metadata:", { userAgent: userAgent.substring(0, 50), ipAddress });
 
-    // Create Checkout session - always fresh, no customer prefill for privacy
+    // Create Checkout session with full payment hardening
     const session = await stripe.checkout.sessions.create({
-      // Don't set customer or customer_email - Stripe will collect email fresh
       locale: "en",
-      billing_address_collection: 'required', // Require full address for AVS checks (US banks reject zip-only)
+      
+      // CRITICAL: Full billing address for AVS checks (prevents US bank declines)
+      billing_address_collection: 'required',
+      
+      // Phone collection improves bank trust score
+      phone_number_collection: {
+        enabled: true,
+      },
+      
+      // Enable modern payment methods for better conversion
+      // Note: Apple Pay & Google Pay are enabled automatically with 'card' when configured in Stripe Dashboard
+      payment_method_types: ['card', 'link'],
+      
+      // 3D Secure configuration for international cards (SCA compliance)
+      payment_method_options: {
+        card: {
+          request_three_d_secure: 'automatic',
+        },
+      },
+      
+      // Prefill email for logged-in users (reduces friction)
+      ...(userEmail && { customer_email: userEmail }),
+      
       line_items: [
         {
           price_data: {
@@ -76,9 +104,10 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      payment_method_types: ["card"],
       success_url: `${req.headers.get("origin")}/donation-success?session_id={CHECKOUT_SESSION_ID}&amount=${amount}&meals=${mealsProvided}`,
       cancel_url: `${req.headers.get("origin")}/donation-cancelled`,
+      
+      // Session metadata for our records
       metadata: {
         type: "donation",
         amount: amount.toString(),
@@ -88,11 +117,20 @@ serve(async (req) => {
         donor_id: userId || "",
         donor_email: userEmail || "",
       },
+      
+      // Payment intent configuration for better tracking and fraud prevention
       payment_intent_data: {
+        // Clear statement descriptor so donors recognize the charge (max 22 chars)
+        statement_descriptor: 'COUPONDONATION',
+        statement_descriptor_suffix: 'DONATE',
         metadata: {
           type: "donation",
           amount: amount.toString(),
           meals_provided: mealsProvided.toString(),
+          brand_name: brandName || "",
+          // Fraud prevention: attach client info for Stripe Radar
+          user_agent: userAgent.substring(0, 500), // Stripe has metadata value limits
+          ip_address: ipAddress,
         },
       },
     });

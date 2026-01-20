@@ -165,6 +165,7 @@ export type Database = {
           category_id: string | null
           created_at: string
           currency: string | null
+          decline_reason: string | null
           donor_email: string | null
           donor_id: string | null
           fundraiser_id: string | null
@@ -186,6 +187,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           currency?: string | null
+          decline_reason?: string | null
           donor_email?: string | null
           donor_id?: string | null
           fundraiser_id?: string | null
@@ -207,6 +209,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           currency?: string | null
+          decline_reason?: string | null
           donor_email?: string | null
           donor_id?: string | null
           fundraiser_id?: string | null

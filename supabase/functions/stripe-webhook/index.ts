@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -24,7 +24,8 @@ serve(async (req) => {
     });
   }
 
-  const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
+  // Use aligned API version across all functions
+  const stripe = new Stripe(stripeSecretKey, { apiVersion: "2025-08-27.basil" });
 
   // Get the signature from headers
   const signature = req.headers.get("stripe-signature");
@@ -111,6 +112,7 @@ serve(async (req) => {
   }
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleSuccessfulPayment(
   stripe: Stripe,
   supabase: any,
@@ -134,13 +136,10 @@ async function handleSuccessfulPayment(
   const amount = (session.amount_total || 0) / 100; // Convert from cents
   const currency = session.currency || "usd";
 
-  // Calculate Stripe fee (2.9% + $0.30 for US)
-  const stripeFee = Number((amount * 0.029 + 0.30).toFixed(2));
-  const netAmount = Number((amount - stripeFee).toFixed(2));
-
-  // Get payment method details if available
+  // Get payment method details and ACTUAL Stripe fee from balance transaction
   let paymentMethod = null;
   let receiptUrl = null;
+  let actualStripeFee: number | null = null;
 
   if (session.payment_intent) {
     try {
@@ -152,9 +151,26 @@ async function handleSuccessfulPayment(
       const charge = paymentIntent.latest_charge as Stripe.Charge;
       if (charge) {
         receiptUrl = charge.receipt_url;
+        
+        // Get payment method details
         if (charge.payment_method_details?.card) {
           const card = charge.payment_method_details.card;
           paymentMethod = `${card.brand?.toUpperCase() || 'CARD'} •••• ${card.last4}`;
+        }
+        
+        // IMPORTANT: Get ACTUAL Stripe fee from balance transaction (not hardcoded estimate)
+        // This is more accurate for international cards with higher fees
+        if (charge.balance_transaction) {
+          try {
+            const balanceTransaction = await stripe.balanceTransactions.retrieve(
+              charge.balance_transaction as string
+            );
+            // Fee is in cents, convert to dollars
+            actualStripeFee = balanceTransaction.fee / 100;
+            console.log(`Actual Stripe fee from balance transaction: $${actualStripeFee}`);
+          } catch (btErr) {
+            console.error("Could not fetch balance transaction:", btErr);
+          }
         }
       }
     } catch (err: unknown) {
@@ -162,6 +178,10 @@ async function handleSuccessfulPayment(
       console.error(`Error fetching payment details: ${errorMessage}`);
     }
   }
+
+  // Fallback to estimated fee if we couldn't get actual (2.9% + $0.30 for US cards)
+  const stripeFee = actualStripeFee ?? Number((amount * 0.029 + 0.30).toFixed(2));
+  const netAmount = Number((amount - stripeFee).toFixed(2));
 
   // Extract metadata
   const metadata = session.metadata || {};
@@ -175,7 +195,7 @@ async function handleSuccessfulPayment(
     : (session.customer_details?.email || null);
 
   // Insert donation record
-  const donationData: any = {
+  const donationData: Record<string, unknown> = {
     amount,
     stripe_session_id: session.id,
     stripe_payment_intent_id: session.payment_intent as string,
@@ -201,9 +221,10 @@ async function handleSuccessfulPayment(
     throw error;
   }
 
-  console.log(`Donation recorded successfully for session ${session.id}`);
+  console.log(`Donation recorded successfully for session ${session.id}, fee: $${stripeFee}, net: $${netAmount}`);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleFailedPayment(
   supabase: any,
   session: Stripe.Checkout.Session,
@@ -231,6 +252,7 @@ async function handleFailedPayment(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleRefund(supabase: any, charge: Stripe.Charge) {
   console.log(`Processing refund for charge: ${charge.id}`);
 
@@ -258,11 +280,19 @@ async function handleRefund(supabase: any, charge: Stripe.Charge) {
   console.log(`Updated donation ${donation.id} status to ${status}`);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handlePaymentIntentFailed(
   supabase: any,
   paymentIntent: Stripe.PaymentIntent
 ) {
   console.log(`Processing failed payment intent: ${paymentIntent.id}`);
+
+  // Extract detailed decline reason for analytics
+  const lastError = paymentIntent.last_payment_error;
+  const declineCode = lastError?.decline_code || lastError?.code || 'unknown';
+  const declineMessage = lastError?.message || 'Payment declined';
+  
+  console.log(`Decline details - Code: ${declineCode}, Message: ${declineMessage}`);
 
   // Update any existing donation with this payment intent
   const { data: donation } = await supabase
@@ -274,8 +304,14 @@ async function handlePaymentIntentFailed(
   if (donation) {
     await supabase
       .from("donations")
-      .update({ status: "failed" })
+      .update({ 
+        status: "failed",
+        decline_reason: `${declineCode}: ${declineMessage}`,
+      })
       .eq("id", donation.id);
-    console.log(`Updated donation ${donation.id} status to failed`);
+    console.log(`Updated donation ${donation.id} status to failed with decline reason`);
+  } else {
+    // Log for analytics even if no donation record exists yet
+    console.log(`No donation record found for failed payment intent ${paymentIntent.id}. Decline: ${declineCode}`);
   }
 }
