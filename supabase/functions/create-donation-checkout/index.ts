@@ -61,6 +61,7 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       // Don't set customer or customer_email - Stripe will collect email fresh
       locale: "en",
+      billing_address_collection: 'required', // Require full address for AVS checks (US banks reject zip-only)
       line_items: [
         {
           price_data: {
