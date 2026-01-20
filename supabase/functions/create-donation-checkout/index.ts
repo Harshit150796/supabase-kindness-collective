@@ -15,7 +15,19 @@ serve(async (req) => {
   try {
     const { amount, brandName, brandId, userId, userEmail } = await req.json();
     
-    console.log("Creating donation checkout session:", { amount, brandName, brandId, userId: userId || 'anonymous', userEmail: userEmail || 'guest' });
+    // Determine trust level for Radar
+    const isAuthenticated = !!userId;
+    const isVerifiedDonor = !!(userEmail && userId); // Has account with verified email
+    
+    console.log("Creating donation checkout session:", { 
+      amount, 
+      brandName, 
+      brandId, 
+      userId: userId || 'anonymous', 
+      userEmail: userEmail || 'guest',
+      isAuthenticated,
+      isVerifiedDonor
+    });
 
     // Validate amount
     if (!amount || amount < 5 || amount > 500) {
@@ -128,6 +140,10 @@ serve(async (req) => {
           amount: amount.toString(),
           meals_provided: mealsProvided.toString(),
           brand_name: brandName || "",
+          // Trust signals for Stripe Radar - reduces false positives for known users
+          is_authenticated: isAuthenticated.toString(),
+          is_verified_donor: isVerifiedDonor.toString(),
+          donor_account_id: userId || "guest",
           // Fraud prevention: attach client info for Stripe Radar
           user_agent: userAgent.substring(0, 500), // Stripe has metadata value limits
           ip_address: ipAddress,
