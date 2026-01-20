@@ -71,60 +71,81 @@ export function DonationFlow() {
 
   const impact = getImpactMessage(amount);
 
-  const handleContinue = async () => {
+  const MAX_RETRIES = 2;
+
+  const handleContinue = async (retryCount: number = 0): Promise<void> => {
     if (step < 3) {
       setStep(step + 1);
-    } else {
-      // Process payment with Stripe
-      setIsProcessing(true);
-      setCheckoutUrl(null);
-      
-      try {
-        const { data, error } = await supabase.functions.invoke('create-donation-checkout', {
-          body: {
-            amount,
-            brandName: selectedBrandData?.name || '',
-            brandId: selectedBrand || '',
-            userId: user?.id || null,
-            userEmail: user?.email || null,
-          },
-        });
+      return;
+    }
+    
+    // Process payment with Stripe
+    setIsProcessing(true);
+    setCheckoutUrl(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('create-donation-checkout', {
+        body: {
+          amount,
+          brandName: selectedBrandData?.name || '',
+          brandId: selectedBrand || '',
+          userId: user?.id || null,
+          userEmail: user?.email || null,
+        },
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        if (data?.url) {
-          setCheckoutUrl(data.url);
-          
-          // Try to open in new tab first (more reliable for async handlers)
-          const newWindow = window.open(data.url, '_blank');
-          
-          if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-            // Popup was blocked, try direct redirect
-            toast({
-              title: 'Redirecting to payment...',
-              description: 'Opening Stripe checkout...',
-            });
-            window.location.href = data.url;
-          } else {
-            // New tab opened successfully
-            toast({
-              title: 'Payment page opened',
-              description: 'Complete your donation in the new tab. If you don\'t see it, check for blocked popups.',
-            });
-            setIsProcessing(false);
-          }
+      if (data?.url) {
+        setCheckoutUrl(data.url);
+        
+        // Try to open in new tab first (more reliable for async handlers)
+        const newWindow = window.open(data.url, '_blank');
+        
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          // Popup was blocked, try direct redirect
+          toast({
+            title: 'Redirecting to payment...',
+            description: 'Opening Stripe checkout...',
+          });
+          window.location.href = data.url;
         } else {
-          throw new Error('No checkout URL received from server');
+          // New tab opened successfully
+          toast({
+            title: 'Payment page opened',
+            description: 'Complete your donation in the new tab. If you don\'t see it, check for blocked popups.',
+          });
+          setIsProcessing(false);
         }
-      } catch (error) {
-        console.error('Checkout error:', error);
-        toast({
-          title: 'Payment Error',
-          description: error instanceof Error ? error.message : 'Unable to start checkout. Please try again.',
-          variant: 'destructive',
-        });
-        setIsProcessing(false);
+      } else {
+        throw new Error('No checkout URL received from server');
       }
+    } catch (error) {
+      console.error('Checkout error (attempt ' + (retryCount + 1) + '):', error);
+      
+      // Retry on transient network errors
+      const errorMessage = error instanceof Error ? error.message : '';
+      const isNetworkError = errorMessage.includes('network') || 
+                             errorMessage.includes('timeout') || 
+                             errorMessage.includes('fetch') ||
+                             errorMessage.includes('Failed to fetch');
+      
+      if (retryCount < MAX_RETRIES && isNetworkError) {
+        toast({
+          title: 'Connection issue',
+          description: 'Retrying...',
+        });
+        // Wait 1 second before retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return handleContinue(retryCount + 1);
+      }
+      
+      toast({
+        title: 'Payment Error',
+        description: error instanceof Error ? error.message : 'Unable to start checkout. Please try again.',
+        variant: 'destructive',
+      });
+      setIsProcessing(false);
     }
   };
 
@@ -231,7 +252,7 @@ export function DonationFlow() {
                 size="lg" 
                 className="w-full"
                 disabled={!selectedBrand}
-                onClick={handleContinue}
+                onClick={() => handleContinue()}
               >
                 Continue
                 <ArrowRight className="w-5 h-5 ml-2" />
@@ -317,7 +338,7 @@ export function DonationFlow() {
                 <Button 
                   size="lg" 
                   className="flex-1"
-                  onClick={handleContinue}
+                  onClick={() => handleContinue()}
                 >
                   Continue
                   <ArrowRight className="w-5 h-5 ml-2" />
@@ -415,7 +436,7 @@ export function DonationFlow() {
               <Button 
                   size="lg" 
                   className="flex-1"
-                  onClick={handleContinue}
+                  onClick={() => handleContinue()}
                   disabled={isProcessing}
                 >
                   {isProcessing ? (
