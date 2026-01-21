@@ -88,9 +88,8 @@ serve(async (req) => {
         enabled: true,
       },
       
-      // Enable modern payment methods for better conversion
-      // Note: Apple Pay & Google Pay are enabled automatically with 'card' when configured in Stripe Dashboard
-      payment_method_types: ['card', 'link'],
+      // Let Stripe dynamically show all enabled payment methods
+      // (Card, Apple Pay, Google Pay, Amazon Pay, Link, ACH - based on dashboard settings)
       
       // 3D Secure configuration for international cards (SCA compliance)
       payment_method_options: {
@@ -144,6 +143,9 @@ serve(async (req) => {
           is_authenticated: isAuthenticated.toString(),
           is_verified_donor: isVerifiedDonor.toString(),
           donor_account_id: userId || "guest",
+          // Amount-based trust signals for Radar rules
+          amount_tier: amount < 100 ? 'small' : amount < 500 ? 'medium' : 'large',
+          under_2000: 'true', // Explicit flag for Radar allow rule
           // Fraud prevention: attach client info for Stripe Radar
           user_agent: userAgent.substring(0, 500), // Stripe has metadata value limits
           ip_address: ipAddress,

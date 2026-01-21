@@ -42,7 +42,8 @@ serve(async (req) => {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    // CRITICAL: Use async version for Deno environment
+    event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
     console.log(`Received event: ${event.type}`);
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
