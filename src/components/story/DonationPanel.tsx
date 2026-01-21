@@ -57,7 +57,7 @@ export function DonationPanel({ story }: DonationPanelProps) {
           className="w-full gap-2 text-base"
           asChild
         >
-          <Link to="/auth?mode=signup&role=donor">
+          <Link to="/donate">
             <Heart className="w-5 h-5" />
             Donate Now
           </Link>
