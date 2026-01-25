@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { SessionSecurityProvider } from "@/components/auth/SessionSecurityProvider";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import HowItWorks from "./pages/HowItWorks";
@@ -123,7 +124,9 @@ const App = () => (
         <BrowserRouter>
           <ErrorBoundary>
             <AuthProvider>
-              <AppRoutes />
+              <SessionSecurityProvider>
+                <AppRoutes />
+              </SessionSecurityProvider>
             </AuthProvider>
           </ErrorBoundary>
         </BrowserRouter>
