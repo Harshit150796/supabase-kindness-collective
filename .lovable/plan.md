@@ -1,77 +1,56 @@
 
 
-## Plan: Show Recipient Portal for Dual-Role Users
+## Plan: Add Donor & Recipient Portal Links to My Account Menu
 
-### Current Situation
-
-Your account `aayushit0192@gmail.com` already has everything set up correctly:
-- Has both `donor` and `recipient` roles
-- Has a loyalty card (LC-D009AC52)
-- Has a pending verification (type: "yourself")
-
-**The problem**: The dashboard checks `donor` role before `recipient`, so you always see the Donor Portal.
+### Overview
+Add both "Donor Portal" and "Recipient Portal" options to the "My Account" dropdown menu, so all logged-in users can access either portal regardless of which roles they have. This gives users full control over which features they want to use.
 
 ---
 
-### Solution
+### Changes to Navbar.tsx
 
-Update the role priority in `DashboardLayout.tsx` to check `recipient` BEFORE `donor`.
+**1. Add new icons import:**
+```typescript
+import { DollarSign, Gift } from 'lucide-react';
+```
+
+**2. Add Portal section to dropdown menu (after Profile, before Your fundraisers):**
+
+```
+Profile
+─────────────
+Donor Portal        → /donor
+Recipient Portal    → /recipient
+─────────────
+Your fundraisers
+Your impact
+─────────────
+Account settings
+─────────────
+Sign out
+```
+
+**3. Add Portal section to mobile menu:**
+
+Add two new buttons for Donor Portal and Recipient Portal in the mobile menu section.
 
 ---
 
-### File: `src/components/layout/DashboardLayout.tsx`
+### Visual Layout (Desktop Dropdown)
 
-**Change 1: Update role checking order (lines 27-52)**
-
-From:
-```typescript
-if (hasRole('donor')) {
-  return [...donor items...];
-}
-return [...recipient items...];
-```
-
-To:
-```typescript
-if (hasRole('recipient')) {
-  return [...recipient items...];
-}
-return [...donor items...];
-```
-
-**Change 2: Update role label (line 55)**
-
-From:
-```typescript
-const roleLabel = hasRole('admin') ? 'Admin' : hasRole('donor') ? 'Donor' : 'Recipient';
-```
-
-To:
-```typescript
-const roleLabel = hasRole('admin') ? 'Admin' : hasRole('recipient') ? 'Recipient' : 'Donor';
-```
-
----
-
-### Result After Implementation
-
-When you log in to `aayushit0192@gmail.com`, you will see:
-
-| Sidebar Item | Route |
-|--------------|-------|
-| Dashboard | `/recipient` |
-| Coupons | `/recipient/coupons` |
-| Loyalty Card | `/recipient/loyalty-card` |
-| History | `/recipient/history` |
-| **Verification** | `/recipient/verification` |
-
-The Verification page (`/recipient/verification`) shows all the options:
-- Income-Based Assistance
-- Disability Support
-- Senior Citizen
-- **Student**
-- **Veteran**
-- Other Assistance Program
+| Icon | Label | Route |
+|------|-------|-------|
+| User | Profile | /profile |
+| --- | *separator* | --- |
+| DollarSign | Donor Portal | /donor |
+| Gift | Recipient Portal | /recipient |
+| --- | *separator* | --- |
+| Megaphone | Your fundraisers | /my-fundraisers |
+| Heart | Your impact | /my-impact |
+| --- | *separator* | --- |
+| Settings | Account settings | /settings |
+| --- | *separator* | --- |
+| LogOut | Sign out | *action* |
 
 ---
 
@@ -79,5 +58,53 @@ The Verification page (`/recipient/verification`) shows all the options:
 
 | File | Change |
 |------|--------|
-| `src/components/layout/DashboardLayout.tsx` | Swap recipient/donor priority in `getNavItems()` and `roleLabel` |
+| `src/components/layout/Navbar.tsx` | Add Donor Portal and Recipient Portal menu items to both desktop dropdown and mobile menu |
+
+---
+
+### Technical Details
+
+**Desktop dropdown additions (after Profile, before Your fundraisers):**
+```tsx
+<DropdownMenuSeparator />
+
+<DropdownMenuItem onClick={() => navigate('/donor')}>
+  <DollarSign className="w-4 h-4 mr-3" />
+  Donor Portal
+</DropdownMenuItem>
+<DropdownMenuItem onClick={() => navigate('/recipient')}>
+  <Gift className="w-4 h-4 mr-3" />
+  Recipient Portal
+</DropdownMenuItem>
+```
+
+**Mobile menu additions (after Profile button, before Your fundraisers):**
+```tsx
+<Button 
+  variant="outline" 
+  className="w-full justify-start gap-2" 
+  onClick={() => { navigate('/donor'); setMobileMenuOpen(false); }}
+>
+  <DollarSign className="w-4 h-4" />
+  Donor Portal
+</Button>
+<Button 
+  variant="outline" 
+  className="w-full justify-start gap-2" 
+  onClick={() => { navigate('/recipient'); setMobileMenuOpen(false); }}
+>
+  <Gift className="w-4 h-4" />
+  Recipient Portal
+</Button>
+```
+
+---
+
+### Result
+
+After this change, when any logged-in user clicks "My Account":
+- They will see both **Donor Portal** and **Recipient Portal** options
+- Clicking Donor Portal takes them to `/donor` with donation features
+- Clicking Recipient Portal takes them to `/recipient` with verification, coupons, and loyalty card features
+- Users have full control to access both sides of the platform
 
