@@ -249,6 +249,7 @@ const PublicFundraiser = () => {
           isOwner={isOwner}
           onAddPhotos={() => setShowImageModal(true)}
           fundraiserTitle={fundraiser.title}
+          coverPhotoUrl={fundraiser.cover_photo_url}
         />
         
         {/* Back button - positioned to work with both empty and filled states */}
