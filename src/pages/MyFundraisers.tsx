@@ -10,6 +10,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Megaphone, Users, DollarSign, Calendar, ExternalLink, Share2, Eye, Heart } from "lucide-react";
 
+interface FundraiserImage {
+  id: string;
+  image_url: string;
+  is_primary: boolean;
+}
+
 interface Fundraiser {
   id: string;
   title: string;
@@ -23,7 +29,18 @@ interface Fundraiser {
   donors_count: number;
   unique_slug: string | null;
   created_at: string;
+  fundraiser_images?: FundraiserImage[];
 }
+
+const getPrimaryImage = (fundraiser: Fundraiser): string | null => {
+  const primaryImg = fundraiser.fundraiser_images?.find(img => img.is_primary)?.image_url;
+  if (primaryImg) return primaryImg;
+  
+  const firstImg = fundraiser.fundraiser_images?.[0]?.image_url;
+  if (firstImg) return firstImg;
+  
+  return fundraiser.cover_photo_url;
+};
 
 const MyFundraisers = () => {
   const navigate = useNavigate();
@@ -48,10 +65,12 @@ const MyFundraisers = () => {
         return;
       }
 
-      // Try to fetch from new fundraisers table first
       const { data, error } = await supabase
         .from("fundraisers")
-        .select("*")
+        .select(`
+          *,
+          fundraiser_images (id, image_url, is_primary)
+        `)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -148,17 +167,20 @@ const MyFundraisers = () => {
                       <div className="flex flex-col md:flex-row">
                         {/* Cover image */}
                         <div className="w-full md:w-48 h-32 md:h-auto flex-shrink-0">
-                          {fundraiser.cover_photo_url ? (
-                            <img 
-                              src={fundraiser.cover_photo_url} 
-                              alt={fundraiser.title}
-                              className="w-full h-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-tr-none"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
-                              <Heart className="w-8 h-8 text-primary/30" />
-                            </div>
-                          )}
+                          {(() => {
+                            const imageUrl = getPrimaryImage(fundraiser);
+                            return imageUrl ? (
+                              <img 
+                                src={imageUrl} 
+                                alt={fundraiser.title}
+                                className="w-full h-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-tr-none"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
+                                <Heart className="w-8 h-8 text-primary/30" />
+                              </div>
+                            );
+                          })()}
                         </div>
                         
                         {/* Content */}
