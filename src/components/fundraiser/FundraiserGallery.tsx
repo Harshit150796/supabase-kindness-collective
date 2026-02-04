@@ -47,12 +47,12 @@ export function FundraiserGallery({
     // Check for legacy cover_photo_url fallback
     if (coverPhotoUrl) {
       return (
-        <div className="relative w-full h-64 lg:h-80">
-          <img
-            src={coverPhotoUrl}
-            alt={fundraiserTitle}
-            className="w-full h-full object-cover"
-          />
+      <div className="relative w-full h-64 lg:h-80 bg-muted/30">
+        <img
+          src={coverPhotoUrl}
+          alt={fundraiserTitle}
+          className="w-full h-full object-contain"
+        />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
           
           {isOwner && (
@@ -137,11 +137,11 @@ export function FundraiserGallery({
   // Single image
   if (sortedImages.length === 1) {
     return (
-      <div className="relative w-full h-64 lg:h-80">
+      <div className="relative w-full h-64 lg:h-80 bg-muted/30">
         <img
           src={sortedImages[0].image_url}
           alt={fundraiserTitle}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
         
@@ -164,11 +164,11 @@ export function FundraiserGallery({
   return (
     <div className="relative">
       {/* Main image */}
-      <div className="relative w-full h-64 lg:h-80 overflow-hidden">
+      <div className="relative w-full h-64 lg:h-80 overflow-hidden bg-muted/30">
         <img
           src={sortedImages[activeIndex].image_url}
           alt={`${fundraiserTitle} - Photo ${activeIndex + 1}`}
-          className="w-full h-full object-cover transition-opacity duration-300"
+          className="w-full h-full object-contain transition-opacity duration-300"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
 
