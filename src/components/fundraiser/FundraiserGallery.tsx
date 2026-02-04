@@ -42,29 +42,67 @@ export function FundraiserGallery({
 
   // No images - show placeholder
   if (images.length === 0) {
-    return (
-      <div className="w-full h-64 lg:h-80 bg-muted/50 flex flex-col items-center justify-center relative">
-        <div className="flex flex-col items-center gap-4 text-center px-4">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-            <Camera className="w-8 h-8 text-muted-foreground" />
-          </div>
-          
-          {isOwner ? (
-            <>
-              <div>
-                <p className="text-muted-foreground font-medium">No photos yet</p>
-                <p className="text-sm text-muted-foreground/70 mt-1">
-                  Add up to 3 photos to help tell your story
+    // Owner view - interactive dashed upload zone
+    if (isOwner) {
+      return (
+        <div className="w-full max-w-4xl mx-auto px-4 lg:px-8 pt-4">
+          <div 
+            onClick={onAddPhotos}
+            className="w-full h-56 lg:h-64 border-2 border-dashed border-muted-foreground/30 
+                 rounded-2xl bg-gradient-to-br from-muted/20 via-muted/30 to-muted/20
+                 flex flex-col items-center justify-center relative overflow-hidden cursor-pointer group
+                 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
+          >
+            {/* Subtle decorative background circles */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary/5 opacity-50" />
+              <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-primary/5 opacity-50" />
+            </div>
+
+            <div className="flex flex-col items-center gap-4 text-center px-6 relative z-10">
+              {/* Camera icon in gradient circle */}
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 
+                   flex items-center justify-center group-hover:scale-110 transition-transform duration-300
+                   shadow-lg shadow-primary/10">
+                <Camera className="w-7 h-7 text-primary" />
+              </div>
+              
+              {/* Text content */}
+              <div className="space-y-1">
+                <p className="text-foreground font-semibold text-lg">
+                  Add photos to tell your story
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Upload up to 3 images to help donors connect with your cause
                 </p>
               </div>
-              <Button onClick={onAddPhotos} className="gap-2">
+              
+              {/* Upload button */}
+              <Button 
+                size="lg" 
+                className="gap-2 rounded-full px-8 mt-2 shadow-md hover:shadow-lg transition-shadow"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddPhotos?.();
+                }}
+              >
                 <Plus className="w-4 h-4" />
-                Add Photos
+                Upload Photos
               </Button>
-            </>
-          ) : (
-            <p className="text-muted-foreground">No photos yet</p>
-          )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Visitor view - minimal placeholder
+    return (
+      <div className="w-full h-32 lg:h-40 flex items-center justify-center bg-gradient-to-br from-muted/30 to-muted/40">
+        <div className="flex items-center gap-3 text-muted-foreground px-4">
+          <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center">
+            <Camera className="w-5 h-5 opacity-60" />
+          </div>
+          <span className="text-sm font-medium">Photos coming soon</span>
         </div>
       </div>
     );
