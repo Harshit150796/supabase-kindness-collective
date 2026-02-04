@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Users, CheckCircle2 } from 'lucide-react';
+import { MapPin, Heart, ArrowRight, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { cn } from '@/lib/utils';
 
 interface Fundraiser {
   id: string;
@@ -15,6 +17,7 @@ interface Fundraiser {
   cover_photo_url?: string | null;
   country?: string | null;
   status: string;
+  created_at?: string;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -28,17 +31,31 @@ const categoryLabels: Record<string, string> = {
 };
 
 const categoryColors: Record<string, string> = {
-  food: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-  household: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  health: 'bg-red-500/10 text-red-600 border-red-500/20',
-  childcare: 'bg-pink-500/10 text-pink-600 border-pink-500/20',
-  education: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-  utilities: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
-  other: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
+  food: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  household: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  health: 'bg-red-500/20 text-red-400 border-red-500/30',
+  childcare: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
+  education: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  utilities: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  other: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
 };
 
 interface FundraiserCardProps {
   fundraiser: Fundraiser;
+}
+
+function getTimeAgo(dateString?: string): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return '1 day ago';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  return `${Math.floor(diffDays / 30)} months ago`;
 }
 
 export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
@@ -46,59 +63,111 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
     ? Math.min((fundraiser.amount_raised / fundraiser.monthly_goal) * 100, 100)
     : 0;
 
-  const defaultImage = 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=400&h=300&fit=crop';
+  const defaultImage = 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=600&h=400&fit=crop';
+  const timeAgo = getTimeAgo(fundraiser.created_at);
 
   return (
-    <Link to={`/f/${fundraiser.unique_slug}`} className="block">
-      <div className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-        {/* Image */}
-        <div className="relative h-48 overflow-hidden">
-          <img 
-            src={fundraiser.cover_photo_url || defaultImage} 
-            alt={fundraiser.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            onError={(e) => {
-              e.currentTarget.src = defaultImage;
-            }}
-          />
+    <Link to={`/f/${fundraiser.unique_slug}`} className="block group">
+      <div className="relative bg-card rounded-2xl border border-border overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/30">
+        {/* Image Section with Gradient Overlay */}
+        <div className="relative overflow-hidden">
+          <AspectRatio ratio={16 / 10}>
+            <img 
+              src={fundraiser.cover_photo_url || defaultImage} 
+              alt={fundraiser.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              onError={(e) => {
+                e.currentTarget.src = defaultImage;
+              }}
+            />
+            {/* Gradient overlay for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          </AspectRatio>
+
+          {/* Category Badge - Top Left */}
           <div className="absolute top-3 left-3">
-            <Badge className={`${categoryColors[fundraiser.category] || categoryColors.other} border`}>
+            <Badge className={cn(
+              "backdrop-blur-sm border text-xs font-medium",
+              categoryColors[fundraiser.category] || categoryColors.other
+            )}>
               {categoryLabels[fundraiser.category] || 'Support'}
             </Badge>
           </div>
+
+          {/* Live Indicator - Top Right */}
           {fundraiser.status === 'active' && (
             <div className="absolute top-3 right-3">
-              <div className="bg-primary/90 text-primary-foreground rounded-full p-1.5">
-                <CheckCircle2 className="w-4 h-4" />
+              <div className="flex items-center gap-1.5 bg-emerald-500/90 text-white rounded-full px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                </span>
+                Live
               </div>
             </div>
           )}
+
+          {/* Support Now CTA - Bottom Right (appears on hover) */}
+          <div className="absolute bottom-3 right-3 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+            <div className="flex items-center gap-1.5 bg-primary text-primary-foreground rounded-full px-4 py-2 text-sm font-semibold shadow-lg">
+              Support Now
+              <ArrowRight className="w-4 h-4" />
+            </div>
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="p-5">
-          {fundraiser.country && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-              <MapPin className="w-3.5 h-3.5" />
-              <span>{fundraiser.country}</span>
-            </div>
-          )}
-          
-          <h3 className="font-semibold text-lg text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">
+        {/* Content Section */}
+        <div className="p-5 space-y-3">
+          {/* Location & Time */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            {fundraiser.country && (
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5" />
+                <span>{fundraiser.country}</span>
+              </div>
+            )}
+            {timeAgo && (
+              <div className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                <span>{timeAgo}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Title */}
+          <h3 className="font-semibold text-lg text-foreground leading-tight line-clamp-2 group-hover:text-primary transition-colors">
             {fundraiser.title}
           </h3>
-          <p className="text-muted-foreground text-sm line-clamp-2 mb-4">{fundraiser.story}</p>
 
-          {/* Progress */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">${(fundraiser.amount_raised || 0).toLocaleString()} raised</span>
-              <span className="font-medium text-foreground">${fundraiser.monthly_goal.toLocaleString()} goal</span>
+          {/* Story Preview */}
+          <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">
+            {fundraiser.story}
+          </p>
+
+          {/* Progress Section */}
+          <div className="pt-2 space-y-3">
+            {/* Progress Bar */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center text-sm">
+                <span className="font-semibold text-foreground">
+                  ${(fundraiser.amount_raised || 0).toLocaleString()}
+                </span>
+                <span className="text-muted-foreground">
+                  of ${fundraiser.monthly_goal.toLocaleString()} goal
+                </span>
+              </div>
+              <Progress value={progressPercent} className="h-2" />
             </div>
-            <Progress value={progressPercent} className="h-2" />
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Users className="w-3 h-3" />
-              <span>{fundraiser.donors_count || 0} donors</span>
+
+            {/* Stats Row */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Heart className="w-4 h-4 text-rose-500 fill-rose-500/30" />
+                <span>{fundraiser.donors_count || 0} donors</span>
+              </div>
+              <div className="text-sm font-medium text-primary">
+                {Math.round(progressPercent)}% funded
+              </div>
             </div>
           </div>
         </div>
