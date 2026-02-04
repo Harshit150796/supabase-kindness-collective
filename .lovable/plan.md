@@ -1,110 +1,158 @@
 
 
-## Plan: Add Donor & Recipient Portal Links to My Account Menu
+## Plan: Ensure All Users Have Both Donor and Recipient Roles
 
-### Overview
-Add both "Donor Portal" and "Recipient Portal" options to the "My Account" dropdown menu, so all logged-in users can access either portal regardless of which roles they have. This gives users full control over which features they want to use.
+### Problem Analysis
+
+The database shows several accounts with incomplete role assignments:
+
+| Email | Roles | Issue |
+|-------|-------|-------|
+| aayushit0192@gmail.com | recipient, donor | OK |
+| aashiii1424@gmail.com | recipient only | Missing donor |
+| jackass6745@gmail.com | recipient only | Missing donor |
+| survivorstruggler@gmail.com | donor only | Missing recipient |
+| vish3544@gmail.com | recipient only | Missing donor |
+| cristiano0907977@gmail.com | donor only | Missing recipient |
+| connect.coupondonation@gmail.com | donor, recipient | OK |
+
+**Root cause**: The Auth.tsx signup only assigns the selected role, not both roles.
 
 ---
 
-### Changes to Navbar.tsx
+### Solution: Three-Part Fix
 
-**1. Add new icons import:**
+#### Part 1: Fix Auth.tsx to Assign Both Roles
+
+**File: `src/pages/Auth.tsx`**
+
+Modify the `handleOTPVerified` function to pass the second role as `additionalRoles`:
+
+**Current code (line 137-142):**
 ```typescript
-import { DollarSign, Gift } from 'lucide-react';
+const { error: signupError } = await signUp(
+  signupEmail,
+  signupPassword,
+  signupFullName,
+  targetRole  // Only assigns one role
+);
 ```
 
-**2. Add Portal section to dropdown menu (after Profile, before Your fundraisers):**
+**New code:**
+```typescript
+// Determine the additional role (opposite of selected)
+const additionalRole = targetRole === 'donor' ? 'recipient' : 'donor';
 
+const { error: signupError } = await signUp(
+  signupEmail,
+  signupPassword,
+  signupFullName,
+  targetRole,
+  [additionalRole]  // Now assigns both roles
+);
 ```
-Profile
-─────────────
-Donor Portal        → /donor
-Recipient Portal    → /recipient
-─────────────
-Your fundraisers
-Your impact
-─────────────
-Account settings
-─────────────
-Sign out
-```
-
-**3. Add Portal section to mobile menu:**
-
-Add two new buttons for Donor Portal and Recipient Portal in the mobile menu section.
 
 ---
 
-### Visual Layout (Desktop Dropdown)
+#### Part 2: Backfill Missing Roles for Existing Accounts
 
-| Icon | Label | Route |
-|------|-------|-------|
-| User | Profile | /profile |
-| --- | *separator* | --- |
-| DollarSign | Donor Portal | /donor |
-| Gift | Recipient Portal | /recipient |
-| --- | *separator* | --- |
-| Megaphone | Your fundraisers | /my-fundraisers |
-| Heart | Your impact | /my-impact |
-| --- | *separator* | --- |
-| Settings | Account settings | /settings |
-| --- | *separator* | --- |
-| LogOut | Sign out | *action* |
+Run a SQL migration to add missing roles to all existing users:
+
+```sql
+-- Add missing donor roles
+INSERT INTO user_roles (user_id, role)
+SELECT u.id, 'donor'::app_role
+FROM auth.users u
+WHERE NOT EXISTS (
+  SELECT 1 FROM user_roles ur 
+  WHERE ur.user_id = u.id AND ur.role = 'donor'
+)
+ON CONFLICT (user_id, role) DO NOTHING;
+
+-- Add missing recipient roles
+INSERT INTO user_roles (user_id, role)
+SELECT u.id, 'recipient'::app_role
+FROM auth.users u
+WHERE NOT EXISTS (
+  SELECT 1 FROM user_roles ur 
+  WHERE ur.user_id = u.id AND ur.role = 'recipient'
+)
+ON CONFLICT (user_id, role) DO NOTHING;
+
+-- Add missing loyalty cards for recipients without one
+INSERT INTO loyalty_cards (user_id, card_number)
+SELECT u.id, 'LC-' || UPPER(SUBSTR(MD5(u.id::text), 1, 8))
+FROM auth.users u
+WHERE NOT EXISTS (
+  SELECT 1 FROM loyalty_cards lc
+  WHERE lc.user_id = u.id
+)
+ON CONFLICT DO NOTHING;
+```
+
+---
+
+#### Part 3: Add Database Trigger for Future-Proofing (Optional)
+
+Create a trigger that automatically ensures both roles exist whenever a user is created or a role is added:
+
+```sql
+-- Function to ensure both roles exist
+CREATE OR REPLACE FUNCTION ensure_dual_roles()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- When a donor role is added, ensure recipient exists
+  IF NEW.role = 'donor' THEN
+    INSERT INTO user_roles (user_id, role)
+    VALUES (NEW.user_id, 'recipient')
+    ON CONFLICT (user_id, role) DO NOTHING;
+  END IF;
+  
+  -- When a recipient role is added, ensure donor exists
+  IF NEW.role = 'recipient' THEN
+    INSERT INTO user_roles (user_id, role)
+    VALUES (NEW.user_id, 'donor')
+    ON CONFLICT (user_id, role) DO NOTHING;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to run after role insert
+CREATE TRIGGER tr_ensure_dual_roles
+AFTER INSERT ON user_roles
+FOR EACH ROW
+EXECUTE FUNCTION ensure_dual_roles();
+```
+
+---
+
+### Implementation Summary
+
+| Component | Action | Purpose |
+|-----------|--------|---------|
+| `src/pages/Auth.tsx` | Add `additionalRole` parameter to signUp call | Fix new signups from Auth page |
+| SQL Migration | Insert missing donor/recipient roles | Fix existing accounts |
+| SQL Trigger (optional) | Auto-add opposite role on insert | Future-proof the system |
 
 ---
 
 ### Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/components/layout/Navbar.tsx` | Add Donor Portal and Recipient Portal menu items to both desktop dropdown and mobile menu |
+1. **src/pages/Auth.tsx** - Add additional role assignment in handleOTPVerified
+
+### Database Changes
+
+1. **Run SQL backfill** - Add missing roles and loyalty cards to existing accounts
+2. **Create trigger (optional)** - Auto-ensure dual roles on role insert
 
 ---
 
-### Technical Details
+### Result After Implementation
 
-**Desktop dropdown additions (after Profile, before Your fundraisers):**
-```tsx
-<DropdownMenuSeparator />
-
-<DropdownMenuItem onClick={() => navigate('/donor')}>
-  <DollarSign className="w-4 h-4 mr-3" />
-  Donor Portal
-</DropdownMenuItem>
-<DropdownMenuItem onClick={() => navigate('/recipient')}>
-  <Gift className="w-4 h-4 mr-3" />
-  Recipient Portal
-</DropdownMenuItem>
-```
-
-**Mobile menu additions (after Profile button, before Your fundraisers):**
-```tsx
-<Button 
-  variant="outline" 
-  className="w-full justify-start gap-2" 
-  onClick={() => { navigate('/donor'); setMobileMenuOpen(false); }}
->
-  <DollarSign className="w-4 h-4" />
-  Donor Portal
-</Button>
-<Button 
-  variant="outline" 
-  className="w-full justify-start gap-2" 
-  onClick={() => { navigate('/recipient'); setMobileMenuOpen(false); }}
->
-  <Gift className="w-4 h-4" />
-  Recipient Portal
-</Button>
-```
-
----
-
-### Result
-
-After this change, when any logged-in user clicks "My Account":
-- They will see both **Donor Portal** and **Recipient Portal** options
-- Clicking Donor Portal takes them to `/donor` with donation features
-- Clicking Recipient Portal takes them to `/recipient` with verification, coupons, and loyalty card features
-- Users have full control to access both sides of the platform
+- **survivorstruggler@gmail.com** will gain `recipient` role and can access Recipient Portal
+- **aashiii1424@gmail.com**, **jackass6745@gmail.com**, **vish3544@gmail.com** will gain `donor` role
+- **All future signups** (from Auth page or Apply flow) will automatically get both roles
+- **Every user** can access both Donor Portal and Recipient Portal from My Account menu
 
