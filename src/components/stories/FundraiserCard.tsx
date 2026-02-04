@@ -5,6 +5,12 @@ import { Progress } from '@/components/ui/progress';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { cn } from '@/lib/utils';
 
+interface FundraiserImage {
+  id: string;
+  image_url: string;
+  is_primary: boolean;
+}
+
 interface Fundraiser {
   id: string;
   title: string;
@@ -18,6 +24,7 @@ interface Fundraiser {
   country?: string | null;
   status: string;
   created_at?: string;
+  fundraiser_images?: FundraiserImage[];
 }
 
 const categoryLabels: Record<string, string> = {
@@ -63,7 +70,12 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
     ? Math.min((fundraiser.amount_raised / fundraiser.monthly_goal) * 100, 100)
     : 0;
 
-  const defaultImage = 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=600&h=400&fit=crop';
+  // Prefer image from fundraiser_images table, fallback to cover_photo_url
+  const primaryImage = fundraiser.fundraiser_images?.find(img => img.is_primary)?.image_url
+    || fundraiser.fundraiser_images?.[0]?.image_url
+    || fundraiser.cover_photo_url
+    || null;
+  
   const timeAgo = getTimeAgo(fundraiser.created_at);
 
   return (
@@ -72,14 +84,17 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
         {/* Image Section with Gradient Overlay */}
         <div className="relative overflow-hidden">
           <AspectRatio ratio={16 / 10}>
-            <img 
-              src={fundraiser.cover_photo_url || defaultImage} 
-              alt={fundraiser.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-              onError={(e) => {
-                e.currentTarget.src = defaultImage;
-              }}
-            />
+            {primaryImage ? (
+              <img 
+                src={primaryImage} 
+                alt={fundraiser.title}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              />
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <Heart className="w-12 h-12 text-muted-foreground/30" />
+              </div>
+            )}
             {/* Gradient overlay for text readability */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           </AspectRatio>

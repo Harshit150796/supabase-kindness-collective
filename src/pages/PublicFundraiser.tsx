@@ -18,6 +18,9 @@ import { ShareModal } from "@/components/apply/ShareModal";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
+import { FundraiserGallery } from "@/components/fundraiser/FundraiserGallery";
+import { ImageUploadModal } from "@/components/fundraiser/ImageUploadModal";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Fundraiser {
   id: string;
@@ -50,6 +53,13 @@ interface Profile {
   avatar_url: string | null;
 }
 
+interface FundraiserImage {
+  id: string;
+  image_url: string;
+  display_order: number;
+  is_primary: boolean;
+}
+
 const categoryLabels: Record<string, string> = {
   food: "Food & Groceries",
   household: "Household Essentials",
@@ -63,19 +73,40 @@ const categoryLabels: Record<string, string> = {
 const PublicFundraiser = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [fundraiser, setFundraiser] = useState<Fundraiser | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
   const [organizer, setOrganizer] = useState<Profile | null>(null);
+  const [images, setImages] = useState<FundraiserImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isOwner = user && fundraiser ? user.id === fundraiser.user_id : false;
 
   useEffect(() => {
     if (slug) {
       fetchFundraiser();
     }
   }, [slug]);
+
+  const fetchImages = async (fundraiserId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("fundraiser_images")
+        .select("*")
+        .eq("fundraiser_id", fundraiserId)
+        .order("display_order", { ascending: true });
+
+      if (!error && data) {
+        setImages(data);
+      }
+    } catch (err) {
+      console.error("Error fetching images:", err);
+    }
+  };
 
   const fetchFundraiser = async () => {
     try {
@@ -103,6 +134,7 @@ const PublicFundraiser = () => {
       setFundraiser(data);
       fetchDonations(data.id);
       fetchOrganizer(data.user_id);
+      fetchImages(data.id);
     } catch (err) {
       console.error("Error fetching fundraiser:", err);
       setError("Failed to load fundraiser");
@@ -209,31 +241,25 @@ const PublicFundraiser = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero section with cover photo */}
+      {/* Hero section with gallery */}
       <div className="relative">
-        {fundraiser.cover_photo_url ? (
-          <div className="w-full h-64 lg:h-80 relative">
-            <img
-              src={fundraiser.cover_photo_url}
-              alt={fundraiser.title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-          </div>
-        ) : (
-          <div className="w-full h-64 lg:h-80 bg-gradient-to-br from-primary/20 via-primary/10 to-background flex items-center justify-center relative">
-            <Heart className="w-24 h-24 text-primary/20" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-          </div>
-        )}
+        <FundraiserGallery
+          images={images}
+          isOwner={isOwner}
+          onAddPhotos={() => setShowImageModal(true)}
+          fundraiserTitle={fundraiser.title}
+        />
         
         {/* Back button */}
         <Link 
           to="/stories"
-          className="absolute top-4 left-4 lg:top-6 lg:left-6 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
+          className="absolute top-4 left-4 lg:top-6 lg:left-6 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors z-10"
         >
           <ChevronLeft className="w-5 h-5" />
         </Link>
+
+        {/* Extra padding when gallery has thumbnails */}
+        {images.length > 1 && <div className="h-10" />}
       </div>
 
       {/* Main content */}
@@ -468,6 +494,16 @@ const PublicFundraiser = () => {
         amountRaised={fundraiser.amount_raised}
         goalAmount={fundraiser.monthly_goal}
       />
+
+      {isOwner && fundraiser && (
+        <ImageUploadModal
+          open={showImageModal}
+          onClose={() => setShowImageModal(false)}
+          fundraiserId={fundraiser.id}
+          existingImages={images}
+          onImagesUpdated={() => fetchImages(fundraiser.id)}
+        />
+      )}
     </div>
   );
 };
