@@ -1,79 +1,55 @@
 
-## Plan: Fix Zoomed-In Images and Ensure Navigation Arrows
+## Plan: Fix Missing Image on Fundraiser Dashboard
 
-### Problem Analysis
+### Root Cause
 
-1. **Image appears zoomed in**: The current CSS uses `object-cover` which crops/fills the container, cutting off parts of the image
-2. **Navigation arrows**: Already implemented for multi-image galleries (lines 175-189), but only work with `fundraiser_images` table entries
+The `FundraiserDashboard.tsx` page does not pass the `coverPhotoUrl` prop to the `FundraiserGallery` component. We just added this prop for the public page (`PublicFundraiser.tsx`), but forgot to do the same for the owner's dashboard.
+
+**Current code (line 350-355):**
+```tsx
+<FundraiserGallery
+  images={images}
+  isOwner={true}
+  onAddPhotos={() => setShowImageModal(true)}
+  fundraiserTitle={fundraiser.title}
+/>
+```
+
+The `coverPhotoUrl` prop is missing, so when `fundraiser_images` is empty, the gallery shows the upload zone instead of the legacy image.
+
+---
 
 ### Solution
 
-**Change the image display mode** from `object-cover` to `object-contain` with a subtle background, so the full image is visible without cropping.
+Add the `coverPhotoUrl` prop to the `FundraiserGallery` component in `FundraiserDashboard.tsx`:
 
----
+**File: `src/pages/FundraiserDashboard.tsx`**
 
-### Implementation Details
+Update lines 350-355:
 
-#### File: `src/components/fundraiser/FundraiserGallery.tsx`
-
-**Update all image containers to use `object-contain` instead of `object-cover`:**
-
-| Section | Line | Change |
-|---------|------|--------|
-| Legacy fallback image | 54 | `object-cover` -> `object-contain` + add `bg-muted/50` |
-| Single image | 144 | `object-cover` -> `object-contain` + add `bg-muted/50` |
-| Multi-image gallery | 171 | `object-cover` -> `object-contain` + add `bg-muted/50` |
-| Thumbnails | 225 | Keep `object-cover` (thumbnails should be cropped) |
-
-**Changes:**
-
-1. **Line 50** - Legacy fallback container:
 ```tsx
-<div className="relative w-full h-64 lg:h-80 bg-muted/30">
-```
-
-2. **Line 54** - Legacy fallback image:
-```tsx
-className="w-full h-full object-contain"
-```
-
-3. **Line 140** - Single image container:
-```tsx
-<div className="relative w-full h-64 lg:h-80 bg-muted/30">
-```
-
-4. **Line 144** - Single image:
-```tsx
-className="w-full h-full object-contain"
-```
-
-5. **Line 167** - Multi-image container:
-```tsx
-<div className="relative w-full h-64 lg:h-80 overflow-hidden bg-muted/30">
-```
-
-6. **Line 171** - Multi-image gallery main image:
-```tsx
-className="w-full h-full object-contain transition-opacity duration-300"
+<FundraiserGallery
+  images={images}
+  isOwner={true}
+  onAddPhotos={() => setShowImageModal(true)}
+  fundraiserTitle={fundraiser.title}
+  coverPhotoUrl={fundraiser.cover_photo_url}
+/>
 ```
 
 ---
 
-### Visual Result
+### Result
 
-**Before:**
-- Image cropped to fill container (zoomed in, parts cut off)
-
-**After:**
-- Full image visible within container
-- Subtle background fills any empty space
-- Image maintains original aspect ratio
-- Navigation arrows already work for multiple images from `fundraiser_images` table
+After this change, the dashboard will:
+1. Show the uploaded image from the legacy `cover_photo_url` field
+2. Display a subtle "Manage Photos" button for the owner to add more images
+3. Match the behavior of the public fundraiser page
 
 ---
 
-### Note on Navigation Arrows
+### File to Modify
 
-The navigation arrows (left/right circles with chevrons) **already exist** in the code at lines 175-189. They appear automatically when there are 2+ images in the `fundraiser_images` table. 
-
-For this specific fundraiser, it only has one legacy `cover_photo_url` image, so no arrows are needed. When fundraisers have multiple images uploaded through the new system, the arrows will appear automatically.
+| File | Change |
+|------|--------|
+| `src/pages/FundraiserDashboard.tsx` | Add `coverPhotoUrl={fundraiser.cover_photo_url}` prop (line 355) |
