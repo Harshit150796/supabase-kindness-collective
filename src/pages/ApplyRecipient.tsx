@@ -351,6 +351,31 @@ const ApplyRecipient = () => {
 
   // Helper function to create fundraiser for a user
   const createFundraiserForUser = async (userId: string) => {
+    let coverPhotoUrl: string | null = null;
+
+    // Upload cover photo if provided
+    if (coverPhoto) {
+      const fileExt = coverPhoto.name.split('.').pop();
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase
+        .storage
+        .from('fundraiser-covers')
+        .upload(fileName, coverPhoto);
+
+      if (uploadError) {
+        console.error('Cover photo upload error:', uploadError);
+        // Continue without cover photo rather than failing the whole submission
+      } else {
+        const { data: urlData } = supabase
+          .storage
+          .from('fundraiser-covers')
+          .getPublicUrl(fileName);
+
+        coverPhotoUrl = urlData.publicUrl;
+      }
+    }
+
     const { data: fundraiserData, error: fundraiserError } = await supabase
       .from("fundraisers")
       .insert({
@@ -364,7 +389,8 @@ const ApplyRecipient = () => {
         unique_slug: generateUniqueSlug(title),
         country: country,
         zip_code: zipCode,
-        status: "pending",
+        status: "active",
+        cover_photo_url: coverPhotoUrl,
       })
       .select()
       .single();
