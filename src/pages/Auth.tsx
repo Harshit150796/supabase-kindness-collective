@@ -132,13 +132,17 @@ export default function Auth() {
     const { email: signupEmail, password: signupPassword, fullName: signupFullName, role: targetRole } = pendingSignupData;
     setLoading(true);
     
+    // Determine the additional role (opposite of selected) - all users get both roles
+    const additionalRole = targetRole === 'donor' ? 'recipient' : 'donor';
+    
     try {
-      // Step 1: Create the account
+      // Step 1: Create the account with both roles
       const { error: signupError } = await signUp(
         signupEmail,
         signupPassword,
         signupFullName,
-        targetRole
+        targetRole,
+        [additionalRole]
       );
 
       if (signupError) {
