@@ -187,8 +187,8 @@ export default function About() {
                     or adult should suffer from hunger or go without the basics needed to live."
                   </blockquote>
                   <a 
-                    href="https://linkedin.com/in/harshitagrawal" 
-                    target="_blank" 
+                    href="https://www.linkedin.com/in/harshit-agrawal-techie" 
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
                   >
@@ -216,8 +216,8 @@ export default function About() {
                     challenge. We built CouponDonation.com to make giving more accessible and measurable."
                   </blockquote>
                   <a 
-                    href="https://linkedin.com/in/paulsavluc" 
-                    target="_blank" 
+                    href="https://www.linkedin.com/in/paul-savluc/" 
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
                   >
