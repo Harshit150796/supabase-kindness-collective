@@ -1,152 +1,147 @@
 
-## Plan: Multi-Image Gallery for Fundraisers
+
+## Plan: Fix Fundraiser Dashboard UI/UX, Image Display & Add Delete Functionality
 
 ### Problem Summary
 
-The public fundraiser page (`/f/need-food-to-survive-i5nyg3`) currently shows a green heart placeholder because:
-1. `cover_photo_url` is `null` - this fundraiser was created before the image upload fix
-2. The current design shows a generic heart icon instead of a clear "no image" state
-3. There's no way for the owner to add/edit images after creation
+Based on my analysis:
+
+1. **Cover photo shows placeholder instead of uploaded image**
+   - The fundraiser has `cover_photo_url: null` in the database
+   - No entries exist in `fundraiser_images` table for this fundraiser
+   - The FundraiserDashboard doesn't use the new gallery system
+
+2. **UI/UX issues on the dashboard**
+   - The layout has awkward spacing and positioning
+   - The header card shows a generic heart icon instead of photos
+   - No integration with the `FundraiserGallery` component
+
+3. **No delete option for fundraiser owners**
+   - Missing UI to delete a fundraiser
+   - Missing RLS policy to allow owners to delete their fundraisers
+
+---
 
 ### Solution Overview
 
-**Goal:** Support up to 3 images per fundraiser with a clean gallery display and owner editing capability.
+**Part 1: Update FundraiserDashboard to use the gallery system**
+- Fetch images from `fundraiser_images` table
+- Integrate the `FundraiserGallery` component in the header
+- Add the `ImageUploadModal` for managing photos
+
+**Part 2: Improve overall UI/UX**
+- Better spacing and responsive layout
+- Cleaner header card design
+- Improved visual hierarchy
+
+**Part 3: Add delete fundraiser functionality**
+- Add RLS policy to allow owners to delete their fundraisers
+- Add a "Delete Fundraiser" button with confirmation dialog
+- Handle cascading deletion of images
 
 ---
 
-### Part 1: Database Schema Update
+### Implementation Details
 
-Create a new `fundraiser_images` table to support multiple images:
+#### Part 1: Database Migration - Enable Fundraiser Deletion
 
 ```sql
-CREATE TABLE fundraiser_images (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  fundraiser_id UUID NOT NULL REFERENCES fundraisers(id) ON DELETE CASCADE,
-  image_url TEXT NOT NULL,
-  display_order INTEGER NOT NULL DEFAULT 0,
-  is_primary BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
+-- Allow users to delete their own fundraisers
+CREATE POLICY "Users can delete own fundraisers"
+ON fundraisers FOR DELETE
+USING (auth.uid() = user_id);
 
--- Index for fast lookups
-CREATE INDEX idx_fundraiser_images_fundraiser_id ON fundraiser_images(fundraiser_id);
-
--- RLS policies
-ALTER TABLE fundraiser_images ENABLE ROW LEVEL SECURITY;
-
--- Anyone can view images
-CREATE POLICY "Public can view fundraiser images"
-ON fundraiser_images FOR SELECT USING (true);
-
--- Owners can manage their images
-CREATE POLICY "Owners can insert images"
-ON fundraiser_images FOR INSERT
-WITH CHECK (
-  EXISTS (SELECT 1 FROM fundraisers WHERE id = fundraiser_id AND user_id = auth.uid())
-);
-
-CREATE POLICY "Owners can delete images"
-ON fundraiser_images FOR DELETE
-USING (
-  EXISTS (SELECT 1 FROM fundraisers WHERE id = fundraiser_id AND user_id = auth.uid())
-);
+-- Cleanup: Delete associated images when fundraiser is deleted
+-- (Already handled by ON DELETE CASCADE on fundraiser_images)
 ```
 
----
+#### Part 2: Update FundraiserDashboard.tsx
 
-### Part 2: Public Fundraiser Page - Hero Section Redesign
+**Changes:**
 
-**File: `src/pages/PublicFundraiser.tsx`**
+1. **Import and state management**
+   - Import `FundraiserGallery` and `ImageUploadModal` components
+   - Add state for `images`, `showImageModal`, `showDeleteDialog`
+   - Add `fetchImages` function
 
-**When images exist:**
-- Display a clean image gallery with the primary image prominently shown
-- If multiple images, show thumbnail navigation below
-- Maintain the 16:10 aspect ratio for consistency
-- Smooth fade/slide transitions between images
+2. **Replace header card** with integrated gallery
+   ```tsx
+   {/* Before: Simple cover photo or heart placeholder */}
+   {/* After: Full FundraiserGallery component */}
+   <FundraiserGallery
+     images={images}
+     isOwner={true}
+     onAddPhotos={() => setShowImageModal(true)}
+     fundraiserTitle={fundraiser.title}
+   />
+   ```
 
-**When NO images exist:**
+3. **Add Quick Actions**
+   - Keep existing: Edit, Copy link, Invite co-organizers
+   - Add: **Delete Fundraiser** button (destructive styling)
 
-For **public visitors (non-owners):**
+4. **Add Delete Confirmation Dialog**
+   ```tsx
+   <AlertDialog open={showDeleteDialog}>
+     <AlertDialogContent>
+       <AlertDialogHeader>
+         <AlertDialogTitle>Delete Fundraiser?</AlertDialogTitle>
+         <AlertDialogDescription>
+           This action cannot be undone. All data including photos 
+           and donation history will be permanently deleted.
+         </AlertDialogDescription>
+       </AlertDialogHeader>
+       <AlertDialogFooter>
+         <AlertDialogCancel>Cancel</AlertDialogCancel>
+         <AlertDialogAction onClick={handleDelete}>
+           Delete
+         </AlertDialogAction>
+       </AlertDialogFooter>
+     </AlertDialogContent>
+   </AlertDialog>
+   ```
+
+5. **Improve layout spacing**
+   - Adjust padding and margins for cleaner look
+   - Better responsive breakpoints
+   - Consistent card shadows and borders
+
+#### Part 3: Visual Design Improvements
+
+**Header Section (with Gallery):**
 ```
-┌─────────────────────────────────────────────────┐
-│                                                 │
-│     ┌─────────────────────────────────────┐     │
-│     │                                     │     │
-│     │      ┌─────────────────────┐        │     │
-│     │      │    📷 (muted icon)  │        │     │
-│     │      └─────────────────────┘        │     │
-│     │                                     │     │
-│     │      No photos yet                  │     │
-│     │                                     │     │
-│     └─────────────────────────────────────┘     │
-│                                                 │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                                                         │
+│     ┌─────────────────────────────────────────────┐     │
+│     │                                             │     │
+│     │        FundraiserGallery Component          │     │
+│     │     (shows photos or "Add Photos" CTA)      │     │
+│     │                                             │     │
+│     └─────────────────────────────────────────────┘     │
+│                                                         │
+│  [Active ✓]                                             │
+│                                                         │
+│  Fundraiser Title                                       │
+│  Created Jan 7, 2026 • Food & Groceries                 │
+│                                                         │
+│  [View ↗]  [Share]  [Edit]                              │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
 ```
-- Clean, neutral gray background
-- Muted camera icon
-- Simple "No photos yet" text
-- No distraction from the story content below
 
-For **the fundraiser owner:**
+**Quick Actions Card:**
 ```
-┌─────────────────────────────────────────────────┐
-│                                                 │
-│     ┌─────────────────────────────────────┐     │
-│     │                                     │     │
-│     │        ┌───────────────────┐        │     │
-│     │        │    📷 + icon      │        │     │
-│     │        └───────────────────┘        │     │
-│     │                                     │     │
-│     │    [   + Add Photos (button)   ]    │     │
-│     │    Upload up to 3 photos            │     │
-│     │                                     │     │
-│     └─────────────────────────────────────┘     │
-│                                                 │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────┐
+│  Quick Actions          │
+├─────────────────────────┤
+│  ✏️  Edit fundraiser    │
+│  📋  Copy link          │
+│  📸  Manage photos      │
+│  👥  Invite co-organizers│
+│  ─────────────────────  │
+│  🗑️  Delete fundraiser  │  ← Destructive action
+└─────────────────────────┘
 ```
-- Clear call-to-action to upload photos
-- Explains the 3-image limit
-- Button opens an upload modal
-
----
-
-### Part 3: Image Upload Modal Component
-
-**New File: `src/components/fundraiser/ImageUploadModal.tsx`**
-
-A modal dialog that allows fundraiser owners to:
-- Upload up to 3 images (drag & drop or click to select)
-- Reorder images by dragging
-- Set the primary/cover image
-- Remove existing images
-
-Features:
-- Live preview of selected images
-- Progress indicator during upload
-- File validation (5MB max, image types only)
-- Clear visual feedback
-
----
-
-### Part 4: Update Existing Components
-
-**Files to modify:**
-1. `src/pages/PublicFundraiser.tsx` - Fetch and display gallery, detect owner, show upload CTA
-2. `src/pages/FundraiserDashboard.tsx` - Show gallery in header, add "Manage Photos" button
-3. `src/components/stories/FundraiserCard.tsx` - Show primary image from new table
-
----
-
-### Implementation Approach
-
-| Step | Description |
-|------|-------------|
-| 1 | Create `fundraiser_images` table with migration |
-| 2 | Create `ImageUploadModal` component |
-| 3 | Update `PublicFundraiser.tsx` to fetch images and show gallery/upload CTA |
-| 4 | Update `FundraiserDashboard.tsx` to show images and management |
-| 5 | Update `FundraiserCard.tsx` to use primary image from new table |
-| 6 | Migrate existing `cover_photo_url` data to new table (optional) |
 
 ---
 
@@ -154,52 +149,57 @@ Features:
 
 | File | Action |
 |------|--------|
-| `supabase/migrations/XXXXXX_create_fundraiser_images.sql` | Create new table |
-| `src/components/fundraiser/ImageUploadModal.tsx` | New component |
-| `src/pages/PublicFundraiser.tsx` | Add gallery + owner upload CTA |
-| `src/pages/FundraiserDashboard.tsx` | Add photo management |
-| `src/components/stories/FundraiserCard.tsx` | Use primary image |
+| `supabase/migrations/XXXXXX_allow_fundraiser_delete.sql` | Add DELETE policy |
+| `src/pages/FundraiserDashboard.tsx` | Major refactor with gallery, delete, improved UI |
 
 ---
 
-### User Experience After Implementation
+### Technical Changes in FundraiserDashboard.tsx
 
-**For fundraiser owners:**
-1. Visit their public page and see "Add Photos" if no images
-2. Click to open upload modal
-3. Drag and drop up to 3 images
-4. Images are uploaded to storage and saved to `fundraiser_images` table
-5. Gallery displays immediately on the public page
+1. **New imports:**
+   - `FundraiserGallery`, `ImageUploadModal`
+   - `AlertDialog` components
+   - `Trash2` icon
 
-**For donors/visitors:**
-1. See beautiful image gallery if photos exist
-2. See clean "No photos yet" placeholder if no photos
-3. Can still read the story and donate regardless
+2. **New state:**
+   ```typescript
+   const [images, setImages] = useState<FundraiserImage[]>([]);
+   const [showImageModal, setShowImageModal] = useState(false);
+   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+   const [isDeleting, setIsDeleting] = useState(false);
+   ```
 
-**On /stories page:**
-1. Cards show the primary image from each fundraiser
-2. Fallback to clean placeholder if no images
+3. **New functions:**
+   - `fetchImages()` - Fetch from `fundraiser_images` table
+   - `handleDeleteFundraiser()` - Delete fundraiser and redirect
+
+4. **Layout improvements:**
+   - Remove old cover photo section
+   - Add `FundraiserGallery` at top of page (full-width, no card wrapper)
+   - Better grid spacing with `gap-6`
+   - Consistent border radius (`rounded-2xl`)
 
 ---
 
-### Visual Design: Image Gallery (with images)
+### User Experience After Fix
 
-```
-┌─────────────────────────────────────────────────┐
-│                                                 │
-│    ┌───────────────────────────────────────┐    │
-│    │                                       │    │
-│    │          Primary Image                │    │
-│    │          (16:10 aspect)               │    │
-│    │                                       │    │
-│    └───────────────────────────────────────┘    │
-│                                                 │
-│    ┌─────┐  ┌─────┐  ┌─────┐                    │
-│    │ [1] │  │ [2] │  │ [3] │   ← Thumbnails     │
-│    └─────┘  └─────┘  └─────┘                    │
-│                                                 │
-└─────────────────────────────────────────────────┘
-```
+1. **Existing fundraisers with no images:**
+   - Show clean "No photos yet" state
+   - Owner sees "Add Photos" button
+   - Click opens ImageUploadModal
 
-Clicking a thumbnail smoothly transitions to show that image as the primary.
+2. **After uploading photos:**
+   - Photos display in gallery with navigation
+   - Primary photo shows as main image
+   - "Manage Photos" button to add/remove/reorder
+
+3. **Delete functionality:**
+   - Delete button visible in Quick Actions
+   - Confirmation dialog prevents accidental deletion
+   - After deletion, redirect to My Fundraisers page
+
+4. **Overall polish:**
+   - Consistent spacing and visual hierarchy
+   - Responsive on mobile and desktop
+   - Professional, trustworthy appearance
 
