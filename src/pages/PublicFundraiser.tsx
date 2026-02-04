@@ -243,7 +243,7 @@ const PublicFundraiser = () => {
       <Navbar />
 
       {/* Hero section with gallery */}
-      <div className="relative pt-2">
+      <div className="relative">
         <FundraiserGallery
           images={images}
           isOwner={isOwner}
@@ -254,21 +254,21 @@ const PublicFundraiser = () => {
         {/* Back button - positioned to work with both empty and filled states */}
         <Link 
           to="/stories"
-          className="absolute top-6 left-4 lg:left-8 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm 
-               flex items-center justify-center hover:bg-background transition-colors z-10 
-               border border-border/50 shadow-sm"
+          className="absolute top-8 left-4 lg:left-8 w-10 h-10 rounded-full bg-background/90 backdrop-blur-sm 
+               flex items-center justify-center hover:bg-background transition-colors z-20 
+               border border-border shadow-sm"
         >
           <ChevronLeft className="w-5 h-5" />
         </Link>
 
         {/* Extra padding when gallery has thumbnails */}
-        {images.length > 1 && <div className="h-10" />}
+        {images.length > 1 && <div className="h-12" />}
       </div>
 
       {/* Main content - adjust margin based on whether images exist */}
       <div className={cn(
-        "max-w-6xl mx-auto px-4 lg:px-8 relative z-10",
-        images.length === 0 ? "mt-6" : "-mt-20"
+        "max-w-6xl mx-auto px-4 lg:px-8 relative z-10 pb-24 lg:pb-8",
+        images.length === 0 ? "-mt-2" : "-mt-20"
       )}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left column - Story content */}
