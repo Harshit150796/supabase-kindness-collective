@@ -15,6 +15,7 @@ interface FundraiserGalleryProps {
   isOwner: boolean;
   onAddPhotos?: () => void;
   fundraiserTitle: string;
+  coverPhotoUrl?: string | null;
 }
 
 export function FundraiserGallery({
@@ -22,6 +23,7 @@ export function FundraiserGallery({
   isOwner,
   onAddPhotos,
   fundraiserTitle,
+  coverPhotoUrl,
 }: FundraiserGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -40,8 +42,34 @@ export function FundraiserGallery({
     setActiveIndex((prev) => (prev - 1 + sortedImages.length) % sortedImages.length);
   };
 
-  // No images - show placeholder
+  // No images in fundraiser_images table - check for legacy fallback
   if (images.length === 0) {
+    // Check for legacy cover_photo_url fallback
+    if (coverPhotoUrl) {
+      return (
+        <div className="relative w-full h-64 lg:h-80">
+          <img
+            src={coverPhotoUrl}
+            alt={fundraiserTitle}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+          
+          {isOwner && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="absolute bottom-4 right-4 gap-1.5 backdrop-blur-sm"
+              onClick={onAddPhotos}
+            >
+              <Camera className="w-4 h-4" />
+              Manage Photos
+            </Button>
+          )}
+        </div>
+      );
+    }
+
     // Owner view - interactive dashed upload zone
     if (isOwner) {
       return (
