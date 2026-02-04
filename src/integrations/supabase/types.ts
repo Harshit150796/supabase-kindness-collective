@@ -242,6 +242,41 @@ export type Database = {
           },
         ]
       }
+      fundraiser_images: {
+        Row: {
+          created_at: string | null
+          display_order: number
+          fundraiser_id: string
+          id: string
+          image_url: string
+          is_primary: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number
+          fundraiser_id: string
+          id?: string
+          image_url: string
+          is_primary?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number
+          fundraiser_id?: string
+          id?: string
+          image_url?: string
+          is_primary?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fundraiser_images_fundraiser_id_fkey"
+            columns: ["fundraiser_id"]
+            isOneToOne: false
+            referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fundraisers: {
         Row: {
           amount_raised: number | null
