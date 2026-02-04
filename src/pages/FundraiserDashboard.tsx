@@ -352,6 +352,7 @@ const FundraiserDashboard = () => {
                 isOwner={true}
                 onAddPhotos={() => setShowImageModal(true)}
                 fundraiserTitle={fundraiser.title}
+                coverPhotoUrl={fundraiser.cover_photo_url}
               />
             </div>
           </div>
