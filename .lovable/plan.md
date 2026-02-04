@@ -1,55 +1,83 @@
 
-## Plan: Fix Missing Image on Fundraiser Dashboard
 
-### Root Cause
+## Plan: Show Recipient Portal for Dual-Role Users
 
-The `FundraiserDashboard.tsx` page does not pass the `coverPhotoUrl` prop to the `FundraiserGallery` component. We just added this prop for the public page (`PublicFundraiser.tsx`), but forgot to do the same for the owner's dashboard.
+### Current Situation
 
-**Current code (line 350-355):**
-```tsx
-<FundraiserGallery
-  images={images}
-  isOwner={true}
-  onAddPhotos={() => setShowImageModal(true)}
-  fundraiserTitle={fundraiser.title}
-/>
-```
+Your account `aayushit0192@gmail.com` already has everything set up correctly:
+- Has both `donor` and `recipient` roles
+- Has a loyalty card (LC-D009AC52)
+- Has a pending verification (type: "yourself")
 
-The `coverPhotoUrl` prop is missing, so when `fundraiser_images` is empty, the gallery shows the upload zone instead of the legacy image.
+**The problem**: The dashboard checks `donor` role before `recipient`, so you always see the Donor Portal.
 
 ---
 
 ### Solution
 
-Add the `coverPhotoUrl` prop to the `FundraiserGallery` component in `FundraiserDashboard.tsx`:
+Update the role priority in `DashboardLayout.tsx` to check `recipient` BEFORE `donor`.
 
-**File: `src/pages/FundraiserDashboard.tsx`**
+---
 
-Update lines 350-355:
+### File: `src/components/layout/DashboardLayout.tsx`
 
-```tsx
-<FundraiserGallery
-  images={images}
-  isOwner={true}
-  onAddPhotos={() => setShowImageModal(true)}
-  fundraiserTitle={fundraiser.title}
-  coverPhotoUrl={fundraiser.cover_photo_url}
-/>
+**Change 1: Update role checking order (lines 27-52)**
+
+From:
+```typescript
+if (hasRole('donor')) {
+  return [...donor items...];
+}
+return [...recipient items...];
+```
+
+To:
+```typescript
+if (hasRole('recipient')) {
+  return [...recipient items...];
+}
+return [...donor items...];
+```
+
+**Change 2: Update role label (line 55)**
+
+From:
+```typescript
+const roleLabel = hasRole('admin') ? 'Admin' : hasRole('donor') ? 'Donor' : 'Recipient';
+```
+
+To:
+```typescript
+const roleLabel = hasRole('admin') ? 'Admin' : hasRole('recipient') ? 'Recipient' : 'Donor';
 ```
 
 ---
 
-### Result
+### Result After Implementation
 
-After this change, the dashboard will:
-1. Show the uploaded image from the legacy `cover_photo_url` field
-2. Display a subtle "Manage Photos" button for the owner to add more images
-3. Match the behavior of the public fundraiser page
+When you log in to `aayushit0192@gmail.com`, you will see:
+
+| Sidebar Item | Route |
+|--------------|-------|
+| Dashboard | `/recipient` |
+| Coupons | `/recipient/coupons` |
+| Loyalty Card | `/recipient/loyalty-card` |
+| History | `/recipient/history` |
+| **Verification** | `/recipient/verification` |
+
+The Verification page (`/recipient/verification`) shows all the options:
+- Income-Based Assistance
+- Disability Support
+- Senior Citizen
+- **Student**
+- **Veteran**
+- Other Assistance Program
 
 ---
 
-### File to Modify
+### Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/pages/FundraiserDashboard.tsx` | Add `coverPhotoUrl={fundraiser.cover_photo_url}` prop (line 355) |
+| `src/components/layout/DashboardLayout.tsx` | Swap recipient/donor priority in `getNavItems()` and `roleLabel` |
+
