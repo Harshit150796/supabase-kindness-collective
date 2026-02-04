@@ -54,11 +54,17 @@ interface UnifiedStory {
 }
 
 function mapFundraiserToStory(f: Fundraiser): UnifiedStory {
+  // Prefer image from fundraiser_images table, fallback to cover_photo_url
+  const primaryImage = f.fundraiser_images?.find(img => img.is_primary)?.image_url
+    || f.fundraiser_images?.[0]?.image_url
+    || f.cover_photo_url
+    || 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=400&h=300&fit=crop';
+  
   return {
     id: f.id,
     name: f.title,
     location: f.country || 'United States',
-    image: f.cover_photo_url || 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=400&h=300&fit=crop',
+    image: primaryImage,
     story: f.story,
     impact: 'Active Campaign',
     category: f.category,
