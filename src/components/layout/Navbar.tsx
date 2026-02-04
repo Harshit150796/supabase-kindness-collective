@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { Coins, Menu, X, User, LogOut, Megaphone, Heart, Settings } from 'lucide-react';
+import { Coins, Menu, X, User, LogOut, Megaphone, Heart, Settings, DollarSign, Gift } from 'lucide-react';
 import { useState } from 'react';
 import {
   DropdownMenu,
@@ -84,6 +84,17 @@ export function Navbar() {
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
                     <User className="w-4 h-4 mr-3" />
                     Profile
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem onClick={() => navigate('/donor')}>
+                    <DollarSign className="w-4 h-4 mr-3" />
+                    Donor Portal
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/recipient')}>
+                    <Gift className="w-4 h-4 mr-3" />
+                    Recipient Portal
                   </DropdownMenuItem>
                   
                   <DropdownMenuSeparator />
@@ -200,6 +211,22 @@ export function Navbar() {
                   >
                     <User className="w-4 h-4" />
                     Profile
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start gap-2" 
+                    onClick={() => { navigate('/donor'); setMobileMenuOpen(false); }}
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    Donor Portal
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start gap-2" 
+                    onClick={() => { navigate('/recipient'); setMobileMenuOpen(false); }}
+                  >
+                    <Gift className="w-4 h-4" />
+                    Recipient Portal
                   </Button>
                   <Button 
                     variant="ghost" 
