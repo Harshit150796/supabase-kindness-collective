@@ -1,200 +1,184 @@
 
 
-## Plan: Refine Empty State UI/UX for Premium Alignment
+## Plan: Ensure Fundraiser Images Display Everywhere
 
-### Current Issues Identified
+### Problem Analysis
 
-Based on your screenshot, the empty state shows:
-1. **Misalignment** - The upload zone appears to float awkwardly without clear visual boundaries
-2. **Disconnected from content** - Large gap between the photo zone and the content cards below
-3. **Basic styling** - No visible dashed border or gradient effects showing (may be subtle)
-4. **Text mismatch** - Shows "No photos yet" instead of the more inviting messaging
+I've identified the root cause and all affected locations:
+
+**Root Cause on MyFundraisers page:**
+The `/my-fundraisers` page (lines 51-56) only fetches `*` from the `fundraisers` table:
+```typescript
+const { data, error } = await supabase
+  .from("fundraisers")
+  .select("*")  // ❌ Does NOT include fundraiser_images relation
+  .eq("user_id", user.id)
+```
+
+It then displays images using only `cover_photo_url` (line 151), which is the legacy field that's likely `null` for newer fundraisers that use the `fundraiser_images` table.
+
+**All Locations Where Fundraisers Are Displayed:**
+
+| Location | File | Current Image Logic | Status |
+|----------|------|---------------------|--------|
+| My Fundraisers | `src/pages/MyFundraisers.tsx` | Only uses `cover_photo_url` | BROKEN - needs fix |
+| Public Fundraiser | `src/pages/PublicFundraiser.tsx` | Fetches `fundraiser_images` separately | Works correctly |
+| Fundraiser Dashboard | `src/pages/FundraiserDashboard.tsx` | Fetches `fundraiser_images` separately | Works correctly |
+| Stories Page | `src/pages/Stories.tsx` | Uses `FundraiserCard` with `useFundraisers` hook | Works correctly |
+| Landing Impact Stories | `src/components/landing/ImpactStories.tsx` | Uses `useFundraisers` but only uses `cover_photo_url` in mapping | BROKEN - needs fix |
+| Fundraiser Card | `src/components/stories/FundraiserCard.tsx` | Prefers `fundraiser_images`, falls back to `cover_photo_url` | Works correctly |
 
 ---
 
-### Enhanced Design Solution
+### Solution Overview
 
-I'll refine the empty state to be more visually integrated and premium-looking:
+**Fix 1: Update MyFundraisers.tsx**
+- Add `fundraiser_images` to the Supabase query using a join
+- Update the interface to include the images array
+- Update the image display logic to prefer images from the new table
 
-**Visual Design:**
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│  [<]                                                                 │
-│                                                                      │
-│    ┌─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┐    │
-│    │                                                             │    │
-│    │                     ┌───────────┐                           │    │
-│    │                     │    📷     │                           │    │
-│    │                     └───────────┘                           │    │
-│    │                                                             │    │
-│    │              Add photos to tell your story                  │    │
-│    │          Upload up to 3 images to help donors               │    │
-│    │               connect with your cause                       │    │
-│    │                                                             │    │
-│    │                 [  + Upload Photos  ]                       │    │
-│    │                                                             │    │
-│    └─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┘    │
-│                                                                      │
-├──────────────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────┐   ┌─────────────────────────┐   │
-│  │  Food & Groceries  ✓ Verified   │   │    0%     $0 raised    │   │
-│  │                                 │   │   funded               │   │
-│  │  Help Feed My Family...         │   │                         │   │
-│  └─────────────────────────────────┘   └─────────────────────────┘   │
-└──────────────────────────────────────────────────────────────────────┘
-```
+**Fix 2: Update ImpactStories.tsx**
+- Update the `mapFundraiserToStory` function to use images from `fundraiser_images` table first, falling back to `cover_photo_url`
 
 ---
 
 ### Implementation Details
 
-#### File: `src/components/fundraiser/FundraiserGallery.tsx`
+#### File 1: `src/pages/MyFundraisers.tsx`
 
-**Key improvements to the owner empty state:**
+**1. Update the interface (around line 13):**
+```typescript
+interface FundraiserImage {
+  id: string;
+  image_url: string;
+  is_primary: boolean;
+}
 
-1. **More visible dashed border** - Increase opacity from `/30` to `/40`
-2. **Stronger hover effect** - More prominent color change on hover
-3. **Better proportions** - Slightly reduced height for better balance
-4. **Improved icon styling** - Larger, more prominent camera icon
-5. **Cleaner text hierarchy** - Better font weights and spacing
-
-```tsx
-// Owner view - interactive dashed upload zone
-if (isOwner) {
-  return (
-    <div className="w-full max-w-4xl mx-auto px-4 lg:px-8 py-6">
-      <div 
-        onClick={onAddPhotos}
-        className="w-full h-52 lg:h-60 border-2 border-dashed border-muted-foreground/40 
-             rounded-2xl bg-gradient-to-br from-muted/30 via-muted/40 to-muted/30
-             flex flex-col items-center justify-center relative overflow-hidden cursor-pointer group
-             hover:border-primary/60 hover:bg-primary/5 transition-all duration-300"
-      >
-        {/* Subtle decorative background circles */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-primary/5" />
-          <div className="absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-primary/5" />
-        </div>
-
-        <div className="flex flex-col items-center gap-3 text-center px-8 relative z-10">
-          {/* Camera icon in circle */}
-          <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20
-               flex items-center justify-center group-hover:scale-105 group-hover:bg-primary/15 
-               transition-all duration-300">
-            <Camera className="w-6 h-6 text-primary" />
-          </div>
-          
-          {/* Text content */}
-          <div className="space-y-1">
-            <p className="text-foreground font-medium text-base">
-              Add photos to tell your story
-            </p>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              Upload up to 3 images to help donors connect with your cause
-            </p>
-          </div>
-          
-          {/* Upload button */}
-          <Button 
-            size="default" 
-            className="gap-2 rounded-full px-6 mt-1"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddPhotos?.();
-            }}
-          >
-            <Plus className="w-4 h-4" />
-            Add Photos
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
+interface Fundraiser {
+  id: string;
+  title: string;
+  story: string;
+  category: string;
+  beneficiary_type: string;
+  monthly_goal: number;
+  cover_photo_url: string | null;
+  status: string;
+  amount_raised: number;
+  donors_count: number;
+  unique_slug: string | null;
+  created_at: string;
+  fundraiser_images?: FundraiserImage[];  // ADD THIS
 }
 ```
 
-2. **Visitor empty state** - More subtle, doesn't distract from content:
-```tsx
-return (
-  <div className="w-full h-28 lg:h-32 flex items-center justify-center bg-muted/30">
-    <div className="flex items-center gap-2.5 text-muted-foreground/70">
-      <Camera className="w-5 h-5" />
-      <span className="text-sm">Photos coming soon</span>
-    </div>
-  </div>
-);
+**2. Update the Supabase query (around line 52):**
+```typescript
+const { data, error } = await supabase
+  .from("fundraisers")
+  .select(`
+    *,
+    fundraiser_images (id, image_url, is_primary)
+  `)
+  .eq("user_id", user.id)
+  .order("created_at", { ascending: false });
+```
+
+**3. Add helper function to get primary image:**
+```typescript
+const getPrimaryImage = (fundraiser: Fundraiser): string | null => {
+  // Prefer image from fundraiser_images table
+  const primaryImg = fundraiser.fundraiser_images?.find(img => img.is_primary)?.image_url;
+  if (primaryImg) return primaryImg;
+  
+  // Fallback to first image in the array
+  const firstImg = fundraiser.fundraiser_images?.[0]?.image_url;
+  if (firstImg) return firstImg;
+  
+  // Final fallback to legacy cover_photo_url
+  return fundraiser.cover_photo_url;
+};
+```
+
+**4. Update the image rendering (around line 150-161):**
+```typescript
+{/* Cover image */}
+<div className="w-full md:w-48 h-32 md:h-auto flex-shrink-0">
+  {(() => {
+    const imageUrl = getPrimaryImage(fundraiser);
+    return imageUrl ? (
+      <img 
+        src={imageUrl} 
+        alt={fundraiser.title}
+        className="w-full h-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-tr-none"
+      />
+    ) : (
+      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
+        <Heart className="w-8 h-8 text-primary/30" />
+      </div>
+    );
+  })()}
+</div>
 ```
 
 ---
 
-#### File: `src/pages/PublicFundraiser.tsx`
+#### File 2: `src/components/landing/ImpactStories.tsx`
 
-**Layout adjustments for better content flow:**
+**Update the `mapFundraiserToStory` function (around line 56-71):**
 
-1. Remove the conditional margin that creates disconnect
-2. Add consistent spacing between sections
-3. Ensure back button stays properly positioned
-
-```tsx
-{/* Hero section with gallery */}
-<div className="relative">
-  <FundraiserGallery
-    images={images}
-    isOwner={isOwner}
-    onAddPhotos={() => setShowImageModal(true)}
-    fundraiserTitle={fundraiser.title}
-  />
+```typescript
+function mapFundraiserToStory(f: Fundraiser): UnifiedStory {
+  // Prefer image from fundraiser_images table, fallback to cover_photo_url
+  const primaryImage = f.fundraiser_images?.find(img => img.is_primary)?.image_url
+    || f.fundraiser_images?.[0]?.image_url
+    || f.cover_photo_url
+    || 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=400&h=300&fit=crop';
   
-  {/* Back button */}
-  <Link 
-    to="/stories"
-    className="absolute top-8 left-4 lg:left-8 w-10 h-10 rounded-full bg-background/90 backdrop-blur-sm 
-         flex items-center justify-center hover:bg-background transition-colors z-20 
-         border border-border shadow-sm"
-  >
-    <ChevronLeft className="w-5 h-5" />
-  </Link>
-
-  {/* Spacing for thumbnails */}
-  {images.length > 1 && <div className="h-12" />}
-</div>
-
-{/* Main content */}
-<div className={cn(
-  "max-w-6xl mx-auto px-4 lg:px-8 relative z-10 pb-24 lg:pb-8",
-  images.length === 0 ? "-mt-2" : "-mt-20"
-)}>
+  return {
+    id: f.id,
+    name: f.title,
+    location: f.country || 'United States',
+    image: primaryImage,
+    story: f.story,
+    impact: 'Active Campaign',
+    category: f.category,
+    donorsCount: f.donors_count || 0,
+    amountRaised: f.amount_raised || 0,
+    goal: f.monthly_goal,
+    type: 'fundraiser',
+    slug: f.unique_slug,
+  };
+}
 ```
 
 ---
 
 ### Summary of Changes
 
-| Component | Change |
-|-----------|--------|
-| `FundraiserGallery.tsx` | Increase border opacity, refine proportions, improve hover states, cleaner text |
-| `PublicFundraiser.tsx` | Adjust spacing, fix back button positioning, smoother content flow |
+| File | Change |
+|------|--------|
+| `src/pages/MyFundraisers.tsx` | Add `FundraiserImage` interface, update query to include `fundraiser_images`, add `getPrimaryImage` helper, update image rendering |
+| `src/components/landing/ImpactStories.tsx` | Update `mapFundraiserToStory` to prefer `fundraiser_images` over `cover_photo_url` |
 
 ---
 
-### Visual Improvements
+### Image Priority Logic (Consistent Everywhere)
 
-| Aspect | Before | After |
-|--------|--------|-------|
-| Border visibility | Light `/30` | More visible `/40` |
-| Height | `h-56 lg:h-64` | `h-52 lg:h-60` (more balanced) |
-| Padding | `pt-4` only | `py-6` (even spacing) |
-| Icon size | `w-16 h-16` circle | `w-14 h-14` (more refined) |
-| Button | `size="lg"` | `size="default"` (less chunky) |
-| Hover border | `primary/50` | `primary/60` (more visible) |
-| Content margin | `mt-6` | `-mt-2` (closer to gallery) |
+After these changes, every location will use the same priority:
+
+1. Primary image from `fundraiser_images` table (where `is_primary = true`)
+2. First image from `fundraiser_images` table
+3. Legacy `cover_photo_url` field
+4. Fallback placeholder (Heart icon or stock image)
 
 ---
 
-### Files to Modify
+### Visual Result
 
-| File | Changes |
-|------|---------|
-| `src/components/fundraiser/FundraiserGallery.tsx` | Refine empty state styling, better proportions and hover effects |
-| `src/pages/PublicFundraiser.tsx` | Adjust layout spacing for smoother visual flow |
+**Before (MyFundraisers):**
+- Shows placeholder heart icon even when images exist in `fundraiser_images` table
+
+**After (MyFundraisers):**
+- Shows the actual uploaded photos for each fundraiser
+- Consistent with how images appear on `/f/:slug`, `/stories`, and dashboard pages
 
