@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FundraiserGallery } from "@/components/fundraiser/FundraiserGallery";
 import { ImageUploadModal } from "@/components/fundraiser/ImageUploadModal";
 import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 
 interface Fundraiser {
   id: string;
@@ -242,7 +243,7 @@ const PublicFundraiser = () => {
       <Navbar />
 
       {/* Hero section with gallery */}
-      <div className="relative">
+      <div className="relative pt-2">
         <FundraiserGallery
           images={images}
           isOwner={isOwner}
@@ -250,10 +251,12 @@ const PublicFundraiser = () => {
           fundraiserTitle={fundraiser.title}
         />
         
-        {/* Back button */}
+        {/* Back button - positioned to work with both empty and filled states */}
         <Link 
           to="/stories"
-          className="absolute top-4 left-4 lg:top-6 lg:left-6 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors z-10"
+          className="absolute top-6 left-4 lg:left-8 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm 
+               flex items-center justify-center hover:bg-background transition-colors z-10 
+               border border-border/50 shadow-sm"
         >
           <ChevronLeft className="w-5 h-5" />
         </Link>
@@ -262,8 +265,11 @@ const PublicFundraiser = () => {
         {images.length > 1 && <div className="h-10" />}
       </div>
 
-      {/* Main content */}
-      <div className="max-w-6xl mx-auto px-4 lg:px-8 -mt-20 relative z-10">
+      {/* Main content - adjust margin based on whether images exist */}
+      <div className={cn(
+        "max-w-6xl mx-auto px-4 lg:px-8 relative z-10",
+        images.length === 0 ? "mt-6" : "-mt-20"
+      )}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left column - Story content */}
           <div className="lg:col-span-2 space-y-6">
