@@ -34,25 +34,25 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         { icon: BarChart, label: 'Analytics', path: '/admin/analytics' },
       ];
     }
-    if (hasRole('donor')) {
+    if (hasRole('recipient')) {
       return [
-        { icon: Home, label: 'Dashboard', path: '/donor' },
-        { icon: DollarSign, label: 'Donate', path: '/donor/donate' },
-        { icon: TrendingUp, label: 'Impact', path: '/donor/impact' },
-        { icon: Clock, label: 'History', path: '/donor/history' },
+        { icon: Home, label: 'Dashboard', path: '/recipient' },
+        { icon: Gift, label: 'Coupons', path: '/recipient/coupons' },
+        { icon: CreditCard, label: 'Loyalty Card', path: '/recipient/loyalty-card' },
+        { icon: Clock, label: 'History', path: '/recipient/history' },
+        { icon: Shield, label: 'Verification', path: '/recipient/verification' },
       ];
     }
     return [
-      { icon: Home, label: 'Dashboard', path: '/recipient' },
-      { icon: Gift, label: 'Coupons', path: '/recipient/coupons' },
-      { icon: CreditCard, label: 'Loyalty Card', path: '/recipient/loyalty-card' },
-      { icon: Clock, label: 'History', path: '/recipient/history' },
-      { icon: Shield, label: 'Verification', path: '/recipient/verification' },
+      { icon: Home, label: 'Dashboard', path: '/donor' },
+      { icon: DollarSign, label: 'Donate', path: '/donor/donate' },
+      { icon: TrendingUp, label: 'Impact', path: '/donor/impact' },
+      { icon: Clock, label: 'History', path: '/donor/history' },
     ];
   };
 
   const navItems = getNavItems();
-  const roleLabel = hasRole('admin') ? 'Admin' : hasRole('donor') ? 'Donor' : 'Recipient';
+  const roleLabel = hasRole('admin') ? 'Admin' : hasRole('recipient') ? 'Recipient' : 'Donor';
 
   return (
     <div className="min-h-screen bg-muted/30">
