@@ -1,140 +1,205 @@
 
+## Plan: Multi-Image Gallery for Fundraisers
 
-## Plan: Fix Active Fundraisers Display & Enhance UI
+### Problem Summary
 
-### Problem Analysis
-
-**Why No Fundraisers Are Showing:**
-1. The `useFundraisers` hook filters for `status: 'active'`
-2. All 5 existing fundraisers in the database have `status: 'pending'`
-3. The recent auto-activation fix only applies to **new** fundraisers—existing ones remain stuck
-
-**Database Query Results:**
-| Title | Status | Cover Photo |
-|-------|--------|-------------|
-| need food to survive | pending | null |
-| Help Feed My Family This Month | pending | null |
-| Help Feed My Family This Month | pending | null |
-| need funds for family and friends | pending | null |
-| Supporting Families with Food Coupons | pending | null |
-
----
+The public fundraiser page (`/f/need-food-to-survive-i5nyg3`) currently shows a green heart placeholder because:
+1. `cover_photo_url` is `null` - this fundraiser was created before the image upload fix
+2. The current design shows a generic heart icon instead of a clear "no image" state
+3. There's no way for the owner to add/edit images after creation
 
 ### Solution Overview
 
-**Part 1: Activate Existing Fundraisers**
-Create a migration to update all pending fundraisers to active status.
-
-**Part 2: Enhanced Card Design**
-Improve the FundraiserCard component with a more professional, polished design featuring:
-- Better image presentation with aspect ratio
-- Gradient overlays for better text readability
-- Urgency indicators and time context
-- Cleaner typography hierarchy
-- Micro-interactions and hover states
+**Goal:** Support up to 3 images per fundraiser with a clean gallery display and owner editing capability.
 
 ---
 
-### Implementation Details
+### Part 1: Database Schema Update
 
-#### Part 1: Database Migration
-
-Create a migration to activate all pending fundraisers:
+Create a new `fundraiser_images` table to support multiple images:
 
 ```sql
--- Activate all pending fundraisers (retroactive fix)
-UPDATE fundraisers 
-SET status = 'active', updated_at = now() 
-WHERE status = 'pending';
+CREATE TABLE fundraiser_images (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  fundraiser_id UUID NOT NULL REFERENCES fundraisers(id) ON DELETE CASCADE,
+  image_url TEXT NOT NULL,
+  display_order INTEGER NOT NULL DEFAULT 0,
+  is_primary BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Index for fast lookups
+CREATE INDEX idx_fundraiser_images_fundraiser_id ON fundraiser_images(fundraiser_id);
+
+-- RLS policies
+ALTER TABLE fundraiser_images ENABLE ROW LEVEL SECURITY;
+
+-- Anyone can view images
+CREATE POLICY "Public can view fundraiser images"
+ON fundraiser_images FOR SELECT USING (true);
+
+-- Owners can manage their images
+CREATE POLICY "Owners can insert images"
+ON fundraiser_images FOR INSERT
+WITH CHECK (
+  EXISTS (SELECT 1 FROM fundraisers WHERE id = fundraiser_id AND user_id = auth.uid())
+);
+
+CREATE POLICY "Owners can delete images"
+ON fundraiser_images FOR DELETE
+USING (
+  EXISTS (SELECT 1 FROM fundraisers WHERE id = fundraiser_id AND user_id = auth.uid())
+);
 ```
 
 ---
 
-#### Part 2: Enhanced FundraiserCard Component
+### Part 2: Public Fundraiser Page - Hero Section Redesign
 
-**New Design Features:**
+**File: `src/pages/PublicFundraiser.tsx`**
 
-1. **Image Section**
-   - 16:10 aspect ratio for consistent sizing
-   - Gradient overlay at bottom for text readability
-   - "Active" pulse indicator badge
-   - Category badge with modern styling
+**When images exist:**
+- Display a clean image gallery with the primary image prominently shown
+- If multiple images, show thumbnail navigation below
+- Maintain the 16:10 aspect ratio for consistency
+- Smooth fade/slide transitions between images
 
-2. **Content Section**
-   - Location with country flag emoji
-   - Clear title hierarchy with line clamping
-   - Truncated story preview
-   - Days active indicator
+**When NO images exist:**
 
-3. **Progress Section**
-   - Animated progress bar
-   - Clear funding stats
-   - Donor count with heart icon
-   - "Support Now" hover call-to-action
+For **public visitors (non-owners):**
+```
+┌─────────────────────────────────────────────────┐
+│                                                 │
+│     ┌─────────────────────────────────────┐     │
+│     │                                     │     │
+│     │      ┌─────────────────────┐        │     │
+│     │      │    📷 (muted icon)  │        │     │
+│     │      └─────────────────────┘        │     │
+│     │                                     │     │
+│     │      No photos yet                  │     │
+│     │                                     │     │
+│     └─────────────────────────────────────┘     │
+│                                                 │
+└─────────────────────────────────────────────────┘
+```
+- Clean, neutral gray background
+- Muted camera icon
+- Simple "No photos yet" text
+- No distraction from the story content below
 
-**Visual Enhancements:**
-- Smooth hover lift animation (-translate-y-2)
-- Border glow effect on hover (primary color)
-- Image zoom on hover
-- Floating CTA button that appears on hover
+For **the fundraiser owner:**
+```
+┌─────────────────────────────────────────────────┐
+│                                                 │
+│     ┌─────────────────────────────────────┐     │
+│     │                                     │     │
+│     │        ┌───────────────────┐        │     │
+│     │        │    📷 + icon      │        │     │
+│     │        └───────────────────┘        │     │
+│     │                                     │     │
+│     │    [   + Add Photos (button)   ]    │     │
+│     │    Upload up to 3 photos            │     │
+│     │                                     │     │
+│     └─────────────────────────────────────┘     │
+│                                                 │
+└─────────────────────────────────────────────────┘
+```
+- Clear call-to-action to upload photos
+- Explains the 3-image limit
+- Button opens an upload modal
 
 ---
 
-#### Part 3: Stories Page Layout Polish
+### Part 3: Image Upload Modal Component
 
-**Grid Improvements:**
-- Responsive: 1 column mobile, 2 columns tablet, 3 columns desktop
-- Consistent gap spacing (gap-6)
-- Loading skeleton that matches card dimensions
+**New File: `src/components/fundraiser/ImageUploadModal.tsx`**
 
-**Empty State (Already Good):**
-- Current empty state is well-designed
-- No changes needed here
+A modal dialog that allows fundraiser owners to:
+- Upload up to 3 images (drag & drop or click to select)
+- Reorder images by dragging
+- Set the primary/cover image
+- Remove existing images
+
+Features:
+- Live preview of selected images
+- Progress indicator during upload
+- File validation (5MB max, image types only)
+- Clear visual feedback
 
 ---
 
-### Files to Change
+### Part 4: Update Existing Components
 
-| File | Change |
+**Files to modify:**
+1. `src/pages/PublicFundraiser.tsx` - Fetch and display gallery, detect owner, show upload CTA
+2. `src/pages/FundraiserDashboard.tsx` - Show gallery in header, add "Manage Photos" button
+3. `src/components/stories/FundraiserCard.tsx` - Show primary image from new table
+
+---
+
+### Implementation Approach
+
+| Step | Description |
+|------|-------------|
+| 1 | Create `fundraiser_images` table with migration |
+| 2 | Create `ImageUploadModal` component |
+| 3 | Update `PublicFundraiser.tsx` to fetch images and show gallery/upload CTA |
+| 4 | Update `FundraiserDashboard.tsx` to show images and management |
+| 5 | Update `FundraiserCard.tsx` to use primary image from new table |
+| 6 | Migrate existing `cover_photo_url` data to new table (optional) |
+
+---
+
+### Files to Create/Modify
+
+| File | Action |
 |------|--------|
-| `supabase/migrations/XXXXXX_activate_pending_fundraisers.sql` | Activate all pending fundraisers |
-| `src/components/stories/FundraiserCard.tsx` | Complete redesign with enhanced UI/UX |
+| `supabase/migrations/XXXXXX_create_fundraiser_images.sql` | Create new table |
+| `src/components/fundraiser/ImageUploadModal.tsx` | New component |
+| `src/pages/PublicFundraiser.tsx` | Add gallery + owner upload CTA |
+| `src/pages/FundraiserDashboard.tsx` | Add photo management |
+| `src/components/stories/FundraiserCard.tsx` | Use primary image |
 
 ---
 
-### Enhanced Card Design Preview
+### User Experience After Implementation
 
-```
-┌─────────────────────────────────────┐
-│  ┌─────────────────────────────────┐│
-│  │                                 ││
-│  │    [Image with gradient]        ││
-│  │                                 ││
-│  │  ┌──────────┐     ┌───────────┐││
-│  │  │ Category │     │ ● Active  │││
-│  │  └──────────┘     └───────────┘││
-│  └─────────────────────────────────┘│
-│                                     │
-│  📍 United States · 3 days ago      │
-│                                     │
-│  Help Feed My Family This Month     │
-│                                     │
-│  We're struggling to put food on    │
-│  the table for our three children...│
-│                                     │
-│  ─────────────────────────── 45%    │
-│  $450 of $1,000 raised              │
-│                                     │
-│  ❤️ 12 donors    [Support Now →]    │
-│                                     │
-└─────────────────────────────────────┘
-```
+**For fundraiser owners:**
+1. Visit their public page and see "Add Photos" if no images
+2. Click to open upload modal
+3. Drag and drop up to 3 images
+4. Images are uploaded to storage and saved to `fundraiser_images` table
+5. Gallery displays immediately on the public page
+
+**For donors/visitors:**
+1. See beautiful image gallery if photos exist
+2. See clean "No photos yet" placeholder if no photos
+3. Can still read the story and donate regardless
+
+**On /stories page:**
+1. Cards show the primary image from each fundraiser
+2. Fallback to clean placeholder if no images
 
 ---
 
-### User Experience After Fix
+### Visual Design: Image Gallery (with images)
 
-1. **Immediate Visibility**: All 5 existing fundraisers will appear in the Active Fundraisers section
-2. **Professional Cards**: Each card shows the fundraiser image (or a beautiful fallback), title, location, progress, and a clear call-to-action
-3. **Future-Proof**: New fundraisers will automatically appear as they're created with `status: 'active'`
+```
+┌─────────────────────────────────────────────────┐
+│                                                 │
+│    ┌───────────────────────────────────────┐    │
+│    │                                       │    │
+│    │          Primary Image                │    │
+│    │          (16:10 aspect)               │    │
+│    │                                       │    │
+│    └───────────────────────────────────────┘    │
+│                                                 │
+│    ┌─────┐  ┌─────┐  ┌─────┐                    │
+│    │ [1] │  │ [2] │  │ [3] │   ← Thumbnails     │
+│    └─────┘  └─────┘  └─────┘                    │
+│                                                 │
+└─────────────────────────────────────────────────┘
+```
+
+Clicking a thumbnail smoothly transitions to show that image as the primary.
 
