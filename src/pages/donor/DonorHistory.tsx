@@ -5,8 +5,9 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Gift, DollarSign, Calendar, CreditCard, Receipt, ExternalLink, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { Gift, DollarSign, Calendar, CreditCard, Receipt, ExternalLink, ChevronDown, ChevronUp, RefreshCw, Ticket } from 'lucide-react';
 import { format } from 'date-fns';
+import { DonationCouponsModal } from '@/components/donor/DonationCouponsModal';
 
 interface Donation {
   id: string;
@@ -24,6 +25,7 @@ interface Donation {
   receipt_url: string | null;
   brand_partner: string | null;
   status: string | null;
+  coupon_count?: number;
 }
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -40,19 +42,47 @@ export default function DonorHistory() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedDonation, setSelectedDonation] = useState<Donation | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const fetchHistory = useCallback(async (showRefreshIndicator = false) => {
     if (!user) return;
     
     if (showRefreshIndicator) setRefreshing(true);
 
-    const { data } = await supabase
+    // Fetch donations with coupon counts
+    const { data: donationsData } = await supabase
       .from('donations')
       .select('*')
       .eq('donor_id', user.id)
       .order('created_at', { ascending: false });
 
-    setDonations(data || []);
+    if (donationsData) {
+      // Fetch coupon counts for each donation
+      const donationIds = donationsData.map(d => d.id);
+      const { data: couponsData } = await supabase
+        .from('coupons')
+        .select('donation_id')
+        .in('donation_id', donationIds);
+
+      // Count coupons per donation
+      const couponCounts: Record<string, number> = {};
+      couponsData?.forEach(c => {
+        if (c.donation_id) {
+          couponCounts[c.donation_id] = (couponCounts[c.donation_id] || 0) + 1;
+        }
+      });
+
+      // Merge coupon counts into donations
+      const donationsWithCounts = donationsData.map(d => ({
+        ...d,
+        coupon_count: couponCounts[d.id] || 0,
+      }));
+
+      setDonations(donationsWithCounts);
+    } else {
+      setDonations([]);
+    }
     setLoading(false);
     setRefreshing(false);
   }, [user]);
@@ -114,8 +144,14 @@ export default function DonorHistory() {
     };
   }, [user]);
 
-  const toggleExpand = (id: string) => {
+  const toggleExpand = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     setExpandedId(expandedId === id ? null : id);
+  };
+
+  const openCouponsModal = (donation: Donation) => {
+    setSelectedDonation(donation);
+    setModalOpen(true);
   };
 
   return (
@@ -171,6 +207,12 @@ export default function DonorHistory() {
                           <Badge variant={status.variant}>{status.label}</Badge>
                           {donation.is_anonymous && (
                             <Badge variant="secondary">Anonymous</Badge>
+                          )}
+                          {(donation.coupon_count ?? 0) > 0 && (
+                            <Badge variant="outline" className="text-primary border-primary">
+                              <Ticket className="w-3 h-3 mr-1" />
+                              {donation.coupon_count} coupons
+                            </Badge>
                           )}
                         </div>
 
@@ -235,6 +277,15 @@ export default function DonorHistory() {
 
                       {/* Actions */}
                       <div className="flex flex-col items-end gap-2 ml-4">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => openCouponsModal(donation)}
+                          className="gap-1"
+                        >
+                          <Ticket className="w-4 h-4" />
+                          View Coupons
+                        </Button>
                         {donation.receipt_url && (
                           <Button
                             variant="outline"
@@ -251,7 +302,7 @@ export default function DonorHistory() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => toggleExpand(donation.id)}
+                          onClick={(e) => toggleExpand(donation.id, e)}
                         >
                           {isExpanded ? (
                             <>
@@ -273,6 +324,13 @@ export default function DonorHistory() {
             })}
           </div>
         )}
+
+        {/* Donation Coupons Modal */}
+        <DonationCouponsModal
+          donation={selectedDonation}
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+        />
       </div>
     </DashboardLayout>
   );

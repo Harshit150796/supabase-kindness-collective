@@ -113,6 +113,16 @@ serve(async (req) => {
   }
 });
 
+// Generate a unique coupon code
+function generateCouponCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleSuccessfulPayment(
   stripe: Stripe,
@@ -215,14 +225,74 @@ async function handleSuccessfulPayment(
     donationData.donor_id = donorId;
   }
 
-  const { error } = await supabase.from("donations").insert(donationData);
+  const { data: insertedDonation, error } = await supabase
+    .from("donations")
+    .insert(donationData)
+    .select("id")
+    .single();
 
   if (error) {
     console.error(`Error inserting donation: ${error.message}`);
     throw error;
   }
 
-  console.log(`Donation recorded successfully for session ${session.id}, fee: $${stripeFee}, net: $${netAmount}`);
+  const donationId = insertedDonation?.id;
+  console.log(`Donation recorded successfully for session ${session.id}, id: ${donationId}, fee: $${stripeFee}, net: $${netAmount}`);
+
+  // Create coupons from this donation
+  if (donationId && brandPartner) {
+    await createCouponsFromDonation(supabase, donationId, amount, brandPartner);
+  } else if (donationId) {
+    console.log(`Skipping coupon creation - no brand partner specified for donation ${donationId}`);
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function createCouponsFromDonation(
+  supabase: any,
+  donationId: string,
+  amount: number,
+  brandPartner: string
+) {
+  console.log(`Creating coupons for donation ${donationId}: $${amount} to ${brandPartner}`);
+
+  // Determine coupon value and count based on donation amount
+  // $50+ donations get $10 coupons, smaller donations get $5 coupons
+  const couponValue = amount >= 50 ? 10 : 5;
+  const couponCount = Math.floor(amount / couponValue);
+
+  if (couponCount === 0) {
+    console.log(`Donation amount $${amount} too small to create coupons`);
+    return;
+  }
+
+  // Calculate expiry date (6 months from now)
+  const expiryDate = new Date();
+  expiryDate.setMonth(expiryDate.getMonth() + 6);
+  const expiryDateStr = expiryDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+
+  // Create coupons in batch
+  const couponsToInsert = [];
+  for (let i = 0; i < couponCount; i++) {
+    couponsToInsert.push({
+      donation_id: donationId,
+      title: `${brandPartner} Gift`,
+      store_name: brandPartner,
+      value: couponValue,
+      code: generateCouponCode(),
+      status: 'available',
+      expiry_date: expiryDateStr,
+    });
+  }
+
+  const { error } = await supabase.from("coupons").insert(couponsToInsert);
+
+  if (error) {
+    console.error(`Error creating coupons: ${error.message}`);
+    // Don't throw - donation is already recorded, this is non-critical
+  } else {
+    console.log(`Created ${couponCount} x $${couponValue} coupons for ${brandPartner}`);
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

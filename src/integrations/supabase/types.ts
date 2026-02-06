@@ -85,6 +85,7 @@ export type Database = {
           created_at: string
           description: string | null
           discount_percent: number | null
+          donation_id: string | null
           expiry_date: string | null
           id: string
           min_purchase: number | null
@@ -106,6 +107,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           discount_percent?: number | null
+          donation_id?: string | null
           expiry_date?: string | null
           id?: string
           min_purchase?: number | null
@@ -127,6 +129,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           discount_percent?: number | null
+          donation_id?: string | null
           expiry_date?: string | null
           id?: string
           min_purchase?: number | null
@@ -147,6 +150,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupons_donation_id_fkey"
+            columns: ["donation_id"]
+            isOneToOne: false
+            referencedRelation: "donations"
             referencedColumns: ["id"]
           },
           {
