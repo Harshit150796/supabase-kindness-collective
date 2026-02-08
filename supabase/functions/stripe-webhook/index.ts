@@ -7,6 +7,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
+interface BrandAllocation {
+  brand: string;
+  brandId: string;
+  percent: number;
+  amount: number;
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -123,6 +130,34 @@ function generateCouponCode(): string {
   return code;
 }
 
+// Parse brand allocations from metadata
+function parseBrandAllocations(metadata: Record<string, string | undefined>): BrandAllocation[] {
+  try {
+    const allocationsJson = metadata.brand_allocations;
+    if (allocationsJson) {
+      const parsed = JSON.parse(allocationsJson);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error("Failed to parse brand_allocations:", e);
+  }
+  
+  // Fallback to legacy single brand
+  const brandName = metadata.brand_name;
+  if (brandName) {
+    return [{
+      brand: brandName,
+      brandId: metadata.brand_id || '',
+      percent: 100,
+      amount: parseFloat(metadata.amount || '0'),
+    }];
+  }
+  
+  return [];
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleSuccessfulPayment(
   stripe: Stripe,
@@ -199,11 +234,22 @@ async function handleSuccessfulPayment(
   const rawDonorId = metadata.donor_id || null;
   // Treat empty string as null
   const donorId = (rawDonorId && rawDonorId.trim() !== "") ? rawDonorId : null;
-  const brandPartner = metadata.brand_name || null;
+  
+  // Parse brand allocations (multi-brand support)
+  const brandAllocations = parseBrandAllocations(metadata);
+  const isMultiBrand = brandAllocations.length > 1;
+  
+  // For backward compatibility, store primary brand or comma-separated list
+  const brandPartner = isMultiBrand 
+    ? brandAllocations.map(a => a.brand).join(', ')
+    : (brandAllocations[0]?.brand || null);
+  
   // Prioritize account email from metadata over Stripe receipt email
   const donorEmail = (metadata.donor_email && metadata.donor_email.trim() !== "") 
     ? metadata.donor_email 
     : (session.customer_details?.email || null);
+
+  console.log(`Processing ${isMultiBrand ? 'multi-brand' : 'single-brand'} donation with ${brandAllocations.length} brand(s)`);
 
   // Insert donation record
   const donationData: Record<string, unknown> = {
@@ -239,59 +285,87 @@ async function handleSuccessfulPayment(
   const donationId = insertedDonation?.id;
   console.log(`Donation recorded successfully for session ${session.id}, id: ${donationId}, fee: $${stripeFee}, net: $${netAmount}`);
 
-  // Create coupons from this donation
-  if (donationId && brandPartner) {
-    await createCouponsFromDonation(supabase, donationId, amount, brandPartner);
+  // Create coupons from this donation (multi-brand support)
+  if (donationId && brandAllocations.length > 0) {
+    await createCouponsFromMultiBrandDonation(supabase, donationId, amount, brandAllocations);
   } else if (donationId) {
-    console.log(`Skipping coupon creation - no brand partner specified for donation ${donationId}`);
+    console.log(`Skipping coupon creation - no brand allocations for donation ${donationId}`);
   }
 }
 
+// NEW: Multi-brand coupon creation
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function createCouponsFromDonation(
+async function createCouponsFromMultiBrandDonation(
   supabase: any,
   donationId: string,
-  amount: number,
-  brandPartner: string
+  totalAmount: number,
+  brandAllocations: BrandAllocation[]
 ) {
-  console.log(`Creating coupons for donation ${donationId}: $${amount} to ${brandPartner}`);
-
-  // Determine coupon value and count based on donation amount
-  // $50+ donations get $10 coupons, smaller donations get $5 coupons
-  const couponValue = amount >= 50 ? 10 : 5;
-  const couponCount = Math.floor(amount / couponValue);
-
-  if (couponCount === 0) {
-    console.log(`Donation amount $${amount} too small to create coupons`);
-    return;
-  }
+  console.log(`Creating coupons for donation ${donationId}: $${totalAmount} across ${brandAllocations.length} brand(s)`);
 
   // Calculate expiry date (6 months from now)
   const expiryDate = new Date();
   expiryDate.setMonth(expiryDate.getMonth() + 6);
   const expiryDateStr = expiryDate.toISOString().split('T')[0]; // YYYY-MM-DD format
 
-  // Create coupons in batch
-  const couponsToInsert = [];
-  for (let i = 0; i < couponCount; i++) {
-    couponsToInsert.push({
+  const allCoupons: Record<string, unknown>[] = [];
+  const brandRecords: Record<string, unknown>[] = [];
+
+  for (const allocation of brandAllocations) {
+    // Calculate allocated amount for this brand
+    const allocatedAmount = (totalAmount * allocation.percent) / 100;
+    
+    // Determine coupon value and count based on allocated amount
+    // $50+ allocations get $10 coupons, smaller allocations get $5 coupons
+    const couponValue = allocatedAmount >= 50 ? 10 : 5;
+    const couponCount = Math.floor(allocatedAmount / couponValue);
+
+    console.log(`Brand ${allocation.brand}: $${allocatedAmount.toFixed(2)} (${allocation.percent}%) → ${couponCount} x $${couponValue} coupons`);
+
+    // Create coupons for this brand
+    for (let i = 0; i < couponCount; i++) {
+      allCoupons.push({
+        donation_id: donationId,
+        title: `${allocation.brand} Gift`,
+        store_name: allocation.brand,
+        value: couponValue,
+        code: generateCouponCode(),
+        status: 'available',
+        expiry_date: expiryDateStr,
+      });
+    }
+
+    // Create brand allocation record
+    brandRecords.push({
       donation_id: donationId,
-      title: `${brandPartner} Gift`,
-      store_name: brandPartner,
-      value: couponValue,
-      code: generateCouponCode(),
-      status: 'available',
-      expiry_date: expiryDateStr,
+      brand_name: allocation.brand,
+      allocation_percent: allocation.percent,
+      allocated_amount: allocatedAmount,
     });
   }
 
-  const { error } = await supabase.from("coupons").insert(couponsToInsert);
-
-  if (error) {
-    console.error(`Error creating coupons: ${error.message}`);
-    // Don't throw - donation is already recorded, this is non-critical
+  // Insert all coupons in batch
+  if (allCoupons.length > 0) {
+    const { error: couponError } = await supabase.from("coupons").insert(allCoupons);
+    if (couponError) {
+      console.error(`Error creating coupons: ${couponError.message}`);
+      // Don't throw - donation is already recorded, this is non-critical
+    } else {
+      console.log(`Created ${allCoupons.length} total coupons across ${brandAllocations.length} brand(s)`);
+    }
   } else {
-    console.log(`Created ${couponCount} x $${couponValue} coupons for ${brandPartner}`);
+    console.log(`No coupons created - allocated amounts too small`);
+  }
+
+  // Insert brand allocation records
+  if (brandRecords.length > 0) {
+    const { error: brandError } = await supabase.from("donation_brands").insert(brandRecords);
+    if (brandError) {
+      console.error(`Error creating donation_brands records: ${brandError.message}`);
+      // Don't throw - non-critical for tracking
+    } else {
+      console.log(`Created ${brandRecords.length} donation_brands record(s)`);
+    }
   }
 }
 

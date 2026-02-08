@@ -168,6 +168,41 @@ export type Database = {
           },
         ]
       }
+      donation_brands: {
+        Row: {
+          allocated_amount: number
+          allocation_percent: number
+          brand_name: string
+          created_at: string
+          donation_id: string
+          id: string
+        }
+        Insert: {
+          allocated_amount: number
+          allocation_percent: number
+          brand_name: string
+          created_at?: string
+          donation_id: string
+          id?: string
+        }
+        Update: {
+          allocated_amount?: number
+          allocation_percent?: number
+          brand_name?: string
+          created_at?: string
+          donation_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donation_brands_donation_id_fkey"
+            columns: ["donation_id"]
+            isOneToOne: false
+            referencedRelation: "donations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       donations: {
         Row: {
           amount: number

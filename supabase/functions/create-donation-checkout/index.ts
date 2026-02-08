@@ -6,6 +6,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface BrandAllocation {
+  brand: string;
+  brandId: string;
+  percent: number;
+  amount: number;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -13,16 +20,27 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, brandName, brandId, userId, userEmail } = await req.json();
+    const { amount, brandName, brandId, brandAllocations, userId, userEmail } = await req.json();
     
     // Determine trust level for Radar
     const isAuthenticated = !!userId;
     const isVerifiedDonor = !!(userEmail && userId); // Has account with verified email
     
+    // Process brand allocations (multi-brand support)
+    const allocations: BrandAllocation[] = brandAllocations && Array.isArray(brandAllocations) && brandAllocations.length > 0
+      ? brandAllocations
+      : brandName 
+        ? [{ brand: brandName, brandId: brandId || '', percent: 100, amount }]
+        : [];
+    
+    const brandNames = allocations.map(a => a.brand).join(', ');
+    const isMultiBrand = allocations.length > 1;
+    
     console.log("Creating donation checkout session:", { 
       amount, 
-      brandName, 
-      brandId, 
+      brandCount: allocations.length,
+      brandNames,
+      isMultiBrand,
       userId: userId || 'anonymous', 
       userEmail: userEmail || 'guest',
       isAuthenticated,
@@ -76,6 +94,11 @@ serve(async (req) => {
     
     console.log("Creating checkout with fraud metadata:", { userAgent: userAgent.substring(0, 50), ipAddress });
 
+    // Build product description based on brand selection
+    const productDescription = isMultiBrand
+      ? `Your $${amount} USD donation is split across ${allocations.length} brands: ${brandNames}. Each brand will provide coupons for families in need.`
+      : `Your $${amount} USD donation provides ${mealsProvided} meals for families in need${brandName ? ` via ${brandName}` : ""}. International cards accepted - your bank handles currency conversion.`;
+
     // Create Checkout session with full payment hardening
     const session = await stripe.checkout.sessions.create({
       locale: "en",
@@ -106,8 +129,10 @@ serve(async (req) => {
           price_data: {
             currency: "usd",
             product_data: {
-              name: `Donation to Help Families`,
-              description: `Your $${amount} USD donation provides ${mealsProvided} meals for families in need${brandName ? ` via ${brandName}` : ""}. International cards accepted - your bank handles currency conversion.`,
+              name: isMultiBrand 
+                ? `Multi-Brand Donation (${allocations.length} brands)`
+                : `Donation to Help Families`,
+              description: productDescription,
             },
             unit_amount: amount * 100,
           },
@@ -123,8 +148,13 @@ serve(async (req) => {
         type: "donation",
         amount: amount.toString(),
         meals_provided: mealsProvided.toString(),
-        brand_name: brandName || "",
-        brand_id: brandId || "",
+        // Legacy single brand fields (for backward compatibility)
+        brand_name: allocations[0]?.brand || "",
+        brand_id: allocations[0]?.brandId || "",
+        // NEW: Multi-brand allocations as JSON
+        brand_allocations: JSON.stringify(allocations),
+        is_multi_brand: isMultiBrand.toString(),
+        brand_count: allocations.length.toString(),
         donor_id: userId || "",
         donor_email: userEmail || "",
       },
@@ -138,7 +168,11 @@ serve(async (req) => {
           type: "donation",
           amount: amount.toString(),
           meals_provided: mealsProvided.toString(),
-          brand_name: brandName || "",
+          // Legacy single brand field
+          brand_name: allocations[0]?.brand || "",
+          // NEW: Multi-brand allocations
+          brand_allocations: JSON.stringify(allocations),
+          is_multi_brand: isMultiBrand.toString(),
           // Trust signals for Stripe Radar - reduces false positives for known users
           is_authenticated: isAuthenticated.toString(),
           is_verified_donor: isVerifiedDonor.toString(),
@@ -153,7 +187,7 @@ serve(async (req) => {
       },
     });
 
-    console.log("Checkout session created:", session.id, "URL:", session.url);
+    console.log("Checkout session created:", session.id, "URL:", session.url, "Brands:", allocations.length);
 
     return new Response(JSON.stringify({ url: session.url, sessionId: session.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

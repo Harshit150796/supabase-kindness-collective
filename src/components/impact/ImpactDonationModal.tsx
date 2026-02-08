@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ import {
   Gift,
   Ticket,
   Check,
+  Store,
 } from 'lucide-react';
 
 interface Donation {
@@ -38,6 +39,13 @@ interface Coupon {
   created_at: string;
 }
 
+interface DonationBrand {
+  id: string;
+  brand_name: string;
+  allocation_percent: number;
+  allocated_amount: number;
+}
+
 interface ImpactDonationModalProps {
   donation: Donation | null;
   open: boolean;
@@ -50,7 +58,8 @@ const getBrandInfo = (brandName: string | null): BrandInfo | null => {
   if (brandLogos[brandName]) return brandLogos[brandName];
   // Try case-insensitive match
   const key = Object.keys(brandLogos).find(
-    (k) => k.toLowerCase() === brandName.toLowerCase()
+    (k) => k.toLowerCase() === brandName.toLowerCase() ||
+           k.toLowerCase().replace(/\s+/g, '') === brandName.toLowerCase().replace(/\s+/g, '')
   );
   return key ? brandLogos[key] : null;
 };
@@ -106,30 +115,58 @@ export function ImpactDonationModal({
   onOpenChange,
 }: ImpactDonationModalProps) {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [brandAllocations, setBrandAllocations] = useState<DonationBrand[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (donation && open) {
-      fetchCoupons();
+      fetchData();
     }
   }, [donation, open]);
 
-  const fetchCoupons = async () => {
+  const fetchData = async () => {
     if (!donation) return;
     setLoading(true);
-    const { data } = await supabase
-      .from('coupons')
-      .select('id, code, value, status, store_name, created_at')
-      .eq('donation_id', donation.id)
-      .order('created_at', { ascending: true });
+    
+    // Fetch coupons and brand allocations in parallel
+    const [couponsRes, brandsRes] = await Promise.all([
+      supabase
+        .from('coupons')
+        .select('id, code, value, status, store_name, created_at')
+        .eq('donation_id', donation.id)
+        .order('store_name', { ascending: true })
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('donation_brands')
+        .select('id, brand_name, allocation_percent, allocated_amount')
+        .eq('donation_id', donation.id)
+        .order('allocated_amount', { ascending: false }),
+    ]);
 
-    setCoupons((data as Coupon[]) || []);
+    setCoupons((couponsRes.data as Coupon[]) || []);
+    setBrandAllocations((brandsRes.data as DonationBrand[]) || []);
     setLoading(false);
   };
 
+  // Group coupons by brand
+  const couponsByBrand = useMemo(() => {
+    const grouped: Record<string, Coupon[]> = {};
+    for (const coupon of coupons) {
+      const brand = coupon.store_name || 'Unknown';
+      if (!grouped[brand]) grouped[brand] = [];
+      grouped[brand].push(coupon);
+    }
+    return grouped;
+  }, [coupons]);
+
+  // Check if multi-brand donation
+  const isMultiBrand = brandAllocations.length > 1 || Object.keys(couponsByBrand).length > 1;
+
   if (!donation) return null;
 
-  const brandInfo = getBrandInfo(donation.brand_partner);
+  // Parse brand names for display (handle comma-separated legacy format)
+  const brandNames = donation.brand_partner?.split(',').map(b => b.trim()) || [];
+  const primaryBrandInfo = getBrandInfo(brandNames[0] || null);
 
   // Count coupons by status
   const statusCounts = coupons.reduce(
@@ -144,17 +181,41 @@ export function ImpactDonationModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader className="text-center pb-4 border-b">
-          {/* Brand Logo */}
+          {/* Brand Logo(s) */}
           <div className="flex flex-col items-center gap-3">
-            {brandInfo ? (
+            {isMultiBrand ? (
+              // Multi-brand: Show multiple logos
+              <div className="flex items-center gap-2">
+                {brandNames.slice(0, 4).map((name, i) => {
+                  const info = getBrandInfo(name);
+                  return info ? (
+                    <div key={i} className="w-12 h-12 rounded-xl bg-white p-1.5 shadow-sm border flex items-center justify-center">
+                      <img
+                        src={info.logo}
+                        alt={info.name}
+                        className="w-full h-full object-contain"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    </div>
+                  ) : (
+                    <div key={i} className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                      <Store className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                  );
+                })}
+                {brandNames.length > 4 && (
+                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                    <span className="text-sm font-medium text-muted-foreground">+{brandNames.length - 4}</span>
+                  </div>
+                )}
+              </div>
+            ) : primaryBrandInfo ? (
               <div className="w-16 h-16 rounded-xl bg-white p-2 shadow-sm border flex items-center justify-center">
                 <img
-                  src={brandInfo.logo}
-                  alt={brandInfo.name}
+                  src={primaryBrandInfo.logo}
+                  alt={primaryBrandInfo.name}
                   className="w-full h-full object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
               </div>
             ) : (
@@ -163,7 +224,9 @@ export function ImpactDonationModal({
               </div>
             )}
             <DialogTitle className="text-xl">
-              {brandInfo?.name || donation.brand_partner || 'Donation Details'}
+              {isMultiBrand 
+                ? `${brandNames.length} Brand Donation`
+                : primaryBrandInfo?.name || donation.brand_partner || 'Donation Details'}
             </DialogTitle>
           </div>
         </DialogHeader>
@@ -191,6 +254,36 @@ export function ImpactDonationModal({
           )}
         </div>
 
+        {/* Brand Allocation Breakdown (for multi-brand) */}
+        {brandAllocations.length > 1 && (
+          <div className="py-4 border-b">
+            <h3 className="font-semibold text-foreground mb-3 text-sm">Brand Allocation</h3>
+            <div className="space-y-2">
+              {brandAllocations.map((alloc) => {
+                const info = getBrandInfo(alloc.brand_name);
+                return (
+                  <div key={alloc.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                    <div className="flex items-center gap-2">
+                      {info ? (
+                        <div className="w-6 h-6 rounded bg-white p-0.5 flex items-center justify-center">
+                          <img src={info.logo} alt={alloc.brand_name} className="w-full h-full object-contain" />
+                        </div>
+                      ) : (
+                        <Store className="w-5 h-5 text-muted-foreground" />
+                      )}
+                      <span className="font-medium text-sm">{alloc.brand_name}</span>
+                    </div>
+                    <div className="text-right text-sm">
+                      <span className="font-semibold">${alloc.allocated_amount.toFixed(2)}</span>
+                      <span className="text-muted-foreground ml-2">({alloc.allocation_percent}%)</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Coupons Section */}
         <div className="py-4">
           <div className="flex items-center gap-2 mb-4">
@@ -214,19 +307,81 @@ export function ImpactDonationModal({
                 This may take a few moments
               </p>
             </div>
-          ) : (
+          ) : isMultiBrand ? (
+            // Multi-brand: Group coupons by brand
             <>
-              {/* Coupons Grid */}
+              <div className="space-y-4 mb-4">
+                {Object.entries(couponsByBrand).map(([brand, brandCoupons]) => {
+                  const info = getBrandInfo(brand);
+                  return (
+                    <div key={brand}>
+                      {/* Brand Header */}
+                      <div className="flex items-center gap-2 mb-2">
+                        {info ? (
+                          <div className="w-5 h-5 rounded bg-white p-0.5">
+                            <img src={info.logo} alt={brand} className="w-full h-full object-contain" />
+                          </div>
+                        ) : (
+                          <Store className="w-4 h-4 text-muted-foreground" />
+                        )}
+                        <span className="font-medium text-sm">{brand}</span>
+                        <span className="text-xs text-muted-foreground ml-auto">
+                          {brandCoupons.length} coupon{brandCoupons.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      {/* Coupons for this brand */}
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        {brandCoupons.map((coupon) => {
+                          const statusConf = getStatusConfig(coupon.status);
+                          const StatusIcon = statusConf.icon;
+                          return (
+                            <div
+                              key={coupon.id}
+                              className={`border rounded-lg p-2 border-l-4 ${statusConf.borderColor} ${statusConf.bgColor}`}
+                            >
+                              <p className="font-bold text-foreground text-sm">
+                                ${coupon.value?.toFixed(2) || '0.00'}
+                              </p>
+                              <div className={`flex items-center gap-1 mt-1 ${statusConf.textColor}`}>
+                                <StatusIcon className="w-3 h-3" />
+                                <span className="text-xs">{statusConf.label}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1 font-mono truncate">
+                                {coupon.code}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Summary */}
+              <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">Summary: </span>
+                {Object.entries(statusCounts).map(([status, count], index) => (
+                  <span key={status}>
+                    {index > 0 && ' • '}
+                    {count} {status}
+                  </span>
+                ))}
+              </div>
+            </>
+          ) : (
+            // Single brand: Original grid layout
+            <>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
                 {coupons.map((coupon) => {
-                  const statusConfig = getStatusConfig(coupon.status);
-                  const StatusIcon = statusConfig.icon;
+                  const statusConf = getStatusConfig(coupon.status);
+                  const StatusIcon = statusConf.icon;
                   const couponBrandInfo = getBrandInfo(coupon.store_name);
 
                   return (
                     <div
                       key={coupon.id}
-                      className={`border rounded-lg p-3 border-l-4 ${statusConfig.borderColor} ${statusConfig.bgColor}`}
+                      className={`border rounded-lg p-3 border-l-4 ${statusConf.borderColor} ${statusConf.bgColor}`}
                     >
                       {/* Mini brand logo */}
                       <div className="flex items-center gap-2 mb-2">
@@ -255,10 +410,10 @@ export function ImpactDonationModal({
                       </p>
 
                       {/* Status Badge */}
-                      <div className={`flex items-center gap-1 mt-2 ${statusConfig.textColor}`}>
+                      <div className={`flex items-center gap-1 mt-2 ${statusConf.textColor}`}>
                         <StatusIcon className="w-3.5 h-3.5" />
                         <span className="text-xs font-medium">
-                          {statusConfig.label}
+                          {statusConf.label}
                         </span>
                       </div>
 

@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { ArrowRight, Check, Heart, Gift, Users, Utensils, Search, Loader2, ExternalLink, Globe, CreditCard } from 'lucide-react';
-import { brandList, popularBrands } from '@/data/brandLogos';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { ArrowRight, Check, Heart, Gift, Users, Utensils, Search, Loader2, ExternalLink, Globe, CreditCard, X } from 'lucide-react';
+import { brandList, popularBrands, brandLogos, BrandInfo } from '@/data/brandLogos';
 import { BrandSelectorModal } from './BrandSelectorModal';
+import { BrandAllocationSliders, BrandAllocation } from './BrandAllocationSliders';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -51,6 +54,18 @@ const PaymentMethodIcons = () => (
 );
 
 const presetAmounts = [10, 25, 50, 100, 250];
+const MAX_BRANDS = 5;
+const MIN_AMOUNT_PER_BRAND = 5;
+
+// Helper to get brand info from ID
+const getBrandInfo = (brandId: string): BrandInfo | null => {
+  for (const [key, info] of Object.entries(brandLogos)) {
+    if (key.toLowerCase().replace(/\s+/g, '') === brandId.toLowerCase().replace(/\s+/g, '')) {
+      return info;
+    }
+  }
+  return null;
+};
 
 // Impact equivalents
 const getImpactMessage = (amount: number) => {
@@ -62,7 +77,9 @@ const getImpactMessage = (amount: number) => {
 
 export function DonationFlow() {
   const { user } = useAuth();
-  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  // Multi-brand selection state
+  const [selectedBrands, setSelectedBrands] = useState<BrandAllocation[]>([]);
+  const [useCustomAllocation, setUseCustomAllocation] = useState(false);
   const [amount, setAmount] = useState(50);
   const [step, setStep] = useState(1);
   const [showBrandModal, setShowBrandModal] = useState(false);
@@ -71,9 +88,119 @@ export function DonationFlow() {
 
   const impact = getImpactMessage(amount);
 
+  // Calculate max brands allowed based on amount
+  const maxBrandsForAmount = Math.min(MAX_BRANDS, Math.floor(amount / MIN_AMOUNT_PER_BRAND));
+
+  // Calculate equal split allocations
+  const equalSplitAllocations = useMemo(() => {
+    if (selectedBrands.length === 0) return [];
+    const equalPercent = Math.floor(100 / selectedBrands.length);
+    const remainder = 100 - (equalPercent * selectedBrands.length);
+    
+    return selectedBrands.map((brand, index) => ({
+      ...brand,
+      percentage: equalPercent + (index === 0 ? remainder : 0),
+    }));
+  }, [selectedBrands]);
+
+  // Get current allocations (custom or equal)
+  const currentAllocations = useMemo(() => {
+    if (!useCustomAllocation || selectedBrands.length === 0) {
+      return equalSplitAllocations;
+    }
+    return selectedBrands;
+  }, [useCustomAllocation, selectedBrands, equalSplitAllocations]);
+
+  // Toggle brand selection
+  const toggleBrand = (brandId: string, brandName: string) => {
+    const exists = selectedBrands.find(b => b.brandId === brandId);
+    
+    if (exists) {
+      // Remove brand
+      setSelectedBrands(prev => prev.filter(b => b.brandId !== brandId));
+    } else {
+      // Add brand if under limit
+      if (selectedBrands.length < maxBrandsForAmount) {
+        const newBrand: BrandAllocation = {
+          brandId,
+          brandName,
+          percentage: 0, // Will be calculated by equal split
+        };
+        setSelectedBrands(prev => [...prev, newBrand]);
+      } else {
+        toast({
+          title: 'Maximum brands reached',
+          description: `You can select up to ${maxBrandsForAmount} brands for a $${amount} donation (minimum $${MIN_AMOUNT_PER_BRAND} per brand).`,
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+  // Remove brand chip
+  const removeBrand = (brandId: string) => {
+    setSelectedBrands(prev => prev.filter(b => b.brandId !== brandId));
+  };
+
+  // Handle brands selected from modal (multi-select mode)
+  const handleBrandsFromModal = (brandIds: string[]) => {
+    const newBrands: BrandAllocation[] = brandIds.map(brandId => {
+      const info = getBrandInfo(brandId);
+      return {
+        brandId,
+        brandName: info?.name || brandId,
+        percentage: 0,
+      };
+    });
+    setSelectedBrands(newBrands);
+  };
+
+  // Handle custom allocation changes
+  const handleAllocationsChange = (allocations: BrandAllocation[]) => {
+    setSelectedBrands(allocations);
+  };
+
+  // Validate allocations before continuing
+  const validateAllocations = (): boolean => {
+    if (selectedBrands.length === 0) return false;
+    
+    if (useCustomAllocation) {
+      const total = selectedBrands.reduce((sum, b) => sum + b.percentage, 0);
+      if (total !== 100) {
+        toast({
+          title: 'Invalid allocation',
+          description: 'Percentages must add up to 100%.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+      
+      // Check minimum per brand
+      for (const brand of selectedBrands) {
+        const brandAmount = (amount * brand.percentage) / 100;
+        if (brandAmount < MIN_AMOUNT_PER_BRAND) {
+          toast({
+            title: 'Minimum not met',
+            description: `${brand.brandName} allocation ($${brandAmount.toFixed(2)}) is below the $${MIN_AMOUNT_PER_BRAND} minimum.`,
+            variant: 'destructive',
+          });
+          return false;
+        }
+      }
+    }
+    
+    return true;
+  };
+
   const MAX_RETRIES = 2;
 
   const handleContinue = async (retryCount: number = 0): Promise<void> => {
+    if (step === 1) {
+      if (!validateAllocations()) return;
+      setStep(2);
+      return;
+    }
+    
     if (step < 3) {
       setStep(step + 1);
       return;
@@ -84,11 +211,22 @@ export function DonationFlow() {
     setCheckoutUrl(null);
     
     try {
+      // Prepare brand allocations for the edge function
+      const brandAllocations = currentAllocations.map(a => ({
+        brand: a.brandName,
+        brandId: a.brandId,
+        percent: a.percentage,
+        amount: Number(((amount * a.percentage) / 100).toFixed(2)),
+      }));
+
       const { data, error } = await supabase.functions.invoke('create-donation-checkout', {
         body: {
           amount,
-          brandName: selectedBrandData?.name || '',
-          brandId: selectedBrand || '',
+          // For backward compatibility, send primary brand
+          brandName: brandAllocations[0]?.brand || '',
+          brandId: brandAllocations[0]?.brandId || '',
+          // New: send all brand allocations
+          brandAllocations,
           userId: user?.id || null,
           userEmail: user?.email || null,
         },
@@ -155,8 +293,6 @@ export function DonationFlow() {
     }
   };
 
-  const selectedBrandData = brandList.find(b => b.name.toLowerCase().replace(/\s+/g, '') === selectedBrand);
-
   return (
     <section id="donation-flow" className="py-20 relative overflow-hidden bg-secondary/20">
       <div className="container mx-auto px-4 relative">
@@ -169,14 +305,14 @@ export function DonationFlow() {
             Make an Impact in Seconds
           </h2>
           <p className="text-lg text-muted-foreground">
-            Choose a brand, select an amount, and see exactly how your donation helps families.
+            Choose brands, select an amount, and see exactly how your donation helps families.
           </p>
         </div>
 
         {/* Steps indicator */}
         <div className="flex justify-center gap-3 mb-10">
           {[
-            { num: 1, label: 'Choose Brand' },
+            { num: 1, label: 'Choose Brands' },
             { num: 2, label: 'Select Amount' },
             { num: 3, label: 'See Impact' }
           ].map((s) => (
@@ -204,27 +340,74 @@ export function DonationFlow() {
 
         {/* Interactive Flow */}
         <Card className="max-w-3xl mx-auto p-6 md:p-10">
-          {/* Step 1: Choose Brand */}
+          {/* Step 1: Choose Brands (Multi-Select) */}
           {step === 1 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center">
-                <h3 className="text-xl font-bold mb-2 text-foreground">Choose a Partner Brand</h3>
-                <p className="text-muted-foreground text-sm">Your donation purchases coupons from these trusted partners</p>
+                <h3 className="text-xl font-bold mb-2 text-foreground">Choose Partner Brands</h3>
+                <p className="text-muted-foreground text-sm">Select one or more brands for your donation (up to {maxBrandsForAmount})</p>
               </div>
               
+              {/* Selected brands chips */}
+              {selectedBrands.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                  {selectedBrands.map((brand) => {
+                    const info = getBrandInfo(brand.brandId);
+                    return (
+                      <div
+                        key={brand.brandId}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-full border border-border"
+                      >
+                        {info && (
+                          <div className="w-5 h-5 rounded bg-white p-0.5 flex items-center justify-center">
+                            <img src={info.logo} alt={info.name} className="w-full h-full object-contain" />
+                          </div>
+                        )}
+                        <span className="text-sm font-medium text-foreground">{brand.brandName}</span>
+                        <button
+                          onClick={() => removeBrand(brand.brandId)}
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                  <span className="text-xs text-muted-foreground self-center ml-2">
+                    {selectedBrands.length} of {maxBrandsForAmount} max
+                  </span>
+                </div>
+              )}
+
+              {/* Brand grid with checkboxes */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {popularBrands.map((brand) => {
                   const brandId = brand.name.toLowerCase().replace(/\s+/g, '');
+                  const isSelected = selectedBrands.some(b => b.brandId === brandId);
+                  const isDisabled = !isSelected && selectedBrands.length >= maxBrandsForAmount;
+                  
                   return (
                     <button
                       key={brand.name}
-                      onClick={() => setSelectedBrand(brandId)}
-                      className={`p-4 rounded-xl border-2 transition-all hover:shadow-md flex flex-col items-center gap-2 ${
-                        selectedBrand === brandId 
+                      onClick={() => toggleBrand(brandId, brand.name)}
+                      disabled={isDisabled}
+                      className={`p-4 rounded-xl border-2 transition-all hover:shadow-md flex flex-col items-center gap-2 relative ${
+                        isSelected 
                           ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
+                          : isDisabled
+                            ? 'border-border bg-muted/50 opacity-50 cursor-not-allowed'
+                            : 'border-border hover:border-primary/50'
                       }`}
                     >
+                      {/* Checkbox indicator */}
+                      <div className={`absolute top-2 right-2 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                        isSelected 
+                          ? 'bg-primary border-primary' 
+                          : 'border-muted-foreground/30'
+                      }`}>
+                        {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                      </div>
+                      
                       <div className="w-12 h-12 rounded-lg bg-background border border-border/50 flex items-center justify-center p-2">
                         <img 
                           src={brand.logo} 
@@ -248,22 +431,67 @@ export function DonationFlow() {
                 Browse all 25+ brands
               </Button>
 
+              {/* Allocation preview (when multiple brands selected) */}
+              {selectedBrands.length > 1 && (
+                <div className="border-t border-border pt-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="custom-allocation"
+                        checked={useCustomAllocation}
+                        onCheckedChange={setUseCustomAllocation}
+                      />
+                      <Label htmlFor="custom-allocation" className="text-sm text-muted-foreground cursor-pointer">
+                        Customize split percentages
+                      </Label>
+                    </div>
+                  </div>
+
+                  {useCustomAllocation ? (
+                    <BrandAllocationSliders
+                      selectedBrands={selectedBrands}
+                      amount={amount}
+                      onAllocationsChange={handleAllocationsChange}
+                    />
+                  ) : (
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                      <div className="text-sm font-medium text-foreground">Equal Split Preview</div>
+                      <div className="space-y-1">
+                        {equalSplitAllocations.map((allocation) => {
+                          const brandAmount = (amount * allocation.percentage) / 100;
+                          return (
+                            <div key={allocation.brandId} className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">{allocation.brandName}</span>
+                              <span className="font-medium text-foreground">
+                                {allocation.percentage}% = ${brandAmount.toFixed(2)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <Button 
                 size="lg" 
                 className="w-full"
-                disabled={!selectedBrand}
+                disabled={selectedBrands.length === 0}
                 onClick={() => handleContinue()}
               >
                 Continue
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
 
-              {/* Brand Selector Modal */}
+              {/* Brand Selector Modal (Multi-Select Mode) */}
               <BrandSelectorModal
                 open={showBrandModal}
                 onOpenChange={setShowBrandModal}
-                selectedBrand={selectedBrand}
-                onSelectBrand={setSelectedBrand}
+                selectedBrands={selectedBrands.map(b => b.brandId)}
+                onSelectBrands={handleBrandsFromModal}
+                maxBrands={maxBrandsForAmount}
+                multiSelect={true}
               />
             </div>
           )}
@@ -272,14 +500,28 @@ export function DonationFlow() {
           {step === 2 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center">
-                {selectedBrandData && (
-                  <div className="inline-flex items-center gap-2 text-muted-foreground mb-3">
-                    <div className="w-8 h-8 rounded bg-background border border-border/50 flex items-center justify-center p-1">
-                      <img src={selectedBrandData.logo} alt={selectedBrandData.name} className="w-full h-full object-contain" />
-                    </div>
-                    <span className="font-medium">{selectedBrandData.name}</span>
-                  </div>
-                )}
+                {/* Show selected brands */}
+                <div className="inline-flex items-center gap-1 text-muted-foreground mb-3 flex-wrap justify-center">
+                  {currentAllocations.slice(0, 3).map((allocation, index) => {
+                    const info = getBrandInfo(allocation.brandId);
+                    return (
+                      <span key={allocation.brandId} className="inline-flex items-center gap-1">
+                        {index > 0 && <span className="mx-1">+</span>}
+                        {info && (
+                          <div className="w-6 h-6 rounded bg-background border border-border/50 flex items-center justify-center p-0.5">
+                            <img src={info.logo} alt={info.name} className="w-full h-full object-contain" />
+                          </div>
+                        )}
+                        <span className="font-medium text-sm">{allocation.brandName}</span>
+                      </span>
+                    );
+                  })}
+                  {currentAllocations.length > 3 && (
+                    <span className="text-sm text-muted-foreground ml-1">
+                      +{currentAllocations.length - 3} more
+                    </span>
+                  )}
+                </div>
                 <h3 className="text-xl font-bold mb-2 text-foreground">Select Donation Amount</h3>
                 <p className="text-muted-foreground text-sm">Every dollar provides real meals for families</p>
               </div>
@@ -291,6 +533,11 @@ export function DonationFlow() {
                   <Utensils className="w-4 h-4" />
                   <span>= {impact.text}</span>
                 </div>
+                {selectedBrands.length > 1 && (
+                  <div className="text-xs text-muted-foreground mt-2">
+                    Split across {selectedBrands.length} brands
+                  </div>
+                )}
               </div>
 
               {/* Preset amounts */}
@@ -326,6 +573,28 @@ export function DonationFlow() {
                 </div>
               </div>
 
+              {/* Per-brand breakdown */}
+              {selectedBrands.length > 1 && (
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                  <div className="text-sm font-medium text-foreground">Breakdown by Brand</div>
+                  <div className="space-y-1">
+                    {currentAllocations.map((allocation) => {
+                      const brandAmount = (amount * allocation.percentage) / 100;
+                      const couponValue = brandAmount >= 50 ? 10 : 5;
+                      const coupons = Math.floor(brandAmount / couponValue);
+                      return (
+                        <div key={allocation.brandId} className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">{allocation.brandName}</span>
+                          <span className="text-foreground">
+                            ${brandAmount.toFixed(2)} → {coupons} coupon{coupons !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-3">
                 <Button 
                   variant="outline" 
@@ -360,15 +629,28 @@ export function DonationFlow() {
 
               {/* Impact Summary */}
               <div className="bg-secondary/50 rounded-xl p-6 space-y-4">
+                {/* Show all selected brands */}
                 <div className="flex items-center justify-between pb-4 border-b border-border/50">
                   <span className="text-muted-foreground">Donating to</span>
-                  <div className="flex items-center gap-2 font-medium text-foreground">
-                    {selectedBrandData && (
-                      <div className="w-6 h-6 rounded bg-background border border-border/50 flex items-center justify-center p-0.5">
-                        <img src={selectedBrandData.logo} alt={selectedBrandData.name} className="w-full h-full object-contain" />
-                      </div>
-                    )}
-                    {selectedBrandData?.name}
+                  <div className="flex items-center gap-1 font-medium text-foreground flex-wrap justify-end">
+                    {currentAllocations.map((allocation, index) => {
+                      const info = getBrandInfo(allocation.brandId);
+                      return (
+                        <span key={allocation.brandId} className="inline-flex items-center gap-1">
+                          {index > 0 && <span className="text-muted-foreground mx-0.5">+</span>}
+                          {info && (
+                            <div className="w-6 h-6 rounded bg-background border border-border/50 flex items-center justify-center p-0.5">
+                              <img src={info.logo} alt={info.name} className="w-full h-full object-contain" />
+                            </div>
+                          )}
+                        </span>
+                      );
+                    })}
+                    <span className="ml-2 text-sm">
+                      {currentAllocations.length === 1 
+                        ? currentAllocations[0].brandName 
+                        : `${currentAllocations.length} brands`}
+                    </span>
                   </div>
                 </div>
                 
@@ -385,6 +667,36 @@ export function DonationFlow() {
                     <div className="text-sm text-muted-foreground">Meals Provided</div>
                   </div>
                 </div>
+
+                {/* Coupon breakdown per brand */}
+                {selectedBrands.length > 0 && (
+                  <div className="border-t border-border/50 pt-4">
+                    <div className="text-sm font-medium text-foreground mb-3">Coupon Breakdown</div>
+                    <div className="space-y-2">
+                      {currentAllocations.map((allocation) => {
+                        const brandAmount = (amount * allocation.percentage) / 100;
+                        const couponValue = brandAmount >= 50 ? 10 : 5;
+                        const coupons = Math.floor(brandAmount / couponValue);
+                        const info = getBrandInfo(allocation.brandId);
+                        return (
+                          <div key={allocation.brandId} className="flex items-center justify-between text-sm bg-background/50 rounded-lg p-2">
+                            <div className="flex items-center gap-2">
+                              {info && (
+                                <div className="w-6 h-6 rounded bg-white p-0.5 flex items-center justify-center">
+                                  <img src={info.logo} alt={info.name} className="w-full h-full object-contain" />
+                                </div>
+                              )}
+                              <span className="text-foreground">{allocation.brandName}</span>
+                            </div>
+                            <span className="text-muted-foreground">
+                              ${brandAmount.toFixed(2)} → {coupons} × ${couponValue} coupon{coupons !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Payment Methods Section */}
                 <div className="border-t border-border/50 pt-4">
@@ -412,15 +724,22 @@ export function DonationFlow() {
                     </p>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                       <Users className="w-3 h-3" />
-                      <span>Join 50,000+ donors making a difference</span>
+                      <span>Family of 4, Los Angeles</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Secondary: Gold Coins mention */}
-                <div className="text-center text-sm text-muted-foreground pt-2">
-                  <Gift className="w-4 h-4 inline mr-1" />
-                  Plus, earn {amount * 10} Gold Coins for exclusive rewards
+                {/* Gold coins bonus */}
+                <div className="bg-gradient-to-r from-amber-500/10 to-yellow-500/10 rounded-lg p-4 border border-amber-500/20">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center">
+                      <Gift className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Plus, earn {amount * 10} Gold Coins</p>
+                      <p className="text-xs text-muted-foreground">Redeem for exclusive rewards and recognition</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -430,12 +749,13 @@ export function DonationFlow() {
                   size="lg" 
                   className="flex-1"
                   onClick={() => setStep(2)}
+                  disabled={isProcessing}
                 >
                   Back
                 </Button>
-              <Button 
+                <Button 
                   size="lg" 
-                  className="flex-1"
+                  className="flex-1 relative"
                   onClick={() => handleContinue()}
                   disabled={isProcessing}
                 >
@@ -453,20 +773,19 @@ export function DonationFlow() {
                 </Button>
               </div>
 
-              {/* Fallback link if popup was blocked */}
+              {/* Manual redirect fallback */}
               {checkoutUrl && !isProcessing && (
-                <div className="text-center pt-4 border-t border-border/50 mt-4">
+                <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-2">
-                    Payment page didn't open? Click below:
+                    Didn't see the payment page?
                   </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  <Button 
+                    variant="link" 
+                    className="text-primary gap-1"
                     onClick={handleManualRedirect}
-                    className="gap-2"
                   >
+                    Open payment page
                     <ExternalLink className="w-4 h-4" />
-                    Open Payment Page
                   </Button>
                 </div>
               )}
