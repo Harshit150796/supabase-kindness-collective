@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Heart, Utensils, Home, Gift, History } from 'lucide-react';
+import { CheckCircle, Heart, Home, Gift, History } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,7 +12,7 @@ export default function DonationSuccess() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const amount = searchParams.get('amount') || '50';
-  const meals = searchParams.get('meals') || '100';
+  const coupons = searchParams.get('coupons') || searchParams.get('meals') || '10';
   const goldCoins = parseInt(amount) * 10;
   const [countdown, setCountdown] = useState(10);
 
@@ -74,10 +74,10 @@ export default function DonationSuccess() {
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-primary flex items-center justify-center gap-1">
-                  <Utensils className="w-6 h-6" />
-                  {meals}
+                  <Gift className="w-6 h-6" />
+                  {coupons}
                 </div>
-                <div className="text-sm text-muted-foreground">Meals Provided</div>
+                <div className="text-sm text-muted-foreground">Coupons Created</div>
               </div>
             </div>
 
@@ -96,8 +96,8 @@ export default function DonationSuccess() {
           {/* Impact Message */}
           <div className="bg-primary/5 rounded-lg p-4">
             <p className="text-sm text-foreground">
-              Your donation will help families access essential groceries and household items. 
-              Together, we're making a real difference in our communities.
+              Your donation creates coupons that are distributed to verified families, 
+              redeemable at partner brands for groceries, essentials, and more.
             </p>
           </div>
 
