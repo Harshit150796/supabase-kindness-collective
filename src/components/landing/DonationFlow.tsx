@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { ArrowRight, Check, Heart, Gift, Users, Utensils, Search, Loader2, ExternalLink, Globe, CreditCard, X } from 'lucide-react';
+import { ArrowRight, Check, Heart, Gift, Users, Search, Loader2, ExternalLink, Globe, CreditCard, X } from 'lucide-react';
 import { brandList, popularBrands, brandLogos, BrandInfo } from '@/data/brandLogos';
 import { BrandSelectorModal } from './BrandSelectorModal';
 import { BrandAllocationSliders, BrandAllocation } from './BrandAllocationSliders';
@@ -67,12 +67,17 @@ const getBrandInfo = (brandId: string): BrandInfo | null => {
   return null;
 };
 
-// Impact equivalents
-const getImpactMessage = (amount: number) => {
-  if (amount >= 100) return { meals: amount * 2, text: `${amount * 2} meals for families in need` };
-  if (amount >= 50) return { meals: amount * 2, text: `${amount * 2} meals for families in need` };
-  if (amount >= 25) return { meals: amount * 2, text: `${amount * 2} meals for families in need` };
-  return { meals: amount * 2, text: `${amount * 2} meals for families in need` };
+// Calculate total coupons across all brand allocations
+const getTotalCoupons = (amount: number, allocations: BrandAllocation[]) => {
+  if (allocations.length === 0) {
+    const couponValue = amount >= 50 ? 10 : 5;
+    return Math.floor(amount / couponValue);
+  }
+  return allocations.reduce((total, alloc) => {
+    const brandAmount = (amount * alloc.percentage) / 100;
+    const couponValue = brandAmount >= 50 ? 10 : 5;
+    return total + Math.floor(brandAmount / couponValue);
+  }, 0);
 };
 
 export function DonationFlow() {
@@ -86,7 +91,7 @@ export function DonationFlow() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
 
-  const impact = getImpactMessage(amount);
+  // totalCoupons moved after currentAllocations
 
   // Calculate max brands allowed based on amount
   const maxBrandsForAmount = Math.min(MAX_BRANDS, Math.floor(amount / MIN_AMOUNT_PER_BRAND));
@@ -110,6 +115,8 @@ export function DonationFlow() {
     }
     return selectedBrands;
   }, [useCustomAllocation, selectedBrands, equalSplitAllocations]);
+
+  const totalCoupons = getTotalCoupons(amount, currentAllocations);
 
   // Toggle brand selection
   const toggleBrand = (brandId: string, brandName: string) => {
@@ -523,15 +530,15 @@ export function DonationFlow() {
                   )}
                 </div>
                 <h3 className="text-xl font-bold mb-2 text-foreground">Select Donation Amount</h3>
-                <p className="text-muted-foreground text-sm">Every dollar provides real meals for families</p>
+                <p className="text-muted-foreground text-sm">Your donation creates coupons for families to use at partner brands</p>
               </div>
 
               {/* Amount display with impact */}
               <div className="text-center py-6 bg-secondary/50 rounded-xl">
                 <div className="text-5xl font-bold text-foreground mb-2">${amount}</div>
                 <div className="flex items-center justify-center gap-2 text-primary font-medium">
-                  <Utensils className="w-4 h-4" />
-                  <span>= {impact.text}</span>
+                  <Gift className="w-4 h-4" />
+                  <span>= {totalCoupons} coupons for families</span>
                 </div>
                 {selectedBrands.length > 1 && (
                   <div className="text-xs text-muted-foreground mt-2">
@@ -661,10 +668,10 @@ export function DonationFlow() {
                   </div>
                   <div>
                     <div className="text-3xl font-bold text-primary flex items-center justify-center gap-1">
-                      <Utensils className="w-6 h-6" />
-                      {impact.meals}
+                      <Gift className="w-6 h-6" />
+                      {totalCoupons}
                     </div>
-                    <div className="text-sm text-muted-foreground">Meals Provided</div>
+                    <div className="text-sm text-muted-foreground">Coupons Created</div>
                   </div>
                 </div>
 

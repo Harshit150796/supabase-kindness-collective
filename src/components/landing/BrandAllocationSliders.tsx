@@ -64,10 +64,11 @@ export function BrandAllocationSliders({
     return Number(((amount * percentage) / 100).toFixed(2));
   };
 
-  // Calculate coupons per brand
-  const getCouponsForBrand = (brandAmount: number) => {
+  // Calculate coupon details per brand
+  const getCouponDetails = (brandAmount: number) => {
     const couponValue = brandAmount >= 50 ? 10 : 5;
-    return Math.floor(brandAmount / couponValue);
+    const count = Math.floor(brandAmount / couponValue);
+    return { count, value: couponValue };
   };
 
   return (
@@ -83,7 +84,7 @@ export function BrandAllocationSliders({
         {localAllocations.map((allocation, index) => {
           const brandInfo = getBrandInfo(allocation.brandId);
           const allocatedAmount = getAmountForBrand(allocation.percentage);
-          const coupons = getCouponsForBrand(allocatedAmount);
+          const couponDetails = getCouponDetails(allocatedAmount);
 
           return (
             <div key={allocation.brandId} className="space-y-2">
@@ -122,7 +123,7 @@ export function BrandAllocationSliders({
               />
 
               <div className="text-xs text-muted-foreground text-right">
-                ≈ {coupons} coupon{coupons !== 1 ? 's' : ''} ({coupons * 2} meals)
+                → {couponDetails.count} × ${couponDetails.value} coupon{couponDetails.count !== 1 ? 's' : ''}
               </div>
             </div>
           );
@@ -141,10 +142,10 @@ export function BrandAllocationSliders({
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           {localAllocations.map((allocation) => {
             const allocatedAmount = getAmountForBrand(allocation.percentage);
-            const coupons = getCouponsForBrand(allocatedAmount);
+            const couponDetails = getCouponDetails(allocatedAmount);
             return (
               <span key={allocation.brandId}>
-                {allocation.brandName}: ${allocatedAmount.toFixed(2)} → {coupons} coupon{coupons !== 1 ? 's' : ''}
+                {allocation.brandName}: {couponDetails.count} × ${couponDetails.value}
               </span>
             );
           })}
