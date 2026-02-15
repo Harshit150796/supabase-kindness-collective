@@ -1,376 +1,267 @@
 
 
-## Plan: Replace Generic "Meals" with Brand-Specific Impact Display
+## Plan: CMS + Enhanced Admin Analytics
 
-### Problem Statement
-
-The current donation flow displays "meals" for all brands, which is inaccurate and misleading:
-- **DoorDash** → meals ✅
-- **Walmart** → groceries, not meals
-- **CVS** → healthcare items, not meals
-- **Starbucks** → beverages, not meals
-- **Amazon** → general products, not meals
-
-When someone donates $1000 to multiple brands, they need to understand:
-1. How many coupons will be created **per brand**
-2. What value each coupon will have (based on allocation tier)
-3. What those coupons will provide (category-specific)
+This plan covers two major features:
+1. A **Content Management System (CMS)** so non-technical team members can edit website text, add blog posts/articles, manage impact stories, and upload images -- all from the admin dashboard
+2. An **Enhanced Admin Analytics** page with visual charts for signup trends, donation metrics, role breakdowns, and a recent users table
 
 ---
 
-### Solution Overview
+### Part 1: Content Management System (CMS)
 
-Replace the universal "meals" metric with **coupon-focused display** that shows:
-- Number of coupons per brand
-- Value per coupon ($5 or $10)
-- Brand-specific impact description (optional contextual text)
+#### What is this?
+
+A CMS lets your team update the website content (hero text, testimonials, impact stories, blog posts, images) without touching any code. They simply log into the admin dashboard, click "Content", and edit things through simple forms.
+
+#### What content will be manageable?
+
+| Content Type | What it controls | Currently |
+|-------------|------------------|-----------|
+| **Site Content** | Hero headline, subtext, CTA buttons, section titles | Hardcoded in components |
+| **Impact Stories** | Stories shown on homepage and /stories page | Hardcoded in `impactStories.ts` |
+| **Testimonials** | Donor/recipient quotes on landing page | Hardcoded in `testimonials.ts` |
+| **Blog Posts** | News, articles, updates (NEW) | Does not exist yet |
+| **FAQ Items** | Questions and answers on FAQ page | Hardcoded |
+
+#### Database Tables (New)
+
+**Table: `cms_content`** -- for editable site text (hero, section titles, etc.)
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| id | uuid | Primary key |
+| content_key | text (unique) | Identifier like "hero_title", "cta_subtitle" |
+| content_value | text | The actual text content |
+| content_type | text | "text", "rich_text", "image_url" |
+| section | text | Grouping: "hero", "cta", "how_it_works" |
+| updated_by | uuid | Who last edited |
+| updated_at | timestamp | When last edited |
+
+**Table: `cms_stories`** -- replaces hardcoded impact stories
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| id | uuid | Primary key |
+| name | text | Story subject name |
+| location | text | City, State |
+| image_url | text | Main photo |
+| short_story | text | Summary shown in cards |
+| full_story | text | Full story on detail page |
+| impact | text | Impact badge text |
+| category | text | family, child, emergency, community |
+| donors_count | integer | Number of donors |
+| amount_raised | numeric | Amount raised |
+| goal | numeric | Fundraising goal |
+| is_published | boolean | Show/hide on website |
+| display_order | integer | Sort order |
+| created_at | timestamp | When created |
+
+**Table: `cms_testimonials`** -- replaces hardcoded testimonials
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| id | uuid | Primary key |
+| quote | text | The testimonial text |
+| name | text | Person's name |
+| role | text | donor, recipient, partner |
+| role_label | text | "Verified Donor", etc. |
+| location | text | City, State |
+| image_url | text | Avatar photo |
+| is_published | boolean | Show/hide |
+| display_order | integer | Sort order |
+| created_at | timestamp | When created |
+
+**Table: `cms_posts`** -- blog/articles (NEW feature)
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| id | uuid | Primary key |
+| title | text | Post title |
+| slug | text (unique) | URL-friendly identifier |
+| excerpt | text | Short summary |
+| content | text | Full article body (markdown) |
+| cover_image_url | text | Featured image |
+| author_id | uuid | Who wrote it |
+| category | text | news, update, guide, story |
+| tags | text[] | Searchable tags |
+| is_published | boolean | Draft vs published |
+| published_at | timestamp | When published |
+| created_at | timestamp | When created |
+
+**Table: `cms_faq`** -- replaces hardcoded FAQ
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| id | uuid | Primary key |
+| question | text | The question |
+| answer | text | The answer (supports markdown) |
+| category | text | Group: "general", "donation", "recipient" |
+| display_order | integer | Sort order |
+| is_published | boolean | Show/hide |
+
+All tables will have RLS policies restricting write access to admin users only, with public read access for published content.
+
+#### Admin CMS Pages (New)
+
+These pages are added to the admin sidebar:
+
+1. **Admin Content** (`/admin/content`) -- Edit site text
+   - Grouped by section (Hero, CTA, How It Works, etc.)
+   - Simple text fields with "Save" buttons
+   - Preview of where the text appears
+
+2. **Admin Stories** (`/admin/stories`) -- Manage impact stories
+   - Table of all stories with publish/unpublish toggles
+   - "Add Story" form with all fields
+   - Edit existing stories
+   - Drag to reorder
+
+3. **Admin Testimonials** (`/admin/testimonials`) -- Manage testimonials
+   - Same pattern as stories
+   - Add/edit/delete/reorder
+
+4. **Admin Blog** (`/admin/blog`) -- Create articles
+   - List of posts with draft/published status
+   - Rich text editor for writing posts
+   - Cover image upload
+   - Publish/unpublish toggle
+
+5. **Admin FAQ** (`/admin/faq`) -- Manage FAQ items
+   - Add/edit/delete questions
+   - Group by category
+   - Reorder
+
+#### Frontend Changes
+
+- **Landing page components** (`HeroSection`, `ImpactStories`, `TestimonialsSection`, etc.) will fetch content from `cms_*` tables instead of hardcoded data files
+- A **custom hook** `useCMSContent(section)` will handle fetching and caching via React Query
+- Fallback to current hardcoded values if CMS has no data (smooth migration)
+- New `/blog` page and `/blog/:slug` page for articles
+
+#### Storage Bucket
+
+- Create a new `cms-images` public storage bucket for uploading images through the CMS
+
+#### Admin Sidebar Update
+
+Add new navigation items for admin users:
+
+```
+Overview
+Users
+Verifications
+Coupons
+Analytics
+---
+Content        (NEW)
+Stories        (NEW)
+Testimonials   (NEW)
+Blog Posts     (NEW)
+FAQ            (NEW)
+```
 
 ---
 
-### Data Model Enhancement
+### Part 2: Enhanced Admin Analytics
 
-Add a new `impactLabel` field to `BrandInfo` in `brandLogos.ts`:
+Replace the current basic stat cards with a rich, visual analytics dashboard.
 
-| Category | Impact Label | Example |
-|----------|--------------|---------|
-| food-delivery | `meals` | "6 meals delivered" |
-| restaurant | `meals` | "4 restaurant meals" |
-| grocery | `groceries` | "Worth of groceries" |
-| coffee | `beverages` | "Coffee/beverage credits" |
-| pharmacy | `essentials` | "Healthcare essentials" |
-| retail | `products` | "Worth of products" |
+#### New Sections
 
-```typescript
-export interface BrandInfo {
-  name: string;
-  logo: string;
-  color: string;
-  category: 'grocery' | 'food-delivery' | 'retail' | 'coffee' | 'pharmacy' | 'restaurant';
-  popular?: boolean;
-  impactUnit?: string;  // NEW: "meals" | "groceries" | "beverages" | "essentials" | "products"
-}
-```
+1. **Summary KPI Cards** (top row)
+   - Total Users (with growth % vs last month)
+   - Total Donations (sum of all donation amounts)
+   - Active Coupons
+   - Conversion Rate
 
----
+2. **Signup Trend Chart** (Recharts AreaChart)
+   - Shows new user registrations over time (daily/weekly/monthly)
+   - Data from `profiles.created_at` grouped by date
 
-### Display Changes
+3. **Donation Trends Chart** (Recharts BarChart)
+   - Shows donation amounts over time
+   - Data from `donations.created_at` and `donations.amount`
 
-#### Option A: Coupon-Only Display (Recommended - Cleaner)
+4. **Role Breakdown Pie Chart** (Recharts PieChart)
+   - Visual split of donors vs recipients vs admins
+   - Data from `user_roles` table
 
-Remove "meals" entirely and focus on **coupon value**:
+5. **Recent Users Table**
+   - Last 10 signups showing name, email, date joined, roles
+   - Data from `profiles` joined with `user_roles`
 
-**Current:**
-```
-DoorDash   60%   $30.00
-           ≈ 6 coupons (12 meals)
-```
+6. **Top Brands by Donation** (Recharts BarChart)
+   - Which brands get the most donation allocations
+   - Data from `donation_brands` table
 
-**New:**
-```
-DoorDash   60%   $30.00
-           → 6 × $5 coupons
-```
+7. **Coupon Status Breakdown** (Recharts PieChart)
+   - Available vs Reserved vs Redeemed
+   - Data from `coupons.status`
 
-For larger allocations ($50+):
-```
-DoorDash   60%   $600.00
-           → 60 × $10 coupons
-```
+#### Data Queries
 
-#### Option B: Category-Aware Display (More Descriptive)
+All analytics data comes from existing tables -- no new tables needed:
+- `profiles` for user signups over time
+- `user_roles` for role distribution
+- `donations` for donation trends and totals
+- `donation_brands` for brand popularity
+- `coupons` for coupon status breakdown
 
-**Current:**
-```
-DoorDash   60%   $30.00
-           ≈ 6 coupons (12 meals)
+#### Date Range Filter
 
-Walmart    40%   $20.00
-           ≈ 4 coupons (8 meals)  ← WRONG
-```
-
-**New:**
-```
-DoorDash   60%   $30.00
-           → 6 × $5 coupons (food delivery)
-
-Walmart    40%   $20.00
-           → 4 × $5 coupons (groceries)
-```
+Add a date range selector (Last 7 days / 30 days / 90 days / All time) at the top of the analytics page.
 
 ---
 
-### Recommended Approach: Clean Coupon Display
+### Files to Create
 
-Focus purely on **what gets created** rather than trying to quantify impact:
-
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  COUPON PREVIEW                                              │
-│  ─────────────────────────────────────────────────────────── │
-│                                                              │
-│  [DoorDash]  DoorDash          $30.00  →  6 × $5 coupons    │
-│  [Walmart]   Walmart           $20.00  →  4 × $5 coupons    │
-│  ─────────────────────────────────────────────────────────── │
-│  Total: $50.00 → 10 coupons                                  │
-│                                                              │
-│  ℹ️ Each coupon is redeemable at the selected brand         │
-└──────────────────────────────────────────────────────────────┘
-```
-
----
+| File | Purpose |
+|------|---------|
+| `supabase/migrations/[ts]_create_cms_tables.sql` | All CMS tables + RLS + storage bucket |
+| `src/hooks/useCMSContent.ts` | Hook to fetch/cache CMS content |
+| `src/pages/admin/AdminContent.tsx` | Edit site text |
+| `src/pages/admin/AdminStories.tsx` | Manage impact stories |
+| `src/pages/admin/AdminTestimonials.tsx` | Manage testimonials |
+| `src/pages/admin/AdminBlog.tsx` | Manage blog posts |
+| `src/pages/admin/AdminFAQ.tsx` | Manage FAQ |
+| `src/pages/Blog.tsx` | Public blog listing page |
+| `src/pages/BlogPost.tsx` | Individual blog post page |
 
 ### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/data/brandLogos.ts` | Add optional `impactUnit` field to BrandInfo |
-| `src/components/landing/BrandAllocationSliders.tsx` | Replace `{coupons * 2} meals` with coupon details |
-| `src/components/landing/DonationFlow.tsx` | Remove `getImpactMessage()`, update Step 2 & 3 displays |
-| `src/pages/DonationSuccess.tsx` | Replace "Meals Provided" with "Coupons Created" |
+| `src/pages/admin/AdminAnalytics.tsx` | Complete rewrite with Recharts charts |
+| `src/components/layout/DashboardLayout.tsx` | Add CMS nav items for admin |
+| `src/App.tsx` | Add new routes |
+| `src/components/landing/HeroSection.tsx` | Fetch from CMS with hardcoded fallback |
+| `src/components/landing/ImpactStories.tsx` | Fetch from `cms_stories` with fallback |
+| `src/components/landing/TestimonialsSection.tsx` | Fetch from `cms_testimonials` with fallback |
+| `src/pages/FAQ.tsx` | Fetch from `cms_faq` with fallback |
+| `src/components/layout/Navbar.tsx` | Add Blog link |
 
 ---
 
-### Detailed Changes
+### Implementation Order
 
-#### 1. BrandAllocationSliders.tsx
-
-**Line 124-126 - Change coupon display:**
-
-```typescript
-// FROM:
-<div className="text-xs text-muted-foreground text-right">
-  ≈ {coupons} coupon{coupons !== 1 ? 's' : ''} ({coupons * 2} meals)
-</div>
-
-// TO:
-<div className="text-xs text-muted-foreground text-right">
-  → {coupons} × ${couponValue} coupon{coupons !== 1 ? 's' : ''}
-</div>
-```
-
-**Update `getCouponsForBrand` to also return coupon value:**
-
-```typescript
-const getCouponDetails = (brandAmount: number) => {
-  const couponValue = brandAmount >= 50 ? 10 : 5;
-  const couponCount = Math.floor(brandAmount / couponValue);
-  return { count: couponCount, value: couponValue };
-};
-```
-
-**Update Summary section (lines 141-151):**
-
-```typescript
-// FROM:
-<span key={allocation.brandId}>
-  {allocation.brandName}: ${allocatedAmount.toFixed(2)} → {coupons} coupon{coupons !== 1 ? 's' : ''}
-</span>
-
-// TO:
-<span key={allocation.brandId}>
-  {allocation.brandName}: {couponDetails.count} × ${couponDetails.value}
-</span>
-```
-
-#### 2. DonationFlow.tsx
-
-**Lines 70-76 - Remove or replace `getImpactMessage()`:**
-
-```typescript
-// FROM:
-const getImpactMessage = (amount: number) => {
-  if (amount >= 100) return { meals: amount * 2, text: `${amount * 2} meals for families in need` };
-  // ...
-};
-
-// TO:
-const getTotalCoupons = (amount: number, allocations: BrandAllocation[]) => {
-  return allocations.reduce((total, alloc) => {
-    const brandAmount = (amount * alloc.percentage) / 100;
-    const couponValue = brandAmount >= 50 ? 10 : 5;
-    return total + Math.floor(brandAmount / couponValue);
-  }, 0);
-};
-```
-
-**Line 526 - Update text:**
-
-```typescript
-// FROM:
-<p className="text-muted-foreground text-sm">Every dollar provides real meals for families</p>
-
-// TO:
-<p className="text-muted-foreground text-sm">Your donation creates coupons for families to use at partner brands</p>
-```
-
-**Lines 530-541 - Update amount display:**
-
-```typescript
-// FROM:
-<div className="text-center py-6 bg-secondary/50 rounded-xl">
-  <div className="text-5xl font-bold text-foreground mb-2">${amount}</div>
-  <div className="flex items-center justify-center gap-2 text-primary font-medium">
-    <Utensils className="w-4 h-4" />
-    <span>= {impact.text}</span>
-  </div>
-</div>
-
-// TO:
-<div className="text-center py-6 bg-secondary/50 rounded-xl">
-  <div className="text-5xl font-bold text-foreground mb-2">${amount}</div>
-  <div className="flex items-center justify-center gap-2 text-primary font-medium">
-    <Gift className="w-4 h-4" />
-    <span>= {totalCoupons} coupons for families</span>
-  </div>
-</div>
-```
-
-**Lines 657-668 - Update Step 3 impact display:**
-
-```typescript
-// FROM:
-<div>
-  <div className="text-3xl font-bold text-primary flex items-center justify-center gap-1">
-    <Utensils className="w-6 h-6" />
-    {impact.meals}
-  </div>
-  <div className="text-sm text-muted-foreground">Meals Provided</div>
-</div>
-
-// TO:
-<div>
-  <div className="text-3xl font-bold text-primary flex items-center justify-center gap-1">
-    <Gift className="w-6 h-6" />
-    {totalCoupons}
-  </div>
-  <div className="text-sm text-muted-foreground">Coupons Created</div>
-</div>
-```
-
-#### 3. DonationSuccess.tsx
-
-**Lines 74-81 - Update success display:**
-
-```typescript
-// FROM:
-<div className="text-center">
-  <div className="text-3xl font-bold text-primary flex items-center justify-center gap-1">
-    <Utensils className="w-6 h-6" />
-    {meals}
-  </div>
-  <div className="text-sm text-muted-foreground">Meals Provided</div>
-</div>
-
-// TO:
-<div className="text-center">
-  <div className="text-3xl font-bold text-primary flex items-center justify-center gap-1">
-    <Gift className="w-6 h-6" />
-    {coupons}
-  </div>
-  <div className="text-sm text-muted-foreground">Coupons Created</div>
-</div>
-```
-
-Also update URL parameter from `meals` to `coupons`.
+1. Database migration (all CMS tables + RLS + storage)
+2. Enhanced Admin Analytics page (charts, tables, filters)
+3. CMS hook and admin content pages
+4. Update frontend components to read from CMS
+5. Blog pages (listing + detail)
+6. Seed initial CMS data from current hardcoded values
 
 ---
 
-### Enhanced Coupon Value Logic
+### How Your Team Will Use It
 
-Show clear breakdown of coupon values based on allocation:
-
-```typescript
-// Coupon value tier logic:
-// - If brand allocation is $50+ → $10 coupons
-// - If brand allocation is < $50 → $5 coupons
-
-const getCouponBreakdown = (amount: number, percentage: number) => {
-  const allocatedAmount = (amount * percentage) / 100;
-  const couponValue = allocatedAmount >= 50 ? 10 : 5;
-  const couponCount = Math.floor(allocatedAmount / couponValue);
-  
-  return {
-    allocatedAmount,
-    couponValue,
-    couponCount,
-    totalValue: couponCount * couponValue,
-  };
-};
-```
-
-**Example for $1000 donation split 60/40:**
-
-| Brand | Allocation | Coupon Value | Coupons | Total Value |
-|-------|------------|--------------|---------|-------------|
-| DoorDash | $600 (60%) | $10 | 60 | $600 |
-| Walmart | $400 (40%) | $10 | 40 | $400 |
-| **Total** | **$1000** | - | **100** | **$1000** |
-
----
-
-### UI Mockup: Updated Step 3
-
-```text
-┌──────────────────────────────────────────────────────────────┐
-│                    Your Impact                               │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│       [DoorDash logo]  [Walmart logo]                        │
-│                                                              │
-│  ───────────────────────────────────────────────────────────│
-│                                                              │
-│           $1,000.00              100                         │
-│         Your Donation       Coupons Created                  │
-│                                                              │
-│  ───────────────────────────────────────────────────────────│
-│                                                              │
-│  COUPON BREAKDOWN                                            │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │ [DoorDash] $600.00 → 60 × $10 coupons                  │ │
-│  │ [Walmart]  $400.00 → 40 × $10 coupons                  │ │
-│  └────────────────────────────────────────────────────────┘ │
-│                                                              │
-│  ℹ️ Coupons are distributed to verified recipient families  │
-│     and redeemable at the selected partner brands.          │
-│                                                              │
-│        [Back]           [Complete Donation ❤️]               │
-└──────────────────────────────────────────────────────────────┘
-```
-
----
-
-### Explanatory Notes to Add
-
-Add contextual information where helpful:
-
-**In BrandAllocationSliders:**
-```text
-💡 How it works:
-• Allocations of $50+ create $10 coupons (higher value)
-• Allocations under $50 create $5 coupons
-• Each coupon is redeemable at the selected brand
-```
-
-**In Step 3 (Impact Preview):**
-```text
-ℹ️ Your coupons will be distributed to verified families who can 
-   redeem them at {brand names} for {category-specific items}.
-```
-
----
-
-### Summary of Changes
-
-| Metric | Current | New |
-|--------|---------|-----|
-| Primary display | "X meals" | "X coupons" |
-| Per-brand detail | "X coupons (Y meals)" | "X × $Value coupons" |
-| Impact text | "meals for families in need" | "coupons for families" |
-| Success page | "Meals Provided" | "Coupons Created" |
-
-This approach:
-1. Accurately represents what is created (coupons, not meals)
-2. Shows clear value breakdown ($5 vs $10 coupons)
-3. Works for all brand categories (food, retail, pharmacy, etc.)
-4. Removes misleading "meals" terminology for non-food brands
+Once built, any admin can:
+1. Log in to the admin dashboard
+2. Click "Content" to edit hero text, section titles, button labels
+3. Click "Stories" to add/edit/remove impact stories with photos
+4. Click "Blog Posts" to write and publish articles
+5. Click "Testimonials" to manage quotes
+6. Click "FAQ" to add/edit questions and answers
+7. All changes appear on the live site immediately -- no code changes needed
 
