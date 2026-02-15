@@ -68,6 +68,12 @@ export function Navbar() {
             >
               FAQ
             </Link>
+            <Link 
+              to="/blog" 
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Blog
+            </Link>
           </div>
 
           {/* Auth Buttons */}
@@ -177,6 +183,13 @@ export function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
             >
               How It Works
+            </Link>
+            <Link 
+              to="/blog" 
+              className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Blog
             </Link>
             <Link 
               to="/faq" 
