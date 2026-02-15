@@ -50,6 +50,13 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminVerifications from "./pages/admin/AdminVerifications";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminContent from "./pages/admin/AdminContent";
+import AdminStories from "./pages/admin/AdminStories";
+import AdminTestimonials from "./pages/admin/AdminTestimonials";
+import AdminBlog from "./pages/admin/AdminBlog";
+import AdminFAQ from "./pages/admin/AdminFAQ";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +117,15 @@ const AppRoutes = () => (
     <Route path="/admin/verifications" element={<ProtectedRoute allowedRoles={['admin']}><AdminVerifications /></ProtectedRoute>} />
     <Route path="/admin/coupons" element={<ProtectedRoute allowedRoles={['admin']}><AdminCoupons /></ProtectedRoute>} />
     <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={['admin']}><AdminAnalytics /></ProtectedRoute>} />
+    <Route path="/admin/content" element={<ProtectedRoute allowedRoles={['admin']}><AdminContent /></ProtectedRoute>} />
+    <Route path="/admin/stories" element={<ProtectedRoute allowedRoles={['admin']}><AdminStories /></ProtectedRoute>} />
+    <Route path="/admin/testimonials" element={<ProtectedRoute allowedRoles={['admin']}><AdminTestimonials /></ProtectedRoute>} />
+    <Route path="/admin/blog" element={<ProtectedRoute allowedRoles={['admin']}><AdminBlog /></ProtectedRoute>} />
+    <Route path="/admin/faq" element={<ProtectedRoute allowedRoles={['admin']}><AdminFAQ /></ProtectedRoute>} />
+    
+    {/* Blog Routes */}
+    <Route path="/blog" element={<Blog />} />
+    <Route path="/blog/:slug" element={<BlogPost />} />
     
     <Route path="*" element={<NotFound />} />
   </Routes>

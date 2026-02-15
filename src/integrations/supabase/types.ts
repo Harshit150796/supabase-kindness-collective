@@ -38,6 +38,213 @@ export type Database = {
         }
         Relationships: []
       }
+      cms_content: {
+        Row: {
+          content_key: string
+          content_type: string
+          content_value: string
+          created_at: string
+          id: string
+          section: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content_key: string
+          content_type?: string
+          content_value?: string
+          created_at?: string
+          id?: string
+          section?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content_key?: string
+          content_type?: string
+          content_value?: string
+          created_at?: string
+          id?: string
+          section?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      cms_faq: {
+        Row: {
+          answer: string
+          category: string
+          created_at: string
+          display_order: number
+          id: string
+          is_published: boolean
+          question: string
+        }
+        Insert: {
+          answer: string
+          category?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_published?: boolean
+          question: string
+        }
+        Update: {
+          answer?: string
+          category?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_published?: boolean
+          question?: string
+        }
+        Relationships: []
+      }
+      cms_posts: {
+        Row: {
+          author_id: string | null
+          category: string
+          content: string
+          cover_image_url: string | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          is_published: boolean
+          published_at: string | null
+          slug: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          category?: string
+          content?: string
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          slug: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          category?: string
+          content?: string
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          slug?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cms_stories: {
+        Row: {
+          amount_raised: number
+          category: string
+          created_at: string
+          display_order: number
+          donors_count: number
+          full_story: string | null
+          goal: number
+          id: string
+          image_url: string | null
+          impact: string | null
+          is_published: boolean
+          location: string | null
+          name: string
+          short_story: string
+          updated_at: string
+        }
+        Insert: {
+          amount_raised?: number
+          category?: string
+          created_at?: string
+          display_order?: number
+          donors_count?: number
+          full_story?: string | null
+          goal?: number
+          id?: string
+          image_url?: string | null
+          impact?: string | null
+          is_published?: boolean
+          location?: string | null
+          name: string
+          short_story: string
+          updated_at?: string
+        }
+        Update: {
+          amount_raised?: number
+          category?: string
+          created_at?: string
+          display_order?: number
+          donors_count?: number
+          full_story?: string | null
+          goal?: number
+          id?: string
+          image_url?: string | null
+          impact?: string | null
+          is_published?: boolean
+          location?: string | null
+          name?: string
+          short_story?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cms_testimonials: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          image_url: string | null
+          is_published: boolean
+          location: string | null
+          name: string
+          quote: string
+          role: string
+          role_label: string
+          verified: boolean
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          location?: string | null
+          name: string
+          quote: string
+          role?: string
+          role_label?: string
+          verified?: boolean
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          location?: string | null
+          name?: string
+          quote?: string
+          role?: string
+          role_label?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       coupon_claims: {
         Row: {
           claimed_at: string
