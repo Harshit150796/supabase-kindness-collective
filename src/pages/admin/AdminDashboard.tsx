@@ -4,22 +4,39 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Users, Shield, Gift, BarChart, ArrowRight, Clock } from 'lucide-react';
+import { Users, Shield, Gift, BarChart, ArrowRight, Clock, Layout, Heart, MessageSquareQuote, FileText, HelpCircle } from 'lucide-react';
 
 interface AdminStats {
   totalUsers: number;
   pendingVerifications: number;
   totalCoupons: number;
   availableCoupons: number;
+  publishedStories: number;
+  publishedPosts: number;
+  testimonials: number;
+  faqItems: number;
 }
+
+const platformActions = [
+  { title: 'Manage Users', description: 'View and manage all users, promote to admin', path: '/admin/users', icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
+  { title: 'Verifications', description: 'Approve/reject recipient applications', path: '/admin/verifications', icon: Shield, color: 'text-gold', bg: 'bg-gold/10' },
+  { title: 'Coupons', description: 'View and manage coupon inventory', path: '/admin/coupons', icon: Gift, color: 'text-emerald-light', bg: 'bg-emerald-light/10' },
+  { title: 'Analytics', description: 'Signup trends, donation charts, stats', path: '/admin/analytics', icon: BarChart, color: 'text-primary', bg: 'bg-primary/10' },
+];
+
+const contentActions = [
+  { title: 'Site Content', description: 'Edit hero text, CTA buttons, section titles', path: '/admin/content', icon: Layout, color: 'text-primary', bg: 'bg-primary/10' },
+  { title: 'Impact Stories', description: 'Add/edit stories with photos, toggle featured', path: '/admin/stories', icon: Heart, color: 'text-destructive', bg: 'bg-destructive/10' },
+  { title: 'Testimonials', description: 'Manage donor and recipient quotes', path: '/admin/testimonials', icon: MessageSquareQuote, color: 'text-gold', bg: 'bg-gold/10' },
+  { title: 'Blog Posts', description: 'Write and publish articles with cover images', path: '/admin/blog', icon: FileText, color: 'text-emerald-light', bg: 'bg-emerald-light/10' },
+  { title: 'FAQ', description: 'Add/edit questions and answers', path: '/admin/faq', icon: HelpCircle, color: 'text-primary', bg: 'bg-primary/10' },
+];
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<AdminStats>({
-    totalUsers: 0,
-    pendingVerifications: 0,
-    totalCoupons: 0,
-    availableCoupons: 0
+    totalUsers: 0, pendingVerifications: 0, totalCoupons: 0, availableCoupons: 0,
+    publishedStories: 0, publishedPosts: 0, testimonials: 0, faqItems: 0,
   });
 
   useEffect(() => {
@@ -27,19 +44,44 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchStats = async () => {
-    const [usersResult, verificationsResult, couponsResult] = await Promise.all([
+    const [usersResult, verificationsResult, couponsResult, storiesResult, postsResult, testimonialsResult, faqResult] = await Promise.all([
       supabase.from('profiles').select('id', { count: 'exact' }),
       supabase.from('recipient_verifications').select('id', { count: 'exact' }).eq('status', 'pending'),
-      supabase.from('coupons').select('id, status', { count: 'exact' })
+      supabase.from('coupons').select('id, status', { count: 'exact' }),
+      supabase.from('cms_stories').select('id', { count: 'exact' }).eq('is_published', true),
+      supabase.from('cms_posts').select('id', { count: 'exact' }).eq('is_published', true),
+      supabase.from('cms_testimonials').select('id', { count: 'exact' }).eq('is_published', true),
+      supabase.from('cms_faq').select('id', { count: 'exact' }).eq('is_published', true),
     ]);
 
     setStats({
       totalUsers: usersResult.count || 0,
       pendingVerifications: verificationsResult.count || 0,
       totalCoupons: couponsResult.count || 0,
-      availableCoupons: couponsResult.data?.filter(c => c.status === 'available').length || 0
+      availableCoupons: couponsResult.data?.filter(c => c.status === 'available').length || 0,
+      publishedStories: storiesResult.count || 0,
+      publishedPosts: postsResult.count || 0,
+      testimonials: testimonialsResult.count || 0,
+      faqItems: faqResult.count || 0,
     });
   };
+
+  const ActionCard = ({ title, description, path, icon: Icon, color, bg }: typeof platformActions[0]) => (
+    <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate(path)}>
+      <CardContent className="flex items-center justify-between p-6">
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 ${bg} rounded-xl flex items-center justify-center`}>
+            <Icon className={`w-6 h-6 ${color}`} />
+          </div>
+          <div>
+            <p className="font-semibold text-foreground">{title}</p>
+            <p className="text-sm text-muted-foreground">{description}</p>
+          </div>
+        </div>
+        <ArrowRight className="w-5 h-5 text-muted-foreground" />
+      </CardContent>
+    </Card>
+  );
 
   return (
     <DashboardLayout>
@@ -49,7 +91,6 @@ export default function AdminDashboard() {
           <p className="text-muted-foreground">Manage the CouponDonation platform</p>
         </div>
 
-        {/* Pending Verifications Alert */}
         {stats.pendingVerifications > 0 && (
           <Card className="border-gold bg-gold/5">
             <CardContent className="flex items-center justify-between p-4">
@@ -60,106 +101,67 @@ export default function AdminDashboard() {
                   <p className="text-sm text-muted-foreground">Users waiting for approval</p>
                 </div>
               </div>
-              <Button onClick={() => navigate('/admin/verifications')}>
-                Review Now
-              </Button>
+              <Button onClick={() => navigate('/admin/verifications')}>Review Now</Button>
             </CardContent>
           </Card>
         )}
 
-        {/* Stats Grid */}
+        {/* Platform Stats */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
-              <Users className="w-4 h-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stats.totalUsers}</div>
-              <p className="text-xs text-muted-foreground">Registered users</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Verifications</CardTitle>
-              <Shield className="w-4 h-4 text-gold" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stats.pendingVerifications}</div>
-              <p className="text-xs text-muted-foreground">Awaiting review</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Coupons</CardTitle>
-              <Gift className="w-4 h-4 text-emerald-light" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stats.totalCoupons}</div>
-              <p className="text-xs text-muted-foreground">All time</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Available Coupons</CardTitle>
-              <BarChart className="w-4 h-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stats.availableCoupons}</div>
-              <p className="text-xs text-muted-foreground">Ready to claim</p>
-            </CardContent>
-          </Card>
+          {[
+            { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-primary', sub: 'Registered users' },
+            { label: 'Pending Verifications', value: stats.pendingVerifications, icon: Shield, color: 'text-gold', sub: 'Awaiting review' },
+            { label: 'Total Coupons', value: stats.totalCoupons, icon: Gift, color: 'text-emerald-light', sub: 'All time' },
+            { label: 'Available Coupons', value: stats.availableCoupons, icon: BarChart, color: 'text-primary', sub: 'Ready to claim' },
+          ].map(s => (
+            <Card key={s.label}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{s.label}</CardTitle>
+                <s.icon className={`w-4 h-4 ${s.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-foreground">{s.value}</div>
+                <p className="text-xs text-muted-foreground">{s.sub}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate('/admin/users')}>
-            <CardContent className="flex items-center justify-between p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                  <Users className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground">Manage Users</p>
-                  <p className="text-sm text-muted-foreground">View and manage all users</p>
-                </div>
-              </div>
-              <ArrowRight className="w-5 h-5 text-muted-foreground" />
-            </CardContent>
-          </Card>
+        {/* CMS Content Stats */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: 'Published Stories', value: stats.publishedStories, icon: Heart, color: 'text-destructive' },
+            { label: 'Blog Posts', value: stats.publishedPosts, icon: FileText, color: 'text-emerald-light' },
+            { label: 'Testimonials', value: stats.testimonials, icon: MessageSquareQuote, color: 'text-gold' },
+            { label: 'FAQ Items', value: stats.faqItems, icon: HelpCircle, color: 'text-primary' },
+          ].map(s => (
+            <Card key={s.label}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{s.label}</CardTitle>
+                <s.icon className={`w-4 h-4 ${s.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-foreground">{s.value}</div>
+                <p className="text-xs text-muted-foreground">Published</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-          <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate('/admin/verifications')}>
-            <CardContent className="flex items-center justify-between p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gold/10 rounded-xl flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-gold" />
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground">Verifications</p>
-                  <p className="text-sm text-muted-foreground">Review verification requests</p>
-                </div>
-              </div>
-              <ArrowRight className="w-5 h-5 text-muted-foreground" />
-            </CardContent>
-          </Card>
+        {/* Platform Management */}
+        <div>
+          <h2 className="text-lg font-semibold text-foreground mb-3">Platform Management</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {platformActions.map(a => <ActionCard key={a.path} {...a} />)}
+          </div>
+        </div>
 
-          <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate('/admin/analytics')}>
-            <CardContent className="flex items-center justify-between p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-emerald-light/10 rounded-xl flex items-center justify-center">
-                  <BarChart className="w-6 h-6 text-emerald-light" />
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground">Analytics</p>
-                  <p className="text-sm text-muted-foreground">Platform statistics</p>
-                </div>
-              </div>
-              <ArrowRight className="w-5 h-5 text-muted-foreground" />
-            </CardContent>
-          </Card>
+        {/* Content Management */}
+        <div>
+          <h2 className="text-lg font-semibold text-foreground mb-3">Content Management</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {contentActions.map(a => <ActionCard key={a.path} {...a} />)}
+          </div>
         </div>
       </div>
     </DashboardLayout>
