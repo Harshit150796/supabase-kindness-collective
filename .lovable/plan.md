@@ -1,86 +1,53 @@
 
 
-## Plan: Create Dedicated Admin Account with Full CMS Access
+## Fix: Admin Account Login Failure
 
-### The Challenge
+### Root Cause
 
-There are a few constraints we need to work around:
+The migration that created the admin account only set a subset of columns in `auth.users`. Supabase's authentication engine (GoTrue) expects several text columns to contain empty strings (`''`), not NULL. Specifically, these columns were left as NULL:
 
-1. **Supabase uses email-based login**, not usernames -- so the admin will log in with an email address
-2. **Password "admin" is only 5 characters** -- Supabase requires a minimum of 6 characters, and the login form validates for 8. We need a password that meets these requirements while staying simple and easy to remember.
+- `email_change`
+- `phone`
+- `phone_change`
+- `phone_change_token`
+- `email_change_token_new`
+- `email_change_token_current`
+- `reauthentication_token`
 
-### Proposed Admin Credentials
+When the system tries to log in the admin user, it scans these columns and crashes because it can't convert NULL to a Go string.
 
-| Field | Value |
-|-------|-------|
-| **Email** | `admin@coupondonation.com` |
-| **Password** | `Admin@123` |
-| **Name** | `CMS Admin` |
-| **Role** | `admin` (+ donor + recipient for full access) |
+### Fix
 
-The password `Admin@123` is short, memorable, and meets all validation rules (uppercase, lowercase, number, special character, 8+ chars). Your team member just goes to `/auth`, enters these credentials, and gets redirected straight to the admin dashboard.
+Run a new database migration that updates the existing admin user row to set all these columns to empty strings:
 
-**Important security note:** This password should be changed after first login in a production environment. For now it works for your team's internal CMS management.
-
-### What the Admin Account Can Do
-
-Once logged in, the admin lands on `/admin` and has access to:
-
-| Sidebar Item | What they can do |
-|-------------|-----------------|
-| **Overview** | See platform stats at a glance |
-| **Users** | View all users, promote others to admin |
-| **Verifications** | Approve/reject recipient verification requests |
-| **Coupons** | Manage coupon inventory |
-| **Analytics** | View signup trends, donation charts, role breakdowns |
-| **Content** | Edit hero text, CTA buttons, section titles on the website |
-| **Stories** | Add/edit/delete impact stories with photos |
-| **Testimonials** | Manage donor and recipient quotes |
-| **Blog Posts** | Write, edit, and publish articles with cover images |
-| **FAQ** | Add/edit/reorder questions and answers |
-
-### How It Works Technically
-
-We will create a **database migration** that:
-
-1. Creates a new user in Supabase's `auth.users` table with email `admin@coupondonation.com` and password `Admin@123`
-2. Creates a profile entry in the `profiles` table
-3. Assigns three roles: `admin`, `donor`, and `recipient` in `user_roles`
-
-This bypasses the normal signup flow (no OTP needed) since it's done directly in the database.
-
-### Admin Users Page Enhancement
-
-We'll also update the **Admin Users page** (`/admin/users`) so the admin can:
-
-- See each user's current roles (donor, recipient, admin) as colored badges
-- Click **"Make Admin"** to promote any user to admin
-- Click **"Remove Admin"** to revoke admin access from other users
-- This way, the first admin can grant CMS access to additional team members without touching code
-
-### Login Flow
-
-```
-1. Go to /auth
-2. Enter email: admin@coupondonation.com
-3. Enter password: Admin@123
-4. Click "Sign In"
-5. Automatically redirected to /admin dashboard
-6. Full sidebar with all CMS + analytics options
+```sql
+UPDATE auth.users
+SET
+  email_change = '',
+  phone = '',
+  phone_change = '',
+  phone_change_token = '',
+  email_change_token_new = '',
+  email_change_token_current = '',
+  reauthentication_token = '',
+  email_change_confirm_status = 0,
+  is_sso_user = false
+WHERE email = 'admin@coupondonation.com';
 ```
 
-### Files to Create/Modify
+### What This Changes
 
-| File | Change |
-|------|--------|
-| `supabase/migrations/[timestamp]_create_admin_account.sql` | SQL to create admin user, profile, and roles |
-| `src/pages/admin/AdminUsers.tsx` | Add "Make Admin" / "Remove Admin" buttons |
+| What | Details |
+|------|---------|
+| Files modified | 1 new migration SQL file |
+| No code changes | The frontend Auth page already works correctly |
+| After the fix | Login with `admin@coupondonation.com` / `Admin@123` will work and redirect to `/admin` |
 
-### Migration SQL (What It Does)
+### Login Instructions (After Fix)
 
-The migration will:
-- Insert a user into `auth.users` with the hashed password
-- Insert a profile with name "CMS Admin" and email `admin@coupondonation.com`
-- Insert three role entries: admin, donor, recipient
-- Use `ON CONFLICT DO NOTHING` so it's safe to run multiple times
+1. Go to `/auth`
+2. Make sure the "Sign In" tab is selected
+3. Email: `admin@coupondonation.com`
+4. Password: `Admin@123`
+5. You'll be redirected to the admin dashboard with full CMS access
 
