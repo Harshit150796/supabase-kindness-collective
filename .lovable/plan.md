@@ -1,53 +1,50 @@
 
 
-## Fix: Admin Account Login Failure
+## Plan: Enhanced Admin Dashboard Overview
 
-### Root Cause
+The admin sidebar already has all the navigation links, but the main dashboard page (`/admin`) only displays 3 quick action cards out of 10 available features. This makes it look like CMS editing capabilities don't exist.
 
-The migration that created the admin account only set a subset of columns in `auth.users`. Supabase's authentication engine (GoTrue) expects several text columns to contain empty strings (`''`), not NULL. Specifically, these columns were left as NULL:
+### Changes
 
-- `email_change`
-- `phone`
-- `phone_change`
-- `phone_change_token`
-- `email_change_token_new`
-- `email_change_token_current`
-- `reauthentication_token`
+**File: `src/pages/admin/AdminDashboard.tsx`**
 
-When the system tries to log in the admin user, it scans these columns and crashes because it can't convert NULL to a Go string.
+Redesign the overview page to clearly surface all admin capabilities in organized sections:
 
-### Fix
+**1. Stats Row (keep existing)** -- Total Users, Pending Verifications, Total Coupons, Available Coupons
 
-Run a new database migration that updates the existing admin user row to set all these columns to empty strings:
+**2. Pending Verifications Alert (keep existing)** -- Yellow banner when there are pending approvals
 
-```sql
-UPDATE auth.users
-SET
-  email_change = '',
-  phone = '',
-  phone_change = '',
-  phone_change_token = '',
-  email_change_token_new = '',
-  email_change_token_current = '',
-  reauthentication_token = '',
-  email_change_confirm_status = 0,
-  is_sso_user = false
-WHERE email = 'admin@coupondonation.com';
-```
+**3. Quick Actions -- reorganized into two groups:**
 
-### What This Changes
+**Platform Management (first row of cards):**
+- Manage Users -- View and manage all users, promote to admin
+- Verifications -- Approve/reject recipient applications
+- Coupons -- View and manage coupon inventory
+- Analytics -- View signup trends, donation charts, platform stats
 
-| What | Details |
-|------|---------|
-| Files modified | 1 new migration SQL file |
-| No code changes | The frontend Auth page already works correctly |
-| After the fix | Login with `admin@coupondonation.com` / `Admin@123` will work and redirect to `/admin` |
+**Content Management (second row of cards):**
+- Site Content -- Edit hero text, CTA buttons, section titles
+- Impact Stories -- Add/edit/delete stories with photos, toggle featured
+- Testimonials -- Manage donor and recipient quotes
+- Blog Posts -- Write and publish articles with cover images
+- FAQ -- Add/edit questions and answers
 
-### Login Instructions (After Fix)
+Each card will have an icon, title, short description, and arrow to navigate. The CMS section will have a clear "Content Management" header so the admin immediately sees they can edit website content.
 
-1. Go to `/auth`
-2. Make sure the "Sign In" tab is selected
-3. Email: `admin@coupondonation.com`
-4. Password: `Admin@123`
-5. You'll be redirected to the admin dashboard with full CMS access
+### Additional Improvements
 
+**Add CMS stats to the stats row:** Add a new row showing content counts:
+- Published Stories count
+- Published Blog Posts count  
+- Testimonials count
+- FAQ Items count
+
+This gives the admin a quick overview of how much content exists.
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/pages/admin/AdminDashboard.tsx` | Add all 9 quick action cards organized in 2 sections, add CMS content stats row |
+
+No new files needed -- this is purely a UI reorganization of the existing dashboard page to make all features visible and discoverable.
