@@ -42,9 +42,9 @@ function AnimatedDonutChart({ isVisible }: { isVisible: boolean }) {
   const circumference = 2 * Math.PI * radius;
   
   const segments = [
-    { percent: 95, color: 'hsl(var(--primary))', label: 'Recipients' },
-    { percent: 3, color: 'hsl(var(--muted-foreground) / 0.5)', label: 'Operations' },
-    { percent: 2, color: 'hsl(var(--muted-foreground) / 0.3)', label: 'Processing' },
+    { percent: 95, color: '#10b981', label: 'Recipients' },
+    { percent: 3, color: '#f59e0b', label: 'Operations' },
+    { percent: 2, color: '#3b82f6', label: 'Processing' },
   ];
   
   let cumulativePercent = 0;
@@ -110,9 +110,9 @@ function AnimatedDonutChart({ isVisible }: { isVisible: boolean }) {
 }
 
 const breakdownItems = [
-  { label: 'Direct to Recipients', percent: 95, color: 'bg-primary', icon: Heart },
-  { label: 'Platform Operations', percent: 3, color: 'bg-muted-foreground/50', icon: PieChart },
-  { label: 'Payment Processing', percent: 2, color: 'bg-muted-foreground/30', icon: DollarSign },
+  { label: 'Direct to Recipients', percent: 95, color: 'bg-emerald-500', iconColor: 'text-emerald-500', dotColor: 'bg-emerald-500', icon: Heart },
+  { label: 'Platform Operations', percent: 3, color: 'bg-amber-500', iconColor: 'text-amber-500', dotColor: 'bg-amber-500', icon: PieChart },
+  { label: 'Payment Processing', percent: 2, color: 'bg-blue-500', iconColor: 'text-blue-500', dotColor: 'bg-blue-500', icon: DollarSign },
 ];
 
 const howItWorksSteps = [
@@ -324,7 +324,8 @@ export function TrustTransparency() {
                           >
                             <div className="flex justify-between items-center text-sm mb-1.5">
                               <span className="flex items-center gap-2 text-foreground font-medium">
-                                <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                                <span className={cn("w-2.5 h-2.5 rounded-full", item.dotColor)} />
+                                <Icon className={cn("w-3.5 h-3.5", item.iconColor)} />
                                 {item.label}
                               </span>
                               <span className="text-foreground font-bold tabular-nums">
