@@ -1,50 +1,51 @@
 
 
-## Plan: Enhanced Admin Dashboard Overview
+## Add Distinct Colors to Donation Breakdown
 
-The admin sidebar already has all the navigation links, but the main dashboard page (`/admin`) only displays 3 quick action cards out of 10 available features. This makes it look like CMS editing capabilities don't exist.
+Currently, all three breakdown items use very similar colors (primary green and two shades of muted gray), making them nearly indistinguishable. This plan adds vibrant, distinct colors to both the breakdown bars and the donut chart ring.
+
+### Color Options
+
+Here are three color palette options that work well with the existing Deep Emerald theme:
+
+**Option A -- Emerald / Amber / Blue (Recommended)**
+- Direct to Recipients (95%): Emerald green (`#10b981`) -- already your brand color, conveys growth and giving
+- Platform Operations (3%): Amber/Gold (`#f59e0b`) -- warm, visible, matches your gold accent
+- Payment Processing (2%): Sky blue (`#3b82f6`) -- cool contrast, trustworthy feel
+
+**Option B -- Emerald / Purple / Orange**
+- Direct to Recipients: Emerald green
+- Platform Operations: Purple (`#8b5cf6`)
+- Payment Processing: Orange (`#f97316`)
+
+**Option C -- Emerald / Rose / Indigo**
+- Direct to Recipients: Emerald green
+- Platform Operations: Rose (`#f43f5e`)
+- Payment Processing: Indigo (`#6366f1`)
+
+I recommend **Option A** because amber/gold is already in your design system and the blue provides a professional, trustworthy contrast.
 
 ### Changes
 
-**File: `src/pages/admin/AdminDashboard.tsx`**
+**File: `src/components/landing/TrustTransparency.tsx`**
 
-Redesign the overview page to clearly surface all admin capabilities in organized sections:
+1. **Update `breakdownItems` array (line 112-116):** Change the `color` property from `bg-muted-foreground/50` and `bg-muted-foreground/30` to distinct Tailwind color classes:
+   - Direct to Recipients: `bg-emerald-500` (keep green)
+   - Platform Operations: `bg-amber-500` (gold/amber)
+   - Payment Processing: `bg-blue-500` (sky blue)
 
-**1. Stats Row (keep existing)** -- Total Users, Pending Verifications, Total Coupons, Available Coupons
+2. **Update `AnimatedDonutChart` segments (line 44-48):** Match the donut ring colors to the breakdown bars:
+   - Recipients segment: `#10b981` (emerald)
+   - Operations segment: `#f59e0b` (amber)
+   - Processing segment: `#3b82f6` (blue)
 
-**2. Pending Verifications Alert (keep existing)** -- Yellow banner when there are pending approvals
+3. **Update breakdown item icons (line 327):** Color each icon to match its respective bar instead of all being `text-muted-foreground`:
+   - Heart icon: `text-emerald-500`
+   - PieChart icon: `text-amber-500`
+   - DollarSign icon: `text-blue-500`
 
-**3. Quick Actions -- reorganized into two groups:**
+4. **Add colored dots as legend indicators** next to each label for even clearer differentiation (small colored circle before the text).
 
-**Platform Management (first row of cards):**
-- Manage Users -- View and manage all users, promote to admin
-- Verifications -- Approve/reject recipient applications
-- Coupons -- View and manage coupon inventory
-- Analytics -- View signup trends, donation charts, platform stats
+### Result
 
-**Content Management (second row of cards):**
-- Site Content -- Edit hero text, CTA buttons, section titles
-- Impact Stories -- Add/edit/delete stories with photos, toggle featured
-- Testimonials -- Manage donor and recipient quotes
-- Blog Posts -- Write and publish articles with cover images
-- FAQ -- Add/edit questions and answers
-
-Each card will have an icon, title, short description, and arrow to navigate. The CMS section will have a clear "Content Management" header so the admin immediately sees they can edit website content.
-
-### Additional Improvements
-
-**Add CMS stats to the stats row:** Add a new row showing content counts:
-- Published Stories count
-- Published Blog Posts count  
-- Testimonials count
-- FAQ Items count
-
-This gives the admin a quick overview of how much content exists.
-
-### Files Modified
-
-| File | Change |
-|------|--------|
-| `src/pages/admin/AdminDashboard.tsx` | Add all 9 quick action cards organized in 2 sections, add CMS content stats row |
-
-No new files needed -- this is purely a UI reorganization of the existing dashboard page to make all features visible and discoverable.
+The donut chart will show three clearly distinct colored segments, and the breakdown bars below will use matching colors, making it instantly obvious which section corresponds to which percentage.
