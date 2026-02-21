@@ -37,7 +37,10 @@ export function Navbar() {
           <Link to="/" className="flex items-center gap-3 group">
             <img src={logo} alt="CouponDonation" className="w-12 h-12 object-contain" />
             <div className="flex flex-col">
-              <span className="font-bold text-lg text-foreground leading-tight">CouponDonation</span>
+              <span className="font-bold text-lg leading-tight">
+                <span className="text-[#7a9e4e]">Coupon</span>
+                <span className="text-[#4a6fa5]">Donation</span>
+              </span>
               <span className="text-[10px] text-muted-foreground leading-tight">Transforming Giving</span>
             </div>
           </Link>
