@@ -1,51 +1,30 @@
 
 
-## Add Distinct Colors to Donation Breakdown
+## Color the Logo Text: "Coupon" in Green, "Donation" in Blue
 
-Currently, all three breakdown items use very similar colors (primary green and two shades of muted gray), making them nearly indistinguishable. This plan adds vibrant, distinct colors to both the breakdown bars and the donut chart ring.
+### Change
 
-### Color Options
+**File: `src/components/layout/Navbar.tsx`** (line 40)
 
-Here are three color palette options that work well with the existing Deep Emerald theme:
+Replace the single `<span>` containing "CouponDonation" with two separate `<span>` elements:
 
-**Option A -- Emerald / Amber / Blue (Recommended)**
-- Direct to Recipients (95%): Emerald green (`#10b981`) -- already your brand color, conveys growth and giving
-- Platform Operations (3%): Amber/Gold (`#f59e0b`) -- warm, visible, matches your gold accent
-- Payment Processing (2%): Sky blue (`#3b82f6`) -- cool contrast, trustworthy feel
+```tsx
+<span className="font-bold text-lg leading-tight">
+  <span className="text-[#7a9e4e]">Coupon</span>
+  <span className="text-[#4a6fa5]">Donation</span>
+</span>
+```
 
-**Option B -- Emerald / Purple / Orange**
-- Direct to Recipients: Emerald green
-- Platform Operations: Purple (`#8b5cf6`)
-- Payment Processing: Orange (`#f97316`)
+The colors are matched from the reference screenshot:
+- "Coupon" -- Olive/sage green (`#7a9e4e`)
+- "Donation" -- Steel blue (`#4a6fa5`)
 
-**Option C -- Emerald / Rose / Indigo**
-- Direct to Recipients: Emerald green
-- Platform Operations: Rose (`#f43f5e`)
-- Payment Processing: Indigo (`#6366f1`)
+This same change will also apply to the footer if the logo text appears there, for consistency.
 
-I recommend **Option A** because amber/gold is already in your design system and the blue provides a professional, trustworthy contrast.
+### Files Modified
 
-### Changes
+| File | Change |
+|------|--------|
+| `src/components/layout/Navbar.tsx` | Split logo text into two colored spans |
+| `src/components/layout/Footer.tsx` | Match the same coloring if logo text exists there |
 
-**File: `src/components/landing/TrustTransparency.tsx`**
-
-1. **Update `breakdownItems` array (line 112-116):** Change the `color` property from `bg-muted-foreground/50` and `bg-muted-foreground/30` to distinct Tailwind color classes:
-   - Direct to Recipients: `bg-emerald-500` (keep green)
-   - Platform Operations: `bg-amber-500` (gold/amber)
-   - Payment Processing: `bg-blue-500` (sky blue)
-
-2. **Update `AnimatedDonutChart` segments (line 44-48):** Match the donut ring colors to the breakdown bars:
-   - Recipients segment: `#10b981` (emerald)
-   - Operations segment: `#f59e0b` (amber)
-   - Processing segment: `#3b82f6` (blue)
-
-3. **Update breakdown item icons (line 327):** Color each icon to match its respective bar instead of all being `text-muted-foreground`:
-   - Heart icon: `text-emerald-500`
-   - PieChart icon: `text-amber-500`
-   - DollarSign icon: `text-blue-500`
-
-4. **Add colored dots as legend indicators** next to each label for even clearer differentiation (small colored circle before the text).
-
-### Result
-
-The donut chart will show three clearly distinct colored segments, and the breakdown bars below will use matching colors, making it instantly obvious which section corresponds to which percentage.
