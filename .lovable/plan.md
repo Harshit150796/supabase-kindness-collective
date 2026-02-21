@@ -1,30 +1,20 @@
 
 
-## Color the Logo Text: "Coupon" in Green, "Donation" in Blue
+## Update Logo Text Colors to Match the Logo Icon
 
-### Change
+The current text uses muted olive green (`#7a9e4e`) and steel blue (`#4a6fa5`). The logo icon itself uses richer, deeper shades -- a forest green for the upper arc and a navy blue for the lower arc.
 
-**File: `src/components/layout/Navbar.tsx`** (line 40)
+### New Colors
 
-Replace the single `<span>` containing "CouponDonation" with two separate `<span>` elements:
-
-```tsx
-<span className="font-bold text-lg leading-tight">
-  <span className="text-[#7a9e4e]">Coupon</span>
-  <span className="text-[#4a6fa5]">Donation</span>
-</span>
-```
-
-The colors are matched from the reference screenshot:
-- "Coupon" -- Olive/sage green (`#7a9e4e`)
-- "Donation" -- Steel blue (`#4a6fa5`)
-
-This same change will also apply to the footer if the logo text appears there, for consistency.
+- "Coupon": Deep forest green (`#2e7d32`) -- matches the green arc in the logo
+- "Donation": Navy blue (`#1565c0`) -- matches the blue arc in the logo
 
 ### Files Modified
 
 | File | Change |
 |------|--------|
-| `src/components/layout/Navbar.tsx` | Split logo text into two colored spans |
-| `src/components/layout/Footer.tsx` | Match the same coloring if logo text exists there |
+| `src/components/layout/Navbar.tsx` | Change `#7a9e4e` to `#2e7d32` and `#4a6fa5` to `#1565c0` |
+| `src/components/layout/Footer.tsx` | Same color updates for consistency |
+
+Both files already have the two-span structure in place, so this is just swapping the hex values (4 replacements total).
 
