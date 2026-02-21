@@ -38,8 +38,8 @@ export function Navbar() {
             <img src={logo} alt="CouponDonation" className="w-12 h-12 object-contain" />
             <div className="flex flex-col">
               <span className="font-bold text-lg leading-tight">
-                <span className="text-[#7a9e4e]">Coupon</span>
-                <span className="text-[#4a6fa5]">Donation</span>
+                <span className="text-[#2e7d32]">Coupon</span>
+                <span className="text-[#1565c0]">Donation</span>
               </span>
               <span className="text-[10px] text-muted-foreground leading-tight">Transforming Giving</span>
             </div>

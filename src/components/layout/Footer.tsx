@@ -12,8 +12,8 @@ export function Footer() {
             <div className="flex items-center gap-2">
               <img src={logo} alt="CouponDonation" className="w-10 h-10 object-contain" />
               <span className="font-bold text-xl">
-                <span className="text-[#7a9e4e]">Coupon</span>
-                <span className="text-[#4a6fa5]">Donation</span>
+                <span className="text-[#2e7d32]">Coupon</span>
+                <span className="text-[#1565c0]">Donation</span>
               </span>
             </div>
             <p className="text-muted-foreground text-sm">
