@@ -35,9 +35,9 @@ export function Navbar() {
         <div className="flex h-18 items-center justify-between py-3">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <img src={logo} alt="CouponDonation" className="w-12 h-12 object-contain" />
+            <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
             <div className="flex flex-col">
-              <span className="font-bold text-lg leading-tight">
+              <span className="font-bold text-base sm:text-lg leading-tight">
                 <span className="text-[#2e7d32]">Coupon</span>
                 <span className="text-[#1565c0]">Donation</span>
               </span>
@@ -156,7 +156,7 @@ export function Navbar() {
 
           {/* Mobile Menu Button */}
           <button
-            className="lg:hidden p-2 rounded-lg hover:bg-muted transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}

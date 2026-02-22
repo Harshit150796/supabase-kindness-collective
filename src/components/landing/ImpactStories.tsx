@@ -254,7 +254,7 @@ export function ImpactStories() {
               onClick={goToPrevious}
               disabled={currentPage === 0}
               className={cn(
-                "w-14 h-14 rounded-xl border border-border/50 bg-background shadow-sm flex items-center justify-center transition-all duration-200",
+                "w-10 h-10 md:w-14 md:h-14 rounded-xl border border-border/50 bg-background shadow-sm flex items-center justify-center transition-all duration-200",
                 currentPage === 0
                   ? "opacity-40 cursor-not-allowed"
                   : "hover:bg-muted hover:border-border hover:shadow-md"
@@ -286,7 +286,7 @@ export function ImpactStories() {
               onClick={goToNext}
               disabled={currentPage === totalPages - 1}
               className={cn(
-                "w-14 h-14 rounded-xl border border-border/50 bg-background shadow-sm flex items-center justify-center transition-all duration-200",
+                "w-10 h-10 md:w-14 md:h-14 rounded-xl border border-border/50 bg-background shadow-sm flex items-center justify-center transition-all duration-200",
                 currentPage === totalPages - 1
                   ? "opacity-40 cursor-not-allowed"
                   : "hover:bg-muted hover:border-border hover:shadow-md"

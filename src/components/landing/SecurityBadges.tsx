@@ -21,7 +21,7 @@ export function SecurityBadges() {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {trustBadges.map((badge) => (
               <Card 
                 key={badge.label}

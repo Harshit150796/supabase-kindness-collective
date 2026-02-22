@@ -175,8 +175,8 @@ export function BrandLeaderboard() {
             </div>
 
             {/* Vertical Bar Chart with Logos - Scrollable on mobile */}
-            <div className="h-[280px] md:h-[320px] overflow-x-auto">
-              <div className="min-w-[500px] md:min-w-0 h-full">
+            <div className="h-[240px] md:h-[320px] overflow-x-auto">
+              <div className="min-w-[450px] sm:min-w-0 h-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart 
                     data={leaderboardData} 

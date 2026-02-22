@@ -125,7 +125,7 @@ export function HeroSection() {
           {/* Featured Story Card */}
           <Card className="max-w-2xl mx-auto mt-8 md:mt-12 overflow-hidden border-border/50 shadow-lg">
             <div className="flex flex-col sm:flex-row">
-              <div className="h-48 sm:w-48 sm:h-auto relative overflow-hidden flex-shrink-0">
+              <div className="h-40 sm:h-48 sm:w-48 sm:h-auto relative overflow-hidden flex-shrink-0">
                 <img 
                   src={featuredStory.image}
                   alt={featuredStory.name}
