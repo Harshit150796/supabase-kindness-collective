@@ -72,7 +72,7 @@ export const ApplyLayout = ({
               <img src={logo} alt="CouponDonation" className="w-11 h-11 transition-transform group-hover:scale-105" />
               <div className="absolute inset-0 rounded-full bg-primary/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <span className="font-bold text-xl text-foreground">CouponDonation</span>
+            <span className="font-bold text-xl"><span className="text-[#2e7d32]">Coupon</span><span className="text-[#1565c0]">Donation</span></span>
           </Link>
 
           {/* Step Indicator with animation */}

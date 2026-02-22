@@ -134,8 +134,8 @@ export default function ResetPassword() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-            <img src={logo} alt="CouponDonation" className="w-12 h-12 object-contain" />
-            <span className="font-bold text-2xl text-foreground">CouponDonation</span>
+            <img src={logo} alt="CouponDonation" className="w-12 h-12 object-contain" width={48} height={48} loading="eager" decoding="async" fetchPriority="high" />
+            <span className="font-bold text-2xl"><span className="text-[#2e7d32]">Coupon</span><span className="text-[#1565c0]">Donation</span></span>
           </div>
         </div>
 
