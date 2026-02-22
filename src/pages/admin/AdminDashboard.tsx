@@ -108,13 +108,13 @@ export default function AdminDashboard() {
 
         {/* Platform Stats */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-primary', sub: 'Registered users' },
-            { label: 'Pending Verifications', value: stats.pendingVerifications, icon: Shield, color: 'text-gold', sub: 'Awaiting review' },
-            { label: 'Total Coupons', value: stats.totalCoupons, icon: Gift, color: 'text-emerald-light', sub: 'All time' },
-            { label: 'Available Coupons', value: stats.availableCoupons, icon: BarChart, color: 'text-primary', sub: 'Ready to claim' },
+        {[
+            { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-primary', sub: 'Registered users', path: '/admin/users' },
+            { label: 'Pending Verifications', value: stats.pendingVerifications, icon: Shield, color: 'text-gold', sub: 'Awaiting review', path: '/admin/verifications' },
+            { label: 'Total Coupons', value: stats.totalCoupons, icon: Gift, color: 'text-emerald-light', sub: 'All time', path: '/admin/coupons' },
+            { label: 'Available Coupons', value: stats.availableCoupons, icon: BarChart, color: 'text-primary', sub: 'Ready to claim', path: '/admin/coupons' },
           ].map(s => (
-            <Card key={s.label}>
+            <Card key={s.label} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate(s.path)}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{s.label}</CardTitle>
                 <s.icon className={`w-4 h-4 ${s.color}`} />
@@ -130,12 +130,12 @@ export default function AdminDashboard() {
         {/* CMS Content Stats */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Published Stories', value: stats.publishedStories, icon: Heart, color: 'text-destructive' },
-            { label: 'Blog Posts', value: stats.publishedPosts, icon: FileText, color: 'text-emerald-light' },
-            { label: 'Testimonials', value: stats.testimonials, icon: MessageSquareQuote, color: 'text-gold' },
-            { label: 'FAQ Items', value: stats.faqItems, icon: HelpCircle, color: 'text-primary' },
+            { label: 'Published Stories', value: stats.publishedStories, icon: Heart, color: 'text-destructive', path: '/admin/stories' },
+            { label: 'Blog Posts', value: stats.publishedPosts, icon: FileText, color: 'text-emerald-light', path: '/admin/blog' },
+            { label: 'Testimonials', value: stats.testimonials, icon: MessageSquareQuote, color: 'text-gold', path: '/admin/testimonials' },
+            { label: 'FAQ Items', value: stats.faqItems, icon: HelpCircle, color: 'text-primary', path: '/admin/faq' },
           ].map(s => (
-            <Card key={s.label}>
+            <Card key={s.label} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate(s.path)}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{s.label}</CardTitle>
                 <s.icon className={`w-4 h-4 ${s.color}`} />
