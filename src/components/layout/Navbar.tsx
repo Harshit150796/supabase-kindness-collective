@@ -35,7 +35,7 @@ export function Navbar() {
         <div className="flex h-18 items-center justify-between py-3">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
+            <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" fetchPriority="high" />
             <div className="flex flex-col">
               <span className="font-bold text-base sm:text-lg leading-tight">
                 <span className="text-[#2e7d32]">Coupon</span>

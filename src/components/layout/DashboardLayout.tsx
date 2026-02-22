@@ -65,8 +65,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Mobile Header */}
       <header className="lg:hidden bg-background border-b border-border p-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="CouponDonation" className="w-8 h-8 object-contain" />
-          <span className="font-bold text-foreground">CouponDonation</span>
+          <img src={logo} alt="CouponDonation" className="w-8 h-8 object-contain" width={32} height={32} loading="eager" decoding="async" fetchPriority="high" />
+          <span className="font-bold"><span className="text-[#2e7d32]">Coupon</span><span className="text-[#1565c0]">Donation</span></span>
         </Link>
         <button onClick={() => setSidebarOpen(!sidebarOpen)}>
           {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -85,8 +85,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Logo */}
             <div className="p-6 border-b border-border hidden lg:block">
               <Link to="/" className="flex items-center gap-2">
-                <img src={logo} alt="CouponDonation" className="w-10 h-10 object-contain" />
-                <span className="font-bold text-xl text-foreground">CouponDonation</span>
+                <img src={logo} alt="CouponDonation" className="w-10 h-10 object-contain" width={40} height={40} loading="eager" decoding="async" fetchPriority="high" />
+                <span className="font-bold text-xl"><span className="text-[#2e7d32]">Coupon</span><span className="text-[#1565c0]">Donation</span></span>
               </Link>
             </div>
 
