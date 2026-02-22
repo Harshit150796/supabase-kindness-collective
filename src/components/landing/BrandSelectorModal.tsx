@@ -201,6 +201,15 @@ export function BrandSelectorModal({
                       src={brand.logo}
                       alt={brand.name}
                       className="w-full h-full object-contain"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        const fallback = document.createElement('div');
+                        fallback.className = 'w-full h-full rounded flex items-center justify-center text-white font-bold text-sm';
+                        fallback.style.backgroundColor = brand.color;
+                        fallback.textContent = brand.name.charAt(0);
+                        target.parentElement?.appendChild(fallback);
+                      }}
                     />
                   </div>
                   <div className="font-medium text-foreground text-xs text-center leading-tight">

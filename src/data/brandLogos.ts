@@ -53,37 +53,37 @@ export const brandLogos: Record<string, BrandInfo> = {
   // Grocery
   Kroger: {
     name: 'Kroger',
-    logo: 'https://companieslogo.com/img/orig/KR-cb5c97d8.png',
+    logo: 'https://companieslogo.com/img/orig/KR-f39fde68.png?t=1720244492',
     color: '#0066B2',
     category: 'grocery',
   },
   WholeFoods: {
     name: 'Whole Foods',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Whole_Foods_Market_201x_logo.svg/640px-Whole_Foods_Market_201x_logo.svg.png',
+    logo: 'https://img.logo.dev/wholefoodsmarket.com',
     color: '#00674B',
     category: 'grocery',
   },
   Costco: {
     name: 'Costco',
-    logo: 'https://companieslogo.com/img/orig/COST-c37b9de7.png',
+    logo: 'https://companieslogo.com/img/orig/COST-180a6d1f.png?t=1720244491',
     color: '#E31837',
     category: 'grocery',
   },
   Safeway: {
     name: 'Safeway',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Safeway_Logo.svg/640px-Safeway_Logo.svg.png',
+    logo: 'https://companieslogo.com/img/orig/SWY.defunct.2015-69b0f460.png?t=1723348719',
     color: '#E21A2C',
     category: 'grocery',
   },
   Publix: {
     name: 'Publix',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Publix_Logo.svg/640px-Publix_Logo.svg.png',
+    logo: 'https://companieslogo.com/img/orig/publix-dbe14b16.png?t=1720244494',
     color: '#4C8C2B',
     category: 'grocery',
   },
   Aldi: {
     name: 'Aldi',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Aldi_Nord_Logo_2022.svg/640px-Aldi_Nord_Logo_2022.svg.png',
+    logo: 'https://img.logo.dev/aldi.us',
     color: '#00529B',
     category: 'grocery',
   },
@@ -102,7 +102,7 @@ export const brandLogos: Record<string, BrandInfo> = {
   },
   Postmates: {
     name: 'Postmates',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Postmates_Logo_2020.svg/640px-Postmates_Logo_2020.svg.png',
+    logo: 'https://img.logo.dev/postmates.com',
     color: '#000000',
     category: 'food-delivery',
   },
@@ -140,7 +140,7 @@ export const brandLogos: Record<string, BrandInfo> = {
   },
   RiteAid: {
     name: 'Rite Aid',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Rite_Aid_logo.svg/640px-Rite_Aid_logo.svg.png',
+    logo: 'https://companieslogo.com/img/orig/RAD-73c35102.png?t=1720244493',
     color: '#00539B',
     category: 'pharmacy',
   },
@@ -159,13 +159,13 @@ export const brandLogos: Record<string, BrandInfo> = {
   },
   Panera: {
     name: 'Panera Bread',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Panera_Bread_logo.svg/640px-Panera_Bread_logo.svg.png',
+    logo: 'https://img.logo.dev/panerabread.com',
     color: '#4A6741',
     category: 'restaurant',
   },
   Subway: {
     name: 'Subway',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Subway_2016_logo.svg/640px-Subway_2016_logo.svg.png',
+    logo: 'https://img.logo.dev/subway.com',
     color: '#008C15',
     category: 'restaurant',
   },
