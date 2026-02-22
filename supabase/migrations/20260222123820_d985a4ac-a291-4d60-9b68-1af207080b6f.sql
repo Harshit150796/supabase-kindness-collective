@@ -1,0 +1,2 @@
+ALTER TABLE cms_posts ADD COLUMN IF NOT EXISTS meta_title TEXT;
+ALTER TABLE cms_posts ADD COLUMN IF NOT EXISTS meta_description TEXT;

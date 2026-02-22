@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { featuredStory } from '@/data/impactStories';
+import { useCMSStories } from '@/hooks/useCMSContent';
 
 // Circular photos of recipients around the hero
 const recipientPhotos = [
@@ -33,10 +34,24 @@ function AnimatedCounter({ end, duration = 2000 }: { end: number; duration?: num
   return <span>{count.toLocaleString()}</span>;
 }
 
-
 export function HeroSection() {
   const navigate = useNavigate();
-  const progress = (featuredStory.amountRaised / featuredStory.goal) * 100;
+  const { data: cmsStories } = useCMSStories(true);
+
+  // Use first published CMS story if available, fallback to hardcoded
+  const story = cmsStories && cmsStories.length > 0
+    ? {
+        name: cmsStories[0].name,
+        location: cmsStories[0].location || '',
+        image: cmsStories[0].image_url || featuredStory.image,
+        story: cmsStories[0].short_story,
+        amountRaised: Number(cmsStories[0].amount_raised) || 0,
+        goal: Number(cmsStories[0].goal) || 1,
+        donorsCount: cmsStories[0].donors_count || 0,
+      }
+    : featuredStory;
+
+  const progress = (story.amountRaised / story.goal) * 100;
 
   return (
     <section className="relative min-h-[85vh] md:min-h-[90vh] flex items-center overflow-hidden">
@@ -127,8 +142,8 @@ export function HeroSection() {
             <div className="flex flex-col sm:flex-row">
               <div className="h-40 sm:h-48 sm:w-48 sm:h-auto relative overflow-hidden flex-shrink-0">
                 <img 
-                  src={featuredStory.image}
-                  alt={featuredStory.name}
+                  src={story.image}
+                  alt={story.name}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute top-3 left-3">
@@ -141,15 +156,15 @@ export function HeroSection() {
               <div className="flex-1 p-4 md:p-5">
                 <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm mb-1.5 md:mb-2">
                   <MapPin className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                  <span>{featuredStory.location}</span>
+                  <span>{story.location}</span>
                 </div>
                 
                 <h3 className="text-base md:text-lg font-semibold text-foreground mb-1.5 md:mb-2">
-                  {featuredStory.name}'s family received groceries for 3 months
+                  {story.name}'s family received groceries for 3 months
                 </h3>
                 
                 <p className="text-muted-foreground text-xs md:text-sm mb-3 md:mb-4 line-clamp-2">
-                  "{featuredStory.story}"
+                  "{story.story}"
                 </p>
                 
                 {/* Progress */}
@@ -157,11 +172,11 @@ export function HeroSection() {
                   <Progress value={progress} className="h-1.5 md:h-2" />
                   <div className="flex justify-between text-xs">
                     <span className="text-foreground font-medium">
-                      ${featuredStory.amountRaised.toLocaleString()} raised
+                      ${story.amountRaised.toLocaleString()} raised
                     </span>
                     <span className="flex items-center gap-1 text-muted-foreground">
                       <Users className="w-3 h-3" />
-                      {featuredStory.donorsCount} donors helped
+                      {story.donorsCount} donors helped
                     </span>
                   </div>
                 </div>
