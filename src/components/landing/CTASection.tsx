@@ -15,7 +15,7 @@ export function CTASection() {
       <div className="container mx-auto px-4 relative">
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* For Donors */}
-          <Card className="p-8 md:p-10 bg-primary text-primary-foreground border-0 hover:shadow-emerald transition-shadow">
+          <Card className="p-6 md:p-8 lg:p-10 bg-primary text-primary-foreground border-0 hover:shadow-emerald transition-shadow">
             <div className="w-14 h-14 rounded-2xl bg-primary-foreground/20 flex items-center justify-center mb-6">
               <Heart className="w-7 h-7" />
             </div>
@@ -45,7 +45,7 @@ export function CTASection() {
           </Card>
 
           {/* For Companies */}
-          <Card className="p-8 md:p-10 border-2 border-gold/20 bg-card hover:shadow-gold transition-shadow">
+          <Card className="p-6 md:p-8 lg:p-10 border-2 border-gold/20 bg-card hover:shadow-gold transition-shadow">
             <div className="w-14 h-14 rounded-2xl bg-gold/10 flex items-center justify-center mb-6">
               <Building2 className="w-7 h-7 text-gold" />
             </div>
@@ -53,7 +53,7 @@ export function CTASection() {
             <p className="text-muted-foreground mb-8 leading-relaxed">
               Partner with us to amplify your social impact. Join DoorDash, Uber, and 50+ brands making a difference.
             </p>
-            <div className="flex items-center gap-4 mb-8 text-foreground">
+            <div className="flex items-center gap-4 mb-8 text-foreground flex-wrap">
               <div className="flex items-center gap-2">
                 <span className="text-xl">🚗</span>
                 <span className="text-sm">DoorDash</span>
@@ -81,7 +81,7 @@ export function CTASection() {
 
         {/* Bottom tagline */}
         <div className="text-center mt-16">
-          <p className="text-2xl md:text-3xl font-bold text-foreground">
+          <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
             Together, we've helped <span className="text-gradient-gold">15,000+ families</span> worldwide.
           </p>
           <p className="text-muted-foreground mt-2">Join the movement today.</p>

@@ -155,7 +155,7 @@ export default function Stories() {
 
         {/* Active Fundraisers Section */}
         <section className="mb-16">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="w-5 h-5 text-primary" />
@@ -166,7 +166,7 @@ export default function Stories() {
               </p>
             </div>
             <Link to="/apply">
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2 w-full sm:w-auto">
                 <PlusCircle className="w-4 h-4" />
                 Start a Fundraiser
               </Button>

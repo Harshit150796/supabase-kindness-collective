@@ -102,7 +102,7 @@ export function BrandSelectorModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] sm:max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
             {multiSelect ? 'Select Brands' : 'Select a Brand'}

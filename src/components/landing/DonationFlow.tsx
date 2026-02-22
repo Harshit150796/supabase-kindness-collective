@@ -704,7 +704,7 @@ export function DonationFlow() {
                               )}
                               <span className="text-foreground">{allocation.brandName}</span>
                             </div>
-                            <span className="text-muted-foreground">
+                            <span className="text-muted-foreground text-xs sm:text-sm truncate">
                               ${brandAmount.toFixed(2)} → {coupons} × ${couponValue} coupon{coupons !== 1 ? 's' : ''}
                             </span>
                           </div>

@@ -275,7 +275,7 @@ export function TrustTransparency() {
             </div>
 
             {/* Tab Content */}
-            <div className="relative min-h-[320px] md:min-h-[280px]">
+            <div className="relative min-h-[280px] md:min-h-[320px]">
               {/* Breakdown Tab */}
               <div 
                 key={`breakdown-${tabAnimationKey}`}
@@ -405,7 +405,7 @@ export function TrustTransparency() {
                               style={{ transitionDelay: `${stepDelay + 100}ms` }}
                             />
                             {/* Main circle */}
-                            <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold text-lg flex items-center justify-center mx-auto shadow-lg shadow-primary/25 group-hover:scale-110 group-hover:shadow-primary/40 transition-all duration-300">
+                            <div className="relative w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold text-base md:text-lg flex items-center justify-center mx-auto shadow-lg shadow-primary/25 group-hover:scale-110 group-hover:shadow-primary/40 transition-all duration-300">
                               {item.step}
                             </div>
                             {/* Icon badge */}
