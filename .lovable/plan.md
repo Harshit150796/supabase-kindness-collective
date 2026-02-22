@@ -1,57 +1,61 @@
 
 
-## Sync Admin Portal with Website Content
+## Three Fixes: Remove Admin Toggle, Consistent Brand Colors, Fix Logo Loading Lag
 
-### Problem
-The admin dashboard shows 0 for all content stats (stories, testimonials, blog posts, FAQ) because the CMS database tables are completely empty. The website displays content from hardcoded fallback files (`src/data/impactStories.ts`, `src/data/testimonials.ts`, and inline arrays in `FAQ.tsx`). Additionally, the stat cards on the admin dashboard are not clickable, so you can't navigate to manage those sections directly from the stats.
+### 1. Remove Admin Role Management from AdminUsers
 
-### Solution
+Remove the "Make Admin" / "Remove Admin" buttons entirely from the user management page. The page will remain as a read-only user list showing names, emails, roles, and join dates -- but without the ability to change roles.
 
-Two-part fix:
+**File: `src/pages/admin/AdminUsers.tsx`**
+- Remove the `toggleAdmin` function and `toggling` state
+- Remove the `ShieldCheck`, `ShieldOff` icon imports
+- Remove the entire button column from each user card
+- Keep the user list, search, role badges -- just remove the admin toggle action
 
-**Part 1: Seed the CMS tables with the existing hardcoded data**
+---
 
-Insert the hardcoded content into the database so the admin portal can see and manage it. Once in the database, the website components (which already prefer CMS data over hardcoded fallbacks) will automatically use the managed data.
+### 2. Make "CouponDonation" Brand Name Consistent Everywhere
 
-- **cms_stories** -- Insert 8 impact stories from `src/data/impactStories.ts` (Maria R., Martinez Family, David & Kids, Hope Community Center, Sarah T., James & Family, Sunshine After School, Eleanor P.)
-- **cms_testimonials** -- Insert 4 testimonials from `src/data/testimonials.ts` (Sarah Chen, Maria G., James Wilson, Michael Torres)
-- **cms_faq** -- Insert 8 FAQ items from the hardcoded array in `FAQ.tsx`
+Currently, the brand name uses green ("Coupon") + blue ("Donation") colors only in the Navbar and Footer. Four other locations render it as plain `text-foreground` with no color split:
 
-All items will be inserted with `is_published: true` so they appear immediately on both the website and admin dashboard.
+| Location | Current | Fix |
+|----------|---------|-----|
+| Navbar | Green + Blue | Already correct |
+| Footer | Green + Blue | Already correct |
+| DashboardLayout (mobile header) | Plain `text-foreground` | Add green + blue split |
+| DashboardLayout (sidebar logo) | Plain `text-foreground` | Add green + blue split |
+| ApplyLayout | Plain `text-foreground` | Add green + blue split |
+| Auth.tsx | Plain `text-foreground` | Add green + blue split |
+| ResetPassword.tsx | Plain `text-foreground` | Add green + blue split |
 
-**Part 2: Make admin dashboard stat cards clickable**
+Each will be updated to use:
+```
+<span className="text-[#2e7d32]">Coupon</span><span className="text-[#1565c0]">Donation</span>
+```
 
-Update the stat cards in `AdminDashboard.tsx` so clicking on them navigates to the corresponding management page:
+---
 
-| Stat Card | Navigates To |
-|-----------|-------------|
-| Published Stories | /admin/stories |
-| Blog Posts | /admin/blog |
-| Testimonials | /admin/testimonials |
-| FAQ Items | /admin/faq |
-| Total Users | /admin/users |
-| Pending Verifications | /admin/verifications |
-| Total Coupons | /admin/coupons |
-| Available Coupons | /admin/coupons |
+### 3. Fix Logo Loading Lag in Header
 
-### Technical Details
+The logo is loaded as a dynamic import (`import logo from '@/assets/logo.png'`). On initial page load, there can be a flash where the logo hasn't loaded yet, causing a layout shift.
 
-**Database inserts (using Supabase insert tool, NOT migrations):**
+**Fix in `src/components/layout/Navbar.tsx`:**
+- Add fixed `width` and `height` attributes to the `<img>` tag to reserve space and prevent layout shift
+- Add `loading="eager"` and `decoding="async"` to prioritize the logo load
+- Add `fetchPriority="high"` to signal the browser to load it first
 
-1. `INSERT INTO cms_stories` -- 8 rows with name, location, image_url, short_story, full_story, impact, category, donors_count, amount_raised, goal, is_published=true, display_order
-2. `INSERT INTO cms_testimonials` -- 4 rows with quote, name, role, role_label, location, image_url, verified, is_published=true, display_order
-3. `INSERT INTO cms_faq` -- 8 rows with question, answer, category='general', is_published=true, display_order
+Same fix applied to `DashboardLayout.tsx` for the dashboard header logo.
 
-**Code changes:**
+---
+
+### Files Modified
 
 | File | Change |
 |------|--------|
-| `src/pages/admin/AdminDashboard.tsx` | Add `onClick` + `cursor-pointer` to all stat cards, navigating to their respective admin pages |
-
-### How Sync Works Going Forward
-
-Once the data is in the CMS tables, the existing architecture handles everything:
-- **Website components** (`TestimonialsSection`, `FAQ`, `ImpactStories`) already check CMS data first and fall back to hardcoded data only if CMS is empty
-- **Admin pages** (`AdminStories`, `AdminTestimonials`, `AdminFAQ`, `AdminBlog`) already have full CRUD (create, edit, delete, publish/unpublish) with React Query cache invalidation
-- Any changes made in admin will automatically reflect on the website since both read from the same Supabase tables
+| `src/pages/admin/AdminUsers.tsx` | Remove admin toggle buttons and related logic |
+| `src/components/layout/DashboardLayout.tsx` | Add green+blue brand colors to both logo locations, fix logo loading |
+| `src/components/apply/ApplyLayout.tsx` | Add green+blue brand colors |
+| `src/pages/Auth.tsx` | Add green+blue brand colors |
+| `src/pages/ResetPassword.tsx` | Add green+blue brand colors |
+| `src/components/layout/Navbar.tsx` | Add loading optimization attributes to logo img |
 
