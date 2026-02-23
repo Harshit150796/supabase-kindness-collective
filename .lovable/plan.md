@@ -1,49 +1,44 @@
 
 
-## Add Harshit Agrawal's Photo to About Page
+## Add Paul Savluc's Photo to About Page
 
 ### What Will Change
 
-The About page currently shows placeholder initials "HA" in a gradient circle for Harshit Agrawal's founder card. This will be replaced with the uploaded photo, properly cropped and sized to look professional.
+Paul Savluc's founder card currently shows placeholder initials "PS" in a gradient circle (line 210). This will be replaced with the uploaded photo, processed into a passport-style headshot.
 
-### Image Handling
+### Image Processing
 
-- Copy the uploaded image to `src/assets/harshit-agrawal.png`
-- Import it as an ES6 module in the About page component for proper bundling
+The uploaded photo shows Paul outdoors with a castle/buildings in the background. To create a professional passport-style headshot:
 
-### Cropping and Styling Strategy
+- Use the AI image editing API to crop tightly to face and shoulders, removing the castle background, and upscale the resolution
+- Save the processed image to `src/assets/paul-savluc.png`
 
-The uploaded photo is a full-body shot on stage. To make it work as a founder headshot in the circular frame:
-
-- Use `object-cover` with `object-position: top` to focus on the face and upper body, cropping out the lower body and audience
-- Increase the circle size from `w-32 h-32` (128px) to `w-40 h-40` (160px) to give the photo more presence
-- Add a subtle border (`ring-4 ring-primary/10`) around the circle for polish
-- Keep the existing hover scale effect
-
-### Code Change
+### Code Changes
 
 **File: `src/pages/About.tsx`**
 
-Replace lines 176-178 (the initials placeholder):
+1. Add import at the top:
 ```tsx
-<div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/20 to-gold/20 flex items-center justify-center mb-6 group-hover:scale-105 transition-transform">
-  <span className="text-4xl font-bold text-primary">HA</span>
+import paulPhoto from '@/assets/paul-savluc.png';
+```
+
+2. Replace the placeholder (lines 210-212) from:
+```tsx
+<div className="w-32 h-32 rounded-full bg-gradient-to-br from-gold/20 to-primary/20 flex items-center justify-center mb-6 group-hover:scale-105 transition-transform">
+  <span className="text-4xl font-bold text-gold">PS</span>
 </div>
 ```
 
-With an actual image:
+To match Harshit's styling:
 ```tsx
 <div className="w-40 h-40 rounded-full overflow-hidden mb-6 group-hover:scale-105 transition-transform ring-4 ring-primary/10">
   <img 
-    src={harshitPhoto} 
-    alt="Harshit Agrawal" 
+    src={paulPhoto} 
+    alt="Paul Savluc" 
     className="w-full h-full object-cover object-top"
   />
 </div>
 ```
 
-And add the import at the top of the file:
-```tsx
-import harshitPhoto from '@/assets/harshit-agrawal.png';
-```
+This makes both founder cards consistent in size (160px) and styling, with professional headshot photos.
 
