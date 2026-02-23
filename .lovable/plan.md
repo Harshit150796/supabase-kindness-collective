@@ -1,44 +1,26 @@
 
 
-## Add Paul Savluc's Photo to About Page
+## Fix Paul Savluc's Photo -- Keep Real Background, Crop to Face & Shoulders
 
-### What Will Change
+### Problem
+The previous edit removed Paul's background entirely, making it look artificial. The user wants the original photo kept natural with its real background, just cropped tighter to focus on face and shoulders.
 
-Paul Savluc's founder card currently shows placeholder initials "PS" in a gradient circle (line 210). This will be replaced with the uploaded photo, processed into a passport-style headshot.
+### Approach
 
-### Image Processing
+1. **Use the newly uploaded photo** (`WhatsApp_Image_paul1.JPG`) as the source -- it already has a nice composition with Paul and the castle background.
+2. **AI image edit**: Crop to a 1:1 square focusing on Paul's face and upper shoulders, keeping the real background visible but with face as the dominant element. Upscale resolution for clarity. No background removal.
+3. **Save** the result to `src/assets/paul-savluc.png`, replacing the current version.
+4. **No code changes needed** -- the import and image element in `About.tsx` already reference this file and have proper `object-cover object-top` styling.
 
-The uploaded photo shows Paul outdoors with a castle/buildings in the background. To create a professional passport-style headshot:
+### Image Processing Details
 
-- Use the AI image editing API to crop tightly to face and shoulders, removing the castle background, and upscale the resolution
-- Save the processed image to `src/assets/paul-savluc.png`
+The crop will target roughly the upper-right portion of the photo where Paul's face and shoulders are, creating a tight 1:1 headshot that:
+- Centers on the face
+- Includes shoulders (collar area of his coat)
+- Keeps some of the castle/sky as natural background blur
+- Does NOT remove or replace the background
+- Upscales to high resolution for crisp display in the 160px circle
 
-### Code Changes
-
-**File: `src/pages/About.tsx`**
-
-1. Add import at the top:
-```tsx
-import paulPhoto from '@/assets/paul-savluc.png';
-```
-
-2. Replace the placeholder (lines 210-212) from:
-```tsx
-<div className="w-32 h-32 rounded-full bg-gradient-to-br from-gold/20 to-primary/20 flex items-center justify-center mb-6 group-hover:scale-105 transition-transform">
-  <span className="text-4xl font-bold text-gold">PS</span>
-</div>
-```
-
-To match Harshit's styling:
-```tsx
-<div className="w-40 h-40 rounded-full overflow-hidden mb-6 group-hover:scale-105 transition-transform ring-4 ring-primary/10">
-  <img 
-    src={paulPhoto} 
-    alt="Paul Savluc" 
-    className="w-full h-full object-cover object-top"
-  />
-</div>
-```
-
-This makes both founder cards consistent in size (160px) and styling, with professional headshot photos.
+### Files Changed
+- `src/assets/paul-savluc.png` -- replaced with properly cropped version
 
