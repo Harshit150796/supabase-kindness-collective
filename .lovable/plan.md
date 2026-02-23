@@ -1,52 +1,49 @@
 
 
-## Fix All Brand Logos to Use Real Company Logos
+## Add Harshit Agrawal's Photo to About Page
 
-### Problem
+### What Will Change
 
-Several brands display incorrect or generic logos because they use unreliable image sources:
-- **`img.logo.dev` brands** (return random/generic icons): Whole Foods, Aldi, Postmates, Panera Bread, Subway
-- **`companieslogo.com` broken URLs**: Grubhub, Instacart, Chipotle, and potentially others with outdated hashes
+The About page currently shows placeholder initials "HA" in a gradient circle for Harshit Agrawal's founder card. This will be replaced with the uploaded photo, properly cropped and sized to look professional.
 
-### Solution
+### Image Handling
 
-Replace all logo URLs with ones from `logo.clearbit.com`, which is a reliable, well-maintained company logo API that returns the actual official logo for any company domain. The format is simple: `https://logo.clearbit.com/{company-domain}`.
+- Copy the uploaded image to `src/assets/harshit-agrawal.png`
+- Import it as an ES6 module in the About page component for proper bundling
 
-### Changes
+### Cropping and Styling Strategy
 
-**File: `src/data/brandLogos.ts`**
+The uploaded photo is a full-body shot on stage. To make it work as a founder headshot in the circular frame:
 
-Every brand's `logo` URL will be updated to use `logo.clearbit.com`:
+- Use `object-cover` with `object-position: top` to focus on the face and upper body, cropping out the lower body and audience
+- Increase the circle size from `w-32 h-32` (128px) to `w-40 h-40` (160px) to give the photo more presence
+- Add a subtle border (`ring-4 ring-primary/10`) around the circle for polish
+- Keep the existing hover scale effect
 
-| Brand | Current Source | New URL |
-|-------|---------------|---------|
-| DoorDash | companieslogo.com | `https://logo.clearbit.com/doordash.com` |
-| Walmart | companieslogo.com | `https://logo.clearbit.com/walmart.com` |
-| Uber | companieslogo.com | `https://logo.clearbit.com/ubereats.com` |
-| Amazon | companieslogo.com | `https://logo.clearbit.com/amazon.com` |
-| Target | companieslogo.com | `https://logo.clearbit.com/target.com` |
-| Starbucks | companieslogo.com | `https://logo.clearbit.com/starbucks.com` |
-| Kroger | companieslogo.com | `https://logo.clearbit.com/kroger.com` |
-| Whole Foods | img.logo.dev | `https://logo.clearbit.com/wholefoodsmarket.com` |
-| Costco | companieslogo.com | `https://logo.clearbit.com/costco.com` |
-| Safeway | companieslogo.com | `https://logo.clearbit.com/safeway.com` |
-| Publix | companieslogo.com | `https://logo.clearbit.com/publix.com` |
-| Aldi | img.logo.dev | `https://logo.clearbit.com/aldi.us` |
-| Grubhub | companieslogo.com | `https://logo.clearbit.com/grubhub.com` |
-| Instacart | companieslogo.com | `https://logo.clearbit.com/instacart.com` |
-| Postmates | img.logo.dev | `https://logo.clearbit.com/postmates.com` |
-| Best Buy | companieslogo.com | `https://logo.clearbit.com/bestbuy.com` |
-| Home Depot | companieslogo.com | `https://logo.clearbit.com/homedepot.com` |
-| Lowe's | companieslogo.com | `https://logo.clearbit.com/lowes.com` |
-| CVS | companieslogo.com | `https://logo.clearbit.com/cvs.com` |
-| Walgreens | companieslogo.com | `https://logo.clearbit.com/walgreens.com` |
-| Rite Aid | companieslogo.com | `https://logo.clearbit.com/riteaid.com` |
-| Dunkin' | companieslogo.com | `https://logo.clearbit.com/dunkindonuts.com` |
-| Chipotle | companieslogo.com | `https://logo.clearbit.com/chipotle.com` |
-| Panera Bread | img.logo.dev | `https://logo.clearbit.com/panerabread.com` |
-| Subway | img.logo.dev | `https://logo.clearbit.com/subway.com` |
-| McDonald's | companieslogo.com | `https://logo.clearbit.com/mcdonalds.com` |
-| Wendy's | companieslogo.com | `https://logo.clearbit.com/wendys.com` |
+### Code Change
 
-This is a single-file change updating all 27 logo URLs to a consistent, reliable source that serves real official company logos. The existing fallback mechanism in `BrandSelectorModal.tsx` (which shows a colored initial if an image fails to load) remains as a safety net.
+**File: `src/pages/About.tsx`**
+
+Replace lines 176-178 (the initials placeholder):
+```tsx
+<div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/20 to-gold/20 flex items-center justify-center mb-6 group-hover:scale-105 transition-transform">
+  <span className="text-4xl font-bold text-primary">HA</span>
+</div>
+```
+
+With an actual image:
+```tsx
+<div className="w-40 h-40 rounded-full overflow-hidden mb-6 group-hover:scale-105 transition-transform ring-4 ring-primary/10">
+  <img 
+    src={harshitPhoto} 
+    alt="Harshit Agrawal" 
+    className="w-full h-full object-cover object-top"
+  />
+</div>
+```
+
+And add the import at the top of the file:
+```tsx
+import harshitPhoto from '@/assets/harshit-agrawal.png';
+```
 
