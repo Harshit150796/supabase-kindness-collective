@@ -1,4 +1,5 @@
 import { Navbar } from '@/components/layout/Navbar';
+import harshitPhoto from '@/assets/harshit-agrawal.png';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -173,8 +174,12 @@ export default function About() {
               {/* Harshit Agrawal */}
               <Card className="p-8 bg-card border-border hover:border-gold/50 hover:shadow-[0_0_20px_hsl(var(--gold)/0.2)] transition-all duration-300 group">
                 <div className="flex flex-col items-center text-center">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/20 to-gold/20 flex items-center justify-center mb-6 group-hover:scale-105 transition-transform">
-                    <span className="text-4xl font-bold text-primary">HA</span>
+                  <div className="w-40 h-40 rounded-full overflow-hidden mb-6 group-hover:scale-105 transition-transform ring-4 ring-primary/10">
+                    <img 
+                      src={harshitPhoto} 
+                      alt="Harshit Agrawal" 
+                      className="w-full h-full object-cover object-top"
+                    />
                   </div>
                   <h3 className="text-2xl font-bold text-foreground mb-1">Harshit Agrawal</h3>
                   <p className="text-gold font-medium mb-4">Founder & CEO</p>
