@@ -169,7 +169,7 @@ export function BrandSelectorModal({
         </div>
 
         {/* Brand Grid */}
-        <ScrollArea className="flex-1 -mx-6 px-6">
+        <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 py-2">
             {filteredBrands.map((brand) => {
               const brandId = brand.name.toLowerCase().replace(/\s+/g, '');
