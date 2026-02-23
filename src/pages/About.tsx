@@ -1,5 +1,6 @@
 import { Navbar } from '@/components/layout/Navbar';
 import harshitPhoto from '@/assets/harshit-agrawal.png';
+import paulPhoto from '@/assets/paul-savluc.png';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -207,8 +208,12 @@ export default function About() {
               {/* Paul Savluc */}
               <Card className="p-8 bg-card border-border hover:border-gold/50 hover:shadow-[0_0_20px_hsl(var(--gold)/0.2)] transition-all duration-300 group">
                 <div className="flex flex-col items-center text-center">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-gold/20 to-primary/20 flex items-center justify-center mb-6 group-hover:scale-105 transition-transform">
-                    <span className="text-4xl font-bold text-gold">PS</span>
+                  <div className="w-40 h-40 rounded-full overflow-hidden mb-6 group-hover:scale-105 transition-transform ring-4 ring-primary/10">
+                    <img 
+                      src={paulPhoto} 
+                      alt="Paul Savluc" 
+                      className="w-full h-full object-cover object-top"
+                    />
                   </div>
                   <h3 className="text-2xl font-bold text-foreground mb-1">Paul Savluc</h3>
                   <p className="text-gold font-medium mb-4">Co-Founder, COO & CMO</p>
