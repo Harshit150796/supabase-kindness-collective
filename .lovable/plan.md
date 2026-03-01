@@ -1,71 +1,66 @@
 
 
-## Database-Driven Featured Stories with Clickable Detail Pages
+## Featured Story Detail Page (Like Real Fundraisers)
 
 ### Overview
-Replace the hardcoded featured story data with a Supabase database table. The featured story on the homepage will pull its name, headline, amounts, donor counts, and goals from the database -- making it easy to update without code changes. The card will also be clickable, linking to a full detail page.
+Create a dedicated detail page for featured stories that matches the exact look and feel of the real fundraiser pages (`/f/:slug`). When a user clicks the featured story card on the homepage, they'll land on a page with the same two-column layout, circular progress ring, donation panel, organizer info, and trust badges -- just like a real fundraiser.
 
-### Changes
+### What Changes
 
-**1. Create `featured_stories` database table**
+**1. New page: `src/pages/FeaturedStoryDetail.tsx`**
 
-A new table with these columns:
-- `id` (uuid, primary key)
-- `story_key` (text, unique) -- maps to the local image asset (e.g., "childrens-hope", "rural-family", "hurricane-relief", "children-of-heroes")
-- `name` (text) -- e.g., "Children's Hope Program"
-- `location` (text)
-- `headline` (text)
-- `short_story` (text)
-- `full_story` (text) -- extended story for the detail page
-- `impact` (text) -- e.g., "3 months of groceries"
-- `category` (text) -- family/child/emergency/community
-- `amount_raised` (numeric)
-- `goal` (numeric)
-- `donors_count` (integer)
-- `brand_partners` (text array)
-- `display_order` (integer) -- controls weekly rotation order (0-3)
-- `is_active` (boolean, default true)
-- `created_at`, `updated_at` (timestamps)
+A new page component modeled after `PublicFundraiser.tsx` that:
+- Accepts a `storyKey` param from the URL (e.g., `/featured/childrens-hope`)
+- Fetches the story data from the `featured_stories` Supabase table using the `story_key`
+- Falls back to local `featuredStories` data if the DB is unavailable
+- Maps `story_key` to the local image assets (same image map from `useFeaturedStories.ts`)
+- Renders the same layout as `PublicFundraiser.tsx`:
+  - Hero image at the top (using the local asset)
+  - Title card with category badge, verified badge, and organizer info
+  - Full story content section
+  - Mock recent supporters list (generated from the `donors_count` field)
+  - Sticky right-column donation panel with circular progress ring, amount raised/goal, donor count, days active
+  - "Donate Now" button linking to `/donate`
+  - Share button with share modal
+  - Mobile fixed bottom CTA bar
+  - Trust badges
+- Back button links to homepage (`/`)
 
-RLS: Anyone can read (public data), admins can manage.
+**2. Add route in `src/App.tsx`**
 
-**2. Seed the table with 4 mock stories**
+Add: `<Route path="/featured/:storyKey" element={<FeaturedStoryDetail />} />`
 
-Insert realistic data for the 4 featured stories with believable amounts, donor counts, full stories, recent updates, and brand partners -- all pulled from the database so nothing looks hardcoded.
+**3. Update `src/components/landing/HeroSection.tsx`**
 
-**3. Create `useFeaturedStories` hook** (`src/hooks/useFeaturedStories.ts`)
+Change the featured story link from `/story/${story.id}` to `/featured/${story.storyKey}` so clicking navigates to the new page.
 
-- Fetches all active featured stories from the `featured_stories` table
-- Maps `story_key` to the local image imports (childrens-hope.webp, etc.)
-- Exports a `useCurrentFeaturedStory()` that picks the right story based on the current week
-- Falls back to the existing hardcoded data if the DB fetch fails
+**4. Update `src/hooks/useFeaturedStories.ts`**
 
-**4. Add featured stories to `impactStories` data** (`src/data/impactStories.ts`)
+Include `story_key` in the returned story object so `HeroSection` can build the correct link.
 
-Add 4 full `ImpactStory` entries (with IDs like `featured-1` through `featured-4`) so the `/story/:id` detail page can render them. These serve as the static fallback and provide the full story structure (gallery images, updates, donors, organizer info) that the detail page expects.
+**5. Update `src/data/featuredStories.ts`**
 
-**5. Update `featuredStories.ts`** (`src/data/featuredStories.ts`)
+Add a `storyKey` field to the `FeaturedStory` interface and each story entry (e.g., `'childrens-hope'`, `'rural-family'`, etc.) for the local fallback path.
 
-- Add an `id` field to the `FeaturedStory` interface
-- Assign IDs `featured-1` through `featured-4` to each story
+**6. Add `full_story` data to the `featured_stories` DB table**
 
-**6. Update HeroSection** (`src/components/landing/HeroSection.tsx`)
+The table already has a `full_story` column. We'll ensure the seeded data includes extended story text so the detail page has rich content to display.
 
-- Use the new `useFeaturedStories` hook to fetch from DB first
-- Wrap the featured story `Card` in a `Link` to `/story/{id}`
-- Add hover styling (cursor pointer, subtle ring effect)
-- Fall back to local data if DB is unavailable
+Update the 4 rows with longer `full_story` text via a migration.
 
 ### How It Works
-- Admins (or anyone with DB access) can update the `featured_stories` table to change amounts, headlines, donor counts, etc. at any time
-- The weekly rotation picks story by `display_order` matching the current week index
-- The 4 images remain as local assets mapped by `story_key` -- no need to upload images to storage
-- Clicking the featured card navigates to `/story/featured-1` (etc.) which shows the full detail page with gallery, updates, donation panel, and related stories
+- User sees the featured story card on the homepage
+- Clicks it, navigates to `/featured/childrens-hope` (or whichever story is currently rotating)
+- The detail page fetches data from `featured_stories` table by `story_key`
+- Renders in the same visual format as real fundraiser pages
+- "Donate Now" links to `/donate`, "Share" opens the share modal
+- Mobile users see a fixed bottom bar with Donate + Share buttons
 
 ### Files Changed
-- **Database**: New `featured_stories` table + seed data (migration + insert)
-- `src/hooks/useFeaturedStories.ts` -- new hook
-- `src/data/featuredStories.ts` -- add `id` field
-- `src/data/impactStories.ts` -- add 4 featured story entries
-- `src/components/landing/HeroSection.tsx` -- use DB hook, make card clickable
+- `src/pages/FeaturedStoryDetail.tsx` -- new page
+- `src/App.tsx` -- add route
+- `src/components/landing/HeroSection.tsx` -- update link target
+- `src/hooks/useFeaturedStories.ts` -- expose `storyKey` field
+- `src/data/featuredStories.ts` -- add `storyKey` to interface and data
+- Database migration -- update `full_story` text for all 4 featured stories
 
