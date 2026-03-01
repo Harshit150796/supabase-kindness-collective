@@ -56,7 +56,7 @@ export function HeroSection() {
     : rotatingStory;
 
   const storyLink = cmsStories && cmsStories.length > 0
-    ? `/story/${story.id}`
+    ? `/cms-story/${story.id}`
     : `/featured/${rotatingStory.storyKey}`;
 
   const progress = (story.amountRaised / story.goal) * 100;
