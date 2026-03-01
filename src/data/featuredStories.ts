@@ -4,6 +4,7 @@ import hurricaneReliefImg from '@/assets/featured/hurricane-relief.webp';
 import childrenOfHeroesImg from '@/assets/featured/children-of-heroes.jpeg';
 
 export interface FeaturedStory {
+  id: string;
   name: string;
   location: string;
   image: string;
@@ -16,6 +17,7 @@ export interface FeaturedStory {
 
 export const featuredStories: FeaturedStory[] = [
   {
+    id: 'featured-1',
     name: "Children's Hope Program",
     location: 'Poland',
     image: childrensHopeImg,
@@ -26,6 +28,7 @@ export const featuredStories: FeaturedStory[] = [
     headline: "Children in conflict zones received hope through play and support",
   },
   {
+    id: 'featured-2',
     name: 'Rural Family Support',
     location: 'Haiti',
     image: ruralFamilyImg,
@@ -36,6 +39,7 @@ export const featuredStories: FeaturedStory[] = [
     headline: "Families in rural Haiti received essential food support",
   },
   {
+    id: 'featured-3',
     name: 'Hurricane Helene Relief',
     location: 'North Carolina, USA',
     image: hurricaneReliefImg,
@@ -46,6 +50,7 @@ export const featuredStories: FeaturedStory[] = [
     headline: "Families rebuilt after Hurricane Helene with grocery support",
   },
   {
+    id: 'featured-4',
     name: 'Children of Heroes',
     location: 'Ukraine',
     image: childrenOfHeroesImg,

@@ -500,6 +500,66 @@ export type Database = {
           },
         ]
       }
+      featured_stories: {
+        Row: {
+          amount_raised: number
+          brand_partners: string[] | null
+          category: string
+          created_at: string
+          display_order: number
+          donors_count: number
+          full_story: string | null
+          goal: number
+          headline: string
+          id: string
+          impact: string | null
+          is_active: boolean
+          location: string
+          name: string
+          short_story: string
+          story_key: string
+          updated_at: string
+        }
+        Insert: {
+          amount_raised?: number
+          brand_partners?: string[] | null
+          category?: string
+          created_at?: string
+          display_order?: number
+          donors_count?: number
+          full_story?: string | null
+          goal?: number
+          headline?: string
+          id?: string
+          impact?: string | null
+          is_active?: boolean
+          location?: string
+          name: string
+          short_story?: string
+          story_key: string
+          updated_at?: string
+        }
+        Update: {
+          amount_raised?: number
+          brand_partners?: string[] | null
+          category?: string
+          created_at?: string
+          display_order?: number
+          donors_count?: number
+          full_story?: string | null
+          goal?: number
+          headline?: string
+          id?: string
+          impact?: string | null
+          is_active?: boolean
+          location?: string
+          name?: string
+          short_story?: string
+          story_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fundraiser_images: {
         Row: {
           created_at: string | null
