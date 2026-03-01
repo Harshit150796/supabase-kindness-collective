@@ -1,37 +1,71 @@
 
 
-## Weekly Rotating Featured Story System
+## Database-Driven Featured Stories with Clickable Detail Pages
 
 ### Overview
-Create an automatic weekly rotation of 4 featured stories on the homepage hero section, each using one of the uploaded images. The system will cycle through stories based on the current week number -- no manual intervention needed.
+Replace the hardcoded featured story data with a Supabase database table. The featured story on the homepage will pull its name, headline, amounts, donor counts, and goals from the database -- making it easy to update without code changes. The card will also be clickable, linking to a full detail page.
 
-### The 4 Featured Stories (one per week, rotating)
+### Changes
 
-1. **Week 1 -- Children's Hope** (kids playing outdoors image): A community program helping children in conflict-affected areas find joy and normalcy through play and support activities.
+**1. Create `featured_stories` database table**
 
-2. **Week 2 -- Rural Family Support** (man in shelter image): Supporting families in rural Haiti with essential food supplies and grocery coupons to help them through difficult times.
+A new table with these columns:
+- `id` (uuid, primary key)
+- `story_key` (text, unique) -- maps to the local image asset (e.g., "childrens-hope", "rural-family", "hurricane-relief", "children-of-heroes")
+- `name` (text) -- e.g., "Children's Hope Program"
+- `location` (text)
+- `headline` (text)
+- `short_story` (text)
+- `full_story` (text) -- extended story for the detail page
+- `impact` (text) -- e.g., "3 months of groceries"
+- `category` (text) -- family/child/emergency/community
+- `amount_raised` (numeric)
+- `goal` (numeric)
+- `donors_count` (integer)
+- `brand_partners` (text array)
+- `display_order` (integer) -- controls weekly rotation order (0-3)
+- `is_active` (boolean, default true)
+- `created_at`, `updated_at` (timestamps)
 
-3. **Week 3 -- Hurricane Relief** (smiling man in kitchen image): Helping families in North Carolina rebuild after Hurricane Helene with grocery support and essential supplies.
+RLS: Anyone can read (public data), admins can manage.
 
-4. **Week 4 -- Children of Heroes** (group of kids image): Supporting children of fallen heroes in Ukraine with nutrition, education supplies, and community care.
+**2. Seed the table with 4 mock stories**
 
-### How the Rotation Works
-- Uses `Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % 4` to determine which story to show based on the current week
-- Automatically cycles every 7 days with zero maintenance
-- CMS stories still take priority if available -- this rotation serves as an improved fallback
+Insert realistic data for the 4 featured stories with believable amounts, donor counts, full stories, recent updates, and brand partners -- all pulled from the database so nothing looks hardcoded.
 
-### Technical Changes
+**3. Create `useFeaturedStories` hook** (`src/hooks/useFeaturedStories.ts`)
 
-**New/modified files:**
+- Fetches all active featured stories from the `featured_stories` table
+- Maps `story_key` to the local image imports (childrens-hope.webp, etc.)
+- Exports a `useCurrentFeaturedStory()` that picks the right story based on the current week
+- Falls back to the existing hardcoded data if the DB fetch fails
 
-1. **Copy 4 images to `src/assets/featured/`** -- the uploaded photos become permanent assets
+**4. Add featured stories to `impactStories` data** (`src/data/impactStories.ts`)
 
-2. **Create `src/data/featuredStories.ts`** -- defines the 4 rotating stories with their images, names, locations, amounts, goals, and short descriptions
+Add 4 full `ImpactStory` entries (with IDs like `featured-1` through `featured-4`) so the `/story/:id` detail page can render them. These serve as the static fallback and provide the full story structure (gallery images, updates, donors, organizer info) that the detail page expects.
 
-3. **Update `src/components/landing/HeroSection.tsx`** -- replace the single `featuredStory` fallback with the week-based rotation logic using `getCurrentFeaturedStory()` helper
+**5. Update `featuredStories.ts`** (`src/data/featuredStories.ts`)
+
+- Add an `id` field to the `FeaturedStory` interface
+- Assign IDs `featured-1` through `featured-4` to each story
+
+**6. Update HeroSection** (`src/components/landing/HeroSection.tsx`)
+
+- Use the new `useFeaturedStories` hook to fetch from DB first
+- Wrap the featured story `Card` in a `Link` to `/story/{id}`
+- Add hover styling (cursor pointer, subtle ring effect)
+- Fall back to local data if DB is unavailable
+
+### How It Works
+- Admins (or anyone with DB access) can update the `featured_stories` table to change amounts, headlines, donor counts, etc. at any time
+- The weekly rotation picks story by `display_order` matching the current week index
+- The 4 images remain as local assets mapped by `story_key` -- no need to upload images to storage
+- Clicking the featured card navigates to `/story/featured-1` (etc.) which shows the full detail page with gallery, updates, donation panel, and related stories
 
 ### Files Changed
-- `src/assets/featured/` -- 4 new image files
-- `src/data/featuredStories.ts` -- new file with 4 story definitions and rotation helper
-- `src/components/landing/HeroSection.tsx` -- use rotating story instead of static fallback
+- **Database**: New `featured_stories` table + seed data (migration + insert)
+- `src/hooks/useFeaturedStories.ts` -- new hook
+- `src/data/featuredStories.ts` -- add `id` field
+- `src/data/impactStories.ts` -- add 4 featured story entries
+- `src/components/landing/HeroSection.tsx` -- use DB hook, make card clickable
 
