@@ -1,66 +1,49 @@
 
 
-## Featured Story Detail Page (Like Real Fundraisers)
+## Fix CMS Story Click-Through: Create Detail Page for CMS Stories
 
-### Overview
-Create a dedicated detail page for featured stories that matches the exact look and feel of the real fundraiser pages (`/f/:slug`). When a user clicks the featured story card on the homepage, they'll land on a page with the same two-column layout, circular progress ring, donation panel, organizer info, and trust badges -- just like a real fundraiser.
+### Problem
+When you click the featured story card showing "Maria R." from Houston, TX on the homepage, it links to `/story/{uuid}`. But the `/story/:id` page only looks up stories from hardcoded local data (`impactStories` array), not from the `cms_stories` database table. Since Maria's UUID doesn't exist in that array, the page redirects to `/stories` instead of showing her details.
 
-### What Changes
+### Solution
+Create a dedicated CMS story detail page that fetches story data from the `cms_stories` Supabase table and displays it in the same rich layout as the featured story detail page (hero image, full story, progress ring, donation panel, supporters, trust badges).
 
-**1. New page: `src/pages/FeaturedStoryDetail.tsx`**
+### Changes
 
-A new page component modeled after `PublicFundraiser.tsx` that:
-- Accepts a `storyKey` param from the URL (e.g., `/featured/childrens-hope`)
-- Fetches the story data from the `featured_stories` Supabase table using the `story_key`
-- Falls back to local `featuredStories` data if the DB is unavailable
-- Maps `story_key` to the local image assets (same image map from `useFeaturedStories.ts`)
-- Renders the same layout as `PublicFundraiser.tsx`:
-  - Hero image at the top (using the local asset)
-  - Title card with category badge, verified badge, and organizer info
-  - Full story content section
-  - Mock recent supporters list (generated from the `donors_count` field)
-  - Sticky right-column donation panel with circular progress ring, amount raised/goal, donor count, days active
-  - "Donate Now" button linking to `/donate`
-  - Share button with share modal
-  - Mobile fixed bottom CTA bar
+**1. Create `src/pages/CMSStoryDetail.tsx`**
+
+A new page component similar to `FeaturedStoryDetail.tsx` that:
+- Accepts an `id` param from the URL (`/cms-story/:id`)
+- Fetches the story from the `cms_stories` table by ID
+- Renders the same two-column layout with:
+  - Hero image (from `image_url`)
+  - Title card with category badge, verified badge
+  - Full story content
+  - Mock recent supporters list (generated from `donors_count`)
+  - Sticky donation panel with circular progress ring, amount/goal, donor count
+  - Donate and Share buttons
+  - Mobile fixed bottom CTA
   - Trust badges
-- Back button links to homepage (`/`)
+- Back button links to homepage
 
 **2. Add route in `src/App.tsx`**
 
-Add: `<Route path="/featured/:storyKey" element={<FeaturedStoryDetail />} />`
+Add: `<Route path="/cms-story/:id" element={<CMSStoryDetail />} />`
 
 **3. Update `src/components/landing/HeroSection.tsx`**
 
-Change the featured story link from `/story/${story.id}` to `/featured/${story.storyKey}` so clicking navigates to the new page.
+Change the CMS story link from `/story/${story.id}` to `/cms-story/${story.id}` so it navigates to the new detail page instead of the hardcoded stories page.
 
-**4. Update `src/hooks/useFeaturedStories.ts`**
+**4. Update `src/pages/Stories.tsx`** (if CMS stories are also clickable there)
 
-Include `story_key` in the returned story object so `HeroSection` can build the correct link.
+Ensure any CMS story cards on the `/stories` page also link to `/cms-story/:id` instead of `/story/:id`.
 
-**5. Update `src/data/featuredStories.ts`**
-
-Add a `storyKey` field to the `FeaturedStory` interface and each story entry (e.g., `'childrens-hope'`, `'rural-family'`, etc.) for the local fallback path.
-
-**6. Add `full_story` data to the `featured_stories` DB table**
-
-The table already has a `full_story` column. We'll ensure the seeded data includes extended story text so the detail page has rich content to display.
-
-Update the 4 rows with longer `full_story` text via a migration.
-
-### How It Works
-- User sees the featured story card on the homepage
-- Clicks it, navigates to `/featured/childrens-hope` (or whichever story is currently rotating)
-- The detail page fetches data from `featured_stories` table by `story_key`
-- Renders in the same visual format as real fundraiser pages
-- "Donate Now" links to `/donate`, "Share" opens the share modal
-- Mobile users see a fixed bottom bar with Donate + Share buttons
+### No Database Changes Needed
+The `cms_stories` table already has all the required fields (`full_story`, `amount_raised`, `goal`, `donors_count`, `category`, `image_url`, etc.) and proper RLS policies for public read access.
 
 ### Files Changed
-- `src/pages/FeaturedStoryDetail.tsx` -- new page
-- `src/App.tsx` -- add route
-- `src/components/landing/HeroSection.tsx` -- update link target
-- `src/hooks/useFeaturedStories.ts` -- expose `storyKey` field
-- `src/data/featuredStories.ts` -- add `storyKey` to interface and data
-- Database migration -- update `full_story` text for all 4 featured stories
+- `src/pages/CMSStoryDetail.tsx` -- new page (modeled after FeaturedStoryDetail)
+- `src/App.tsx` -- add `/cms-story/:id` route
+- `src/components/landing/HeroSection.tsx` -- fix link target for CMS stories
+- `src/pages/Stories.tsx` -- fix CMS story card links (if applicable)
 
