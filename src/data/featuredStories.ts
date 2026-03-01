@@ -5,6 +5,7 @@ import childrenOfHeroesImg from '@/assets/featured/children-of-heroes.jpeg';
 
 export interface FeaturedStory {
   id: string;
+  storyKey: string;
   name: string;
   location: string;
   image: string;
@@ -18,6 +19,7 @@ export interface FeaturedStory {
 export const featuredStories: FeaturedStory[] = [
   {
     id: 'featured-1',
+    storyKey: 'childrens-hope',
     name: "Children's Hope Program",
     location: 'Poland',
     image: childrensHopeImg,
@@ -29,6 +31,7 @@ export const featuredStories: FeaturedStory[] = [
   },
   {
     id: 'featured-2',
+    storyKey: 'rural-family',
     name: 'Rural Family Support',
     location: 'Haiti',
     image: ruralFamilyImg,
@@ -40,6 +43,7 @@ export const featuredStories: FeaturedStory[] = [
   },
   {
     id: 'featured-3',
+    storyKey: 'hurricane-relief',
     name: 'Hurricane Helene Relief',
     location: 'North Carolina, USA',
     image: hurricaneReliefImg,
@@ -51,6 +55,7 @@ export const featuredStories: FeaturedStory[] = [
   },
   {
     id: 'featured-4',
+    storyKey: 'children-of-heroes',
     name: 'Children of Heroes',
     location: 'Ukraine',
     image: childrenOfHeroesImg,
