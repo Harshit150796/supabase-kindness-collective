@@ -4,7 +4,7 @@ import { ArrowRight, Play, MapPin, Users, UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { featuredStory } from '@/data/impactStories';
+import { getCurrentFeaturedStory } from '@/data/featuredStories';
 import { useCMSStories } from '@/hooks/useCMSContent';
 
 // Circular photos of recipients around the hero
@@ -38,18 +38,21 @@ export function HeroSection() {
   const navigate = useNavigate();
   const { data: cmsStories } = useCMSStories(true);
 
-  // Use first published CMS story if available, fallback to hardcoded
+  const rotatingStory = getCurrentFeaturedStory();
+
+  // Use first published CMS story if available, fallback to rotating featured story
   const story = cmsStories && cmsStories.length > 0
     ? {
         name: cmsStories[0].name,
         location: cmsStories[0].location || '',
-        image: cmsStories[0].image_url || featuredStory.image,
+        image: cmsStories[0].image_url || rotatingStory.image,
         story: cmsStories[0].short_story,
         amountRaised: Number(cmsStories[0].amount_raised) || 0,
         goal: Number(cmsStories[0].goal) || 1,
         donorsCount: cmsStories[0].donors_count || 0,
+        headline: `${cmsStories[0].name}'s family received groceries for 3 months`,
       }
-    : featuredStory;
+    : rotatingStory;
 
   const progress = (story.amountRaised / story.goal) * 100;
 
@@ -160,7 +163,7 @@ export function HeroSection() {
                 </div>
                 
                 <h3 className="text-base md:text-lg font-semibold text-foreground mb-1.5 md:mb-2">
-                  {story.name}'s family received groceries for 3 months
+                  {story.headline}
                 </h3>
                 
                 <p className="text-muted-foreground text-xs md:text-sm mb-3 md:mb-4 line-clamp-2">
