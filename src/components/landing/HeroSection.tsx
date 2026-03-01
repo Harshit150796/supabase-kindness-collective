@@ -40,22 +40,28 @@ export function HeroSection() {
 
   const { story: rotatingStory } = useCurrentFeaturedStory();
 
-  // Use first published CMS story if available, fallback to DB-driven rotating featured story
-  const story = cmsStories && cmsStories.length > 0
+  // Weekly rotation: pick CMS story based on week number
+  const cmsWeekIndex = cmsStories && cmsStories.length > 0
+    ? Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % cmsStories.length
+    : 0;
+
+  const activeCMS = cmsStories && cmsStories.length > 0 ? cmsStories[cmsWeekIndex] : null;
+
+  const story = activeCMS
     ? {
-        id: cmsStories[0].id,
-        name: cmsStories[0].name,
-        location: cmsStories[0].location || '',
-        image: cmsStories[0].image_url || rotatingStory.image,
-        story: cmsStories[0].short_story,
-        amountRaised: Number(cmsStories[0].amount_raised) || 0,
-        goal: Number(cmsStories[0].goal) || 1,
-        donorsCount: cmsStories[0].donors_count || 0,
-        headline: `${cmsStories[0].name}'s family received groceries for 3 months`,
+        id: activeCMS.id,
+        name: activeCMS.name,
+        location: activeCMS.location || '',
+        image: activeCMS.image_url || rotatingStory.image,
+        story: activeCMS.short_story,
+        amountRaised: Number(activeCMS.amount_raised) || 0,
+        goal: Number(activeCMS.goal) || 1,
+        donorsCount: activeCMS.donors_count || 0,
+        headline: `${activeCMS.name}'s family received groceries for 3 months`,
       }
     : rotatingStory;
 
-  const storyLink = cmsStories && cmsStories.length > 0
+  const storyLink = activeCMS
     ? `/story-detail/${story.id}`
     : `/featured/${rotatingStory.storyKey}`;
 
