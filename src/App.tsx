@@ -30,6 +30,7 @@ import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import FundraiserDashboard from "./pages/FundraiserDashboard";
 import Donate from "./pages/Donate";
+import FeaturedStoryDetail from "./pages/FeaturedStoryDetail";
 
 // Recipient pages
 import RecipientDashboard from "./pages/recipient/RecipientDashboard";
@@ -81,6 +82,7 @@ const AppRoutes = () => (
     <Route path="/stories" element={<Stories />} />
     <Route path="/story/:id" element={<StoryDetail />} />
           <Route path="/f/:slug" element={<PublicFundraiser />} />
+          <Route path="/featured/:storyKey" element={<FeaturedStoryDetail />} />
           
           {/* OBS/Streaming Overlay Routes */}
           <Route path="/overlay/progress/:slug" element={<ProgressBarOverlay />} />

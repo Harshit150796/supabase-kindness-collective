@@ -47,6 +47,7 @@ export function useCurrentFeaturedStory() {
     return {
       story: {
         id: storyKeyToId[s.story_key] || `featured-${s.display_order + 1}`,
+        storyKey: s.story_key,
         name: s.name,
         location: s.location,
         image: imageMap[s.story_key] || '',
@@ -65,6 +66,7 @@ export function useCurrentFeaturedStory() {
   return {
     story: {
       id: local.id,
+      storyKey: local.storyKey,
       name: local.name,
       location: local.location,
       image: local.image,
