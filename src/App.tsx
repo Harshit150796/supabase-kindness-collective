@@ -84,7 +84,7 @@ const AppRoutes = () => (
     <Route path="/story/:id" element={<StoryDetail />} />
           <Route path="/f/:slug" element={<PublicFundraiser />} />
           <Route path="/featured/:storyKey" element={<FeaturedStoryDetail />} />
-          <Route path="/cms-story/:id" element={<CMSStoryDetail />} />
+          <Route path="/story-detail/:id" element={<CMSStoryDetail />} />
           
           {/* OBS/Streaming Overlay Routes */}
           <Route path="/overlay/progress/:slug" element={<ProgressBarOverlay />} />
