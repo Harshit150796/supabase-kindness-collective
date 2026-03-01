@@ -1,54 +1,22 @@
 
 
-## New Featured Story with Uploaded Images
+## Fix: Make Jean-Pierre the Current Featured Story
 
-### Overview
-Save all 4 uploaded images into the project for future use, and create a new featured CMS story using one of them. No existing stories will be deleted or modified.
+### Root Cause
+The weekly rotation formula `Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % cmsStories.length` currently resolves to index 0 (Amina K.) for this week. The "flash" you saw was likely the component rendering before CMS data loaded (showing fallback), then switching to the CMS result (Amina).
 
-### 1. Save All 4 Images to Project
+### Solution
+Reorder the `display_order` values so Jean-Pierre is at position 1 (first in the rotation). This guarantees he shows as the current featured story.
 
-Copy all uploaded images to `src/assets/featured/` for permanent storage:
-- `src/assets/featured/children-playing-hope.webp` (kids playing ring toss)
-- `src/assets/featured/haiti-rural-family.webp` (man in rural shelter)
-- `src/assets/featured/hurricane-helene-family.webp` (couple in kitchen)
-- `src/assets/featured/children-of-heroes-2.jpeg` (group of children on couch)
+### Database Update (data only, no schema change)
+- Set Jean-Pierre L. to `display_order = 1`
+- Set Amina K. to `display_order = 2`  
+- Set Grace N. to `display_order = 3`
+- Shift Martinez Family to `display_order = 4`, others accordingly
 
-### 2. Upload One Image to CMS Storage
-
-Upload `haiti-rural-family.webp` (the 2nd image -- the man in rural Haiti) to the `cms-images` Supabase storage bucket so it has a public URL for the CMS story's `image_url`.
-
-### 3. Create New CMS Story
-
-Insert a new published story into `cms_stories` with `display_order: 3` (after Amina at 1 and Grace at 2). Shift existing stories at display_order >= 3 up by one.
-
-**Story Details:**
-- **Name:** Jean-Pierre L.
-- **Location:** Golbotine, Haiti
-- **Category:** family
-- **Short story:** After the earthquake destroyed our home, my family and I had nothing. We cooked over an open fire in a makeshift shelter. CouponDonation's grocery coupons gave us consistent access to food for four months while we rebuilt. For the first time, I could focus on rebuilding instead of worrying about the next meal.
-- **Full story:** Extended narrative covering Jean-Pierre's life as a farmer before the earthquake, the devastation of losing everything, the daily struggle to feed his family of five from a damaged shelter, discovering CouponDonation through a local aid worker, four months of consistent grocery support that freed him to rebuild, and his current work helping distribute aid to other displaced families in his community.
-- **Goal:** $2,000
-- **Amount raised:** $1,680
-- **Donors count:** 245
-- **Impact:** 4 months of groceries for a family of 5 during disaster recovery
-- **Image:** Public URL from cms-images bucket (uploaded haiti-rural-family.webp)
-
-### 4. Bump Existing Display Orders
-
-Shift all existing stories with `display_order >= 3` up by 1 to make room for Jean-Pierre at position 3.
-
-### No Frontend Changes Needed
-
-The weekly rotation logic in `HeroSection.tsx` already cycles through all published CMS stories. The new story will automatically enter the rotation and will be accessible at `/story-detail/{id}`.
+### No Frontend Code Changes
+The existing rotation logic will now pick Jean-Pierre (index 0) as the featured story this week.
 
 ### Files Changed
-- Copy 4 images to `src/assets/featured/`
-- Upload 1 image to `cms-images` storage bucket
-- Data update: shift display_order values and insert new story into `cms_stories`
-
-### Result
-- All 4 uploaded images saved permanently in the project for future featured stories
-- Jean-Pierre's story from Haiti is live as the 3rd featured CMS story
-- All existing stories (Amina, Grace, Maria archived, Martinez, etc.) remain untouched
-- Hero rotation now cycles through 3 featured stories (Amina, Grace, Jean-Pierre) plus all other published CMS stories
+- None (data-only update via Supabase)
 
