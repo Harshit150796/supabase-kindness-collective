@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ArrowRight, Play, MapPin, Users, UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { getCurrentFeaturedStory } from '@/data/featuredStories';
+import { useCurrentFeaturedStory } from '@/hooks/useFeaturedStories';
 import { useCMSStories } from '@/hooks/useCMSContent';
 
 // Circular photos of recipients around the hero
@@ -38,11 +38,12 @@ export function HeroSection() {
   const navigate = useNavigate();
   const { data: cmsStories } = useCMSStories(true);
 
-  const rotatingStory = getCurrentFeaturedStory();
+  const { story: rotatingStory } = useCurrentFeaturedStory();
 
-  // Use first published CMS story if available, fallback to rotating featured story
+  // Use first published CMS story if available, fallback to DB-driven rotating featured story
   const story = cmsStories && cmsStories.length > 0
     ? {
+        id: cmsStories[0].id,
         name: cmsStories[0].name,
         location: cmsStories[0].location || '',
         image: cmsStories[0].image_url || rotatingStory.image,
@@ -53,6 +54,10 @@ export function HeroSection() {
         headline: `${cmsStories[0].name}'s family received groceries for 3 months`,
       }
     : rotatingStory;
+
+  const storyLink = cmsStories && cmsStories.length > 0
+    ? `/story/${story.id}`
+    : `/story/${story.id}`;
 
   const progress = (story.amountRaised / story.goal) * 100;
 
@@ -141,51 +146,53 @@ export function HeroSection() {
           </div>
 
           {/* Featured Story Card */}
-          <Card className="max-w-2xl mx-auto mt-8 md:mt-12 overflow-hidden border-border/50 shadow-lg">
-            <div className="flex flex-col sm:flex-row">
-              <div className="h-40 sm:h-48 sm:w-48 sm:h-auto relative overflow-hidden flex-shrink-0">
-                <img 
-                  src={story.image}
-                  alt={story.name}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-3 left-3">
-                  <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full bg-background/90 text-foreground text-xs font-medium">
-                    Featured Story
-                  </span>
-                </div>
-              </div>
-              
-              <div className="flex-1 p-4 md:p-5">
-                <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm mb-1.5 md:mb-2">
-                  <MapPin className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                  <span>{story.location}</span>
-                </div>
-                
-                <h3 className="text-base md:text-lg font-semibold text-foreground mb-1.5 md:mb-2">
-                  {story.headline}
-                </h3>
-                
-                <p className="text-muted-foreground text-xs md:text-sm mb-3 md:mb-4 line-clamp-2">
-                  "{story.story}"
-                </p>
-                
-                {/* Progress */}
-                <div className="space-y-1.5 md:space-y-2">
-                  <Progress value={progress} className="h-1.5 md:h-2" />
-                  <div className="flex justify-between text-xs">
-                    <span className="text-foreground font-medium">
-                      ${story.amountRaised.toLocaleString()} raised
-                    </span>
-                    <span className="flex items-center gap-1 text-muted-foreground">
-                      <Users className="w-3 h-3" />
-                      {story.donorsCount} donors helped
+          <Link to={storyLink} className="block max-w-2xl mx-auto mt-8 md:mt-12">
+            <Card className="overflow-hidden border-border/50 shadow-lg cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all">
+              <div className="flex flex-col sm:flex-row">
+                <div className="h-40 sm:h-48 sm:w-48 sm:h-auto relative overflow-hidden flex-shrink-0">
+                  <img 
+                    src={story.image}
+                    alt={story.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-3 left-3">
+                    <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full bg-background/90 text-foreground text-xs font-medium">
+                      Featured Story
                     </span>
                   </div>
                 </div>
+                
+                <div className="flex-1 p-4 md:p-5">
+                  <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm mb-1.5 md:mb-2">
+                    <MapPin className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                    <span>{story.location}</span>
+                  </div>
+                  
+                  <h3 className="text-base md:text-lg font-semibold text-foreground mb-1.5 md:mb-2">
+                    {story.headline}
+                  </h3>
+                  
+                  <p className="text-muted-foreground text-xs md:text-sm mb-3 md:mb-4 line-clamp-2">
+                    "{story.story}"
+                  </p>
+                  
+                  {/* Progress */}
+                  <div className="space-y-1.5 md:space-y-2">
+                    <Progress value={progress} className="h-1.5 md:h-2" />
+                    <div className="flex justify-between text-xs">
+                      <span className="text-foreground font-medium">
+                        ${story.amountRaised.toLocaleString()} raised
+                      </span>
+                      <span className="flex items-center gap-1 text-muted-foreground">
+                        <Users className="w-3 h-3" />
+                        {story.donorsCount} donors helped
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </Link>
         </div>
       </div>
     </section>
