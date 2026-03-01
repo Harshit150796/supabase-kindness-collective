@@ -1,25 +1,45 @@
 
 
-## Edit Paul Savluc's Photo -- Front-Facing Angle with More Zoom
+## Fix Site Name Display in Google Search Results
 
 ### Problem
-Paul's current photo shows him at a side angle. The user wants his face adjusted to appear more front-facing (looking toward the camera), while keeping the real background intact and zooming in slightly more on the face.
+Google search results show "coupondonation.com" with a lowercase "c" instead of "CouponDonation". This is because Google is using the raw domain name rather than the structured data site name.
 
-### Approach
+### Root Cause
+While the structured data already includes `"name": "CouponDonation"`, there are minor improvements to reinforce the brand name for Google's crawler.
 
-1. **Use the AI image editing API** with the current `src/assets/paul-savluc.png` as the source image
-2. **Editing prompt** will instruct the model to:
-   - Rotate/adjust Paul's face so he appears to be looking directly at the camera (front-facing)
-   - Zoom in slightly more so the face is larger and more prominent
-   - Keep the natural castle/sky background intact
-   - Maintain realistic, professional quality -- no artificial look
-   - Upscale to high resolution for crisp display
-3. **Save** the result back to `src/assets/paul-savluc.png`
-4. **No code changes needed** -- the About page already imports and displays this asset correctly
+### Changes
+
+**File: `index.html`**
+
+1. Add `alternateName` to the **WebSite** structured data schema to give Google more signals:
+```json
+{
+  "@type": "WebSite",
+  "name": "CouponDonation",
+  "alternateName": ["Coupon Donation", "CouponDonation.com"],
+  ...
+}
+```
+
+2. Add a `publisher` reference in the WebSite schema linking it to the Organization:
+```json
+{
+  "@type": "WebSite",
+  "name": "CouponDonation",
+  "alternateName": ["Coupon Donation", "CouponDonation.com"],
+  "url": "https://coupondonation.com",
+  "publisher": {
+    "@type": "Organization",
+    "name": "CouponDonation"
+  },
+  "potentialAction": { ... }
+}
+```
 
 ### Important Note
-AI face angle adjustment has limitations -- the model will do its best to make the face appear more forward-facing while keeping things natural. If the result looks unnatural, we may need to try a different source photo or approach.
+After deploying, you should go to **Google Search Console** > **URL Inspection** > enter `https://coupondonation.com` > click **Request Indexing**. Google may take a few days to weeks to update the displayed site name. These structured data improvements maximize the chance Google uses "CouponDonation" instead of the raw domain.
 
 ### Files Changed
-- `src/assets/paul-savluc.png` -- replaced with front-facing, zoomed-in version
+- `index.html` -- enhanced WebSite structured data schema
 
