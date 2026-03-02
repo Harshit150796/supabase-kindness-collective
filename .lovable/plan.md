@@ -1,65 +1,38 @@
 
 
-## Admin Stories Page Redesign
+## Fix Missing Stories in Admin + Fix Hero Flash
 
-### Overview
-Redesign `/admin/stories` with a polished, professional UI and add a "Set as Featured" action so admins can pick which story shows in the homepage hero section.
+### Problem 1: Missing Stories
+The `featured_stories` table has 4 stories (Children's Hope, Rural Family Support, Hurricane Helene Relief, Children of Heroes) that are NOT in `cms_stories`. The admin page at `/admin/stories` only shows `cms_stories`, so these are invisible to admins.
 
-### 1. Enhanced Story List Cards
+### Problem 2: Hero Flash
+When the homepage loads, `useCurrentFeaturedStory()` returns a local/fallback story instantly, while `useCMSStories()` loads asynchronously. This causes a visible "flash" -- the fallback story appears briefly, then gets replaced by the CMS story once it loads.
 
-Replace the current compact card rows with richer cards that show more information at a glance:
+---
 
-- Larger image thumbnails (80x80 instead of 64x64) with rounded corners
-- Clear status badges: "Published" (green), "Draft" (gray), "Featured" (gold star badge)
-- Inline stats row showing donation progress: "$1,680 / $2,000 (84%)" with a mini progress bar
-- Donors count, category pill, and location displayed clearly
-- Impact badge shown if present
-- Better spacing and visual hierarchy
+### Solution
 
-### 2. "Set as Featured" Action
+#### 1. Add the 4 featured stories to `cms_stories` table
+Insert the 4 missing stories into `cms_stories` as published entries so they appear in the admin stories page:
+- **Children's Hope Program** (Poland) - category: child
+- **Rural Family Support** (Haiti) - category: family  
+- **Hurricane Helene Relief** (North Carolina, USA) - category: emergency
+- **Children of Heroes** (Ukraine) - category: child
 
-Add a star/crown button on each story card:
-- Clicking it sets that story to `display_order = 1` (the index the weekly rotation currently resolves to)
-- The previously featured story gets bumped to the next available order
-- A gold "Featured" badge appears on the currently featured story (the one at `display_order = 1` among published stories)
-- This gives admins direct control over which story appears in the hero section without needing to manually juggle display_order numbers
+Each will get appropriate `amount_raised`, `goal`, `donors_count`, `short_story`, and `image_url` values matching the existing `featured_stories` data. They'll be added with `display_order` values after the existing stories.
 
-### 3. Improved Edit/Create Dialog
+#### 2. Fix the Hero Flash in `HeroSection.tsx`
+Update the HeroSection to check the CMS loading state before rendering. When CMS data is still loading, show the loading/skeleton state instead of the fallback story. This prevents the flash:
 
-Reorganize the dialog into clear sections with better labels and descriptions:
-- **Basic Info** section: Name, Location, Category (with proper Select component instead of raw HTML select)
-- **Story Content** section: Short Story (with placeholder guidance), Full Story
-- **Fundraising Stats** section: Amount Raised, Goal, Donors Count -- with a visual progress preview
-- **Media** section: Image upload with drag-drop styling
-- **Settings** section: Impact badge, Display Order, Published toggle
-
-### 4. Summary Stats Header
-
-Add a stats bar at the top of the page showing:
-- Total stories count
-- Published vs Draft count
-- Currently featured story name
-
-### 5. Category Filter Tabs
-
-Add filter tabs below the search bar: All | Family | Child | Emergency | Community
-- Allows quick filtering by category in addition to the text search
+- Destructure `isLoading` from `useCMSStories()`
+- While loading, either show a subtle skeleton or simply don't render the featured story card until data is ready
+- Once loaded, render the correct CMS story immediately without any intermediate fallback flash
 
 ### Technical Details
 
-**File changed:** `src/pages/admin/AdminStories.tsx` (single file, complete rewrite of the component)
+**Files changed:**
+1. **Database insert** (no migration, data only) -- Add 4 rows to `cms_stories`
+2. **`src/components/landing/HeroSection.tsx`** -- Add loading state check from `useCMSStories` to prevent flash. When `isLoading` is true, show a skeleton placeholder for the featured story card instead of the fallback story.
 
-**No database changes needed.** The "Set as Featured" feature works by reordering `display_order` values in the existing `cms_stories` table -- the same mechanism already used by the up/down arrows.
-
-**New imports:** `Star`, `Eye`, `DollarSign`, `Target`, `Filter` from lucide-react; `Badge` from ui/badge; `Tabs`/`TabsList`/`TabsTrigger` from ui/tabs; `Progress` from ui/progress; `Select`/`SelectTrigger`/`SelectValue`/`SelectContent`/`SelectItem` from ui/select.
-
-**Key logic for "Set as Featured":**
-```text
-1. Find all published stories sorted by display_order
-2. Set the target story to display_order = 1
-3. Shift all other published stories' display_order values accordingly
-4. Invalidate the cms-stories query cache
-```
-
-This ensures the HeroSection's weekly rotation formula (`weekIndex % stories.length`) picks the featured story at index 0.
+**No schema changes needed.** The `cms_stories` table already has all the required columns.
 
