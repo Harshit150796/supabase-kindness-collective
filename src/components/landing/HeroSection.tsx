@@ -4,6 +4,7 @@ import { ArrowRight, Play, MapPin, Users, UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentFeaturedStory } from '@/hooks/useFeaturedStories';
 import { useCMSStories } from '@/hooks/useCMSContent';
 
@@ -36,7 +37,7 @@ function AnimatedCounter({ end, duration = 2000 }: { end: number; duration?: num
 
 export function HeroSection() {
   const navigate = useNavigate();
-  const { data: cmsStories } = useCMSStories(true);
+  const { data: cmsStories, isLoading: cmsLoading } = useCMSStories(true);
 
   const { story: rotatingStory } = useCurrentFeaturedStory();
 
@@ -152,6 +153,28 @@ export function HeroSection() {
           </div>
 
           {/* Featured Story Card */}
+          {cmsLoading ? (
+            <div className="max-w-2xl mx-auto mt-8 md:mt-12">
+              <Card className="overflow-hidden border-border/50 shadow-lg">
+                <div className="flex flex-col sm:flex-row">
+                  <Skeleton className="h-40 sm:h-48 sm:w-48 flex-shrink-0" />
+                  <div className="flex-1 p-4 md:p-5 space-y-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                    <div className="space-y-2 pt-2">
+                      <Skeleton className="h-2 w-full" />
+                      <div className="flex justify-between">
+                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          ) : (
           <Link to={storyLink} className="block max-w-2xl mx-auto mt-8 md:mt-12">
             <Card className="overflow-hidden border-border/50 shadow-lg cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all">
               <div className="flex flex-col sm:flex-row">
@@ -199,6 +222,7 @@ export function HeroSection() {
               </div>
             </Card>
           </Link>
+          )}
         </div>
       </div>
     </section>
