@@ -1,22 +1,40 @@
 
 
-## Fix: Make Jean-Pierre the Current Featured Story
+## Fix: Replace Broken Clearbit Brand Logos
 
-### Root Cause
-The weekly rotation formula `Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % cmsStories.length` currently resolves to index 0 (Amina K.) for this week. The "flash" you saw was likely the component rendering before CMS data loaded (showing fallback), then switching to the CMS result (Amina).
+### Problem
+All brand logos across the site use `logo.clearbit.com` URLs, which no longer work (Clearbit deprecated their free Logo API). This affects:
+- LiveActivityBar ("Powered by" section)
+- BrandLeaderboard (chart and donor cards)
+- DonationFlow (brand selection grid)
+- BrandSelectorModal (brand picker dialog)
+
+This is NOT caused by our recent featured story changes -- it's an external service shutdown.
 
 ### Solution
-Reorder the `display_order` values so Jean-Pierre is at position 1 (first in the rotation). This guarantees he shows as the current featured story.
+Update `src/data/brandLogos.ts` to use a working logo source. Two reliable options:
 
-### Database Update (data only, no schema change)
-- Set Jean-Pierre L. to `display_order = 1`
-- Set Amina K. to `display_order = 2`  
-- Set Grace N. to `display_order = 3`
-- Shift Martinez Family to `display_order = 4`, others accordingly
+**Option chosen: Google's favicon service + brand initial fallback**
+- Primary: `https://www.google.com/s2/favicons?domain=DOMAIN&sz=128` (reliable, free, no API key)
+- These return high-quality favicons at 128px which work well for small brand circles
 
-### No Frontend Code Changes
-The existing rotation logic will now pick Jean-Pierre (index 0) as the featured story this week.
+### File Changed
+**`src/data/brandLogos.ts`** -- Replace all `logo.clearbit.com` URLs with Google favicon URLs:
 
-### Files Changed
-- None (data-only update via Supabase)
+```
+logo: 'https://logo.clearbit.com/doordash.com'
+```
+becomes:
+```
+logo: 'https://www.google.com/s2/favicons?domain=doordash.com&sz=128'
+```
+
+Applied to all 24 brands in the file. No other files need changes since they all read from this single data source.
+
+### Why This Is Safe
+- Single file change (`brandLogos.ts`) -- the centralized data source
+- No component logic changes
+- No database changes
+- All consumers (LiveActivityBar, BrandLeaderboard, DonationFlow, BrandSelectorModal) automatically pick up the new URLs
+- Google's favicon service is stable and widely used
 
