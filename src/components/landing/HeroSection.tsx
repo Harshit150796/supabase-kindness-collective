@@ -41,12 +41,8 @@ export function HeroSection() {
 
   const { story: rotatingStory } = useCurrentFeaturedStory();
 
-  // Weekly rotation: pick CMS story based on week number
-  const cmsWeekIndex = cmsStories && cmsStories.length > 0
-    ? Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % cmsStories.length
-    : 0;
-
-  const activeCMS = cmsStories && cmsStories.length > 0 ? cmsStories[cmsWeekIndex] : null;
+  // Pick the story with the lowest display_order (admin-set featured)
+  const activeCMS = cmsStories && cmsStories.length > 0 ? cmsStories[0] : null;
 
   const story = activeCMS
     ? {
