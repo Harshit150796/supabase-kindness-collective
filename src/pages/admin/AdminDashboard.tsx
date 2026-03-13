@@ -15,6 +15,9 @@ interface AdminStats {
   publishedPosts: number;
   testimonials: number;
   faqItems: number;
+  totalFundraisers: number;
+  activeFundraisers: number;
+  pendingFundraisers: number;
 }
 
 const platformActions = [
