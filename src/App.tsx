@@ -57,6 +57,7 @@ import AdminStories from "./pages/admin/AdminStories";
 import AdminTestimonials from "./pages/admin/AdminTestimonials";
 import AdminBlog from "./pages/admin/AdminBlog";
 import AdminFAQ from "./pages/admin/AdminFAQ";
+import AdminFundraisers from "./pages/admin/AdminFundraisers";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 
