@@ -4,7 +4,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Users, Shield, Gift, BarChart, ArrowRight, Clock, Layout, Heart, MessageSquareQuote, FileText, HelpCircle } from 'lucide-react';
+import { Users, Shield, Gift, BarChart, ArrowRight, Clock, Layout, Heart, MessageSquareQuote, FileText, HelpCircle, Megaphone } from 'lucide-react';
 
 interface AdminStats {
   totalUsers: number;
@@ -15,12 +15,16 @@ interface AdminStats {
   publishedPosts: number;
   testimonials: number;
   faqItems: number;
+  totalFundraisers: number;
+  activeFundraisers: number;
+  pendingFundraisers: number;
 }
 
 const platformActions = [
   { title: 'Manage Users', description: 'View and manage all users, promote to admin', path: '/admin/users', icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
   { title: 'Verifications', description: 'Approve/reject recipient applications', path: '/admin/verifications', icon: Shield, color: 'text-gold', bg: 'bg-gold/10' },
   { title: 'Coupons', description: 'View and manage coupon inventory', path: '/admin/coupons', icon: Gift, color: 'text-emerald-light', bg: 'bg-emerald-light/10' },
+  { title: 'Fundraisers', description: 'Moderate and manage all fundraiser campaigns', path: '/admin/fundraisers', icon: Megaphone, color: 'text-primary', bg: 'bg-primary/10' },
   { title: 'Analytics', description: 'Signup trends, donation charts, stats', path: '/admin/analytics', icon: BarChart, color: 'text-primary', bg: 'bg-primary/10' },
 ];
 
@@ -37,6 +41,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0, pendingVerifications: 0, totalCoupons: 0, availableCoupons: 0,
     publishedStories: 0, publishedPosts: 0, testimonials: 0, faqItems: 0,
+    totalFundraisers: 0, activeFundraisers: 0, pendingFundraisers: 0,
   });
 
   useEffect(() => {
@@ -44,7 +49,7 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchStats = async () => {
-    const [usersResult, verificationsResult, couponsResult, storiesResult, postsResult, testimonialsResult, faqResult] = await Promise.all([
+    const [usersResult, verificationsResult, couponsResult, storiesResult, postsResult, testimonialsResult, faqResult, fundraisersResult] = await Promise.all([
       supabase.from('profiles').select('id', { count: 'exact' }),
       supabase.from('recipient_verifications').select('id', { count: 'exact' }).eq('status', 'pending'),
       supabase.from('coupons').select('id, status', { count: 'exact' }),
@@ -52,7 +57,10 @@ export default function AdminDashboard() {
       supabase.from('cms_posts').select('id', { count: 'exact' }).eq('is_published', true),
       supabase.from('cms_testimonials').select('id', { count: 'exact' }).eq('is_published', true),
       supabase.from('cms_faq').select('id', { count: 'exact' }).eq('is_published', true),
+      supabase.from('fundraisers').select('id, status', { count: 'exact' }),
     ]);
+
+    const fundraiserData = fundraisersResult.data || [];
 
     setStats({
       totalUsers: usersResult.count || 0,
@@ -63,6 +71,9 @@ export default function AdminDashboard() {
       publishedPosts: postsResult.count || 0,
       testimonials: testimonialsResult.count || 0,
       faqItems: faqResult.count || 0,
+      totalFundraisers: fundraisersResult.count || 0,
+      activeFundraisers: fundraiserData.filter(f => f.status === 'active').length,
+      pendingFundraisers: fundraiserData.filter(f => f.status === 'pending').length,
     });
   };
 

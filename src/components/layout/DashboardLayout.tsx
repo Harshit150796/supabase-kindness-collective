@@ -6,7 +6,7 @@ import {
   Home, Gift, CreditCard, Clock, Shield, 
   BarChart, Users, LogOut, Menu, X,
   DollarSign, TrendingUp, FileText, BookOpen,
-  MessageSquare, HelpCircle, Newspaper
+  MessageSquare, HelpCircle, Newspaper, Megaphone
 } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
@@ -32,6 +32,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         { icon: Users, label: 'Users', path: '/admin/users' },
         { icon: Shield, label: 'Verifications', path: '/admin/verifications' },
         { icon: Gift, label: 'Coupons', path: '/admin/coupons' },
+        { icon: Megaphone, label: 'Fundraisers', path: '/admin/fundraisers' },
         { icon: BarChart, label: 'Analytics', path: '/admin/analytics' },
         { icon: FileText, label: 'Content', path: '/admin/content' },
         { icon: BookOpen, label: 'Stories', path: '/admin/stories' },
