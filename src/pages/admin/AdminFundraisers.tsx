@@ -90,12 +90,28 @@ export default function AdminFundraisers() {
   const { data: fundraisers, isLoading } = useQuery({
     queryKey: ['admin-fundraisers'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch fundraisers
+      const { data: fundraiserData, error } = await supabase
         .from('fundraisers')
-        .select(`*, profiles!fundraisers_user_id_fkey(email, full_name)`)
+        .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []) as unknown as FundraiserWithProfile[];
+      
+      // Fetch profiles for organizer info
+      const userIds = [...new Set((fundraiserData || []).map(f => f.user_id))];
+      let profileMap: Record<string, { email: string; full_name: string | null }> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, email, full_name')
+          .in('user_id', userIds);
+        (profiles || []).forEach(p => { profileMap[p.user_id] = { email: p.email, full_name: p.full_name }; });
+      }
+      
+      return (fundraiserData || []).map(f => ({
+        ...f,
+        profiles: profileMap[f.user_id] || null,
+      })) as FundraiserWithProfile[];
     },
   });
 
