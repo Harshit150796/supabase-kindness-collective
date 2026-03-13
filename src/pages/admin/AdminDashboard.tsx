@@ -49,7 +49,7 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchStats = async () => {
-    const [usersResult, verificationsResult, couponsResult, storiesResult, postsResult, testimonialsResult, faqResult] = await Promise.all([
+    const [usersResult, verificationsResult, couponsResult, storiesResult, postsResult, testimonialsResult, faqResult, fundraisersResult] = await Promise.all([
       supabase.from('profiles').select('id', { count: 'exact' }),
       supabase.from('recipient_verifications').select('id', { count: 'exact' }).eq('status', 'pending'),
       supabase.from('coupons').select('id, status', { count: 'exact' }),
@@ -57,7 +57,10 @@ export default function AdminDashboard() {
       supabase.from('cms_posts').select('id', { count: 'exact' }).eq('is_published', true),
       supabase.from('cms_testimonials').select('id', { count: 'exact' }).eq('is_published', true),
       supabase.from('cms_faq').select('id', { count: 'exact' }).eq('is_published', true),
+      supabase.from('fundraisers').select('id, status', { count: 'exact' }),
     ]);
+
+    const fundraiserData = fundraisersResult.data || [];
 
     setStats({
       totalUsers: usersResult.count || 0,
@@ -68,6 +71,9 @@ export default function AdminDashboard() {
       publishedPosts: postsResult.count || 0,
       testimonials: testimonialsResult.count || 0,
       faqItems: faqResult.count || 0,
+      totalFundraisers: fundraisersResult.count || 0,
+      activeFundraisers: fundraiserData.filter(f => f.status === 'active').length,
+      pendingFundraisers: fundraiserData.filter(f => f.status === 'pending').length,
     });
   };
 
