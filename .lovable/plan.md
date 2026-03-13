@@ -1,36 +1,76 @@
 
 
-## Fix: Featured Story Selection on Homepage
+## Admin Fundraiser Management Page
 
-### Problem
-The admin "Set as Featured" button correctly sets a story's `display_order` to 1, but the `HeroSection` ignores this. Instead, it uses a time-based rotation formula to pick a random story index each week:
+You're right -- the admin panel currently has no way to manage the real fundraisers that users create. You can only manage CMS "impact stories" (which are editorial content), but the actual fundraiser campaigns in the `fundraisers` table have no admin interface. Here's the plan to add a comprehensive fundraiser management page.
 
-```text
-cmsWeekIndex = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % stories.length
+### What gets built
+
+A new `/admin/fundraisers` page with full CRUD and moderation capabilities:
+
+**Dashboard stats bar:**
+- Total fundraisers, active, pending review, paused/completed
+- Total amount raised across all campaigns
+
+**List view with:**
+- Search by title, story, organizer
+- Filter by status (all / active / pending / paused / completed)
+- Filter by category (food, household, health, childcare, education, utilities, other)
+- Sortable columns (date created, amount raised, goal, donors count)
+- Pagination
+
+**Each fundraiser row shows:**
+- Cover image thumbnail
+- Title, category badge, status badge
+- Organizer email (joined from profiles)
+- Progress bar (raised vs goal)
+- Donor count, country
+- Created date
+- Action buttons: View public page, Edit, Change status, Delete
+
+**Edit dialog (full fundraiser editing):**
+- Title, story (textarea)
+- Category, beneficiary type
+- Monthly goal, amount raised, donors count
+- Country, zip code
+- Cover photo URL
+- Status dropdown (pending / active / paused / completed)
+- Long-term toggle
+
+**Bulk actions:**
+- Select multiple fundraisers
+- Bulk activate, pause, or delete
+
+**Delete confirmation:**
+- AlertDialog before any deletion (consistent with other admin pages)
+
+### Files changed
+
+1. **New file: `src/pages/admin/AdminFundraisers.tsx`** -- The full management page, following the same patterns as `AdminStories.tsx` (search, filters, dialog form, AlertDialog delete, bulk actions)
+
+2. **`src/App.tsx`** -- Add route: `/admin/fundraisers` with admin ProtectedRoute, import the new page
+
+3. **`src/pages/admin/AdminDashboard.tsx`** -- Add "Fundraisers" to `platformActions` array with stats card showing active/pending counts. Add fundraiser counts to `AdminStats` and `fetchStats`
+
+4. **`src/components/layout/DashboardLayout.tsx`** -- Add "Fundraisers" nav item to admin sidebar (between Coupons and Analytics)
+
+### RLS note
+
+The existing RLS policies already allow admins full SELECT and UPDATE on `fundraisers`. However, admins currently cannot DELETE fundraisers they don't own. A new migration will add an admin DELETE policy.
+
+### Migration
+
+```sql
+CREATE POLICY "Admins can delete all fundraisers"
+ON public.fundraisers FOR DELETE
+TO public
+USING (has_role(auth.uid(), 'admin'::user_role));
 ```
 
-This means the featured story chosen by the admin never actually controls the homepage.
+### Technical approach
 
-### Solution
-Update `HeroSection.tsx` to always show the story with the lowest `display_order` (the one the admin set as featured) instead of using the weekly rotation.
-
-**Change in `src/components/landing/HeroSection.tsx`:**
-
-Replace the weekly rotation logic (lines 44-49):
-```text
-const cmsWeekIndex = cmsStories && cmsStories.length > 0
-    ? Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % cmsStories.length
-    : 0;
-const activeCMS = cmsStories && cmsStories.length > 0 ? cmsStories[cmsWeekIndex] : null;
-```
-
-With a simple pick-the-first approach:
-```text
-const activeCMS = cmsStories && cmsStories.length > 0 ? cmsStories[0] : null;
-```
-
-Since `useCMSStories` already orders results by `display_order`, the story at index 0 is always the one the admin set as featured (display_order = 1). This is a one-line change.
-
-### Files Changed
-- `src/components/landing/HeroSection.tsx` -- Remove the weekly rotation formula, use `cmsStories[0]` instead.
+- Fetches fundraisers with a join to `profiles` (for organizer email/name) and `fundraiser_images`
+- Uses `@tanstack/react-query` for data fetching with invalidation on mutations
+- Follows the exact same UI patterns as AdminStories (Card layout, search bar, category tabs, dialog form, AlertDialog, bulk selection, toast notifications)
+- Links each fundraiser to its public page (`/f/:slug`) via external link icon
 
