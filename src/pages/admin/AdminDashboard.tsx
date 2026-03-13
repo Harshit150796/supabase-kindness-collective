@@ -41,6 +41,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0, pendingVerifications: 0, totalCoupons: 0, availableCoupons: 0,
     publishedStories: 0, publishedPosts: 0, testimonials: 0, faqItems: 0,
+    totalFundraisers: 0, activeFundraisers: 0, pendingFundraisers: 0,
   });
 
   useEffect(() => {
