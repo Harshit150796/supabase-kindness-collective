@@ -4,7 +4,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Users, Shield, Gift, BarChart, ArrowRight, Clock, Layout, Heart, MessageSquareQuote, FileText, HelpCircle } from 'lucide-react';
+import { Users, Shield, Gift, BarChart, ArrowRight, Clock, Layout, Heart, MessageSquareQuote, FileText, HelpCircle, Megaphone } from 'lucide-react';
 
 interface AdminStats {
   totalUsers: number;
