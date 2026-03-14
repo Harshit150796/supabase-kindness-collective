@@ -1,35 +1,36 @@
 
 
-## Add Image Upload and Management to Admin Fundraiser Editor
+## Fix: Featured Story Selection on Homepage
 
 ### Problem
-The edit dialog only has a plain text input for "Cover Photo URL" — no way to upload images, view existing gallery images, or manage the `fundraiser_images` table. Admins need full image control.
+The admin "Set as Featured" button correctly sets a story's `display_order` to 1, but the `HeroSection` ignores this. Instead, it uses a time-based rotation formula to pick a random story index each week:
 
-### What gets built
+```text
+cmsWeekIndex = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % stories.length
+```
 
-Replace the "Cover Photo URL" text field in the edit dialog with a full image management section:
+This means the featured story chosen by the admin never actually controls the homepage.
 
-1. **Current images display** — Show all images from `fundraiser_images` table for the fundraiser being edited, with:
-   - Thumbnail grid (same pattern as `ImageUploadModal`)
-   - "Set as Cover" button per image
-   - Delete button per image
-   - Primary/cover badge on the current primary image
+### Solution
+Update `HeroSection.tsx` to always show the story with the lowest `display_order` (the one the admin set as featured) instead of using the weekly rotation.
 
-2. **Upload button** — File picker that uploads to the `fundraiser-covers` storage bucket and inserts into `fundraiser_images` table (max 3 images, same as existing limit)
+**Change in `src/components/landing/HeroSection.tsx`:**
 
-3. **Legacy cover photo** — Keep the cover_photo_url text input as a fallback field, but show it collapsed/secondary since the gallery system is preferred
+Replace the weekly rotation logic (lines 44-49):
+```text
+const cmsWeekIndex = cmsStories && cmsStories.length > 0
+    ? Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % cmsStories.length
+    : 0;
+const activeCMS = cmsStories && cmsStories.length > 0 ? cmsStories[cmsWeekIndex] : null;
+```
 
-4. **RLS for admin image management** — Add policies so admins can INSERT, UPDATE, and DELETE `fundraiser_images` for any fundraiser (currently only owners can)
+With a simple pick-the-first approach:
+```text
+const activeCMS = cmsStories && cmsStories.length > 0 ? cmsStories[0] : null;
+```
 
-### Files changed
+Since `useCMSStories` already orders results by `display_order`, the story at index 0 is always the one the admin set as featured (display_order = 1). This is a one-line change.
 
-1. **Migration** — Add admin RLS policies on `fundraiser_images` for INSERT, UPDATE, DELETE
-2. **`src/pages/admin/AdminFundraisers.tsx`** — Add state for fundraiser images, fetch them when opening edit dialog, add image grid with upload/delete/set-primary functionality inside the edit dialog
-
-### Technical approach
-- When `openEdit(f)` is called, also fetch `fundraiser_images` for that fundraiser ID
-- Upload uses same pattern as `ImageUploadModal`: upload to `fundraiser-covers` bucket, insert row into `fundraiser_images`
-- Delete removes from both storage and database
-- Set primary unsets all then sets selected
-- All within the existing edit `Dialog`, replacing the URL text input with a visual image manager
+### Files Changed
+- `src/components/landing/HeroSection.tsx` -- Remove the weekly rotation formula, use `cmsStories[0]` instead.
 

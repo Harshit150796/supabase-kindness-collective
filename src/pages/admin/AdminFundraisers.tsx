@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,13 +17,21 @@ import { toast } from '@/hooks/use-toast';
 import {
   Plus, Pencil, Trash2, Search, ExternalLink, MapPin, Users,
   DollarSign, Eye, Megaphone, Pause, CheckCircle, Clock, TrendingUp,
-  Globe, ArrowUpDown
+  Globe, ArrowUpDown, Upload, Star, X, Loader2, ImageIcon
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
+
+interface FundraiserImage {
+  id: string;
+  image_url: string;
+  display_order: number;
+  is_primary: boolean | null;
+}
 
 interface FundraiserWithProfile {
   id: string;
@@ -86,6 +94,13 @@ export default function AdminFundraisers() {
   const [sortAsc, setSortAsc] = useState(false);
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 20;
+
+  // Image management state
+  const [editImages, setEditImages] = useState<FundraiserImage[]>([]);
+  const [imageUploading, setImageUploading] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const MAX_IMAGES = 3;
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
   const { data: fundraisers, isLoading } = useQuery({
     queryKey: ['admin-fundraisers'],
@@ -152,7 +167,7 @@ export default function AdminFundraisers() {
     else setSelected(new Set(paginated.map(f => f.id)));
   };
 
-  const openEdit = (f: FundraiserWithProfile) => {
+  const openEdit = async (f: FundraiserWithProfile) => {
     setForm({
       title: f.title, story: f.story, category: f.category,
       beneficiary_type: f.beneficiary_type, monthly_goal: f.monthly_goal,
@@ -163,6 +178,88 @@ export default function AdminFundraisers() {
     });
     setEditId(f.id);
     setDialogOpen(true);
+
+    // Fetch existing images for this fundraiser
+    const { data } = await supabase
+      .from('fundraiser_images')
+      .select('*')
+      .eq('fundraiser_id', f.id)
+      .order('display_order');
+    setEditImages((data || []) as FundraiserImage[]);
+  };
+
+  // Image management handlers
+  const handleImageUpload = useCallback(async (files: FileList | null) => {
+    if (!files || !editId) return;
+    const remaining = MAX_IMAGES - editImages.length;
+    const filesToUpload = Array.from(files).slice(0, remaining);
+
+    for (const file of filesToUpload) {
+      if (!file.type.startsWith('image/')) {
+        toast({ title: 'Invalid file type', description: 'Please select an image file', variant: 'destructive' });
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        toast({ title: 'File too large', description: 'Image must be less than 5MB', variant: 'destructive' });
+        continue;
+      }
+
+      setImageUploading(true);
+      try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${editId}/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('fundraiser-covers').upload(fileName, file);
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage.from('fundraiser-covers').getPublicUrl(fileName);
+        const isPrimary = editImages.length === 0;
+
+        const { data, error: insertError } = await supabase
+          .from('fundraiser_images')
+          .insert({
+            fundraiser_id: editId,
+            image_url: publicUrl,
+            display_order: editImages.length,
+            is_primary: isPrimary,
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        setEditImages(prev => [...prev, data as FundraiserImage]);
+        toast({ title: 'Image uploaded' });
+      } catch (err: any) {
+        console.error('Upload error:', err);
+        toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+      } finally {
+        setImageUploading(false);
+      }
+    }
+  }, [editId, editImages.length]);
+
+  const handleSetImagePrimary = async (imageId: string) => {
+    if (!editId) return;
+    await supabase.from('fundraiser_images').update({ is_primary: false }).eq('fundraiser_id', editId);
+    await supabase.from('fundraiser_images').update({ is_primary: true }).eq('id', imageId);
+    setEditImages(prev => prev.map(img => ({ ...img, is_primary: img.id === imageId })));
+    toast({ title: 'Cover photo updated' });
+  };
+
+  const handleDeleteImage = async (imageId: string, imageUrl: string) => {
+    await supabase.from('fundraiser_images').delete().eq('id', imageId);
+    const urlParts = imageUrl.split('/fundraiser-covers/');
+    if (urlParts[1]) {
+      await supabase.storage.from('fundraiser-covers').remove([urlParts[1]]);
+    }
+    setEditImages(prev => {
+      const remaining = prev.filter(img => img.id !== imageId);
+      if (prev.find(img => img.id === imageId)?.is_primary && remaining.length > 0) {
+        remaining[0].is_primary = true;
+        supabase.from('fundraiser_images').update({ is_primary: true }).eq('id', remaining[0].id);
+      }
+      return remaining;
+    });
+    toast({ title: 'Image removed' });
   };
 
   const handleSave = async () => {
@@ -555,9 +652,80 @@ export default function AdminFundraisers() {
                 <Input value={form.zip_code} onChange={e => setForm(p => ({ ...p, zip_code: e.target.value }))} />
               </div>
             </div>
-            <div>
-              <Label>Cover Photo URL</Label>
-              <Input value={form.cover_photo_url} onChange={e => setForm(p => ({ ...p, cover_photo_url: e.target.value }))} placeholder="https://..." />
+
+            {/* Image Management */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" /> Photos ({editImages.length}/{MAX_IMAGES})
+              </Label>
+
+              {/* Existing images grid */}
+              {editImages.length > 0 && (
+                <div className="grid grid-cols-3 gap-3">
+                  {editImages.map(img => (
+                    <div
+                      key={img.id}
+                      className={cn(
+                        "relative aspect-square rounded-lg overflow-hidden border-2 transition-colors",
+                        img.is_primary ? "border-primary" : "border-border"
+                      )}
+                    >
+                      <img src={img.image_url} alt="Fundraiser" className="w-full h-full object-cover" />
+                      {img.is_primary && (
+                        <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-current" /> Cover
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        {!img.is_primary && (
+                          <Button size="sm" variant="secondary" className="h-8 text-xs" onClick={() => handleSetImagePrimary(img.id)}>
+                            <Star className="w-3 h-3 mr-1" /> Set Cover
+                          </Button>
+                        )}
+                        <Button size="sm" variant="destructive" className="h-8 w-8 p-0" onClick={() => handleDeleteImage(img.id, img.image_url)}>
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload area */}
+              {editImages.length < MAX_IMAGES && (
+                <div
+                  className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-secondary/50 transition-colors"
+                  onClick={() => imageInputRef.current?.click()}
+                >
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={e => { handleImageUpload(e.target.files); e.target.value = ''; }}
+                    disabled={imageUploading}
+                  />
+                  {imageUploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                      <p className="text-sm text-muted-foreground">Uploading...</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <Upload className="w-8 h-8 text-muted-foreground" />
+                      <p className="text-sm font-medium text-foreground">Click to upload photos</p>
+                      <p className="text-xs text-muted-foreground">{MAX_IMAGES - editImages.length} remaining • Max 5MB each</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Legacy fallback */}
+              <details className="text-xs">
+                <summary className="text-muted-foreground cursor-pointer hover:text-foreground">Legacy cover URL (fallback)</summary>
+                <Input value={form.cover_photo_url} onChange={e => setForm(p => ({ ...p, cover_photo_url: e.target.value }))} placeholder="https://..." className="mt-2" />
+              </details>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
