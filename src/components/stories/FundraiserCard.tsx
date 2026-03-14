@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Heart, ArrowRight, Clock } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { MapPin, Heart, ArrowRight } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { cn } from '@/lib/utils';
