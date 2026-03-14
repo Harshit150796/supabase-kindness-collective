@@ -167,7 +167,7 @@ export default function AdminFundraisers() {
     else setSelected(new Set(paginated.map(f => f.id)));
   };
 
-  const openEdit = (f: FundraiserWithProfile) => {
+  const openEdit = async (f: FundraiserWithProfile) => {
     setForm({
       title: f.title, story: f.story, category: f.category,
       beneficiary_type: f.beneficiary_type, monthly_goal: f.monthly_goal,
@@ -178,6 +178,88 @@ export default function AdminFundraisers() {
     });
     setEditId(f.id);
     setDialogOpen(true);
+
+    // Fetch existing images for this fundraiser
+    const { data } = await supabase
+      .from('fundraiser_images')
+      .select('*')
+      .eq('fundraiser_id', f.id)
+      .order('display_order');
+    setEditImages((data || []) as FundraiserImage[]);
+  };
+
+  // Image management handlers
+  const handleImageUpload = useCallback(async (files: FileList | null) => {
+    if (!files || !editId) return;
+    const remaining = MAX_IMAGES - editImages.length;
+    const filesToUpload = Array.from(files).slice(0, remaining);
+
+    for (const file of filesToUpload) {
+      if (!file.type.startsWith('image/')) {
+        toast({ title: 'Invalid file type', description: 'Please select an image file', variant: 'destructive' });
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        toast({ title: 'File too large', description: 'Image must be less than 5MB', variant: 'destructive' });
+        continue;
+      }
+
+      setImageUploading(true);
+      try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${editId}/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('fundraiser-covers').upload(fileName, file);
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage.from('fundraiser-covers').getPublicUrl(fileName);
+        const isPrimary = editImages.length === 0;
+
+        const { data, error: insertError } = await supabase
+          .from('fundraiser_images')
+          .insert({
+            fundraiser_id: editId,
+            image_url: publicUrl,
+            display_order: editImages.length,
+            is_primary: isPrimary,
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        setEditImages(prev => [...prev, data as FundraiserImage]);
+        toast({ title: 'Image uploaded' });
+      } catch (err: any) {
+        console.error('Upload error:', err);
+        toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+      } finally {
+        setImageUploading(false);
+      }
+    }
+  }, [editId, editImages.length]);
+
+  const handleSetImagePrimary = async (imageId: string) => {
+    if (!editId) return;
+    await supabase.from('fundraiser_images').update({ is_primary: false }).eq('fundraiser_id', editId);
+    await supabase.from('fundraiser_images').update({ is_primary: true }).eq('id', imageId);
+    setEditImages(prev => prev.map(img => ({ ...img, is_primary: img.id === imageId })));
+    toast({ title: 'Cover photo updated' });
+  };
+
+  const handleDeleteImage = async (imageId: string, imageUrl: string) => {
+    await supabase.from('fundraiser_images').delete().eq('id', imageId);
+    const urlParts = imageUrl.split('/fundraiser-covers/');
+    if (urlParts[1]) {
+      await supabase.storage.from('fundraiser-covers').remove([urlParts[1]]);
+    }
+    setEditImages(prev => {
+      const remaining = prev.filter(img => img.id !== imageId);
+      if (prev.find(img => img.id === imageId)?.is_primary && remaining.length > 0) {
+        remaining[0].is_primary = true;
+        supabase.from('fundraiser_images').update({ is_primary: true }).eq('id', remaining[0].id);
+      }
+      return remaining;
+    });
+    toast({ title: 'Image removed' });
   };
 
   const handleSave = async () => {
