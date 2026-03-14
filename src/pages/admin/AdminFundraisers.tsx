@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,13 +17,21 @@ import { toast } from '@/hooks/use-toast';
 import {
   Plus, Pencil, Trash2, Search, ExternalLink, MapPin, Users,
   DollarSign, Eye, Megaphone, Pause, CheckCircle, Clock, TrendingUp,
-  Globe, ArrowUpDown
+  Globe, ArrowUpDown, Upload, Star, X, Loader2, ImageIcon
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
+
+interface FundraiserImage {
+  id: string;
+  image_url: string;
+  display_order: number;
+  is_primary: boolean | null;
+}
 
 interface FundraiserWithProfile {
   id: string;
