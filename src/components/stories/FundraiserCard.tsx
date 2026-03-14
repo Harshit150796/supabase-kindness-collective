@@ -37,14 +37,24 @@ const categoryLabels: Record<string, string> = {
   other: 'Other',
 };
 
-const categoryColors: Record<string, string> = {
-  food: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  household: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  health: 'bg-red-500/20 text-red-400 border-red-500/30',
-  childcare: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
-  education: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  utilities: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  other: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+const categoryDotColors: Record<string, string> = {
+  food: 'bg-emerald-500',
+  household: 'bg-blue-500',
+  health: 'bg-red-500',
+  childcare: 'bg-pink-500',
+  education: 'bg-purple-500',
+  utilities: 'bg-orange-500',
+  other: 'bg-gray-500',
+};
+
+const categoryTextColors: Record<string, string> = {
+  food: 'text-emerald-600 dark:text-emerald-400',
+  household: 'text-blue-600 dark:text-blue-400',
+  health: 'text-red-600 dark:text-red-400',
+  childcare: 'text-pink-600 dark:text-pink-400',
+  education: 'text-purple-600 dark:text-purple-400',
+  utilities: 'text-orange-600 dark:text-orange-400',
+  other: 'text-muted-foreground',
 };
 
 interface FundraiserCardProps {
