@@ -652,9 +652,80 @@ export default function AdminFundraisers() {
                 <Input value={form.zip_code} onChange={e => setForm(p => ({ ...p, zip_code: e.target.value }))} />
               </div>
             </div>
-            <div>
-              <Label>Cover Photo URL</Label>
-              <Input value={form.cover_photo_url} onChange={e => setForm(p => ({ ...p, cover_photo_url: e.target.value }))} placeholder="https://..." />
+
+            {/* Image Management */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" /> Photos ({editImages.length}/{MAX_IMAGES})
+              </Label>
+
+              {/* Existing images grid */}
+              {editImages.length > 0 && (
+                <div className="grid grid-cols-3 gap-3">
+                  {editImages.map(img => (
+                    <div
+                      key={img.id}
+                      className={cn(
+                        "relative aspect-square rounded-lg overflow-hidden border-2 transition-colors",
+                        img.is_primary ? "border-primary" : "border-border"
+                      )}
+                    >
+                      <img src={img.image_url} alt="Fundraiser" className="w-full h-full object-cover" />
+                      {img.is_primary && (
+                        <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-current" /> Cover
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        {!img.is_primary && (
+                          <Button size="sm" variant="secondary" className="h-8 text-xs" onClick={() => handleSetImagePrimary(img.id)}>
+                            <Star className="w-3 h-3 mr-1" /> Set Cover
+                          </Button>
+                        )}
+                        <Button size="sm" variant="destructive" className="h-8 w-8 p-0" onClick={() => handleDeleteImage(img.id, img.image_url)}>
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload area */}
+              {editImages.length < MAX_IMAGES && (
+                <div
+                  className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-secondary/50 transition-colors"
+                  onClick={() => imageInputRef.current?.click()}
+                >
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={e => { handleImageUpload(e.target.files); e.target.value = ''; }}
+                    disabled={imageUploading}
+                  />
+                  {imageUploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                      <p className="text-sm text-muted-foreground">Uploading...</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <Upload className="w-8 h-8 text-muted-foreground" />
+                      <p className="text-sm font-medium text-foreground">Click to upload photos</p>
+                      <p className="text-xs text-muted-foreground">{MAX_IMAGES - editImages.length} remaining • Max 5MB each</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Legacy fallback */}
+              <details className="text-xs">
+                <summary className="text-muted-foreground cursor-pointer hover:text-foreground">Legacy cover URL (fallback)</summary>
+                <Input value={form.cover_photo_url} onChange={e => setForm(p => ({ ...p, cover_photo_url: e.target.value }))} placeholder="https://..." className="mt-2" />
+              </details>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
