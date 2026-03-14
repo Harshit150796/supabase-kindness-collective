@@ -118,20 +118,31 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
 
         {/* Content Section */}
         <div className="p-5 space-y-3">
-          {/* Location & Time */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            {fundraiser.country && (
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5" />
-                <span>{fundraiser.country}</span>
-              </div>
-            )}
-            {timeAgo && (
-              <div className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                <span>{timeAgo}</span>
-              </div>
-            )}
+          {/* Category & Status Row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className={cn("inline-block w-2 h-2 rounded-full", categoryDotColors[fundraiser.category] || categoryDotColors.other)} />
+              <span className={cn("text-xs font-medium", categoryTextColors[fundraiser.category] || categoryTextColors.other)}>
+                {categoryLabels[fundraiser.category] || 'Support'}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              {fundraiser.country && (
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  <span>{fundraiser.country}</span>
+                </div>
+              )}
+              {fundraiser.status === 'active' && (
+                <div className="flex items-center gap-1">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">Live</span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Title */}
