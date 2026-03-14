@@ -1,36 +1,131 @@
 
 
-## Fix: Featured Story Selection on Homepage
+## Redesigning the Fundraiser Card Overlays
 
-### Problem
-The admin "Set as Featured" button correctly sets a story's `display_order` to 1, but the `HeroSection` ignores this. Instead, it uses a time-based rotation formula to pick a random story index each week:
+### The Problem
+The category badge ("Food Support") and live status indicator ("Active") sit on top of the image as floating overlays, which:
+- Obscures the fundraiser's photo — the most emotionally compelling element
+- Looks cluttered with two badges competing for attention on a small image area
+- The semi-transparent colored badges blend awkwardly with varied photo backgrounds
+- On smaller cards (mobile/tablet), these overlays consume a disproportionate amount of image real estate
+
+### Design Options
+
+Here are 4 proven approaches from top-tier fundraising and marketplace platforms:
+
+---
+
+**Option A: "GoFundMe Clean" — Move metadata below the image**
+Move both category and status entirely out of the image area and into the content section. The image stays clean and unobstructed.
 
 ```text
-cmsWeekIndex = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % stories.length
+┌──────────────────────────┐
+│                          │
+│       FULL IMAGE         │
+│     (no overlays)        │
+│                          │
+├──────────────────────────┤
+│ Food Support · Live 🟢   │
+│ Help Maria's Family...   │
+│ ━━━━━━━━━━━░░░░ 67%     │
+│ ♥ 24 donors   $670/$1k  │
+└──────────────────────────┘
 ```
+- Category as a subtle colored text label (not a badge)
+- Status as a small green dot inline with category
+- Maximizes image impact — best for emotional storytelling
 
-This means the featured story chosen by the admin never actually controls the homepage.
+---
 
-### Solution
-Update `HeroSection.tsx` to always show the story with the lowest `display_order` (the one the admin set as featured) instead of using the weekly rotation.
+**Option B: "Minimal Chip" — Single subtle indicator on image**
+Keep only ONE tiny, minimal indicator on the image (just the live dot or a small category icon), and move everything else below.
 
-**Change in `src/components/landing/HeroSection.tsx`:**
-
-Replace the weekly rotation logic (lines 44-49):
 ```text
-const cmsWeekIndex = cmsStories && cmsStories.length > 0
-    ? Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % cmsStories.length
-    : 0;
-const activeCMS = cmsStories && cmsStories.length > 0 ? cmsStories[cmsWeekIndex] : null;
+┌──────────────────────────┐
+│                     🟢   │
+│       FULL IMAGE         │
+│                          │
+│                          │
+├──────────────────────────┤
+│ Food Support             │
+│ Help Maria's Family...   │
+│ ━━━━━━━━━━━░░░░ 67%     │
+│ ♥ 24 donors   $670/$1k  │
+└──────────────────────────┘
 ```
+- Just a 8px green pulsing dot in the corner (no text label)
+- Category rendered as a colored pill below the image, before the title
+- Clean image with just a whisper of status
 
-With a simple pick-the-first approach:
+---
+
+**Option C: "Bottom Edge Strip" — Integrated category bar**
+Place category as a slim strip at the very bottom edge of the image, blending with the gradient. No top overlays at all.
+
 ```text
-const activeCMS = cmsStories && cmsStories.length > 0 ? cmsStories[0] : null;
+┌──────────────────────────┐
+│                          │
+│       FULL IMAGE         │
+│                          │
+│▓▓ 🟢 Food Support ▓▓▓▓▓▓│
+├──────────────────────────┤
+│ Help Maria's Family...   │
+│ ━━━━━━━━━━━░░░░ 67%     │
+│ ♥ 24 donors   $670/$1k  │
+└──────────────────────────┘
 ```
+- Category + status in a single frosted-glass bar at the image bottom
+- Leverages the existing gradient overlay area
+- Compact, premium feel
 
-Since `useCMSStories` already orders results by `display_order`, the story at index 0 is always the one the admin set as featured (display_order = 1). This is a one-line change.
+---
 
-### Files Changed
-- `src/components/landing/HeroSection.tsx` -- Remove the weekly rotation formula, use `cmsStories[0]` instead.
+**Option D: "Card Header Ribbon" — Category above image**
+Place the category as a colored top border or ribbon above the image, outside the image area entirely.
+
+```text
+┌──────────────────────────┐
+│ 🍽 Food Support    Live 🟢│  ← colored ribbon
+├──────────────────────────┤
+│                          │
+│       FULL IMAGE         │
+│     (no overlays)        │
+│                          │
+├──────────────────────────┤
+│ Help Maria's Family...   │
+│ ━━━━━━━━━━━░░░░ 67%     │
+│ ♥ 24 donors   $670/$1k  │
+└──────────────────────────┘
+```
+- Thin colored bar above image with category icon + name + live dot
+- Color-coded by category (emerald for food, blue for household, etc.)
+- Image completely clean, category immediately scannable
+
+---
+
+### Recommendation
+
+**Option A** is the strongest choice. Here's why:
+- GoFundMe, GiveDirectly, and other top platforms have moved away from image overlays
+- The image is the #1 conversion driver — every pixel of obstruction reduces emotional impact
+- Category and status information is secondary; users scan the image and title first
+- Works perfectly across all screen sizes without responsive overlay positioning issues
+
+### Implementation
+
+**File changed:** `src/pages/admin/AdminFundraisers.tsx` — no change needed
+**File changed:** `src/components/stories/FundraiserCard.tsx` — restructure the card layout:
+
+1. Remove all `absolute` positioned overlays from the image section (category badge, live indicator)
+2. Remove the gradient overlay (no longer needed for text readability)
+3. Add a metadata row between the image and title: category pill (small, colored text with dot) + live status (green dot + "Live" text)
+4. Keep the hover "Support Now" CTA on the image (it only appears on hover, so no obstruction)
+5. Refine the category pill to use a small colored dot + text instead of a full badge — lighter visual weight
+
+The card content section becomes:
+- Category dot + label | Live dot (inline row)
+- Location + time (existing)
+- Title (existing)
+- Story preview (existing)
+- Progress bar + stats (existing)
 
