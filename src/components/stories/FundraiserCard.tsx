@@ -91,48 +91,23 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
   return (
     <Link to={`/f/${fundraiser.unique_slug}`} className="block group">
       <div className="relative bg-card rounded-2xl border border-border overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/30">
-        {/* Image Section with Gradient Overlay */}
-        <div className="relative overflow-hidden">
+        {/* Clean Image Section — no overlays */}
+        <div className="relative overflow-hidden rounded-t-2xl">
           <AspectRatio ratio={16 / 10}>
             {primaryImage ? (
               <img 
                 src={primaryImage} 
                 alt={fundraiser.title}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             ) : (
               <div className="w-full h-full bg-muted flex items-center justify-center">
                 <Heart className="w-12 h-12 text-muted-foreground/30" />
               </div>
             )}
-            {/* Gradient overlay for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           </AspectRatio>
 
-          {/* Category Badge - Top Left */}
-          <div className="absolute top-3 left-3">
-            <Badge className={cn(
-              "backdrop-blur-sm border text-xs font-medium",
-              categoryColors[fundraiser.category] || categoryColors.other
-            )}>
-              {categoryLabels[fundraiser.category] || 'Support'}
-            </Badge>
-          </div>
-
-          {/* Live Indicator - Top Right */}
-          {fundraiser.status === 'active' && (
-            <div className="absolute top-3 right-3">
-              <div className="flex items-center gap-1.5 bg-emerald-500/90 text-white rounded-full px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                </span>
-                Live
-              </div>
-            </div>
-          )}
-
-          {/* Support Now CTA - Bottom Right (appears on hover) */}
+          {/* Support Now CTA - appears on hover only */}
           <div className="absolute bottom-3 right-3 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
             <div className="flex items-center gap-1.5 bg-primary text-primary-foreground rounded-full px-4 py-2 text-sm font-semibold shadow-lg">
               Support Now
