@@ -95,6 +95,13 @@ export default function AdminFundraisers() {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 20;
 
+  // Image management state
+  const [editImages, setEditImages] = useState<FundraiserImage[]>([]);
+  const [imageUploading, setImageUploading] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const MAX_IMAGES = 3;
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
   const { data: fundraisers, isLoading } = useQuery({
     queryKey: ['admin-fundraisers'],
     queryFn: async () => {
