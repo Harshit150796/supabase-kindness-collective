@@ -79,8 +79,11 @@ serve(async (req: Request) => {
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
 <body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;line-height:1.6;">
 <div style="max-width:580px;margin:0 auto;padding:20px;">
-<img src="${baseUrl}/favicon.png" alt="CouponDonation" width="32" height="32" style="display:block;margin-bottom:16px;" />
+<a href="${baseUrl}" style="text-decoration:none;"><img src="${baseUrl}/favicon.png" alt="CouponDonation" width="32" height="32" style="display:block;margin-bottom:16px;" /></a>
 ${campaign.html_content}
+<p style="margin-top:24px;">
+<a href="${baseUrl}" style="color:#333333;text-decoration:underline;">Visit CouponDonation</a>
+</p>
 <p style="margin-top:32px;font-size:11px;color:#999999;">
 You're receiving this because you subscribed to CouponDonation updates.<br/>
 <a href="${unsubUrl}" style="color:#999999;">Unsubscribe</a>
