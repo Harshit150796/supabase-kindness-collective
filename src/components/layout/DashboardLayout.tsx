@@ -6,7 +6,7 @@ import {
   Home, Gift, CreditCard, Clock, Shield, 
   BarChart, Users, LogOut, Menu, X,
   DollarSign, TrendingUp, FileText, BookOpen,
-  MessageSquare, HelpCircle, Newspaper, Megaphone
+  MessageSquare, HelpCircle, Newspaper, Megaphone, Mail
 } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
@@ -39,6 +39,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         { icon: MessageSquare, label: 'Testimonials', path: '/admin/testimonials' },
         { icon: Newspaper, label: 'Blog Posts', path: '/admin/blog' },
         { icon: HelpCircle, label: 'FAQ', path: '/admin/faq' },
+        { icon: Mail, label: 'Newsletters', path: '/admin/newsletters' },
       ];
     }
     if (hasRole('recipient')) {
