@@ -28,7 +28,6 @@ serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get campaign
     const { data: campaign, error: campErr } = await supabase
       .from("email_campaigns")
       .select("*")
@@ -49,7 +48,6 @@ serve(async (req: Request) => {
       });
     }
 
-    // Get active subscribers
     const { data: subscribers, error: subErr } = await supabase
       .from("email_subscribers")
       .select("*")
@@ -62,7 +60,6 @@ serve(async (req: Request) => {
       });
     }
 
-    // Mark campaign as sending
     await supabase
       .from("email_campaigns")
       .update({ status: "sending", total_recipients: subscribers.length })
@@ -72,17 +69,36 @@ serve(async (req: Request) => {
     let sentCount = 0;
     let failCount = 0;
 
-    // Send in batches of 10 with delay
     for (let i = 0; i < subscribers.length && sentCount < DAILY_LIMIT; i++) {
       const sub = subscribers[i];
       const unsubUrl = `${baseUrl}/unsubscribe?token=${sub.unsubscribe_token}`;
 
-      const htmlWithUnsub = campaign.html_content + `
-        <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;text-align:center;font-size:12px;color:#6b7280;">
-          <p>You're receiving this because you subscribed to CouponDonation updates.</p>
-          <p><a href="${unsubUrl}" style="color:#6b7280;text-decoration:underline;">Unsubscribe</a></p>
-        </div>
-      `;
+      // Minimal, transactional-style HTML — no heavy styling, no colored buttons
+      const htmlEmail = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
+<body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;line-height:1.6;">
+<div style="max-width:580px;margin:0 auto;padding:20px;">
+<img src="${baseUrl}/favicon.png" alt="CouponDonation" width="32" height="32" style="display:block;margin-bottom:16px;" />
+${campaign.html_content}
+<p style="margin-top:32px;font-size:11px;color:#999999;">
+You're receiving this because you subscribed to CouponDonation updates.<br/>
+<a href="${unsubUrl}" style="color:#999999;">Unsubscribe</a>
+</p>
+</div>
+</body>
+</html>`;
+
+      // Plain text version for deliverability
+      const textContent = campaign.html_content
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/p>/gi, '\n\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .trim();
+
+      const textEmail = `${textContent}\n\n---\nYou're receiving this because you subscribed to CouponDonation updates.\nUnsubscribe: ${unsubUrl}`;
 
       try {
         const res = await fetch("https://api.resend.com/emails", {
@@ -92,10 +108,11 @@ serve(async (req: Request) => {
             Authorization: `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: `CouponDonation <${campaign.sender_email}>`,
+            from: `Harshit from CouponDonation <${campaign.sender_email}>`,
             to: [sub.email],
             subject: campaign.subject,
-            html: htmlWithUnsub,
+            html: htmlEmail,
+            text: textEmail,
           }),
         });
 
@@ -110,13 +127,11 @@ serve(async (req: Request) => {
         console.error(`Error sending to ${sub.email}:`, e);
       }
 
-      // Small delay between sends to avoid rate limits
       if (i < subscribers.length - 1) {
         await new Promise((r) => setTimeout(r, 200));
       }
     }
 
-    // Update campaign status
     await supabase
       .from("email_campaigns")
       .update({
