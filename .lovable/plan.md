@@ -1,51 +1,39 @@
 
 
-## Fix Newsletter Deliverability & Add Logo
+## Send Newsletter to Website Users + Email Improvements
 
-### Problem
-1. **No logo** in the email — the logo exists at `src/assets/logo.png` but isn't referenced in the email HTML
-2. **Landing in Promotions tab** — the current HTML is too marketing-heavy (banner-style layout, heavy styling, CTAs), which Gmail classifies as promotional
+### What needs to happen
 
-### Why emails land in Promotions
-Gmail's AI classifies emails based on:
-- Heavy HTML with marketing-style layouts → Promotions
-- Multiple CTAs, large images, colorful buttons → Promotions
-- Minimal HTML, conversational tone, plain structure → Primary
-- Transactional/personal-style emails (like OTPs) → Primary
+1. **Import website users as subscribers** — Query the `profiles` table for all registered user emails, insert them into `email_subscribers` with `source: 'website_user'`, skipping duplicates
+2. **Add website hyperlink to email** — Update the email HTML template in `send-newsletter/index.ts` to include a clickable link to `https://www.coupondonation.com`
+3. **Add company logo as sender profile picture** — This is the Gmail/email client avatar. Resend does not support setting a sender avatar directly. The standard way is through **BIMI** (Brand Indicators for Message Identification), which requires a verified trademark and DNS record — this is a long-term setup. However, a simpler immediate fix: link the logo in the email header so it's visible in the email body, and ensure `favicon.png` is accessible at the domain root (already is)
+4. **Create a new campaign and send to all subscribers** (existing Excel contacts + newly imported website users)
 
-### Solution
+### Implementation steps
 
-**1. Host logo publicly** — The logo at `src/assets/logo.png` is bundled by Vite and not directly URL-accessible. We'll reference it from the live site: `https://www.coupondonation.com/favicon.png` (already in `/public/favicon.png`) or use the OG image.
+**Step 1**: Run a script to query `profiles` table emails and import them into `email_subscribers` via the `import-subscribers` Edge Function
 
-**2. Rewrite the email template** to be minimal and conversational:
-- Small logo at top (not a banner — just a tiny inline image like Gmail/Slack notifications)
-- Plain text style body — short paragraphs, no colored buttons, no heavy CSS
-- Single simple text link (not a styled CTA button)
-- Include a `text` version alongside `html` in the Resend API call (improves deliverability significantly)
-- Personal "From" name format: `Harshit from CouponDonation` instead of just `CouponDonation`
+**Step 2**: Update `supabase/functions/send-newsletter/index.ts`:
+- Make the logo in the email header clickable, linking to the website
+- Add a visible "Visit CouponDonation" text link in the email body
+- Keep the minimal transactional style
 
-**3. Update `send-newsletter/index.ts`**:
-- Add `text` field to Resend payload (plain text version of the email)
-- Change the From name to feel personal
-- Keep the unsubscribe footer minimal
+**Step 3**: Create a new campaign with proper content and trigger send to all active subscribers
 
-**4. Create a new campaign and send to all 50 subscribers**:
-- Reset the previous campaign status so it can be re-sent, OR create a new campaign
-- New subject line: conversational, not marketing (e.g., "Quick hello from CouponDonation" instead of "Introducing CouponDonation — Turn Coupons Into Real Impact")
-- Send to all 50 active subscribers
+**Step 4**: Deploy the updated Edge Function
+
+### About the sender profile picture
+
+The profile picture/avatar shown next to an email in Gmail is not controlled by the email content — it's determined by:
+- **Google Workspace**: If the sender email has a Google account with a profile photo
+- **BIMI**: A DNS-based standard that displays a verified logo (requires VMC certificate ~$1,500/year)
+- **Gravatar**: Some clients use Gravatar for the sender's email
+
+Since `updates@coupondonation.com` likely sends through Resend (not a Google Workspace account), there's no simple way to set the avatar. The recommended approach is to register a Google Workspace account for `updates@coupondonation.com` and set a profile picture, or set up BIMI DNS records.
+
+For now, I'll make the logo prominent and clickable in the email body itself.
 
 ### Files changed
-
-1. **`supabase/functions/send-newsletter/index.ts`** — Add plain `text` field to Resend API call, use personal From name, keep HTML minimal
-2. **`src/pages/admin/AdminNewsletters.tsx`** — Add a "Plain Text" field to the campaign composer so admins can include a text version
-
-### Email template approach (built into the edge function)
-
-The edge function will wrap campaign content in a minimal template:
-- Tiny logo image (32px) linked from the live site
-- Content in plain `<p>` tags with default fonts (no custom CSS)
-- Simple text unsubscribe link
-- No background colors, no buttons, no tables-based layout
-
-This mimics how transactional emails (OTPs, password resets) are structured, which is why they land in Primary.
+- `supabase/functions/send-newsletter/index.ts` — Add clickable logo linking to website
+- No other code changes — the rest is data operations (importing users, creating campaign, triggering send)
 
