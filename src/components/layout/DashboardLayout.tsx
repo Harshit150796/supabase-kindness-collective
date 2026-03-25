@@ -6,7 +6,7 @@ import {
   Home, Gift, CreditCard, Clock, Shield, 
   BarChart, Users, LogOut, Menu, X,
   DollarSign, TrendingUp, FileText, BookOpen,
-  MessageSquare, HelpCircle, Newspaper, Megaphone
+  MessageSquare, HelpCircle, Newspaper, Megaphone, Mail
 } from 'lucide-react';
 import logo from '@/assets/logo.png';
 

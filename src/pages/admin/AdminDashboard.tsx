@@ -4,7 +4,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Users, Shield, Gift, BarChart, ArrowRight, Clock, Layout, Heart, MessageSquareQuote, FileText, HelpCircle, Megaphone } from 'lucide-react';
+import { Users, Shield, Gift, BarChart, ArrowRight, Clock, Layout, Heart, MessageSquareQuote, FileText, HelpCircle, Megaphone, Mail } from 'lucide-react';
 
 interface AdminStats {
   totalUsers: number;
@@ -34,6 +34,7 @@ const contentActions = [
   { title: 'Testimonials', description: 'Manage donor and recipient quotes', path: '/admin/testimonials', icon: MessageSquareQuote, color: 'text-gold', bg: 'bg-gold/10' },
   { title: 'Blog Posts', description: 'Write and publish articles with cover images', path: '/admin/blog', icon: FileText, color: 'text-emerald-light', bg: 'bg-emerald-light/10' },
   { title: 'FAQ', description: 'Add/edit questions and answers', path: '/admin/faq', icon: HelpCircle, color: 'text-primary', bg: 'bg-primary/10' },
+  { title: 'Newsletters', description: 'Send email campaigns to subscribers', path: '/admin/newsletters', icon: Mail, color: 'text-primary', bg: 'bg-primary/10' },
 ];
 
 export default function AdminDashboard() {
