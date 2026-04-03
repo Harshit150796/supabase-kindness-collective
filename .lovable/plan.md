@@ -1,54 +1,32 @@
 
 
-## Redesign Hero Section: Show Transition from Broken Systems to CouponDonation
+## Remove Backgrounds from Hero Images & Blend into Website
 
-### What gets removed
-- The center "Transparent & Secure Donations" badge (both desktop and mobile versions, lines 53-81)
+### What needs to happen
 
-### What gets added
+Both hero images (`hero-earth-heart.png` and `hero-earth-hands.png`) currently have solid/colored backgrounds that clash with the website's clean gradient background. We need to:
 
-A **visual narrative flow** between the two images that tells the story: "Old broken systems → CouponDonation's trustworthy approach"
+1. **Remove backgrounds from both images** using AI image editing — isolate just the central earth/logo artwork with full transparency
+2. **Re-export as transparent PNGs** so they blend seamlessly into the website's `from-secondary/30 via-background to-background` gradient
+3. **Adjust CSS for seamless blending** — add subtle effects so the images feel native to the page
 
-**Layout concept:**
-```text
-┌─────────────────────┐    ──────────►    ┌─────────────────────┐
-│   LEFT IMAGE        │                   │   RIGHT IMAGE       │
-│   (Crumbling earth) │   Animated arrow  │   (CouponDonation)  │
-│                     │   + transition    │                     │
-│   Label:            │   connector       │   Label:            │
-│   "The Old Way"     │                   │   "The CouponDonation│
-│   Opaque · Untrace- │                   │    Way"             │
-│   able · Unreliable │                   │   Transparent ·     │
-│                     │                   │   Traceable · Secure│
-└─────────────────────┘                   └─────────────────────┘
-```
+### Step-by-step
 
-**Specific elements:**
+**Step 1: AI background removal — Left image (earth-heart)**
+- Use the AI image editing tool (`google/gemini-3.1-flash-image-preview`) with the prompt: "Remove the background completely, keep only the central earth with heart artwork. Make the background fully transparent. Output as PNG with transparency."
+- Save result to `src/assets/hero-earth-heart.png`
 
-1. **Left image caption** — Below the left image, a small label:
-   - Title: "The Old Way" (in muted/destructive tone)
-   - Subtitle chips: "Opaque" · "Untraceable" · "Unreliable" (red-tinted tags)
+**Step 2: AI background removal — Right image (earth-hands)**  
+- Same approach for the second image: remove all background, isolate the central earth/crest/logo artwork
+- Save result to `src/assets/hero-earth-hands.png`
 
-2. **Center transition arrow** — Between the two images:
-   - A horizontal animated arrow (CSS `→` with a subtle pulse animation)
-   - Small text above it: "We're changing this"
-   - On mobile: vertical arrow pointing down
-
-3. **Right image caption** — Below the right image, a small label:
-   - Title: "The CouponDonation Way" (in primary/emerald tone)
-   - Subtitle chips: "Transparent" · "Traceable" · "Secure" (green-tinted tags)
-
-4. **Bottom tagline** — Centered below both images:
-   - "Every donation tracked. Every coupon verified. Every family fed."
-
-### Design principles
-- No heavy badges or floating elements overlaying the images
-- Clean typography-driven storytelling
-- Left side uses muted/destructive colors to convey "broken"
-- Right side uses primary/emerald colors to convey "trustworthy"
-- Arrow animation draws the eye from left to right (the shift)
-- Mobile: stacks vertically with downward arrow
+**Step 3: CSS refinements in HeroSection.tsx**
+- Keep `object-contain` and `drop-shadow-2xl` (the shadow will now naturally ground transparent images against the gradient)
+- Add a subtle CSS `filter` for slight warmth/contrast boost so the images feel cohesive with the site's color palette
+- Ensure both images render at equal visual weight with balanced sizing
 
 ### Files changed
-- `src/components/landing/HeroSection.tsx` — Remove center badges, add captions, transition arrow, and bottom tagline
+- `src/assets/hero-earth-heart.png` — Replaced with background-removed version
+- `src/assets/hero-earth-hands.png` — Replaced with background-removed version
+- `src/components/landing/HeroSection.tsx` — Minor CSS tweaks for blending (filter, shadow adjustments)
 
