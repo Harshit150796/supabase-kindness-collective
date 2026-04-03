@@ -1,27 +1,54 @@
 
 
-## Enhance Right-Side Hero Image & Display Quality
+## Redesign Hero Section: Show Transition from Broken Systems to CouponDonation
 
-### Current problem
-The screenshot shows the right-side image ("Veritas Et Terra") is barely visible — it appears as a thin distorted strip. The image has too much empty/light background and the central earth/logo element is too small within the frame.
+### What gets removed
+- The center "Transparent & Secure Donations" badge (both desktop and mobile versions, lines 53-81)
 
-### Plan
+### What gets added
 
-**Step 1: AI-enhance the image**
-Use the Gemini image editing API (`google/gemini-3.1-flash-image-preview`) to:
-- Crop/zoom into the central earth and crest logo, removing excess whitespace
-- Enhance colors and contrast for web display
-- Make the logo the focal point with a clean, vibrant composition that matches the left image's style
+A **visual narrative flow** between the two images that tells the story: "Old broken systems → CouponDonation's trustworthy approach"
 
-**Step 2: Replace the asset**
-Save the enhanced image as `src/assets/hero-earth-hands.png`, replacing the current version.
+**Layout concept:**
+```text
+┌─────────────────────┐    ──────────►    ┌─────────────────────┐
+│   LEFT IMAGE        │                   │   RIGHT IMAGE       │
+│   (Crumbling earth) │   Animated arrow  │   (CouponDonation)  │
+│                     │   + transition    │                     │
+│   Label:            │   connector       │   Label:            │
+│   "The Old Way"     │                   │   "The CouponDonation│
+│   Opaque · Untrace- │                   │    Way"             │
+│   able · Unreliable │                   │   Transparent ·     │
+│                     │                   │   Traceable · Secure│
+└─────────────────────┘                   └─────────────────────┘
+```
 
-**Step 3: Fine-tune CSS in `HeroSection.tsx`**
-- Ensure `object-contain` is used so the image renders fully without distortion
-- Add `image-rendering: high-quality` via inline style for sharper rendering
-- Verify both images display at balanced proportions on the current 850px viewport (which hits the `md` breakpoint)
+**Specific elements:**
+
+1. **Left image caption** — Below the left image, a small label:
+   - Title: "The Old Way" (in muted/destructive tone)
+   - Subtitle chips: "Opaque" · "Untraceable" · "Unreliable" (red-tinted tags)
+
+2. **Center transition arrow** — Between the two images:
+   - A horizontal animated arrow (CSS `→` with a subtle pulse animation)
+   - Small text above it: "We're changing this"
+   - On mobile: vertical arrow pointing down
+
+3. **Right image caption** — Below the right image, a small label:
+   - Title: "The CouponDonation Way" (in primary/emerald tone)
+   - Subtitle chips: "Transparent" · "Traceable" · "Secure" (green-tinted tags)
+
+4. **Bottom tagline** — Centered below both images:
+   - "Every donation tracked. Every coupon verified. Every family fed."
+
+### Design principles
+- No heavy badges or floating elements overlaying the images
+- Clean typography-driven storytelling
+- Left side uses muted/destructive colors to convey "broken"
+- Right side uses primary/emerald colors to convey "trustworthy"
+- Arrow animation draws the eye from left to right (the shift)
+- Mobile: stacks vertically with downward arrow
 
 ### Files changed
-- `src/assets/hero-earth-hands.png` — Replaced with AI-enhanced, zoomed-in version
-- `src/components/landing/HeroSection.tsx` — Minor CSS tweaks for sharper rendering
+- `src/components/landing/HeroSection.tsx` — Remove center badges, add captions, transition arrow, and bottom tagline
 
