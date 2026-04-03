@@ -497,7 +497,7 @@
   
   @keyframes vine-leaf-appear {
     from { opacity: 0; transform: scale(0); }
-    to { opacity: 0.15; transform: scale(1); }
+    to { opacity: 0.45; transform: scale(1); }
   }
   
   /* Input focus ring animation */
