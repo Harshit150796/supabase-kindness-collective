@@ -8,15 +8,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentFeaturedStory } from '@/hooks/useFeaturedStories';
 import { useCMSStories } from '@/hooks/useCMSContent';
 
-// Circular photos of recipients around the hero
-const recipientPhotos = [
-  { src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&h=80&fit=crop&crop=face', position: 'top-20 left-[8%]' },
-  { src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face', position: 'top-32 right-[12%]' },
-  { src: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face', position: 'bottom-40 left-[5%]' },
-  { src: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face', position: 'top-48 left-[18%]' },
-  { src: 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=80&h=80&fit=crop&crop=face', position: 'bottom-32 right-[8%]' },
-  { src: 'https://images.unsplash.com/photo-1596464716127-f2a82984de30?w=80&h=80&fit=crop&crop=face', position: 'top-24 right-[22%]' },
-];
 
 function AnimatedCounter({ end, duration = 2000 }: { end: number; duration?: number }) {
   const [count, setCount] = useState(0);
