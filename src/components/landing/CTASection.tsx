@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Building2, Coins, Heart, Users } from 'lucide-react';
+import { ArrowRight, Building2, Coins, Heart, Users, ShieldCheck, Lock, Eye } from 'lucide-react';
+import earthHeartLogo from '@/assets/earth-heart-logo.png';
 
 export function CTASection() {
   const navigate = useNavigate();
@@ -13,6 +14,41 @@ export function CTASection() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gold/5 rounded-full blur-3xl" />
 
       <div className="container mx-auto px-4 relative">
+        {/* Earth-Heart Centerpiece */}
+        <div className="flex flex-col items-center mb-16 animate-fade-in">
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/10 rounded-full blur-3xl scale-150" />
+            <img
+              src={earthHeartLogo}
+              alt="CouponDonation — Transparent & Secure Giving"
+              className="relative w-[200px] md:w-[280px] h-auto drop-shadow-2xl"
+            />
+          </div>
+
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mt-8 text-center">
+            Transparent & Secure Donations
+          </h2>
+          <p className="text-muted-foreground mt-3 text-center max-w-lg text-base md:text-lg">
+            Every dollar tracked. Every family helped. Zero hidden fees.
+          </p>
+
+          {/* Trust indicators */}
+          <div className="flex flex-wrap items-center justify-center gap-6 mt-6 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-primary" />
+              <span>100% Transparent</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Lock className="w-4 h-4 text-primary" />
+              <span>Secure Payments</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Eye className="w-4 h-4 text-primary" />
+              <span>Track Your Impact</span>
+            </div>
+          </div>
+        </div>
+
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* For Donors */}
           <Card className="p-6 md:p-8 lg:p-10 bg-primary text-primary-foreground border-0 hover:shadow-emerald transition-shadow">
