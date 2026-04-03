@@ -40,38 +40,40 @@ export function HeroSection() {
 
       <div className="container mx-auto px-4 py-12 md:py-16 relative z-10">
         {/* Split-screen image layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-0 items-center relative max-w-5xl mx-auto mb-10 md:mb-14">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-0 items-center relative max-w-6xl mx-auto mb-10 md:mb-14">
           {/* Left side - Earth heart image */}
-          <div className="flex justify-center md:justify-end md:pr-8">
+          <div className="flex justify-center md:justify-end md:pr-10">
             <img
               src={heroEarthHeart}
               alt="CouponDonation - Giving with heart"
-              className="w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 lg:w-96 lg:h-96 object-contain drop-shadow-xl"
+              className="w-72 h-72 sm:w-80 sm:h-80 md:w-[22rem] md:h-[22rem] lg:w-[28rem] lg:h-[28rem] object-contain drop-shadow-2xl"
             />
           </div>
 
           {/* Center connector badge */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 hidden md:flex">
-            <div className="flex items-center gap-2 bg-background border border-border shadow-lg px-4 py-2 rounded-full">
+            <div className="flex items-center gap-2 bg-background border border-border shadow-lg px-5 py-2.5 rounded-full">
               <Shield className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-foreground whitespace-nowrap">
+              <span className="text-sm font-semibold text-foreground whitespace-nowrap">
                 Transparent & Secure Donations
               </span>
             </div>
           </div>
 
-          {/* Right side - Placeholder for second image */}
-          <div className="flex justify-center md:justify-start md:pl-8">
-            <div className="w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 lg:w-96 lg:h-96 rounded-2xl border-2 border-dashed border-border/60 bg-muted/30 flex items-center justify-center">
-              <span className="text-muted-foreground text-sm">Second image coming soon</span>
-            </div>
+          {/* Right side - Earth hands image */}
+          <div className="flex justify-center md:justify-start md:pl-10">
+            <img
+              src={heroEarthHands}
+              alt="CouponDonation - Nurturing the world"
+              className="w-72 h-72 sm:w-80 sm:h-80 md:w-[22rem] md:h-[22rem] lg:w-[28rem] lg:h-[28rem] object-contain drop-shadow-2xl"
+            />
           </div>
 
           {/* Mobile connector badge */}
-          <div className="flex md:hidden justify-center -mt-3 -mb-3 order-2 col-span-1">
+          <div className="flex md:hidden justify-center -mt-2 -mb-2 order-2 col-span-1">
             <div className="flex items-center gap-2 bg-background border border-border shadow-md px-4 py-2 rounded-full">
               <Shield className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-sm font-semibold text-foreground">
                 Transparent & Secure Donations
               </span>
             </div>
