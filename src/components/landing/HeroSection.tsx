@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentFeaturedStory } from '@/hooks/useFeaturedStories';
 import { useCMSStories } from '@/hooks/useCMSContent';
 import heroEarthHeart from '@/assets/hero-earth-heart.png';
+import heroEarthHands from '@/assets/hero-earth-hands.png';
 
 export function HeroSection() {
   const { data: cmsStories, isLoading: cmsLoading } = useCMSStories(true);
