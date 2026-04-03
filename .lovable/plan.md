@@ -1,39 +1,37 @@
+## Replace Hero Top Section with Split-Screen Image Layout
 
+### What gets removed
 
-## Send Newsletter to Website Users + Email Improvements
+The entire top portion of the HeroSection currently showing:
 
-### What needs to happen
+- "Trusted by 50,000+ donors worldwide" badge
+- "15,000 families fed this month. Help us reach 20,000." headline
+- "Your donation becomes real grocery coupons..." subheadline
+  &nbsp;
+- Floating recipient photos around the hero
 
-1. **Import website users as subscribers** — Query the `profiles` table for all registered user emails, insert them into `email_subscribers` with `source: 'website_user'`, skipping duplicates
-2. **Add website hyperlink to email** — Update the email HTML template in `send-newsletter/index.ts` to include a clickable link to `https://www.coupondonation.com`
-3. **Add company logo as sender profile picture** — This is the Gmail/email client avatar. Resend does not support setting a sender avatar directly. The standard way is through **BIMI** (Brand Indicators for Message Identification), which requires a verified trademark and DNS record — this is a long-term setup. However, a simpler immediate fix: link the logo in the email header so it's visible in the email body, and ensure `favicon.png` is accessible at the domain root (already is)
-4. **Create a new campaign and send to all subscribers** (existing Excel contacts + newly imported website users)
+The Featured Story card at the bottom of the hero will be preserved.
 
-### Implementation steps
+### What gets added
 
-**Step 1**: Run a script to query `profiles` table emails and import them into `email_subscribers` via the `import-subscribers` Edge Function
+A **split-screen two-column layout** replacing the removed content:
 
-**Step 2**: Update `supabase/functions/send-newsletter/index.ts`:
-- Make the logo in the email header clickable, linking to the website
-- Add a visible "Visit CouponDonation" text link in the email body
-- Keep the minimal transactional style
+- **Left side (50%)**: The Earth-heart logo image (`Gemini_Generated_Image_ybn3e3ybn3e3ybn3-2.png`) displayed prominently
+- **Right side (50%)**: Reserved as a placeholder for the second image (which you'll provide next)
+- **Center connector**: A small "Transparency & Secure Donations" badge/tag between the two images to visually convey the transition concept
 
-**Step 3**: Create a new campaign with proper content and trigger send to all active subscribers
+On mobile, the layout stacks vertically (image on top, placeholder below).
 
-**Step 4**: Deploy the updated Edge Function
+### Implementation
 
-### About the sender profile picture
-
-The profile picture/avatar shown next to an email in Gmail is not controlled by the email content — it's determined by:
-- **Google Workspace**: If the sender email has a Google account with a profile photo
-- **BIMI**: A DNS-based standard that displays a verified logo (requires VMC certificate ~$1,500/year)
-- **Gravatar**: Some clients use Gravatar for the sender's email
-
-Since `updates@coupondonation.com` likely sends through Resend (not a Google Workspace account), there's no simple way to set the avatar. The recommended approach is to register a Google Workspace account for `updates@coupondonation.com` and set a profile picture, or set up BIMI DNS records.
-
-For now, I'll make the logo prominent and clickable in the email body itself.
+1. **Copy the uploaded image** to `src/assets/hero-earth-heart.png`
+2. **Rewrite `HeroSection.tsx**`:
+  - Remove: `recipientPhotos` array, `AnimatedCounter` component, trust badge, headline, subheadline, all CTA buttons, floating photos
+  - Add: Two-column grid (`grid-cols-2` on md+) with the Earth-heart image on the left, a placeholder on the right
+  - Add: A centered overlay tag reading "Transparent & Secure Donations" with a subtle design
+  - Keep: The Featured Story card section and its loading skeleton at the bottom
 
 ### Files changed
-- `supabase/functions/send-newsletter/index.ts` — Add clickable logo linking to website
-- No other code changes — the rest is data operations (importing users, creating campaign, triggering send)
 
+- `src/components/landing/HeroSection.tsx` — Major rewrite of the top section
+- `src/assets/hero-earth-heart.png` — New asset (copied from upload)
