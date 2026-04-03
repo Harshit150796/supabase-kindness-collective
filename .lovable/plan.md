@@ -1,37 +1,27 @@
-## Replace Hero Top Section with Split-Screen Image Layout
 
-### What gets removed
 
-The entire top portion of the HeroSection currently showing:
+## Enhance Right-Side Hero Image & Display Quality
 
-- "Trusted by 50,000+ donors worldwide" badge
-- "15,000 families fed this month. Help us reach 20,000." headline
-- "Your donation becomes real grocery coupons..." subheadline
-  &nbsp;
-- Floating recipient photos around the hero
+### Current problem
+The screenshot shows the right-side image ("Veritas Et Terra") is barely visible — it appears as a thin distorted strip. The image has too much empty/light background and the central earth/logo element is too small within the frame.
 
-The Featured Story card at the bottom of the hero will be preserved.
+### Plan
 
-### What gets added
+**Step 1: AI-enhance the image**
+Use the Gemini image editing API (`google/gemini-3.1-flash-image-preview`) to:
+- Crop/zoom into the central earth and crest logo, removing excess whitespace
+- Enhance colors and contrast for web display
+- Make the logo the focal point with a clean, vibrant composition that matches the left image's style
 
-A **split-screen two-column layout** replacing the removed content:
+**Step 2: Replace the asset**
+Save the enhanced image as `src/assets/hero-earth-hands.png`, replacing the current version.
 
-- **Left side (50%)**: The Earth-heart logo image (`Gemini_Generated_Image_ybn3e3ybn3e3ybn3-2.png`) displayed prominently
-- **Right side (50%)**: Reserved as a placeholder for the second image (which you'll provide next)
-- **Center connector**: A small "Transparency & Secure Donations" badge/tag between the two images to visually convey the transition concept
-
-On mobile, the layout stacks vertically (image on top, placeholder below).
-
-### Implementation
-
-1. **Copy the uploaded image** to `src/assets/hero-earth-heart.png`
-2. **Rewrite `HeroSection.tsx**`:
-  - Remove: `recipientPhotos` array, `AnimatedCounter` component, trust badge, headline, subheadline, all CTA buttons, floating photos
-  - Add: Two-column grid (`grid-cols-2` on md+) with the Earth-heart image on the left, a placeholder on the right
-  - Add: A centered overlay tag reading "Transparent & Secure Donations" with a subtle design
-  - Keep: The Featured Story card section and its loading skeleton at the bottom
+**Step 3: Fine-tune CSS in `HeroSection.tsx`**
+- Ensure `object-contain` is used so the image renders fully without distortion
+- Add `image-rendering: high-quality` via inline style for sharper rendering
+- Verify both images display at balanced proportions on the current 850px viewport (which hits the `md` breakpoint)
 
 ### Files changed
+- `src/assets/hero-earth-hands.png` — Replaced with AI-enhanced, zoomed-in version
+- `src/components/landing/HeroSection.tsx` — Minor CSS tweaks for sharper rendering
 
-- `src/components/landing/HeroSection.tsx` — Major rewrite of the top section
-- `src/assets/hero-earth-heart.png` — New asset (copied from upload)
