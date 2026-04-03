@@ -1,37 +1,39 @@
 
 
-## Landing Page Enhancement
+## Send Newsletter to Website Users + Email Improvements
 
-### What changes
+### What needs to happen
 
-**1. Remove floating recipient photos from HeroSection**
-The circular face photos scattered around the hero text (shown in your 2nd screenshot) will be completely removed. The hero becomes a clean, focused section with just the trust badge, headline, subheadline, CTAs, and the featured story card.
+1. **Import website users as subscribers** — Query the `profiles` table for all registered user emails, insert them into `email_subscribers` with `source: 'website_user'`, skipping duplicates
+2. **Add website hyperlink to email** — Update the email HTML template in `send-newsletter/index.ts` to include a clickable link to `https://www.coupondonation.com`
+3. **Add company logo as sender profile picture** — This is the Gmail/email client avatar. Resend does not support setting a sender avatar directly. The standard way is through **BIMI** (Brand Indicators for Message Identification), which requires a verified trademark and DNS record — this is a long-term setup. However, a simpler immediate fix: link the logo in the email header so it's visible in the email body, and ensure `favicon.png` is accessible at the domain root (already is)
+4. **Create a new campaign and send to all subscribers** (existing Excel contacts + newly imported website users)
 
-**2. Place the earth-heart logo in the lower half of the landing page**
-The uploaded earth-heart image (tree growing from heart-shaped Earth, held by hands) will be embedded into the **CTASection** — the final call-to-action section near the bottom of the page. This is the natural "second half" placement that creates a powerful closing visual.
+### Implementation steps
 
-### Design approach
+**Step 1**: Run a script to query `profiles` table emails and import them into `email_subscribers` via the `import-subscribers` Edge Function
 
-The CTASection currently has two cards (For Donors / For Companies) side by side. The redesign will:
+**Step 2**: Update `supabase/functions/send-newsletter/index.ts`:
+- Make the logo in the email header clickable, linking to the website
+- Add a visible "Visit CouponDonation" text link in the email body
+- Keep the minimal transactional style
 
-- Add the earth-heart image as a **large, centered visual centerpiece** above the two CTA cards
-- The image sits on a subtle radial gradient background that complements the cream/warm tones of the image itself
-- Below the image: a concise tagline about transparency and secure donations (e.g., "100% Transparent. Secure. Direct Impact.")
-- The two CTA cards remain below, now anchored by the visual weight of the logo above
-- On mobile, the image scales down gracefully and stacks naturally
+**Step 3**: Create a new campaign with proper content and trigger send to all active subscribers
+
+**Step 4**: Deploy the updated Edge Function
+
+### About the sender profile picture
+
+The profile picture/avatar shown next to an email in Gmail is not controlled by the email content — it's determined by:
+- **Google Workspace**: If the sender email has a Google account with a profile photo
+- **BIMI**: A DNS-based standard that displays a verified logo (requires VMC certificate ~$1,500/year)
+- **Gravatar**: Some clients use Gravatar for the sender's email
+
+Since `updates@coupondonation.com` likely sends through Resend (not a Google Workspace account), there's no simple way to set the avatar. The recommended approach is to register a Google Workspace account for `updates@coupondonation.com` and set a profile picture, or set up BIMI DNS records.
+
+For now, I'll make the logo prominent and clickable in the email body itself.
 
 ### Files changed
-
-| File | Change |
-|------|--------|
-| `src/components/landing/HeroSection.tsx` | Remove `recipientPhotos` array and all floating photo rendering (lines 12-90). Clean hero with just text + featured story card |
-| `src/components/landing/CTASection.tsx` | Add the earth-heart image as a centerpiece above the CTA cards with a "Transparent & Secure Donations" tagline |
-| `src/assets/` | Copy the uploaded earth-heart image into project assets |
-
-### Technical details
-
-- The earth-heart image will be imported as an ES6 module from `src/assets/earth-heart-logo.png`
-- The image will be displayed at ~280px on desktop, ~200px on mobile, with a subtle drop shadow and fade-in animation
-- The floating photos code (lines 12-90 in HeroSection) is fully removed — no replacement needed since the hero is stronger without visual clutter
-- The HeroSection retains all functional elements: trust badge, animated counter headline, subheadline, CTA buttons, "See how it works" link, and the featured story card
+- `supabase/functions/send-newsletter/index.ts` — Add clickable logo linking to website
+- No other code changes — the rest is data operations (importing users, creating campaign, triggering send)
 

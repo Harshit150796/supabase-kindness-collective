@@ -8,6 +8,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentFeaturedStory } from '@/hooks/useFeaturedStories';
 import { useCMSStories } from '@/hooks/useCMSContent';
 
+// Circular photos of recipients around the hero
+const recipientPhotos = [
+  { src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&h=80&fit=crop&crop=face', position: 'top-20 left-[8%]' },
+  { src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face', position: 'top-32 right-[12%]' },
+  { src: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face', position: 'bottom-40 left-[5%]' },
+  { src: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face', position: 'top-48 left-[18%]' },
+  { src: 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=80&h=80&fit=crop&crop=face', position: 'bottom-32 right-[8%]' },
+  { src: 'https://images.unsplash.com/photo-1596464716127-f2a82984de30?w=80&h=80&fit=crop&crop=face', position: 'top-24 right-[22%]' },
+];
 
 function AnimatedCounter({ end, duration = 2000 }: { end: number; duration?: number }) {
   const [count, setCount] = useState(0);
@@ -60,6 +69,25 @@ export function HeroSection() {
       {/* Subtle background */}
       <div className="absolute inset-0 bg-gradient-to-b from-secondary/50 via-background to-background" />
       
+      {/* Floating recipient photos */}
+      {recipientPhotos.map((photo, i) => (
+        <div 
+          key={i}
+          className={`absolute ${photo.position} hidden lg:block`}
+          style={{ animationDelay: `${i * 0.5}s` }}
+        >
+          <div className="relative">
+            <img 
+              src={photo.src}
+              alt=""
+              className="w-16 h-16 rounded-full object-cover border-4 border-background shadow-lg opacity-80 hover:opacity-100 hover:scale-110 transition-all duration-300"
+            />
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+              <span className="text-primary-foreground text-xs">❤️</span>
+            </div>
+          </div>
+        </div>
+      ))}
 
       <div className="container mx-auto px-4 py-12 md:py-16 relative z-10">
         <div className="max-w-4xl mx-auto">
