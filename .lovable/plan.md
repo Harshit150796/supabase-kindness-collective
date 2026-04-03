@@ -1,52 +1,48 @@
 
 
-## Add Animated Brown Branches from Left Hero Image to "Where Your Money Goes"
+## Make Branches Look Like Real Wood & Visually Connect to Left Hero Image
 
-### Concept
+### Problem
+The current branches are thin, barely visible SVG strokes (1.5-3px, 0.15-0.3 opacity) that look like abstract lines, not real wood. They don't visually originate from the left hero image and are nearly invisible. The user wants thick, realistic wooden branches that clearly emerge from the left "crumbling earth" image and cascade down the page.
 
-SVG-based animated brown vines, roots, and branches that originate from the bottom of the left hero image (the "old way" crumbling earth) and trail down the left side of the page. They stop just before the "Where Your Money Goes" headline in the TrustTransparency section. The vines represent decay and the broken donation system — brown, dry, withered branches that slowly sway and grow.
+### Vision alignment
+The left hero image represents **broken, corrupt donation systems** -- the brown branches extending from it symbolize the **decay, rot, and withering** of these old systems. They should look like real dried, cracked wood -- not subtle decorative lines.
 
-### Technical approach
+### Plan
 
-**New component: `src/components/landing/AnimatedBranchesLeft.tsx`**
+**Rewrite `src/components/landing/AnimatedBranchesLeft.tsx`** with a completely new SVG design:
 
-- A full-width, absolutely positioned SVG overlay rendered as a sibling layer in `Index.tsx`, spanning from the hero section down to the TrustTransparency section
-- Uses `pointer-events: none` so all text and interactive elements remain fully clickable
-- Low `z-index` (z-0) so content sits above it, but branches are visible in the background
-- Uses CSS animations for gentle swaying motion (keyframes defined in `index.css`)
+1. **Origin point**: Branches start from coordinates matching the bottom-center of the left hero image (~25% from left on desktop), creating visual continuity -- as if growing out of the crumbling earth artwork
 
-**SVG branch design:**
-- 5-7 organic SVG `<path>` elements with cubic bezier curves simulating natural vine/root shapes
-- Brown color palette: `#8B6914`, `#6B4423`, `#A0522D`, `#5C4033` (sienna, saddle brown tones)
-- Thin stroke widths (1.5-3px) with `stroke-linecap: round` for organic feel
-- Small leaf/twig offshoots branching from main stems
-- `stroke-dasharray` + `stroke-dashoffset` animation to create a "growing" effect on page load
-- Gentle CSS `transform` sway animations (2-4 degree rotation, 6-10s duration) for liveliness
-- Varying opacity (0.15-0.35) so they don't compete with content
+2. **Realistic wood appearance**:
+   - Main trunk: 8-12px stroke width with `stroke-linecap: round` and `stroke-linejoin: round`
+   - Use **dual-stroke technique**: a darker outer stroke (6-10px, `#4A2C0A`) with a lighter inner stroke (3-6px, `#8B6914`) layered on top to simulate bark texture and wood grain
+   - Add knots/bumps using small filled circles at branch junction points
+   - Opacity increased to 0.4-0.7 for visibility
 
-**Scroll-aware growth:**
-- Uses `IntersectionObserver` or scroll position to trigger branch growth animations as user scrolls
-- Branches "grow" progressively — upper ones animate first, lower ones follow with staggered delays
+3. **Branch structure** (8-10 paths total):
+   - One thick main trunk flowing downward along the left ~15% of the page
+   - 3-4 medium secondary branches curving inward (reaching to ~30% page width)
+   - 3-4 thin twigs and offshoots with dead leaf clusters at tips
+   - 1-2 drooping "hanging" branches for depth
+   - All paths use organic cubic bezier curves with irregularity (no straight lines)
 
-**Layout in `Index.tsx`:**
-- Wrap hero through TrustTransparency in a `relative` container
-- Place `AnimatedBranchesLeft` as an absolute overlay within this container
-- Branches hug the left margin and occasionally curve inward slightly, never crossing center
+4. **Brown color palette** matched to the hero image:
+   - Deep bark: `#4A2C0A`, `#3E2106`
+   - Mid brown: `#6B4423`, `#5C4033`
+   - Light wood: `#8B6914`, `#A0522D`
+   - Dry leaf accents: `#8B7355`
 
-### Animation details (added to `index.css`)
-- `@keyframes vine-grow`: `stroke-dashoffset` from full length to 0 over 3-4s
-- `@keyframes sway-gentle`: subtle rotation oscillation (±2-3deg) over 6-8s
-- `@keyframes sway-slow`: slower, larger oscillation for main stems
-- Each branch has different animation-delay and duration for natural variance
+5. **Dead leaf clusters**: Small SVG leaf shapes (not circles) at branch tips using `<path>` for curled, dried leaf silhouettes
+
+6. **Animations** (keep existing CSS keyframes):
+   - `vine-grow` stroke-dash animation for growth effect
+   - `sway-gentle` / `sway-slow` for lifelike movement
+   - Staggered delays so branches grow sequentially from top to bottom
+   - Increased opacity in `vine-leaf-appear` to 0.3-0.5
+
+7. **Visibility**: The branches must be clearly visible -- the current near-invisible approach is abandoned. They're a storytelling element, not subtle decoration. Still use `pointer-events: none` so text remains clickable.
 
 ### Files changed
-- **`src/components/landing/AnimatedBranchesLeft.tsx`** — New component with SVG branches
-- **`src/pages/Index.tsx`** — Wrap relevant sections in relative container, add overlay
-- **`src/index.css`** — Add vine-grow and sway keyframe animations
-
-### Performance considerations
-- Pure CSS animations (no JS animation loops)
-- SVG paths are lightweight (few KB total)
-- `will-change: transform` on animated elements for GPU acceleration
-- `pointer-events: none` ensures zero interaction overhead
+- `src/components/landing/AnimatedBranchesLeft.tsx` -- Complete rewrite with realistic wood branches
 
