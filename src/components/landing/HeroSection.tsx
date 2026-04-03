@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Users, Shield } from 'lucide-react';
+import { MapPin, Users, ArrowRight, ArrowDown } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -39,49 +39,57 @@ export function HeroSection() {
       <div className="absolute inset-0 bg-gradient-to-b from-secondary/30 via-background to-background" />
 
       <div className="container mx-auto px-4 py-12 md:py-16 relative z-10">
-        {/* Split-screen image layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-0 items-center relative max-w-6xl mx-auto mb-10 md:mb-14">
-          {/* Left side - Earth heart image */}
-          <div className="flex justify-center md:justify-end md:pr-10">
+        {/* Split-screen narrative layout */}
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 md:gap-4 items-center max-w-6xl mx-auto mb-8 md:mb-14">
+          {/* Left side - The Old Way */}
+          <div className="flex flex-col items-center text-center">
             <img
               src={heroEarthHeart}
-              alt="CouponDonation - Giving with heart"
-              className="w-72 h-72 sm:w-80 sm:h-80 md:w-[22rem] md:h-[22rem] lg:w-[28rem] lg:h-[28rem] object-contain drop-shadow-2xl"
+              alt="The old way of donations - broken and opaque"
+              className="w-64 h-64 sm:w-72 sm:h-72 md:w-[20rem] md:h-[20rem] lg:w-[26rem] lg:h-[26rem] object-contain drop-shadow-2xl"
             />
-          </div>
-
-          {/* Center connector badge */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 hidden md:flex">
-            <div className="flex items-center gap-2 bg-background border border-border shadow-lg px-5 py-2.5 rounded-full">
-              <Shield className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground whitespace-nowrap">
-                Transparent & Secure Donations
-              </span>
+            <div className="mt-4 space-y-2">
+              <p className="text-sm font-semibold text-destructive">The Old Way</p>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                <span className="px-2.5 py-0.5 rounded-full bg-destructive/10 text-destructive text-xs font-medium border border-destructive/20">Opaque</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-destructive/10 text-destructive text-xs font-medium border border-destructive/20">Untraceable</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-destructive/10 text-destructive text-xs font-medium border border-destructive/20">Unreliable</span>
+              </div>
             </div>
           </div>
 
-          {/* Right side - Earth hands image */}
-          <div className="flex justify-center md:justify-start md:pl-10">
-            <img
-              src={heroEarthHands}
-              alt="CouponDonation - Nurturing the world"
-              style={{ imageRendering: '-webkit-optimize-contrast' } as React.CSSProperties}
-              className="w-72 h-72 sm:w-80 sm:h-80 md:w-[22rem] md:h-[22rem] lg:w-[28rem] lg:h-[28rem] object-contain drop-shadow-2xl"
-            />
+          {/* Center transition arrow */}
+          <div className="flex flex-col items-center gap-2 py-2">
+            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">We're changing this</span>
+            <ArrowRight className="hidden md:block w-8 h-8 text-primary animate-pulse" />
+            <ArrowDown className="md:hidden w-8 h-8 text-primary animate-pulse" />
           </div>
 
-          {/* Mobile connector badge */}
-          <div className="flex md:hidden justify-center -mt-2 -mb-2 order-2 col-span-1">
-            <div className="flex items-center gap-2 bg-background border border-border shadow-md px-4 py-2 rounded-full">
-              <Shield className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">
-                Transparent & Secure Donations
-              </span>
+          {/* Right side - The CouponDonation Way */}
+          <div className="flex flex-col items-center text-center">
+            <img
+              src={heroEarthHands}
+              alt="CouponDonation - Transparent and secure donations"
+              style={{ imageRendering: '-webkit-optimize-contrast' } as React.CSSProperties}
+              className="w-64 h-64 sm:w-72 sm:h-72 md:w-[20rem] md:h-[20rem] lg:w-[26rem] lg:h-[26rem] object-contain drop-shadow-2xl"
+            />
+            <div className="mt-4 space-y-2">
+              <p className="text-sm font-semibold text-primary">The CouponDonation Way</p>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">Transparent</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">Traceable</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">Secure</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Featured Story Card (preserved) */}
+        {/* Bottom tagline */}
+        <p className="text-center text-sm md:text-base text-muted-foreground font-medium mb-10 md:mb-14 max-w-xl mx-auto">
+          Every donation tracked. Every coupon verified. Every family fed.
+        </p>
+
+        {/* Featured Story Card */}
         {cmsLoading ? (
           <div className="max-w-2xl mx-auto">
             <Card className="overflow-hidden border-border/50 shadow-lg">
