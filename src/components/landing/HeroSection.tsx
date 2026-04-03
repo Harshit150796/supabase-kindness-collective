@@ -60,25 +60,6 @@ export function HeroSection() {
       {/* Subtle background */}
       <div className="absolute inset-0 bg-gradient-to-b from-secondary/50 via-background to-background" />
       
-      {/* Floating recipient photos */}
-      {recipientPhotos.map((photo, i) => (
-        <div 
-          key={i}
-          className={`absolute ${photo.position} hidden lg:block`}
-          style={{ animationDelay: `${i * 0.5}s` }}
-        >
-          <div className="relative">
-            <img 
-              src={photo.src}
-              alt=""
-              className="w-16 h-16 rounded-full object-cover border-4 border-background shadow-lg opacity-80 hover:opacity-100 hover:scale-110 transition-all duration-300"
-            />
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-primary-foreground text-xs">❤️</span>
-            </div>
-          </div>
-        </div>
-      ))}
 
       <div className="container mx-auto px-4 py-12 md:py-16 relative z-10">
         <div className="max-w-4xl mx-auto">
