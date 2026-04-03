@@ -71,8 +71,8 @@ export function HeroSection() {
             <img
               src={heroEarthHands}
               alt="CouponDonation - Transparent and secure donations"
-              style={{ imageRendering: '-webkit-optimize-contrast' } as React.CSSProperties}
-              className="w-64 h-64 sm:w-72 sm:h-72 md:w-[20rem] md:h-[20rem] lg:w-[26rem] lg:h-[26rem] object-contain drop-shadow-2xl"
+              style={{ filter: 'brightness(1.02) contrast(1.05)', imageRendering: '-webkit-optimize-contrast' } as React.CSSProperties}
+              className="w-64 h-64 sm:w-72 sm:h-72 md:w-[20rem] md:h-[20rem] lg:w-[26rem] lg:h-[26rem] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)]"
             />
             <div className="mt-4 space-y-2">
               <p className="text-sm font-semibold text-primary">The CouponDonation Way</p>
