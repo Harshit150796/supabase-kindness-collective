@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Users } from 'lucide-react';
+import { MapPin, Users, Shield } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentFeaturedStory } from '@/hooks/useFeaturedStories';
 import { useCMSStories } from '@/hooks/useCMSContent';
-import logo from '@/assets/logo.png';
+import heroEarthHeart from '@/assets/hero-earth-heart.png';
+import heroEarthHands from '@/assets/hero-earth-hands.png';
 
 export function HeroSection() {
   const { data: cmsStories, isLoading: cmsLoading } = useCMSStories(true);
@@ -34,18 +35,53 @@ export function HeroSection() {
   const progress = (story.amountRaised / story.goal) * 100;
 
   return (
-    <section className="relative flex flex-col items-center overflow-hidden bg-white">
-      <div className="container mx-auto px-4 pt-16 pb-12 md:pt-24 md:pb-16 relative z-10">
-        {/* Centered Logo */}
-        <div className="flex justify-center mb-12 md:mb-16">
-          <img
-            src={logo}
-            alt="CouponDonation"
-            className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain drop-shadow-lg"
-          />
+    <section className="relative min-h-[70vh] md:min-h-[80vh] flex flex-col items-center overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-secondary/30 via-background to-background" />
+
+      <div className="container mx-auto px-4 py-12 md:py-16 relative z-10">
+        {/* Split-screen image layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-0 items-center relative max-w-6xl mx-auto mb-10 md:mb-14">
+          {/* Left side - Earth heart image */}
+          <div className="flex justify-center md:justify-end md:pr-10">
+            <img
+              src={heroEarthHeart}
+              alt="CouponDonation - Giving with heart"
+              className="w-72 h-72 sm:w-80 sm:h-80 md:w-[22rem] md:h-[22rem] lg:w-[28rem] lg:h-[28rem] object-contain drop-shadow-2xl"
+            />
+          </div>
+
+          {/* Center connector badge */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 hidden md:flex">
+            <div className="flex items-center gap-2 bg-background border border-border shadow-lg px-5 py-2.5 rounded-full">
+              <Shield className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground whitespace-nowrap">
+                Transparent & Secure Donations
+              </span>
+            </div>
+          </div>
+
+          {/* Right side - Earth hands image */}
+          <div className="flex justify-center md:justify-start md:pl-10">
+            <img
+              src={heroEarthHands}
+              alt="CouponDonation - Nurturing the world"
+              style={{ imageRendering: '-webkit-optimize-contrast' } as React.CSSProperties}
+              className="w-72 h-72 sm:w-80 sm:h-80 md:w-[22rem] md:h-[22rem] lg:w-[28rem] lg:h-[28rem] object-contain drop-shadow-2xl"
+            />
+          </div>
+
+          {/* Mobile connector badge */}
+          <div className="flex md:hidden justify-center -mt-2 -mb-2 order-2 col-span-1">
+            <div className="flex items-center gap-2 bg-background border border-border shadow-md px-4 py-2 rounded-full">
+              <Shield className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">
+                Transparent & Secure Donations
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Featured Story Card */}
+        {/* Featured Story Card (preserved) */}
         {cmsLoading ? (
           <div className="max-w-2xl mx-auto">
             <Card className="overflow-hidden border-border/50 shadow-lg">
@@ -78,7 +114,7 @@ export function HeroSection() {
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-3 left-3">
-                    <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full bg-white/90 text-foreground text-xs font-medium">
+                    <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full bg-background/90 text-foreground text-xs font-medium">
                       Featured Story
                     </span>
                   </div>

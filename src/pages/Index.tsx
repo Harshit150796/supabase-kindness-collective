@@ -1,7 +1,6 @@
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { HeroSection } from '@/components/landing/HeroSection';
-import { VineBackground } from '@/components/landing/VineBackground';
 import { LiveActivityBar } from '@/components/landing/LiveActivityBar';
 import { ImpactStories } from '@/components/landing/ImpactStories';
 import { TrustTransparency } from '@/components/landing/TrustTransparency';
@@ -14,22 +13,37 @@ import { CTASection } from '@/components/landing/CTASection';
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="relative">
-        <VineBackground />
-        <div className="relative z-10">
-          <HeroSection />
-          <LiveActivityBar />
-          <ImpactStories />
-          <TrustTransparency />
-          <BrandLeaderboard />
-          <DonationFlow />
-          <SecurityBadges />
-          <TestimonialsSection />
-          <ImpactDashboard />
-          <CTASection />
-        </div>
+      <main>
+        {/* 1. Human-centered hero with featured story */}
+        <HeroSection />
+        
+        {/* 2. Live activity - creates urgency and social proof */}
+        <LiveActivityBar />
+        {/* 2. Real recipient stories - builds emotional connection */}
+        <ImpactStories />
+        
+        {/* 3. Transparency - where money goes + how it works flow */}
+        <TrustTransparency />
+        
+        {/* 4. Brand leaderboard - Top Donors → Live Leaderboard */}
+        <BrandLeaderboard />
+        
+        {/* 5. Donation flow - impact-focused, not rewards-focused */}
+        <DonationFlow />
+        
+        {/* 6. Security badges - trust reassurance before testimonials */}
+        <SecurityBadges />
+        
+        {/* 7. Community testimonials with photos */}
+        <TestimonialsSection />
+        
+        {/* 8. Overall impact statistics */}
+        <ImpactDashboard />
+        
+        {/* 9. Final call to action */}
+        <CTASection />
       </main>
       <Footer />
     </div>
