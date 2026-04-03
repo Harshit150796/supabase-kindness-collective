@@ -441,6 +441,65 @@
     box-shadow: 0 4px 15px -3px hsl(var(--primary) / 0.4);
   }
   
+  /* Vine grow animation - stroke drawing effect */
+  .vine-path {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+  }
+  
+  .vine-animate {
+    animation: vine-grow var(--vine-duration, 3.5s) ease-out forwards;
+  }
+  
+  @keyframes vine-grow {
+    from { stroke-dashoffset: 1000; }
+    to { stroke-dashoffset: 0; }
+  }
+  
+  /* Gentle sway for branches */
+  .sway-branch {
+    animation: vine-grow var(--vine-duration, 2.5s) ease-out forwards,
+               sway-gentle 6s ease-in-out 3.5s infinite;
+  }
+  
+  .sway-branch.vine-animate {
+    animation: vine-grow var(--vine-duration, 2.5s) ease-out forwards,
+               sway-gentle 6s ease-in-out 3.5s infinite;
+  }
+  
+  .sway-branch-slow {
+    animation: vine-grow var(--vine-duration, 2.8s) ease-out forwards,
+               sway-slow 10s ease-in-out 3.5s infinite;
+  }
+  
+  .sway-branch-slow.vine-animate {
+    animation: vine-grow var(--vine-duration, 2.8s) ease-out forwards,
+               sway-slow 10s ease-in-out 3.5s infinite;
+  }
+  
+  @keyframes sway-gentle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(2deg); }
+    75% { transform: rotate(-2deg); }
+  }
+  
+  @keyframes sway-slow {
+    0%, 100% { transform: rotate(0deg); }
+    33% { transform: rotate(3deg); }
+    66% { transform: rotate(-1.5deg); }
+  }
+  
+  /* Leaf fade-in */
+  .vine-leaf {
+    animation: vine-leaf-appear 1s ease-out forwards;
+    opacity: 0;
+  }
+  
+  @keyframes vine-leaf-appear {
+    from { opacity: 0; transform: scale(0); }
+    to { opacity: 0.15; transform: scale(1); }
+  }
+  
   /* Input focus ring animation */
   .input-focus-ring {
     transition: box-shadow 0.2s ease-out, border-color 0.2s ease-out;
