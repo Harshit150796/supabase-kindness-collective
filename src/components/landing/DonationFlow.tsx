@@ -87,6 +87,9 @@ export function DonationFlow() {
   const [selectedBrands, setSelectedBrands] = useState<BrandAllocation[]>([]);
   const [useCustomAllocation, setUseCustomAllocation] = useState(false);
   const [amount, setAmount] = useState(50);
+  const [customAmountText, setCustomAmountText] = useState('');
+  const [isCustomMode, setIsCustomMode] = useState(false);
+  const customInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState(1);
   const [showBrandModal, setShowBrandModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
