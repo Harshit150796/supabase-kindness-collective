@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { ArrowRight, Check, Heart, Gift, Users, Search, Loader2, ExternalLink, Globe, CreditCard, X } from 'lucide-react';
 import { brandList, popularBrands, brandLogos, BrandInfo } from '@/data/brandLogos';
 import { BrandSelectorModal } from './BrandSelectorModal';
