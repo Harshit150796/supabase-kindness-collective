@@ -560,14 +560,18 @@ export function DonationFlow() {
                 )}
               </div>
 
-              {/* Preset amounts */}
+              {/* Preset amounts + Custom */}
               <div className="flex flex-wrap justify-center gap-2">
                 {presetAmounts.map((preset) => (
                   <button
                     key={preset}
-                    onClick={() => setAmount(preset)}
+                    onClick={() => {
+                      setAmount(preset);
+                      setCustomAmountText('');
+                      setIsCustomMode(false);
+                    }}
                     className={`px-5 py-2.5 rounded-lg font-medium transition-all text-sm ${
-                      amount === preset 
+                      amount === preset && !isCustomMode
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted hover:bg-muted/80 text-foreground'
                     }`}
@@ -575,13 +579,70 @@ export function DonationFlow() {
                     ${preset}
                   </button>
                 ))}
+                <button
+                  onClick={() => {
+                    setIsCustomMode(true);
+                    setTimeout(() => customInputRef.current?.focus(), 50);
+                  }}
+                  className={`px-5 py-2.5 rounded-lg font-medium transition-all text-sm ${
+                    isCustomMode
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted hover:bg-muted/80 text-foreground'
+                  }`}
+                >
+                  Custom
+                </button>
               </div>
+
+              {/* Custom amount input */}
+              {isCustomMode && (
+                <div className="flex items-center gap-2 max-w-xs mx-auto">
+                  <span className="text-2xl font-bold text-foreground">$</span>
+                  <Input
+                    ref={customInputRef}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Enter amount..."
+                    value={customAmountText}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setCustomAmountText(val);
+                      const num = parseInt(val, 10);
+                      if (!isNaN(num) && num > 0) {
+                        setAmount(Math.min(num, 10000));
+                      }
+                    }}
+                    onBlur={() => {
+                      const num = parseInt(customAmountText, 10);
+                      if (isNaN(num) || num < 5) {
+                        toast({
+                          title: 'Minimum $5',
+                          description: 'The minimum donation amount is $5.',
+                          variant: 'destructive',
+                        });
+                        if (isNaN(num) || num < 5) {
+                          setAmount(5);
+                          setCustomAmountText('5');
+                        }
+                      } else if (num > 10000) {
+                        setAmount(10000);
+                        setCustomAmountText('10000');
+                      }
+                    }}
+                    className="text-xl font-semibold text-center"
+                  />
+                </div>
+              )}
 
               {/* Slider */}
               <div className="px-2">
                 <Slider
-                  value={[amount]}
-                  onValueChange={([v]) => setAmount(v)}
+                  value={[Math.min(amount, 500)]}
+                  onValueChange={([v]) => {
+                    setAmount(v);
+                    setCustomAmountText('');
+                    setIsCustomMode(false);
+                  }}
                   min={5}
                   max={500}
                   step={5}
