@@ -23,9 +23,3 @@ verify_jwt = false
 
 [functions.check-email-exists]
 verify_jwt = false
-
-[functions.send-newsletter]
-verify_jwt = false
-
-[functions.handle-newsletter-unsubscribe]
-verify_jwt = false

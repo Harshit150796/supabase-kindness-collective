@@ -10,30 +10,22 @@ import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
 import { BrandLeaderboard } from '@/components/landing/BrandLeaderboard';
 import { ImpactDashboard } from '@/components/landing/ImpactDashboard';
 import { CTASection } from '@/components/landing/CTASection';
-import { AnimatedBranchesLeft } from '@/components/landing/AnimatedBranchesLeft';
-import { AnimatedBranchesRight } from '@/components/landing/AnimatedBranchesRight';
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <main>
-        {/* Wrapper for hero → trust section with animated branches overlay */}
-        <div className="relative">
-          <AnimatedBranchesLeft />
-          <AnimatedBranchesRight />
-          
-          {/* 1. Human-centered hero with featured story */}
-          <HeroSection />
-          
-          {/* 2. Live activity - creates urgency and social proof */}
-          <LiveActivityBar />
-          {/* 2. Real recipient stories - builds emotional connection */}
-          <ImpactStories />
-          
-          {/* 3. Transparency - where money goes + how it works flow */}
-          <TrustTransparency />
-        </div>
+        {/* 1. Human-centered hero with featured story */}
+        <HeroSection />
+        
+        {/* 2. Live activity - creates urgency and social proof */}
+        <LiveActivityBar />
+        {/* 2. Real recipient stories - builds emotional connection */}
+        <ImpactStories />
+        
+        {/* 3. Transparency - where money goes + how it works flow */}
+        <TrustTransparency />
         
         {/* 4. Brand leaderboard - Top Donors → Live Leaderboard */}
         <BrandLeaderboard />

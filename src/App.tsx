@@ -57,11 +57,8 @@ import AdminStories from "./pages/admin/AdminStories";
 import AdminTestimonials from "./pages/admin/AdminTestimonials";
 import AdminBlog from "./pages/admin/AdminBlog";
 import AdminFAQ from "./pages/admin/AdminFAQ";
-import AdminFundraisers from "./pages/admin/AdminFundraisers";
-import AdminNewsletters from "./pages/admin/AdminNewsletters";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
-import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
 
@@ -129,13 +126,10 @@ const AppRoutes = () => (
     <Route path="/admin/testimonials" element={<ProtectedRoute allowedRoles={['admin']}><AdminTestimonials /></ProtectedRoute>} />
     <Route path="/admin/blog" element={<ProtectedRoute allowedRoles={['admin']}><AdminBlog /></ProtectedRoute>} />
     <Route path="/admin/faq" element={<ProtectedRoute allowedRoles={['admin']}><AdminFAQ /></ProtectedRoute>} />
-    <Route path="/admin/fundraisers" element={<ProtectedRoute allowedRoles={['admin']}><AdminFundraisers /></ProtectedRoute>} />
-    <Route path="/admin/newsletters" element={<ProtectedRoute allowedRoles={['admin']}><AdminNewsletters /></ProtectedRoute>} />
     
     {/* Blog Routes */}
     <Route path="/blog" element={<Blog />} />
     <Route path="/blog/:slug" element={<BlogPost />} />
-    <Route path="/unsubscribe" element={<Unsubscribe />} />
     
     <Route path="*" element={<NotFound />} />
   </Routes>

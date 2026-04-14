@@ -48,15 +48,15 @@ export function Footer() {
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
-                <span>connect@coupondonation.com</span>
+                <span>hello@coupondonation.com</span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                <span>+1 (315) 898-6745</span>
+                <span>+1 (555) 123-4567</span>
               </li>
               <li className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                <span>United States</span>
+                <span>New York, NY | Los Angeles, CA</span>
               </li>
             </ul>
           </div>
