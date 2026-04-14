@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Users, ArrowRight, ArrowDown } from 'lucide-react';
+import { MapPin, Users } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentFeaturedStory } from '@/hooks/useFeaturedStories';
 import { useCMSStories } from '@/hooks/useCMSContent';
+import { CentralTree } from '@/components/landing/CentralTree';
 import heroEarthHeart from '@/assets/hero-earth-heart.png';
 import heroEarthHands from '@/assets/hero-earth-hands.png';
 
@@ -59,12 +60,8 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Center transition arrow */}
-          <div className="flex flex-col items-center gap-2 py-2">
-            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">We're changing this</span>
-            <ArrowRight className="hidden md:block w-8 h-8 text-primary animate-pulse" />
-            <ArrowDown className="md:hidden w-8 h-8 text-primary animate-pulse" />
-          </div>
+          {/* Central Tree of Life */}
+          <CentralTree />
 
           {/* Right side - The CouponDonation Way */}
           <div className="flex flex-col items-center text-center">

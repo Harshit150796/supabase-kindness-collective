@@ -11,6 +11,7 @@ import { BrandLeaderboard } from '@/components/landing/BrandLeaderboard';
 import { ImpactDashboard } from '@/components/landing/ImpactDashboard';
 import { CTASection } from '@/components/landing/CTASection';
 import { AnimatedBranchesLeft } from '@/components/landing/AnimatedBranchesLeft';
+import { AnimatedBranchesRight } from '@/components/landing/AnimatedBranchesRight';
 
 const Index = () => {
   return (
@@ -20,6 +21,7 @@ const Index = () => {
         {/* Wrapper for hero → trust section with animated branches overlay */}
         <div className="relative">
           <AnimatedBranchesLeft />
+          <AnimatedBranchesRight />
           
           {/* 1. Human-centered hero with featured story */}
           <HeroSection />
