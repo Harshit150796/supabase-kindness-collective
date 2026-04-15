@@ -14,28 +14,23 @@ interface BrandAllocation {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { amount, brandName, brandId, brandAllocations, userId, userEmail } = await req.json();
-    
-    // Determine trust level for Radar
-    const isAuthenticated = !!userId;
-    const isVerifiedDonor = !!(userEmail && userId); // Has account with verified email
-    
+
     // Process brand allocations (multi-brand support)
     const allocations: BrandAllocation[] = brandAllocations && Array.isArray(brandAllocations) && brandAllocations.length > 0
       ? brandAllocations
       : brandName 
         ? [{ brand: brandName, brandId: brandId || '', percent: 100, amount }]
         : [];
-    
+
     const brandNames = allocations.map(a => a.brand).join(', ');
     const isMultiBrand = allocations.length > 1;
-    
+
     console.log("Creating donation checkout session:", { 
       amount, 
       brandCount: allocations.length,
@@ -43,67 +38,46 @@ serve(async (req) => {
       isMultiBrand,
       userId: userId || 'anonymous', 
       userEmail: userEmail || 'guest',
-      isAuthenticated,
-      isVerifiedDonor
     });
 
     // Validate amount
-    if (!amount || amount < 5 || amount > 500) {
-      throw new Error("Invalid donation amount. Must be between $5 and $500.");
+    if (!amount || amount < 5 || amount > 10000) {
+      throw new Error("Invalid donation amount. Must be between $5 and $10,000.");
     }
 
     // Initialize Stripe
     const rawStripeKey = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
-    const stripeKey = rawStripeKey
-      .trim()
-      // Guard against users pasting quoted values like "sk_live_..."
-      .replace(/^['"]|['"]$/g, "");
+    const stripeKey = rawStripeKey.trim().replace(/^['"]|['"]$/g, "");
 
     if (!stripeKey) {
-      throw new Error(
-        "Missing STRIPE_SECRET_KEY. Add it in Supabase → Project Settings → Functions → Secrets."
-      );
+      throw new Error("Missing STRIPE_SECRET_KEY. Add it in Supabase → Project Settings → Functions → Secrets.");
     }
-
-    // Common mistake: copying a masked key from an error message (contains ***).
     if (stripeKey.includes("*")) {
-      throw new Error(
-        "STRIPE_SECRET_KEY looks masked (contains '*'). Paste the full secret key from Stripe (starts with sk_...)."
-      );
+      throw new Error("STRIPE_SECRET_KEY looks masked (contains '*'). Paste the full secret key from Stripe.");
     }
-
     if (!stripeKey.startsWith("sk_")) {
-      throw new Error(
-        "Invalid STRIPE_SECRET_KEY: must be a Stripe Secret Key (starts with 'sk_'), not a publishable key (pk_...)."
-      );
+      throw new Error("Invalid STRIPE_SECRET_KEY: must start with 'sk_'.");
     }
 
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Calculate impact for metadata
     const mealsProvided = amount * 2;
-    
-    // Extract fraud prevention data from request headers
-    const userAgent = req.headers.get("user-agent") || "unknown";
-    const ipAddress = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() 
-      || req.headers.get("cf-connecting-ip") 
-      || req.headers.get("x-real-ip") 
-      || "unknown";
-    
-    console.log("Creating checkout with fraud metadata:", { userAgent: userAgent.substring(0, 50), ipAddress });
 
-    // Build product description based on brand selection
+    // Build product description
     const productDescription = isMultiBrand
       ? `Your $${amount} USD donation is split across ${allocations.length} brands: ${brandNames}. Each brand will provide coupons for families in need.`
-      : `Your $${amount} USD donation provides ${mealsProvided} meals for families in need${brandName ? ` via ${brandName}` : ""}. International cards accepted - your bank handles currency conversion.`;
+      : `Your $${amount} USD donation provides ${mealsProvided} meals for families in need${brandName ? ` via ${brandName}` : ""}. International cards accepted.`;
 
-    // Create Checkout session with full payment hardening
+    // Generate idempotency key to prevent duplicate charges
+    const idempotencyKey = `checkout_${userId || 'anon'}_${amount}_${Date.now()}`;
+
+    // Create Checkout session with optimized settings for higher approval rates
     const session = await stripe.checkout.sessions.create({
       locale: "en",
       
-      // CRITICAL: Full billing address for AVS checks (prevents US bank declines)
+      // Full billing address for AVS checks
       billing_address_collection: 'required',
       
       // Phone collection improves bank trust score
@@ -111,17 +85,14 @@ serve(async (req) => {
         enabled: true,
       },
       
-      // Let Stripe dynamically show all enabled payment methods
-      // (Card, Apple Pay, Google Pay, Amazon Pay, Link, ACH - based on dashboard settings)
-      
-      // 3D Secure configuration for international cards (SCA compliance)
+      // 3D Secure: 'automatic' lets Stripe decide when it's needed
       payment_method_options: {
         card: {
           request_three_d_secure: 'automatic',
         },
       },
       
-      // Prefill email for logged-in users (reduces friction)
+      // Prefill email for logged-in users
       ...(userEmail && { customer_email: userEmail }),
       
       line_items: [
@@ -143,15 +114,13 @@ serve(async (req) => {
       success_url: `${req.headers.get("origin")}/donation-success?session_id={CHECKOUT_SESSION_ID}&amount=${amount}&meals=${mealsProvided}`,
       cancel_url: `${req.headers.get("origin")}/donation-cancelled`,
       
-      // Session metadata for our records
+      // Session metadata
       metadata: {
         type: "donation",
         amount: amount.toString(),
         meals_provided: mealsProvided.toString(),
-        // Legacy single brand fields (for backward compatibility)
         brand_name: allocations[0]?.brand || "",
         brand_id: allocations[0]?.brandId || "",
-        // NEW: Multi-brand allocations as JSON
         brand_allocations: JSON.stringify(allocations),
         is_multi_brand: isMultiBrand.toString(),
         brand_count: allocations.length.toString(),
@@ -159,32 +128,22 @@ serve(async (req) => {
         donor_email: userEmail || "",
       },
       
-      // Payment intent configuration for better tracking and fraud prevention
+      // Simplified payment_intent metadata — removed redundant fields
+      // Stripe automatically captures IP, user-agent, and device info via Checkout
       payment_intent_data: {
-        // Clear statement descriptor so donors recognize the charge (max 22 chars)
         statement_descriptor: 'COUPONDONATION',
-        statement_descriptor_suffix: 'DONATE',
         metadata: {
           type: "donation",
           amount: amount.toString(),
           meals_provided: mealsProvided.toString(),
-          // Legacy single brand field
           brand_name: allocations[0]?.brand || "",
-          // NEW: Multi-brand allocations
           brand_allocations: JSON.stringify(allocations),
           is_multi_brand: isMultiBrand.toString(),
-          // Trust signals for Stripe Radar - reduces false positives for known users
-          is_authenticated: isAuthenticated.toString(),
-          is_verified_donor: isVerifiedDonor.toString(),
           donor_account_id: userId || "guest",
-          // Amount-based trust signals for Radar rules
-          amount_tier: amount < 100 ? 'small' : amount < 500 ? 'medium' : 'large',
-          under_2000: 'true', // Explicit flag for Radar allow rule
-          // Fraud prevention: attach client info for Stripe Radar
-          user_agent: userAgent.substring(0, 500), // Stripe has metadata value limits
-          ip_address: ipAddress,
         },
       },
+    }, {
+      idempotencyKey,
     });
 
     console.log("Checkout session created:", session.id, "URL:", session.url, "Brands:", allocations.length);

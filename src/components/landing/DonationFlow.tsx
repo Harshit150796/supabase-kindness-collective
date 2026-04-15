@@ -265,6 +265,15 @@ export function DonationFlow() {
             description: 'Complete your donation in the new tab. If you don\'t see it, check for blocked popups.',
           });
           setIsProcessing(false);
+          
+          // Show helper after a delay in case payment fails
+          setTimeout(() => {
+            toast({
+              title: 'Payment didn\'t go through?',
+              description: 'If your card was declined, try a different card or contact your bank to approve the transaction.',
+              duration: 15000,
+            });
+          }, 30000);
         }
       } else {
         throw new Error('No checkout URL received from server');
