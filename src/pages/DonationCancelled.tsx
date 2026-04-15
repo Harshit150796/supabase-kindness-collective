@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { XCircle, ArrowLeft, Heart } from 'lucide-react';
+import { XCircle, ArrowLeft, Heart, CreditCard, Phone, RefreshCw } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 
@@ -20,19 +20,37 @@ export default function DonationCancelled() {
           {/* Message */}
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-              Donation Cancelled
+              Payment Not Completed
             </h1>
             <p className="text-muted-foreground">
-              No worries! Your payment was not processed and you haven't been charged.
+              Your payment was not processed and you haven't been charged. This can happen for several reasons.
             </p>
           </div>
 
+          {/* Common reasons & tips */}
+          <div className="bg-secondary/50 rounded-xl p-5 text-left space-y-3">
+            <p className="text-sm font-semibold text-foreground">Common reasons & what to try:</p>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li className="flex items-start gap-2">
+                <CreditCard className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
+                <span><strong>Card declined by your bank</strong> — Your bank may have flagged the transaction. Try a different card or contact your bank to approve it.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <RefreshCw className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
+                <span><strong>Too many recent attempts</strong> — Some banks limit how often you can transact online. Wait a few minutes and try again.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Phone className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
+                <span><strong>3D Secure verification failed</strong> — If your bank requires a verification code, make sure to complete it in the popup.</span>
+              </li>
+            </ul>
+          </div>
+
           {/* Encouragement */}
-          <div className="bg-secondary/50 rounded-xl p-6">
-            <Heart className="w-8 h-8 text-primary mx-auto mb-3" />
-            <p className="text-sm text-foreground">
-              Every donation makes a difference. When you're ready, we'd love to have you join 
-              our community of 50,000+ donors helping families in need.
+          <div className="bg-primary/5 rounded-xl p-4 flex items-center gap-3">
+            <Heart className="w-6 h-6 text-primary shrink-0" />
+            <p className="text-sm text-foreground text-left">
+              Every donation makes a difference. When you're ready, we'd love to have you join our community of donors helping families in need.
             </p>
           </div>
 
