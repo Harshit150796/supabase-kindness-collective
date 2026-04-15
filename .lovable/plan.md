@@ -1,84 +1,55 @@
 
 
-## Central Tree of Life -- Animated Visual Centerpiece
+## Improve Stripe Payment Success Rate & Error Handling
 
-### Inspiration from the reference image
+### Root Cause Analysis
 
-The reference shows a large, living tree at the center of the website where the two halves (old/broken and new/growth) merge. The tree acts as a unifying visual element with intertwining vines, stems, leaves, flowers, and organic textures wrapping around the entire hero and content area. It tells the story of transformation -- decay on the left becoming life on the right.
+The decline is **not a code bug** -- all 12+ recorded donations succeeded. The $50 decline happened at the **card issuer / Stripe Radar level** before your webhook ever fires. Your checkout session was created successfully, but the card was declined during payment.
 
-### What we'll build
+Common causes for same-card declines:
+- **Card issuer velocity limits** (too many online transactions in a short window)
+- **Stripe Radar false positive** (metadata like `amount_tier`, trust signals may trigger rules)
+- **3D Secure issuer-side rejection**
 
-A **central animated SVG tree** that sits between and connects the two hero images, with its root system and branches extending outward across the page. The left side of the tree shows brown/decaying branches (connecting to the existing `AnimatedBranchesLeft`), while the right side shows green, lively growth with leaves and small flowers.
+### What we can improve (code-side)
 
-### Architecture
+**1. Reduce Radar friction -- simplify payment_intent metadata**
 
-**New component: `src/components/landing/CentralTree.tsx`**
+The current checkout passes heavy metadata (`user_agent`, `ip_address`, `amount_tier`, `under_2000`) that Radar doesn't need from metadata -- Stripe collects IP and user-agent automatically from the Checkout session. Removing redundant/custom metadata reduces the chance of Radar misinterpreting signals.
 
-A large SVG overlay positioned at the center of the hero section that renders:
+**2. Add `request_three_d_secure: 'any'` option for retries**
 
-1. **Central trunk** -- A thick, textured trunk rising from the bottom-center between the two hero images, using the dual-stroke bark technique. It splits into a Y-shape, with left branches going brown/dead and right branches going green/alive.
+When a payment fails, offering a retry with forced 3D Secure can help -- authenticated payments have higher approval rates with card issuers.
 
-2. **Left side (decay)** -- Brown/dead branches extending toward the left hero image, visually merging with the existing `AnimatedBranchesLeft` system. Dry, leafless twigs with knots and bark texture. Colors: `#4A2C0A`, `#6B4423`, `#8B6914`.
+**3. Better decline error messaging**
 
-3. **Right side (growth)** -- Green, lively branches extending toward the right hero image with:
-   - Emerald stems (`#059669`, `#10B981`, `#34D399`)
-   - Small animated leaf shapes that "unfurl" with a scale+rotate animation
-   - Tiny flower/blossom accents in gold (`#D4A017`) at branch tips
-   - Subtle vine tendrils curling at endpoints
+Currently if Stripe Checkout declines the card, the user gets a generic Stripe error page. We should improve the cancel/failure URL to show helpful guidance (e.g., "Try a different card", "Contact your bank").
 
-4. **Intertwining vines** -- Two main vines (one brown, one green) that spiral around the central trunk like a DNA helix, representing the transition from old to new.
+**4. Add idempotency key to prevent duplicate charges**
 
-5. **Root system** -- Visible roots at the base spreading left (brown/dry) and right (green/alive), grounding the tree visually.
+Generate a unique key per checkout attempt so if a user double-clicks or retries, Stripe deduplicates.
 
-### Animations
+**5. Update the `create-donation-checkout` edge function:**
+- Remove redundant `user_agent` and `ip_address` from `payment_intent_data.metadata` (Stripe captures these automatically)
+- Remove `under_2000` and `amount_tier` fields (these only matter if you have custom Radar rules configured in the Stripe dashboard)
+- Add an `idempotency_key` parameter to `stripe.checkout.sessions.create()`
+- Simplify `statement_descriptor` to just one field (suffix is sometimes ignored)
 
-All CSS-based for performance:
+**6. Update `DonationCancelled.tsx` page:**
+- Add specific guidance for declined cards: "Your card may have been declined by your bank"
+- Suggest trying a different card or payment method
+- Add a "Try with a different card" button that links back to the donate flow
 
-- **`tree-grow`** -- Trunk grows upward from base using stroke-dashoffset (2s)
-- **`branch-spread`** -- Branches extend outward with staggered delays (1-3s after trunk)
-- **`leaf-unfurl`** -- Leaves scale from 0 + rotate from -90deg to 0 (0.5s each, staggered)
-- **`flower-bloom`** -- Small gold circles at tips scale in with a gentle bounce (0.6s)
-- **`vine-spiral`** -- Intertwining vines draw along their paths (3-4s)
-- **`breathe`** -- Subtle scale oscillation (1.00-1.02) on the green side, suggesting life
-- Existing `sway-gentle` and `sway-slow` reused for branch movement
-
-### Layout integration
-
-- Replace the simple arrow between hero images with this central tree
-- The tree sits in the `md:grid-cols-[1fr_auto_1fr]` center column, replacing the current arrow div
-- On mobile (stacked layout), the tree renders as a vertical trunk between the two images with a downward arrow incorporated into the design
-- The tree extends slightly beyond its column using `overflow-visible` to create visual overlap with both hero images
-
-### SVG structure (simplified)
-
-```text
-              [Leaf] [Leaf]        [Leaf]
-         [Flower]  \   |   / [Flower]
-    Brown branches   \ | /   Green branches  
-         ----         \|/         ----
-              \    TRUNK    /
-               \    ||    /
-         Brown  \   ||   /  Green
-         vine ~~~\  ||  /~~~ vine
-                  \ || /
-                   \||/
-              ====ROOTS====
-        dry roots ← → green roots
-```
-
-### Performance
-
-- Pure SVG + CSS animations, no JS loops
-- `pointer-events: none` on overlay
-- `will-change: transform` on animated elements
-- IntersectionObserver triggers growth only when visible
-- Total SVG: ~50 paths, lightweight
+**7. Update `DonationFlow.tsx`:**
+- After checkout opens, if the user returns to the tab, show a "Payment didn't go through?" helper with tips
 
 ### Files changed
+- `supabase/functions/create-donation-checkout/index.ts` -- Clean up metadata, add idempotency
+- `src/pages/DonationCancelled.tsx` -- Better decline guidance and retry options
+- `src/components/landing/DonationFlow.tsx` -- Post-checkout helper messaging
 
-- **`src/components/landing/CentralTree.tsx`** -- New component: the full animated tree SVG
-- **`src/components/landing/AnimatedBranchesRight.tsx`** -- New component: green branches/vines cascading from right hero image down the right side of the page (mirrors AnimatedBranchesLeft but with emerald/green palette and live leaves)
-- **`src/components/landing/HeroSection.tsx`** -- Replace center arrow div with `CentralTree` component; adjust grid layout to give center column more space
-- **`src/pages/Index.tsx`** -- Add `AnimatedBranchesRight` to the relative wrapper alongside `AnimatedBranchesLeft`
-- **`src/index.css`** -- Add new keyframes: `leaf-unfurl`, `flower-bloom`, `vine-spiral`, `breathe`
+### Stripe Dashboard recommendations (manual, not code)
+- Check **Stripe Dashboard > Payments > Declined** to see the exact decline reason (e.g., `card_declined`, `insufficient_funds`, `do_not_honor`)
+- Review **Stripe Radar rules** -- ensure no overly aggressive block rules exist
+- Consider enabling **Adaptive Acceptance** in Stripe settings (auto-retries soft declines)
 
