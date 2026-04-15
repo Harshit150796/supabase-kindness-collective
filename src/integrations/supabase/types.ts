@@ -500,6 +500,84 @@ export type Database = {
           },
         ]
       }
+      email_campaigns: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          html_content: string
+          id: string
+          preview_text: string | null
+          sender_email: string
+          sent_at: string | null
+          sent_count: number
+          status: string
+          subject: string
+          total_recipients: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          html_content?: string
+          id?: string
+          preview_text?: string | null
+          sender_email?: string
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          subject: string
+          total_recipients?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          html_content?: string
+          id?: string
+          preview_text?: string | null
+          sender_email?: string
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          subject?: string
+          total_recipients?: number
+        }
+        Relationships: []
+      }
+      email_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          source: string
+          subscribed: boolean
+          subscribed_at: string
+          unsubscribe_token: string
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name?: string | null
+          source?: string
+          subscribed?: boolean
+          subscribed_at?: string
+          unsubscribe_token?: string
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          source?: string
+          subscribed?: boolean
+          subscribed_at?: string
+          unsubscribe_token?: string
+          unsubscribed_at?: string | null
+        }
+        Relationships: []
+      }
       featured_stories: {
         Row: {
           amount_raised: number

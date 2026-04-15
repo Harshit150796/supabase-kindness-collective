@@ -1,51 +1,19 @@
-import { Button } from '@/components/ui/button';
-import { useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, Play, MapPin, Users, UserPlus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { MapPin, Users } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentFeaturedStory } from '@/hooks/useFeaturedStories';
 import { useCMSStories } from '@/hooks/useCMSContent';
-
-// Circular photos of recipients around the hero
-const recipientPhotos = [
-  { src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&h=80&fit=crop&crop=face', position: 'top-20 left-[8%]' },
-  { src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face', position: 'top-32 right-[12%]' },
-  { src: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face', position: 'bottom-40 left-[5%]' },
-  { src: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face', position: 'top-48 left-[18%]' },
-  { src: 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=80&h=80&fit=crop&crop=face', position: 'bottom-32 right-[8%]' },
-  { src: 'https://images.unsplash.com/photo-1596464716127-f2a82984de30?w=80&h=80&fit=crop&crop=face', position: 'top-24 right-[22%]' },
-];
-
-function AnimatedCounter({ end, duration = 2000 }: { end: number; duration?: number }) {
-  const [count, setCount] = useState(0);
-  
-  useEffect(() => {
-    let startTime: number;
-    const animate = (currentTime: number) => {
-      if (!startTime) startTime = currentTime;
-      const progress = Math.min((currentTime - startTime) / duration, 1);
-      setCount(Math.floor(progress * end));
-      if (progress < 1) requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-  }, [end, duration]);
-  
-  return <span>{count.toLocaleString()}</span>;
-}
+import { CentralTree } from '@/components/landing/CentralTree';
+import heroEarthHeart from '@/assets/hero-earth-heart.png';
+import heroEarthHands from '@/assets/hero-earth-hands.png';
 
 export function HeroSection() {
-  const navigate = useNavigate();
-  const { data: cmsStories } = useCMSStories(true);
-
+  const { data: cmsStories, isLoading: cmsLoading } = useCMSStories(true);
   const { story: rotatingStory } = useCurrentFeaturedStory();
 
-  // Weekly rotation: pick CMS story based on week number
-  const cmsWeekIndex = cmsStories && cmsStories.length > 0
-    ? Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % cmsStories.length
-    : 0;
-
-  const activeCMS = cmsStories && cmsStories.length > 0 ? cmsStories[cmsWeekIndex] : null;
+  const activeCMS = cmsStories && cmsStories.length > 0 ? cmsStories[0] : null;
 
   const story = activeCMS
     ? {
@@ -68,95 +36,85 @@ export function HeroSection() {
   const progress = (story.amountRaised / story.goal) * 100;
 
   return (
-    <section className="relative min-h-[85vh] md:min-h-[90vh] flex items-center overflow-hidden">
-      {/* Subtle background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-secondary/50 via-background to-background" />
-      
-      {/* Floating recipient photos */}
-      {recipientPhotos.map((photo, i) => (
-        <div 
-          key={i}
-          className={`absolute ${photo.position} hidden lg:block`}
-          style={{ animationDelay: `${i * 0.5}s` }}
-        >
-          <div className="relative">
-            <img 
-              src={photo.src}
-              alt=""
-              className="w-16 h-16 rounded-full object-cover border-4 border-background shadow-lg opacity-80 hover:opacity-100 hover:scale-110 transition-all duration-300"
+    <section className="relative min-h-[70vh] md:min-h-[80vh] flex flex-col items-center overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-secondary/30 via-background to-background" />
+
+      <div className="container mx-auto px-4 py-12 md:py-16 relative z-10">
+        {/* Split-screen narrative layout */}
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 md:gap-4 items-center max-w-6xl mx-auto mb-8 md:mb-14">
+          {/* Left side - The Old Way */}
+          <div className="flex flex-col items-center text-center">
+            <img
+              src={heroEarthHeart}
+              alt="The old way of donations - broken and opaque"
+              style={{ filter: 'brightness(1.02) contrast(1.05)' } as React.CSSProperties}
+              className="w-64 h-64 sm:w-72 sm:h-72 md:w-[20rem] md:h-[20rem] lg:w-[26rem] lg:h-[26rem] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)]"
             />
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-primary-foreground text-xs">❤️</span>
+            <div className="mt-4 space-y-2">
+              <p className="text-sm font-semibold text-destructive">The Old Way</p>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                <span className="px-2.5 py-0.5 rounded-full bg-destructive/10 text-destructive text-xs font-medium border border-destructive/20">Opaque</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-destructive/10 text-destructive text-xs font-medium border border-destructive/20">Untraceable</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-destructive/10 text-destructive text-xs font-medium border border-destructive/20">Unreliable</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Central Tree of Life */}
+          <CentralTree />
+
+          {/* Right side - The CouponDonation Way */}
+          <div className="flex flex-col items-center text-center">
+            <img
+              src={heroEarthHands}
+              alt="CouponDonation - Transparent and secure donations"
+              style={{ filter: 'brightness(1.02) contrast(1.05)', imageRendering: '-webkit-optimize-contrast' } as React.CSSProperties}
+              className="w-64 h-64 sm:w-72 sm:h-72 md:w-[20rem] md:h-[20rem] lg:w-[26rem] lg:h-[26rem] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)]"
+            />
+            <div className="mt-4 space-y-2">
+              <p className="text-sm font-semibold text-primary">The CouponDonation Way</p>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">Transparent</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">Traceable</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">Secure</span>
+              </div>
             </div>
           </div>
         </div>
-      ))}
 
-      <div className="container mx-auto px-4 py-12 md:py-16 relative z-10">
-        <div className="max-w-4xl mx-auto">
-          {/* Main Content */}
-          <div className="text-center mb-8 md:mb-10">
-            {/* Trust badge */}
-            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-3 md:px-4 py-1.5 md:py-2 rounded-full mb-4 md:mb-6">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-              </span>
-              <span className="text-xs md:text-sm font-medium text-primary">Trusted by 50,000+ donors worldwide</span>
-            </div>
+        {/* Bottom tagline */}
+        <p className="text-center text-sm md:text-base text-muted-foreground font-medium mb-10 md:mb-14 max-w-xl mx-auto">
+          Every donation tracked. Every coupon verified. Every family fed.
+        </p>
 
-            {/* Headline - Specific & Impact-focused */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 md:mb-6 text-foreground">
-              <AnimatedCounter end={15000} /> families fed this month.
-              <br />
-              <span className="text-primary">Help us reach 20,000.</span>
-            </h1>
-
-            {/* Subheadline */}
-            <p className="text-base md:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 md:mb-8 px-2">
-              Your donation becomes real grocery coupons for families in need. 
-              100% transparent. 95% goes directly to recipients.
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center mb-4 px-4 sm:px-0">
-              <Button 
-                size="lg" 
-                className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 gap-2 w-full sm:w-auto"
-                onClick={() => navigate('/donate')}
-              >
-                Start Donating
-                <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
-              </Button>
-              <Button 
-                size="lg" 
-                className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto"
-                onClick={() => navigate('/apply')}
-              >
-                <UserPlus className="w-4 h-4 md:w-5 md:h-5" />
-                Apply as Recipient
-              </Button>
-            </div>
-            
-            {/* Secondary CTA */}
-            <div className="flex justify-center">
-              <Button 
-                variant="ghost"
-                className="gap-2 text-muted-foreground hover:text-foreground text-sm md:text-base"
-                onClick={() => navigate('/how-it-works')}
-              >
-                <Play className="w-4 h-4" />
-                See how it works
-              </Button>
-            </div>
+        {/* Featured Story Card */}
+        {cmsLoading ? (
+          <div className="max-w-2xl mx-auto">
+            <Card className="overflow-hidden border-border/50 shadow-lg">
+              <div className="flex flex-col sm:flex-row">
+                <Skeleton className="h-40 sm:h-48 sm:w-48 flex-shrink-0" />
+                <div className="flex-1 p-4 md:p-5 space-y-3">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <div className="space-y-2 pt-2">
+                    <Skeleton className="h-2 w-full" />
+                    <div className="flex justify-between">
+                      <Skeleton className="h-3 w-20" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </div>
-
-          {/* Featured Story Card */}
-          <Link to={storyLink} className="block max-w-2xl mx-auto mt-8 md:mt-12">
+        ) : (
+          <Link to={storyLink} className="block max-w-2xl mx-auto">
             <Card className="overflow-hidden border-border/50 shadow-lg cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all">
               <div className="flex flex-col sm:flex-row">
-                <div className="h-40 sm:h-48 sm:w-48 sm:h-auto relative overflow-hidden flex-shrink-0">
-                  <img 
+                <div className="h-40 sm:h-48 sm:w-48 relative overflow-hidden flex-shrink-0">
+                  <img
                     src={story.image}
                     alt={story.name}
                     className="w-full h-full object-cover"
@@ -167,22 +125,21 @@ export function HeroSection() {
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="flex-1 p-4 md:p-5">
                   <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm mb-1.5 md:mb-2">
                     <MapPin className="w-3 h-3 md:w-3.5 md:h-3.5" />
                     <span>{story.location}</span>
                   </div>
-                  
+
                   <h3 className="text-base md:text-lg font-semibold text-foreground mb-1.5 md:mb-2">
                     {story.headline}
                   </h3>
-                  
+
                   <p className="text-muted-foreground text-xs md:text-sm mb-3 md:mb-4 line-clamp-2">
                     "{story.story}"
                   </p>
-                  
-                  {/* Progress */}
+
                   <div className="space-y-1.5 md:space-y-2">
                     <Progress value={progress} className="h-1.5 md:h-2" />
                     <div className="flex justify-between text-xs">
@@ -199,7 +156,7 @@ export function HeroSection() {
               </div>
             </Card>
           </Link>
-        </div>
+        )}
       </div>
     </section>
   );
