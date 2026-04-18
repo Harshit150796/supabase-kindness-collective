@@ -1,190 +1,373 @@
 import * as THREE from 'three';
 
-// ---- Realistic maple/oak-style leaf texture ----
-let leafTextureCache: THREE.CanvasTexture | null = null;
-export function getLeafTexture(): THREE.CanvasTexture {
-  if (leafTextureCache) return leafTextureCache;
+// ---------- Helper: build normal map from grayscale canvas ----------
+function canvasToNormalMap(src: HTMLCanvasElement, strength = 2.0): THREE.CanvasTexture {
+  const W = src.width;
+  const H = src.height;
+  const sctx = src.getContext('2d')!;
+  const data = sctx.getImageData(0, 0, W, H).data;
+  const lum = new Float32Array(W * H);
+  for (let i = 0; i < W * H; i++) {
+    const r = data[i * 4];
+    const g = data[i * 4 + 1];
+    const b = data[i * 4 + 2];
+    lum[i] = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  }
+  const out = document.createElement('canvas');
+  out.width = W;
+  out.height = H;
+  const octx = out.getContext('2d')!;
+  const img = octx.createImageData(W, H);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const xl = lum[y * W + ((x - 1 + W) % W)];
+      const xr = lum[y * W + ((x + 1) % W)];
+      const yt = lum[((y - 1 + H) % H) * W + x];
+      const yb = lum[((y + 1) % H) * W + x];
+      const dx = (xr - xl) * strength;
+      const dy = (yb - yt) * strength;
+      const nz = 1.0;
+      const len = Math.sqrt(dx * dx + dy * dy + nz * nz) || 1;
+      const nx = dx / len;
+      const ny = dy / len;
+      const nzn = nz / len;
+      const i = (y * W + x) * 4;
+      img.data[i] = (nx * 0.5 + 0.5) * 255;
+      img.data[i + 1] = (ny * 0.5 + 0.5) * 255;
+      img.data[i + 2] = (nzn * 0.5 + 0.5) * 255;
+      img.data[i + 3] = 255;
+    }
+  }
+  octx.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(out);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+// ---------- Realistic leaf (variant A — broad maple-ish) ----------
+function buildLeaf(variant: 'A' | 'B'): THREE.CanvasTexture {
   const S = 256;
   const c = document.createElement('canvas');
   c.width = S;
   c.height = S;
   const ctx = c.getContext('2d')!;
   ctx.clearRect(0, 0, S, S);
-
   const cx = S / 2;
 
-  // Lush leaf silhouette — wider almond with serrated hint
+  // Irregular natural silhouette using bezier with subtle wobble
   ctx.beginPath();
-  ctx.moveTo(cx, 14);
-  // Right side
-  ctx.bezierCurveTo(cx + 60, 30, cx + 110, 90, cx + 95, 145);
-  ctx.bezierCurveTo(cx + 80, 195, cx + 30, 232, cx, 244);
-  // Left side
-  ctx.bezierCurveTo(cx - 30, 232, cx - 80, 195, cx - 95, 145);
-  ctx.bezierCurveTo(cx - 110, 90, cx - 60, 30, cx, 14);
+  ctx.moveTo(cx, 10);
+  if (variant === 'A') {
+    ctx.bezierCurveTo(cx + 70, 28, cx + 118, 100, cx + 92, 158);
+    ctx.bezierCurveTo(cx + 72, 208, cx + 28, 240, cx, 250);
+    ctx.bezierCurveTo(cx - 28, 240, cx - 72, 208, cx - 92, 158);
+    ctx.bezierCurveTo(cx - 118, 100, cx - 70, 28, cx, 10);
+  } else {
+    // Slimmer almond
+    ctx.bezierCurveTo(cx + 52, 30, cx + 92, 110, cx + 78, 160);
+    ctx.bezierCurveTo(cx + 60, 210, cx + 22, 244, cx, 252);
+    ctx.bezierCurveTo(cx - 22, 244, cx - 60, 210, cx - 78, 160);
+    ctx.bezierCurveTo(cx - 92, 110, cx - 52, 30, cx, 10);
+  }
   ctx.closePath();
 
-  // Multi-stop gradient for depth
+  // Base mottled green gradient
   const grad = ctx.createLinearGradient(cx - 60, 30, cx + 60, S - 30);
-  grad.addColorStop(0, '#86EFAC');
-  grad.addColorStop(0.35, '#34D399');
-  grad.addColorStop(0.7, '#10B981');
-  grad.addColorStop(1, '#065F46');
+  if (variant === 'A') {
+    grad.addColorStop(0, '#A7D98A');
+    grad.addColorStop(0.35, '#5FB35A');
+    grad.addColorStop(0.7, '#2F8A3E');
+    grad.addColorStop(1, '#1B5E20');
+  } else {
+    grad.addColorStop(0, '#B5DC93');
+    grad.addColorStop(0.4, '#6FAA4D');
+    grad.addColorStop(0.75, '#3D7A2C');
+    grad.addColorStop(1, '#244D17');
+  }
   ctx.fillStyle = grad;
   ctx.fill();
 
-  // Subtle inner shadow (depth)
+  // Mottled noise inside leaf
   ctx.save();
   ctx.clip();
-  const shadow = ctx.createRadialGradient(cx + 30, S - 40, 10, cx + 30, S - 40, 180);
-  shadow.addColorStop(0, 'rgba(4, 71, 55, 0.45)');
-  shadow.addColorStop(1, 'rgba(4, 71, 55, 0)');
+  for (let i = 0; i < 900; i++) {
+    const x = Math.random() * S;
+    const y = Math.random() * S;
+    const r = Math.random() * 2.4;
+    const a = Math.random();
+    if (a < 0.6) ctx.fillStyle = `rgba(20,60,25,${0.04 + Math.random() * 0.12})`;
+    else if (a < 0.85) ctx.fillStyle = `rgba(180,210,120,${0.05 + Math.random() * 0.15})`;
+    else ctx.fillStyle = `rgba(160,130,40,${0.04 + Math.random() * 0.1})`; // yellow/brown speckle
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Inner shadow for depth
+  const shadow = ctx.createRadialGradient(cx + 28, S - 50, 12, cx + 28, S - 50, 200);
+  shadow.addColorStop(0, 'rgba(10,40,15,0.5)');
+  shadow.addColorStop(1, 'rgba(10,40,15,0)');
   ctx.fillStyle = shadow;
   ctx.fillRect(0, 0, S, S);
-  ctx.restore();
 
-  // Highlight sheen
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(cx, 14);
-  ctx.bezierCurveTo(cx + 60, 30, cx + 110, 90, cx + 95, 145);
-  ctx.bezierCurveTo(cx + 80, 195, cx + 30, 232, cx, 244);
-  ctx.bezierCurveTo(cx - 30, 232, cx - 80, 195, cx - 95, 145);
-  ctx.bezierCurveTo(cx - 110, 90, cx - 60, 30, cx, 14);
-  ctx.closePath();
-  ctx.clip();
-  const high = ctx.createLinearGradient(cx - 50, 20, cx + 20, 120);
-  high.addColorStop(0, 'rgba(255,255,255,0.35)');
+  // Soft highlight sheen
+  const high = ctx.createLinearGradient(cx - 50, 20, cx + 30, 130);
+  high.addColorStop(0, 'rgba(255,255,255,0.28)');
   high.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = high;
   ctx.fillRect(0, 0, S, S);
   ctx.restore();
 
-  // Central vein
-  ctx.strokeStyle = 'rgba(4,71,55,0.7)';
-  ctx.lineWidth = 2.5;
+  // Central midrib
+  ctx.strokeStyle = 'rgba(15,50,20,0.75)';
+  ctx.lineWidth = 2.8;
   ctx.beginPath();
-  ctx.moveTo(cx, 22);
-  ctx.lineTo(cx, S - 22);
+  ctx.moveTo(cx, 18);
+  ctx.lineTo(cx, S - 18);
   ctx.stroke();
 
-  // Side veins (curved)
-  ctx.lineWidth = 1.3;
-  ctx.strokeStyle = 'rgba(4,71,55,0.45)';
-  for (let i = 1; i < 6; i++) {
-    const y = 40 + i * 30;
+  // Side veins
+  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = 'rgba(15,50,20,0.45)';
+  for (let i = 1; i < 7; i++) {
+    const y = 30 + i * 28;
     ctx.beginPath();
     ctx.moveTo(cx, y);
-    ctx.quadraticCurveTo(cx + 35, y + 10, cx + 65, y + 28);
+    ctx.quadraticCurveTo(cx + 30, y + 10, cx + 70, y + 30);
     ctx.moveTo(cx, y);
-    ctx.quadraticCurveTo(cx - 35, y + 10, cx - 65, y + 28);
+    ctx.quadraticCurveTo(cx - 30, y + 10, cx - 70, y + 30);
     ctx.stroke();
   }
+
+  // Translucent edge — soften silhouette
+  ctx.globalCompositeOperation = 'destination-in';
+  const edge = ctx.createRadialGradient(cx, S / 2 + 10, 60, cx, S / 2 + 10, 130);
+  edge.addColorStop(0, 'rgba(0,0,0,1)');
+  edge.addColorStop(0.85, 'rgba(0,0,0,1)');
+  edge.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = edge;
+  ctx.fillRect(0, 0, S, S);
+  ctx.globalCompositeOperation = 'source-over';
 
   const tex = new THREE.CanvasTexture(c);
   tex.anisotropy = 8;
   tex.needsUpdate = true;
-  leafTextureCache = tex;
   return tex;
 }
 
-// ---- Bark texture ----
-let barkTexCache: THREE.CanvasTexture | null = null;
-export function getBarkTexture(): THREE.CanvasTexture {
-  if (barkTexCache) return barkTexCache;
-  const W = 512;
-  const H = 1024;
+let leafA: THREE.CanvasTexture | null = null;
+let leafB: THREE.CanvasTexture | null = null;
+export function getLeafTexture(): THREE.CanvasTexture {
+  if (!leafA) leafA = buildLeaf('A');
+  return leafA;
+}
+export function getLeafTextureB(): THREE.CanvasTexture {
+  if (!leafB) leafB = buildLeaf('B');
+  return leafB;
+}
+
+// ---------- Bark color + normal ----------
+let barkColorCache: THREE.CanvasTexture | null = null;
+let barkNormalCache: THREE.CanvasTexture | null = null;
+function buildBarkCanvas(): HTMLCanvasElement {
+  const W = 1024;
+  const H = 2048;
   const c = document.createElement('canvas');
   c.width = W;
   c.height = H;
   const ctx = c.getContext('2d')!;
 
+  // Base wood gradient
   const grad = ctx.createLinearGradient(0, 0, W, 0);
-  grad.addColorStop(0, '#3D2410');
-  grad.addColorStop(0.5, '#6B4422');
-  grad.addColorStop(1, '#3D2410');
+  grad.addColorStop(0, '#2E1A0A');
+  grad.addColorStop(0.5, '#6B4A2A');
+  grad.addColorStop(1, '#2E1A0A');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
-  for (let i = 0; i < 100; i++) {
+  // Vertical wood grain striations
+  for (let i = 0; i < 250; i++) {
     const x = Math.random() * W;
-    const w = 1 + Math.random() * 4;
-    ctx.fillStyle = `rgba(0,0,0,${0.1 + Math.random() * 0.25})`;
+    const w = 1 + Math.random() * 5;
+    ctx.fillStyle = `rgba(0,0,0,${0.08 + Math.random() * 0.28})`;
     ctx.fillRect(x, 0, w, H);
   }
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 140; i++) {
     const x = Math.random() * W;
-    ctx.fillStyle = `rgba(200,160,110,${0.06 + Math.random() * 0.12})`;
+    ctx.fillStyle = `rgba(220,180,130,${0.05 + Math.random() * 0.14})`;
     ctx.fillRect(x, 0, 1, H);
   }
-  ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-  for (let i = 0; i < 40; i++) {
+
+  // Deep cracks
+  ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+  for (let i = 0; i < 80; i++) {
     const y = Math.random() * H;
-    ctx.lineWidth = 0.5 + Math.random() * 1.4;
+    ctx.lineWidth = 0.6 + Math.random() * 1.8;
     ctx.beginPath();
     ctx.moveTo(0, y);
     let x = 0;
     while (x < W) {
-      x += 8 + Math.random() * 16;
-      ctx.lineTo(x, y + (Math.random() - 0.5) * 6);
+      x += 6 + Math.random() * 14;
+      ctx.lineTo(x, y + (Math.random() - 0.5) * 8);
     }
     ctx.stroke();
   }
-  const moss = ctx.createLinearGradient(0, H * 0.7, 0, H);
-  moss.addColorStop(0, 'rgba(61,90,64,0)');
-  moss.addColorStop(1, 'rgba(61,90,64,0.4)');
-  ctx.fillStyle = moss;
-  ctx.fillRect(0, H * 0.7, W, H * 0.3);
 
+  // Knots
+  for (let i = 0; i < 6; i++) {
+    const kx = Math.random() * W;
+    const ky = Math.random() * H;
+    const kr = 18 + Math.random() * 28;
+    const kg = ctx.createRadialGradient(kx, ky, 2, kx, ky, kr);
+    kg.addColorStop(0, 'rgba(20,10,4,0.85)');
+    kg.addColorStop(0.6, 'rgba(40,22,10,0.4)');
+    kg.addColorStop(1, 'rgba(40,22,10,0)');
+    ctx.fillStyle = kg;
+    ctx.beginPath();
+    ctx.arc(kx, ky, kr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Lichen patches near bottom
+  for (let i = 0; i < 40; i++) {
+    const x = Math.random() * W;
+    const y = H * 0.5 + Math.random() * H * 0.5;
+    const r = 8 + Math.random() * 24;
+    const lg = ctx.createRadialGradient(x, y, 1, x, y, r);
+    lg.addColorStop(0, 'rgba(140,160,90,0.35)');
+    lg.addColorStop(1, 'rgba(140,160,90,0)');
+    ctx.fillStyle = lg;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Moss gradient at base
+  const moss = ctx.createLinearGradient(0, H * 0.78, 0, H);
+  moss.addColorStop(0, 'rgba(50,80,45,0)');
+  moss.addColorStop(1, 'rgba(50,80,45,0.55)');
+  ctx.fillStyle = moss;
+  ctx.fillRect(0, H * 0.78, W, H * 0.22);
+
+  return c;
+}
+export function getBarkTexture(): THREE.CanvasTexture {
+  if (barkColorCache) return barkColorCache;
+  const c = buildBarkCanvas();
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = 4;
+  tex.anisotropy = 8;
   tex.needsUpdate = true;
-  barkTexCache = tex;
+  barkColorCache = tex;
+  // Build matching normal
+  barkNormalCache = canvasToNormalMap(c, 2.6);
+  barkNormalCache.anisotropy = 8;
   return tex;
 }
+export function getBarkNormalMap(): THREE.CanvasTexture {
+  if (!barkNormalCache) {
+    getBarkTexture();
+  }
+  return barkNormalCache!;
+}
 
-// ---- Ground texture ----
-let groundTexCache: THREE.CanvasTexture | null = null;
-export function getGroundTexture(): THREE.CanvasTexture {
-  if (groundTexCache) return groundTexCache;
+// ---------- Ground (grass + dirt + clover) ----------
+let groundColorCache: THREE.CanvasTexture | null = null;
+let groundNormalCache: THREE.CanvasTexture | null = null;
+function buildGroundCanvas(): HTMLCanvasElement {
   const S = 1024;
   const c = document.createElement('canvas');
   c.width = S;
   c.height = S;
   const ctx = c.getContext('2d')!;
+
+  // Base
   const grad = ctx.createRadialGradient(S / 2, S / 2, 60, S / 2, S / 2, S / 2);
-  grad.addColorStop(0, '#C9D9A8');
-  grad.addColorStop(0.4, '#A8B58C');
-  grad.addColorStop(0.8, '#7A8A60');
-  grad.addColorStop(1, '#5A6B45');
+  grad.addColorStop(0, '#7E9B5C');
+  grad.addColorStop(0.4, '#6A8A4A');
+  grad.addColorStop(0.8, '#54743A');
+  grad.addColorStop(1, '#3F5A2C');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, S, S);
 
-  for (let i = 0; i < 1500; i++) {
+  // Dirt patches
+  for (let i = 0; i < 30; i++) {
     const x = Math.random() * S;
     const y = Math.random() * S;
-    const r = Math.random() * 1.8;
-    ctx.fillStyle = `rgba(40,55,25,${Math.random() * 0.22})`;
+    const r = 18 + Math.random() * 50;
+    const dg = ctx.createRadialGradient(x, y, 2, x, y, r);
+    dg.addColorStop(0, 'rgba(90,60,30,0.45)');
+    dg.addColorStop(1, 'rgba(90,60,30,0)');
+    ctx.fillStyle = dg;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
   }
-  // Grass tufts
-  for (let i = 0; i < 400; i++) {
+
+  // Tiny noise / soil specks
+  for (let i = 0; i < 3000; i++) {
     const x = Math.random() * S;
     const y = Math.random() * S;
-    ctx.strokeStyle = `rgba(80,120,60,${0.3 + Math.random() * 0.3})`;
-    ctx.lineWidth = 0.8;
+    const r = Math.random() * 1.4;
+    ctx.fillStyle = `rgba(30,40,18,${Math.random() * 0.25})`;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Grass blades
+  for (let i = 0; i < 1800; i++) {
+    const x = Math.random() * S;
+    const y = Math.random() * S;
+    const a = 0.35 + Math.random() * 0.4;
+    ctx.strokeStyle = `rgba(${60 + Math.random() * 50},${110 + Math.random() * 50},${50 + Math.random() * 30},${a})`;
+    ctx.lineWidth = 0.7 + Math.random() * 0.6;
     ctx.beginPath();
     ctx.moveTo(x, y);
-    ctx.lineTo(x + (Math.random() - 0.5) * 4, y - 3 - Math.random() * 4);
+    ctx.lineTo(x + (Math.random() - 0.5) * 5, y - 4 - Math.random() * 6);
     ctx.stroke();
   }
+
+  // Clover dots
+  for (let i = 0; i < 80; i++) {
+    const x = Math.random() * S;
+    const y = Math.random() * S;
+    ctx.fillStyle = `rgba(80,140,70,${0.4 + Math.random() * 0.3})`;
+    ctx.beginPath();
+    ctx.arc(x, y, 1.5 + Math.random() * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Fallen leaf hints
+  for (let i = 0; i < 25; i++) {
+    const x = Math.random() * S;
+    const y = Math.random() * S;
+    ctx.fillStyle = `rgba(${140 + Math.random() * 60},${90 + Math.random() * 40},${30 + Math.random() * 20},${0.25 + Math.random() * 0.25})`;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(Math.random() * Math.PI * 2);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 4 + Math.random() * 3, 2 + Math.random() * 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  return c;
+}
+export function getGroundTexture(): THREE.CanvasTexture {
+  if (groundColorCache) return groundColorCache;
+  const c = buildGroundCanvas();
   const tex = new THREE.CanvasTexture(c);
-  tex.anisotropy = 4;
+  tex.anisotropy = 8;
   tex.needsUpdate = true;
-  groundTexCache = tex;
+  groundColorCache = tex;
+  groundNormalCache = canvasToNormalMap(c, 1.4);
+  groundNormalCache.anisotropy = 8;
   return tex;
+}
+export function getGroundNormalMap(): THREE.CanvasTexture {
+  if (!groundNormalCache) getGroundTexture();
+  return groundNormalCache!;
 }

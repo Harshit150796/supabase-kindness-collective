@@ -2,24 +2,22 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-/**
- * Gradient sky dome + warm sun disc + soft floating dust motes for depth.
- */
 export function Sky() {
-  const skyMat = useMemo(() => {
+  const mat = useMemo(() => {
     return new THREE.ShaderMaterial({
       side: THREE.BackSide,
       depthWrite: false,
       uniforms: {
-        topColor: { value: new THREE.Color('#FFC9A3') },
-        midColor: { value: new THREE.Color('#FFF1D6') },
-        bottomColor: { value: new THREE.Color('#E8F0E8') },
+        topColor: { value: new THREE.Color('#BFD8E8') },
+        midColor: { value: new THREE.Color('#FFF2D8') },
+        bottomColor: { value: new THREE.Color('#D8E0CC') },
       },
       vertexShader: `
         varying vec3 vWorldPos;
         void main() {
-          vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          vec4 wp = modelMatrix * vec4(position, 1.0);
+          vWorldPos = wp.xyz;
+          gl_Position = projectionMatrix * viewMatrix * wp;
         }
       `,
       fragmentShader: `
@@ -30,11 +28,8 @@ export function Sky() {
         void main() {
           float h = normalize(vWorldPos).y;
           vec3 col;
-          if (h > 0.0) {
-            col = mix(midColor, topColor, smoothstep(0.0, 0.8, h));
-          } else {
-            col = mix(midColor, bottomColor, smoothstep(0.0, 0.6, -h));
-          }
+          if (h > 0.0) col = mix(midColor, topColor, smoothstep(0.0, 0.7, h));
+          else col = mix(midColor, bottomColor, smoothstep(0.0, -0.4, h));
           gl_FragColor = vec4(col, 1.0);
         }
       `,
@@ -45,12 +40,11 @@ export function Sky() {
     <>
       <mesh>
         <sphereGeometry args={[60, 32, 32]} />
-        <primitive object={skyMat} attach="material" />
+        <primitive object={mat} attach="material" />
       </mesh>
-      {/* Warm sun glow */}
       <mesh position={[8, 9, -12]}>
-        <sphereGeometry args={[1.4, 24, 24]} />
-        <meshBasicMaterial color="#FFE9B0" toneMapped={false} />
+        <sphereGeometry args={[1.2, 24, 24]} />
+        <meshBasicMaterial color="#FFF6D8" toneMapped={false} />
       </mesh>
       <DustMotes />
     </>
@@ -64,9 +58,9 @@ function DustMotes() {
     const arr = new Float32Array(N * 3);
     const base = new Float32Array(N * 3);
     for (let i = 0; i < N; i++) {
-      const x = (Math.random() - 0.5) * 14;
-      const y = Math.random() * 7 + 0.5;
-      const z = (Math.random() - 0.5) * 6 - 1;
+      const x = (Math.random() - 0.5) * 16;
+      const y = 1 + Math.random() * 7;
+      const z = (Math.random() - 0.5) * 8;
       arr[i * 3] = x;
       arr[i * 3 + 1] = y;
       arr[i * 3 + 2] = z;
@@ -80,30 +74,27 @@ function DustMotes() {
   useFrame(({ clock }) => {
     if (!ref.current) return;
     const t = clock.getElapsedTime();
-    const arr = ref.current.geometry.attributes.position.array as Float32Array;
-    for (let i = 0; i < arr.length / 3; i++) {
-      arr[i * 3] = basePositions[i * 3] + Math.sin(t * 0.3 + i) * 0.25;
-      arr[i * 3 + 1] = basePositions[i * 3 + 1] + Math.sin(t * 0.4 + i * 0.7) * 0.15;
+    const pos = ref.current.geometry.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < pos.count; i++) {
+      const bx = basePositions[i * 3];
+      const by = basePositions[i * 3 + 1];
+      const bz = basePositions[i * 3 + 2];
+      pos.setXYZ(
+        i,
+        bx + Math.sin(t * 0.3 + i) * 0.2,
+        by + Math.sin(t * 0.5 + i * 1.3) * 0.15,
+        bz + Math.cos(t * 0.4 + i * 0.7) * 0.2
+      );
     }
-    ref.current.geometry.attributes.position.needsUpdate = true;
+    pos.needsUpdate = true;
   });
 
   return (
     <points ref={ref}>
       <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          args={[positions, 3]}
-        />
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
-      <pointsMaterial
-        size={0.05}
-        color="#FFF6D6"
-        transparent
-        opacity={0.55}
-        sizeAttenuation
-        depthWrite={false}
-      />
+      <pointsMaterial size={0.04} color="#FFF8E8" transparent opacity={0.45} sizeAttenuation depthWrite={false} />
     </points>
   );
 }
