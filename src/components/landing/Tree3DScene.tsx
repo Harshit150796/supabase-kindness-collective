@@ -1,6 +1,6 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Environment, PerformanceMonitor, SoftShadows } from '@react-three/drei';
+import { Environment, PerformanceMonitor } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { Tree, getBranchTips } from './tree3d/Tree';
@@ -14,14 +14,13 @@ const GROUND_Y = -0.01;
 
 function CameraParallax() {
   const { camera, mouse } = useThree();
-  const baseRef = useRef(new THREE.Vector3(0.8, 3.4, 9.5));
   useFrame((_, dt) => {
     const t = performance.now() / 1000;
-    const targetX = baseRef.current.x + mouse.x * 0.4 + Math.sin(t * 0.15) * 0.05;
-    const targetY = baseRef.current.y + mouse.y * 0.2;
-    camera.position.x += (targetX - camera.position.x) * Math.min(1, dt * 2);
-    camera.position.y += (targetY - camera.position.y) * Math.min(1, dt * 2);
-    camera.lookAt(0, 2.6, 0);
+    const targetX = mouse.x * 0.6 + Math.sin(t * 0.15) * 0.08;
+    const targetY = 3.6 + mouse.y * 0.25;
+    camera.position.x += (targetX - camera.position.x) * Math.min(1, dt * 1.8);
+    camera.position.y += (targetY - camera.position.y) * Math.min(1, dt * 1.8);
+    camera.lookAt(0, 3.0, 0);
   });
   return null;
 }
@@ -59,7 +58,7 @@ function Scene({ leafCount }: { leafCount: number }) {
         };
         return next;
       });
-    }, 4500);
+    }, 4000);
     return () => clearInterval(interval);
   }, [donations]);
 
@@ -94,22 +93,22 @@ function Scene({ leafCount }: { leafCount: number }) {
   return (
     <>
       {/* Lighting rig — golden hour 3-point */}
-      <ambientLight intensity={0.45} color="#FFE9C7" />
+      <ambientLight intensity={0.55} color="#FFE9C7" />
       <directionalLight
-        position={[6, 9, 4]}
-        intensity={1.6}
+        position={[6, 10, 4]}
+        intensity={1.7}
         color="#FFE4B5"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-camera-left={-8}
-        shadow-camera-right={8}
-        shadow-camera-top={8}
+        shadow-camera-left={-10}
+        shadow-camera-right={10}
+        shadow-camera-top={10}
         shadow-camera-bottom={-2}
         shadow-bias={-0.0005}
       />
-      <directionalLight position={[-5, 4, -2]} intensity={0.5} color="#A7C7E7" />
-      <directionalLight position={[0, 3, -6]} intensity={0.8} color="#FFA866" />
+      <directionalLight position={[-5, 4, -2]} intensity={0.55} color="#A7C7E7" />
+      <directionalLight position={[0, 4, -6]} intensity={0.9} color="#FFA866" />
 
       <Sky />
       <Tree leafCount={leafCount} />
@@ -152,23 +151,20 @@ export function Tree3DScene() {
     return () => obs.disconnect();
   }, []);
 
-  const leafCount = isMobile ? 1500 : 3500;
+  const leafCount = isMobile ? 2000 : 5000;
 
   return (
-    <div
-      ref={wrapRef}
-      className="relative w-full h-[460px] sm:h-[540px] md:h-[640px] lg:h-[720px]"
-    >
+    <div ref={wrapRef} className="absolute inset-0 w-full h-full">
       <Canvas
         shadows
         dpr={dpr}
         frameloop={inView ? 'always' : 'demand'}
-        camera={{ position: [0.8, 3.4, 9.5], fov: 36 }}
+        camera={{ position: [0, 3.6, 11], fov: 42 }}
         gl={{
           antialias: true,
           alpha: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.1,
+          toneMappingExposure: 1.15,
         }}
         style={{ background: 'transparent' }}
       >
@@ -179,18 +175,17 @@ export function Tree3DScene() {
           }}
           onIncline={() => setDpr([1, 1.75])}
         />
-        <SoftShadows size={25} samples={12} focus={0.6} />
         <Suspense fallback={null}>
           <Scene leafCount={leafCount} />
           {enablePost && (
             <EffectComposer multisampling={0}>
               <Bloom
-                intensity={0.55}
-                luminanceThreshold={0.85}
+                intensity={0.5}
+                luminanceThreshold={0.88}
                 luminanceSmoothing={0.3}
                 mipmapBlur
               />
-              <Vignette eskil={false} offset={0.2} darkness={0.55} />
+              <Vignette eskil={false} offset={0.25} darkness={0.45} />
             </EffectComposer>
           )}
         </Suspense>

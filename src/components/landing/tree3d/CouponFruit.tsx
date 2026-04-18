@@ -21,10 +21,10 @@ interface Props {
   onRegrown: (idx: number) => void;
 }
 
-const HANG_DROP = 0.85;
-const COUPON_W = 0.9;
-const COUPON_H = 0.58;
-const COUPON_D = 0.04;
+const HANG_DROP = 1.0;
+const COUPON_W = 1.15;
+const COUPON_H = 0.74;
+const COUPON_D = 0.05;
 
 // Build a rounded-rect extruded geometry for premium coupon shape
 function makeRoundedCouponGeom(): THREE.ExtrudeGeometry {
