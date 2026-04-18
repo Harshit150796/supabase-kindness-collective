@@ -18,7 +18,7 @@ export function HeroSection() {
       />
       <div
         aria-hidden
-        className="absolute bottom-0 right-0 w-[32rem] h-[32rem] rounded-full bg-amber-300/10 blur-3xl"
+        className="absolute bottom-0 right-0 w-[32rem] h-[32rem] rounded-full bg-accent/20 blur-3xl"
       />
 
       <div className="container mx-auto px-4 py-12 md:py-16 relative z-10">
