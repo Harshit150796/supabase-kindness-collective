@@ -371,3 +371,115 @@ export function getGroundNormalMap(): THREE.CanvasTexture {
   if (!groundNormalCache) getGroundTexture();
   return groundNormalCache!;
 }
+
+// ---------- Leaf atlas (4 variants in 2x2 grid) ----------
+let leafAtlasCache: THREE.CanvasTexture | null = null;
+
+function drawLeafShape(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  variant: number
+) {
+  ctx.save();
+  ctx.translate(cx, cy);
+
+  ctx.beginPath();
+  if (variant === 0) {
+    const r = size * 0.5;
+    const lobes = 7;
+    for (let i = 0; i <= 60; i++) {
+      const t = i / 60;
+      const ang = -Math.PI / 2 + t * Math.PI * 2;
+      const wob = 0.78 + Math.sin(t * Math.PI * lobes) * 0.18;
+      const rad = r * wob * (1 - 0.15 * Math.abs(Math.sin(ang)));
+      const x = Math.cos(ang) * rad;
+      const y = Math.sin(ang) * rad * 1.25;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+  } else if (variant === 1) {
+    const r = size * 0.5;
+    const points = 5;
+    for (let i = 0; i <= 80; i++) {
+      const t = i / 80;
+      const ang = -Math.PI / 2 + t * Math.PI * 2;
+      const sharp = Math.pow(Math.abs(Math.cos(ang * points * 0.5)), 0.5);
+      const rad = r * (0.55 + 0.45 * sharp);
+      ctx.lineTo(Math.cos(ang) * rad, Math.sin(ang) * rad * 1.15);
+    }
+  } else if (variant === 2) {
+    ctx.ellipse(0, 0, size * 0.32, size * 0.5, 0, 0, Math.PI * 2);
+  } else {
+    ctx.moveTo(0, -size * 0.55);
+    ctx.bezierCurveTo(size * 0.3, -size * 0.3, size * 0.25, size * 0.4, 0, size * 0.55);
+    ctx.bezierCurveTo(-size * 0.25, size * 0.4, -size * 0.3, -size * 0.3, 0, -size * 0.55);
+  }
+  ctx.closePath();
+
+  const grad = ctx.createRadialGradient(0, -size * 0.1, size * 0.05, 0, 0, size * 0.55);
+  const palette = [
+    ['#8fbf5e', '#3f7a2e'],
+    ['#a3c96a', '#4a8a36'],
+    ['#7fb854', '#356826'],
+    ['#9fc965', '#467d2f'],
+  ];
+  const [c1, c2] = palette[variant];
+  grad.addColorStop(0, c1);
+  grad.addColorStop(1, c2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(40, 70, 30, 0.35)';
+  ctx.lineWidth = Math.max(1, size * 0.008);
+  ctx.beginPath();
+  ctx.moveTo(0, -size * 0.5);
+  ctx.lineTo(0, size * 0.5);
+  for (let i = 1; i <= 4; i++) {
+    const y = -size * 0.4 + (i / 5) * size * 0.85;
+    const w = size * 0.28 * (1 - Math.abs(i - 2.5) / 3);
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y + size * 0.05);
+    ctx.moveTo(0, y);
+    ctx.lineTo(-w, y + size * 0.05);
+  }
+  ctx.stroke();
+
+  ctx.globalCompositeOperation = 'lighter';
+  const hl = ctx.createRadialGradient(-size * 0.15, -size * 0.2, 0, 0, 0, size * 0.4);
+  hl.addColorStop(0, 'rgba(255,255,255,0.18)');
+  hl.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = hl;
+  ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+
+  ctx.restore();
+}
+
+export function getLeafAtlas(): THREE.CanvasTexture {
+  if (leafAtlasCache) return leafAtlasCache;
+  const SIZE = 1024;
+  const CELL = SIZE / 2;
+  const c = document.createElement('canvas');
+  c.width = SIZE;
+  c.height = SIZE;
+  const ctx = c.getContext('2d')!;
+  ctx.clearRect(0, 0, SIZE, SIZE);
+
+  for (let v = 0; v < 4; v++) {
+    const col = v % 2;
+    const row = Math.floor(v / 2);
+    const cx = col * CELL + CELL / 2;
+    const cy = row * CELL + CELL / 2;
+    drawLeafShape(ctx, cx, cy, CELL * 0.92, v);
+  }
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 16;
+  tex.needsUpdate = true;
+  leafAtlasCache = tex;
+  return tex;
+}
+
