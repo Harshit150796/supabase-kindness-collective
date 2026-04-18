@@ -1,75 +1,49 @@
 
-User wants:
-1. Remove all overlay text/CTAs from the hero (no text on top of tree, no blur/gradient overlay).
-2. Tree section becomes a pure, full-bleed 3D scene.
-3. Make the tree look photorealistic — not cartoonish/stylized.
 
-Current state: HeroSection has text overlay + readability gradients on top of Tree3DScene. Tree uses procedurally drawn canvas leaf textures (stylized look).
+User wants: GLTF trunk + procedural instanced foliage + camera parallax. No leaf cluster GLB, no GLB empty dependency. Clean and stable.
 
-Plan:
+Honest reality check: there's no `tree.glb` or `leaf-atlas.png` in the project today. I'll source CC0 assets and bundle them locally during implementation.
 
-## Pure Photoreal Tree Hero — Remove Text, Push Realism
+## Hybrid Tree v3 — GLTF Trunk + Smart Instanced Foliage
 
-### 1. Strip the hero down to just the tree
-`src/components/landing/HeroSection.tsx`:
-- Remove the text column (badge, headline, subcopy, CTA buttons, fine print)
-- Remove the left-side readability gradient and bottom fade gradient (no blur)
-- Keep only: full-bleed `<Tree3DScene />` filling the section edge-to-edge
-- Section height stays ~88vh on desktop, ~60vh on mobile
-- Suspense fallback becomes a clean warm gradient (no skeleton text)
+### Assets to add
+- `public/models/tree.glb` — CC0 oak/maple trunk + branches only (Quaternius Ultimate Nature, ~1–2 MB). Foliage stripped if model has it.
+- `public/textures/leaf-atlas.png` — 2×2 atlas of 4 real leaf cutouts with alpha (~150 KB, CC0 from ambientCG).
 
-### 2. Push the tree toward photorealism
+### `Tree.tsx` — GLTF only
+- Delete all `TubeGeometry` (trunk, branches, twigs, roots)
+- `useGLTF('/models/tree.glb')` → traverse, set `castShadow`/`receiveShadow`, replace material with `MeshStandardMaterial` if model ships with low-quality one
+- Compute a procedural canopy bounding sphere (center ~`(0, 4.5, 0)`, radius ~2.2) — used by foliage, no branch-tip dependency
+- Export `getCanopyVolume()` instead of `getBranchTips()`. Coupon-fruit positions stay (already hand-tuned in `couponDesign.ts`)
 
-**Leaves (`textures.ts` + `FoliageInstanced.tsx`):**
-- Replace the cartoon canvas-painted leaf with a more photoreal leaf alpha map: irregular natural silhouette, real-looking color noise (mottled greens with subtle yellow + brown speckles), darker midrib, soft translucent edges
-- Add a second leaf variant (slightly different shape/tint) — alternate per instance for variety
-- Enable `transparent` + `alphaTest: 0.5` + `side: DoubleSide` and slight `roughness` variance per instance
-- Increase leaf density: 7,000 desktop / 2,800 mobile
-- Tighter Poisson clustering so canopy reads as solid mass, not sparse dots
-- Per-instance scale variance widened (0.6–1.4) for natural irregularity
+### `FoliageInstanced.tsx` — clean rewrite
+- Single `InstancedMesh` of crossed quads
+- Each "cluster point" = 3 crossed planes (X-shape) merged into one geometry → 1 instance covers ~3 leaf cards from any angle
+- Distribution: spawn N points in canopy sphere using `sphere + 3D noise + outer-bias falloff` (`r = R * pow(rand, 0.4)` weights toward outer shell)
+- Counts: desktop 3,000 instances (≈9,000 visible leaf cards) · mobile 1,000 instances (≈3,000)
+- Per-instance attributes: `aPhase` (wind), `aAtlasIdx` (0–3 for atlas cell), `aTint` (HSL hue ±8°)
+- Material: `MeshPhysicalMaterial` desktop (`transmission: 0.35`, `thickness: 0.4`, `alphaTest: 0.4`, `side: DoubleSide`, `roughness: 0.75`); mobile falls back to `MeshStandardMaterial` (no transmission)
+- Vertex shader (via `onBeforeCompile`): `transformed.x += sin(uTime*1.2 + aPhase + position.y*0.8) * 0.04 * uv.y` — tip-weighted sway
 
-**Bark (`textures.ts`):**
-- Generate a higher-res (1024×2048) bark color map with deeper crack shadows, lichen patches, knot details
-- Generate a matching normal map (height-to-normal from canvas grayscale) so trunk catches light realistically
-- Apply both to trunk + branches via `MeshStandardMaterial` (`map`, `normalMap`, `roughness: 0.95`)
+### `Tree3DScene.tsx`
+- Replace `Environment preset="park"` → `preset="forest"`
+- Directional light: keep 4096 shadow map, add `shadow-radius: 8`, `shadow-blurSamples: 25` for soft PCSS-style shadows
+- Camera parallax: smooth lerp toward `mouse.x * 0.6` and `mouse.y * 0.3` with subtle bobbing (already partially exists — tune dampening factor down to 1.2 for more visible response)
+- Keep fog, tone mapping, post-FX as-is
 
-**Tree shape (`Tree.tsx`):**
-- Add 6–8 thin tertiary twigs branching off each secondary branch (more realistic silhouette under canopy)
-- Slight random jitter on branch control points each render so no two branches feel identical
-- Bigger overall scale to fill the wider section
-
-**Lighting & atmosphere (`Tree3DScene.tsx`):**
-- Switch `<Environment preset="sunset" />` to `preset="park"` for more neutral natural daylight (less orange wash → more realistic)
-- Reduce warm directional intensity, raise ambient slightly
-- Add subtle fog: `<fog attach="fog" args={['#DCE6D5', 18, 45]}` for atmospheric depth
-- Keep Bloom but lower intensity (0.3) so highlights feel natural, not glowy
-- Add `Vignette` at lower darkness (0.3)
-
-**Ground (`Ground.tsx`):**
-- Higher-detail grass canvas texture: blade strands, tiny clover, dirt patches, fallen leaf hints
-- Slight bump via normalMap so ground catches sunlight unevenly
-
-**Sky (`Sky.tsx`):**
-- Soften gradient: pale blue `#BFD8E8` top → warm cream `#FFF2D8` horizon → muted green `#D8E0CC` bottom (matches a real outdoor scene at mid-morning)
-- Reduce sun glow brightness
-
-**Camera (`Tree3DScene.tsx`):**
-- Pull back slightly (`position: [0, 4.0, 13]`, `fov: 38`) so the whole tree fits comfortably edge-to-edge with breathing room
-- Keep mouse parallax subtle
-
-### 3. Coupons
-- Keep current coupon-fruit system intact (size/positions already good)
-- Slightly reduce edge-glow intensity so they feel like real hanging tags, not neon
+### `useGLTF` setup
+- Add `useGLTF.preload('/models/tree.glb')` at module top
+- Wrap in `<Suspense>` (already in place)
 
 ### Files changed
-- `src/components/landing/HeroSection.tsx` — strip overlay text + gradients
-- `src/components/landing/Tree3DScene.tsx` — env preset, fog, camera, lighting tuning, post-FX values
-- `src/components/landing/tree3d/textures.ts` — photoreal leaf + bark + ground textures, add normal maps
-- `src/components/landing/tree3d/Tree.tsx` — add tertiary twigs, denser canopy clusters
-- `src/components/landing/tree3d/FoliageInstanced.tsx` — increased count, two leaf variants, wider scale variance
-- `src/components/landing/tree3d/Ground.tsx` — richer grass texture + normal map
-- `src/components/landing/tree3d/Sky.tsx` — softer realistic gradient
-- `src/components/landing/tree3d/CouponFruit.tsx` — tone down edge glow
+- `src/components/landing/tree3d/Tree.tsx` — strip procedural, load GLB
+- `src/components/landing/tree3d/FoliageInstanced.tsx` — full rewrite per spec
+- `src/components/landing/Tree3DScene.tsx` — forest env, soft shadows, parallax tune
+- `public/models/tree.glb` — new (~1.5 MB)
+- `public/textures/leaf-atlas.png` — new (~150 KB)
 
-### Note
-Removing the hero text means the headline + CTAs disappear from the landing page top. Sections below (LiveActivityBar, ImpactStories, etc.) remain — the page will scroll into them right after the tree. Confirm if you want the headline restored later in a separate section below the tree.
+### Risks (upfront)
+- ~1.7 MB asset add → first hero paint +0.5–1s on slow networks (already lazy-loaded)
+- If sourced GLB's trunk silhouette differs from current tree, coupon-fruit positions may need 1 minor tweak in `couponDesign.ts` to sit naturally on the new branches — I'll verify and adjust if needed
+- `MeshPhysicalMaterial` + transmission is GPU-heavy; mobile fallback handles this
+
