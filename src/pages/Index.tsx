@@ -10,47 +10,40 @@ import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
 import { BrandLeaderboard } from '@/components/landing/BrandLeaderboard';
 import { ImpactDashboard } from '@/components/landing/ImpactDashboard';
 import { CTASection } from '@/components/landing/CTASection';
-import { AnimatedBranchesLeft } from '@/components/landing/AnimatedBranchesLeft';
-import { AnimatedBranchesRight } from '@/components/landing/AnimatedBranchesRight';
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <main>
-        {/* Wrapper for hero → trust section with animated branches overlay */}
-        <div className="relative">
-          <AnimatedBranchesLeft />
-          <AnimatedBranchesRight />
-          
-          {/* 1. Human-centered hero with featured story */}
-          <HeroSection />
-          
-          {/* 2. Live activity - creates urgency and social proof */}
-          <LiveActivityBar />
-          {/* 2. Real recipient stories - builds emotional connection */}
-          <ImpactStories />
-          
-          {/* 3. Transparency - where money goes + how it works flow */}
-          <TrustTransparency />
-        </div>
-        
-        {/* 4. Brand leaderboard - Top Donors → Live Leaderboard */}
+        {/* 1. Human-centered hero with featured story */}
+        <HeroSection />
+
+        {/* 2. Live activity - creates urgency and social proof */}
+        <LiveActivityBar />
+
+        {/* 3. Real recipient stories - builds emotional connection */}
+        <ImpactStories />
+
+        {/* 4. Transparency - where money goes + how it works flow */}
+        <TrustTransparency />
+
+        {/* 5. Brand leaderboard - Top Donors → Live Leaderboard */}
         <BrandLeaderboard />
-        
-        {/* 5. Donation flow - impact-focused, not rewards-focused */}
+
+        {/* 6. Donation flow - impact-focused, not rewards-focused */}
         <DonationFlow />
-        
-        {/* 6. Security badges - trust reassurance before testimonials */}
+
+        {/* 7. Security badges - trust reassurance before testimonials */}
         <SecurityBadges />
-        
-        {/* 7. Community testimonials with photos */}
+
+        {/* 8. Community testimonials with photos */}
         <TestimonialsSection />
-        
-        {/* 8. Overall impact statistics */}
+
+        {/* 9. Overall impact statistics */}
         <ImpactDashboard />
-        
-        {/* 9. Final call to action */}
+
+        {/* 10. Final call to action */}
         <CTASection />
       </main>
       <Footer />
