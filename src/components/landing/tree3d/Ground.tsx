@@ -1,20 +1,20 @@
 import { useMemo } from 'react';
 import { ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
-import { getGroundTexture } from './textures';
+import { getGroundTexture, getGroundNormalMap } from './textures';
 
 export function Ground({ y = -0.01 }: { y?: number }) {
   const tex = useMemo(() => getGroundTexture(), []);
+  const nrm = useMemo(() => getGroundNormalMap(), []);
 
-  // Scattered pebbles
   const pebbles = useMemo(() => {
     const arr: { pos: [number, number, number]; r: number }[] = [];
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 22; i++) {
       const ang = Math.random() * Math.PI * 2;
-      const rad = 1.2 + Math.random() * 3.2;
+      const rad = 1.2 + Math.random() * 3.5;
       arr.push({
         pos: [Math.cos(ang) * rad, y + 0.02, Math.sin(ang) * rad],
-        r: 0.04 + Math.random() * 0.06,
+        r: 0.04 + Math.random() * 0.07,
       });
     }
     return arr;
@@ -23,16 +23,16 @@ export function Ground({ y = -0.01 }: { y?: number }) {
   return (
     <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, y, 0]} receiveShadow>
-        <circleGeometry args={[10, 64]} />
-        <meshStandardMaterial map={tex} roughness={1} />
+        <circleGeometry args={[12, 96]} />
+        <meshStandardMaterial map={tex} normalMap={nrm} normalScale={new THREE.Vector2(0.6, 0.6)} roughness={1} />
       </mesh>
 
       <ContactShadows
         position={[0, y + 0.005, 0]}
-        opacity={0.55}
-        scale={12}
-        blur={2.6}
-        far={8}
+        opacity={0.6}
+        scale={14}
+        blur={2.8}
+        far={9}
         resolution={1024}
         color="#1f2937"
       />

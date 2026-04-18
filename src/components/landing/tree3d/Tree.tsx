@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
-import { getBarkTexture } from './textures';
+import { getBarkTexture, getBarkNormalMap } from './textures';
 import { FoliageInstanced } from './FoliageInstanced';
 
 export interface BranchTip {
@@ -32,6 +32,7 @@ export function getBranchTips(): BranchTip[] {
 
 function Trunk() {
   const tex = useMemo(() => getBarkTexture(), []);
+  const nrm = useMemo(() => getBarkNormalMap(), []);
 
   const trunkGeom = useMemo(() => {
     const pts = [
@@ -68,13 +69,14 @@ function Trunk() {
 
   return (
     <mesh geometry={trunkGeom} castShadow receiveShadow>
-      <meshStandardMaterial map={tex} roughness={0.95} metalness={0.02} />
+      <meshStandardMaterial map={tex} normalMap={nrm} normalScale={new THREE.Vector2(1.2, 1.2)} roughness={0.95} metalness={0.02} />
     </mesh>
   );
 }
 
 function Roots() {
   const tex = useMemo(() => getBarkTexture(), []);
+  const nrm = useMemo(() => getBarkNormalMap(), []);
   const roots = useMemo(() => {
     const arr: { geom: THREE.TubeGeometry }[] = [];
     const N = 7;
@@ -95,7 +97,7 @@ function Roots() {
     <group>
       {roots.map((r, i) => (
         <mesh key={i} geometry={r.geom} castShadow receiveShadow>
-          <meshStandardMaterial map={tex} roughness={0.95} />
+          <meshStandardMaterial map={tex} normalMap={nrm} roughness={0.95} />
         </mesh>
       ))}
     </group>
@@ -104,6 +106,29 @@ function Roots() {
 
 function Branches() {
   const tex = useMemo(() => getBarkTexture(), []);
+  const nrm = useMemo(() => getBarkNormalMap(), []);
+
+  // Tertiary twigs branching from each main branch
+  const twigGeoms = useMemo(() => {
+    const arr: THREE.TubeGeometry[] = [];
+    BRANCH_CURVES.forEach((c) => {
+      const curve = new THREE.CubicBezierCurve3(c[0], c[1], c[2], c[3]);
+      // 3 twigs per branch at t=0.55, 0.75, 0.9
+      [0.55, 0.72, 0.88].forEach((t) => {
+        const base = curve.getPoint(t);
+        const tan = curve.getTangent(t).normalize();
+        // Perpendicular offset
+        const perp = new THREE.Vector3(-tan.z, 0.3, tan.x).normalize();
+        const dir = perp.clone().multiplyScalar(0.6 + Math.random() * 0.4);
+        const ctrl1 = base.clone().add(dir.clone().multiplyScalar(0.3));
+        const ctrl2 = base.clone().add(dir.clone().multiplyScalar(0.7)).add(new THREE.Vector3(0, 0.15, 0));
+        const end = base.clone().add(dir).add(new THREE.Vector3(0, 0.25, 0));
+        const tc = new THREE.CubicBezierCurve3(base, ctrl1, ctrl2, end);
+        arr.push(new THREE.TubeGeometry(tc, 10, 0.04, 6, false));
+      });
+    });
+    return arr;
+  }, []);
   const branchGeoms = useMemo(() => {
     return BRANCH_CURVES.map((c) => {
       const curve = new THREE.CubicBezierCurve3(c[0], c[1], c[2], c[3]);
@@ -137,7 +162,12 @@ function Branches() {
     <group>
       {branchGeoms.map((g, i) => (
         <mesh key={i} geometry={g} castShadow receiveShadow>
-          <meshStandardMaterial map={tex} roughness={0.92} />
+          <meshStandardMaterial map={tex} normalMap={nrm} roughness={0.92} />
+        </mesh>
+      ))}
+      {twigGeoms.map((g, i) => (
+        <mesh key={`tw-${i}`} geometry={g} castShadow>
+          <meshStandardMaterial map={tex} normalMap={nrm} roughness={0.95} />
         </mesh>
       ))}
     </group>

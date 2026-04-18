@@ -16,11 +16,11 @@ function CameraParallax() {
   const { camera, mouse } = useThree();
   useFrame((_, dt) => {
     const t = performance.now() / 1000;
-    const targetX = mouse.x * 0.6 + Math.sin(t * 0.15) * 0.08;
-    const targetY = 3.6 + mouse.y * 0.25;
-    camera.position.x += (targetX - camera.position.x) * Math.min(1, dt * 1.8);
-    camera.position.y += (targetY - camera.position.y) * Math.min(1, dt * 1.8);
-    camera.lookAt(0, 3.0, 0);
+    const targetX = mouse.x * 0.5 + Math.sin(t * 0.12) * 0.06;
+    const targetY = 4.0 + mouse.y * 0.2;
+    camera.position.x += (targetX - camera.position.x) * Math.min(1, dt * 1.6);
+    camera.position.y += (targetY - camera.position.y) * Math.min(1, dt * 1.6);
+    camera.lookAt(0, 3.2, 0);
   });
   return null;
 }
@@ -92,23 +92,26 @@ function Scene({ leafCount }: { leafCount: number }) {
 
   return (
     <>
-      {/* Lighting rig — golden hour 3-point */}
-      <ambientLight intensity={0.55} color="#FFE9C7" />
+      {/* Natural mid-morning lighting — neutral, less orange */}
+      <ambientLight intensity={0.75} color="#F4F1E8" />
       <directionalLight
-        position={[6, 10, 4]}
-        intensity={1.7}
-        color="#FFE4B5"
+        position={[6, 11, 5]}
+        intensity={1.3}
+        color="#FFF4E0"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-camera-left={-10}
-        shadow-camera-right={10}
-        shadow-camera-top={10}
-        shadow-camera-bottom={-2}
+        shadow-camera-left={-12}
+        shadow-camera-right={12}
+        shadow-camera-top={12}
+        shadow-camera-bottom={-3}
         shadow-bias={-0.0005}
       />
-      <directionalLight position={[-5, 4, -2]} intensity={0.55} color="#A7C7E7" />
-      <directionalLight position={[0, 4, -6]} intensity={0.9} color="#FFA866" />
+      <directionalLight position={[-6, 5, -3]} intensity={0.45} color="#BFD8E8" />
+      <directionalLight position={[0, 4, -8]} intensity={0.5} color="#FFD8A8" />
+
+      {/* Atmospheric depth */}
+      <fog attach="fog" args={['#DCE6D5', 18, 45]} />
 
       <Sky />
       <Tree leafCount={leafCount} />
@@ -127,7 +130,7 @@ function Scene({ leafCount }: { leafCount: number }) {
         />
       ))}
 
-      <Environment preset="sunset" background={false} />
+      <Environment preset="park" background={false} />
       <CameraParallax />
     </>
   );
@@ -151,7 +154,7 @@ export function Tree3DScene() {
     return () => obs.disconnect();
   }, []);
 
-  const leafCount = isMobile ? 2000 : 5000;
+  const leafCount = isMobile ? 2800 : 7000;
 
   return (
     <div ref={wrapRef} className="absolute inset-0 w-full h-full">
@@ -159,12 +162,12 @@ export function Tree3DScene() {
         shadows
         dpr={dpr}
         frameloop={inView ? 'always' : 'demand'}
-        camera={{ position: [0, 3.6, 11], fov: 42 }}
+        camera={{ position: [0, 4.0, 13], fov: 38 }}
         gl={{
           antialias: true,
           alpha: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.15,
+          toneMappingExposure: 1.05,
         }}
         style={{ background: 'transparent' }}
       >
@@ -180,12 +183,12 @@ export function Tree3DScene() {
           {enablePost && (
             <EffectComposer multisampling={0}>
               <Bloom
-                intensity={0.5}
-                luminanceThreshold={0.88}
+                intensity={0.3}
+                luminanceThreshold={0.92}
                 luminanceSmoothing={0.3}
                 mipmapBlur
               />
-              <Vignette eskil={false} offset={0.25} darkness={0.45} />
+              <Vignette eskil={false} offset={0.3} darkness={0.3} />
             </EffectComposer>
           )}
         </Suspense>
