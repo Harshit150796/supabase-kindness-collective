@@ -1,16 +1,32 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { Environment, PerformanceMonitor } from '@react-three/drei';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Environment, PerformanceMonitor, SoftShadows } from '@react-three/drei';
+import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { Tree, getBranchTips } from './tree3d/Tree';
 import { CouponFruit, type CouponState } from './tree3d/CouponFruit';
 import { Ground } from './tree3d/Ground';
+import { Sky } from './tree3d/Sky';
 import { COUPON_FRUITS } from './tree3d/couponDesign';
 import { useFallingDonations } from '@/hooks/useFallingDonations';
 
 const GROUND_Y = -0.01;
 
-function Scene() {
+function CameraParallax() {
+  const { camera, mouse } = useThree();
+  const baseRef = useRef(new THREE.Vector3(0.8, 3.4, 9.5));
+  useFrame((_, dt) => {
+    const t = performance.now() / 1000;
+    const targetX = baseRef.current.x + mouse.x * 0.4 + Math.sin(t * 0.15) * 0.05;
+    const targetY = baseRef.current.y + mouse.y * 0.2;
+    camera.position.x += (targetX - camera.position.x) * Math.min(1, dt * 2);
+    camera.position.y += (targetY - camera.position.y) * Math.min(1, dt * 2);
+    camera.lookAt(0, 2.6, 0);
+  });
+  return null;
+}
+
+function Scene({ leafCount }: { leafCount: number }) {
   const branchTips = useMemo(() => getBranchTips().map((b) => b.tip), []);
   const fruits = useMemo(
     () => COUPON_FRUITS.slice(0, branchTips.length),
@@ -24,7 +40,6 @@ function Scene() {
     fruits.map(() => ({ phase: 'hanging' as const }))
   );
 
-  // Periodically drop a random hanging coupon with the next donation
   useEffect(() => {
     if (donations.length === 0) return;
     const interval = setInterval(() => {
@@ -78,17 +93,26 @@ function Scene() {
 
   return (
     <>
-      <ambientLight intensity={0.6} />
+      {/* Lighting rig — golden hour 3-point */}
+      <ambientLight intensity={0.45} color="#FFE9C7" />
       <directionalLight
-        position={[5, 8, 4]}
-        intensity={1.2}
+        position={[6, 9, 4]}
+        intensity={1.6}
+        color="#FFE4B5"
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-left={-8}
+        shadow-camera-right={8}
+        shadow-camera-top={8}
+        shadow-camera-bottom={-2}
+        shadow-bias={-0.0005}
       />
-      <directionalLight position={[-4, 3, -2]} intensity={0.4} color="#fde68a" />
+      <directionalLight position={[-5, 4, -2]} intensity={0.5} color="#A7C7E7" />
+      <directionalLight position={[0, 3, -6]} intensity={0.8} color="#FFA866" />
 
-      <Tree />
+      <Sky />
+      <Tree leafCount={leafCount} />
       <Ground y={GROUND_Y} />
 
       {fruits.map((data, i) => (
@@ -104,7 +128,8 @@ function Scene() {
         />
       ))}
 
-      <Environment preset="park" />
+      <Environment preset="sunset" background={false} />
+      <CameraParallax />
     </>
   );
 }
@@ -112,7 +137,9 @@ function Scene() {
 export function Tree3DScene() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(true);
-  const [dpr, setDpr] = useState<[number, number]>([1, 1.6]);
+  const [dpr, setDpr] = useState<[number, number]>([1, 1.75]);
+  const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const [enablePost, setEnablePost] = useState(!isMobile);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -125,25 +152,47 @@ export function Tree3DScene() {
     return () => obs.disconnect();
   }, []);
 
+  const leafCount = isMobile ? 1500 : 3500;
+
   return (
     <div
       ref={wrapRef}
-      className="relative w-full h-[420px] sm:h-[500px] md:h-[600px] lg:h-[680px]"
+      className="relative w-full h-[460px] sm:h-[540px] md:h-[640px] lg:h-[720px]"
     >
       <Canvas
         shadows
         dpr={dpr}
         frameloop={inView ? 'always' : 'demand'}
-        camera={{ position: [0.5, 3.2, 8.5], fov: 38 }}
-        gl={{ antialias: true, alpha: true }}
+        camera={{ position: [0.8, 3.4, 9.5], fov: 36 }}
+        gl={{
+          antialias: true,
+          alpha: true,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.1,
+        }}
         style={{ background: 'transparent' }}
       >
         <PerformanceMonitor
-          onDecline={() => setDpr([1, 1])}
-          onIncline={() => setDpr([1, 1.6])}
+          onDecline={() => {
+            setDpr([1, 1]);
+            setEnablePost(false);
+          }}
+          onIncline={() => setDpr([1, 1.75])}
         />
+        <SoftShadows size={25} samples={12} focus={0.6} />
         <Suspense fallback={null}>
-          <Scene />
+          <Scene leafCount={leafCount} />
+          {enablePost && (
+            <EffectComposer multisampling={0}>
+              <Bloom
+                intensity={0.55}
+                luminanceThreshold={0.85}
+                luminanceSmoothing={0.3}
+                mipmapBlur
+              />
+              <Vignette eskil={false} offset={0.2} darkness={0.55} />
+            </EffectComposer>
+          )}
         </Suspense>
       </Canvas>
     </div>
