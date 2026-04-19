@@ -72,17 +72,21 @@ function getCouponGeom() {
   return couponGeomCache;
 }
 
-export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown }: Props) {
+export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging }: Props) {
   const groupRef = useRef<THREE.Group>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const velocityRef = useRef({ y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 });
   const posRef = useRef(new THREE.Vector3());
   const rotRef = useRef(new THREE.Euler());
+  const caughtRef = useRef(false);
+  const [sparkle, setSparkle] = useState<{ pos: THREE.Vector3; time: number } | null>(null);
+  const { openStory } = useInteraction();
 
   useEffect(() => {
     if (state.phase === 'falling') {
+      caughtRef.current = false;
       velocityRef.current = {
-        y: 0.4, // small upward kick (twang)
+        y: 0.4,
         x: (Math.random() - 0.5) * 0.5,
         z: (Math.random() - 0.5) * 0.3,
         rotX: (Math.random() - 0.5) * 5,
@@ -93,6 +97,26 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       rotRef.current.set(0, 0, 0);
     }
   }, [state.phase, branchTip]);
+
+  const handlePointer = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    if (state.phase === 'hanging') {
+      onClickHanging(index);
+    } else if (state.phase === 'falling' && !caughtRef.current) {
+      caughtRef.current = true;
+      velocityRef.current = { y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 };
+      setSparkle({ pos: posRef.current.clone(), time: performance.now() / 1000 });
+      toast(`✨ You caught one! +$${state.donation.amount} impact`, { duration: 2200 });
+      // Settle to ground after a brief pause
+      setTimeout(() => {
+        const restPos = posRef.current.clone();
+        restPos.y = groundY + 0.025;
+        onLanded(index, restPos);
+      }, 350);
+    } else if (state.phase === 'landed') {
+      openStory(state.donation);
+    }
+  };
 
   const texture = useMemo(() => drawCouponTexture(data), [data]);
   const geom = useMemo(() => getCouponGeom(), []);
