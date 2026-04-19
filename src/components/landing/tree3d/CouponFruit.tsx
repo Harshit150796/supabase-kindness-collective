@@ -196,9 +196,19 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         />
       )}
 
-      <group ref={groupRef}>
+      <group
+        ref={groupRef}
+        onPointerDown={handlePointer}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = '';
+        }}
+      >
         {/* Gold edge glow (additive) */}
-        <mesh ref={glowRef} scale={[1.08, 1.12, 0.9]}>
+        <mesh ref={glowRef} scale={[1.08, 1.12, 0.9]} raycast={() => {}}>
           <boxGeometry args={[COUPON_W, COUPON_H, COUPON_D]} />
           <meshBasicMaterial
             color="#FFD56A"
@@ -223,11 +233,19 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         </mesh>
 
         {/* Back face (white) */}
-        <mesh position={[0, 0, -COUPON_D / 2 - 0.001]} rotation={[0, Math.PI, 0]}>
+        <mesh position={[0, 0, -COUPON_D / 2 - 0.001]} rotation={[0, Math.PI, 0]} raycast={() => {}}>
           <planeGeometry args={[COUPON_W * 0.95, COUPON_H * 0.95]} />
           <meshStandardMaterial color="#FFFFFF" roughness={0.7} />
         </mesh>
       </group>
+
+      {sparkle && (
+        <SparkleBurst
+          position={sparkle.pos}
+          startTime={sparkle.time}
+          onDone={() => setSparkle(null)}
+        />
+      )}
 
       {showLabel && state.phase === 'landed' && (
         <Html

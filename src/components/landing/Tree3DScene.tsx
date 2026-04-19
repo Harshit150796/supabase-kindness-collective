@@ -1,6 +1,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Environment, PerformanceMonitor } from '@react-three/drei';
+import { Environment, PerformanceMonitor, OrbitControls } from '@react-three/drei';
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { Tree, getBranchTips } from './tree3d/Tree';
@@ -9,59 +10,235 @@ import { Ground } from './tree3d/Ground';
 import { Sky } from './tree3d/Sky';
 import { COUPON_FRUITS } from './tree3d/couponDesign';
 import { useFallingDonations } from '@/hooks/useFallingDonations';
+import { InteractionProvider, useInteraction, type TimeOfDay } from './tree3d/InteractionContext';
+import { HitZones } from './tree3d/HitZones';
+import { Fireflies } from './tree3d/Fireflies';
+import { TrunkRipple } from './tree3d/TrunkRipple';
+import { Bird } from './tree3d/Bird';
+import { Squirrel } from './tree3d/Squirrel';
+import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
+import { TransparencyPopover } from './tree3d/TransparencyPopover';
 
 const GROUND_Y = -0.01;
+const DEFAULT_CAM = new THREE.Vector3(0, 4.0, 13);
+const TARGET = new THREE.Vector3(0, 3.4, 0);
 
-function CameraParallax() {
+function CameraRig({ controlsRef }: { controlsRef: React.RefObject<OrbitControlsImpl> }) {
   const { camera, mouse } = useThree();
+  const { parallaxBoostRef } = useInteraction();
+  const lastInteractionRef = useRef(performance.now() / 1000);
+  const resetAnim = useRef<{ start: number; from: THREE.Vector3 } | null>(null);
+
+  // Track interactions on the controls
+  useEffect(() => {
+    const c = controlsRef.current;
+    if (!c) return;
+    const onStart = () => {
+      lastInteractionRef.current = performance.now() / 1000;
+      resetAnim.current = null;
+    };
+    const onChange = () => {
+      lastInteractionRef.current = performance.now() / 1000;
+    };
+    c.addEventListener('start', onStart);
+    c.addEventListener('change', onChange);
+    return () => {
+      c.removeEventListener('start', onStart);
+      c.removeEventListener('change', onChange);
+    };
+  }, [controlsRef]);
+
+  // Expose reset on double-click via window event
+  useEffect(() => {
+    const onReset = () => {
+      resetAnim.current = { start: performance.now() / 1000, from: camera.position.clone() };
+    };
+    window.addEventListener('tree3d-reset-camera', onReset);
+    return () => window.removeEventListener('tree3d-reset-camera', onReset);
+  }, [camera]);
+
   useFrame((_, dt) => {
-    const t = performance.now() / 1000;
-    const targetX = mouse.x * 0.85 + Math.sin(t * 0.12) * 0.08;
-    const targetY = 4.0 + mouse.y * 0.35;
-    const k = Math.min(1, dt * 1.2);
-    camera.position.x += (targetX - camera.position.x) * k;
-    camera.position.y += (targetY - camera.position.y) * k;
-    camera.lookAt(0, 3.4, 0);
+    const c = controlsRef.current;
+    if (!c) return;
+    const now = performance.now() / 1000;
+    const idle = now - lastInteractionRef.current;
+
+    // Camera reset animation (double-click)
+    if (resetAnim.current) {
+      const k = Math.min(1, (now - resetAnim.current.start) / 0.6);
+      const eased = 1 - Math.pow(1 - k, 3);
+      camera.position.lerpVectors(resetAnim.current.from, DEFAULT_CAM, eased);
+      c.target.copy(TARGET);
+      if (k >= 1) resetAnim.current = null;
+    } else if (idle > 3 && c.getAzimuthalAngle() !== 0) {
+      // Auto-return to center azimuth
+      const az = c.getAzimuthalAngle();
+      const newAz = az * Math.pow(0.04, dt);
+      // Rotate camera around target on Y-axis to approach az=0
+      const offset = camera.position.clone().sub(c.target);
+      const sph = new THREE.Spherical().setFromVector3(offset);
+      sph.theta = newAz;
+      offset.setFromSpherical(sph);
+      camera.position.copy(c.target).add(offset);
+    }
+
+    // Subtle parallax overlay when not actively dragging (idle > 0.2s)
+    if (idle > 0.2 && !resetAnim.current) {
+      const boost = parallaxBoostRef.current.value;
+      const dx = mouse.x * 0.25 * boost;
+      const dy = mouse.y * 0.12 * boost;
+      // apply as offset on top of current orbit position
+      camera.position.x += dx * dt * 0.6;
+      camera.position.y += dy * dt * 0.6;
+    }
+
+    c.update();
   });
+
   return null;
+}
+
+function DayNightLights() {
+  const { timeOfDay } = useInteraction();
+  const dirRef = useRef<THREE.DirectionalLight>(null);
+  const ambRef = useRef<THREE.AmbientLight>(null);
+  const fillRef = useRef<THREE.DirectionalLight>(null);
+  const fogColorRef = useRef(new THREE.Color('#DCE6D5'));
+  const targetFog = useMemo(() => new THREE.Color(), []);
+  const { scene } = useThree();
+
+  const targets: Record<TimeOfDay, { dirCol: string; dirInt: number; ambCol: string; ambInt: number; fillCol: string; fillInt: number; fog: string }> = useMemo(
+    () => ({
+      day: { dirCol: '#FFF4E0', dirInt: 1.35, ambCol: '#F4F1E8', ambInt: 0.75, fillCol: '#BFD8E8', fillInt: 0.45, fog: '#DCE6D5' },
+      sunset: { dirCol: '#FFA060', dirInt: 1.0, ambCol: '#FFD0A0', ambInt: 0.55, fillCol: '#9B7BB5', fillInt: 0.35, fog: '#E8B890' },
+      night: { dirCol: '#9DB4E6', dirInt: 0.45, ambCol: '#5A6B8A', ambInt: 0.35, fillCol: '#3A4A7E', fillInt: 0.2, fog: '#1A2440' },
+    }),
+    []
+  );
+
+  const dirColor = useMemo(() => new THREE.Color(targets.day.dirCol), [targets]);
+  const ambColor = useMemo(() => new THREE.Color(targets.day.ambCol), [targets]);
+  const fillColor = useMemo(() => new THREE.Color(targets.day.fillCol), [targets]);
+
+  useFrame((_, dt) => {
+    const t = targets[timeOfDay];
+    const k = Math.min(1, dt * 1.5);
+    if (dirRef.current) {
+      dirColor.lerp(new THREE.Color(t.dirCol), k);
+      dirRef.current.color.copy(dirColor);
+      dirRef.current.intensity += (t.dirInt - dirRef.current.intensity) * k;
+    }
+    if (ambRef.current) {
+      ambColor.lerp(new THREE.Color(t.ambCol), k);
+      ambRef.current.color.copy(ambColor);
+      ambRef.current.intensity += (t.ambInt - ambRef.current.intensity) * k;
+    }
+    if (fillRef.current) {
+      fillColor.lerp(new THREE.Color(t.fillCol), k);
+      fillRef.current.color.copy(fillColor);
+      fillRef.current.intensity += (t.fillInt - fillRef.current.intensity) * k;
+    }
+    if (scene.fog) {
+      targetFog.set(t.fog);
+      fogColorRef.current.lerp(targetFog, k);
+      (scene.fog as THREE.Fog).color.copy(fogColorRef.current);
+    }
+  });
+
+  return (
+    <>
+      <ambientLight ref={ambRef} intensity={0.75} color="#F4F1E8" />
+      <directionalLight
+        ref={dirRef}
+        position={[6, 11, 5]}
+        intensity={1.35}
+        color="#FFF4E0"
+        castShadow
+        shadow-mapSize-width={4096}
+        shadow-mapSize-height={4096}
+        shadow-camera-left={-12}
+        shadow-camera-right={12}
+        shadow-camera-top={12}
+        shadow-camera-bottom={-3}
+        shadow-bias={-0.0005}
+        shadow-radius={8}
+        shadow-blurSamples={25}
+      />
+      <directionalLight ref={fillRef} position={[-6, 5, -3]} intensity={0.45} color="#BFD8E8" />
+    </>
+  );
 }
 
 function Scene({ leafCount }: { leafCount: number }) {
   const branchTips = useMemo(() => getBranchTips().map((b) => b.tip), []);
-  const fruits = useMemo(
-    () => COUPON_FRUITS.slice(0, branchTips.length),
-    [branchTips.length]
-  );
+  const fruits = useMemo(() => COUPON_FRUITS.slice(0, branchTips.length), [branchTips.length]);
 
   const donations = useFallingDonations();
   const donationIdxRef = useRef(0);
+  const { shakeEvent, bumpWind } = useInteraction();
 
   const [states, setStates] = useState<CouponState[]>(() =>
     fruits.map(() => ({ phase: 'hanging' as const }))
   );
 
-  useEffect(() => {
-    if (donations.length === 0) return;
-    const interval = setInterval(() => {
+  const dropOne = useCallback(
+    (idx: number) => {
       setStates((prev) => {
-        const hangingIdx = prev
-          .map((s, i) => (s.phase === 'hanging' ? i : -1))
-          .filter((i) => i >= 0);
-        if (hangingIdx.length === 0) return prev;
-        const pick = hangingIdx[Math.floor(Math.random() * hangingIdx.length)];
-        const donation = donations[donationIdxRef.current % donations.length];
+        if (prev[idx].phase !== 'hanging') return prev;
+        const donation = donations[donationIdxRef.current % Math.max(1, donations.length)];
         donationIdxRef.current++;
         const next = [...prev];
-        next[pick] = {
+        next[idx] = {
           phase: 'falling',
           startTime: performance.now() / 1000,
           donation,
         };
         return next;
       });
+    },
+    [donations]
+  );
+
+  // Auto drops on timer
+  useEffect(() => {
+    if (donations.length === 0) return;
+    const interval = setInterval(() => {
+      setStates((prev) => {
+        const hangingIdx = prev.map((s, i) => (s.phase === 'hanging' ? i : -1)).filter((i) => i >= 0);
+        if (hangingIdx.length === 0) return prev;
+        const pick = hangingIdx[Math.floor(Math.random() * hangingIdx.length)];
+        const donation = donations[donationIdxRef.current % donations.length];
+        donationIdxRef.current++;
+        const next = [...prev];
+        next[pick] = { phase: 'falling', startTime: performance.now() / 1000, donation };
+        return next;
+      });
     }, 4000);
     return () => clearInterval(interval);
   }, [donations]);
+
+  // Shake event → cascade drop 3-5 hanging coupons
+  useEffect(() => {
+    if (!shakeEvent) return;
+    setStates((prev) => {
+      const hangingIdx = prev.map((s, i) => (s.phase === 'hanging' ? i : -1)).filter((i) => i >= 0);
+      if (hangingIdx.length === 0) return prev;
+      const count = Math.min(hangingIdx.length, 3 + Math.floor(Math.random() * 3));
+      const shuffled = [...hangingIdx].sort(() => Math.random() - 0.5).slice(0, count);
+      const next = [...prev];
+      shuffled.forEach((idx, n) => {
+        const donation = donations[donationIdxRef.current % Math.max(1, donations.length)];
+        donationIdxRef.current++;
+        next[idx] = {
+          phase: 'falling',
+          startTime: performance.now() / 1000 + n * 0.1,
+          donation,
+        };
+      });
+      return next;
+    });
+    bumpWind(0.5);
+  }, [shakeEvent, donations, bumpWind]);
 
   const handleLanded = useCallback((idx: number, restPos: THREE.Vector3) => {
     setStates((prev) => {
@@ -93,32 +270,18 @@ function Scene({ leafCount }: { leafCount: number }) {
 
   return (
     <>
-      {/* Natural mid-morning lighting — neutral, less orange */}
-      <ambientLight intensity={0.75} color="#F4F1E8" />
-      <directionalLight
-        position={[6, 11, 5]}
-        intensity={1.35}
-        color="#FFF4E0"
-        castShadow
-        shadow-mapSize-width={4096}
-        shadow-mapSize-height={4096}
-        shadow-camera-left={-12}
-        shadow-camera-right={12}
-        shadow-camera-top={12}
-        shadow-camera-bottom={-3}
-        shadow-bias={-0.0005}
-        shadow-radius={8}
-        shadow-blurSamples={25}
-      />
-      <directionalLight position={[-6, 5, -3]} intensity={0.45} color="#BFD8E8" />
-      <directionalLight position={[0, 4, -8]} intensity={0.5} color="#FFD8A8" />
-
-      {/* Atmospheric depth */}
+      <DayNightLights />
+      <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />
       <fog attach="fog" args={['#DCE6D5', 18, 45]} />
 
       <Sky />
       <Tree leafCount={leafCount} />
       <Ground y={GROUND_Y} />
+      <HitZones />
+      <Fireflies />
+      <TrunkRipple />
+      <Bird />
+      <Squirrel />
 
       {fruits.map((data, i) => (
         <CouponFruit
@@ -130,17 +293,41 @@ function Scene({ leafCount }: { leafCount: number }) {
           groundY={GROUND_Y}
           onLanded={handleLanded}
           onRegrown={handleRegrown}
+          onClickHanging={dropOne}
         />
       ))}
 
       <Environment preset="forest" background={false} />
-      <CameraParallax />
     </>
   );
 }
 
+function WindTracker() {
+  const { bumpWind } = useInteraction();
+  const lastRef = useRef<{ x: number; y: number; t: number } | null>(null);
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const now = performance.now();
+      if (lastRef.current) {
+        const dx = e.clientX - lastRef.current.x;
+        const dy = e.clientY - lastRef.current.y;
+        const dt = Math.max(1, now - lastRef.current.t);
+        const v = Math.sqrt(dx * dx + dy * dy) / dt; // px/ms
+        if (v > 0.5) bumpWind(Math.min(0.05, v * 0.01));
+      }
+      lastRef.current = { x: e.clientX, y: e.clientY, t: now };
+    };
+    window.addEventListener('pointermove', onMove);
+    return () => window.removeEventListener('pointermove', onMove);
+  }, [bumpWind]);
+
+  return null;
+}
+
 export function Tree3DScene() {
   const wrapRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<OrbitControlsImpl>(null);
   const [inView, setInView] = useState(true);
   const [dpr, setDpr] = useState<[number, number]>([1, 1.75]);
   const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
@@ -149,10 +336,7 @@ export function Tree3DScene() {
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const obs = new IntersectionObserver(
-      ([e]) => setInView(e.isIntersecting),
-      { threshold: 0.05 }
-    );
+    const obs = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: 0.05 });
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
@@ -160,7 +344,41 @@ export function Tree3DScene() {
   const leafCount = isMobile ? 2800 : 7000;
 
   return (
-    <div ref={wrapRef} className="absolute inset-0 w-full h-full">
+    <InteractionProvider>
+      <div ref={wrapRef} className="absolute inset-0 w-full h-full">
+        <Tree3DInner
+          controlsRef={controlsRef}
+          dpr={dpr}
+          inView={inView}
+          enablePost={enablePost}
+          leafCount={leafCount}
+          onDecline={() => {
+            setDpr([1, 1]);
+            setEnablePost(false);
+          }}
+          onIncline={() => setDpr([1, 1.75])}
+        />
+      </div>
+    </InteractionProvider>
+  );
+}
+
+interface InnerProps {
+  controlsRef: React.RefObject<OrbitControlsImpl>;
+  dpr: [number, number];
+  inView: boolean;
+  enablePost: boolean;
+  leafCount: number;
+  onDecline: () => void;
+  onIncline: () => void;
+}
+
+function Tree3DInner({ controlsRef, dpr, inView, enablePost, leafCount, onDecline, onIncline }: InnerProps) {
+  const { spawnRipple, setParallaxBoost } = useInteraction();
+  const lastClickRef = useRef(0);
+
+  return (
+    <>
       <Canvas
         shadows={{ type: THREE.PCFSoftShadowMap }}
         dpr={dpr}
@@ -173,30 +391,49 @@ export function Tree3DScene() {
           toneMappingExposure: 1.05,
         }}
         style={{ background: 'transparent' }}
+        onPointerDown={() => setParallaxBoost(true)}
+        onPointerUp={() => setParallaxBoost(false)}
+        onPointerLeave={() => setParallaxBoost(false)}
+        onClick={() => {
+          spawnRipple();
+          const now = performance.now();
+          if (now - lastClickRef.current < 350) {
+            window.dispatchEvent(new CustomEvent('tree3d-reset-camera'));
+          }
+          lastClickRef.current = now;
+        }}
       >
-        <PerformanceMonitor
-          onDecline={() => {
-            setDpr([1, 1]);
-            setEnablePost(false);
-          }}
-          onIncline={() => setDpr([1, 1.75])}
+        <PerformanceMonitor onDecline={onDecline} onIncline={onIncline} />
+        <OrbitControls
+          ref={controlsRef}
+          enablePan={false}
+          enableZoom={true}
+          enableDamping
+          dampingFactor={0.08}
+          minDistance={9}
+          maxDistance={17}
+          minPolarAngle={Math.PI / 3}
+          maxPolarAngle={Math.PI / 2.1}
+          minAzimuthAngle={-Math.PI / 2}
+          maxAzimuthAngle={Math.PI / 2}
+          target={[0, 3.4, 0]}
+          makeDefault
         />
+        <CameraRig controlsRef={controlsRef} />
+        <WindTracker />
         <Suspense fallback={null}>
           <Scene leafCount={leafCount} />
           {enablePost && (
             <EffectComposer multisampling={0}>
-              <Bloom
-                intensity={0.3}
-                luminanceThreshold={0.92}
-                luminanceSmoothing={0.3}
-                mipmapBlur
-              />
+              <Bloom intensity={0.3} luminanceThreshold={0.92} luminanceSmoothing={0.3} mipmapBlur />
               <Vignette eskil={false} offset={0.3} darkness={0.3} />
             </EffectComposer>
           )}
         </Suspense>
       </Canvas>
-    </div>
+      <RecipientStoryPanel />
+      <TransparencyPopover />
+    </>
   );
 }
 
