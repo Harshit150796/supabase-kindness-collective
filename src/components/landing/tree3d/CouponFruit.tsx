@@ -1,9 +1,12 @@
-import { useMemo, useRef, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useMemo, useRef, useEffect, useState } from 'react';
+import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Line, Html } from '@react-three/drei';
 import { drawCouponTexture, type CouponData } from './couponDesign';
 import type { FallingDonation } from '@/hooks/useFallingDonations';
+import { useInteraction } from './InteractionContext';
+import { SparkleBurst } from './SparkleBurst';
+import { toast } from 'sonner';
 
 export type CouponState =
   | { phase: 'hanging' }
@@ -19,6 +22,7 @@ interface Props {
   index: number;
   onLanded: (idx: number, restPos: THREE.Vector3) => void;
   onRegrown: (idx: number) => void;
+  onClickHanging: (idx: number) => void;
 }
 
 const HANG_DROP = 1.0;
@@ -68,17 +72,21 @@ function getCouponGeom() {
   return couponGeomCache;
 }
 
-export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown }: Props) {
+export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging }: Props) {
   const groupRef = useRef<THREE.Group>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const velocityRef = useRef({ y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 });
   const posRef = useRef(new THREE.Vector3());
   const rotRef = useRef(new THREE.Euler());
+  const caughtRef = useRef(false);
+  const [sparkle, setSparkle] = useState<{ pos: THREE.Vector3; time: number } | null>(null);
+  const { openStory } = useInteraction();
 
   useEffect(() => {
     if (state.phase === 'falling') {
+      caughtRef.current = false;
       velocityRef.current = {
-        y: 0.4, // small upward kick (twang)
+        y: 0.4,
         x: (Math.random() - 0.5) * 0.5,
         z: (Math.random() - 0.5) * 0.3,
         rotX: (Math.random() - 0.5) * 5,
@@ -89,6 +97,26 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       rotRef.current.set(0, 0, 0);
     }
   }, [state.phase, branchTip]);
+
+  const handlePointer = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    if (state.phase === 'hanging') {
+      onClickHanging(index);
+    } else if (state.phase === 'falling' && !caughtRef.current) {
+      caughtRef.current = true;
+      velocityRef.current = { y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 };
+      setSparkle({ pos: posRef.current.clone(), time: performance.now() / 1000 });
+      toast(`✨ You caught one! +$${state.donation.amount} impact`, { duration: 2200 });
+      // Settle to ground after a brief pause
+      setTimeout(() => {
+        const restPos = posRef.current.clone();
+        restPos.y = groundY + 0.025;
+        onLanded(index, restPos);
+      }, 350);
+    } else if (state.phase === 'landed') {
+      openStory(state.donation);
+    }
+  };
 
   const texture = useMemo(() => drawCouponTexture(data), [data]);
   const geom = useMemo(() => getCouponGeom(), []);
@@ -168,9 +196,19 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         />
       )}
 
-      <group ref={groupRef}>
+      <group
+        ref={groupRef}
+        onPointerDown={handlePointer}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = '';
+        }}
+      >
         {/* Gold edge glow (additive) */}
-        <mesh ref={glowRef} scale={[1.08, 1.12, 0.9]}>
+        <mesh ref={glowRef} scale={[1.08, 1.12, 0.9]} raycast={() => {}}>
           <boxGeometry args={[COUPON_W, COUPON_H, COUPON_D]} />
           <meshBasicMaterial
             color="#FFD56A"
@@ -195,11 +233,19 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         </mesh>
 
         {/* Back face (white) */}
-        <mesh position={[0, 0, -COUPON_D / 2 - 0.001]} rotation={[0, Math.PI, 0]}>
+        <mesh position={[0, 0, -COUPON_D / 2 - 0.001]} rotation={[0, Math.PI, 0]} raycast={() => {}}>
           <planeGeometry args={[COUPON_W * 0.95, COUPON_H * 0.95]} />
           <meshStandardMaterial color="#FFFFFF" roughness={0.7} />
         </mesh>
       </group>
+
+      {sparkle && (
+        <SparkleBurst
+          position={sparkle.pos}
+          startTime={sparkle.time}
+          onDone={() => setSparkle(null)}
+        />
+      )}
 
       {showLabel && state.phase === 'landed' && (
         <Html
