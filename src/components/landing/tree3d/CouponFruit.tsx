@@ -1,9 +1,12 @@
-import { useMemo, useRef, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useMemo, useRef, useEffect, useState } from 'react';
+import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Line, Html } from '@react-three/drei';
 import { drawCouponTexture, type CouponData } from './couponDesign';
 import type { FallingDonation } from '@/hooks/useFallingDonations';
+import { useInteraction } from './InteractionContext';
+import { SparkleBurst } from './SparkleBurst';
+import { toast } from 'sonner';
 
 export type CouponState =
   | { phase: 'hanging' }
@@ -19,6 +22,7 @@ interface Props {
   index: number;
   onLanded: (idx: number, restPos: THREE.Vector3) => void;
   onRegrown: (idx: number) => void;
+  onClickHanging: (idx: number) => void;
 }
 
 const HANG_DROP = 1.0;
