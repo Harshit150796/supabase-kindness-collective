@@ -16,11 +16,12 @@ function CameraParallax() {
   const { camera, mouse } = useThree();
   useFrame((_, dt) => {
     const t = performance.now() / 1000;
-    const targetX = mouse.x * 0.5 + Math.sin(t * 0.12) * 0.06;
-    const targetY = 4.0 + mouse.y * 0.2;
-    camera.position.x += (targetX - camera.position.x) * Math.min(1, dt * 1.6);
-    camera.position.y += (targetY - camera.position.y) * Math.min(1, dt * 1.6);
-    camera.lookAt(0, 3.2, 0);
+    const targetX = mouse.x * 0.85 + Math.sin(t * 0.12) * 0.08;
+    const targetY = 4.0 + mouse.y * 0.35;
+    const k = Math.min(1, dt * 1.2);
+    camera.position.x += (targetX - camera.position.x) * k;
+    camera.position.y += (targetY - camera.position.y) * k;
+    camera.lookAt(0, 3.4, 0);
   });
   return null;
 }
@@ -96,16 +97,18 @@ function Scene({ leafCount }: { leafCount: number }) {
       <ambientLight intensity={0.75} color="#F4F1E8" />
       <directionalLight
         position={[6, 11, 5]}
-        intensity={1.3}
+        intensity={1.35}
         color="#FFF4E0"
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={4096}
+        shadow-mapSize-height={4096}
         shadow-camera-left={-12}
         shadow-camera-right={12}
         shadow-camera-top={12}
         shadow-camera-bottom={-3}
         shadow-bias={-0.0005}
+        shadow-radius={8}
+        shadow-blurSamples={25}
       />
       <directionalLight position={[-6, 5, -3]} intensity={0.45} color="#BFD8E8" />
       <directionalLight position={[0, 4, -8]} intensity={0.5} color="#FFD8A8" />
@@ -130,7 +133,7 @@ function Scene({ leafCount }: { leafCount: number }) {
         />
       ))}
 
-      <Environment preset="park" background={false} />
+      <Environment preset="forest" background={false} />
       <CameraParallax />
     </>
   );
