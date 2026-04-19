@@ -1,16 +1,34 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useInteraction } from './InteractionContext';
+
+const PALETTES = {
+  day: { top: '#BFD8E8', mid: '#FFF2D8', bot: '#D8E0CC' },
+  sunset: { top: '#5B7BB5', mid: '#FFD89E', bot: '#FF8E5C' },
+  night: { top: '#0A1530', mid: '#1F2C5C', bot: '#3A4A7E' },
+};
 
 export function Sky() {
+  const { timeOfDay } = useInteraction();
+
+  const targets = useMemo(
+    () => ({
+      top: new THREE.Color(),
+      mid: new THREE.Color(),
+      bot: new THREE.Color(),
+    }),
+    []
+  );
+
   const mat = useMemo(() => {
     return new THREE.ShaderMaterial({
       side: THREE.BackSide,
       depthWrite: false,
       uniforms: {
-        topColor: { value: new THREE.Color('#BFD8E8') },
-        midColor: { value: new THREE.Color('#FFF2D8') },
-        bottomColor: { value: new THREE.Color('#D8E0CC') },
+        topColor: { value: new THREE.Color(PALETTES.day.top) },
+        midColor: { value: new THREE.Color(PALETTES.day.mid) },
+        bottomColor: { value: new THREE.Color(PALETTES.day.bot) },
       },
       vertexShader: `
         varying vec3 vWorldPos;
@@ -36,16 +54,35 @@ export function Sky() {
     });
   }, []);
 
+  useFrame((_, dt) => {
+    const p = PALETTES[timeOfDay];
+    targets.top.set(p.top);
+    targets.mid.set(p.mid);
+    targets.bot.set(p.bot);
+    const k = Math.min(1, dt * 1.5);
+    (mat.uniforms.topColor.value as THREE.Color).lerp(targets.top, k);
+    (mat.uniforms.midColor.value as THREE.Color).lerp(targets.mid, k);
+    (mat.uniforms.bottomColor.value as THREE.Color).lerp(targets.bot, k);
+  });
+
   return (
     <>
       <mesh>
         <sphereGeometry args={[60, 32, 32]} />
         <primitive object={mat} attach="material" />
       </mesh>
-      <mesh position={[8, 9, -12]}>
-        <sphereGeometry args={[1.2, 24, 24]} />
-        <meshBasicMaterial color="#FFF6D8" toneMapped={false} />
-      </mesh>
+      {timeOfDay !== 'night' && (
+        <mesh position={[8, 9, -12]}>
+          <sphereGeometry args={[1.2, 24, 24]} />
+          <meshBasicMaterial color={timeOfDay === 'sunset' ? '#FFB070' : '#FFF6D8'} toneMapped={false} />
+        </mesh>
+      )}
+      {timeOfDay === 'night' && (
+        <mesh position={[6, 10, -12]}>
+          <sphereGeometry args={[0.9, 24, 24]} />
+          <meshBasicMaterial color="#E8EBF5" toneMapped={false} />
+        </mesh>
+      )}
       <DustMotes />
     </>
   );
