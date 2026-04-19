@@ -162,7 +162,7 @@ export function Tree3DScene() {
   return (
     <div ref={wrapRef} className="absolute inset-0 w-full h-full">
       <Canvas
-        shadows
+        shadows={{ type: THREE.PCFSoftShadowMap }}
         dpr={dpr}
         frameloop={inView ? 'always' : 'demand'}
         camera={{ position: [0, 4.0, 13], fov: 38 }}
