@@ -1,6 +1,6 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Environment, PerformanceMonitor, useFBX } from '@react-three/drei';
+import { Environment, PerformanceMonitor } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { Tree, getBranchTips } from './tree3d/Tree';
@@ -10,21 +10,17 @@ import { Sky } from './tree3d/Sky';
 import { COUPON_FRUITS } from './tree3d/couponDesign';
 import { useFallingDonations } from '@/hooks/useFallingDonations';
 
-// Preload FBX so suspense fallback shows immediately and asset is cached
-useFBX.preload('/models/tree.fbx');
-
 const GROUND_Y = -0.01;
 
 function CameraParallax() {
   const { camera, mouse } = useThree();
   useFrame((_, dt) => {
     const t = performance.now() / 1000;
-    const targetX = mouse.x * 0.6 + Math.sin(t * 0.12) * 0.06;
-    const targetY = 4.0 + mouse.y * 0.3;
-    const k = Math.min(1, dt * 1.2);
-    camera.position.x += (targetX - camera.position.x) * k;
-    camera.position.y += (targetY - camera.position.y) * k;
-    camera.lookAt(0, 3.6, 0);
+    const targetX = mouse.x * 0.5 + Math.sin(t * 0.12) * 0.06;
+    const targetY = 4.0 + mouse.y * 0.2;
+    camera.position.x += (targetX - camera.position.x) * Math.min(1, dt * 1.6);
+    camera.position.y += (targetY - camera.position.y) * Math.min(1, dt * 1.6);
+    camera.lookAt(0, 3.2, 0);
   });
   return null;
 }
@@ -96,25 +92,25 @@ function Scene({ leafCount }: { leafCount: number }) {
 
   return (
     <>
-      <ambientLight intensity={0.7} color="#F4F1E8" />
+      {/* Natural mid-morning lighting — neutral, less orange */}
+      <ambientLight intensity={0.75} color="#F4F1E8" />
       <directionalLight
         position={[6, 11, 5]}
         intensity={1.3}
         color="#FFF4E0"
         castShadow
-        shadow-mapSize-width={4096}
-        shadow-mapSize-height={4096}
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
         shadow-camera-left={-12}
         shadow-camera-right={12}
         shadow-camera-top={12}
         shadow-camera-bottom={-3}
         shadow-bias={-0.0005}
-        shadow-radius={8}
-        shadow-blurSamples={25}
       />
       <directionalLight position={[-6, 5, -3]} intensity={0.45} color="#BFD8E8" />
       <directionalLight position={[0, 4, -8]} intensity={0.5} color="#FFD8A8" />
 
+      {/* Atmospheric depth */}
       <fog attach="fog" args={['#DCE6D5', 18, 45]} />
 
       <Sky />
@@ -134,7 +130,7 @@ function Scene({ leafCount }: { leafCount: number }) {
         />
       ))}
 
-      <Environment preset="forest" background={false} />
+      <Environment preset="park" background={false} />
       <CameraParallax />
     </>
   );
@@ -158,12 +154,12 @@ export function Tree3DScene() {
     return () => obs.disconnect();
   }, []);
 
-  const leafCount = isMobile ? 1000 : 3000;
+  const leafCount = isMobile ? 2800 : 7000;
 
   return (
     <div ref={wrapRef} className="absolute inset-0 w-full h-full">
       <Canvas
-        shadows="soft"
+        shadows
         dpr={dpr}
         frameloop={inView ? 'always' : 'demand'}
         camera={{ position: [0, 4.0, 13], fov: 38 }}
