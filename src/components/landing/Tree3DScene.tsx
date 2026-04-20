@@ -23,11 +23,18 @@ const GROUND_Y = -0.01;
 const DEFAULT_CAM = new THREE.Vector3(0, 4.0, 13);
 const TARGET = new THREE.Vector3(0, 3.4, 0);
 
-function CameraRig({ controlsRef }: { controlsRef: React.RefObject<OrbitControlsImpl> }) {
+function CameraRig({
+  controlsRef,
+  zoomProgressRef,
+}: {
+  controlsRef: React.RefObject<OrbitControlsImpl>;
+  zoomProgressRef: React.MutableRefObject<number>;
+}) {
   const { camera, mouse } = useThree();
   const { parallaxBoostRef } = useInteraction();
   const lastInteractionRef = useRef(performance.now() / 1000);
   const resetAnim = useRef<{ start: number; from: THREE.Vector3 } | null>(null);
+  const currentDistRef = useRef(13);
 
   // Track interactions on the controls
   useEffect(() => {
