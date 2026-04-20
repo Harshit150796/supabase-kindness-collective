@@ -23,11 +23,18 @@ const GROUND_Y = -0.01;
 const DEFAULT_CAM = new THREE.Vector3(0, 4.0, 13);
 const TARGET = new THREE.Vector3(0, 3.4, 0);
 
-function CameraRig({ controlsRef }: { controlsRef: React.RefObject<OrbitControlsImpl> }) {
+function CameraRig({
+  controlsRef,
+  zoomProgressRef,
+}: {
+  controlsRef: React.RefObject<OrbitControlsImpl>;
+  zoomProgressRef: React.MutableRefObject<number>;
+}) {
   const { camera, mouse } = useThree();
   const { parallaxBoostRef } = useInteraction();
   const lastInteractionRef = useRef(performance.now() / 1000);
   const resetAnim = useRef<{ start: number; from: THREE.Vector3 } | null>(null);
+  const currentDistRef = useRef(13);
 
   // Track interactions on the controls
   useEffect(() => {
@@ -81,6 +88,15 @@ function CameraRig({ controlsRef }: { controlsRef: React.RefObject<OrbitControls
       offset.setFromSpherical(sph);
       camera.position.copy(c.target).add(offset);
     }
+
+    // Drive camera distance from external zoomProgress (scroll-controlled)
+    const targetDist = 13 + zoomProgressRef.current * 4; // 13..17
+    currentDistRef.current += (targetDist - currentDistRef.current) * Math.min(1, dt * 6);
+    const offset = camera.position.clone().sub(c.target);
+    const sph = new THREE.Spherical().setFromVector3(offset);
+    sph.radius = currentDistRef.current;
+    offset.setFromSpherical(sph);
+    camera.position.copy(c.target).add(offset);
 
     // Subtle parallax overlay when not actively dragging (idle > 0.2s)
     if (idle > 0.2 && !resetAnim.current) {
@@ -328,6 +344,7 @@ function WindTracker() {
 export function Tree3DScene() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
+  const zoomProgressRef = useRef(0); // 0 = zoomed in (13), 1 = zoomed out (17)
   const [inView, setInView] = useState(true);
   const [dpr, setDpr] = useState<[number, number]>([1, 1.75]);
   const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
@@ -341,13 +358,75 @@ export function Tree3DScene() {
     return () => obs.disconnect();
   }, []);
 
+  // Scroll-to-zoom-then-release: intercept wheel + touch on the hero wrapper.
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+
+    const WHEEL_SENSITIVITY = 0.0018;
+    const TOUCH_SENSITIVITY = 0.005;
+
+    const onWheel = (e: WheelEvent) => {
+      if (window.scrollY > 4) return;
+      const cur = zoomProgressRef.current;
+      const dy = e.deltaY;
+      if (dy > 0 && cur >= 1) return; // fully zoomed out → let page scroll
+      if (dy < 0 && cur <= 0) return; // fully zoomed in → let page scroll up (no-op at top)
+      e.preventDefault();
+      zoomProgressRef.current = Math.max(0, Math.min(1, cur + dy * WHEEL_SENSITIVITY));
+    };
+
+    let lastTouchY: number | null = null;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      lastTouchY = e.touches[0].clientY;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (lastTouchY === null || e.touches.length !== 1) return;
+      if (window.scrollY > 4) return;
+      const y = e.touches[0].clientY;
+      const dy = lastTouchY - y; // swipe up = positive (zoom out)
+      lastTouchY = y;
+      const cur = zoomProgressRef.current;
+      if (dy > 0 && cur >= 1) return; // let page scroll
+      if (dy < 0 && cur <= 0) return; // let page scroll
+      e.preventDefault();
+      zoomProgressRef.current = Math.max(0, Math.min(1, cur + dy * TOUCH_SENSITIVITY));
+    };
+
+    const onTouchEnd = () => {
+      lastTouchY = null;
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    el.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, []);
+
   const leafCount = isMobile ? 2800 : 7000;
 
   return (
     <InteractionProvider>
-      <div ref={wrapRef} className="absolute inset-0 w-full h-full">
+      <div
+        ref={wrapRef}
+        className="absolute inset-0 w-full h-full"
+        style={{ touchAction: 'pan-x' }}
+      >
         <Tree3DInner
           controlsRef={controlsRef}
+          zoomProgressRef={zoomProgressRef}
           dpr={dpr}
           inView={inView}
           enablePost={enablePost}
@@ -358,6 +437,8 @@ export function Tree3DScene() {
           }}
           onIncline={() => setDpr([1, 1.75])}
         />
+        <RecipientStoryPanel />
+        <TransparencyPopover />
       </div>
     </InteractionProvider>
   );
@@ -365,6 +446,7 @@ export function Tree3DScene() {
 
 interface InnerProps {
   controlsRef: React.RefObject<OrbitControlsImpl>;
+  zoomProgressRef: React.MutableRefObject<number>;
   dpr: [number, number];
   inView: boolean;
   enablePost: boolean;
@@ -373,7 +455,7 @@ interface InnerProps {
   onIncline: () => void;
 }
 
-function Tree3DInner({ controlsRef, dpr, inView, enablePost, leafCount, onDecline, onIncline }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, onDecline, onIncline }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const lastClickRef = useRef(0);
 
@@ -407,7 +489,7 @@ function Tree3DInner({ controlsRef, dpr, inView, enablePost, leafCount, onDeclin
         <OrbitControls
           ref={controlsRef}
           enablePan={false}
-          enableZoom={true}
+          enableZoom={false}
           enableDamping
           dampingFactor={0.08}
           minDistance={9}
@@ -419,7 +501,7 @@ function Tree3DInner({ controlsRef, dpr, inView, enablePost, leafCount, onDeclin
           target={[0, 3.4, 0]}
           makeDefault
         />
-        <CameraRig controlsRef={controlsRef} />
+        <CameraRig controlsRef={controlsRef} zoomProgressRef={zoomProgressRef} />
         <WindTracker />
         <Suspense fallback={null}>
           <Scene leafCount={leafCount} />
@@ -431,8 +513,6 @@ function Tree3DInner({ controlsRef, dpr, inView, enablePost, leafCount, onDeclin
           )}
         </Suspense>
       </Canvas>
-      <RecipientStoryPanel />
-      <TransparencyPopover />
     </>
   );
 }
