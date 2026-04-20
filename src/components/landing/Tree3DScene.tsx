@@ -89,6 +89,15 @@ function CameraRig({
       camera.position.copy(c.target).add(offset);
     }
 
+    // Drive camera distance from external zoomProgress (scroll-controlled)
+    const targetDist = 13 + zoomProgressRef.current * 4; // 13..17
+    currentDistRef.current += (targetDist - currentDistRef.current) * Math.min(1, dt * 6);
+    const offset = camera.position.clone().sub(c.target);
+    const sph = new THREE.Spherical().setFromVector3(offset);
+    sph.radius = currentDistRef.current;
+    offset.setFromSpherical(sph);
+    camera.position.copy(c.target).add(offset);
+
     // Subtle parallax overlay when not actively dragging (idle > 0.2s)
     if (idle > 0.2 && !resetAnim.current) {
       const boost = parallaxBoostRef.current.value;
