@@ -59,6 +59,7 @@ import AdminBlog from "./pages/admin/AdminBlog";
 import AdminFAQ from "./pages/admin/AdminFAQ";
 import AdminFundraisers from "./pages/admin/AdminFundraisers";
 import AdminNewsletters from "./pages/admin/AdminNewsletters";
+import AdminDonations from "./pages/admin/AdminDonations";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import Unsubscribe from "./pages/Unsubscribe";
@@ -131,6 +132,7 @@ const AppRoutes = () => (
     <Route path="/admin/faq" element={<ProtectedRoute allowedRoles={['admin']}><AdminFAQ /></ProtectedRoute>} />
     <Route path="/admin/fundraisers" element={<ProtectedRoute allowedRoles={['admin']}><AdminFundraisers /></ProtectedRoute>} />
     <Route path="/admin/newsletters" element={<ProtectedRoute allowedRoles={['admin']}><AdminNewsletters /></ProtectedRoute>} />
+    <Route path="/admin/donations" element={<ProtectedRoute allowedRoles={['admin']}><AdminDonations /></ProtectedRoute>} />
     
     {/* Blog Routes */}
     <Route path="/blog" element={<Blog />} />
