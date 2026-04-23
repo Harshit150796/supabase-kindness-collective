@@ -426,6 +426,7 @@ export type Database = {
           decline_reason: string | null
           donor_email: string | null
           donor_id: string | null
+          donor_name: string | null
           fundraiser_id: string | null
           id: string
           is_anonymous: boolean | null
@@ -448,6 +449,7 @@ export type Database = {
           decline_reason?: string | null
           donor_email?: string | null
           donor_id?: string | null
+          donor_name?: string | null
           fundraiser_id?: string | null
           id?: string
           is_anonymous?: boolean | null
@@ -470,6 +472,7 @@ export type Database = {
           decline_reason?: string | null
           donor_email?: string | null
           donor_id?: string | null
+          donor_name?: string | null
           fundraiser_id?: string | null
           id?: string
           is_anonymous?: boolean | null
@@ -1185,6 +1188,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_donation_to_fundraiser: {
+        Args: {
+          _amount: number
+          _donor_email: string
+          _donor_id: string
+          _fundraiser_id: string
+        }
+        Returns: undefined
+      }
       cleanup_expired_otps: { Args: never; Returns: undefined }
       cleanup_expired_password_reset_tokens: { Args: never; Returns: undefined }
       generate_card_number: { Args: never; Returns: string }
