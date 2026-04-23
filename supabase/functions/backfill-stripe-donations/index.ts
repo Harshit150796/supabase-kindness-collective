@@ -126,6 +126,9 @@ Deno.serve(async (req) => {
         const donorEmail = (rawMetadataEmail && rawMetadataEmail.trim() !== "") 
           ? rawMetadataEmail 
           : (session.customer_details?.email || null);
+        const donorName = session.customer_details?.name || null;
+        const rawFundraiserId = metadata.fundraiser_id || null;
+        const fundraiserId = (rawFundraiserId && rawFundraiserId.trim() !== "") ? rawFundraiserId : null;
 
         // Insert into donations table
         const { error: insertError } = await supabase.from("donations").insert({
@@ -139,7 +142,9 @@ Deno.serve(async (req) => {
           currency,
           receipt_url: receiptUrl,
           donor_email: donorEmail,
+          donor_name: donorName,
           brand_partner: brandPartner,
+          fundraiser_id: fundraiserId,
           status: "completed",
           created_at: new Date(session.created * 1000).toISOString(),
         });

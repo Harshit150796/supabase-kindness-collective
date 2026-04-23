@@ -19,7 +19,7 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, brandName, brandId, brandAllocations, userId, userEmail } = await req.json();
+    const { amount, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = await req.json();
 
     // Process brand allocations (multi-brand support)
     const allocations: BrandAllocation[] = brandAllocations && Array.isArray(brandAllocations) && brandAllocations.length > 0
@@ -126,6 +126,7 @@ serve(async (req) => {
         brand_count: allocations.length.toString(),
         donor_id: userId || "",
         donor_email: userEmail || "",
+        fundraiser_id: fundraiserId || "",
       },
       
       // Simplified payment_intent metadata — removed redundant fields

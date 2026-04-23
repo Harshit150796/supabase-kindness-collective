@@ -33,6 +33,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         { icon: Shield, label: 'Verifications', path: '/admin/verifications' },
         { icon: Gift, label: 'Coupons', path: '/admin/coupons' },
         { icon: Megaphone, label: 'Fundraisers', path: '/admin/fundraisers' },
+        { icon: DollarSign, label: 'Donations', path: '/admin/donations' },
         { icon: BarChart, label: 'Analytics', path: '/admin/analytics' },
         { icon: FileText, label: 'Content', path: '/admin/content' },
         { icon: BookOpen, label: 'Stories', path: '/admin/stories' },

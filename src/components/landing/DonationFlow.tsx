@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -230,6 +230,11 @@ export function DonationFlow() {
         amount: Number(((amount * a.percentage) / 100).toFixed(2)),
       }));
 
+      // Capture fundraiser context from URL query string (?fundraiser=<id>)
+      const fundraiserId = typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('fundraiser')
+        : null;
+
       const { data, error } = await supabase.functions.invoke('create-donation-checkout', {
         body: {
           amount,
@@ -240,6 +245,7 @@ export function DonationFlow() {
           brandAllocations,
           userId: user?.id || null,
           userEmail: user?.email || null,
+          fundraiserId: fundraiserId || null,
         },
       });
 

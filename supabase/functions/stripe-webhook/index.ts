@@ -249,7 +249,14 @@ async function handleSuccessfulPayment(
     ? metadata.donor_email 
     : (session.customer_details?.email || null);
 
-  console.log(`Processing ${isMultiBrand ? 'multi-brand' : 'single-brand'} donation with ${brandAllocations.length} brand(s)`);
+  // Capture donor name from Stripe checkout (helpful for guest donors)
+  const donorName = session.customer_details?.name || null;
+
+  // Capture fundraiser attribution
+  const rawFundraiserId = metadata.fundraiser_id || null;
+  const fundraiserId = (rawFundraiserId && rawFundraiserId.trim() !== "") ? rawFundraiserId : null;
+
+  console.log(`Processing ${isMultiBrand ? 'multi-brand' : 'single-brand'} donation with ${brandAllocations.length} brand(s), fundraiser: ${fundraiserId || 'none'}`);
 
   // Insert donation record
   const donationData: Record<string, unknown> = {
@@ -262,6 +269,7 @@ async function handleSuccessfulPayment(
     currency,
     receipt_url: receiptUrl,
     donor_email: donorEmail,
+    donor_name: donorName,
     brand_partner: brandPartner,
     status: "completed",
   };
@@ -269,6 +277,9 @@ async function handleSuccessfulPayment(
   // Only add donor_id if we have one (authenticated user)
   if (donorId) {
     donationData.donor_id = donorId;
+  }
+  if (fundraiserId) {
+    donationData.fundraiser_id = fundraiserId;
   }
 
   const { data: insertedDonation, error } = await supabase
@@ -284,6 +295,21 @@ async function handleSuccessfulPayment(
 
   const donationId = insertedDonation?.id;
   console.log(`Donation recorded successfully for session ${session.id}, id: ${donationId}, fee: $${stripeFee}, net: $${netAmount}`);
+
+  // Update fundraiser totals atomically (amount_raised + donors_count)
+  if (fundraiserId) {
+    const { error: rpcErr } = await supabase.rpc("apply_donation_to_fundraiser", {
+      _fundraiser_id: fundraiserId,
+      _amount: amount,
+      _donor_email: donorEmail,
+      _donor_id: donorId,
+    });
+    if (rpcErr) {
+      console.error(`Error updating fundraiser totals: ${rpcErr.message}`);
+    } else {
+      console.log(`Fundraiser ${fundraiserId} totals updated (+$${amount})`);
+    }
+  }
 
   // Create coupons from this donation (multi-brand support)
   if (donationId && brandAllocations.length > 0) {
