@@ -290,15 +290,54 @@ export type Database = {
           },
         ]
       }
+      coupon_procurement_batches: {
+        Row: {
+          brand_name: string
+          coupon_value: number
+          created_at: string
+          id: string
+          notes: string | null
+          total_cost: number | null
+          total_count: number
+          uploaded_by: string | null
+          vendor: string | null
+        }
+        Insert: {
+          brand_name: string
+          coupon_value: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          total_cost?: number | null
+          total_count: number
+          uploaded_by?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          brand_name?: string
+          coupon_value?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          total_cost?: number | null
+          total_count?: number
+          uploaded_by?: string | null
+          vendor?: string | null
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           category: string | null
           category_id: string | null
-          code: string
+          claimed_at: string | null
+          code: string | null
           created_at: string
           description: string | null
           discount_percent: number | null
           donation_id: string | null
+          donor_id: string | null
+          expected_value: number | null
           expiry_date: string | null
           id: string
           min_purchase: number | null
@@ -316,11 +355,14 @@ export type Database = {
         Insert: {
           category?: string | null
           category_id?: string | null
-          code: string
+          claimed_at?: string | null
+          code?: string | null
           created_at?: string
           description?: string | null
           discount_percent?: number | null
           donation_id?: string | null
+          donor_id?: string | null
+          expected_value?: number | null
           expiry_date?: string | null
           id?: string
           min_purchase?: number | null
@@ -338,11 +380,14 @@ export type Database = {
         Update: {
           category?: string | null
           category_id?: string | null
-          code?: string
+          claimed_at?: string | null
+          code?: string | null
           created_at?: string
           description?: string | null
           discount_percent?: number | null
           donation_id?: string | null
+          donor_id?: string | null
+          expected_value?: number | null
           expiry_date?: string | null
           id?: string
           min_purchase?: number | null
@@ -1197,8 +1242,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      attach_procured_codes: {
+        Args: { _brand: string; _codes: string[]; _value: number }
+        Returns: number
+      }
       cleanup_expired_otps: { Args: never; Returns: undefined }
       cleanup_expired_password_reset_tokens: { Args: never; Returns: undefined }
+      confirm_coupon_redemption: {
+        Args: { _coupon_id: string }
+        Returns: undefined
+      }
       generate_card_number: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -1210,7 +1263,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "donor" | "recipient"
-      coupon_status: "available" | "reserved" | "redeemed" | "expired"
+      coupon_status:
+        | "available"
+        | "reserved"
+        | "redeemed"
+        | "expired"
+        | "pending_procurement"
+        | "claimed"
       user_role: "recipient" | "donor" | "admin"
       verification_status: "pending" | "approved" | "rejected"
     }
@@ -1341,7 +1400,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "donor", "recipient"],
-      coupon_status: ["available", "reserved", "redeemed", "expired"],
+      coupon_status: [
+        "available",
+        "reserved",
+        "redeemed",
+        "expired",
+        "pending_procurement",
+        "claimed",
+      ],
       user_role: ["recipient", "donor", "admin"],
       verification_status: ["pending", "approved", "rejected"],
     },
