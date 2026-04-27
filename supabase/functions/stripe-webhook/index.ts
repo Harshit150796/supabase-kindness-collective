@@ -120,15 +120,10 @@ serve(async (req) => {
   }
 });
 
-// Generate a unique coupon code
-function generateCouponCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
+// NOTE: We no longer generate fake placeholder coupon codes.
+// Coupons are created in `pending_procurement` status with code = NULL.
+// An admin (or future automated procurement) attaches real gift card codes
+// via the `attach_procured_codes` RPC and the status flips to `available`.
 
 // Parse brand allocations from metadata
 function parseBrandAllocations(metadata: Record<string, string | undefined>): BrandAllocation[] {
