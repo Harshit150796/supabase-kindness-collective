@@ -1,70 +1,122 @@
 
 
-## Findings
+# Streamlining Donation → Coupon Tracking & Notifications
 
-I checked the database for Michael's $25 donation. Here's exactly what we know — and what's broken.
-
-### The donation record (only 1 match)
-- **Donor email**: `maustin5280@gmail.com`
-- **Amount**: $25
-- **Date**: 2026-04-16
-- **Status**: completed
-- **Stripe session**: `cs_live_a1dx3oikWbKzwwgbmDdA7J8pyqfovfNdxHTvMdn2yDL41GW6neaFeWMB2M`
-- **`fundraiser_id`**: **NULL** ← we don't know which fundraiser
-- **`donor_id`**: **NULL** ← donated as guest (not logged in), so no profile name "Michael" is linked
-- **`message`**: NULL
-
-### Why we can't tell which fundraiser
-
-Two real bugs in the donation pipeline:
-
-1. **`create-donation-checkout` never passes `fundraiser_id` into Stripe metadata.** The donate flow lets users pick a fundraiser, but that ID is dropped before checkout.
-2. **`stripe-webhook` never reads or writes `fundraiser_id`** when inserting the donation row. Even if metadata had it, it'd be ignored.
-
-Result: every donation lands with `fundraiser_id = NULL`. We literally cannot attribute Michael's $25 (or any other donation) to a campaign right now.
-
-### Were the fundraiser totals updated?
-
-**No.** The webhook does not touch the `fundraisers` table. `amount_raised` and `donors_count` on every fundraiser are stuck at whatever was seeded — donations don't roll up. (That's why those fields are still 0 across the board.)
-
-### Why Michael's name isn't visible
-
-The donation was made as a guest (no `donor_id`), and Stripe Checkout's `customer_details.name` is captured by Stripe but **we don't store it** — only `donor_email`. So "Michael" likely came from the Stripe dashboard, not ours.
-
-### Admin CMS — donations page is missing
-
-Your admin portal has pages for Users, Fundraisers, Coupons, Stories, etc. — but **no Donations page at all**. The only place donations appear is `AdminAnalytics.tsx` as aggregated totals. There's no way to browse, search, or open a single donation today.
+You asked two big questions. Here's the honest read on each, then the plan.
 
 ---
 
-## Plan to fix (4 changes)
+## Question 1: Should donors hand out coupons themselves, or should we (the platform) do it?
 
-### 1. Capture `fundraiser_id` end-to-end
-- `DonationFlow.tsx` → pass selected `fundraiserId` to `create-donation-checkout`
-- `create-donation-checkout/index.ts` → include `fundraiser_id` in Stripe session metadata
-- `stripe-webhook/index.ts` → read `metadata.fundraiser_id` and write it on the donation row
-- Also capture `customer_details.name` into a new `donor_name` column so guest donor names are visible
+**Recommendation: Platform-controlled distribution.** Donor pays → platform owns the coupon → platform assigns it to a verified recipient. Donor never touches the code.
 
-### 2. Auto-update fundraiser totals
-In `stripe-webhook`, after inserting a successful donation with a `fundraiser_id`:
-- `amount_raised += amount`
-- `donors_count += 1` (counted by distinct donor_id/email per fundraiser to avoid double-counting repeat donors)
+### Why (trade-offs honestly)
 
-Add a DB migration to add a `donor_name` column on `donations` and a tiny SQL helper (or do it in TS) for the increment.
+| Option | Pros | Cons |
+|---|---|---|
+| **A. Donor distributes** (donor gets the code, sends to whoever) | Personal, gift-like feel | Defeats your verification model. Codes get shared on Reddit. No tracking. Tax/audit nightmare. Recipients aren't vetted. |
+| **B. Platform distributes** ✅ | Verified recipients only. Full audit trail. Donor sees real impact ("Sarah in Detroit redeemed your $10 Walmart coupon"). Brands trust the funnel. | Donor doesn't get the warm-fuzzy of "handing" a gift. Solved with rich impact updates. |
 
-### 3. Backfill the existing 10 donations
-One-off: pull `customer_details` and `metadata` from each Stripe session via the Stripe API and update the donations rows + fundraiser counters. For Michael's donation specifically, this will recover his name and (if his checkout had fundraiser context) the fundraiser link. If his session has no fundraiser metadata (likely — the bug existed when he donated), we'll mark it as a general donation and surface it that way.
+Your whole brand (verified families, Stripe-for-charity, transparency) only works with **B**. The current code already assumes B — it just isn't wired end-to-end.
 
-### 4. New Admin Donations page (`/admin/donations`)
-Following the same pattern as `AdminFundraisers.tsx`:
-- Sortable, paginated list: date, donor name/email, amount, status, fundraiser (linked), brand allocations, Stripe receipt link
-- Filters: status, date range, fundraiser, has-fundraiser-vs-general
-- Detail drawer: full Stripe metadata, coupon(s) generated, refund status
-- Add link from Admin Dashboard sidebar + a "Total Donations" stat card
+---
 
-### Deliverable for your immediate question
-After step 3 runs, you'll be able to open `/admin/donations`, search "maustin5280" or "Michael", and see the full record — fundraiser link included if Stripe captured it, or flagged as "unattributed" if not.
+## Question 2: Do we *actually* buy a real coupon when a donation comes in, or generate a placeholder?
 
-### Honest caveat
-For donations made **before** the fix, fundraiser attribution depends entirely on what Stripe stored in session metadata at the time. Since our checkout never sent `fundraiser_id`, it's almost certainly missing for all 10 existing donations including Michael's — the backfill will recover names and emails, but those historical donations will have to be manually reassigned to fundraisers (the new admin page will let you do that with a dropdown).
+**Today (the bug):** The webhook calls `generateCouponCode()` — random 8 chars like `K7MP2QXR`. **It's fake.** Nothing was bought. A recipient who "redeems" it at Walmart gets nothing.
+
+**Two real paths forward:**
+
+### Path A — Pooled procurement (recommended for launch)
+- Donations accumulate in your Stripe balance.
+- You buy real gift cards from each brand in **bulk batches** (e.g., weekly), via Tango Card / Tremendous / Giftbit APIs (these aggregate Walmart/Target/Amazon/DoorDash/etc. and give you one API).
+- An admin job (or auto cron) ingests purchased codes into `coupons` table, marking them `available`.
+- Recipients claim from the real inventory.
+- **Pro**: lower fees (bulk discounts, fewer API calls), works today with manual ops, you can float a small inventory.
+- **Con**: there's a delay between donation and a real code existing. We mark donor-facing status as "Funded → Coupon being procured → Ready → Claimed → Redeemed".
+
+### Path B — Just-in-time procurement (later)
+- Webhook fires → immediately call Tango/Tremendous → code returned → store in `coupons` row linked to the donation.
+- **Pro**: instant 1:1 link from donation to a real code.
+- **Con**: every donation = an API call + possible failure to handle, higher per-unit fees, harder to refund.
+
+**Recommendation: ship Path A now**, migrate hot brands to Path B once volume justifies it. Both use the same DB schema, so no rework.
+
+---
+
+## Question 3: How do donors get notified when "their" coupon is redeemed?
+
+We add a real lifecycle to each coupon and an attribution chain back to the donor:
+
+```
+donation ──┬─→ coupon (procured, available)
+           │       │
+           │       └─→ claimed by recipient
+           │              │
+           │              └─→ redeemed at store
+           │
+           └─→ donor gets: in-app notification + email at each milestone
+```
+
+Notifications fire at three moments:
+1. **Coupon created** — "Your $10 Walmart coupon is live and waiting for a family."
+2. **Coupon claimed** — "A verified family in Texas just claimed your coupon."
+3. **Coupon redeemed** — "Maria used your $10 Walmart coupon today. Thank you."
+
+Privacy: recipient name/photo only shown if they opt-in; default is region + first name.
+
+---
+
+## Plan (build order)
+
+### Step 1 — Lifecycle & attribution (DB)
+- Add `coupon_status` enum values: `pending_procurement | available | claimed | redeemed | expired | refunded`.
+- Add `donor_id` (denormalized from donation) + `claimed_at`, `redeemed_at` (already partially there) to `coupons`.
+- Add `notifications` rows trigger: when coupon status flips, insert a notification for `donor_id`.
+- New table `coupon_procurement_batches` (admin-only): tracks bulk gift card purchases — vendor, brand, amount, count, codes_uploaded_at.
+
+### Step 2 — Fix the webhook
+- Stop generating fake codes immediately. Instead, insert coupons with `status = 'pending_procurement'` and `code = NULL`.
+- Coupons become `available` only when a real code is attached (admin upload or API).
+
+### Step 3 — Procurement admin tooling (`/admin/procurement`)
+- Lists all `pending_procurement` coupons grouped by brand and value.
+- "Bulk upload codes" — admin pastes/uploads CSV of real codes from Tango/Tremendous/manual purchase, system attaches them FIFO to oldest pending coupons, flips status to `available`, fires donor notifications.
+- (Later) "Auto-procure" button per brand → calls Tango API.
+
+### Step 4 — Recipient redemption confirmation
+Two options for "how do we know it was redeemed?":
+- **Self-report**: recipient marks "I used this" in their portal — fast, trust-based, fine for small grants.
+- **Brand API**: Tango/Tremendous webhooks tell us when a code is redeemed at the brand — gold standard, requires using their issuance API.
+
+We support both: Tango-issued codes use webhook; manually uploaded codes use self-report with a "swipe to confirm redemption" UX in `RecipientCoupons`.
+
+### Step 5 — Donor notifications + impact feed
+- In-app: bell icon already has `notifications` table; we surface coupon lifecycle events there.
+- Email: extend the existing transactional email system to send "Your coupon was redeemed" with recipient region + first name + brand.
+- Donor dashboard gets a new **"My Coupons"** section: timeline of every coupon spawned by their donations with current status.
+
+### Step 6 — Admin Donations page improvements
+Already exists. Add a "Coupons spawned" sub-table per donation showing each coupon's current status + which recipient claimed it (admin-only PII).
+
+---
+
+## Honest caveats
+
+1. **You don't have a gift card vendor wired up yet.** Until you sign up with Tango/Tremendous (or buy cards manually), Step 3's "upload codes" path is the only working flow. That's fine for launch — admin manually buys and uploads. But you cannot honestly tell donors "real coupon issued" until that pipeline exists.
+2. **Self-reported redemption is gameable** (recipients could lie). Acceptable while small; switch to API redemption tracking once volume matters.
+3. **Existing 10 donations** have fake codes already in `coupons`. We'll mark them all `pending_procurement` in a migration so the new pipeline is clean — admin reissues real codes via the procurement page.
+4. **Notifications add email volume** — 3 emails per coupon × multiple coupons per donation can be noisy. We'll batch into a daily digest by default with a per-event opt-in.
+
+---
+
+## Technical artifacts the plan will produce
+
+- 1 DB migration (status enum expansion, columns, triggers, new table)
+- 1 webhook update (stop generating fake codes)
+- 1 new admin page `/admin/procurement`
+- 1 new donor section "My Coupons"
+- 1 update to `RecipientCoupons` (confirm-redemption UX)
+- 2 notification templates (in-app + email) for claim/redeem events
+- Backfill script for the existing 10 donations
 
