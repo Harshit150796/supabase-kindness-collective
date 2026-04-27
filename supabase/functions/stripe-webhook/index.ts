@@ -120,15 +120,10 @@ serve(async (req) => {
   }
 });
 
-// Generate a unique coupon code
-function generateCouponCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
+// NOTE: We no longer generate fake placeholder coupon codes.
+// Coupons are created in `pending_procurement` status with code = NULL.
+// An admin (or future automated procurement) attaches real gift card codes
+// via the `attach_procured_codes` RPC and the status flips to `available`.
 
 // Parse brand allocations from metadata
 function parseBrandAllocations(metadata: Record<string, string | undefined>): BrandAllocation[] {
@@ -313,17 +308,19 @@ async function handleSuccessfulPayment(
 
   // Create coupons from this donation (multi-brand support)
   if (donationId && brandAllocations.length > 0) {
-    await createCouponsFromMultiBrandDonation(supabase, donationId, amount, brandAllocations);
+    await createCouponsFromMultiBrandDonation(supabase, donationId, donorId, amount, brandAllocations);
   } else if (donationId) {
     console.log(`Skipping coupon creation - no brand allocations for donation ${donationId}`);
   }
 }
 
-// NEW: Multi-brand coupon creation
+// NEW: Multi-brand coupon creation — coupons are created as `pending_procurement`
+// with `code = NULL`. Admin attaches real gift card codes later via `attach_procured_codes`.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function createCouponsFromMultiBrandDonation(
   supabase: any,
   donationId: string,
+  donorId: string | null,
   totalAmount: number,
   brandAllocations: BrandAllocation[]
 ) {
@@ -346,17 +343,19 @@ async function createCouponsFromMultiBrandDonation(
     const couponValue = allocatedAmount >= 50 ? 10 : 5;
     const couponCount = Math.floor(allocatedAmount / couponValue);
 
-    console.log(`Brand ${allocation.brand}: $${allocatedAmount.toFixed(2)} (${allocation.percent}%) → ${couponCount} x $${couponValue} coupons`);
+    console.log(`Brand ${allocation.brand}: $${allocatedAmount.toFixed(2)} (${allocation.percent}%) → ${couponCount} x $${couponValue} coupon slot(s)`);
 
-    // Create coupons for this brand
+    // Create coupon SLOTS for this brand (pending procurement, no real code yet)
     for (let i = 0; i < couponCount; i++) {
       allCoupons.push({
         donation_id: donationId,
+        donor_id: donorId,
         title: `${allocation.brand} Gift`,
         store_name: allocation.brand,
         value: couponValue,
-        code: generateCouponCode(),
-        status: 'available',
+        expected_value: couponValue,
+        code: null,
+        status: 'pending_procurement',
         expiry_date: expiryDateStr,
       });
     }

@@ -45,6 +45,7 @@ import DonorDashboard from "./pages/donor/DonorDashboard";
 import DonorDonate from "./pages/donor/DonorDonate";
 import DonorImpact from "./pages/donor/DonorImpact";
 import DonorHistory from "./pages/donor/DonorHistory";
+import DonorCoupons from "./pages/donor/DonorCoupons";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -60,6 +61,7 @@ import AdminFAQ from "./pages/admin/AdminFAQ";
 import AdminFundraisers from "./pages/admin/AdminFundraisers";
 import AdminNewsletters from "./pages/admin/AdminNewsletters";
 import AdminDonations from "./pages/admin/AdminDonations";
+import AdminProcurement from "./pages/admin/AdminProcurement";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import Unsubscribe from "./pages/Unsubscribe";
@@ -117,6 +119,7 @@ const AppRoutes = () => (
     <Route path="/donor" element={<ProtectedRoute allowedRoles={['donor']}><DonorDashboard /></ProtectedRoute>} />
     <Route path="/donor/donate" element={<ProtectedRoute allowedRoles={['donor']}><DonorDonate /></ProtectedRoute>} />
     <Route path="/donor/impact" element={<ProtectedRoute allowedRoles={['donor']}><DonorImpact /></ProtectedRoute>} />
+    <Route path="/donor/coupons" element={<ProtectedRoute allowedRoles={['donor']}><DonorCoupons /></ProtectedRoute>} />
     <Route path="/donor/history" element={<ProtectedRoute allowedRoles={['donor']}><DonorHistory /></ProtectedRoute>} />
     
     {/* Admin Routes */}
@@ -133,6 +136,7 @@ const AppRoutes = () => (
     <Route path="/admin/fundraisers" element={<ProtectedRoute allowedRoles={['admin']}><AdminFundraisers /></ProtectedRoute>} />
     <Route path="/admin/newsletters" element={<ProtectedRoute allowedRoles={['admin']}><AdminNewsletters /></ProtectedRoute>} />
     <Route path="/admin/donations" element={<ProtectedRoute allowedRoles={['admin']}><AdminDonations /></ProtectedRoute>} />
+    <Route path="/admin/procurement" element={<ProtectedRoute allowedRoles={['admin']}><AdminProcurement /></ProtectedRoute>} />
     
     {/* Blog Routes */}
     <Route path="/blog" element={<Blog />} />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -6,146 +6,231 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Gift, Calendar, Search, Tag, DollarSign } from 'lucide-react';
+import { Gift, Calendar, Search, DollarSign, Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Coupon {
   id: string;
   title: string;
-  code: string;
+  code: string | null;
+  store_name: string;
   description: string | null;
   value: number;
-  discount_percent: number | null;
   expiry_date: string | null;
-  category_id: string | null;
+  status: string;
+  reserved_by: string | null;
+  redeemed_by: string | null;
 }
 
 export default function RecipientCoupons() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [available, setAvailable] = useState<Coupon[]>([]);
+  const [mine, setMine] = useState<Coupon[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const [claiming, setClaiming] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCoupons();
-  }, []);
+  const fetchCoupons = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
 
-  const fetchCoupons = async () => {
-    const { data } = await supabase
+    // Available pool (real codes only — pending_procurement coupons are hidden)
+    const { data: pool } = await supabase
       .from('coupons')
-      .select('id, title, code, description, value, discount_percent, expiry_date, category_id')
+      .select('id, title, code, store_name, description, value, expiry_date, status, reserved_by, redeemed_by')
       .eq('status', 'available')
+      .not('code', 'is', null)
       .order('created_at', { ascending: false });
 
-    setCoupons(data || []);
+    // Coupons reserved or redeemed by me
+    const { data: ownClaimed } = await supabase
+      .from('coupons')
+      .select('id, title, code, store_name, description, value, expiry_date, status, reserved_by, redeemed_by')
+      .or(`reserved_by.eq.${user.id},redeemed_by.eq.${user.id}`)
+      .order('reserved_at', { ascending: false });
+
+    setAvailable(pool || []);
+    setMine(ownClaimed || []);
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => { fetchCoupons(); }, [fetchCoupons]);
 
   const handleClaim = async (couponId: string) => {
-    setClaiming(couponId);
+    if (!user) return;
+    setBusy(couponId);
     try {
-      // Update coupon status to reserved
       const { error } = await supabase
         .from('coupons')
-        .update({ 
+        .update({
           status: 'reserved',
-          reserved_by: user!.id,
-          reserved_at: new Date().toISOString()
+          reserved_by: user.id,
+          reserved_at: new Date().toISOString(),
         })
-        .eq('id', couponId);
+        .eq('id', couponId)
+        .eq('status', 'available'); // race-safe
 
       if (error) throw error;
-
-      toast({ title: 'Success!', description: 'Coupon reserved successfully.' });
-      fetchCoupons();
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Claimed!', description: 'Your coupon code is in My Coupons.' });
+      await fetchCoupons();
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Could not claim coupon';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
     } finally {
-      setClaiming(null);
+      setBusy(null);
     }
   };
 
-  const filteredCoupons = coupons.filter(coupon =>
-    coupon.title.toLowerCase().includes(search.toLowerCase()) ||
-    coupon.description?.toLowerCase().includes(search.toLowerCase())
+  const handleConfirmRedeemed = async (couponId: string) => {
+    setBusy(couponId);
+    try {
+      const { error } = await supabase.rpc('confirm_coupon_redemption', { _coupon_id: couponId });
+      if (error) throw error;
+      toast({ title: 'Marked as redeemed', description: 'The donor will be notified — thank you!' });
+      await fetchCoupons();
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Could not mark as redeemed';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const copyCode = async (code: string, id: string) => {
+    await navigator.clipboard.writeText(code);
+    setCopied(id);
+    setTimeout(() => setCopied(null), 1500);
+  };
+
+  const filterFn = (c: Coupon) =>
+    c.title.toLowerCase().includes(search.toLowerCase()) ||
+    c.store_name.toLowerCase().includes(search.toLowerCase());
+
+  const renderCard = (coupon: Coupon, owned: boolean) => (
+    <Card key={coupon.id} className="hover:border-primary/30 transition-colors">
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between">
+          <CardTitle className="text-lg">{coupon.title}</CardTitle>
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <DollarSign className="w-3 h-3" />{coupon.value}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {coupon.description && (
+          <p className="text-sm text-muted-foreground">{coupon.description}</p>
+        )}
+        {coupon.expiry_date && (
+          <Badge variant="outline" className="text-xs">
+            <Calendar className="w-3 h-3 mr-1" />Expires {format(new Date(coupon.expiry_date), 'MMM d, yyyy')}
+          </Badge>
+        )}
+
+        {owned && coupon.code && (
+          <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
+            <p className="text-xs text-muted-foreground mb-1">Your code</p>
+            <div className="flex items-center justify-between gap-2">
+              <code className="font-mono text-base font-semibold text-foreground tracking-wider">
+                {coupon.code}
+              </code>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => copyCode(coupon.code!, coupon.id)}
+              >
+                {copied === coupon.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {owned ? (
+          coupon.status === 'redeemed' ? (
+            <Badge className="w-full justify-center py-2" variant="default">Redeemed — thank you!</Badge>
+          ) : (
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={() => handleConfirmRedeemed(coupon.id)}
+              disabled={busy === coupon.id}
+            >
+              {busy === coupon.id ? 'Saving…' : "I used this coupon"}
+            </Button>
+          )
+        ) : (
+          <Button
+            className="w-full"
+            onClick={() => handleClaim(coupon.id)}
+            disabled={busy === coupon.id}
+          >
+            {busy === coupon.id ? 'Claiming…' : 'Claim Coupon'}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Available Coupons</h1>
-          <p className="text-muted-foreground">Browse and claim coupons from generous donors</p>
+          <h1 className="text-3xl font-bold text-foreground">Coupons</h1>
+          <p className="text-muted-foreground">Claim coupons funded by donors. Mark them as used so donors see their impact.</p>
         </div>
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search coupons..."
+            placeholder="Search by brand or title…"
             className="pl-10"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        {loading ? (
-          <div className="text-center py-8 text-muted-foreground">Loading...</div>
-        ) : filteredCoupons.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <Gift className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-lg font-medium text-foreground">No coupons available</p>
-              <p className="text-muted-foreground">Check back later for new donations!</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredCoupons.map((coupon) => (
-              <Card key={coupon.id} className="hover:border-primary/30 transition-colors">
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{coupon.title}</CardTitle>
-                    </div>
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      <DollarSign className="w-3 h-3" />
-                      {coupon.value}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {coupon.description && (
-                    <p className="text-sm text-muted-foreground">{coupon.description}</p>
-                  )}
-                  <div className="flex flex-wrap gap-2">
-                    {coupon.discount_percent && (
-                      <Badge variant="outline" className="text-xs">
-                        <Tag className="w-3 h-3 mr-1" />
-                        {coupon.discount_percent}% off
-                      </Badge>
-                    )}
-                    {coupon.expiry_date && (
-                      <Badge variant="outline" className="text-xs">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        Expires {format(new Date(coupon.expiry_date), 'MMM d')}
-                      </Badge>
-                    )}
-                  </div>
-                  <Button 
-                    className="w-full" 
-                    onClick={() => handleClaim(coupon.id)}
-                    disabled={claiming === coupon.id}
-                  >
-                    {claiming === coupon.id ? 'Reserving...' : 'Reserve Coupon'}
-                  </Button>
+        <Tabs defaultValue="available">
+          <TabsList>
+            <TabsTrigger value="available">Available ({available.length})</TabsTrigger>
+            <TabsTrigger value="mine">My Coupons ({mine.length})</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="available" className="mt-6">
+            {loading ? (
+              <div className="text-center py-8 text-muted-foreground">Loading…</div>
+            ) : available.filter(filterFn).length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <Gift className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-lg font-medium text-foreground">No coupons available right now</p>
+                  <p className="text-muted-foreground">New ones arrive as donors fund the pool.</p>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {available.filter(filterFn).map((c) => renderCard(c, false))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="mine" className="mt-6">
+            {mine.filter(filterFn).length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <Gift className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-lg font-medium text-foreground">You haven't claimed any coupons yet</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {mine.filter(filterFn).map((c) => renderCard(c, true))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );

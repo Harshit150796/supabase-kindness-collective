@@ -6,7 +6,7 @@ import {
   Home, Gift, CreditCard, Clock, Shield, 
   BarChart, Users, LogOut, Menu, X,
   DollarSign, TrendingUp, FileText, BookOpen,
-  MessageSquare, HelpCircle, Newspaper, Megaphone, Mail
+  MessageSquare, HelpCircle, Newspaper, Megaphone, Mail, Package
 } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
@@ -32,6 +32,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         { icon: Users, label: 'Users', path: '/admin/users' },
         { icon: Shield, label: 'Verifications', path: '/admin/verifications' },
         { icon: Gift, label: 'Coupons', path: '/admin/coupons' },
+        { icon: Package, label: 'Procurement', path: '/admin/procurement' },
         { icon: Megaphone, label: 'Fundraisers', path: '/admin/fundraisers' },
         { icon: DollarSign, label: 'Donations', path: '/admin/donations' },
         { icon: BarChart, label: 'Analytics', path: '/admin/analytics' },
@@ -55,6 +56,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return [
       { icon: Home, label: 'Dashboard', path: '/donor' },
       { icon: DollarSign, label: 'Donate', path: '/donor/donate' },
+      { icon: Gift, label: 'My Coupons', path: '/donor/coupons' },
       { icon: TrendingUp, label: 'Impact', path: '/donor/impact' },
       { icon: Clock, label: 'History', path: '/donor/history' },
     ];
