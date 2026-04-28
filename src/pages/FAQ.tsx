@@ -28,6 +28,12 @@ export default function FAQ() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Frequently Asked Questions"
+        description="Answers to common questions about donating, applying for help, recipient verification, coupon redemption, security, and how CouponDonation makes an impact."
+        path="/faq"
+        jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'FAQ', path: '/faq' }])}
+      />
       <Navbar />
       <main>
         <section className="py-20 bg-gradient-to-br from-primary/5 via-background to-gold/5">

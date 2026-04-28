@@ -110,6 +110,12 @@ export default function About() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="About Us - Our Mission to End Food Insecurity"
+        description="Learn about CouponDonation's mission to convert generous donations into grocery coupons for verified families across America. Meet our founders and team."
+        path="/about"
+        jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'About', path: '/about' }])}
+      />
       <Navbar />
       <main className="overflow-hidden">
         {/* Hero Section */}

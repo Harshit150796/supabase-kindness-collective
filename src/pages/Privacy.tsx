@@ -4,6 +4,11 @@ import { Footer } from '@/components/layout/Footer';
 export default function Privacy() {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Privacy Policy"
+        description="How CouponDonation collects, uses, and protects your personal data, donation history, and account information."
+        path="/privacy"
+      />
       <Navbar />
       
       <main className="container mx-auto px-4 py-16">
