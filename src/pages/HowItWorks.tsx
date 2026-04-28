@@ -1,3 +1,4 @@
+import { SEO, breadcrumbJsonLd } from '@/components/SEO';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,12 @@ export default function HowItWorks() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="How It Works - Donate, Verify, Redeem"
+        description="See how CouponDonation works in 3 simple steps: donors give, families get verified, and recipients redeem real grocery coupons at partner stores."
+        path="/how-it-works"
+        jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'How It Works', path: '/how-it-works' }])}
+      />
       <Navbar />
       <main>
         {/* Hero */}

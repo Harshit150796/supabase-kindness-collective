@@ -10,10 +10,16 @@ import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
 import { BrandLeaderboard } from '@/components/landing/BrandLeaderboard';
 import { ImpactDashboard } from '@/components/landing/ImpactDashboard';
 import { CTASection } from '@/components/landing/CTASection';
+import { SEO } from '@/components/SEO';
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="CouponDonation - Transforming Giving Through Generosity"
+        description="CouponDonation converts your donation into grocery coupons for verified families in need. Donate to causes from Walmart, Target, Amazon and more."
+        path="/"
+      />
       <Navbar />
       <main>
         {/* 1. Human-centered hero with featured story */}

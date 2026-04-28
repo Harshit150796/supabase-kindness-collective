@@ -1,3 +1,4 @@
+import { SEO, breadcrumbJsonLd } from '@/components/SEO';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
@@ -89,6 +90,12 @@ export default function Stories() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Impact Stories - Real Lives Changed by Donations"
+        description="Read real stories of families helped through CouponDonation. Browse active fundraisers and see the impact every donation makes in our community."
+        path="/stories"
+        jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Stories', path: '/stories' }])}
+      />
       <Navbar />
       
       <main className="container mx-auto px-4 py-8">

@@ -1,3 +1,4 @@
+import { SEO, breadcrumbJsonLd } from '@/components/SEO';
 import { Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -13,6 +14,12 @@ export default function Blog() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Blog & Updates"
+        description="Latest news, impact updates, donor spotlights, and stories from CouponDonation. Stay connected with our mission to end food insecurity."
+        path="/blog"
+        jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Blog', path: '/blog' }])}
+      />
       <Navbar />
       <main>
         <section className="py-20 bg-gradient-to-br from-primary/5 via-background to-gold/5">
