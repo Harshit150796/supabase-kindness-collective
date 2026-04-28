@@ -1,3 +1,4 @@
+import { SEO, breadcrumbJsonLd } from '@/components/SEO';
 import { Navbar } from '@/components/layout/Navbar';
 import harshitPhoto from '@/assets/harshit-agrawal.png';
 import paulPhoto from '@/assets/paul-savluc.png';
