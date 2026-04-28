@@ -44,29 +44,35 @@
     <meta name="twitter:description" content="Connect generosity with opportunity. Transform lives through the power of giving." />
     <meta name="twitter:image" content="https://coupondonation.com/og-image.png" />
     
-    <!-- Structured Data (JSON-LD) -->
+    <!-- Organization Structured Data -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "CouponDonation",
-      "alternateName": "Coupon Donation",
+      "alternateName": ["Coupon Donation", "CouponDonation.com"],
       "url": "https://coupondonation.com",
       "logo": "https://coupondonation.com/favicon-512.png",
       "image": "https://coupondonation.com/favicon-512.png",
-      "description": "CouponDonation connects generous donors with those in need through coupon and gift card donations.",
+      "description": "CouponDonation converts monetary donations into grocery coupons for verified families in need, partnering with brands like Walmart, Target, and Amazon.",
+      "email": "connect@coupondonation.com",
+      "telephone": "+1-315-898-6745",
       "sameAs": [
+        "https://www.linkedin.com/company/coupondonation",
         "https://twitter.com/CouponDonation"
       ],
-      "contactPoint": {
+      "contactPoint": [{
         "@type": "ContactPoint",
-        "email": "hello@coupondonation.com",
-        "contactType": "customer service"
-      }
+        "telephone": "+1-315-898-6745",
+        "email": "connect@coupondonation.com",
+        "contactType": "customer service",
+        "areaServed": "US",
+        "availableLanguage": "English"
+      }]
     }
     </script>
-    
-    <!-- WebSite Schema for Sitelinks Search -->
+
+    <!-- WebSite Schema for Sitelinks Search Box -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -83,6 +89,22 @@
         "target": "https://coupondonation.com/stories?q={search_term_string}",
         "query-input": "required name=search_term_string"
       }
+    }
+    </script>
+
+    <!-- Site Navigation - helps Google build sitelinks -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        { "@type": "SiteNavigationElement", "name": "About Us", "url": "https://coupondonation.com/about" },
+        { "@type": "SiteNavigationElement", "name": "How It Works", "url": "https://coupondonation.com/how-it-works" },
+        { "@type": "SiteNavigationElement", "name": "Stories", "url": "https://coupondonation.com/stories" },
+        { "@type": "SiteNavigationElement", "name": "Donate", "url": "https://coupondonation.com/donate" },
+        { "@type": "SiteNavigationElement", "name": "Apply for Help", "url": "https://coupondonation.com/apply" },
+        { "@type": "SiteNavigationElement", "name": "Blog", "url": "https://coupondonation.com/blog" },
+        { "@type": "SiteNavigationElement", "name": "FAQ", "url": "https://coupondonation.com/faq" }
+      ]
     }
     </script>
   </head>
