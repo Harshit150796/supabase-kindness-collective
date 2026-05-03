@@ -1046,7 +1046,6 @@ export type Database = {
           funding_goal: number | null
           household_size: number | null
           id: string
-          password_hash: string | null
           phone: string | null
           photo_url: string | null
           referral_source: string | null
@@ -1071,7 +1070,6 @@ export type Database = {
           funding_goal?: number | null
           household_size?: number | null
           id?: string
-          password_hash?: string | null
           phone?: string | null
           photo_url?: string | null
           referral_source?: string | null
@@ -1096,7 +1094,6 @@ export type Database = {
           funding_goal?: number | null
           household_size?: number | null
           id?: string
-          password_hash?: string | null
           phone?: string | null
           photo_url?: string | null
           referral_source?: string | null
