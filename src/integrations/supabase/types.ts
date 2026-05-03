@@ -550,43 +550,148 @@ export type Database = {
       }
       email_campaigns: {
         Row: {
+          audience_type: string
           created_at: string
           created_by: string | null
           html_content: string
           id: string
           preview_text: string | null
+          reply_to: string | null
+          scheduled_for: string | null
+          segment_id: string | null
           sender_email: string
           sent_at: string | null
           sent_count: number
           status: string
           subject: string
+          template_id: string | null
+          test_recipients: string[] | null
           total_recipients: number
+          tracking_enabled: boolean
+          updated_at: string
         }
         Insert: {
+          audience_type?: string
           created_at?: string
           created_by?: string | null
           html_content?: string
           id?: string
           preview_text?: string | null
+          reply_to?: string | null
+          scheduled_for?: string | null
+          segment_id?: string | null
           sender_email?: string
           sent_at?: string | null
           sent_count?: number
           status?: string
           subject: string
+          template_id?: string | null
+          test_recipients?: string[] | null
           total_recipients?: number
+          tracking_enabled?: boolean
+          updated_at?: string
         }
         Update: {
+          audience_type?: string
           created_at?: string
           created_by?: string | null
           html_content?: string
           id?: string
           preview_text?: string | null
+          reply_to?: string | null
+          scheduled_for?: string | null
+          segment_id?: string | null
           sender_email?: string
           sent_at?: string | null
           sent_count?: number
           status?: string
           subject?: string
+          template_id?: string | null
+          test_recipients?: string[] | null
           total_recipients?: number
+          tracking_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaigns_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "email_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_events: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          recipient_email: string | null
+          subscriber_id: string | null
+          url: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          recipient_email?: string | null
+          subscriber_id?: string | null
+          url?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          recipient_email?: string | null
+          subscriber_id?: string | null
+          url?: string | null
+        }
+        Relationships: []
+      }
+      email_segments: {
+        Row: {
+          created_at: string
+          description: string | null
+          filter_spec: Json
+          id: string
+          last_count: number | null
+          last_resolved_at: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          filter_spec?: Json
+          id?: string
+          last_count?: number | null
+          last_resolved_at?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          filter_spec?: Json
+          id?: string
+          last_count?: number | null
+          last_resolved_at?: string | null
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -594,35 +699,83 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          engagement_score: number | null
           id: string
+          last_click_at: string | null
+          last_open_at: string | null
           name: string | null
           source: string
           subscribed: boolean
           subscribed_at: string
+          tags: string[] | null
           unsubscribe_token: string
           unsubscribed_at: string | null
         }
         Insert: {
           created_at?: string
           email: string
+          engagement_score?: number | null
           id?: string
+          last_click_at?: string | null
+          last_open_at?: string | null
           name?: string | null
           source?: string
           subscribed?: boolean
           subscribed_at?: string
+          tags?: string[] | null
           unsubscribe_token?: string
           unsubscribed_at?: string | null
         }
         Update: {
           created_at?: string
           email?: string
+          engagement_score?: number | null
           id?: string
+          last_click_at?: string | null
+          last_open_at?: string | null
           name?: string | null
           source?: string
           subscribed?: boolean
           subscribed_at?: string
+          tags?: string[] | null
           unsubscribe_token?: string
           unsubscribed_at?: string | null
+        }
+        Relationships: []
+      }
+      email_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          html_content: string
+          id: string
+          name: string
+          preview_text: string | null
+          subject: string
+          tokens: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          html_content?: string
+          id?: string
+          name: string
+          preview_text?: string | null
+          subject: string
+          tokens?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          html_content?: string
+          id?: string
+          name?: string
+          preview_text?: string | null
+          subject?: string
+          tokens?: string[] | null
+          updated_at?: string
         }
         Relationships: []
       }
