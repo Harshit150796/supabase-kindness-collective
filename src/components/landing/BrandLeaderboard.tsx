@@ -5,18 +5,18 @@ import { useState, useEffect } from 'react';
 import { brandLogos } from '@/data/brandLogos';
 
 const leaderboardData = [
-  { name: 'DoorDash', donations: 450000 },
-  { name: 'Walmart', donations: 380000 },
-  { name: 'Uber', donations: 320000 },
-  { name: 'Amazon', donations: 290000 },
-  { name: 'Target', donations: 250000 },
-  { name: 'Starbucks', donations: 210000 },
+  { name: 'DoorDash', donations: 1000 },
+  { name: 'Walmart', donations: 800 },
+  { name: 'Uber', donations: 600 },
+  { name: 'Amazon', donations: 500 },
+  { name: 'Target', donations: 400 },
+  { name: 'Starbucks', donations: 0 },
 ];
 
 const topBrands = [
-  { rank: 1, name: 'DoorDash', amount: '$450K', change: '+12%' },
-  { rank: 2, name: 'Walmart', amount: '$380K', change: '+8%' },
-  { rank: 3, name: 'Uber', amount: '$320K', change: '+15%' },
+  { rank: 1, name: 'DoorDash', amount: '$1,000', change: '+12%' },
+  { rank: 2, name: 'Walmart', amount: '$800', change: '+8%' },
+  { rank: 3, name: 'Uber', amount: '$600', change: '+15%' },
 ];
 
 const recentDonations = [
