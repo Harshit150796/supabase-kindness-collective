@@ -82,7 +82,7 @@ export function CTASection() {
         {/* Bottom tagline */}
         <div className="text-center mt-16">
           <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
-            Together, we've helped <span className="text-gradient-gold">15,000+ families</span> worldwide.
+            Together, let's reach <span className="text-gradient-gold">15,000+ families</span>.
           </p>
           <p className="text-muted-foreground mt-2">Join the movement today.</p>
         </div>
