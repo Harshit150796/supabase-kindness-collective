@@ -1,39 +1,28 @@
 ## Goal
-Minimal change — only swap the inflated dollar amounts on the brand sections to small, realistic pre-launch numbers. No layout, copy, or structural changes.
+Replace inflated stats in the Impact sections with realistic pre-launch numbers. Number/label swaps only — no layout or copy changes.
 
-## Edits to `src/components/landing/BrandLeaderboard.tsx`
+## Edits
 
-**1. `leaderboardData` (bar chart) — lines 7–14**
-| Brand | Before | After |
+### 1. `src/components/landing/ImpactDashboard.tsx` — `impactStats` array
+| Label | Before | After |
 |---|---|---|
-| DoorDash | 450000 | 1000 |
-| Walmart | 380000 | 800 |
-| Uber | 320000 | 600 |
-| Amazon | 290000 | 500 |
-| Target | 250000 | 400 |
-| Starbucks | 210000 | 0 |
+| Total Donated | `$2.5M+` | `$10,000` |
+| Families Helped | `15,000+` | `20` |
+| Coupons Delivered | `50,000+` | `50+` |
+| Countries Reached | `25+` | `3+` |
 
-**2. `topBrands` (Top Donors cards) — lines 16–20**
-| Brand | Before | After |
+### 2. `src/components/landing/ImpactSection.tsx` — `stats` array
+Mirror the same numbers for consistency:
+| Label | Before | After |
 |---|---|---|
-| DoorDash | $450K | $1,000 |
-| Walmart | $380K | $800 |
-| Uber | $320K | $600 |
-
-(Keep the `change` percentages and ranks as-is — user only asked to change the dollar numbers.)
-
-**3. Bar chart label format — line 88**
-Change `${(value / 1000).toFixed(0)}K` → `$${value.toLocaleString()}` so $1,000 renders as "$1,000" instead of "$1K", and Starbucks' $0 renders as "$0".
-
-**4. Tooltip format — line 40**
-Same swap: `${(data.donations / 1000).toFixed(0)}K donated` → `$${data.donations.toLocaleString()} donated`.
-
-**5. Footer total — line 253**
-`$1.9M+` → `$3,300` (sum of the six new amounts).
+| Total Value Donated | `$2.5M+` | `$10,000` |
+| Families Supported (sublabel `Across 25 countries`) | `15,000+` | `20` (sublabel → `Across 3 countries`) |
+| Partner Brands | `50+` | `6` |
+| Satisfaction Rate | `98%` | leave as `98%` (not a count) |
 
 ## Not touched
-- `LiveActivityBar`, `ImpactDashboard`, `ImpactSection`, `CTASection` — user said only the visible brand numbers.
-- All copy, headings, badges, ticker names, and chart styling stay identical.
+- `LiveActivityBar`, `BrandLeaderboard`, `CTASection`, `TestimonialsSection`, hero — untouched.
+- All headings, badges, icons, and styling stay identical.
 
-## File touched
-- `src/components/landing/BrandLeaderboard.tsx` (only)
+## Open question
+- `ImpactSection` "Partner Brands 50+" and "Satisfaction Rate 98%" — you didn't mention these. Proposing `50+ → 6` (matches actual brand count) and keep `98%` as-is. Say the word if you'd rather leave both untouched or change differently.

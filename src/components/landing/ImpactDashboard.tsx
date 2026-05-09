@@ -3,10 +3,10 @@ import { Globe, Users, ShoppingBag, Heart } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const impactStats = [
-  { icon: Heart, value: '$2.5M+', label: 'Total Donated', color: 'text-primary' },
-  { icon: Users, value: '15,000+', label: 'Families Helped', color: 'text-gold' },
-  { icon: ShoppingBag, value: '50,000+', label: 'Coupons Delivered', color: 'text-primary' },
-  { icon: Globe, value: '25+', label: 'Countries Reached', color: 'text-gold' },
+  { icon: Heart, value: '$10,000', label: 'Total Donated', color: 'text-primary' },
+  { icon: Users, value: '20', label: 'Families Helped', color: 'text-gold' },
+  { icon: ShoppingBag, value: '50+', label: 'Coupons Delivered', color: 'text-primary' },
+  { icon: Globe, value: '3+', label: 'Countries Reached', color: 'text-gold' },
 ];
 
 function AnimatedNumber({ value }: { value: string }) {
