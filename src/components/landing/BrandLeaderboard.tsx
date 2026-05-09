@@ -5,18 +5,18 @@ import { useState, useEffect } from 'react';
 import { brandLogos } from '@/data/brandLogos';
 
 const leaderboardData = [
-  { name: 'DoorDash', donations: 450000 },
-  { name: 'Walmart', donations: 380000 },
-  { name: 'Uber', donations: 320000 },
-  { name: 'Amazon', donations: 290000 },
-  { name: 'Target', donations: 250000 },
-  { name: 'Starbucks', donations: 210000 },
+  { name: 'DoorDash', donations: 1000 },
+  { name: 'Walmart', donations: 800 },
+  { name: 'Uber', donations: 600 },
+  { name: 'Amazon', donations: 500 },
+  { name: 'Target', donations: 400 },
+  { name: 'Starbucks', donations: 0 },
 ];
 
 const topBrands = [
-  { rank: 1, name: 'DoorDash', amount: '$450K', change: '+12%' },
-  { rank: 2, name: 'Walmart', amount: '$380K', change: '+8%' },
-  { rank: 3, name: 'Uber', amount: '$320K', change: '+15%' },
+  { rank: 1, name: 'DoorDash', amount: '$1,000', change: '+12%' },
+  { rank: 2, name: 'Walmart', amount: '$800', change: '+8%' },
+  { rank: 3, name: 'Uber', amount: '$600', change: '+15%' },
 ];
 
 const recentDonations = [
@@ -37,7 +37,7 @@ const CustomTooltip = ({ active, payload }: any) => {
         <img src={brand?.logo} alt={data.name} className="w-8 h-8 object-contain" />
         <div>
           <p className="font-semibold text-foreground">{data.name}</p>
-          <p className="text-primary font-bold">${(data.donations / 1000).toFixed(0)}K donated</p>
+          <p className="text-primary font-bold">${data.donations.toLocaleString()} donated</p>
         </div>
       </div>
     );
@@ -85,7 +85,7 @@ const CustomLabel = ({ x, y, width, value }: any) => {
       fontWeight={700}
       className="fill-foreground"
     >
-      ${(value / 1000).toFixed(0)}K
+      ${value.toLocaleString()}
     </text>
   );
 };
@@ -250,7 +250,7 @@ export function BrandLeaderboard() {
             {/* Footer Stats */}
             <div className="flex items-center justify-between mt-3 md:mt-4 pt-3 md:pt-4 border-t border-border">
               <span className="text-xs md:text-sm text-muted-foreground">Total this month</span>
-              <span className="text-lg md:text-xl font-bold text-foreground">$1.9M+</span>
+              <span className="text-lg md:text-xl font-bold text-foreground">$3,300</span>
             </div>
           </Card>
         </div>
