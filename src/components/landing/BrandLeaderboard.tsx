@@ -85,7 +85,7 @@ const CustomLabel = ({ x, y, width, value }: any) => {
       fontWeight={700}
       className="fill-foreground"
     >
-      ${(value / 1000).toFixed(0)}K
+      ${value.toLocaleString()}
     </text>
   );
 };
