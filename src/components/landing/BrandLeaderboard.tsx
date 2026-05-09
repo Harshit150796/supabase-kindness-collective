@@ -37,7 +37,7 @@ const CustomTooltip = ({ active, payload }: any) => {
         <img src={brand?.logo} alt={data.name} className="w-8 h-8 object-contain" />
         <div>
           <p className="font-semibold text-foreground">{data.name}</p>
-          <p className="text-primary font-bold">${(data.donations / 1000).toFixed(0)}K donated</p>
+          <p className="text-primary font-bold">${data.donations.toLocaleString()} donated</p>
         </div>
       </div>
     );
