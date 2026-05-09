@@ -250,7 +250,7 @@ export function BrandLeaderboard() {
             {/* Footer Stats */}
             <div className="flex items-center justify-between mt-3 md:mt-4 pt-3 md:pt-4 border-t border-border">
               <span className="text-xs md:text-sm text-muted-foreground">Total this month</span>
-              <span className="text-lg md:text-xl font-bold text-foreground">$1.9M+</span>
+              <span className="text-lg md:text-xl font-bold text-foreground">$3,300</span>
             </div>
           </Card>
         </div>
