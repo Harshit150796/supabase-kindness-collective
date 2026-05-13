@@ -1,21 +1,31 @@
-## Plan to fix blurry hanging coupon text
+## Goal
+Make the entire 3D tree hero stay sharp after the page finishes loading, with noticeably clearer tree details and hanging coupon text/logos.
 
-### Goal
-Make the brand names, amount, labels, and coupon visuals on the tree readable and crisp at the current preview size, not just higher-resolution but still blurred by 3D perspective, mipmaps, lighting, and post-processing.
+## Root cause to fix
+The scene is initially sharper, then becomes blurry because runtime rendering changes after load:
+- `PerformanceMonitor` can lower DPR from `[1, 1.75]` to `[1, 1]`, so the canvas renders at a lower resolution on the user's DPR 2 preview.
+- Post-processing is enabled after load on desktop/tablet and uses bloom with `mipmapBlur`, which softens the whole 3D image.
+- The coupon HTML overlay is very large and transformed in 3D, but not centered or configured for crisp browser compositing, so the text can still be resampled poorly.
 
-### What I found
-- The coupon artwork is currently drawn into a canvas texture in `couponDesign.ts`, then mapped onto a small 3D extruded mesh in `CouponFruit.tsx`.
-- Even at 4× texture size, text still gets softened because it is minified on a tiny angled 3D object, affected by mipmap filtering, material lighting/emissive maps, bloom/vignette post-processing, and leaf occlusion.
-- This is a rendering approach issue, not only an image-resolution issue.
+## Implementation plan
+1. Lock the 3D canvas to a high, stable DPR instead of allowing automatic quality downgrade.
+   - Use a stable DPR range suitable for DPR 2 screens, e.g. `[1.5, 2]`.
+   - Remove/disable the `PerformanceMonitor` quality downgrade path for this hero so clarity does not collapse after load.
 
-### Implementation
-1. **Keep the 3D coupon card shape**, but simplify its material so it no longer reuses the full coupon texture for emissive lighting that can wash out the text.
-2. **Render the readable coupon content as crisp vector/UI overlay on the front face** using Drei `Html` anchored to each coupon, so text and logos remain browser-rendered instead of rasterized into a shrinking texture.
-3. **Create a compact coupon face component** matching the reference: brand color stripe, sharp brand text/logo area, pill label, amount, and coupon label.
-4. **Hide or reduce text in the canvas texture fallback**, leaving the 3D base/background as the card surface while the overlay carries the legible content.
-5. **Adjust occlusion/scale/positioning** so the overlay sits just above the coupon face, follows the hanging/falling/landed coupon transform, and does not get buried by tree leaves.
-6. **Reduce blur contributors** for coupons: avoid mipmap-softened text, keep texture filtering appropriate for the base card, and ensure post-processing bloom does not bloom over the coupon typography.
-7. **Verify visually on the home route** at the current viewport and make any sizing tweaks so Costco/CVS/amount text is noticeably sharper.
+2. Remove the blur-heavy post-processing from the hero.
+   - Disable `EffectComposer`, `Bloom` with `mipmapBlur`, and `Vignette` for the tree/coupon scene.
+   - Preserve lighting/environment so the scene still feels premium, but without a full-frame softening pass.
 
-### Expected result
-The coupons will still feel attached to the 3D tree, but their visible text/logo/amount will be much clearer because it will be rendered as sharp vector/browser text instead of a tiny rasterized texture on a moving 3D mesh.
+3. Sharpen coupon rendering.
+   - Keep the 3D coupon card mesh as the physical object.
+   - Keep the HTML coupon face, but add `center`, `sprite={false}`, and CSS rendering hints (`backfaceVisibility`, `transformStyle`, `willChange`, `imageRendering: auto`) so browser-rendered text remains crisper.
+   - Slightly simplify/reduce the coupon face box-shadow/text-shadow if needed because shadows visually read as blur at small 3D sizes.
+
+4. Improve tree texture clarity.
+   - Ensure model textures use high anisotropy and stable filtering, and mark them for update after material preparation.
+   - Avoid introducing any backdrop or CSS blur over the canvas.
+
+5. Verify the result.
+   - Re-open the home route at the user's current viewport size.
+   - Check that the scene remains sharp after the full page load instead of degrading after 1–2 seconds.
+   - If needed, make one small follow-up tuning pass on DPR/post-processing/coupon overlay sizing.
