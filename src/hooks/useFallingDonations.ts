@@ -21,14 +21,29 @@ function isInternalEmail(email: string | null): boolean {
   return domain === 'coupondonation.com';
 }
 
-function nameFromEmail(email: string | null): string {
-  if (!email) return 'A generous donor';
-  if (isInternalEmail(email)) return 'A generous donor';
+const MOCK_DONOR_NAMES = [
+  'Emma L.', 'Maria S.', 'James K.', 'Sarah M.', 'Priya S.', 'Mike R.',
+  'Aisha N.', 'David P.', 'Olivia T.', 'Noah B.', 'Sofia G.', 'Liam C.',
+  'Hannah W.', 'Ethan J.', 'Zara H.', 'Marcus D.',
+];
+
+function pickMockName(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h + id.charCodeAt(i)) | 0;
+  return MOCK_DONOR_NAMES[Math.abs(h) % MOCK_DONOR_NAMES.length];
+}
+
+function nameFromEmail(email: string): string {
   const local = email.split('@')[0];
   const clean = local.replace(/[._-]/g, ' ').trim();
   const pretty = clean.charAt(0).toUpperCase() + clean.slice(1) + '.';
-  // Hard cap so on-canvas labels never balloon
   return pretty.length > 18 ? pretty.slice(0, 17).trimEnd() + '…' : pretty;
+}
+
+function resolveDonorName(d: { id: string; donor_email: string | null; is_anonymous: boolean | null }): string {
+  if (d.is_anonymous) return 'Anonymous Donor';
+  if (!d.donor_email || isInternalEmail(d.donor_email)) return pickMockName(d.id);
+  return nameFromEmail(d.donor_email);
 }
 
 const FALLBACK: FallingDonation[] = [
@@ -58,7 +73,7 @@ export function useFallingDonations() {
 
       const mapped: FallingDonation[] = data.map((d: any) => ({
         id: d.id,
-        donorName: d.is_anonymous ? 'Anonymous' : nameFromEmail(d.donor_email),
+        donorName: resolveDonorName(d),
         amount: Number(d.amount) || 0,
       }));
       setDonations(mapped);
@@ -74,7 +89,7 @@ export function useFallingDonations() {
           if (d.status !== 'completed') return;
           const item: FallingDonation = {
             id: d.id,
-            donorName: d.is_anonymous ? 'Anonymous' : nameFromEmail(d.donor_email),
+            donorName: resolveDonorName(d),
             amount: Number(d.amount) || 0,
           };
           setDonations((prev) => [item, ...prev].slice(0, 20));

@@ -1,51 +1,45 @@
-## Root cause
+## Goal
 
-Two separate bugs combine to produce the broken visual in image 2:
+Stop showing "A generous donor" for every internal/admin donation on the 3D tree. Keep the realistic mix of friendly first-name labels (Emma, Maria, James, etc.) the site used to display, while still hiding the real "Connect coupondonation." admin email.
 
-1. **"Connect coupondonation." donor name.** Almost every recent completed donation in the database belongs to the internal account `connect.coupondonation@gmail.com` (admin/test account). `useFallingDonations` runs `nameFromEmail()` on the email's local part, which converts `connect.coupondonation` → `Connect coupondonation.`. So the live data feeds a real-looking but wrong donor name into every falling coupon.
+## Behavior rules
 
-2. **Labels look huge and stack on top of each other.** In `CouponFruit.tsx`, the landed-state donor label is rendered with `distanceFactor={6}` and `whiteSpace: 'nowrap'`. When the donor name is long ("Connect coupondonation."), the pill stretches very wide, and because many donations land in roughly the same spot in quick succession, several oversized labels overlap — exactly what image 2 shows. Image 1 is the same component working correctly with a short name (e.g. "James K.").
+For each donation feeding the tree (`useFallingDonations.ts`):
 
-Image 1 is the intended look. We are not changing that visual; we only want to make sure every donation reliably renders the same way.
+1. `is_anonymous = true` → label `"A generous donor"`.
+2. Internal email (`coupondonation.com` domain or known admin/test addresses) → pick a **mock first-name** from a curated pool, deterministically by donation id, so the same donation always shows the same name (no flicker on re-render).
+3. Real external email with a usable local part → keep current behavior: derive a friendly name from the email (`maustin5280@gmail.com` → `Maustin.`), capped at 18 chars.
+4. Empty/missing email and not anonymous → fall back to a mock name (same deterministic pick) instead of "A generous donor".
 
-## Implementation plan
+## Mock name pool
 
-Scope is purely frontend/presentation. No DB, no backend.
+A small curated pool of warm, realistic first names + last initial:
+`Emma L.`, `Maria S.`, `James K.`, `Sarah M.`, `Priya S.`, `Mike R.`, `Aisha N.`, `David P.`, `Olivia T.`, `Noah B.`, `Sofia G.`, `Liam C.`, `Hannah W.`, `Ethan J.`, `Zara H.`, `Marcus D.`
 
-### 1. Filter internal/admin emails out of the public donor-name display
-File: `src/hooks/useFallingDonations.ts`
+Selection: simple hash of the donation `id` modulo pool length → stable, varied across donations.
 
-- Add an `INTERNAL_EMAILS` set containing the known internal accounts:
-  - `connect.coupondonation@gmail.com`
-  - `connect@coupondonation.com`
-  - `admin@coupondonation.com`
-- Also treat any email whose domain is `coupondonation.com` as internal.
-- For internal emails, render the donor name as `"A generous donor"` instead of running `nameFromEmail()`. Keep the real amount and id so impact stats stay accurate.
-- Apply this in both the initial fetch mapping and the realtime INSERT subscription.
+## Implementation
 
-This single fix removes the "Connect coupondonation." text everywhere on the tree, including for the historical data already in the database, without touching any donation rows.
+Single file: `src/hooks/useFallingDonations.ts`
 
-### 2. Make the on-canvas donor label robust to any future long name
-File: `src/components/landing/tree3d/CouponFruit.tsx` (the landed-state `<Html>` label only — the coupon face itself is unchanged)
+- Add `MOCK_DONOR_NAMES` array.
+- Add `pickMockName(id: string)` — sums char codes of `id`, mod pool length.
+- Update mapping (both initial fetch and realtime INSERT) and the `FALLBACK` array stays as-is:
+  - if `is_anonymous` → `"Anonymous Donor"`
+  - else if internal email or no email → `pickMockName(d.id)`
+  - else → existing `nameFromEmail(d.donor_email)`
+- Keep the 18-char cap from the previous change.
 
-- Cap donor name length at ~18 chars with an ellipsis before rendering inside the label.
-- Replace `whiteSpace: 'nowrap'` with a fixed `maxWidth` (≈ 180px) plus `whiteSpace: 'nowrap'` + `overflow: 'hidden'` + `textOverflow: 'ellipsis'` on the name span so the pill can never balloon horizontally.
-- Lower `distanceFactor` slightly (e.g. `6` → `8`) so the pill is visually consistent with image 1 even when the camera is close.
+No changes to `CouponFruit.tsx`; the maxWidth/ellipsis/2.8s window from the prior pass already protects the label.
 
-### 3. Prevent label pile-up when many coupons land at once
-File: `src/components/landing/tree3d/CouponFruit.tsx`
+## Verification
 
-- Keep the existing 5-second auto-hide, but only show the label for the first ~3 most recently landed coupons. Implement by tracking `landTime` and only rendering the label when `now - landTime < 2.5s` (shorter window) — this matches image 1 (one or two pills visible at a time) and avoids the stacked wall of pills in image 2.
+Reload `/`, watch tree:
 
-### 4. Verification
-
-- Reload `/`, watch the tree for ~30 seconds, confirm:
-  - No coupon ever shows "Connect coupondonation." — internal donations show "A generous donor".
-  - Landed labels match image 1 in size and never overlap into a wall of giant text.
-  - The hanging coupon faces themselves are unchanged.
+- Coupons show a varied mix of first names (Emma L., James K., …) instead of repeating "A generous donor" or "Connect coupondonation."
+- Truly anonymous donations show "Anonymous Donor".
+- Same donation id keeps the same mock name across renders.
 
 ## Out of scope
 
-- No changes to the coupon face design, the 3D tree, DPR, or post-processing.
-- No DB migrations or edits to donation rows.
-- No changes to any non-tree surface that legitimately shows the real donor email/name (admin pages, etc.).
+- No DB writes, no schema changes, no edits to admin pages or any surface that legitimately shows the real donor email/name.
