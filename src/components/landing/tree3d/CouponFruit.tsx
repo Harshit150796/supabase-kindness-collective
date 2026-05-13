@@ -353,10 +353,18 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         {state.phase !== 'regrowing' && (
           <Html
             transform
+            sprite
             occlude={false}
             position={[0, 0, COUPON_D / 2 + 0.012]}
             scale={COUPON_W / 920}
-            style={{ pointerEvents: 'none', userSelect: 'none' }}
+            style={{
+              pointerEvents: 'none',
+              userSelect: 'none',
+              backfaceVisibility: 'hidden',
+              transformStyle: 'preserve-3d',
+              willChange: 'transform',
+              imageRendering: 'auto',
+            }}
             zIndexRange={[10, 0]}
           >
             <CouponFace data={data} />

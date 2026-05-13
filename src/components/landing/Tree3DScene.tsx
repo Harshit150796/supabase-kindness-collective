@@ -346,9 +346,15 @@ export function Tree3DScene() {
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const zoomProgressRef = useRef(0); // 0 = zoomed in (13), 1 = zoomed out (17)
   const [inView, setInView] = useState(true);
-  const [dpr, setDpr] = useState<[number, number]>([1, 1.75]);
   const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
-  const [enablePost, setEnablePost] = useState(!isMobile);
+  // Lock DPR to device pixel ratio for crisp rendering; do not auto-downgrade after load.
+  const stableDpr = useMemo<[number, number]>(() => {
+    const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1.5;
+    return [d, d];
+  }, []);
+  const dpr = stableDpr;
+  // Post-processing (bloom + vignette) softens the whole scene; keep it off for clarity.
+  const enablePost = false;
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -431,11 +437,8 @@ export function Tree3DScene() {
           inView={inView}
           enablePost={enablePost}
           leafCount={leafCount}
-          onDecline={() => {
-            setDpr([1, 1]);
-            setEnablePost(false);
-          }}
-          onIncline={() => setDpr([1, 1.75])}
+          onDecline={() => {}}
+          onIncline={() => {}}
         />
         <RecipientStoryPanel />
         <TransparencyPopover />
