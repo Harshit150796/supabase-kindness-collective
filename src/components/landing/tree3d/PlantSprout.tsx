@@ -3,7 +3,7 @@ import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Html } from '@react-three/drei';
 import { useInteraction } from './InteractionContext';
-import { drawCouponTexture, type CouponData } from './couponDesign';
+import type { CouponData } from './couponDesign';
 import { brandLogos } from '@/data/brandLogos';
 import type { FallingDonation } from '@/hooks/useFallingDonations';
 
