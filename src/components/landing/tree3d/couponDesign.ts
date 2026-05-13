@@ -39,12 +39,16 @@ function roundRect(
 }
 
 export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
-  const W = 512;
-  const H = 320;
+  const SCALE = 2;
+  const W = 512 * SCALE;
+  const H = 320 * SCALE;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
+  ctx.scale(SCALE, SCALE);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
   // Background card
   ctx.fillStyle = '#FFFFFF';
@@ -66,7 +70,9 @@ export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
 
   // Brand name
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 44px system-ui, -apple-system, Arial';
+  ctx.shadowColor = 'rgba(0,0,0,0.25)';
+  ctx.shadowBlur = 4;
+  ctx.font = 'bold 46px system-ui, -apple-system, Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(data.brand.toUpperCase(), W / 2, 53);
@@ -88,9 +94,13 @@ export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
   ctx.fillText(data.trait, W / 2, pillY + pillH / 2 + 1);
 
   // Amount
+  ctx.shadowColor = 'rgba(0,0,0,0.18)';
+  ctx.shadowBlur = 6;
   ctx.fillStyle = '#D4A017';
-  ctx.font = 'bold 78px system-ui, -apple-system, Arial';
-  ctx.fillText(`$${data.amount}`, W / 2, 240);
+  ctx.font = 'bold 84px system-ui, -apple-system, Arial';
+  ctx.fillText(`$${data.amount}`, 256, 240);
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
 
   // "COUPON" sub-label
   ctx.fillStyle = '#6B7280';
@@ -98,7 +108,11 @@ export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
   ctx.fillText('GROCERY COUPON', W / 2, 290);
 
   const tex = new THREE.CanvasTexture(canvas);
-  tex.anisotropy = 4;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 16;
+  tex.minFilter = THREE.LinearMipMapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.generateMipmaps = true;
   tex.needsUpdate = true;
   return tex;
 }
