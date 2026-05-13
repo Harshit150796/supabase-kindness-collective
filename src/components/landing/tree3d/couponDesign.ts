@@ -49,24 +49,27 @@ export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
   ctx.scale(SCALE, SCALE);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
+  // Logical drawing dimensions (after scale)
+  const LW = 512;
+  const LH = 320;
 
   // Background card
   ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, 8, 8, W - 16, H - 16, 28);
+  roundRect(ctx, 8, 8, LW - 16, LH - 16, 28);
   ctx.fill();
 
   // Gold border
   ctx.strokeStyle = '#D4A017';
   ctx.lineWidth = 6;
-  roundRect(ctx, 8, 8, W - 16, H - 16, 28);
+  roundRect(ctx, 8, 8, LW - 16, LH - 16, 28);
   ctx.stroke();
 
   // Top brand stripe
   ctx.fillStyle = data.color;
-  roundRect(ctx, 8, 8, W - 16, 90, 28);
+  roundRect(ctx, 8, 8, LW - 16, 90, 28);
   ctx.fill();
   // square off bottom of stripe
-  ctx.fillRect(8, 70, W - 16, 28);
+  ctx.fillRect(8, 70, LW - 16, 28);
 
   // Brand name
   ctx.fillStyle = '#FFFFFF';
@@ -75,12 +78,12 @@ export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
   ctx.font = 'bold 46px system-ui, -apple-system, Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(data.brand.toUpperCase(), W / 2, 53);
+  ctx.fillText(data.brand.toUpperCase(), LW / 2, 53);
 
   // Trait pill
   const pillW = 280;
   const pillH = 56;
-  const pillX = (W - pillW) / 2;
+  const pillX = (LW - pillW) / 2;
   const pillY = 130;
   ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
   roundRect(ctx, pillX, pillY, pillW, pillH, 28);
@@ -91,21 +94,21 @@ export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
   ctx.stroke();
   ctx.fillStyle = '#059669';
   ctx.font = 'bold 26px system-ui, -apple-system, Arial';
-  ctx.fillText(data.trait, W / 2, pillY + pillH / 2 + 1);
+  ctx.fillText(data.trait, LW / 2, pillY + pillH / 2 + 1);
 
   // Amount
   ctx.shadowColor = 'rgba(0,0,0,0.18)';
   ctx.shadowBlur = 6;
   ctx.fillStyle = '#D4A017';
   ctx.font = 'bold 84px system-ui, -apple-system, Arial';
-  ctx.fillText(`$${data.amount}`, 256, 240);
+  ctx.fillText(`$${data.amount}`, LW / 2, 240);
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
 
   // "COUPON" sub-label
   ctx.fillStyle = '#6B7280';
   ctx.font = '600 18px system-ui, -apple-system, Arial';
-  ctx.fillText('GROCERY COUPON', W / 2, 290);
+  ctx.fillText('GROCERY COUPON', LW / 2, 290);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
