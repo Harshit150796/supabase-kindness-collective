@@ -200,7 +200,8 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   const rotRef = useRef(new THREE.Euler());
   const caughtRef = useRef(false);
   const [sparkle, setSparkle] = useState<{ pos: THREE.Vector3; time: number } | null>(null);
-  const { openStory } = useInteraction();
+  const { openStory, spawnPlant } = useInteraction();
+  const plantSpawnedRef = useRef(false);
 
   useEffect(() => {
     if (state.phase === 'falling') {
