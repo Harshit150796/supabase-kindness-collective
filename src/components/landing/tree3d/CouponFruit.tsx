@@ -295,23 +295,23 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       groupRef.current.scale.setScalar(1);
     } else if (state.phase === 'landed') {
       const elapsed = t - state.landTime;
-      // Squash & settle
-      const settle = Math.min(1, elapsed / 0.4);
-      const squash = 1 - Math.sin(settle * Math.PI) * 0.1;
-      groupRef.current.position.copy(state.restPos);
-      groupRef.current.rotation.set(-Math.PI / 2.1, rotRef.current.y * 0.4, rotRef.current.z * 0.5);
-      groupRef.current.scale.set(1, squash, 1);
+      // Coupon was consumed by the plant bloom — keep group hidden, just
+      // wait for the regrow scheduler to fire.
+      groupRef.current.visible = false;
       if (elapsed > 5) onRegrown(index);
     } else if (state.phase === 'regrowing') {
+      groupRef.current.visible = true;
       const elapsed = t - state.startTime;
       const dur = 0.9;
       const k = Math.min(1, elapsed / dur);
-      // Elastic ease
       const eased = k === 1 ? 1 : 1 - Math.pow(2, -10 * k) * Math.cos((k * 10 - 0.75) * (2 * Math.PI) / 3);
       groupRef.current.position.set(branchTip.x, branchTip.y - HANG_DROP, branchTip.z);
       groupRef.current.rotation.set(0, 0, 0);
       groupRef.current.scale.setScalar(Math.max(0, eased));
       if (k >= 1) onRegrown(index);
+    }
+    if (state.phase !== 'landed' && groupRef.current) {
+      groupRef.current.visible = true;
     }
   });
 
