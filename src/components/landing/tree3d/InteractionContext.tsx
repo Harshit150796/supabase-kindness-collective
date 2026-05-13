@@ -18,6 +18,14 @@ export interface BirdEvent {
   time: number;
 }
 
+export interface PlantEvent {
+  uid: number;
+  id: string; // donation id
+  position: [number, number, number];
+  amount: number;
+  accentColor: string;
+}
+
 export interface InteractionState {
   // Time of day
   timeOfDay: TimeOfDay;
