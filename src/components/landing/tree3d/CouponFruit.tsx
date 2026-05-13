@@ -355,7 +355,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
             transform
             occlude={false}
             position={[0, 0, COUPON_D / 2 + 0.012]}
-            scale={0.115}
+            scale={COUPON_W / 920}
             style={{ pointerEvents: 'none', userSelect: 'none' }}
             zIndexRange={[10, 0]}
           >
