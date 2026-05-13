@@ -285,6 +285,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       if (posRef.current.y <= groundY + COUPON_H / 2) {
         posRef.current.y = groundY + 0.025;
         const restPos = posRef.current.clone();
+        tryPlant(restPos);
         onLanded(index, restPos);
       }
       groupRef.current.position.copy(posRef.current);
