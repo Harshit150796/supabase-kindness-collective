@@ -118,6 +118,20 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
     parallaxBoostRef.current.value = b ? 2.5 : 1;
   }, []);
 
+  const [plantEvent, setPlantEvent] = useState<PlantEvent | null>(null);
+  const spawnPlant = useCallback(
+    (donation: { id: string; amount: number }, position: [number, number, number], accentColor: string) => {
+      setPlantEvent({
+        uid: idRef.current++,
+        id: donation.id,
+        position,
+        amount: donation.amount,
+        accentColor,
+      });
+    },
+    []
+  );
+
   return (
     <Ctx.Provider
       value={{
@@ -139,6 +153,8 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
         closeTransparency,
         parallaxBoostRef,
         setParallaxBoost,
+        plantEvent,
+        spawnPlant,
       }}
     >
       {children}
