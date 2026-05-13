@@ -299,6 +299,8 @@ function Scene({ leafCount, plantCap }: { leafCount: number; plantCap: number })
       <TrunkRipple />
       <Bird />
       <Squirrel />
+      <PlantsLayer cap={plantCap} />
+
 
       {fruits.map((data, i) => (
         <CouponFruit
