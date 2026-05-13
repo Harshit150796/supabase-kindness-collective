@@ -3,6 +3,7 @@ import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Line, Html } from '@react-three/drei';
 import { drawCouponTexture, type CouponData } from './couponDesign';
+import { brandLogos } from '@/data/brandLogos';
 import type { FallingDonation } from '@/hooks/useFallingDonations';
 import { useInteraction } from './InteractionContext';
 import { SparkleBurst } from './SparkleBurst';
@@ -70,6 +71,125 @@ let couponGeomCache: THREE.ExtrudeGeometry | null = null;
 function getCouponGeom() {
   if (!couponGeomCache) couponGeomCache = makeRoundedCouponGeom();
   return couponGeomCache;
+}
+
+// Crisp vector coupon face rendered as DOM via Drei <Html transform>.
+// Designed at ~920×600 px so it stays sharp when scaled down into 3D.
+function CouponFace({ data }: { data: CouponData }) {
+  const logo = brandLogos[data.brand]?.logo;
+  return (
+    <div
+      style={{
+        width: 920,
+        height: 600,
+        borderRadius: 56,
+        background: '#FFFFFF',
+        border: '12px solid #D4A017',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 18px 60px rgba(0,0,0,0.18)',
+      }}
+    >
+      {/* Brand stripe */}
+      <div
+        style={{
+          background: data.color,
+          color: '#FFFFFF',
+          height: 170,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 22,
+          padding: '0 28px',
+        }}
+      >
+        {logo && (
+          <img
+            src={logo}
+            alt=""
+            crossOrigin="anonymous"
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: 18,
+              background: '#fff',
+              padding: 8,
+              objectFit: 'contain',
+              flexShrink: 0,
+            }}
+          />
+        )}
+        <span
+          style={{
+            fontSize: 92,
+            fontWeight: 900,
+            letterSpacing: 2,
+            lineHeight: 1,
+            textTransform: 'uppercase',
+            textShadow: '0 2px 0 rgba(0,0,0,0.12)',
+          }}
+        >
+          {data.brand}
+        </span>
+      </div>
+
+      {/* Trait pill */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 36 }}>
+        <div
+          style={{
+            background: 'rgba(16,185,129,0.12)',
+            border: '4px solid #10B981',
+            color: '#047857',
+            borderRadius: 999,
+            padding: '14px 40px',
+            fontSize: 44,
+            fontWeight: 800,
+            letterSpacing: 2,
+          }}
+        >
+          {data.trait}
+        </div>
+      </div>
+
+      {/* Amount */}
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: 8,
+        }}
+      >
+        <div
+          style={{
+            color: '#D4A017',
+            fontSize: 200,
+            fontWeight: 900,
+            lineHeight: 1,
+            textShadow: '0 4px 0 rgba(212,160,23,0.18)',
+          }}
+        >
+          ${data.amount}
+        </div>
+        <div
+          style={{
+            color: '#6B7280',
+            fontSize: 36,
+            fontWeight: 700,
+            letterSpacing: 6,
+            marginTop: 12,
+          }}
+        >
+          GROCERY COUPON
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging }: Props) {
@@ -220,17 +340,28 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
           />
         </mesh>
 
-        {/* Front face (textured) */}
+        {/* Front face (textured base — card background only, text drawn via crisp HTML overlay) */}
         <mesh geometry={geom} castShadow>
           <meshStandardMaterial
             map={texture}
-            roughness={0.45}
-            metalness={0.1}
-            emissive="#FFD56A"
-            emissiveIntensity={0.06}
-            emissiveMap={texture}
+            roughness={0.55}
+            metalness={0.05}
           />
         </mesh>
+
+        {/* Crisp vector overlay anchored to the front face — follows sway/fall via parent group */}
+        {state.phase !== 'regrowing' && (
+          <Html
+            transform
+            occlude={false}
+            position={[0, 0, COUPON_D / 2 + 0.012]}
+            scale={COUPON_W / 920}
+            style={{ pointerEvents: 'none', userSelect: 'none' }}
+            zIndexRange={[10, 0]}
+          >
+            <CouponFace data={data} />
+          </Html>
+        )}
 
         {/* Back face (white) */}
         <mesh position={[0, 0, -COUPON_D / 2 - 0.001]} rotation={[0, Math.PI, 0]} raycast={() => {}}>

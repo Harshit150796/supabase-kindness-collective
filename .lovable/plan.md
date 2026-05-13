@@ -1,20 +1,21 @@
-## Improve hanging coupon image quality
+## Plan to fix blurry hanging coupon text
 
-The coupons hanging on the tree look blurry because their texture is drawn on a small 512×320 canvas and rendered with low anisotropy. Reference image shows a crisp Costco-style coupon — we'll match that clarity.
+### Goal
+Make the brand names, amount, labels, and coupon visuals on the tree readable and crisp at the current preview size, not just higher-resolution but still blurred by 3D perspective, mipmaps, lighting, and post-processing.
 
-### Changes (single file: `src/components/landing/tree3d/couponDesign.ts`)
+### What I found
+- The coupon artwork is currently drawn into a canvas texture in `couponDesign.ts`, then mapped onto a small 3D extruded mesh in `CouponFruit.tsx`.
+- Even at 4× texture size, text still gets softened because it is minified on a tiny angled 3D object, affected by mipmap filtering, material lighting/emissive maps, bloom/vignette post-processing, and leaf occlusion.
+- This is a rendering approach issue, not only an image-resolution issue.
 
-1. **Increase canvas resolution 4×** — go from 512×320 to 2048×1280 (matching the 1.15 × 0.74 aspect ratio of the 3D coupon plane). Scale every drawing coordinate, font size, border radius, and stroke width by 4× so the layout is identical, just sharper.
+### Implementation
+1. **Keep the 3D coupon card shape**, but simplify its material so it no longer reuses the full coupon texture for emissive lighting that can wash out the text.
+2. **Render the readable coupon content as crisp vector/UI overlay on the front face** using Drei `Html` anchored to each coupon, so text and logos remain browser-rendered instead of rasterized into a shrinking texture.
+3. **Create a compact coupon face component** matching the reference: brand color stripe, sharp brand text/logo area, pill label, amount, and coupon label.
+4. **Hide or reduce text in the canvas texture fallback**, leaving the 3D base/background as the card surface while the overlay carries the legible content.
+5. **Adjust occlusion/scale/positioning** so the overlay sits just above the coupon face, follows the hanging/falling/landed coupon transform, and does not get buried by tree leaves.
+6. **Reduce blur contributors** for coupons: avoid mipmap-softened text, keep texture filtering appropriate for the base card, and ensure post-processing bloom does not bloom over the coupon typography.
+7. **Verify visually on the home route** at the current viewport and make any sizing tweaks so Costco/CVS/amount text is noticeably sharper.
 
-2. **Sharper texture sampling** on the `THREE.CanvasTexture`:
-   - `anisotropy: 16` (up from 4) — dramatically reduces blur at glancing angles, which is exactly how the coupons hang.
-   - `minFilter: THREE.LinearMipmapLinearFilter` + `magFilter: THREE.LinearFilter` + `generateMipmaps: true` for clean filtering at distance.
-   - Set `colorSpace = THREE.SRGBColorSpace` so colors render correctly (currently default linear, which can wash things out).
-
-3. **Crisper text rendering** — set `ctx.imageSmoothingQuality = 'high'` and use slightly heavier font weights so small labels (`GROCERY COUPON`, trait pill) stay readable at the new resolution.
-
-No changes to the 3D mesh, geometry, lighting, layout, brand list, or any other component — purely a texture-quality upgrade.
-
-### Why this fixes it
-
-The 3D coupon is ~1.15 units wide and frequently shown at screen sizes well above 512px. The GPU was upscaling a tiny canvas, hence the blur. Quadrupling the source resolution + maxing anisotropy + proper mipmaps brings it to the crisp look in the reference image.
+### Expected result
+The coupons will still feel attached to the 3D tree, but their visible text/logo/amount will be much clearer because it will be rendered as sharp vector/browser text instead of a tiny rasterized texture on a moving 3D mesh.
