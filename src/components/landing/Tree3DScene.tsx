@@ -459,11 +459,12 @@ interface InnerProps {
   inView: boolean;
   enablePost: boolean;
   leafCount: number;
+  plantCap: number;
   onDecline: () => void;
   onIncline: () => void;
 }
 
-function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, onDecline, onIncline }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, onDecline, onIncline }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const lastClickRef = useRef(0);
 
