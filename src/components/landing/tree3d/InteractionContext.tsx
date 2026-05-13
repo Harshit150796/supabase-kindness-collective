@@ -60,6 +60,10 @@ export interface InteractionState {
   // Parallax boost (mouse held)
   parallaxBoostRef: React.MutableRefObject<{ value: number }>;
   setParallaxBoost: (b: boolean) => void;
+
+  // Plant spawn (coupon landed)
+  plantEvent: PlantEvent | null;
+  spawnPlant: (donation: { id: string; amount: number }, position: [number, number, number], accentColor: string) => void;
 }
 
 const Ctx = createContext<InteractionState | null>(null);
