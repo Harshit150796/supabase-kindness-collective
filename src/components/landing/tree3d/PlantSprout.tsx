@@ -180,7 +180,7 @@ function RoseBloom({
 }) {
   const petalGeom = getPetalGeom();
   const centerGeom = getCenterGeom();
-  const texture = useMemo(() => drawCouponTexture(data), [data]);
+  
   const logo = brandLogos[data.brand]?.logo;
 
   // 3 layered rings of petals, fanning around (and slightly behind) the card.
