@@ -425,6 +425,7 @@ export function Tree3DScene() {
   }, []);
 
   const leafCount = isMobile ? 2800 : 7000;
+  const plantCap = isMobile ? 20 : 40;
 
   return (
     <InteractionProvider>
