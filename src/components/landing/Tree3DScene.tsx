@@ -437,11 +437,8 @@ export function Tree3DScene() {
           inView={inView}
           enablePost={enablePost}
           leafCount={leafCount}
-          onDecline={() => {
-            setDpr([1, 1]);
-            setEnablePost(false);
-          }}
-          onIncline={() => setDpr([1, 1.75])}
+          onDecline={() => {}}
+          onIncline={() => {}}
         />
         <RecipientStoryPanel />
         <TransparencyPopover />
