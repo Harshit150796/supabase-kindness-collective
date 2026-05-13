@@ -73,7 +73,7 @@ export function useFallingDonations() {
 
       const mapped: FallingDonation[] = data.map((d: any) => ({
         id: d.id,
-        donorName: d.is_anonymous ? 'Anonymous' : nameFromEmail(d.donor_email),
+        donorName: resolveDonorName(d),
         amount: Number(d.amount) || 0,
       }));
       setDonations(mapped);
