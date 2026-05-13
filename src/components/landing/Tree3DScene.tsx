@@ -186,7 +186,7 @@ function DayNightLights() {
   );
 }
 
-function Scene({ leafCount }: { leafCount: number }) {
+function Scene({ leafCount, plantCap }: { leafCount: number; plantCap: number }) {
   const branchTips = useMemo(() => getBranchTips().map((b) => b.tip), []);
   const fruits = useMemo(() => COUPON_FRUITS.slice(0, branchTips.length), [branchTips.length]);
 
