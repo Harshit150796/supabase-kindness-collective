@@ -125,7 +125,7 @@ function DayNightLights() {
 
   const targets: Record<TimeOfDay, { dirCol: string; dirInt: number; ambCol: string; ambInt: number; fillCol: string; fillInt: number; fog: string }> = useMemo(
     () => ({
-      day: { dirCol: '#FFF4E0', dirInt: 1.35, ambCol: '#F4F1E8', ambInt: 0.75, fillCol: '#BFD8E8', fillInt: 0.45, fog: '#DCE6D5' },
+      day: { dirCol: '#FFF4E0', dirInt: 1.55, ambCol: '#F4F1E8', ambInt: 0.85, fillCol: '#BFD8E8', fillInt: 0.5, fog: '#DCE6D5' },
       sunset: { dirCol: '#FFA060', dirInt: 1.0, ambCol: '#FFD0A0', ambInt: 0.55, fillCol: '#9B7BB5', fillInt: 0.35, fog: '#E8B890' },
       night: { dirCol: '#9DB4E6', dirInt: 0.45, ambCol: '#5A6B8A', ambInt: 0.35, fillCol: '#3A4A7E', fillInt: 0.2, fog: '#1A2440' },
     }),
@@ -288,7 +288,7 @@ function Scene({ leafCount }: { leafCount: number }) {
     <>
       <DayNightLights />
       <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />
-      <fog attach="fog" args={['#DCE6D5', 18, 45]} />
+      <fog attach="fog" args={['#DCE6D5', 26, 60]} />
 
       <Sky />
       <Tree leafCount={leafCount} />
@@ -346,7 +346,7 @@ export function Tree3DScene() {
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const zoomProgressRef = useRef(0); // 0 = zoomed in (13), 1 = zoomed out (17)
   const [inView, setInView] = useState(true);
-  const [dpr, setDpr] = useState<[number, number]>([1, 1.75]);
+  const [dpr, setDpr] = useState<[number, number]>(() => [1, typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1.5, 2.5) : 2]);
   const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
   const [enablePost, setEnablePost] = useState(!isMobile);
 
@@ -432,10 +432,10 @@ export function Tree3DScene() {
           enablePost={enablePost}
           leafCount={leafCount}
           onDecline={() => {
-            setDpr([1, 1]);
+            setDpr([1, 1.25]);
             setEnablePost(false);
           }}
-          onIncline={() => setDpr([1, 1.75])}
+          onIncline={() => setDpr([1, typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1.5, 2.5) : 2])}
         />
         <RecipientStoryPanel />
         <TransparencyPopover />
@@ -469,8 +469,10 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
         gl={{
           antialias: true,
           alpha: true,
+          powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.05,
+          toneMappingExposure: 1.15,
+          outputColorSpace: THREE.SRGBColorSpace,
         }}
         style={{ background: 'transparent' }}
         onPointerDown={() => setParallaxBoost(true)}
@@ -507,8 +509,8 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
           <Scene leafCount={leafCount} />
           {enablePost && (
             <EffectComposer multisampling={0}>
-              <Bloom intensity={0.3} luminanceThreshold={0.92} luminanceSmoothing={0.3} mipmapBlur />
-              <Vignette eskil={false} offset={0.3} darkness={0.3} />
+              <Bloom intensity={0.22} luminanceThreshold={0.94} luminanceSmoothing={0.25} mipmapBlur />
+              <Vignette eskil={false} offset={0.4} darkness={0.18} />
             </EffectComposer>
           )}
         </Suspense>
