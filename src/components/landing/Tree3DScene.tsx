@@ -441,6 +441,7 @@ export function Tree3DScene() {
           inView={inView}
           enablePost={enablePost}
           leafCount={leafCount}
+          plantCap={plantCap}
           onDecline={() => {}}
           onIncline={() => {}}
         />
