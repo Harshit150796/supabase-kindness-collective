@@ -208,12 +208,12 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         }}
       >
         {/* Gold edge glow (additive) */}
-        <mesh ref={glowRef} scale={[1.04, 1.06, 0.9]} raycast={() => {}}>
+        <mesh ref={glowRef} scale={[1.08, 1.12, 0.9]} raycast={() => {}}>
           <boxGeometry args={[COUPON_W, COUPON_H, COUPON_D]} />
           <meshBasicMaterial
             color="#FFD56A"
             transparent
-            opacity={0.06}
+            opacity={0.14}
             blending={THREE.AdditiveBlending}
             depthWrite={false}
             toneMapped={false}
@@ -224,10 +224,10 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         <mesh geometry={geom} castShadow>
           <meshStandardMaterial
             map={texture}
-            roughness={0.32}
-            metalness={0.18}
+            roughness={0.45}
+            metalness={0.1}
             emissive="#FFD56A"
-            emissiveIntensity={0.18}
+            emissiveIntensity={0.06}
             emissiveMap={texture}
           />
         </mesh>
