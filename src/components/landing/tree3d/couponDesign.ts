@@ -39,66 +39,74 @@ function roundRect(
 }
 
 export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
-  const W = 512;
-  const H = 320;
+  // 4× resolution upgrade for crisp coupons (was 512×320)
+  const S = 4;
+  const W = 512 * S;
+  const H = 320 * S;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
   // Background card
   ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, 8, 8, W - 16, H - 16, 28);
+  roundRect(ctx, 8 * S, 8 * S, W - 16 * S, H - 16 * S, 28 * S);
   ctx.fill();
 
   // Gold border
   ctx.strokeStyle = '#D4A017';
-  ctx.lineWidth = 6;
-  roundRect(ctx, 8, 8, W - 16, H - 16, 28);
+  ctx.lineWidth = 6 * S;
+  roundRect(ctx, 8 * S, 8 * S, W - 16 * S, H - 16 * S, 28 * S);
   ctx.stroke();
 
   // Top brand stripe
   ctx.fillStyle = data.color;
-  roundRect(ctx, 8, 8, W - 16, 90, 28);
+  roundRect(ctx, 8 * S, 8 * S, W - 16 * S, 90 * S, 28 * S);
   ctx.fill();
   // square off bottom of stripe
-  ctx.fillRect(8, 70, W - 16, 28);
+  ctx.fillRect(8 * S, 70 * S, W - 16 * S, 28 * S);
 
   // Brand name
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 44px system-ui, -apple-system, Arial';
+  ctx.font = `bold ${44 * S}px system-ui, -apple-system, Arial`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(data.brand.toUpperCase(), W / 2, 53);
+  ctx.fillText(data.brand.toUpperCase(), W / 2, 53 * S);
 
   // Trait pill
-  const pillW = 280;
-  const pillH = 56;
+  const pillW = 280 * S;
+  const pillH = 56 * S;
   const pillX = (W - pillW) / 2;
-  const pillY = 130;
+  const pillY = 130 * S;
   ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
-  roundRect(ctx, pillX, pillY, pillW, pillH, 28);
+  roundRect(ctx, pillX, pillY, pillW, pillH, 28 * S);
   ctx.fill();
   ctx.strokeStyle = '#10B981';
-  ctx.lineWidth = 2;
-  roundRect(ctx, pillX, pillY, pillW, pillH, 28);
+  ctx.lineWidth = 2 * S;
+  roundRect(ctx, pillX, pillY, pillW, pillH, 28 * S);
   ctx.stroke();
   ctx.fillStyle = '#059669';
-  ctx.font = 'bold 26px system-ui, -apple-system, Arial';
-  ctx.fillText(data.trait, W / 2, pillY + pillH / 2 + 1);
+  ctx.font = `bold ${26 * S}px system-ui, -apple-system, Arial`;
+  ctx.fillText(data.trait, W / 2, pillY + pillH / 2 + 1 * S);
 
   // Amount
   ctx.fillStyle = '#D4A017';
-  ctx.font = 'bold 78px system-ui, -apple-system, Arial';
-  ctx.fillText(`$${data.amount}`, W / 2, 240);
+  ctx.font = `bold ${78 * S}px system-ui, -apple-system, Arial`;
+  ctx.fillText(`$${data.amount}`, W / 2, 240 * S);
 
   // "COUPON" sub-label
   ctx.fillStyle = '#6B7280';
-  ctx.font = '600 18px system-ui, -apple-system, Arial';
-  ctx.fillText('GROCERY COUPON', W / 2, 290);
+  ctx.font = `600 ${18 * S}px system-ui, -apple-system, Arial`;
+  ctx.fillText('GROCERY COUPON', W / 2, 290 * S);
 
   const tex = new THREE.CanvasTexture(canvas);
-  tex.anisotropy = 4;
+  tex.anisotropy = 16;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.generateMipmaps = true;
+  tex.colorSpace = THREE.SRGBColorSpace;
   tex.needsUpdate = true;
   return tex;
 }
