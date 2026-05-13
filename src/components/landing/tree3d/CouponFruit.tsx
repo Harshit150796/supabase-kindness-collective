@@ -3,6 +3,7 @@ import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Line, Html } from '@react-three/drei';
 import { drawCouponTexture, type CouponData } from './couponDesign';
+import { brandLogos } from '@/data/brandLogos';
 import type { FallingDonation } from '@/hooks/useFallingDonations';
 import { useInteraction } from './InteractionContext';
 import { SparkleBurst } from './SparkleBurst';
@@ -220,17 +221,28 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
           />
         </mesh>
 
-        {/* Front face (textured) */}
+        {/* Front face (textured base — card background only, text drawn via crisp HTML overlay) */}
         <mesh geometry={geom} castShadow>
           <meshStandardMaterial
             map={texture}
-            roughness={0.45}
-            metalness={0.1}
-            emissive="#FFD56A"
-            emissiveIntensity={0.06}
-            emissiveMap={texture}
+            roughness={0.55}
+            metalness={0.05}
           />
         </mesh>
+
+        {/* Crisp vector overlay anchored to the front face — follows sway/fall via parent group */}
+        {state.phase !== 'regrowing' && (
+          <Html
+            transform
+            occlude={false}
+            position={[0, 0, COUPON_D / 2 + 0.012]}
+            scale={0.115}
+            style={{ pointerEvents: 'none', userSelect: 'none' }}
+            zIndexRange={[10, 0]}
+          >
+            <CouponFace data={data} />
+          </Html>
+        )}
 
         {/* Back face (white) */}
         <mesh position={[0, 0, -COUPON_D / 2 - 0.001]} rotation={[0, Math.PI, 0]} raycast={() => {}}>
