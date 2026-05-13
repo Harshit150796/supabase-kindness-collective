@@ -200,11 +200,13 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   const rotRef = useRef(new THREE.Euler());
   const caughtRef = useRef(false);
   const [sparkle, setSparkle] = useState<{ pos: THREE.Vector3; time: number } | null>(null);
-  const { openStory } = useInteraction();
+  const { openStory, spawnPlant } = useInteraction();
+  const plantSpawnedRef = useRef(false);
 
   useEffect(() => {
     if (state.phase === 'falling') {
       caughtRef.current = false;
+      plantSpawnedRef.current = false;
       velocityRef.current = {
         y: 0.4,
         x: (Math.random() - 0.5) * 0.5,
@@ -217,6 +219,17 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       rotRef.current.set(0, 0, 0);
     }
   }, [state.phase, branchTip]);
+
+  const tryPlant = (pos: THREE.Vector3) => {
+    if (plantSpawnedRef.current) return;
+    if (state.phase !== 'falling') return;
+    plantSpawnedRef.current = true;
+    spawnPlant(
+      { id: state.donation.id, amount: state.donation.amount },
+      [pos.x, groundY, pos.z],
+      data.color
+    );
+  };
 
   const handlePointer = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
@@ -231,6 +244,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       setTimeout(() => {
         const restPos = posRef.current.clone();
         restPos.y = groundY + 0.025;
+        tryPlant(restPos);
         onLanded(index, restPos);
       }, 350);
     } else if (state.phase === 'landed') {
@@ -272,6 +286,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       if (posRef.current.y <= groundY + COUPON_H / 2) {
         posRef.current.y = groundY + 0.025;
         const restPos = posRef.current.clone();
+        tryPlant(restPos);
         onLanded(index, restPos);
       }
       groupRef.current.position.copy(posRef.current);

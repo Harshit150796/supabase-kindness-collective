@@ -18,6 +18,14 @@ export interface BirdEvent {
   time: number;
 }
 
+export interface PlantEvent {
+  uid: number;
+  id: string; // donation id
+  position: [number, number, number];
+  amount: number;
+  accentColor: string;
+}
+
 export interface InteractionState {
   // Time of day
   timeOfDay: TimeOfDay;
@@ -52,6 +60,10 @@ export interface InteractionState {
   // Parallax boost (mouse held)
   parallaxBoostRef: React.MutableRefObject<{ value: number }>;
   setParallaxBoost: (b: boolean) => void;
+
+  // Plant spawn (coupon landed)
+  plantEvent: PlantEvent | null;
+  spawnPlant: (donation: { id: string; amount: number }, position: [number, number, number], accentColor: string) => void;
 }
 
 const Ctx = createContext<InteractionState | null>(null);
@@ -106,6 +118,20 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
     parallaxBoostRef.current.value = b ? 2.5 : 1;
   }, []);
 
+  const [plantEvent, setPlantEvent] = useState<PlantEvent | null>(null);
+  const spawnPlant = useCallback(
+    (donation: { id: string; amount: number }, position: [number, number, number], accentColor: string) => {
+      setPlantEvent({
+        uid: idRef.current++,
+        id: donation.id,
+        position,
+        amount: donation.amount,
+        accentColor,
+      });
+    },
+    []
+  );
+
   return (
     <Ctx.Provider
       value={{
@@ -127,6 +153,8 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
         closeTransparency,
         parallaxBoostRef,
         setParallaxBoost,
+        plantEvent,
+        spawnPlant,
       }}
     >
       {children}

@@ -18,6 +18,7 @@ import { Bird } from './tree3d/Bird';
 import { Squirrel } from './tree3d/Squirrel';
 import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
 import { TransparencyPopover } from './tree3d/TransparencyPopover';
+import { PlantsLayer } from './tree3d/PlantsLayer';
 
 const GROUND_Y = -0.01;
 const DEFAULT_CAM = new THREE.Vector3(0, 4.0, 13);
@@ -185,7 +186,7 @@ function DayNightLights() {
   );
 }
 
-function Scene({ leafCount }: { leafCount: number }) {
+function Scene({ leafCount, plantCap }: { leafCount: number; plantCap: number }) {
   const branchTips = useMemo(() => getBranchTips().map((b) => b.tip), []);
   const fruits = useMemo(() => COUPON_FRUITS.slice(0, branchTips.length), [branchTips.length]);
 
@@ -298,6 +299,8 @@ function Scene({ leafCount }: { leafCount: number }) {
       <TrunkRipple />
       <Bird />
       <Squirrel />
+      <PlantsLayer cap={plantCap} />
+
 
       {fruits.map((data, i) => (
         <CouponFruit
@@ -422,6 +425,7 @@ export function Tree3DScene() {
   }, []);
 
   const leafCount = isMobile ? 2800 : 7000;
+  const plantCap = isMobile ? 20 : 40;
 
   return (
     <InteractionProvider>
@@ -437,6 +441,7 @@ export function Tree3DScene() {
           inView={inView}
           enablePost={enablePost}
           leafCount={leafCount}
+          plantCap={plantCap}
           onDecline={() => {}}
           onIncline={() => {}}
         />
@@ -454,11 +459,12 @@ interface InnerProps {
   inView: boolean;
   enablePost: boolean;
   leafCount: number;
+  plantCap: number;
   onDecline: () => void;
   onIncline: () => void;
 }
 
-function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, onDecline, onIncline }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, onDecline, onIncline }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const lastClickRef = useRef(0);
 
@@ -507,7 +513,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
         <CameraRig controlsRef={controlsRef} zoomProgressRef={zoomProgressRef} />
         <WindTracker />
         <Suspense fallback={null}>
-          <Scene leafCount={leafCount} />
+          <Scene leafCount={leafCount} plantCap={plantCap} />
           {enablePost && (
             <EffectComposer multisampling={0}>
               <Bloom intensity={0.3} luminanceThreshold={0.92} luminanceSmoothing={0.3} mipmapBlur />
