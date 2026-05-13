@@ -89,7 +89,7 @@ export function useFallingDonations() {
           if (d.status !== 'completed') return;
           const item: FallingDonation = {
             id: d.id,
-            donorName: d.is_anonymous ? 'Anonymous' : nameFromEmail(d.donor_email),
+            donorName: resolveDonorName(d),
             amount: Number(d.amount) || 0,
           };
           setDonations((prev) => [item, ...prev].slice(0, 20));
