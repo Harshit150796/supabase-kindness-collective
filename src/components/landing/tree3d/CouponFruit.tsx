@@ -394,7 +394,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         <Html
           position={[state.restPos.x, state.restPos.y + 0.55, state.restPos.z]}
           center
-          distanceFactor={6}
+          distanceFactor={8}
           style={{ pointerEvents: 'none' }}
         >
           <div
