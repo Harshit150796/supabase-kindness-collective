@@ -225,7 +225,8 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
     if (state.phase !== 'falling') return;
     plantSpawnedRef.current = true;
     spawnPlant(
-      { id: state.donation.id, amount: state.donation.amount },
+      state.donation,
+      data,
       [pos.x, groundY, pos.z],
       data.color
     );
