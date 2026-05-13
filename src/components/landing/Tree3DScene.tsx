@@ -18,6 +18,7 @@ import { Bird } from './tree3d/Bird';
 import { Squirrel } from './tree3d/Squirrel';
 import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
 import { TransparencyPopover } from './tree3d/TransparencyPopover';
+import { PlantsLayer } from './tree3d/PlantsLayer';
 
 const GROUND_Y = -0.01;
 const DEFAULT_CAM = new THREE.Vector3(0, 4.0, 13);
