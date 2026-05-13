@@ -206,6 +206,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   useEffect(() => {
     if (state.phase === 'falling') {
       caughtRef.current = false;
+      plantSpawnedRef.current = false;
       velocityRef.current = {
         y: 0.4,
         x: (Math.random() - 0.5) * 0.5,
@@ -218,6 +219,17 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       rotRef.current.set(0, 0, 0);
     }
   }, [state.phase, branchTip]);
+
+  const tryPlant = (pos: THREE.Vector3) => {
+    if (plantSpawnedRef.current) return;
+    if (state.phase !== 'falling') return;
+    plantSpawnedRef.current = true;
+    spawnPlant(
+      { id: state.donation.id, amount: state.donation.amount },
+      [pos.x, groundY, pos.z],
+      data.color
+    );
+  };
 
   const handlePointer = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
