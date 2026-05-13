@@ -350,8 +350,6 @@ function RoseBloom({
               </div>
             </div>
           </div>
-          {/* Hidden img to ensure texture asset is loaded for parity */}
-          <img src={(texture.image as HTMLCanvasElement | HTMLImageElement | undefined)?.src ?? ''} alt="" style={{ display: 'none' }} />
         </Html>
       )}
     </group>
