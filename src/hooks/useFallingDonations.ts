@@ -7,11 +7,28 @@ export interface FallingDonation {
   amount: number;
 }
 
+const INTERNAL_EMAILS = new Set([
+  'connect.coupondonation@gmail.com',
+  'connect@coupondonation.com',
+  'admin@coupondonation.com',
+]);
+
+function isInternalEmail(email: string | null): boolean {
+  if (!email) return false;
+  const e = email.toLowerCase().trim();
+  if (INTERNAL_EMAILS.has(e)) return true;
+  const domain = e.split('@')[1] || '';
+  return domain === 'coupondonation.com';
+}
+
 function nameFromEmail(email: string | null): string {
   if (!email) return 'A generous donor';
+  if (isInternalEmail(email)) return 'A generous donor';
   const local = email.split('@')[0];
   const clean = local.replace(/[._-]/g, ' ').trim();
-  return clean.charAt(0).toUpperCase() + clean.slice(1) + '.';
+  const pretty = clean.charAt(0).toUpperCase() + clean.slice(1) + '.';
+  // Hard cap so on-canvas labels never balloon
+  return pretty.length > 18 ? pretty.slice(0, 17).trimEnd() + '…' : pretty;
 }
 
 const FALLBACK: FallingDonation[] = [
