@@ -432,11 +432,20 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
                 flexShrink: 0,
               }}
             >
-              {state.donation.donorName.charAt(0).toUpperCase()}
+              {safeDonorName.charAt(0).toUpperCase()}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-              <span style={{ color: '#059669', fontWeight: 700 }}>
-                {state.donation.donorName}
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, minWidth: 0 }}>
+              <span
+                style={{
+                  color: '#059669',
+                  fontWeight: 700,
+                  maxWidth: 160,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {safeDonorName}
               </span>
               <span style={{ color: '#6b7280', fontSize: 11, fontWeight: 500 }}>
                 donated{' '}
