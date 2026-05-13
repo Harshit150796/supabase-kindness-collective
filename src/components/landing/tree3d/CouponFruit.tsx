@@ -244,6 +244,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       setTimeout(() => {
         const restPos = posRef.current.clone();
         restPos.y = groundY + 0.025;
+        tryPlant(restPos);
         onLanded(index, restPos);
       }, 350);
     } else if (state.phase === 'landed') {
