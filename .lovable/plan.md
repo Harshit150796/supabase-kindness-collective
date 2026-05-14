@@ -1,90 +1,84 @@
 ## Goal
 
-Make the sprouting plants feel like real flowering rose bushes growing around the tree, and make the falling coupon *become* the flower at the top of the plant — so the donor name visibly blooms on a stem. Keep the scene calm and uncluttered by limiting how often a plant is allowed to grow.
+When a coupon (donation) falls and touches the grass, sprout a small, beautiful plant at the landing spot — a visible, lasting symbol that every donation creates new life around the tree. Plants accumulate over the session so the landscape gradually fills with greenery as donations come in.
 
-## What changes (visual & behavior)
+## Visual concept
 
-### 1. Plant size, shape, and feel — "rose plant"
-- Roughly **2× current size**. Target heights:
-  - Sprout: ~0.45–0.55 m
-  - Flowering rose: ~0.7–0.85 m
-  - Mini bush: ~0.6–0.75 m, wider footprint
-- Replace the flat petal shape with a **layered rose bloom**:
-  - 3 concentric rings of curled petals (5 / 6 / 7 petals), each ring slightly rotated and tilted inward to suggest a real rose.
-  - Petal color = brand accent, with a soft pastel highlight on inner petals and a deeper saturated tone on the outer ring (so the bloom reads as dimensional, not flat).
-  - Tiny golden center (existing CENTER_COLOR), slightly raised.
-- Stem upgrade:
-  - Slightly thicker base, gentle taper, very subtle bend (not perfectly vertical).
-  - 3–5 oval rose-style leaves with serrated silhouette (use a refined leaf shape — wider, with a small notch — keeping it cheap geometry).
-  - 2–3 sparse "thorn" specks on the stem (tiny dark cones) — only on the rose archetype, optional and very subtle.
-- Bush archetype becomes a **rose bush**: 3 stems, each topped with a smaller rose bloom (not buds). Same per-instance materials, just smaller blooms.
+At the moment a coupon lands:
 
-### 2. The falling coupon *becomes* the flower
-This is the headline change. Right now the coupon lands on the ground and a separate plant grows next to it. Instead:
+1. A tiny puff of soil/dust + green sparkle bursts at the landing point (reuses existing `SparkleBurst` look, recolored).
+2. A sprout pushes up out of the ground over ~1.2s with an elastic ease (squash → stretch → settle).
+3. The sprout grows into a small stylized plant (~0.25–0.45m tall) over another ~1.5s: stem rises, 2–4 leaves unfurl (scale + slight rotation), and 1–3 tiny flowers/buds bloom on top in a color tied to the coupon's brand (so the plant subtly "remembers" which donation created it).
+4. After full bloom, the plant gently sways with the same wind signal already used by the tree, and stays in the scene.
 
-- When a coupon's fall reaches ground contact (or the catch-and-land path), it **does not lie on the grass**. It triggers a `spawnPlant` and is then *consumed* — the coupon mesh fades out over ~0.25s while the stem rises.
-- The plant grows from the landing point, and at the top of the stem the **coupon card itself is re-attached as the bloom centerpiece**:
-  - The coupon shrinks to a small "flower-card" size (~35–45% of falling size), tilts to face the camera, and sits nestled inside the rose petals.
-  - The donor name + amount remain readable on the card — so the visual reads as "this person's donation literally bloomed into a rose."
-- The petals form *around* the card (card sits flat, petals fan outward and slightly forward), so from the default camera angle the donor card is the focal point and the rose frames it.
-- Sway: card sways with the stem as one unit (already handled by the group transform).
+Plants are placed slightly offset from the coupon's resting position (so they don't z-fight with the lying coupon card) and very lightly jittered so a cluster looks organic, not gridded.
 
-### 3. Spawn rate limit (calm scene)
-- Hard cap: **at most 1 new plant every 3 seconds**, max **8 active plants** on desktop, **5 on mobile**.
-- If donations land faster than the cooldown allows, the extra coupons skip the plant transformation and just fade out quietly at the landing point (no awkward pile-up, no queue buildup).
-- Plants persist for the rest of the session (no auto-fade), but if the cap is exceeded the **oldest** plant fades out over 0.6s to make room (FIFO, same as today, just at the new lower cap).
+## Plant variety
 
-### 4. Placement
-- Plants spawn at the coupon's landing XZ with small jitter (±0.12m).
-- Add a soft exclusion radius (~0.4m) around the tree trunk so plants never grow on top of roots.
-- Add a minimum spacing (~0.35m) between active plants so the rose garden looks composed, not clumped — if the random landing spot is too close to an existing plant, nudge outward along the vector from that neighbor.
+3 procedural plant archetypes, picked deterministically from the donation `id` so the same donation always produces the same plant:
 
-## Files
+- **Sprout-with-leaves** — short stem, 2 broad leaves, no flower. Used for small donations.
+- **Flowering stem** — taller stem, 3 leaves, 1 flower head (5 rounded petals + center). Used for medium donations.
+- **Mini bush** — 3 short stems clustered, multiple small leaves, 2–3 tiny buds. Used for larger donations.
 
-**Edit**
+Amount → archetype mapping:
+- `< $10` → sprout
+- `$10–$49` → flowering stem
+- `>= $50` → mini bush
+
+Flower/bud color = the coupon's brand color (already on `CouponData.color`), with a softer pastel variant for petals so it reads as natural, not neon.
+
+## Lifecycle & limits
+
+- Plants persist for the rest of the session (they do not disappear when the coupon regrows on the tree).
+- Cap at **40 plants** total in the scene. When the cap is exceeded, the oldest plant fades out over 0.6s and is removed (FIFO) so the scene stays performant.
+- Mobile cap: **20 plants** (detected via the existing `isMobile` flag in `Tree3DScene`).
+- All plants share a small set of cached geometries/materials (one per archetype + one shared leaf/petal geometry) so adding a plant is cheap.
+
+## Architecture
+
+New files:
+
 - `src/components/landing/tree3d/PlantSprout.tsx`
-  - New rose-bloom geometry helper (3-ring layered petals, curled via rotation on each petal).
-  - New rose-leaf shape geometry (replace generic teardrop).
-  - Increase base height constants ~2×.
-  - Add an optional `couponMesh` slot at the top of the stem (a positioned group the parent can fill).
-- `src/components/landing/tree3d/PlantsLayer.tsx`
-  - Lower default cap to 8 (desktop) / 5 (mobile).
-  - Track `lastSpawnTime`; if `now - lastSpawnTime < 3s`, ignore the incoming `plantEvent` (and emit a flag the coupon can read to know it should just fade).
-  - Min-spacing nudge logic before committing the new plant's position.
-  - Pass full `FallingDonation` (or the subset needed: brand color, donor name, amount, design data) into `PlantSprout` so the bloom can render the same coupon card.
-- `src/components/landing/tree3d/InteractionContext.tsx`
-  - Extend `PlantEvent` with the donation payload needed to render the card-as-bloom (donor name, amount, brand, color, coupon design id).
-  - Add `requestPlant(donation, position) → boolean` (returns whether the plant will actually spawn given the cooldown), so `CouponFruit` can decide to consume itself either way (fade) but only convert to a bloom when accepted.
-- `src/components/landing/tree3d/CouponFruit.tsx`
-  - On ground contact / catch-land:
-    - Call `requestPlant(...)`.
-    - Always fade the falling coupon out over ~0.25s (so the coupon never lies on the grass anymore).
-    - If `requestPlant` was accepted, the plant takes over and re-renders the coupon card as its bloom.
-  - Skip the existing "lie flat on grass" resting state.
-- `src/components/landing/Tree3DScene.tsx`
-  - Pass updated caps (8 / 5) to `<PlantsLayer />`.
+  - Single plant component. Props: `position`, `seed` (donation id), `archetype`, `accentColor`, `bornAt`, `fadingOut?`, `onFadedOut?`.
+  - Owns its own grow animation in `useFrame` based on `bornAt`. Uses elastic ease for stem rise + staggered leaf unfurl + flower bloom.
+  - Subscribes to `useInteraction().windRef` (same source the tree already reads) for sway.
+  - Built from primitives (`cylinderGeometry` for stems, `sphereGeometry` scaled for leaves/buds, custom small `Shape`-based petals) — no external assets, no new dependencies.
 
-**No new files.** `couponDesign.ts` already has the card geometry/material helpers; the plant will reuse them at smaller scale so the bloom-card looks identical to the falling card.
+- `src/components/landing/tree3d/PlantsLayer.tsx`
+  - Holds the array of active plants. Exposes an imperative `spawnPlant(donation, position)` via context or a ref forwarded from `Scene`.
+  - Manages the FIFO cap and triggers fade-outs.
+
+Edits:
+
+- `src/components/landing/tree3d/InteractionContext.tsx`
+  - Add `spawnPlant(donation, position)` to the context (the same pattern already used for `spawnRipple`, `openStory`, etc.) so `CouponFruit` can call it without prop-drilling.
+
+- `src/components/landing/tree3d/CouponFruit.tsx`
+  - In the `useFrame` falling branch, at the exact moment we detect ground contact (and in the click-catch path before `setTimeout(onLanded)`), call `spawnPlant(state.donation, landingXZ)` once per landing. Guard with a ref so it can only fire once per fall.
+  - No visual changes to the coupon itself.
+
+- `src/components/landing/Tree3DScene.tsx`
+  - Render `<PlantsLayer />` once inside `Scene`, alongside `Ground`, `Fireflies`, etc.
+  - Pass the mobile cap into `PlantsLayer`.
 
 ## Performance notes
 
-- Cap of 8 plants keeps total extra meshes tiny.
-- Rose bloom = ~18 petals + 1 center per plant. With cap 8 → ≤144 small meshes total, all reusing 1 cached petal geometry and 4 materials per plant.
-- Coupon-as-bloom reuses the existing cached coupon geometry/material from `CouponFruit`, just at smaller scale — no new texture work.
-- Cooldown gating means we never spawn more than ~20 plants per minute, well within budget.
+- Geometries and base materials are created once per archetype and reused (module-level cache, same pattern as `getCouponGeom` in `CouponFruit.tsx`).
+- Plants opt out of shadow casting by default (only `receiveShadow` on the ground stays); we can enable `castShadow` on the tallest stem for the bush archetype only if it still feels light.
+- All sway math is cheap sine-based, identical in cost to the existing leaf sway.
+- No new npm packages.
 
 ## Out of scope
 
-- No DB/schema changes, no donor-name logic changes, no admin UI.
-- No new npm packages.
-- Tree, fireflies, ground, sky, transparency popover — untouched.
+- No DB writes, no schema changes, no admin UI, no changes to coupon design, label text, donor name resolution, or the falling/regrow logic itself.
+- Plants are visual only — they do not block clicks on the coupon, the tree, or the ground.
 
 ## Verification
 
 On `/`:
-- A coupon falls → at ground contact it does **not** lie on the grass; instead a stem rises and the same coupon card becomes the rose's bloom at the top, framed by layered petals in the brand color.
-- Plants are clearly ~2× larger than before and read as rose plants from the default camera.
-- Trigger the shake cascade with many coupons → only 1 plant grows every ~3 seconds; extra coupons just fade quietly at landing.
-- Total active plants never exceeds 8 (5 on mobile); when exceeded, the oldest fades out.
-- Plants don't grow on the trunk and don't visibly overlap each other.
-- Sway and wind still feel consistent with the tree.
+- Wait for a coupon to fall → at the moment it touches the grass, a sprout appears next to it and grows into a small plant.
+- Click a hanging coupon → catch it → after it settles, a plant sprouts at the landing spot.
+- Trigger the shake cascade → multiple plants sprout in sequence around the tree.
+- Plants gently sway and remain after the coupon regrows back onto the tree.
+- After many drops, the oldest plants fade out so total never exceeds 40 (20 on mobile) and FPS stays smooth.
