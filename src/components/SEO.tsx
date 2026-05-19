@@ -16,7 +16,7 @@ export function SEO({
   title,
   description,
   path,
-  image = `${SITE}/og-image.jpg`,
+  image = `${SITE}/og-image.png`,
   type = "website",
   noindex = false,
   jsonLd,

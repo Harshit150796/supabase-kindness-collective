@@ -1,6 +1,6 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { PerformanceMonitor, OrbitControls } from '@react-three/drei';
+import { Environment, PerformanceMonitor, OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
@@ -171,22 +171,22 @@ function DayNightLights() {
         intensity={1.35}
         color="#FFF4E0"
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={4096}
+        shadow-mapSize-height={4096}
         shadow-camera-left={-12}
         shadow-camera-right={12}
         shadow-camera-top={12}
         shadow-camera-bottom={-3}
         shadow-bias={-0.0005}
-        shadow-radius={6}
-        shadow-blurSamples={8}
+        shadow-radius={8}
+        shadow-blurSamples={25}
       />
       <directionalLight ref={fillRef} position={[-6, 5, -3]} intensity={0.45} color="#BFD8E8" />
     </>
   );
 }
 
-function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap: number; isMobile: boolean }) {
+function Scene({ leafCount, plantCap }: { leafCount: number; plantCap: number }) {
   const branchTips = useMemo(() => getBranchTips().map((b) => b.tip), []);
   const fruits = useMemo(() => COUPON_FRUITS.slice(0, branchTips.length), [branchTips.length]);
 
@@ -295,16 +295,12 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
       <Tree leafCount={leafCount} />
       <Ground y={GROUND_Y} />
       <HitZones />
+      <Fireflies />
+      <TrunkRipple />
+      <Bird />
+      <Squirrel />
       <PlantsLayer cap={plantCap} />
-      {/* Ambient critters: desktop only — they add visual life but cost frame time on mobile. */}
-      {!isMobile && (
-        <>
-          <Fireflies />
-          <TrunkRipple />
-          <Bird />
-          <Squirrel />
-        </>
-      )}
+
 
       {fruits.map((data, i) => (
         <CouponFruit
@@ -319,6 +315,8 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
           onClickHanging={dropOne}
         />
       ))}
+
+      <Environment preset="forest" background={false} />
     </>
   );
 }
@@ -352,9 +350,9 @@ export function Tree3DScene() {
   const zoomProgressRef = useRef(0); // 0 = zoomed in (13), 1 = zoomed out (17)
   const [inView, setInView] = useState(true);
   const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
-  // Cap DPR to 1.5 — higher values triple GPU work for marginal visual gain on this scene.
+  // Lock DPR to device pixel ratio for crisp rendering; do not auto-downgrade after load.
   const stableDpr = useMemo<[number, number]>(() => {
-    const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 1.5) : 1.25;
+    const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1.5;
     return [d, d];
   }, []);
   const dpr = stableDpr;
@@ -370,32 +368,64 @@ export function Tree3DScene() {
   }, []);
 
   // Scroll-to-zoom-then-release: intercept wheel + touch on the hero wrapper.
-  // Disabled on mobile — it fights native scroll and makes phones feel laggy.
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-    if (typeof window !== 'undefined' && window.innerWidth < 768) return;
 
     const WHEEL_SENSITIVITY = 0.0018;
+    const TOUCH_SENSITIVITY = 0.005;
 
     const onWheel = (e: WheelEvent) => {
       if (window.scrollY > 4) return;
       const cur = zoomProgressRef.current;
       const dy = e.deltaY;
-      if (dy > 0 && cur >= 1) return;
-      if (dy < 0 && cur <= 0) return;
+      if (dy > 0 && cur >= 1) return; // fully zoomed out → let page scroll
+      if (dy < 0 && cur <= 0) return; // fully zoomed in → let page scroll up (no-op at top)
       e.preventDefault();
       zoomProgressRef.current = Math.max(0, Math.min(1, cur + dy * WHEEL_SENSITIVITY));
     };
 
+    let lastTouchY: number | null = null;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      lastTouchY = e.touches[0].clientY;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (lastTouchY === null || e.touches.length !== 1) return;
+      if (window.scrollY > 4) return;
+      const y = e.touches[0].clientY;
+      const dy = lastTouchY - y; // swipe up = positive (zoom out)
+      lastTouchY = y;
+      const cur = zoomProgressRef.current;
+      if (dy > 0 && cur >= 1) return; // let page scroll
+      if (dy < 0 && cur <= 0) return; // let page scroll
+      e.preventDefault();
+      zoomProgressRef.current = Math.max(0, Math.min(1, cur + dy * TOUCH_SENSITIVITY));
+    };
+
+    const onTouchEnd = () => {
+      lastTouchY = null;
+    };
+
     el.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    el.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
     return () => {
       el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
     };
   }, []);
 
-  const leafCount = isMobile ? 1600 : 5000;
-  const plantCap = isMobile ? 14 : 30;
+  const leafCount = isMobile ? 2800 : 7000;
+  const plantCap = isMobile ? 20 : 40;
 
   return (
     <InteractionProvider>
@@ -412,7 +442,6 @@ export function Tree3DScene() {
           enablePost={enablePost}
           leafCount={leafCount}
           plantCap={plantCap}
-          isMobile={isMobile}
           onDecline={() => {}}
           onIncline={() => {}}
         />
@@ -431,12 +460,11 @@ interface InnerProps {
   enablePost: boolean;
   leafCount: number;
   plantCap: number;
-  isMobile: boolean;
   onDecline: () => void;
   onIncline: () => void;
 }
 
-function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, isMobile, onDecline, onIncline }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, onDecline, onIncline }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const lastClickRef = useRef(0);
 
@@ -485,7 +513,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
         <CameraRig controlsRef={controlsRef} zoomProgressRef={zoomProgressRef} />
         <WindTracker />
         <Suspense fallback={null}>
-          <Scene leafCount={leafCount} plantCap={plantCap} isMobile={isMobile} />
+          <Scene leafCount={leafCount} plantCap={plantCap} />
           {enablePost && (
             <EffectComposer multisampling={0}>
               <Bloom intensity={0.3} luminanceThreshold={0.92} luminanceSmoothing={0.3} mipmapBlur />

@@ -1,64 +1,84 @@
 ## Goal
 
-Bring the landing page back to "extremely fast" on first load on every device, and make mobile feel light and snappy — without losing the brand visuals (tree, falling coupons, donor names).
+When a coupon (donation) falls and touches the grass, sprout a small, beautiful plant at the landing spot — a visible, lasting symbol that every donation creates new life around the tree. Plants accumulate over the session so the landscape gradually fills with greenery as donations come in.
 
-## Root causes (verified in the code)
+## Visual concept
 
-1. **No route-level code splitting.** `src/App.tsx` eagerly imports ~50 page components (Admin*, Donor*, Recipient*, Blog, Stories, overlays, DonationFlow, etc.). The home route ships them all in the initial JS bundle.
-2. **3D hero is heavy and always runs.**
-  - `Tree3DScene` runs `frameloop="always"` whenever in view, with DPR locked up to 2, PCFSoft 4096×4096 shadow maps, and a forest HDRI Environment.
-  - On mobile it still spawns 2800 instanced leaves, fireflies, squirrel, bird, plants layer, trunk ripple, hit zones, 16 `CouponFruit` instances.
-  - Each `CouponFruit` uses Drei `<Html transform>` to render a 920×600 DOM coupon face inside the Canvas — 16 React+iframe transforms compositing every frame. The landed label additionally uses `backdrop-filter: blur(8px)` over an animated scene (known perf killer).
-  - 1.5 MB `tree.glb` is loaded before the page is interactive.
-3. **Oversized public assets.** `og-image.png` 809 KB, `favicon-512.png` 938 KB, `favicon-192.png` 677 KB, `favicon.png` 222 KB — all referenced from `index.html`/manifest on first paint.
-4. **Heavy below-the-fold sections load eagerly.** `DonationFlow` (894 lines), `BrandLeaderboard`, `ImpactStories`, `TrustTransparency` etc. all import on first render even though they're far below the fold.
-5. **Mobile UX issues.** Hero is `60vh` but full Canvas + scroll-jacking wheel/touch handlers compete with native scrolling, making the page feel sluggish on phones.
+At the moment a coupon lands:
 
-## Plan
+1. A tiny puff of soil/dust + green sparkle bursts at the landing point (reuses existing `SparkleBurst` look, recolored).
+2. A sprout pushes up out of the ground over ~1.2s with an elastic ease (squash → stretch → settle).
+3. The sprout grows into a small stylized plant (~0.25–0.45m tall) over another ~1.5s: stem rises, 2–4 leaves unfurl (scale + slight rotation), and 1–3 tiny flowers/buds bloom on top in a color tied to the coupon's brand (so the plant subtly "remembers" which donation created it).
+4. After full bloom, the plant gently sways with the same wind signal already used by the tree, and stays in the scene.
 
-### 1. Route-level code splitting (biggest single win)
+Plants are placed slightly offset from the coupon's resting position (so they don't z-fight with the lying coupon card) and very lightly jittered so a cluster looks organic, not gridded.
 
-- Convert every non-home route in `src/App.tsx` to `React.lazy(...)` + a single top-level `<Suspense fallback={…}>`.
-- Keep `Index` eager so the landing page itself is not gated by Suspense.
-- Expected impact: initial JS bundle drops by an order of magnitude.
+## Plant variety
 
-### 2. Defer below-the-fold landing sections
+3 procedural plant archetypes, picked deterministically from the donation `id` so the same donation always produces the same plant:
 
-- In `src/pages/Index.tsx`, lazy-load everything below `HeroSection` + `LiveActivityBar`:
-`ImpactStories`, `TrustTransparency`, `BrandLeaderboard`, `DonationFlow`, `SecurityBadges`, `TestimonialsSection`, `ImpactDashboard`, `CTASection`.
-- Wrap each in `<Suspense fallback={<div className="h-[400px]" />}>` so layout is reserved (no CLS).
-- Optional: mount each via an `IntersectionObserver` wrapper so chunks load only as the user scrolls.
+- **Sprout-with-leaves** — short stem, 2 broad leaves, no flower. Used for small donations.
+- **Flowering stem** — taller stem, 3 leaves, 1 flower head (5 rounded petals + center). Used for medium donations.
+- **Mini bush** — 3 short stems clustered, multiple small leaves, 2–3 tiny buds. Used for larger donations.
 
+Amount → archetype mapping:
+- `< $10` → sprout
+- `$10–$49` → flowering stem
+- `>= $50` → mini bush
 
+Flower/bud color = the coupon's brand color (already on `CouponData.color`), with a softer pastel variant for petals so it reads as natural, not neon.
 
-### 5. HTML/meta hygiene in `index.html`
+## Lifecycle & limits
 
-- Add `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">` if missing.
-- Add `<link rel="preconnect">` for Supabase + Stripe (already used early).
-- Move any tracking pixels' `<noscript>` out of `<head>` (rule already in our directives).
+- Plants persist for the rest of the session (they do not disappear when the coupon regrows on the tree).
+- Cap at **40 plants** total in the scene. When the cap is exceeded, the oldest plant fades out over 0.6s and is removed (FIFO) so the scene stays performant.
+- Mobile cap: **20 plants** (detected via the existing `isMobile` flag in `Tree3DScene`).
+- All plants share a small set of cached geometries/materials (one per archetype + one shared leaf/petal geometry) so adding a plant is cheap.
 
-### 6. Verification
+## Architecture
 
-- Build the project (Vite auto-runs) and inspect chunk sizes in the output.
-- Use `browser--performance_profile` on `/` at mobile viewport (390×844) to confirm: TTFB/LCP, long tasks count, JS heap < 60 MB.
-- Manually scroll the page in the preview to confirm sections appear smoothly and 3D hero (desktop) still drops coupons with donor names.
+New files:
 
-## Technical details
+- `src/components/landing/tree3d/PlantSprout.tsx`
+  - Single plant component. Props: `position`, `seed` (donation id), `archetype`, `accentColor`, `bornAt`, `fadingOut?`, `onFadedOut?`.
+  - Owns its own grow animation in `useFrame` based on `bornAt`. Uses elastic ease for stem rise + staggered leaf unfurl + flower bloom.
+  - Subscribes to `useInteraction().windRef` (same source the tree already reads) for sway.
+  - Built from primitives (`cylinderGeometry` for stems, `sphereGeometry` scaled for leaves/buds, custom small `Shape`-based petals) — no external assets, no new dependencies.
 
-- Files to edit:
-  - `src/App.tsx` — convert non-home routes to `lazy`.
-  - `src/pages/Index.tsx` — lazy + Suspense + IO wrapper for below-fold sections.
-  - `src/components/landing/HeroSection.tsx` — branch on `isMobile`/`prefers-reduced-motion` to a static hero.
-  - `src/components/landing/Tree3DScene.tsx` — lower shadows, drop Environment, mobile bail-out, kill scroll-jack on mobile, idle-mount Canvas, visibility-pause.
-  - `src/components/landing/tree3d/CouponFruit.tsx` — remove `<Html transform>` overlay, remove `backdrop-filter`, cap concurrency where applicable.
-  - `src/components/landing/Tree3DScene.tsx` Scene — gate `Fireflies`/`Bird`/`Squirrel`/`TrunkRipple`/`HitZones`/`PlantsLayer` by `isMobile`.
-  - `index.html` — preconnect + LCP preload + viewport.
-  - `public/og-image.png`, `public/favicon*.png`, `public/models/tree.glb` — re-encode/compress via a one-off script.
-- No backend or schema changes. No business-logic changes. Donor-name behavior, plant growth, falling animation, brand allocation logic stay intact.
+- `src/components/landing/tree3d/PlantsLayer.tsx`
+  - Holds the array of active plants. Exposes an imperative `spawnPlant(donation, position)` via context or a ref forwarded from `Scene`.
+  - Manages the FIFO cap and triggers fade-outs.
 
-## Out of scope (won't touch)
+Edits:
 
-- Donation / Stripe / auth flows.
-- Database schema or RLS.
-- Visual identity (palette, logo, typography).
-- Donor-name resolution and plant growth logic added in prior turns.
+- `src/components/landing/tree3d/InteractionContext.tsx`
+  - Add `spawnPlant(donation, position)` to the context (the same pattern already used for `spawnRipple`, `openStory`, etc.) so `CouponFruit` can call it without prop-drilling.
+
+- `src/components/landing/tree3d/CouponFruit.tsx`
+  - In the `useFrame` falling branch, at the exact moment we detect ground contact (and in the click-catch path before `setTimeout(onLanded)`), call `spawnPlant(state.donation, landingXZ)` once per landing. Guard with a ref so it can only fire once per fall.
+  - No visual changes to the coupon itself.
+
+- `src/components/landing/Tree3DScene.tsx`
+  - Render `<PlantsLayer />` once inside `Scene`, alongside `Ground`, `Fireflies`, etc.
+  - Pass the mobile cap into `PlantsLayer`.
+
+## Performance notes
+
+- Geometries and base materials are created once per archetype and reused (module-level cache, same pattern as `getCouponGeom` in `CouponFruit.tsx`).
+- Plants opt out of shadow casting by default (only `receiveShadow` on the ground stays); we can enable `castShadow` on the tallest stem for the bush archetype only if it still feels light.
+- All sway math is cheap sine-based, identical in cost to the existing leaf sway.
+- No new npm packages.
+
+## Out of scope
+
+- No DB writes, no schema changes, no admin UI, no changes to coupon design, label text, donor name resolution, or the falling/regrow logic itself.
+- Plants are visual only — they do not block clicks on the coupon, the tree, or the ground.
+
+## Verification
+
+On `/`:
+- Wait for a coupon to fall → at the moment it touches the grass, a sprout appears next to it and grows into a small plant.
+- Click a hanging coupon → catch it → after it settles, a plant sprouts at the landing spot.
+- Trigger the shake cascade → multiple plants sprout in sequence around the tree.
+- Plants gently sway and remain after the coupon regrows back onto the tree.
+- After many drops, the oldest plants fade out so total never exceeds 40 (20 on mobile) and FPS stays smooth.
