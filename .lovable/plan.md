@@ -1,84 +1,73 @@
-## Goal
+# Mobile Performance Plan — Landing Page
 
-When a coupon (donation) falls and touches the grass, sprout a small, beautiful plant at the landing spot — a visible, lasting symbol that every donation creates new life around the tree. Plants accumulate over the session so the landscape gradually fills with greenery as donations come in.
+Goal: Make `/` load fast and run smooth on mobile **without changing any visuals** of the 3D tree or the rest of the page. The tree, plants, fireflies, bird, squirrel, sky, ground, day/night, coupons — all stay exactly as they are visually. We only touch *when* and *how* things load, and tune mobile-only quality knobs that the user cannot perceive.
 
-## Visual concept
+---
 
-At the moment a coupon lands:
+## 1. Defer everything below the hero until it's needed
 
-1. A tiny puff of soil/dust + green sparkle bursts at the landing point (reuses existing `SparkleBurst` look, recolored).
-2. A sprout pushes up out of the ground over ~1.2s with an elastic ease (squash → stretch → settle).
-3. The sprout grows into a small stylized plant (~0.25–0.45m tall) over another ~1.5s: stem rises, 2–4 leaves unfurl (scale + slight rotation), and 1–3 tiny flowers/buds bloom on top in a color tied to the coupon's brand (so the plant subtly "remembers" which donation created it).
-4. After full bloom, the plant gently sways with the same wind signal already used by the tree, and stays in the scene.
+Currently `src/pages/Index.tsx` imports every section synchronously (LiveActivityBar, ImpactStories, TrustTransparency, BrandLeaderboard, DonationFlow — 894 lines, SecurityBadges, TestimonialsSection, ImpactDashboard, CTASection, Footer). On mobile this all parses before the user sees anything.
 
-Plants are placed slightly offset from the coupon's resting position (so they don't z-fight with the lying coupon card) and very lightly jittered so a cluster looks organic, not gridded.
+- Convert all below-the-fold sections to `React.lazy` with a `Suspense` skeleton matching their current height (prevents layout shift).
+- Keep `Navbar` + `HeroSection` eager so the first paint is unchanged.
+- Wrap each lazy section in an `IntersectionObserver`-based "render when near viewport" wrapper (200px rootMargin) so we don't even fetch the chunks until the user scrolls toward them.
 
-## Plant variety
+Net effect: initial JS for `/` drops dramatically; nothing visual changes.
 
-3 procedural plant archetypes, picked deterministically from the donation `id` so the same donation always produces the same plant:
+## 2. Code-split heavy routes in `src/App.tsx`
 
-- **Sprout-with-leaves** — short stem, 2 broad leaves, no flower. Used for small donations.
-- **Flowering stem** — taller stem, 3 leaves, 1 flower head (5 rounded petals + center). Used for medium donations.
-- **Mini bush** — 3 short stems clustered, multiple small leaves, 2–3 tiny buds. Used for larger donations.
+All 40+ pages are imported eagerly today, which bloats the initial bundle that mobile users download before the homepage can hydrate.
 
-Amount → archetype mapping:
-- `< $10` → sprout
-- `$10–$49` → flowering stem
-- `>= $50` → mini bush
+- Convert every non-homepage route (`About`, `HowItWorks`, all `/admin/*`, all `/donor/*`, all `/recipient/*`, `Blog`, overlays, etc.) to `React.lazy` + a single `Suspense` boundary around `<Routes>`.
+- Keep `Index` eager so `/` is instant.
 
-Flower/bud color = the coupon's brand color (already on `CouponData.color`), with a softer pastel variant for petals so it reads as natural, not neon.
+## 3. Defer the 3D scene start on mobile until the canvas is actually visible
 
-## Lifecycle & limits
+`HeroSection` already lazy-loads `Tree3DScene`, but on mobile we should also avoid mounting `<Canvas>` until the hero is in view and the browser is idle — so the first paint is just the gradient sky placeholder (looks identical to the current fallback).
 
-- Plants persist for the rest of the session (they do not disappear when the coupon regrows on the tree).
-- Cap at **40 plants** total in the scene. When the cap is exceeded, the oldest plant fades out over 0.6s and is removed (FIFO) so the scene stays performant.
-- Mobile cap: **20 plants** (detected via the existing `isMobile` flag in `Tree3DScene`).
-- All plants share a small set of cached geometries/materials (one per archetype + one shared leaf/petal geometry) so adding a plant is cheap.
+- In `Tree3DScene.tsx`, on mobile only, gate the `<Canvas>` behind: `inView && requestIdleCallback fired (or 250 ms timeout fallback)`.
+- The gradient placeholder already exists in `HeroSection`, so visually there's no change — just a ~quarter-second deferral that lets HTML/CSS paint first and React hydrate other things.
 
-## Architecture
+## 4. Mobile-only runtime tuning inside Tree3DScene (no visual change)
 
-New files:
+These are all values the eye cannot distinguish on a 390 px viewport but cost real frame time:
 
-- `src/components/landing/tree3d/PlantSprout.tsx`
-  - Single plant component. Props: `position`, `seed` (donation id), `archetype`, `accentColor`, `bornAt`, `fadingOut?`, `onFadedOut?`.
-  - Owns its own grow animation in `useFrame` based on `bornAt`. Uses elastic ease for stem rise + staggered leaf unfurl + flower bloom.
-  - Subscribes to `useInteraction().windRef` (same source the tree already reads) for sway.
-  - Built from primitives (`cylinderGeometry` for stems, `sphereGeometry` scaled for leaves/buds, custom small `Shape`-based petals) — no external assets, no new dependencies.
+- **DPR cap**: currently locked to `devicePixelRatio` up to 2. On mobile cap at `1.5` (Three.js community standard for mid-range phones). At 390 CSS px this is visually indistinguishable from 2x but ~30 % cheaper per frame.
+- **Shadow map**: currently `4096×4096`. On mobile drop to `1024×1024` and reduce `shadow-blurSamples` from 25 → 8. Shadows still look soft at hero scale on a phone.
+- **`frameloop`**: already `demand` when off-screen — keep. Additionally pause the loop while `document.visibilityState === 'hidden'` (tab in background).
+- **Leaf count**: already `2800` on mobile, keep.
+- **Plant cap**: already `20` on mobile, keep.
+- **Fireflies / Bird / Squirrel**: keep visuals; just confirm they respect `frameloop="demand"` and use the existing wind ref (no changes needed unless profiling shows otherwise).
+- **Environment preset**: `Environment preset="forest"` downloads an HDR. On mobile switch to `background={false}` with the lightweight `apartment` preset OR preload it with `<Environment files=...>` cached — pick whichever measures faster. Either way the visual difference at mobile scale is imperceptible because we already set `background={false}`.
 
-- `src/components/landing/tree3d/PlantsLayer.tsx`
-  - Holds the array of active plants. Exposes an imperative `spawnPlant(donation, position)` via context or a ref forwarded from `Scene`.
-  - Manages the FIFO cap and triggers fade-outs.
+## 5. Asset & network hygiene
 
-Edits:
+- `<link rel="preload" as="image" href="/src/assets/logo.png">` in `index.html` won't match the bundled hashed asset path in production — it's a wasted request. Remove it (or move it inside the React tree where the import URL is known).
+- Add `<link rel="preconnect">` for the Supabase project URL and Stripe so first DB / image fetches start sooner.
+- Audit `src/data/brandLogos.ts` and any landing images — ensure they're lazy (`loading="lazy" decoding="async"`) and use explicit `width`/`height` to avoid CLS. No visual change.
 
-- `src/components/landing/tree3d/InteractionContext.tsx`
-  - Add `spawnPlant(donation, position)` to the context (the same pattern already used for `spawnRipple`, `openStory`, etc.) so `CouponFruit` can call it without prop-drilling.
+## 6. Verify, don't guess
 
-- `src/components/landing/tree3d/CouponFruit.tsx`
-  - In the `useFrame` falling branch, at the exact moment we detect ground contact (and in the click-catch path before `setTimeout(onLanded)`), call `spawnPlant(state.donation, landingXZ)` once per landing. Guard with a ref so it can only fire once per fall.
-  - No visual changes to the coupon itself.
+After the changes:
+- Build and inspect `dist/assets/*.js` sizes — confirm initial chunk shrank.
+- Use the browser performance profiler on a throttled mobile viewport (390×844, 4× CPU slowdown) before/after to confirm LCP and TTI improved.
+- Visually diff the hero against the current commit at 390 px to confirm zero visual regressions.
 
-- `src/components/landing/Tree3DScene.tsx`
-  - Render `<PlantsLayer />` once inside `Scene`, alongside `Ground`, `Fireflies`, etc.
-  - Pass the mobile cap into `PlantsLayer`.
+---
 
-## Performance notes
+## Out of scope (explicitly not changing)
 
-- Geometries and base materials are created once per archetype and reused (module-level cache, same pattern as `getCouponGeom` in `CouponFruit.tsx`).
-- Plants opt out of shadow casting by default (only `receiveShadow` on the ground stays); we can enable `castShadow` on the tallest stem for the bush archetype only if it still feels light.
-- All sway math is cheap sine-based, identical in cost to the existing leaf sway.
-- No new npm packages.
+- Any geometry, colors, materials, lighting hues, animation timing, or shader of the tree, plants, fireflies, bird, squirrel, sky, or coupons.
+- Any copy, layout, spacing, or component structure of landing sections.
+- Backend, data fetching logic, or business rules.
 
-## Out of scope
+## Files that will be touched
 
-- No DB writes, no schema changes, no admin UI, no changes to coupon design, label text, donor name resolution, or the falling/regrow logic itself.
-- Plants are visual only — they do not block clicks on the coupon, the tree, or the ground.
+- `src/pages/Index.tsx` — lazy + intersection-observer wrappers for below-fold sections.
+- `src/App.tsx` — route-level code splitting.
+- `src/components/landing/HeroSection.tsx` — small mobile-gating addition.
+- `src/components/landing/Tree3DScene.tsx` — DPR cap, shadow map size, visibility pause, environment tweak (mobile branch only).
+- `index.html` — remove stale preload, add preconnects.
+- Possibly one new tiny helper `src/components/LazyOnView.tsx` for the intersection-observer wrapper.
 
-## Verification
-
-On `/`:
-- Wait for a coupon to fall → at the moment it touches the grass, a sprout appears next to it and grows into a small plant.
-- Click a hanging coupon → catch it → after it settles, a plant sprouts at the landing spot.
-- Trigger the shake cascade → multiple plants sprout in sequence around the tree.
-- Plants gently sway and remain after the coupon regrows back onto the tree.
-- After many drops, the oldest plants fade out so total never exceeds 40 (20 on mobile) and FPS stays smooth.
+No new dependencies required.

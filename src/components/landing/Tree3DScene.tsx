@@ -115,7 +115,7 @@ function CameraRig({
   return null;
 }
 
-function DayNightLights() {
+function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
   const { timeOfDay } = useInteraction();
   const dirRef = useRef<THREE.DirectionalLight>(null);
   const ambRef = useRef<THREE.AmbientLight>(null);
@@ -162,6 +162,9 @@ function DayNightLights() {
     }
   });
 
+  const shadowSize = isMobile ? 1024 : 4096;
+  const shadowBlur = isMobile ? 4 : 25;
+
   return (
     <>
       <ambientLight ref={ambRef} intensity={0.75} color="#F4F1E8" />
@@ -171,22 +174,22 @@ function DayNightLights() {
         intensity={1.35}
         color="#FFF4E0"
         castShadow
-        shadow-mapSize-width={4096}
-        shadow-mapSize-height={4096}
+        shadow-mapSize-width={shadowSize}
+        shadow-mapSize-height={shadowSize}
         shadow-camera-left={-12}
         shadow-camera-right={12}
         shadow-camera-top={12}
         shadow-camera-bottom={-3}
         shadow-bias={-0.0005}
         shadow-radius={8}
-        shadow-blurSamples={25}
+        shadow-blurSamples={shadowBlur}
       />
       <directionalLight ref={fillRef} position={[-6, 5, -3]} intensity={0.45} color="#BFD8E8" />
     </>
   );
 }
 
-function Scene({ leafCount, plantCap }: { leafCount: number; plantCap: number }) {
+function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap: number; isMobile: boolean }) {
   const branchTips = useMemo(() => getBranchTips().map((b) => b.tip), []);
   const fruits = useMemo(() => COUPON_FRUITS.slice(0, branchTips.length), [branchTips.length]);
 
@@ -287,7 +290,7 @@ function Scene({ leafCount, plantCap }: { leafCount: number; plantCap: number })
 
   return (
     <>
-      <DayNightLights />
+      <DayNightLights isMobile={isMobile} />
       <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />
       <fog attach="fog" args={['#DCE6D5', 18, 45]} />
 
@@ -350,11 +353,15 @@ export function Tree3DScene() {
   const zoomProgressRef = useRef(0); // 0 = zoomed in (13), 1 = zoomed out (17)
   const [inView, setInView] = useState(true);
   const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
-  // Lock DPR to device pixel ratio for crisp rendering; do not auto-downgrade after load.
+  const [mounted, setMounted] = useState(() => typeof window === 'undefined' ? false : window.innerWidth >= 768);
+  const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
+  // DPR: 1.5 cap on mobile (visually indistinguishable at hero scale, ~30% cheaper),
+  // 2 cap on desktop for crisp rendering.
   const stableDpr = useMemo<[number, number]>(() => {
-    const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1.5;
+    const max = isMobile ? 1.5 : 2;
+    const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, max) : max;
     return [d, d];
-  }, []);
+  }, [isMobile]);
   const dpr = stableDpr;
   // Post-processing (bloom + vignette) softens the whole scene; keep it off for clarity.
   const enablePost = false;
@@ -366,6 +373,25 @@ export function Tree3DScene() {
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
+
+  // Pause render loop while tab is hidden — saves battery + CPU on mobile.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const onVis = () => setTabVisible(document.visibilityState !== 'hidden');
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
+
+  // On mobile, defer mounting the WebGL canvas until the browser is idle so the
+  // hero gradient + below-fold work get to paint/hydrate first. Visually
+  // identical because the fallback is the same gradient.
+  useEffect(() => {
+    if (mounted) return;
+    const ric: any = (typeof window !== 'undefined' && (window as any).requestIdleCallback) || ((cb: () => void) => setTimeout(cb, 250));
+    const cancel: any = (typeof window !== 'undefined' && (window as any).cancelIdleCallback) || clearTimeout;
+    const id = ric(() => setMounted(true), { timeout: 800 });
+    return () => cancel(id);
+  }, [mounted]);
 
   // Scroll-to-zoom-then-release: intercept wheel + touch on the hero wrapper.
   useEffect(() => {
@@ -434,17 +460,22 @@ export function Tree3DScene() {
         className="absolute inset-0 w-full h-full"
         style={{ touchAction: 'pan-x' }}
       >
-        <Tree3DInner
-          controlsRef={controlsRef}
-          zoomProgressRef={zoomProgressRef}
-          dpr={dpr}
-          inView={inView}
-          enablePost={enablePost}
-          leafCount={leafCount}
-          plantCap={plantCap}
-          onDecline={() => {}}
-          onIncline={() => {}}
-        />
+        {mounted ? (
+          <Tree3DInner
+            controlsRef={controlsRef}
+            zoomProgressRef={zoomProgressRef}
+            dpr={dpr}
+            inView={inView && tabVisible}
+            enablePost={enablePost}
+            leafCount={leafCount}
+            plantCap={plantCap}
+            isMobile={isMobile}
+            onDecline={() => {}}
+            onIncline={() => {}}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#FFF2D8] to-[#D8E0CC]" />
+        )}
         <RecipientStoryPanel />
         <TransparencyPopover />
       </div>
@@ -460,11 +491,12 @@ interface InnerProps {
   enablePost: boolean;
   leafCount: number;
   plantCap: number;
+  isMobile: boolean;
   onDecline: () => void;
   onIncline: () => void;
 }
 
-function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, onDecline, onIncline }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, isMobile, onDecline, onIncline }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const lastClickRef = useRef(0);
 
@@ -513,7 +545,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
         <CameraRig controlsRef={controlsRef} zoomProgressRef={zoomProgressRef} />
         <WindTracker />
         <Suspense fallback={null}>
-          <Scene leafCount={leafCount} plantCap={plantCap} />
+          <Scene leafCount={leafCount} plantCap={plantCap} isMobile={isMobile} />
           {enablePost && (
             <EffectComposer multisampling={0}>
               <Bloom intensity={0.3} luminanceThreshold={0.92} luminanceSmoothing={0.3} mipmapBlur />
