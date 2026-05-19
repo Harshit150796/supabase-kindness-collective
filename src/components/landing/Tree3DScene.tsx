@@ -545,7 +545,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
         <CameraRig controlsRef={controlsRef} zoomProgressRef={zoomProgressRef} />
         <WindTracker />
         <Suspense fallback={null}>
-          <Scene leafCount={leafCount} plantCap={plantCap} />
+          <Scene leafCount={leafCount} plantCap={plantCap} isMobile={isMobile} />
           {enablePost && (
             <EffectComposer multisampling={0}>
               <Bloom intensity={0.3} luminanceThreshold={0.92} luminanceSmoothing={0.3} mipmapBlur />
