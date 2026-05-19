@@ -245,7 +245,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
           />
         </mesh>
 
-        {/* Front face (textured base — card background only, text drawn via crisp HTML overlay) */}
+        {/* Front face — textured with the full coupon design (brand, trait, amount). */}
         <mesh geometry={geom} castShadow>
           <meshStandardMaterial
             map={texture}
@@ -253,28 +253,6 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
             metalness={0.05}
           />
         </mesh>
-
-        {/* Crisp vector overlay anchored to the front face — follows sway/fall via parent group */}
-        {state.phase !== 'regrowing' && (
-          <Html
-            transform
-            sprite
-            occlude={false}
-            position={[0, 0, COUPON_D / 2 + 0.012]}
-            scale={COUPON_W / 920}
-            style={{
-              pointerEvents: 'none',
-              userSelect: 'none',
-              backfaceVisibility: 'hidden',
-              transformStyle: 'preserve-3d',
-              willChange: 'transform',
-              imageRendering: 'auto',
-            }}
-            zIndexRange={[10, 0]}
-          >
-            <CouponFace data={data} />
-          </Html>
-        )}
 
         {/* Back face (white) */}
         <mesh position={[0, 0, -COUPON_D / 2 - 0.001]} rotation={[0, Math.PI, 0]} raycast={() => {}}>
@@ -300,8 +278,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         >
           <div
             style={{
-              background: 'rgba(255,255,255,0.92)',
-              backdropFilter: 'blur(8px)',
+              background: '#FFFFFF',
               border: '1.5px solid #D4A017',
               borderRadius: '14px',
               padding: '10px 16px',
