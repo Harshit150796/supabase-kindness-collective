@@ -374,6 +374,25 @@ export function Tree3DScene() {
     return () => obs.disconnect();
   }, []);
 
+  // Pause render loop while tab is hidden — saves battery + CPU on mobile.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const onVis = () => setTabVisible(document.visibilityState !== 'hidden');
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
+
+  // On mobile, defer mounting the WebGL canvas until the browser is idle so the
+  // hero gradient + below-fold work get to paint/hydrate first. Visually
+  // identical because the fallback is the same gradient.
+  useEffect(() => {
+    if (mounted) return;
+    const ric: any = (typeof window !== 'undefined' && (window as any).requestIdleCallback) || ((cb: () => void) => setTimeout(cb, 250));
+    const cancel: any = (typeof window !== 'undefined' && (window as any).cancelIdleCallback) || clearTimeout;
+    const id = ric(() => setMounted(true), { timeout: 800 });
+    return () => cancel(id);
+  }, [mounted]);
+
   // Scroll-to-zoom-then-release: intercept wheel + touch on the hero wrapper.
   useEffect(() => {
     const el = wrapRef.current;
@@ -441,17 +460,22 @@ export function Tree3DScene() {
         className="absolute inset-0 w-full h-full"
         style={{ touchAction: 'pan-x' }}
       >
-        <Tree3DInner
-          controlsRef={controlsRef}
-          zoomProgressRef={zoomProgressRef}
-          dpr={dpr}
-          inView={inView}
-          enablePost={enablePost}
-          leafCount={leafCount}
-          plantCap={plantCap}
-          onDecline={() => {}}
-          onIncline={() => {}}
-        />
+        {mounted ? (
+          <Tree3DInner
+            controlsRef={controlsRef}
+            zoomProgressRef={zoomProgressRef}
+            dpr={dpr}
+            inView={inView && tabVisible}
+            enablePost={enablePost}
+            leafCount={leafCount}
+            plantCap={plantCap}
+            isMobile={isMobile}
+            onDecline={() => {}}
+            onIncline={() => {}}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#FFF2D8] to-[#D8E0CC]" />
+        )}
         <RecipientStoryPanel />
         <TransparencyPopover />
       </div>
@@ -467,11 +491,12 @@ interface InnerProps {
   enablePost: boolean;
   leafCount: number;
   plantCap: number;
+  isMobile: boolean;
   onDecline: () => void;
   onIncline: () => void;
 }
 
-function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, onDecline, onIncline }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, isMobile, onDecline, onIncline }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const lastClickRef = useRef(0);
 
