@@ -171,15 +171,15 @@ function DayNightLights() {
         intensity={1.35}
         color="#FFF4E0"
         castShadow
-        shadow-mapSize-width={4096}
-        shadow-mapSize-height={4096}
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
         shadow-camera-left={-12}
         shadow-camera-right={12}
         shadow-camera-top={12}
         shadow-camera-bottom={-3}
         shadow-bias={-0.0005}
-        shadow-radius={8}
-        shadow-blurSamples={25}
+        shadow-radius={6}
+        shadow-blurSamples={8}
       />
       <directionalLight ref={fillRef} position={[-6, 5, -3]} intensity={0.45} color="#BFD8E8" />
     </>
@@ -295,12 +295,16 @@ function Scene({ leafCount, plantCap }: { leafCount: number; plantCap: number })
       <Tree leafCount={leafCount} />
       <Ground y={GROUND_Y} />
       <HitZones />
-      <Fireflies />
-      <TrunkRipple />
-      <Bird />
-      <Squirrel />
       <PlantsLayer cap={plantCap} />
-
+      {/* Ambient critters: desktop only — they add visual life but cost frame time on mobile. */}
+      {!isMobile && (
+        <>
+          <Fireflies />
+          <TrunkRipple />
+          <Bird />
+          <Squirrel />
+        </>
+      )}
 
       {fruits.map((data, i) => (
         <CouponFruit
@@ -315,8 +319,6 @@ function Scene({ leafCount, plantCap }: { leafCount: number; plantCap: number })
           onClickHanging={dropOne}
         />
       ))}
-
-      <Environment preset="forest" background={false} />
     </>
   );
 }
