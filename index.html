@@ -19,7 +19,11 @@
     <link rel="icon" type="image/png" sizes="48x48" href="/favicon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon-192.png" />
     <link rel="manifest" href="/manifest.json" />
-    <link rel="preload" as="image" href="/src/assets/logo.png" />
+    <!-- Preconnect to backend + payments so first XHR / image starts faster on mobile -->
+    <link rel="preconnect" href="https://vbnbacowuoeeojjdrzzp.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://vbnbacowuoeeojjdrzzp.supabase.co" />
+    <link rel="preconnect" href="https://js.stripe.com" crossorigin />
+    <link rel="preconnect" href="https://www.google.com" crossorigin />
     
     <!-- Canonical URL -->
     <link rel="canonical" href="https://coupondonation.com" />
