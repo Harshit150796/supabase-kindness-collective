@@ -189,7 +189,7 @@ function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
   );
 }
 
-function Scene({ leafCount, plantCap }: { leafCount: number; plantCap: number }) {
+function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap: number; isMobile: boolean }) {
   const branchTips = useMemo(() => getBranchTips().map((b) => b.tip), []);
   const fruits = useMemo(() => COUPON_FRUITS.slice(0, branchTips.length), [branchTips.length]);
 
@@ -290,7 +290,7 @@ function Scene({ leafCount, plantCap }: { leafCount: number; plantCap: number })
 
   return (
     <>
-      <DayNightLights />
+      <DayNightLights isMobile={isMobile} />
       <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />
       <fog attach="fog" args={['#DCE6D5', 18, 45]} />
 
@@ -353,11 +353,15 @@ export function Tree3DScene() {
   const zoomProgressRef = useRef(0); // 0 = zoomed in (13), 1 = zoomed out (17)
   const [inView, setInView] = useState(true);
   const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
-  // Lock DPR to device pixel ratio for crisp rendering; do not auto-downgrade after load.
+  const [mounted, setMounted] = useState(() => typeof window === 'undefined' ? false : window.innerWidth >= 768);
+  const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
+  // DPR: 1.5 cap on mobile (visually indistinguishable at hero scale, ~30% cheaper),
+  // 2 cap on desktop for crisp rendering.
   const stableDpr = useMemo<[number, number]>(() => {
-    const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1.5;
+    const max = isMobile ? 1.5 : 2;
+    const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, max) : max;
     return [d, d];
-  }, []);
+  }, [isMobile]);
   const dpr = stableDpr;
   // Post-processing (bloom + vignette) softens the whole scene; keep it off for clarity.
   const enablePost = false;
