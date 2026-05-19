@@ -1,16 +1,36 @@
+import { lazy } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { LiveActivityBar } from '@/components/landing/LiveActivityBar';
-import { ImpactStories } from '@/components/landing/ImpactStories';
-import { TrustTransparency } from '@/components/landing/TrustTransparency';
-import { DonationFlow } from '@/components/landing/DonationFlow';
-import { SecurityBadges } from '@/components/landing/SecurityBadges';
-import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
-import { BrandLeaderboard } from '@/components/landing/BrandLeaderboard';
-import { ImpactDashboard } from '@/components/landing/ImpactDashboard';
-import { CTASection } from '@/components/landing/CTASection';
 import { SEO } from '@/components/SEO';
+import { LazySection } from '@/components/landing/LazySection';
+
+// Heavy below-the-fold sections — split into their own chunks and mounted on scroll.
+const ImpactStories = lazy(() =>
+  import('@/components/landing/ImpactStories').then((m) => ({ default: m.ImpactStories }))
+);
+const TrustTransparency = lazy(() =>
+  import('@/components/landing/TrustTransparency').then((m) => ({ default: m.TrustTransparency }))
+);
+const BrandLeaderboard = lazy(() =>
+  import('@/components/landing/BrandLeaderboard').then((m) => ({ default: m.BrandLeaderboard }))
+);
+const DonationFlow = lazy(() =>
+  import('@/components/landing/DonationFlow').then((m) => ({ default: m.DonationFlow }))
+);
+const SecurityBadges = lazy(() =>
+  import('@/components/landing/SecurityBadges').then((m) => ({ default: m.SecurityBadges }))
+);
+const TestimonialsSection = lazy(() =>
+  import('@/components/landing/TestimonialsSection').then((m) => ({ default: m.TestimonialsSection }))
+);
+const ImpactDashboard = lazy(() =>
+  import('@/components/landing/ImpactDashboard').then((m) => ({ default: m.ImpactDashboard }))
+);
+const CTASection = lazy(() =>
+  import('@/components/landing/CTASection').then((m) => ({ default: m.CTASection }))
+);
 
 const Index = () => {
   return (
@@ -29,28 +49,28 @@ const Index = () => {
         <LiveActivityBar />
 
         {/* 3. Real recipient stories - builds emotional connection */}
-        <ImpactStories />
+        <LazySection minHeight={520}><ImpactStories /></LazySection>
 
         {/* 4. Transparency - where money goes + how it works flow */}
-        <TrustTransparency />
+        <LazySection minHeight={600}><TrustTransparency /></LazySection>
 
         {/* 5. Brand leaderboard - Top Donors → Live Leaderboard */}
-        <BrandLeaderboard />
+        <LazySection minHeight={520}><BrandLeaderboard /></LazySection>
 
         {/* 6. Donation flow - impact-focused, not rewards-focused */}
-        <DonationFlow />
+        <LazySection minHeight={640}><DonationFlow /></LazySection>
 
         {/* 7. Security badges - trust reassurance before testimonials */}
-        <SecurityBadges />
+        <LazySection minHeight={240}><SecurityBadges /></LazySection>
 
         {/* 8. Community testimonials with photos */}
-        <TestimonialsSection />
+        <LazySection minHeight={520}><TestimonialsSection /></LazySection>
 
         {/* 9. Overall impact statistics */}
-        <ImpactDashboard />
+        <LazySection minHeight={420}><ImpactDashboard /></LazySection>
 
         {/* 10. Final call to action */}
-        <CTASection />
+        <LazySection minHeight={360}><CTASection /></LazySection>
       </main>
       <Footer />
     </div>
