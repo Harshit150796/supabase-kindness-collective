@@ -444,6 +444,7 @@ export function Tree3DScene() {
           enablePost={enablePost}
           leafCount={leafCount}
           plantCap={plantCap}
+          isMobile={isMobile}
           onDecline={() => {}}
           onIncline={() => {}}
         />
@@ -462,11 +463,12 @@ interface InnerProps {
   enablePost: boolean;
   leafCount: number;
   plantCap: number;
+  isMobile: boolean;
   onDecline: () => void;
   onIncline: () => void;
 }
 
-function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, onDecline, onIncline }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, isMobile, onDecline, onIncline }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const lastClickRef = useRef(0);
 
