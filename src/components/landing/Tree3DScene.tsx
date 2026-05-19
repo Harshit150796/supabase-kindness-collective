@@ -115,7 +115,7 @@ function CameraRig({
   return null;
 }
 
-function DayNightLights() {
+function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
   const { timeOfDay } = useInteraction();
   const dirRef = useRef<THREE.DirectionalLight>(null);
   const ambRef = useRef<THREE.AmbientLight>(null);
