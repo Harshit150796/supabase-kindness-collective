@@ -1,6 +1,6 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Environment, PerformanceMonitor, OrbitControls } from '@react-three/drei';
+import { PerformanceMonitor, OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
@@ -352,9 +352,9 @@ export function Tree3DScene() {
   const zoomProgressRef = useRef(0); // 0 = zoomed in (13), 1 = zoomed out (17)
   const [inView, setInView] = useState(true);
   const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
-  // Lock DPR to device pixel ratio for crisp rendering; do not auto-downgrade after load.
+  // Cap DPR to 1.5 — higher values triple GPU work for marginal visual gain on this scene.
   const stableDpr = useMemo<[number, number]>(() => {
-    const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1.5;
+    const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 1.5) : 1.25;
     return [d, d];
   }, []);
   const dpr = stableDpr;
@@ -370,64 +370,32 @@ export function Tree3DScene() {
   }, []);
 
   // Scroll-to-zoom-then-release: intercept wheel + touch on the hero wrapper.
+  // Disabled on mobile — it fights native scroll and makes phones feel laggy.
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
+    if (typeof window !== 'undefined' && window.innerWidth < 768) return;
 
     const WHEEL_SENSITIVITY = 0.0018;
-    const TOUCH_SENSITIVITY = 0.005;
 
     const onWheel = (e: WheelEvent) => {
       if (window.scrollY > 4) return;
       const cur = zoomProgressRef.current;
       const dy = e.deltaY;
-      if (dy > 0 && cur >= 1) return; // fully zoomed out → let page scroll
-      if (dy < 0 && cur <= 0) return; // fully zoomed in → let page scroll up (no-op at top)
+      if (dy > 0 && cur >= 1) return;
+      if (dy < 0 && cur <= 0) return;
       e.preventDefault();
       zoomProgressRef.current = Math.max(0, Math.min(1, cur + dy * WHEEL_SENSITIVITY));
     };
 
-    let lastTouchY: number | null = null;
-
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return;
-      lastTouchY = e.touches[0].clientY;
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      if (lastTouchY === null || e.touches.length !== 1) return;
-      if (window.scrollY > 4) return;
-      const y = e.touches[0].clientY;
-      const dy = lastTouchY - y; // swipe up = positive (zoom out)
-      lastTouchY = y;
-      const cur = zoomProgressRef.current;
-      if (dy > 0 && cur >= 1) return; // let page scroll
-      if (dy < 0 && cur <= 0) return; // let page scroll
-      e.preventDefault();
-      zoomProgressRef.current = Math.max(0, Math.min(1, cur + dy * TOUCH_SENSITIVITY));
-    };
-
-    const onTouchEnd = () => {
-      lastTouchY = null;
-    };
-
     el.addEventListener('wheel', onWheel, { passive: false });
-    el.addEventListener('touchstart', onTouchStart, { passive: true });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEnd, { passive: true });
-    el.addEventListener('touchcancel', onTouchEnd, { passive: true });
-
     return () => {
       el.removeEventListener('wheel', onWheel);
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
-      el.removeEventListener('touchcancel', onTouchEnd);
     };
   }, []);
 
-  const leafCount = isMobile ? 2800 : 7000;
-  const plantCap = isMobile ? 20 : 40;
+  const leafCount = isMobile ? 1600 : 5000;
+  const plantCap = isMobile ? 14 : 30;
 
   return (
     <InteractionProvider>
