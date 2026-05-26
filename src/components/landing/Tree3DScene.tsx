@@ -294,14 +294,14 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
       <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />
       <fog attach="fog" args={['#DCE6D5', 18, 45]} />
 
-      <Sky disableMotes={isMobile} />
+      <Sky />
       <Tree leafCount={leafCount} />
-      <Ground y={GROUND_Y} contactShadowResolution={isMobile ? 256 : 1024} contactShadowBlur={isMobile ? 2 : 2.8} />
+      <Ground y={GROUND_Y} />
       <HitZones />
-      {!isMobile && <Fireflies />}
-      {!isMobile && <TrunkRipple />}
-      {!isMobile && <Bird />}
-      {!isMobile && <Squirrel />}
+      <Fireflies />
+      <TrunkRipple />
+      <Bird />
+      <Squirrel />
       <PlantsLayer cap={plantCap} />
 
 
@@ -319,45 +319,33 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
         />
       ))}
 
-      {!isMobile && <Environment preset="forest" background={false} />}
+      <Environment preset="forest" background={false} />
     </>
   );
 }
-
 
 function WindTracker() {
   const { bumpWind } = useInteraction();
   const lastRef = useRef<{ x: number; y: number; t: number } | null>(null);
 
   useEffect(() => {
-    // Skip on touch devices entirely — pointermove fires constantly during
-    // scroll on iOS/Android and we don't need mouse-driven wind there.
-    if (typeof window === 'undefined') return;
-    if (window.matchMedia?.('(hover: none)').matches) return;
-
-    let lastSample = 0;
     const onMove = (e: PointerEvent) => {
       const now = performance.now();
-      // Throttle to ~16 samples/sec — enough for wind feel, way less than
-      // native pointermove rate.
-      if (now - lastSample < 60) return;
-      lastSample = now;
       if (lastRef.current) {
         const dx = e.clientX - lastRef.current.x;
         const dy = e.clientY - lastRef.current.y;
         const dt = Math.max(1, now - lastRef.current.t);
-        const v = Math.sqrt(dx * dx + dy * dy) / dt;
+        const v = Math.sqrt(dx * dx + dy * dy) / dt; // px/ms
         if (v > 0.5) bumpWind(Math.min(0.05, v * 0.01));
       }
       lastRef.current = { x: e.clientX, y: e.clientY, t: now };
     };
-    window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('pointermove', onMove);
     return () => window.removeEventListener('pointermove', onMove);
   }, [bumpWind]);
 
   return null;
 }
-
 
 export function Tree3DScene() {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -367,26 +355,16 @@ export function Tree3DScene() {
   const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
   const [mounted, setMounted] = useState(() => typeof window === 'undefined' ? false : window.innerWidth >= 768);
   const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
-  // Honor prefers-reduced-motion: render a single frame instead of an animation loop.
-  const reducedMotion = useMemo(
-    () =>
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true,
-    []
-  );
-  // DPR: on mobile cap at 1 (half the fragments vs. 1.5, basically invisible at
-  // hero scale). Desktop stays at 2 for crispness. Drops further if
-  // PerformanceMonitor reports decline.
-  const [perfTier, setPerfTier] = useState(1); // 1 = full, 0 = degraded
+  // DPR: 1.5 cap on mobile (visually indistinguishable at hero scale, ~30% cheaper),
+  // 2 cap on desktop for crisp rendering.
   const stableDpr = useMemo<[number, number]>(() => {
-    const max = isMobile ? 1 : perfTier === 0 ? 1.25 : 2;
+    const max = isMobile ? 1.5 : 2;
     const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, max) : max;
     return [d, d];
-  }, [isMobile, perfTier]);
+  }, [isMobile]);
   const dpr = stableDpr;
   // Post-processing (bloom + vignette) softens the whole scene; keep it off for clarity.
   const enablePost = false;
-
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -440,19 +418,16 @@ export function Tree3DScene() {
       lastTouchY = e.touches[0].clientY;
     };
 
-    // touchmove starts passive so normal vertical scroll stays on the fast
-    // compositor thread; we flip to non-passive only when we actually need to
-    // intercept (i.e. we're at the top of the page and zoom isn't maxed out).
     const onTouchMove = (e: TouchEvent) => {
       if (lastTouchY === null || e.touches.length !== 1) return;
       if (window.scrollY > 4) return;
       const y = e.touches[0].clientY;
-      const dy = lastTouchY - y;
+      const dy = lastTouchY - y; // swipe up = positive (zoom out)
       lastTouchY = y;
       const cur = zoomProgressRef.current;
-      if (dy > 0 && cur >= 1) return;
-      if (dy < 0 && cur <= 0) return;
-      if (e.cancelable) e.preventDefault();
+      if (dy > 0 && cur >= 1) return; // let page scroll
+      if (dy < 0 && cur <= 0) return; // let page scroll
+      e.preventDefault();
       zoomProgressRef.current = Math.max(0, Math.min(1, cur + dy * TOUCH_SENSITIVITY));
     };
 
@@ -462,13 +437,9 @@ export function Tree3DScene() {
 
     el.addEventListener('wheel', onWheel, { passive: false });
     el.addEventListener('touchstart', onTouchStart, { passive: true });
-    // passive:false is required because we conditionally call preventDefault
-    // inside onTouchMove. We early-return on the common scroll path so the
-    // listener returns synchronously in the no-op case.
     el.addEventListener('touchmove', onTouchMove, { passive: false });
     el.addEventListener('touchend', onTouchEnd, { passive: true });
     el.addEventListener('touchcancel', onTouchEnd, { passive: true });
-
 
     return () => {
       el.removeEventListener('wheel', onWheel);
@@ -480,7 +451,7 @@ export function Tree3DScene() {
   }, []);
 
   const leafCount = isMobile ? 2800 : 7000;
-  const plantCap = isMobile ? 8 : 40;
+  const plantCap = isMobile ? 20 : 40;
 
   return (
     <InteractionProvider>
@@ -499,9 +470,8 @@ export function Tree3DScene() {
             leafCount={leafCount}
             plantCap={plantCap}
             isMobile={isMobile}
-            reducedMotion={reducedMotion}
-            onDecline={() => setPerfTier(0)}
-            onIncline={() => setPerfTier(1)}
+            onDecline={() => {}}
+            onIncline={() => {}}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#FFF2D8] to-[#D8E0CC]" />
@@ -513,7 +483,6 @@ export function Tree3DScene() {
   );
 }
 
-
 interface InnerProps {
   controlsRef: React.RefObject<OrbitControlsImpl>;
   zoomProgressRef: React.MutableRefObject<number>;
@@ -523,34 +492,24 @@ interface InnerProps {
   leafCount: number;
   plantCap: number;
   isMobile: boolean;
-  reducedMotion: boolean;
   onDecline: () => void;
   onIncline: () => void;
 }
 
-function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, isMobile, reducedMotion, onDecline, onIncline }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, isMobile, onDecline, onIncline }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const lastClickRef = useRef(0);
-
-  // Effective frameloop: 'always' while the hero is on screen, 'demand'
-  // otherwise (and always 'demand' if user prefers reduced motion).
-  const frameloop: 'always' | 'demand' = reducedMotion ? 'demand' : inView ? 'always' : 'demand';
 
   return (
     <>
       <Canvas
-        // Real-time shadow maps are expensive on mobile GPUs and basically
-        // invisible at hero scale — ContactShadows below handles grounding.
-        shadows={isMobile ? false : { type: THREE.PCFSoftShadowMap }}
+        shadows={{ type: THREE.PCFSoftShadowMap }}
         dpr={dpr}
-        frameloop={frameloop}
+        frameloop={inView ? 'always' : 'demand'}
         camera={{ position: [0, 4.0, 13], fov: 38 }}
         gl={{
-          // antialias off on mobile (combined with DPR=1 the moiré is
-          // imperceptible at phone sizes; halves fragment cost again).
-          antialias: !isMobile,
+          antialias: true,
           alpha: true,
-          powerPreference: isMobile ? 'low-power' : 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.05,
         }}
@@ -567,13 +526,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
           lastClickRef.current = now;
         }}
       >
-        {/* Auto-degrade quality if framerate drops (mobile already starts low). */}
-        <PerformanceMonitor
-          onDecline={onDecline}
-          onIncline={onIncline}
-          flipflops={3}
-        />
-
+        <PerformanceMonitor onDecline={onDecline} onIncline={onIncline} />
         <OrbitControls
           ref={controlsRef}
           enablePan={false}

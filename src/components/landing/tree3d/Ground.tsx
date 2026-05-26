@@ -3,15 +3,7 @@ import { ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 import { getGroundTexture, getGroundNormalMap } from './textures';
 
-export function Ground({
-  y = -0.01,
-  contactShadowResolution = 1024,
-  contactShadowBlur = 2.8,
-}: {
-  y?: number;
-  contactShadowResolution?: number;
-  contactShadowBlur?: number;
-}) {
+export function Ground({ y = -0.01 }: { y?: number }) {
   const tex = useMemo(() => getGroundTexture(), []);
   const nrm = useMemo(() => getGroundNormalMap(), []);
 
@@ -39,12 +31,11 @@ export function Ground({
         position={[0, y + 0.005, 0]}
         opacity={0.6}
         scale={14}
-        blur={contactShadowBlur}
+        blur={2.8}
         far={9}
-        resolution={contactShadowResolution}
+        resolution={1024}
         color="#1f2937"
       />
-
 
       {pebbles.map((p, i) => (
         <mesh key={i} position={p.pos} castShadow receiveShadow>

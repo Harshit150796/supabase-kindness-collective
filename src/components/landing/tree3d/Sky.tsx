@@ -9,7 +9,7 @@ const PALETTES = {
   night: { top: '#0A1530', mid: '#1F2C5C', bot: '#3A4A7E' },
 };
 
-export function Sky({ disableMotes = false }: { disableMotes?: boolean } = {}) {
+export function Sky() {
   const { timeOfDay } = useInteraction();
 
   const targets = useMemo(
@@ -83,7 +83,7 @@ export function Sky({ disableMotes = false }: { disableMotes?: boolean } = {}) {
           <meshBasicMaterial color="#E8EBF5" toneMapped={false} />
         </mesh>
       )}
-      {!disableMotes && <DustMotes />}
+      <DustMotes />
     </>
   );
 }
