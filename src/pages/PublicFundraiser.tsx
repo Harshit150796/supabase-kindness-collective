@@ -1,3 +1,4 @@
+import { SEO, breadcrumbJsonLd } from "@/components/SEO";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { 
