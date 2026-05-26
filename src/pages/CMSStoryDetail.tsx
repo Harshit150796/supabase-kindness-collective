@@ -151,7 +151,19 @@ const CMSStoryDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={`${story.name} — Story`}
+        description={(story.short_story || story.full_story || `Read ${story.name}'s story on CouponDonation.`).slice(0, 155)}
+        path={`/story-detail/${story.id}`}
+        type="article"
+        jsonLd={breadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Stories', path: '/stories' },
+          { name: story.name, path: `/story-detail/${story.id}` },
+        ])}
+      />
       <Navbar />
+
 
       {/* Hero image */}
       <div className="relative">
