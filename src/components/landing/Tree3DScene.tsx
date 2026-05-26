@@ -298,10 +298,10 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
       <Tree leafCount={leafCount} />
       <Ground y={GROUND_Y} isMobile={isMobile} />
       <HitZones />
-      {!isMobile && <Fireflies />}
+      <Fireflies />
       <TrunkRipple />
-      {!isMobile && <Bird />}
-      {!isMobile && <Squirrel />}
+      <Bird />
+      <Squirrel />
       <PlantsLayer cap={plantCap} />
 
 
@@ -319,7 +319,7 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
         />
       ))}
 
-      {!isMobile && <Environment preset="forest" background={false} />}
+      <Environment preset="forest" background={false} />
     </>
   );
 }
@@ -450,8 +450,8 @@ export function Tree3DScene() {
     };
   }, []);
 
-  const leafCount = isMobile ? 2000 : 7000;
-  const plantCap = isMobile ? 12 : 40;
+  const leafCount = isMobile ? 2800 : 7000;
+  const plantCap = isMobile ? 20 : 40;
 
   return (
     <InteractionProvider>
