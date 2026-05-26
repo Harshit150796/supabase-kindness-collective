@@ -23,8 +23,8 @@ export default function HowItWorks() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="How It Works - Donate, Verify, Redeem"
-        description="See how CouponDonation works in 3 simple steps: donors give, families get verified, and recipients redeem real grocery coupons at partner stores."
+        title="How CouponDonation Works — Donate, Verify, Redeem"
+        description="See how CouponDonation works in 3 steps: donors give, families get verified, recipients redeem real grocery coupons at Walmart, Target, and Amazon."
         path="/how-it-works"
         jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'How It Works', path: '/how-it-works' }])}
       />

@@ -112,8 +112,8 @@ export default function About() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="About Us - Our Mission to End Food Insecurity"
-        description="Learn about CouponDonation's mission to convert generous donations into grocery coupons for verified families across America. Meet our founders and team."
+        title="About CouponDonation — Our Mission to Feed Families"
+        description="Meet the team behind CouponDonation and learn how we convert donations into grocery coupons for verified families across America, with 95% efficiency."
         path="/about"
         jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'About', path: '/about' }])}
       />

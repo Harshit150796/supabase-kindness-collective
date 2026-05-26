@@ -1,4 +1,4 @@
-import { SEO } from '@/components/SEO';
+import { SEO, breadcrumbJsonLd } from '@/components/SEO';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 
@@ -7,8 +7,9 @@ export default function Terms() {
     <div className="min-h-screen bg-background">
       <SEO
         title="Terms of Service"
-        description="Terms and conditions for using CouponDonation. Read our policies on donations, recipient eligibility, refunds, and platform usage."
+        description="Terms and conditions for using CouponDonation: donation policies, recipient eligibility, refunds, and platform usage."
         path="/terms"
+        jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Terms', path: '/terms' }])}
       />
       <Navbar />
       

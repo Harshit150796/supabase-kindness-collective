@@ -1,3 +1,4 @@
+import { SEO, breadcrumbJsonLd } from "@/components/SEO";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
@@ -168,7 +169,20 @@ const FeaturedStoryDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={`${story.name} — Featured Story`}
+        description={(story.short_story || story.full_story || `Read ${story.name}'s story on CouponDonation.`).slice(0, 155)}
+        path={`/featured/${story.story_key}`}
+        type="article"
+        image={image}
+        jsonLd={breadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Stories', path: '/stories' },
+          { name: story.name, path: `/featured/${story.story_key}` },
+        ])}
+      />
       <Navbar />
+
 
       {/* Hero image */}
       <div className="relative">

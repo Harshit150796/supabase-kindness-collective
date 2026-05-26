@@ -1,3 +1,4 @@
+import { SEO, breadcrumbJsonLd } from '@/components/SEO';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -54,7 +55,19 @@ export default function StoryDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={`${story.name} — Impact Story`}
+        description={(story.story || `Read ${story.name}'s story on CouponDonation and see how donations are helping verified families.`).slice(0, 155)}
+        path={`/story/${story.id}`}
+        type="article"
+        jsonLd={breadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Stories', path: '/stories' },
+          { name: story.name, path: `/story/${story.id}` },
+        ])}
+      />
       <Navbar />
+      
       
       <main className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}

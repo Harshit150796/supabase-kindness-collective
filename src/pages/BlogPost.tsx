@@ -1,3 +1,4 @@
+import { SEO, breadcrumbJsonLd } from '@/components/SEO';
 import { useParams, Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -14,6 +15,20 @@ export default function BlogPost() {
 
   return (
     <div className="min-h-screen bg-background">
+      {post && (
+        <SEO
+          title={post.title}
+          description={(post.excerpt || post.title).slice(0, 155)}
+          path={`/blog/${slug}`}
+          type="article"
+          image={post.cover_image_url || undefined}
+          jsonLd={breadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: 'Blog', path: '/blog' },
+            { name: post.title, path: `/blog/${slug}` },
+          ])}
+        />
+      )}
       <Navbar />
       <main className="py-12">
         <div className="container mx-auto px-4 max-w-3xl">
