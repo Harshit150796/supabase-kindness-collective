@@ -30,12 +30,12 @@ export function Navbar() {
   };
 
   return (
-    <nav className="bg-background/80 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b border-border/50">
+    <nav className="bg-background lg:bg-background/80 lg:backdrop-blur-lg lg:supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b border-border/50">
       <div className="container mx-auto px-4">
         <div className="flex h-18 items-center justify-between py-3">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" fetchPriority="high" />
+            <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" {...({ fetchpriority: 'high' } as any)} />
             <div className="flex flex-col">
               <span className="font-bold text-base sm:text-lg leading-tight">
                 <span className="text-[#2e7d32]">Coupon</span>
