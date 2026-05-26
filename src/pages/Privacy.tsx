@@ -1,4 +1,4 @@
-import { SEO } from '@/components/SEO';
+import { SEO, breadcrumbJsonLd } from '@/components/SEO';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 
@@ -9,6 +9,7 @@ export default function Privacy() {
         title="Privacy Policy"
         description="How CouponDonation collects, uses, and protects your personal data, donation history, and account information."
         path="/privacy"
+        jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Privacy', path: '/privacy' }])}
       />
       <Navbar />
       
