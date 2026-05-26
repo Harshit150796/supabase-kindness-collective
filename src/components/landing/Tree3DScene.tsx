@@ -2,7 +2,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, PerformanceMonitor, OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
+// Postprocessing intentionally not imported — bloom/vignette disabled, keeps mobile bundle smaller.
 import * as THREE from 'three';
 import { Tree, getBranchTips } from './tree3d/Tree';
 import { CouponFruit, type CouponState } from './tree3d/CouponFruit';
@@ -296,12 +296,12 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
 
       <Sky />
       <Tree leafCount={leafCount} />
-      <Ground y={GROUND_Y} />
+      <Ground y={GROUND_Y} isMobile={isMobile} />
       <HitZones />
-      <Fireflies />
+      {!isMobile && <Fireflies />}
       <TrunkRipple />
-      <Bird />
-      <Squirrel />
+      {!isMobile && <Bird />}
+      {!isMobile && <Squirrel />}
       <PlantsLayer cap={plantCap} />
 
 
@@ -319,7 +319,7 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
         />
       ))}
 
-      <Environment preset="forest" background={false} />
+      {!isMobile && <Environment preset="forest" background={false} />}
     </>
   );
 }
@@ -450,15 +450,15 @@ export function Tree3DScene() {
     };
   }, []);
 
-  const leafCount = isMobile ? 2800 : 7000;
-  const plantCap = isMobile ? 20 : 40;
+  const leafCount = isMobile ? 2000 : 7000;
+  const plantCap = isMobile ? 12 : 40;
 
   return (
     <InteractionProvider>
       <div
         ref={wrapRef}
         className="absolute inset-0 w-full h-full"
-        style={{ touchAction: 'pan-x' }}
+        style={{ touchAction: 'pan-y' }}
       >
         {mounted ? (
           <Tree3DInner
@@ -546,12 +546,6 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
         <WindTracker />
         <Suspense fallback={null}>
           <Scene leafCount={leafCount} plantCap={plantCap} isMobile={isMobile} />
-          {enablePost && (
-            <EffectComposer multisampling={0}>
-              <Bloom intensity={0.3} luminanceThreshold={0.92} luminanceSmoothing={0.3} mipmapBlur />
-              <Vignette eskil={false} offset={0.3} darkness={0.3} />
-            </EffectComposer>
-          )}
         </Suspense>
       </Canvas>
     </>
