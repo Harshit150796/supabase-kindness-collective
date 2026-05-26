@@ -7,7 +7,7 @@ export function Ground({ y = -0.01, isMobile = false }: { y?: number; isMobile?:
   const tex = useMemo(() => getGroundTexture(), []);
   const nrm = useMemo(() => getGroundNormalMap(), []);
 
-  const pebbleCount = isMobile ? 10 : 22;
+  const pebbleCount = 22;
   const pebbles = useMemo(() => {
     const arr: { pos: [number, number, number]; r: number }[] = [];
     for (let i = 0; i < pebbleCount; i++) {
@@ -24,7 +24,7 @@ export function Ground({ y = -0.01, isMobile = false }: { y?: number; isMobile?:
   return (
     <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, y, 0]} receiveShadow>
-        <circleGeometry args={[12, isMobile ? 48 : 96]} />
+        <circleGeometry args={[12, 96]} />
         <meshStandardMaterial map={tex} normalMap={nrm} normalScale={new THREE.Vector2(0.6, 0.6)} roughness={1} />
       </mesh>
 
@@ -34,7 +34,7 @@ export function Ground({ y = -0.01, isMobile = false }: { y?: number; isMobile?:
         scale={14}
         blur={2.8}
         far={9}
-        resolution={isMobile ? 256 : 1024}
+        resolution={1024}
         color="#1f2937"
       />
 
