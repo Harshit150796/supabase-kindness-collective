@@ -1,3 +1,4 @@
+import { SEO, breadcrumbJsonLd } from '@/components/SEO';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
