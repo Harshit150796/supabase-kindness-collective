@@ -294,14 +294,14 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
       <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />
       <fog attach="fog" args={['#DCE6D5', 18, 45]} />
 
-      <Sky />
+      <Sky disableMotes={isMobile} />
       <Tree leafCount={leafCount} />
-      <Ground y={GROUND_Y} />
+      <Ground y={GROUND_Y} contactShadowResolution={isMobile ? 256 : 1024} contactShadowBlur={isMobile ? 2 : 2.8} />
       <HitZones />
-      <Fireflies />
-      <TrunkRipple />
-      <Bird />
-      <Squirrel />
+      {!isMobile && <Fireflies />}
+      {!isMobile && <TrunkRipple />}
+      {!isMobile && <Bird />}
+      {!isMobile && <Squirrel />}
       <PlantsLayer cap={plantCap} />
 
 
@@ -319,10 +319,11 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
         />
       ))}
 
-      <Environment preset="forest" background={false} />
+      {!isMobile && <Environment preset="forest" background={false} />}
     </>
   );
 }
+
 
 function WindTracker() {
   const { bumpWind } = useInteraction();
