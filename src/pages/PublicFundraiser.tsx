@@ -241,7 +241,20 @@ const PublicFundraiser = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={`${fundraiser.title} — Fundraiser`}
+        description={(fundraiser.story || `Support ${fundraiser.title} on CouponDonation. Your donation becomes real grocery coupons for verified families.`).slice(0, 155)}
+        path={`/f/${fundraiser.unique_slug}`}
+        type="article"
+        image={fundraiser.cover_photo_url || undefined}
+        jsonLd={breadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Stories', path: '/stories' },
+          { name: fundraiser.title, path: `/f/${fundraiser.unique_slug}` },
+        ])}
+      />
       <Navbar />
+
 
       {/* Hero section with gallery */}
       <div className="relative">
