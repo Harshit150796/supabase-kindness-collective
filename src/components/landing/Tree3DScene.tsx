@@ -469,7 +469,7 @@ export function Tree3DScene() {
   }, []);
 
   const leafCount = isMobile ? 2800 : 7000;
-  const plantCap = isMobile ? 20 : 40;
+  const plantCap = isMobile ? 8 : 40;
 
   return (
     <InteractionProvider>
@@ -488,8 +488,9 @@ export function Tree3DScene() {
             leafCount={leafCount}
             plantCap={plantCap}
             isMobile={isMobile}
-            onDecline={() => {}}
-            onIncline={() => {}}
+            reducedMotion={reducedMotion}
+            onDecline={() => setPerfTier(0)}
+            onIncline={() => setPerfTier(1)}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#FFF2D8] to-[#D8E0CC]" />
@@ -500,6 +501,7 @@ export function Tree3DScene() {
     </InteractionProvider>
   );
 }
+
 
 interface InnerProps {
   controlsRef: React.RefObject<OrbitControlsImpl>;
