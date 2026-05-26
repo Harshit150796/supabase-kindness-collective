@@ -330,23 +330,34 @@ function WindTracker() {
   const lastRef = useRef<{ x: number; y: number; t: number } | null>(null);
 
   useEffect(() => {
+    // Skip on touch devices entirely — pointermove fires constantly during
+    // scroll on iOS/Android and we don't need mouse-driven wind there.
+    if (typeof window === 'undefined') return;
+    if (window.matchMedia?.('(hover: none)').matches) return;
+
+    let lastSample = 0;
     const onMove = (e: PointerEvent) => {
       const now = performance.now();
+      // Throttle to ~16 samples/sec — enough for wind feel, way less than
+      // native pointermove rate.
+      if (now - lastSample < 60) return;
+      lastSample = now;
       if (lastRef.current) {
         const dx = e.clientX - lastRef.current.x;
         const dy = e.clientY - lastRef.current.y;
         const dt = Math.max(1, now - lastRef.current.t);
-        const v = Math.sqrt(dx * dx + dy * dy) / dt; // px/ms
+        const v = Math.sqrt(dx * dx + dy * dy) / dt;
         if (v > 0.5) bumpWind(Math.min(0.05, v * 0.01));
       }
       lastRef.current = { x: e.clientX, y: e.clientY, t: now };
     };
-    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointermove', onMove, { passive: true });
     return () => window.removeEventListener('pointermove', onMove);
   }, [bumpWind]);
 
   return null;
 }
+
 
 export function Tree3DScene() {
   const wrapRef = useRef<HTMLDivElement>(null);
