@@ -512,24 +512,34 @@ interface InnerProps {
   leafCount: number;
   plantCap: number;
   isMobile: boolean;
+  reducedMotion: boolean;
   onDecline: () => void;
   onIncline: () => void;
 }
 
-function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, isMobile, onDecline, onIncline }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, isMobile, reducedMotion, onDecline, onIncline }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const lastClickRef = useRef(0);
+
+  // Effective frameloop: 'always' while the hero is on screen, 'demand'
+  // otherwise (and always 'demand' if user prefers reduced motion).
+  const frameloop: 'always' | 'demand' = reducedMotion ? 'demand' : inView ? 'always' : 'demand';
 
   return (
     <>
       <Canvas
-        shadows={{ type: THREE.PCFSoftShadowMap }}
+        // Real-time shadow maps are expensive on mobile GPUs and basically
+        // invisible at hero scale — ContactShadows below handles grounding.
+        shadows={isMobile ? false : { type: THREE.PCFSoftShadowMap }}
         dpr={dpr}
-        frameloop={inView ? 'always' : 'demand'}
+        frameloop={frameloop}
         camera={{ position: [0, 4.0, 13], fov: 38 }}
         gl={{
-          antialias: true,
+          // antialias off on mobile (combined with DPR=1 the moiré is
+          // imperceptible at phone sizes; halves fragment cost again).
+          antialias: !isMobile,
           alpha: true,
+          powerPreference: isMobile ? 'low-power' : 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.05,
         }}
@@ -546,7 +556,13 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
           lastClickRef.current = now;
         }}
       >
-        <PerformanceMonitor onDecline={onDecline} onIncline={onIncline} />
+        {/* Auto-degrade quality if framerate drops (mobile already starts low). */}
+        <PerformanceMonitor
+          onDecline={onDecline}
+          onIncline={onIncline}
+          flipflops={3}
+        />
+
         <OrbitControls
           ref={controlsRef}
           enablePan={false}
