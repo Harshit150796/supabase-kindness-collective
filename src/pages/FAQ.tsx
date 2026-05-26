@@ -27,13 +27,26 @@ export default function FAQ() {
     ? cmsFaqs.map((f: any) => ({ question: f.question, answer: f.answer }))
     : hardcodedFaqs;
 
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.question,
+      acceptedAnswer: { "@type": "Answer", text: f.answer },
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Frequently Asked Questions"
-        description="Answers to common questions about donating, applying for help, recipient verification, coupon redemption, security, and how CouponDonation makes an impact."
+        title="FAQ — Donations, Verification & Coupon Redemption"
+        description="Answers about donating, recipient verification, coupon redemption, security, and how CouponDonation turns your gift into real grocery help for families."
         path="/faq"
-        jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'FAQ', path: '/faq' }])}
+        jsonLd={[
+          breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'FAQ', path: '/faq' }]),
+          faqJsonLd,
+        ]}
       />
       <Navbar />
       <main>
