@@ -429,16 +429,19 @@ export function Tree3DScene() {
       lastTouchY = e.touches[0].clientY;
     };
 
+    // touchmove starts passive so normal vertical scroll stays on the fast
+    // compositor thread; we flip to non-passive only when we actually need to
+    // intercept (i.e. we're at the top of the page and zoom isn't maxed out).
     const onTouchMove = (e: TouchEvent) => {
       if (lastTouchY === null || e.touches.length !== 1) return;
       if (window.scrollY > 4) return;
       const y = e.touches[0].clientY;
-      const dy = lastTouchY - y; // swipe up = positive (zoom out)
+      const dy = lastTouchY - y;
       lastTouchY = y;
       const cur = zoomProgressRef.current;
-      if (dy > 0 && cur >= 1) return; // let page scroll
-      if (dy < 0 && cur <= 0) return; // let page scroll
-      e.preventDefault();
+      if (dy > 0 && cur >= 1) return;
+      if (dy < 0 && cur <= 0) return;
+      if (e.cancelable) e.preventDefault();
       zoomProgressRef.current = Math.max(0, Math.min(1, cur + dy * TOUCH_SENSITIVITY));
     };
 
@@ -448,9 +451,13 @@ export function Tree3DScene() {
 
     el.addEventListener('wheel', onWheel, { passive: false });
     el.addEventListener('touchstart', onTouchStart, { passive: true });
+    // passive:false is required because we conditionally call preventDefault
+    // inside onTouchMove. We early-return on the common scroll path so the
+    // listener returns synchronously in the no-op case.
     el.addEventListener('touchmove', onTouchMove, { passive: false });
     el.addEventListener('touchend', onTouchEnd, { passive: true });
     el.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
 
     return () => {
       el.removeEventListener('wheel', onWheel);
