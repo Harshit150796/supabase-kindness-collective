@@ -170,9 +170,12 @@ export function getLeafTextureB(): THREE.CanvasTexture {
 // ---------- Bark color + normal ----------
 let barkColorCache: THREE.CanvasTexture | null = null;
 let barkNormalCache: THREE.CanvasTexture | null = null;
+// On mobile, halve the bark canvas (1024x2048 -> 512x1024). Visually identical
+// at hero scale, ~4x cheaper to generate + upload to GPU.
+const IS_MOBILE = typeof window !== 'undefined' && window.innerWidth < 768;
 function buildBarkCanvas(): HTMLCanvasElement {
-  const W = 1024;
-  const H = 2048;
+  const W = IS_MOBILE ? 512 : 1024;
+  const H = IS_MOBILE ? 1024 : 2048;
   const c = document.createElement('canvas');
   c.width = W;
   c.height = H;
@@ -187,13 +190,15 @@ function buildBarkCanvas(): HTMLCanvasElement {
   ctx.fillRect(0, 0, W, H);
 
   // Vertical wood grain striations
-  for (let i = 0; i < 250; i++) {
+  const striationCount = IS_MOBILE ? 130 : 250;
+  for (let i = 0; i < striationCount; i++) {
     const x = Math.random() * W;
     const w = 1 + Math.random() * 5;
     ctx.fillStyle = `rgba(0,0,0,${0.08 + Math.random() * 0.28})`;
     ctx.fillRect(x, 0, w, H);
   }
-  for (let i = 0; i < 140; i++) {
+  const lightCount = IS_MOBILE ? 70 : 140;
+  for (let i = 0; i < lightCount; i++) {
     const x = Math.random() * W;
     ctx.fillStyle = `rgba(220,180,130,${0.05 + Math.random() * 0.14})`;
     ctx.fillRect(x, 0, 1, H);
@@ -201,7 +206,8 @@ function buildBarkCanvas(): HTMLCanvasElement {
 
   // Deep cracks
   ctx.strokeStyle = 'rgba(0,0,0,0.55)';
-  for (let i = 0; i < 80; i++) {
+  const crackCount = IS_MOBILE ? 40 : 80;
+  for (let i = 0; i < crackCount; i++) {
     const y = Math.random() * H;
     ctx.lineWidth = 0.6 + Math.random() * 1.8;
     ctx.beginPath();
@@ -230,7 +236,7 @@ function buildBarkCanvas(): HTMLCanvasElement {
   }
 
   // Lichen patches near bottom
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < (IS_MOBILE ? 20 : 40); i++) {
     const x = Math.random() * W;
     const y = H * 0.5 + Math.random() * H * 0.5;
     const r = 8 + Math.random() * 24;
@@ -258,12 +264,12 @@ export function getBarkTexture(): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = 8;
+  tex.anisotropy = IS_MOBILE ? 4 : 8;
   tex.needsUpdate = true;
   barkColorCache = tex;
   // Build matching normal
   barkNormalCache = canvasToNormalMap(c, 2.6);
-  barkNormalCache.anisotropy = 8;
+  barkNormalCache.anisotropy = IS_MOBILE ? 4 : 8;
   return tex;
 }
 export function getBarkNormalMap(): THREE.CanvasTexture {
@@ -272,6 +278,24 @@ export function getBarkNormalMap(): THREE.CanvasTexture {
   }
   return barkNormalCache!;
 }
+
+/**
+ * Pre-build the heavy procedural textures on idle, before the WebGL canvas
+ * mounts. This avoids a 300-700ms main-thread freeze when the Tree3DScene
+ * first mounts on mobile (bark + ground canvases + their per-pixel normal
+ * map computations). Safe to call multiple times — results are cached.
+ */
+export function warmTreeTextures(): void {
+  if (typeof window === 'undefined') return;
+  const ric: (cb: () => void, opts?: { timeout: number }) => number =
+    (window as unknown as { requestIdleCallback?: typeof requestIdleCallback }).requestIdleCallback ||
+    ((cb: () => void) => window.setTimeout(cb, 200) as unknown as number);
+  // Stagger so each chunk yields to the main thread between heavy builds.
+  ric(() => { getLeafTexture(); getLeafTextureB(); }, { timeout: 1500 });
+  ric(() => { getBarkTexture(); }, { timeout: 2500 });
+  ric(() => { getGroundTexture(); }, { timeout: 3500 });
+}
+
 
 // ---------- Ground (grass + dirt + clover) ----------
 let groundColorCache: THREE.CanvasTexture | null = null;
