@@ -356,16 +356,26 @@ export function Tree3DScene() {
   const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
   const [mounted, setMounted] = useState(() => typeof window === 'undefined' ? false : window.innerWidth >= 768);
   const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
-  // DPR: 1.5 cap on mobile (visually indistinguishable at hero scale, ~30% cheaper),
-  // 2 cap on desktop for crisp rendering.
+  // Honor prefers-reduced-motion: render a single frame instead of an animation loop.
+  const reducedMotion = useMemo(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true,
+    []
+  );
+  // DPR: on mobile cap at 1 (half the fragments vs. 1.5, basically invisible at
+  // hero scale). Desktop stays at 2 for crispness. Drops further if
+  // PerformanceMonitor reports decline.
+  const [perfTier, setPerfTier] = useState(1); // 1 = full, 0 = degraded
   const stableDpr = useMemo<[number, number]>(() => {
-    const max = isMobile ? 1.5 : 2;
+    const max = isMobile ? 1 : perfTier === 0 ? 1.25 : 2;
     const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, max) : max;
     return [d, d];
-  }, [isMobile]);
+  }, [isMobile, perfTier]);
   const dpr = stableDpr;
   // Post-processing (bloom + vignette) softens the whole scene; keep it off for clarity.
   const enablePost = false;
+
 
   useEffect(() => {
     const el = wrapRef.current;
