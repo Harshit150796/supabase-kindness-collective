@@ -16,6 +16,8 @@ import { Fireflies } from './tree3d/Fireflies';
 import { TrunkRipple } from './tree3d/TrunkRipple';
 import { Bird } from './tree3d/Bird';
 import { Squirrel } from './tree3d/Squirrel';
+import { AmbientBirds } from './tree3d/AmbientBirds';
+import { GroundCritters } from './tree3d/GroundCritters';
 import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
 import { TransparencyPopover } from './tree3d/TransparencyPopover';
 import { PlantsLayer } from './tree3d/PlantsLayer';
@@ -302,6 +304,8 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
       <TrunkRipple />
       <Bird />
       <Squirrel />
+      <AmbientBirds count={isMobile ? 4 : 6} />
+      <GroundCritters count={isMobile ? 2 : 4} />
       <PlantsLayer cap={plantCap} />
 
 
