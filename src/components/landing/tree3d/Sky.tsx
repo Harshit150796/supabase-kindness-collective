@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useInteraction } from './InteractionContext';
 
 const PALETTES = {
-  day: { top: '#7FB5E6', mid: '#F5D5A8', bot: '#FFE8C8' },
+  day: { top: '#7FB5E6', mid: '#CFE6F5', bot: '#E8F1E0' },
   sunset: { top: '#5B7BB5', mid: '#FFD89E', bot: '#FF8E5C' },
   night: { top: '#0A1530', mid: '#1F2C5C', bot: '#3A4A7E' },
 };
