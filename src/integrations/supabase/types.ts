@@ -1403,6 +1403,26 @@ export type Database = {
         Returns: undefined
       }
       generate_card_number: { Args: never; Returns: string }
+      get_impact_stats: {
+        Args: never
+        Returns: {
+          active_fundraisers: number
+          donations_today: number
+          raised_today: number
+          total_coupons: number
+          total_donations: number
+          total_raised: number
+        }[]
+      }
+      get_top_donors_week: {
+        Args: never
+        Returns: {
+          display_name: string
+          donations_count: number
+          is_anonymous: boolean
+          total: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
