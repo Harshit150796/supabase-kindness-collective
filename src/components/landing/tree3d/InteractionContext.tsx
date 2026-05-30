@@ -1,4 +1,4 @@
-import { createContext, useContext, useRef, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useRef, useState, useCallback, useEffect, ReactNode } from 'react';
 import type { FallingDonation } from '@/hooks/useFallingDonations';
 
 export type TimeOfDay = 'day' | 'sunset' | 'night';
