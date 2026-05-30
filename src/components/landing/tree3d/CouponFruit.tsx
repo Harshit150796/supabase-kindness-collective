@@ -210,10 +210,14 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
     if (state.phase === 'falling') {
       caughtRef.current = false;
       plantSpawnedRef.current = false;
+      // Outward scatter — pick a random angle and push the coupon away from the trunk
+      // so coupons land spread across the grass disc instead of piling under the tree.
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1.0 + Math.random() * 1.5;
       velocityRef.current = {
         y: 0.4,
-        x: (Math.random() - 0.5) * 0.5,
-        z: (Math.random() - 0.5) * 0.3,
+        x: Math.cos(angle) * speed,
+        z: Math.sin(angle) * speed,
         rotX: (Math.random() - 0.5) * 5,
         rotY: (Math.random() - 0.5) * 3,
         rotZ: (Math.random() - 0.5) * 5,
@@ -222,6 +226,28 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       rotRef.current.set(0, 0, 0);
     }
   }, [state.phase, branchTip]);
+
+  // Push restPos into a 2.0–9.5m ring around the trunk so coupons spread visibly.
+  const scatterRestPos = (pos: THREE.Vector3): THREE.Vector3 => {
+    const out = pos.clone();
+    const dist = Math.sqrt(out.x * out.x + out.z * out.z);
+    const minR = 2.0;
+    const maxR = 9.5;
+    if (dist < minR) {
+      // Too close to trunk — push out along a random angle (or its own direction if any).
+      const angle = dist > 0.0001 ? Math.atan2(out.z, out.x) : Math.random() * Math.PI * 2;
+      const r = minR + Math.random() * (maxR - minR) * 0.4;
+      out.x = Math.cos(angle) * r;
+      out.z = Math.sin(angle) * r;
+    } else if (dist > maxR) {
+      const angle = Math.atan2(out.z, out.x);
+      out.x = Math.cos(angle) * maxR;
+      out.z = Math.sin(angle) * maxR;
+    }
+    out.y = groundY + 0.025;
+    return out;
+  };
+
 
   const tryPlant = (pos: THREE.Vector3) => {
     if (plantSpawnedRef.current) return;
