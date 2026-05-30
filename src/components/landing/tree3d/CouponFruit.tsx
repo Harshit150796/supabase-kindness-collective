@@ -203,22 +203,34 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   const { openStory, spawnPlant } = useInteraction();
   const plantSpawnedRef = useRef(false);
 
+  // Stable scatter target across the grass, deterministic per coupon slot.
+  const scatterTarget = useMemo(() => {
+    const ang = (index * 2.3998) % (Math.PI * 2);
+    const rad = 1.8 + ((index * 0.6180339) % 1) * 3.7;
+    return { x: Math.cos(ang) * rad, z: Math.sin(ang) * rad };
+  }, [index]);
+
   useEffect(() => {
     if (state.phase === 'falling') {
       caughtRef.current = false;
       plantSpawnedRef.current = false;
+      const startY = branchTip.y - HANG_DROP;
+      const dropH = Math.max(0.1, startY - groundY);
+      const tFall = Math.sqrt((2 * dropH) / 9.8);
+      const dx = scatterTarget.x - branchTip.x;
+      const dz = scatterTarget.z - branchTip.z;
       velocityRef.current = {
         y: 0.4,
-        x: (Math.random() - 0.5) * 0.5,
-        z: (Math.random() - 0.5) * 0.3,
+        x: dx / tFall + (Math.random() - 0.5) * 0.2,
+        z: dz / tFall + (Math.random() - 0.5) * 0.2,
         rotX: (Math.random() - 0.5) * 5,
         rotY: (Math.random() - 0.5) * 3,
         rotZ: (Math.random() - 0.5) * 5,
       };
-      posRef.current.set(branchTip.x, branchTip.y - HANG_DROP, branchTip.z);
+      posRef.current.set(branchTip.x, startY, branchTip.z);
       rotRef.current.set(0, 0, 0);
     }
-  }, [state.phase, branchTip]);
+  }, [state.phase, branchTip, groundY, scatterTarget]);
 
   const tryPlant = (pos: THREE.Vector3) => {
     if (plantSpawnedRef.current) return;
@@ -284,6 +296,9 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       rotRef.current.z += velocityRef.current.rotZ * dt;
 
       if (posRef.current.y <= groundY + COUPON_H / 2) {
+        // Snap to scatter target so coupons land spread across the grass.
+        posRef.current.x = scatterTarget.x + (Math.random() - 0.5) * 0.15;
+        posRef.current.z = scatterTarget.z + (Math.random() - 0.5) * 0.15;
         posRef.current.y = groundY + 0.025;
         const restPos = posRef.current.clone();
         tryPlant(restPos);
