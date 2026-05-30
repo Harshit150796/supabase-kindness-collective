@@ -68,8 +68,16 @@ export interface InteractionState {
 
 const Ctx = createContext<InteractionState | null>(null);
 
+function getTimeOfDayFromClock(): TimeOfDay {
+  const h = new Date().getHours();
+  if (h >= 6 && h < 17) return 'day';
+  if (h >= 17 && h < 20) return 'sunset';
+  return 'night';
+}
+
 export function InteractionProvider({ children }: { children: ReactNode }) {
-  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('day');
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(getTimeOfDayFromClock);
+  const userOverrodeRef = useRef(false);
   const [shakeEvent, setShakeEvent] = useState<ShakeEvent | null>(null);
   const [ripples, setRipples] = useState<RippleEvent[]>([]);
   const [birdEvent, setBirdEvent] = useState<BirdEvent | null>(null);
