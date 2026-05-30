@@ -63,33 +63,35 @@ Deno.serve(async (req) => {
       searchFundraisers: tool({
         description: "Search active fundraisers. Use when the user asks to see, find, or browse campaigns/causes.",
         inputSchema: z.object({
-          query: z.string().optional().describe("Free-text search across title/description"),
-          category: z.string().optional().describe("Category name e.g. hunger, education, medical"),
-          region: z.string().optional().describe("City, state, or region"),
+          query: z.string().optional().describe("Free-text search across title/story"),
+          category: z.string().optional().describe("Category e.g. hunger, education, medical"),
+          region: z.string().optional().describe("City, country, or zip"),
           limit: z.number().min(1).max(5).default(3),
         }),
         execute: async ({ query, category, region, limit }) => {
           let q = supabase
             .from("fundraisers")
-            .select("id, slug, title, description, goal_amount, amount_raised, donors_count, region, category_id")
+            .select("id, unique_slug, title, story, monthly_goal, amount_raised, donors_count, country, zip_code, category")
             .eq("status", "active")
             .order("created_at", { ascending: false })
             .limit(limit);
-          if (query) q = q.or(`title.ilike.%${query}%,description.ilike.%${query}%`);
-          if (region) q = q.ilike("region", `%${region}%`);
+          if (query) q = q.or(`title.ilike.%${query}%,story.ilike.%${query}%`);
+          if (category) q = q.ilike("category", `%${category}%`);
+          if (region) q = q.or(`country.ilike.%${region}%,zip_code.ilike.%${region}%`);
           const { data, error } = await q;
           if (error) return { error: error.message, results: [] };
           return {
             results: (data ?? []).map((f) => ({
               title: f.title,
-              slug: f.slug,
-              url: `/f/${f.slug}`,
-              donateUrl: `/donate?fundraiser=${f.slug ?? f.id}`,
+              slug: f.unique_slug,
+              url: f.unique_slug ? `/f/${f.unique_slug}` : `/stories`,
+              donateUrl: `/donate`,
               raised: Number(f.amount_raised ?? 0),
-              goal: Number(f.goal_amount ?? 0),
+              goal: Number(f.monthly_goal ?? 0),
               donors: f.donors_count ?? 0,
-              region: f.region ?? null,
-              snippet: (f.description ?? "").slice(0, 160),
+              location: [f.country, f.zip_code].filter(Boolean).join(" · ") || null,
+              category: f.category ?? null,
+              snippet: (f.story ?? "").slice(0, 160),
             })),
           };
         },
