@@ -73,6 +73,9 @@ function getCouponGeom() {
   return couponGeomCache;
 }
 
+// Module-level set tracking visible donor-name labels (used to cap concurrent labels on mobile)
+const activeLabels = new Set<number>();
+
 // Crisp vector coupon face rendered as DOM via Drei <Html transform>.
 // Designed at ~920×600 px so it stays sharp when scaled down into 3D.
 function CouponFace({ data }: { data: CouponData }) {
