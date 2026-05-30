@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { convertToModelMessages, stepCountIs, streamText, tool, type UIMessage } from "npm:ai@^4.0.0";
-import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible@^0.2.0";
-import { z } from "npm:zod@^3.23.0";
+import { convertToModelMessages, stepCountIs, streamText, tool, type UIMessage } from "npm:ai@^6.0.0";
+import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible@^1.0.0";
+import { z } from "npm:zod@^3.25.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
