@@ -27,9 +27,9 @@ interface Props {
 }
 
 const HANG_DROP = 1.0;
-const COUPON_W = 1.15;
-const COUPON_H = 0.74;
-const COUPON_D = 0.05;
+const COUPON_W = 1.725;
+const COUPON_H = 1.11;
+const COUPON_D = 0.075;
 
 // Build a rounded-rect extruded geometry for premium coupon shape
 function makeRoundedCouponGeom(): THREE.ExtrudeGeometry {
