@@ -1,13 +1,15 @@
 ## Problem
 
-The landing page renders completely blank. Vite returns 504 for `ai`, `@ai-sdk/react`, `streamdown`, `use-stick-to-bottom`, and `motion/react`. Root cause: `AITreeChat.tsx` imports `useChat` from `@ai-sdk/react`, which is not in `package.json`. The missing package breaks Vite's dep optimization for the whole AI-SDK graph, so `HeroSection` (which eagerly imports `AITreeChat`) fails to load and React renders nothing.
+The three components (HeroHeadline, TopDonorsPanel, AITreeChat + coupon-chat) are already implemented and wired into `HeroSection.tsx`. The page renders blank because Vite is still serving 504s for `@ai-sdk/react`, `ai`, `streamdown`, `use-stick-to-bottom`, and `motion/react` from its stale optimized-deps cache. `@ai-sdk/react` was added to `package.json` in the last loop, but the running dev server never re-ran dep optimization, so the prior 504 entries are still being served.
 
 ## Fix
 
-1. Install the missing package:
-   - `bun add @ai-sdk/react@^2`
-2. Restart the dev server so Vite re-runs dep optimization with the now-complete graph.
-3. Verify the page renders by reloading `/` and confirming the tree scene, headline, top-donors panel, and "Talk to Coupon" launcher are all visible.
-4. Click the launcher, send one message ("Show me active campaigns"), confirm the stream returns and the `searchFundraisers` tool result renders.
+1. Restart the Vite dev server so it re-scans deps with the now-complete `@ai-sdk/react` graph and rebuilds `.vite/deps`.
+2. Reload `/` and confirm the hero renders with:
+   - Headline + rotating word + Donate/How-it-works CTA (top center)
+   - Top Donors glass card (top right)
+   - "Talk to Coupon" leaf launcher (bottom right)
+3. Click the launcher, send "Show me active campaigns", confirm the stream returns and `searchFundraisers` results render.
+4. If any 504 persists after restart, clear `node_modules/.vite` and restart once more.
 
-No other code changes are required — `HeroHeadline`, `TopDonorsPanel`, `AITreeChat`, `AITreeLauncher`, and the `coupon-chat` edge function are already wired correctly.
+No code changes are required — all three features are already built.
