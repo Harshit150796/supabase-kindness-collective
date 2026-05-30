@@ -271,11 +271,11 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       toast(`✨ You caught one! +$${state.donation.amount} impact`, { duration: 2200 });
       // Settle to ground after a brief pause
       setTimeout(() => {
-        const restPos = posRef.current.clone();
-        restPos.y = groundY + 0.025;
+        const restPos = scatterRestPos(posRef.current);
         tryPlant(restPos);
         onLanded(index, restPos);
       }, 350);
+
     } else if (state.phase === 'landed') {
       openStory(state.donation);
     }
