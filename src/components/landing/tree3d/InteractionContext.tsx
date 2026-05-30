@@ -1,4 +1,4 @@
-import { createContext, useContext, useRef, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useRef, useState, useCallback, useEffect, ReactNode } from 'react';
 import type { FallingDonation } from '@/hooks/useFallingDonations';
 
 export type TimeOfDay = 'day' | 'sunset' | 'night';
@@ -68,8 +68,16 @@ export interface InteractionState {
 
 const Ctx = createContext<InteractionState | null>(null);
 
+function getTimeOfDayFromClock(): TimeOfDay {
+  const h = new Date().getHours();
+  if (h >= 6 && h < 17) return 'day';
+  if (h >= 17 && h < 20) return 'sunset';
+  return 'night';
+}
+
 export function InteractionProvider({ children }: { children: ReactNode }) {
-  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('day');
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(getTimeOfDayFromClock);
+  const userOverrodeRef = useRef(false);
   const [shakeEvent, setShakeEvent] = useState<ShakeEvent | null>(null);
   const [ripples, setRipples] = useState<RippleEvent[]>([]);
   const [birdEvent, setBirdEvent] = useState<BirdEvent | null>(null);
@@ -82,7 +90,19 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
   const idRef = useRef(1);
 
   const cycleTimeOfDay = useCallback(() => {
+    userOverrodeRef.current = true;
     setTimeOfDay((p) => (p === 'day' ? 'sunset' : p === 'sunset' ? 'night' : 'day'));
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (userOverrodeRef.current) return;
+      setTimeOfDay((prev) => {
+        const next = getTimeOfDayFromClock();
+        return next === prev ? prev : next;
+      });
+    }, 5 * 60 * 1000);
+    return () => clearInterval(id);
   }, []);
 
   const bumpWind = useCallback((v: number) => {
