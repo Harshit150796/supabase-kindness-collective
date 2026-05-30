@@ -352,6 +352,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
 
       <group
         ref={groupRef}
+        visible={state.phase !== 'landed'}
         onPointerDown={handlePointer}
         onPointerOver={(e) => {
           e.stopPropagation();

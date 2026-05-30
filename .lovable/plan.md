@@ -1,17 +1,13 @@
-## Remove ground critters (rabbits & squirrels)
+## Goal
+When a coupon falls from the tree and hits the ground, the brand-coupon card should disappear immediately. Only the floating donor name pill (above the sprouting plant) should remain visible during the landed phase. After the pill fades, the coupon regrows on the branch as today.
 
-The canvas-sprite rabbits/squirrels on the grass look flat and out of place. Remove them entirely.
+## Changes — `src/components/landing/tree3d/CouponFruit.tsx`
 
-### Changes
+1. In the `landed` phase render block, do not render the coupon group (rounded card mesh, gold glow, `<CouponFace>` HTML overlay, white back face). The plant sprout (spawned via `spawnPlant` on landing) and the donor name pill `<Html>` continue to render.
+2. Keep the existing `landed`-phase timing (`elapsed > 5` triggers `onRegrown`) so the regrow cycle is unchanged.
+3. Keep the `showLabel` donor pill exactly as is (visible for ~2.8s after land).
+4. Skip the squash/settle frame work for the now-hidden group (cheap guard, no behavior change).
 
-1. **`src/components/landing/Tree3DScene.tsx`** — remove the `<GroundCritters />` render and its import. Also remove the `<Squirrel />` (trunk-peek) render and its import, since the user wants squirrels gone completely.
-
-2. **Delete files** (no longer referenced):
-   - `src/components/landing/tree3d/GroundCritters.tsx`
-   - `src/components/landing/tree3d/Squirrel.tsx`
-   - `src/components/landing/tree3d/squirrelTexture.ts`
-
-3. **Keep** `AmbientBirds`, `Bird`, fireflies, plants — only ground critters/squirrels are removed.
-
-### Out of scope
-No changes to birds, tree, sky, lighting, or any other scene element.
+## Out of scope
+- No changes to hanging sway, falling physics, sparkle burst, plant sprout, regrow animation, or any other scene element.
+- No changes to `CouponFace`, `couponDesign.ts`, or texture generation.
