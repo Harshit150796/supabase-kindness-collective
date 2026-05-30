@@ -29,15 +29,21 @@ export function PlantsLayer({ cap = 40 }: { cap?: number }) {
       let seed = 0;
       for (let i = 0; i < plantEvent.id.length; i++) seed = (seed + plantEvent.id.charCodeAt(i) * (i + 1)) | 0;
       seed = Math.abs(seed) || 1;
-      const jitter = () => (((seed = (seed * 9301 + 49297) % 233280) / 233280) - 0.5) * 0.18;
+      const jitter = () => (((seed = (seed * 9301 + 49297) % 233280) / 233280) - 0.5) * 0.5;
+
+      let px = plantEvent.position[0] + jitter();
+      let pz = plantEvent.position[2] + jitter();
+      // Keep plants off the trunk base.
+      const r = Math.hypot(px, pz);
+      if (r < 1.6) {
+        const s = 1.6 / (r || 1);
+        px *= s;
+        pz *= s;
+      }
 
       const next: Plant = {
         id: plantEvent.id + ':' + plantEvent.uid,
-        position: [
-          plantEvent.position[0] + jitter(),
-          plantEvent.position[1],
-          plantEvent.position[2] + jitter(),
-        ],
+        position: [px, plantEvent.position[1], pz],
         archetype: pickArchetype(plantEvent.amount),
         accentColor: plantEvent.accentColor,
         bornAt: performance.now() / 1000,
