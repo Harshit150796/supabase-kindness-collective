@@ -313,11 +313,12 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       rotRef.current.z += velocityRef.current.rotZ * dt;
 
       if (posRef.current.y <= groundY + COUPON_H / 2) {
-        posRef.current.y = groundY + 0.025;
-        const restPos = posRef.current.clone();
+        const restPos = scatterRestPos(posRef.current);
+        posRef.current.copy(restPos);
         tryPlant(restPos);
         onLanded(index, restPos);
       }
+
       groupRef.current.position.copy(posRef.current);
       groupRef.current.rotation.copy(rotRef.current);
       groupRef.current.scale.setScalar(1);
