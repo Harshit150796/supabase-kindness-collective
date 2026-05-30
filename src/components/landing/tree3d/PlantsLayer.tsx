@@ -29,24 +29,21 @@ export function PlantsLayer({ cap = 40 }: { cap?: number }) {
       let seed = 0;
       for (let i = 0; i < plantEvent.id.length; i++) seed = (seed + plantEvent.id.charCodeAt(i) * (i + 1)) | 0;
       seed = Math.abs(seed) || 1;
-      const rand = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
-
-      // Scatter plants across the full grass disc (annulus 2.0 – 9.5m around trunk)
-      // instead of clustering at the coupon landing spot.
-      const angle = rand() * Math.PI * 2;
-      const radius = 2.0 + rand() * 7.5;
-      const groundYPos = plantEvent.position[1];
+      const jitter = () => (((seed = (seed * 9301 + 49297) % 233280) / 233280) - 0.5) * 0.18;
 
       const next: Plant = {
         id: plantEvent.id + ':' + plantEvent.uid,
-        position: [Math.cos(angle) * radius, groundYPos, Math.sin(angle) * radius],
+        position: [
+          plantEvent.position[0] + jitter(),
+          plantEvent.position[1],
+          plantEvent.position[2] + jitter(),
+        ],
         archetype: pickArchetype(plantEvent.amount),
         accentColor: plantEvent.accentColor,
         bornAt: performance.now() / 1000,
         fadingOut: false,
         seed,
       };
-
 
       let merged = [...prev, next];
       // FIFO cap: mark oldest non-fading as fading

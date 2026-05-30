@@ -1,24 +1,31 @@
+# Restore the tree's original look on mobile
 
-## Goal
-Make the coupon fruits ~1.5× bigger so they're readable on the grass (and while hanging/falling).
+Revert the mobile-only visual downgrades made in the recent perf pass to `Tree3DScene.tsx` and `Ground.tsx`. Keep the unrelated perf wins (Navbar/LiveActivityBar blur fix, favicon compression, DPR cap, idle-mount, paused-when-hidden, scroll touchAction).
 
-## Change
-Single file: `src/components/landing/tree3d/CouponFruit.tsx`.
+## Changes
 
-Bump the three coupon dimension constants by 1.5×:
-- `COUPON_W` `1.15` → `1.725`
-- `COUPON_H` `0.74` → `1.11`
-- `COUPON_D` `0.05` → `0.075`
+### `src/components/landing/Tree3DScene.tsx`
+- Re-enable on mobile (remove the `!isMobile &&` guards):
+  - `<Environment preset="forest" background={false} />` — restores the image-based lighting that made the tree feel lit and warm.
+  - `<Fireflies />` — restores the canopy glow.
+  - `<Bird />` and `<Squirrel />` — restores ambient life.
+- Restore leaf density: `leafCount` mobile `2000 → 2800`.
+- Restore plant cap: `plantCap` mobile `12 → 20`.
 
-These constants drive the rounded geometry, the glow box, the back face, and the HTML overlay scale (`COUPON_W / 920`), so a single change scales the whole coupon consistently in hanging, falling, and landed states.
+### `src/components/landing/tree3d/Ground.tsx`
+- Restore pebble count mobile `10 → 22`.
+- Restore `ContactShadows` resolution mobile `256 → 1024` (this also softens the shadow so it stops reading as a hard dark blob).
+- Restore `circleGeometry` segments mobile `48 → 96`.
+- (Optional kept) `isMobile` prop stays; values just match desktop.
 
-## Side effects to handle
-- `HANG_DROP` stays at `1.0` — coupons will sit slightly lower below the branch (still fine).
-- Ground-collision check `posRef.current.y <= groundY + COUPON_H / 2` already uses `COUPON_H`, so it auto-adjusts.
-- Tiny floating donor-name badge stays the same size (it uses `distanceFactor`, not coupon dims).
-- More coupons may now overlap on the grass; the existing 2.0–9.5 m scatter ring still gives enough space, no change needed.
+### Not changed (keep current perf wins)
+- DPR cap (1.5 mobile / 2 desktop).
+- Idle-mount of canvas on mobile.
+- Pause render loop when tab hidden.
+- `touchAction: 'pan-y'` on hero wrapper.
+- `Navbar` + `LiveActivityBar` mobile blur removal.
+- Compressed `favicon-192.png`.
+- Postprocessing import stays out (it was already disabled).
 
-## Not changed
-- Coupon design, colors, brand stripe, fonts.
-- Fall physics, sparkle, plant spawning, regrow timing.
-- Scatter ring radii, mobile cap, label badge.
+## Trade-off note
+Bringing back `Environment` (HDRI), `Fireflies`, `Bird`, `Squirrel`, and full-res contact shadows on mobile will increase GPU/CPU cost on phones — which is what they were removed for. The user has explicitly accepted this in favor of preserving the look. The other perf fixes above remain so the page still loads and scrolls better than before the perf pass.

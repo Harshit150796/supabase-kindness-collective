@@ -27,9 +27,9 @@ interface Props {
 }
 
 const HANG_DROP = 1.0;
-const COUPON_W = 1.725;
-const COUPON_H = 1.11;
-const COUPON_D = 0.075;
+const COUPON_W = 1.15;
+const COUPON_H = 0.74;
+const COUPON_D = 0.05;
 
 // Build a rounded-rect extruded geometry for premium coupon shape
 function makeRoundedCouponGeom(): THREE.ExtrudeGeometry {
@@ -72,9 +72,6 @@ function getCouponGeom() {
   if (!couponGeomCache) couponGeomCache = makeRoundedCouponGeom();
   return couponGeomCache;
 }
-
-// Module-level set tracking visible donor-name labels (used to cap concurrent labels on mobile)
-const activeLabels = new Set<number>();
 
 // Crisp vector coupon face rendered as DOM via Drei <Html transform>.
 // Designed at ~920×600 px so it stays sharp when scaled down into 3D.
@@ -210,14 +207,10 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
     if (state.phase === 'falling') {
       caughtRef.current = false;
       plantSpawnedRef.current = false;
-      // Outward scatter — pick a random angle and push the coupon away from the trunk
-      // so coupons land spread across the grass disc instead of piling under the tree.
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 1.0 + Math.random() * 1.5;
       velocityRef.current = {
         y: 0.4,
-        x: Math.cos(angle) * speed,
-        z: Math.sin(angle) * speed,
+        x: (Math.random() - 0.5) * 0.5,
+        z: (Math.random() - 0.5) * 0.3,
         rotX: (Math.random() - 0.5) * 5,
         rotY: (Math.random() - 0.5) * 3,
         rotZ: (Math.random() - 0.5) * 5,
@@ -226,28 +219,6 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       rotRef.current.set(0, 0, 0);
     }
   }, [state.phase, branchTip]);
-
-  // Push restPos into a 2.0–9.5m ring around the trunk so coupons spread visibly.
-  const scatterRestPos = (pos: THREE.Vector3): THREE.Vector3 => {
-    const out = pos.clone();
-    const dist = Math.sqrt(out.x * out.x + out.z * out.z);
-    const minR = 2.0;
-    const maxR = 9.5;
-    if (dist < minR) {
-      // Too close to trunk — push out along a random angle (or its own direction if any).
-      const angle = dist > 0.0001 ? Math.atan2(out.z, out.x) : Math.random() * Math.PI * 2;
-      const r = minR + Math.random() * (maxR - minR) * 0.4;
-      out.x = Math.cos(angle) * r;
-      out.z = Math.sin(angle) * r;
-    } else if (dist > maxR) {
-      const angle = Math.atan2(out.z, out.x);
-      out.x = Math.cos(angle) * maxR;
-      out.z = Math.sin(angle) * maxR;
-    }
-    out.y = groundY + 0.025;
-    return out;
-  };
-
 
   const tryPlant = (pos: THREE.Vector3) => {
     if (plantSpawnedRef.current) return;
@@ -271,11 +242,11 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       toast(`✨ You caught one! +$${state.donation.amount} impact`, { duration: 2200 });
       // Settle to ground after a brief pause
       setTimeout(() => {
-        const restPos = scatterRestPos(posRef.current);
+        const restPos = posRef.current.clone();
+        restPos.y = groundY + 0.025;
         tryPlant(restPos);
         onLanded(index, restPos);
       }, 350);
-
     } else if (state.phase === 'landed') {
       openStory(state.donation);
     }
@@ -313,12 +284,11 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       rotRef.current.z += velocityRef.current.rotZ * dt;
 
       if (posRef.current.y <= groundY + COUPON_H / 2) {
-        const restPos = scatterRestPos(posRef.current);
-        posRef.current.copy(restPos);
+        posRef.current.y = groundY + 0.025;
+        const restPos = posRef.current.clone();
         tryPlant(restPos);
         onLanded(index, restPos);
       }
-
       groupRef.current.position.copy(posRef.current);
       groupRef.current.rotation.copy(rotRef.current);
       groupRef.current.scale.setScalar(1);
@@ -344,26 +314,11 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
     }
   });
 
-  const LABEL_DURATION = 1.8;
-  const LABEL_FADE = 0.5;
-  const labelLife = state.phase === 'landed' ? performance.now() / 1000 - state.landTime : 0;
-  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
-  const wantsLabel = state.phase === 'landed' && labelLife < LABEL_DURATION;
-  const canShowOnMobile = !isMobile || activeLabels.size < 2 || activeLabels.has(index);
-  const showLabel = wantsLabel && canShowOnMobile;
-  const labelOpacity = Math.max(0, Math.min(1, (LABEL_DURATION - labelLife) / LABEL_FADE));
+  const showLabel = state.phase === 'landed' && performance.now() / 1000 - state.landTime < 2.8;
   const safeDonorName =
     state.phase === 'landed'
-      ? (state.donation.donorName || 'A generous donor').slice(0, 14)
+      ? (state.donation.donorName || 'A generous donor').slice(0, 18)
       : '';
-
-  useEffect(() => {
-    if (!showLabel) return;
-    activeLabels.add(index);
-    return () => {
-      activeLabels.delete(index);
-    };
-  }, [showLabel, index]);
 
   return (
     <>
@@ -452,31 +407,68 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
 
       {showLabel && state.phase === 'landed' && (
         <Html
-          position={[state.restPos.x, state.restPos.y + 0.5, state.restPos.z]}
+          position={[state.restPos.x, state.restPos.y + 0.55, state.restPos.z]}
           center
-          distanceFactor={5}
+          distanceFactor={8}
           style={{ pointerEvents: 'none' }}
         >
           <div
             style={{
-              background: '#FFFFFF',
-              border: '1px solid rgba(212,160,23,0.5)',
-              borderRadius: '999px',
-              padding: '6px 10px',
+              background: 'rgba(255,255,255,0.92)',
+              backdropFilter: 'blur(8px)',
+              border: '1.5px solid #D4A017',
+              borderRadius: '14px',
+              padding: '10px 16px',
               fontFamily: 'system-ui, -apple-system, Arial',
-              fontSize: '11px',
+              fontSize: '13px',
               fontWeight: 600,
               color: '#1f2937',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+              boxShadow: '0 10px 30px rgba(212,160,23,0.35), 0 0 0 4px rgba(212,160,23,0.08)',
               whiteSpace: 'nowrap',
-              lineHeight: 1,
-              opacity: labelOpacity,
-              transition: 'opacity 120ms linear',
+              maxWidth: 220,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              animation: 'fadeIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)',
             }}
           >
-            <span style={{ color: '#059669', fontWeight: 700 }}>{safeDonorName}</span>
-            <span style={{ color: '#9ca3af', margin: '0 4px' }}>·</span>
-            <span style={{ color: '#D4A017', fontWeight: 800 }}>${state.donation.amount}</span>
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #10B981, #059669)',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 800,
+                fontSize: 13,
+                flexShrink: 0,
+              }}
+            >
+              {safeDonorName.charAt(0).toUpperCase()}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, minWidth: 0 }}>
+              <span
+                style={{
+                  color: '#059669',
+                  fontWeight: 700,
+                  maxWidth: 160,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {safeDonorName}
+              </span>
+              <span style={{ color: '#6b7280', fontSize: 11, fontWeight: 500 }}>
+                donated{' '}
+                <span style={{ color: '#D4A017', fontWeight: 800, fontSize: 13 }}>
+                  ${state.donation.amount}
+                </span>
+              </span>
+            </div>
           </div>
         </Html>
       )}
