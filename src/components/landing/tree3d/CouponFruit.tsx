@@ -296,6 +296,9 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       rotRef.current.z += velocityRef.current.rotZ * dt;
 
       if (posRef.current.y <= groundY + COUPON_H / 2) {
+        // Snap to scatter target so coupons land spread across the grass.
+        posRef.current.x = scatterTarget.x + (Math.random() - 0.5) * 0.15;
+        posRef.current.z = scatterTarget.z + (Math.random() - 0.5) * 0.15;
         posRef.current.y = groundY + 0.025;
         const restPos = posRef.current.clone();
         tryPlant(restPos);
