@@ -301,9 +301,7 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
       <Fireflies />
       <TrunkRipple />
       <Bird />
-      <Squirrel />
       <AmbientBirds count={isMobile ? 4 : 6} />
-      <GroundCritters count={isMobile ? 2 : 4} />
       <PlantsLayer cap={plantCap} />
 
 
