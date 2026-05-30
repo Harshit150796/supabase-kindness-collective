@@ -71,9 +71,8 @@ export function AITreeChat({ open, onClose }: Props) {
 
   const isLoading = status === "submitted" || status === "streaming";
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = input.trim();
+  const handleSubmit = (message: { text?: string; files?: any[] }) => {
+    const text = (message.text ?? input).trim();
     if (!text || isLoading) return;
     void sendMessage({ text });
     setInput("");
@@ -177,7 +176,7 @@ export function AITreeChat({ open, onClose }: Props) {
 
             {status === "submitted" && (
               <Message from="assistant">
-                <Shimmer>Thinking…</Shimmer>
+                <Shimmer>Thinking</Shimmer>
               </Message>
             )}
 
@@ -245,7 +244,7 @@ function ToolResults({ toolParts }: { toolParts: any[] }) {
               key={i}
               className="text-[11px] text-muted-foreground bg-muted/40 rounded-md px-2 py-1"
             >
-              <Shimmer>Looking up {toolName}…</Shimmer>
+              <Shimmer>{`Looking up ${toolName}`}</Shimmer>
             </div>
           );
         }
