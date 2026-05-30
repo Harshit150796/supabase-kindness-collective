@@ -314,11 +314,26 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
     }
   });
 
-  const showLabel = state.phase === 'landed' && performance.now() / 1000 - state.landTime < 2.8;
+  const LABEL_DURATION = 1.8;
+  const LABEL_FADE = 0.5;
+  const labelLife = state.phase === 'landed' ? performance.now() / 1000 - state.landTime : 0;
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+  const wantsLabel = state.phase === 'landed' && labelLife < LABEL_DURATION;
+  const canShowOnMobile = !isMobile || activeLabels.size < 2 || activeLabels.has(index);
+  const showLabel = wantsLabel && canShowOnMobile;
+  const labelOpacity = Math.max(0, Math.min(1, (LABEL_DURATION - labelLife) / LABEL_FADE));
   const safeDonorName =
     state.phase === 'landed'
-      ? (state.donation.donorName || 'A generous donor').slice(0, 18)
+      ? (state.donation.donorName || 'A generous donor').slice(0, 14)
       : '';
+
+  useEffect(() => {
+    if (!showLabel) return;
+    activeLabels.add(index);
+    return () => {
+      activeLabels.delete(index);
+    };
+  }, [showLabel, index]);
 
   return (
     <>
