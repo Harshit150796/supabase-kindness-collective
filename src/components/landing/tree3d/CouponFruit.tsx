@@ -425,68 +425,31 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
 
       {showLabel && state.phase === 'landed' && (
         <Html
-          position={[state.restPos.x, state.restPos.y + 0.55, state.restPos.z]}
+          position={[state.restPos.x, state.restPos.y + 0.5, state.restPos.z]}
           center
-          distanceFactor={8}
+          distanceFactor={5}
           style={{ pointerEvents: 'none' }}
         >
           <div
             style={{
-              background: 'rgba(255,255,255,0.92)',
-              backdropFilter: 'blur(8px)',
-              border: '1.5px solid #D4A017',
-              borderRadius: '14px',
-              padding: '10px 16px',
+              background: '#FFFFFF',
+              border: '1px solid rgba(212,160,23,0.5)',
+              borderRadius: '999px',
+              padding: '6px 10px',
               fontFamily: 'system-ui, -apple-system, Arial',
-              fontSize: '13px',
+              fontSize: '11px',
               fontWeight: 600,
               color: '#1f2937',
-              boxShadow: '0 10px 30px rgba(212,160,23,0.35), 0 0 0 4px rgba(212,160,23,0.08)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
               whiteSpace: 'nowrap',
-              maxWidth: 220,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              animation: 'fadeIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              lineHeight: 1,
+              opacity: labelOpacity,
+              transition: 'opacity 120ms linear',
             }}
           >
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #10B981, #059669)',
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: 13,
-                flexShrink: 0,
-              }}
-            >
-              {safeDonorName.charAt(0).toUpperCase()}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, minWidth: 0 }}>
-              <span
-                style={{
-                  color: '#059669',
-                  fontWeight: 700,
-                  maxWidth: 160,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {safeDonorName}
-              </span>
-              <span style={{ color: '#6b7280', fontSize: 11, fontWeight: 500 }}>
-                donated{' '}
-                <span style={{ color: '#D4A017', fontWeight: 800, fontSize: 13 }}>
-                  ${state.donation.amount}
-                </span>
-              </span>
-            </div>
+            <span style={{ color: '#059669', fontWeight: 700 }}>{safeDonorName}</span>
+            <span style={{ color: '#9ca3af', margin: '0 4px' }}>·</span>
+            <span style={{ color: '#D4A017', fontWeight: 800 }}>${state.donation.amount}</span>
           </div>
         </Html>
       )}
