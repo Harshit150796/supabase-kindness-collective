@@ -90,7 +90,19 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
   const idRef = useRef(1);
 
   const cycleTimeOfDay = useCallback(() => {
+    userOverrodeRef.current = true;
     setTimeOfDay((p) => (p === 'day' ? 'sunset' : p === 'sunset' ? 'night' : 'day'));
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (userOverrodeRef.current) return;
+      setTimeOfDay((prev) => {
+        const next = getTimeOfDayFromClock();
+        return next === prev ? prev : next;
+      });
+    }, 5 * 60 * 1000);
+    return () => clearInterval(id);
   }, []);
 
   const bumpWind = useCallback((v: number) => {
