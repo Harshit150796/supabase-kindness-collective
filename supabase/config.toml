@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.handle-newsletter-unsubscribe]
 verify_jwt = false
+
+[functions.coupon-chat]
+verify_jwt = false
