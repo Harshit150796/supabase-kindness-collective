@@ -1,41 +1,33 @@
 
 ## Goal
-Shrink and simplify the "Emma L. donated $75" badge that floats above each landed coupon so it stops dominating the hero on mobile. No other visuals change.
+Spread the landed coupons and the small plants across the whole grass disc (radius ~10) instead of piling them right under the tree trunk.
+
+## Why they cluster today
+- The tree drops coupons almost straight down — `CouponFruit.tsx` gives them tiny horizontal velocity (`(Math.random()-0.5) * 0.5`), so they land within a metre or so of the branch tip.
+- `PlantsLayer` plants spawn at the coupon's land position with only `±0.18` jitter, so they inherit the same clumping.
+- Ground radius is 12 — there's plenty of empty grass going unused.
 
 ## Scope
-Single file: `src/components/landing/tree3d/CouponFruit.tsx` (the `showLabel` block, lines ~317–474).
+Two files, no visual style changes — just better spatial distribution.
 
-## Changes
+### 1. `src/components/landing/tree3d/CouponFruit.tsx`
+When a coupon transitions to `falling`, give it a much larger horizontal kick so it travels outward as it falls, and add a final "scatter" of the rest position so coupons end up spread across a 3–9 metre ring around the trunk (not just under it).
 
-### 1. Smaller, simpler badge
-Replace the current two-line card (avatar circle + name + amount, gold border, blur, big shadow) with a single compact pill:
+- Initial horizontal velocity: `(Math.random() - 0.5) * 0.5` → multiply by ~6 (range ±1.5 m/s). Pick a random outward angle so the bias is *away* from centre, not random — i.e. compute `angle = Math.random() * 2π`, then `vx = cos(angle) * speed`, `vz = sin(angle) * speed`, with `speed = 1.0 + Math.random()*1.5`.
+- Cap the final `restPos` distance from origin to `[2.0, 9.5]` — if the physics lands it closer than 2 (right under trunk), push it out along its angle. This guarantees visible spread even on slow drops.
+- Air drag stays the same; gravity unchanged → fall feels the same, just lands wider.
 
-`Emma L. · $75`
+### 2. `src/components/landing/tree3d/PlantsLayer.tsx`
+Decouple plant placement from the coupon landing spot. Plants are decorative — they don't need to mark a specific coupon. Spawn each new plant at a random point in an annulus around the tree (radius 2.0–9.5), rather than `plantEvent.position + ±0.18`.
 
-- Remove the 28px gradient avatar circle.
-- Remove `backdropFilter: blur(8px)` (also helps mobile scroll perf).
-- Thinner border: `1px solid rgba(212,160,23,0.5)` instead of `1.5px solid #D4A017`.
-- Smaller padding: `6px 10px` (was `10px 16px`).
-- Smaller font: `11px` name, `11px` amount inline (was 13px + 11px stacked).
-- Softer shadow: `0 4px 12px rgba(0,0,0,0.12)`.
-- Solid white background (no transparency).
-- Truncate name to 14 chars (was 18).
-
-### 2. Scale down in 3D
-- `distanceFactor={8}` → `distanceFactor={5}`. This is the main thing that makes it huge on mobile.
-
-### 3. Shorter lifetime + fade out
-- Total lifetime: 2.8s → 1.8s.
-- Last 0.5s: opacity fades from 1 → 0 (computed from `landTime`).
-
-### 4. Mobile concurrency cap
-- On viewports `< 768px`, never show more than 2 badges at once.
-- Implementation: module-level `Set<number>` of currently-visible label indices. A new label only renders if either (a) not mobile, or (b) the set has fewer than 2 entries, or (c) this index is already in the set. `useEffect` adds/removes the index on show/hide.
+- Replace the jitter logic with: deterministic `angle` and `radius` from the donation id seed, so the same donation always picks the same spot (no flicker on re-render).
+- Keep `y = plantEvent.position[1]` (ground y), keep the FIFO cap, keep the `accentColor` from the donation.
 
 ## Not changed
-- Coupon geometry, texture, glow, sparkle, fall physics, regrow — all untouched.
-- Tap behavior (opens `RecipientStoryPanel`) — untouched.
-- `LiveActivityBar`, tree, lighting, fireflies — untouched.
+- Falling physics duration, gravity, rotation tumble, sparkle, label badge, regrow timing.
+- Plant archetypes, growth animation, fade-out.
+- Ground, lights, tree, coupon look.
+- Mobile vs desktop counts.
 
 ## Verification
-After the edit, check the preview on the mobile viewport: badges should be roughly half the previous footprint, no blur, and at most 2 visible at a time; they should fade out smoothly just before disappearing.
+After the edit, watch the preview for ~30 seconds: landed coupons and sprouted plants should appear scattered around the trunk in a wide ring, not piled at the base. Confirm no coupons clip into the trunk (min radius 2).
