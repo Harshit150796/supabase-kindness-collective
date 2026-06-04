@@ -1,21 +1,15 @@
-Edit `src/components/landing/hero/HeroHeadline.tsx` only. No other files change.
+## Problem
 
-### Remove
-- The "Donate now" and "How it works" buttons (and the unused `Button`, `Link`, `ArrowRight` imports).
-- The supporting paragraph "Watch your gift fall, take root, and feed a verified family." (also competes with the tree).
+The three components (HeroHeadline, TopDonorsPanel, AITreeChat + coupon-chat) are already implemented and wired into `HeroSection.tsx`. The page renders blank because Vite is still serving 504s for `@ai-sdk/react`, `ai`, `streamdown`, `use-stick-to-bottom`, and `motion/react` from its stale optimized-deps cache. `@ai-sdk/react` was added to `package.json` in the last loop, but the running dev server never re-ran dep optimization, so the prior 504 entries are still being served.
 
-### Keep
-- The rotating eyebrow `CouponDonation is Transparent / Trackable / Real-time` — unchanged behavior, kept as the visual anchor at top center.
+## Fix
 
-### Restyle the H1 "Every donation grows into groceries."
-Goal: read as a delicate caption sitting above the tree, not a billboard covering it.
+1. Restart the Vite dev server so it re-scans deps with the now-complete `@ai-sdk/react` graph and rebuilds `.vite/deps`.
+2. Reload `/` and confirm the hero renders with:
+   - Headline + rotating word + Donate/How-it-works CTA (top center)
+   - Top Donors glass card (top right)
+   - "Talk to Coupon" leaf launcher (bottom right)
+3. Click the launcher, send "Show me active campaigns", confirm the stream returns and `searchFundraisers` results render.
+4. If any 504 persists after restart, clear `node_modules/.vite` and restart once more.
 
-- Size: drop from `text-2xl md:text-4xl` → `text-base md:text-xl` (mobile) / `md:text-2xl` max on desktop.
-- Weight: `font-bold` → `font-medium`, with `tracking-tight`.
-- Color: use a softer emerald token instead of full `text-foreground` — `text-emerald-900/70 dark:text-emerald-100/80`. The word "groceries" gets a single accent span using `text-emerald-700 dark:text-emerald-300 font-semibold` so the sentence still has a focal point without shouting.
-- Drop the heavy `textShadow` on the wrapper; replace with a much lighter `0 1px 2px rgba(255,255,255,0.6)` so text reads on the sky without a dark halo over the canopy.
-- Tighten the wrapper width: `max-w-2xl` → `max-w-xl`, and reduce top offset slightly (`top-4 md:top-6` → `top-3 md:top-5`) so it stays in the sky band above the foliage.
-- Remove the now-unused `mt-3 md:mt-4` button row entirely.
-
-### Result
-Top of hero shows: tiny rotating eyebrow, then one short, soft headline. No buttons. The 3D tree below is fully visible and visually dominant.
+No code changes are required — all three features are already built.
