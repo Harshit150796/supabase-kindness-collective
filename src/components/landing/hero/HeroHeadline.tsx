@@ -29,12 +29,6 @@ export function HeroHeadline() {
           {ROTATING_WORDS[idx]}
         </span>
       </div>
-      <h1 className="text-2xl md:text-4xl font-bold text-foreground leading-tight">
-        Every donation grows into groceries.
-      </h1>
-      <p className="hidden md:block mt-2 text-sm text-foreground/80">
-        Watch your gift fall, take root, and feed a verified family.
-      </p>
       <div className="mt-3 md:mt-4 flex items-center justify-center gap-2">
         <Button asChild size="sm" className="shadow-lg">
           <Link to="/donate">
