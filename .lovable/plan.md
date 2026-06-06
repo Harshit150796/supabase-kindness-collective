@@ -1,15 +1,25 @@
-Restyle `PrivacyConsentBanner` to match the GoFundMe reference: a contained floating card instead of a full-width bottom bar.
+# Plan: Cookie Policy + Banner Link Fix
 
-**Changes to `src/components/PrivacyConsentBanner.tsx`:**
+## 1. Fix "See Our Privacy Policy" link
+In `src/components/PrivacyConsentBanner.tsx`, the link uses `<Link to="/privacy">` but clicking it doesn't visually do anything because the banner stays mounted on top of the new page (and `/privacy` is already a valid route, so the user sees no change at the top of the viewport).
 
-- Remove full-width `left-0 right-0` + top border styling.
-- Wrap content in a centered floating card:
-  - Positioned `fixed bottom-4 left-1/2 -translate-x-1/2` (or `bottom-6` with side margins on mobile).
-  - `max-w-3xl w-[calc(100%-2rem)]`.
-  - `rounded-2xl border border-border bg-background shadow-xl`.
-  - Inner padding `p-5 md:p-6`.
-- Keep the same horizontal layout: text block on the left, "Okay" button on the right.
-- Keep "See Our Privacy Notice" link below the text (smaller, muted).
-- Same accept logic, same localStorage key, same animation (slide-in-from-bottom).
+Fix:
+- Change the link target to point to the new `/cookies` page for the "See Our Cookie Policy" link (more contextually correct for a cookie/privacy consent banner).
+- Keep the inline `/privacy` and `/terms` links inside the paragraph.
+- On any link click inside the banner, scroll to top so the user sees the destination page (`window.scrollTo({ top: 0 })`).
+- Rename the standalone bottom link to **"See Our Cookie Policy"** → `/cookies`.
 
-**Out of scope:** No changes to copy, links, App.tsx mounting, or consent logic.
+## 2. Create Cookie Policy page
+- New file `src/pages/Cookies.tsx` modeled after `src/pages/Privacy.tsx` (same Navbar/Footer/SEO layout).
+- Sections: Introduction, What Are Cookies, Types We Use (Essential, Analytics, Preference), Third-Party Cookies (Stripe, Supabase, analytics), Managing Cookies (browser settings), Changes to Policy, Contact.
+- Last updated date: June 6, 2026.
+
+## 3. Wire the route
+- In `src/App.tsx`: add `const Cookies = lazy(() => import("./pages/Cookies"));` and `<Route path="/cookies" element={<Cookies />} />`.
+
+## 4. Footer link
+- In `src/components/layout/Footer.tsx`, add a "Cookie Policy" link next to Privacy Policy and Terms of Service in the bottom row.
+
+## Out of scope
+- No changes to consent storage logic, banner layout/size, or analytics behavior.
+- No cookie-category opt-in toggles (this is a disclosure policy page, not a granular consent manager).

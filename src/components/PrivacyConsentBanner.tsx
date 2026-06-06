@@ -79,10 +79,11 @@ export function PrivacyConsentBanner() {
         </div>
         <div className="mt-3">
           <Link
-            to="/privacy"
+            to="/cookies"
+            onClick={() => window.scrollTo({ top: 0 })}
             className="text-xs underline underline-offset-2 text-muted-foreground hover:text-foreground transition-colors"
           >
-            See Our Privacy Policy
+            See Our Cookie Policy
           </Link>
         </div>
       </div>
