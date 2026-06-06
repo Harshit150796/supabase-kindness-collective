@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SessionSecurityProvider } from "@/components/auth/SessionSecurityProvider";
 import Index from "./pages/Index";
+import { PrivacyConsentBanner } from "./components/PrivacyConsentBanner";
 
 // All non-homepage routes are lazy-loaded so mobile users don't download
 // the entire app on first paint.
@@ -168,6 +169,7 @@ const App = () => (
             <AuthProvider>
               <SessionSecurityProvider>
                 <AppRoutes />
+                <PrivacyConsentBanner />
               </SessionSecurityProvider>
             </AuthProvider>
           </ErrorBoundary>
