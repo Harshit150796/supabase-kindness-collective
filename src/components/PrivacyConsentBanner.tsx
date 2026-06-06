@@ -38,9 +38,9 @@ export function PrivacyConsentBanner() {
       role="dialog"
       aria-live="polite"
       aria-label="Privacy information"
-      className="fixed bottom-0 left-0 right-0 z-[100] bg-background border-t border-border shadow-[0_-4px_24px_rgba(0,0,0,0.08)] animate-in slide-in-from-bottom duration-500"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-3xl rounded-2xl border border-border bg-background shadow-2xl animate-in slide-in-from-bottom duration-500"
     >
-      <div className="container mx-auto px-4 py-5">
+      <div className="p-5 md:p-6">
         <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-bold text-foreground mb-1">
@@ -49,15 +49,14 @@ export function PrivacyConsentBanner() {
             <p className="text-sm text-muted-foreground leading-relaxed">
               We use cookies and similar technologies to analyze site usage,
               remember your preferences, and improve your experience on
-              CouponDonation. By continuing to use our site, you consent to the
-              use of these technologies as explained in our{' '}
+              CouponDonation. By continuing, you agree to our{' '}
               <Link
                 to="/privacy"
                 className="underline underline-offset-2 hover:text-foreground transition-colors"
               >
                 Privacy Policy
               </Link>
-              {' '}and agree to our{' '}
+              {' '}and{' '}
               <Link
                 to="/terms"
                 className="underline underline-offset-2 hover:text-foreground transition-colors"
@@ -67,23 +66,18 @@ export function PrivacyConsentBanner() {
               .
             </p>
           </div>
-          <div className="flex items-center justify-between md:justify-end gap-4 md:shrink-0">
-            <Link
-              to="/privacy"
-              className="text-sm underline underline-offset-2 text-muted-foreground hover:text-foreground transition-colors md:hidden"
-            >
-              See Privacy Policy
-            </Link>
+          <div className="md:shrink-0">
             <Button
               onClick={accept}
               size="lg"
-              className="rounded-full px-10 font-semibold"
+              variant="outline"
+              className="w-full md:w-auto rounded-xl px-10 font-semibold"
             >
               Okay
             </Button>
           </div>
         </div>
-        <div className="hidden md:flex justify-center mt-2">
+        <div className="mt-3">
           <Link
             to="/privacy"
             className="text-xs underline underline-offset-2 text-muted-foreground hover:text-foreground transition-colors"
