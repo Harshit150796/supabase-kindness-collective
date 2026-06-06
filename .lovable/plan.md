@@ -1,15 +1,29 @@
-## Problem
+## Fix AI SDK version mismatch
 
-The three components (HeroHeadline, TopDonorsPanel, AITreeChat + coupon-chat) are already implemented and wired into `HeroSection.tsx`. The page renders blank because Vite is still serving 504s for `@ai-sdk/react`, `ai`, `streamdown`, `use-stick-to-bottom`, and `motion/react` from its stale optimized-deps cache. `@ai-sdk/react` was added to `package.json` in the last loop, but the running dev server never re-ran dep optimization, so the prior 504 entries are still being served.
+`package.json` has `ai@^6` (top-level) but `@ai-sdk/react@^2` — and `@ai-sdk/react@2.0.195` depends on `ai@5.0.193`. Two copies of `ai` end up in the graph, with incompatible `UIMessage`, `DefaultChatTransport`, `ChatStatus`, and `FileUIPart` shapes between them. The frontend imports these from top-level `ai`, while `useChat` expects the v5 shapes — a hidden footgun that can break the chat widget at runtime.
 
-## Fix
+### Change
 
-1. Restart the Vite dev server so it re-scans deps with the now-complete `@ai-sdk/react` graph and rebuilds `.vite/deps`.
-2. Reload `/` and confirm the hero renders with:
-   - Headline + rotating word + Donate/How-it-works CTA (top center)
-   - Top Donors glass card (top right)
-   - "Talk to Coupon" leaf launcher (bottom right)
-3. Click the launcher, send "Show me active campaigns", confirm the stream returns and `searchFundraisers` results render.
-4. If any 504 persists after restart, clear `node_modules/.vite` and restart once more.
+In `package.json`, pin `ai` to the `5.x` line that matches `@ai-sdk/react@2`:
 
-No code changes are required — all three features are already built.
+```diff
+- "ai": "^6.0.193",
++ "ai": "^5.0.193",
+```
+
+Then reinstall and let Vite re-optimize:
+
+```bash
+bun install
+rm -rf node_modules/.vite
+```
+
+Vite dev server auto-restarts on install.
+
+### Verify
+
+- Reload `/`, open the "Talk to Coupon" launcher, send "Show me active campaigns".
+- Confirm the stream returns and `searchFundraisers` results render.
+- Confirm no console errors from `ai`/`@ai-sdk/react` and no Vite 504s for those packages.
+
+No other files change. The Edge Function (`supabase/functions/coupon-chat/index.ts`) stays on `npm:ai@^6.0.0` server-side — that's fine, the version mismatch was only on the client.
