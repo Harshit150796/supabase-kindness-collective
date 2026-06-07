@@ -12,7 +12,7 @@ export function HeroSection() {
   const [chatOpen, setChatOpen] = useState(false);
 
   return (
-    <section className="relative w-full h-[60vh] md:h-[88vh] overflow-hidden">
+    <section className="relative w-full h-[72vh] md:h-[88vh] overflow-hidden">
       <div className="absolute inset-0">
         <Suspense
           fallback={
