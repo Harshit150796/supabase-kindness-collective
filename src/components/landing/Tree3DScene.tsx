@@ -514,7 +514,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
         shadows={{ type: THREE.PCFSoftShadowMap }}
         dpr={dpr}
         frameloop={inView ? 'always' : 'demand'}
-        camera={{ position: [0, 4.0, 13], fov: 38 }}
+        camera={{ position: isMobile ? [0, 4.4, 16] : [0, 4.0, 13], fov: isMobile ? 32 : 38 }}
         gl={{
           antialias: true,
           alpha: true,
@@ -534,23 +534,23 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
           lastClickRef.current = now;
         }}
       >
-        <PerformanceMonitor onDecline={onDecline} onIncline={onIncline} />
+        {/* PerformanceMonitor removed — was causing DPR rescaling flicker */}
         <OrbitControls
           ref={controlsRef}
           enablePan={false}
           enableZoom={false}
           enableDamping
           dampingFactor={0.08}
-          minDistance={9}
-          maxDistance={17}
+          minDistance={isMobile ? 12 : 9}
+          maxDistance={isMobile ? 20 : 17}
           minPolarAngle={Math.PI / 3}
           maxPolarAngle={Math.PI / 2.1}
           minAzimuthAngle={-Math.PI / 2}
           maxAzimuthAngle={Math.PI / 2}
-          target={[0, 3.4, 0]}
+          target={isMobile ? [0, 3.6, 0] : [0, 3.4, 0]}
           makeDefault
         />
-        <CameraRig controlsRef={controlsRef} zoomProgressRef={zoomProgressRef} />
+        <CameraRig controlsRef={controlsRef} zoomProgressRef={zoomProgressRef} isMobile={isMobile} />
         <WindTracker />
         <Suspense fallback={null}>
           <Scene leafCount={leafCount} plantCap={plantCap} isMobile={isMobile} />
