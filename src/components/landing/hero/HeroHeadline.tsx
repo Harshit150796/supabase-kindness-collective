@@ -18,7 +18,7 @@ export function HeroHeadline() {
       className="absolute top-4 md:top-6 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-2xl text-center pointer-events-auto"
       style={{ textShadow: "0 2px 12px rgba(0,0,0,0.18)" }}
     >
-      <div className="hidden md:flex items-center justify-center gap-2 mb-2">
+      <div className="flex items-center justify-center gap-2 mb-2">
         <span className="text-xs uppercase tracking-[0.2em] text-foreground/70 font-semibold">
           CouponDonation is
         </span>
@@ -29,7 +29,7 @@ export function HeroHeadline() {
           {ROTATING_WORDS[idx]}
         </span>
       </div>
-      <div className="mt-3 md:mt-4 flex items-center justify-center gap-2">
+      <div className="mt-3 md:mt-4 inline-flex items-center justify-center gap-2 bg-background/60 backdrop-blur-sm rounded-full px-2 py-1 md:bg-transparent md:backdrop-blur-0 md:p-0">
         <Button asChild size="sm" className="shadow-lg">
           <Link to="/donate">
             Donate now <ArrowRight className="ml-1 w-3.5 h-3.5" />
