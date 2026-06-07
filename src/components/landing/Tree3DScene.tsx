@@ -361,7 +361,7 @@ export function Tree3DScene() {
   const zoomProgressRef = useRef(0); // 0 = zoomed in (13), 1 = zoomed out (17)
   const [inView, setInView] = useState(true);
   const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
-  const [mounted, setMounted] = useState(() => typeof window === 'undefined' ? false : window.innerWidth >= 768);
+  const [mounted, setMounted] = useState(true);
   const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
   // DPR: 1.5 cap on mobile (visually indistinguishable at hero scale, ~30% cheaper),
   // 2 cap on desktop for crisp rendering.
