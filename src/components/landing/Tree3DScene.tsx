@@ -390,16 +390,8 @@ export function Tree3DScene() {
     return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
 
-  // On mobile, defer mounting the WebGL canvas until the browser is idle so the
-  // hero gradient + below-fold work get to paint/hydrate first. Visually
-  // identical because the fallback is the same gradient.
-  useEffect(() => {
-    if (mounted) return;
-    const ric: any = (typeof window !== 'undefined' && (window as any).requestIdleCallback) || ((cb: () => void) => setTimeout(cb, 250));
-    const cancel: any = (typeof window !== 'undefined' && (window as any).cancelIdleCallback) || clearTimeout;
-    const id = ric(() => setMounted(true), { timeout: 800 });
-    return () => cancel(id);
-  }, [mounted]);
+
+
 
   // Scroll-to-zoom-then-release: intercept wheel + touch on the hero wrapper.
   useEffect(() => {
