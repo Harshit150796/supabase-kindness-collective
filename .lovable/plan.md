@@ -1,53 +1,44 @@
-## What's wrong on mobile
+# Fix: "Live tracking" bar under the tree blinks on mobile
 
-Looking at `src/components/landing/HeroSection.tsx`, `src/components/landing/Tree3DScene.tsx`, and the screenshot:
+## What's happening
 
-1. **Tree takes over the screen.** Hero section is `h-[60vh] md:h-[88vh]`. The camera sits at `(0, 4.0, 13)` with FOV `38` regardless of device, so on a narrow phone viewport the tree fills the frame edge-to-edge and pushes coupon cards over the headline area.
-2. **Layout overlap / "disappearing text".** Coupon fruits float at canopy height and visually overlap the `Donate now` / `How it works` buttons because the headline sits at `top-4` while the canopy is centered vertically in a short 60vh container. The "CouponDonation is Transparent" rotating label is `hidden md:flex` — that's why it never shows on mobile.
-3. **Random reloading / flicker.** Three contributors:
-   - `frameloop` flips between `'always'` and `'demand'` from an `IntersectionObserver` on the wrapper. On mobile address-bar resize and lazy section hydration below the fold, the hero briefly leaves the viewport and the canvas freezes, then resumes — looks like the scene "reloads".
-   - `PerformanceMonitor` is wired with empty `onDecline`/`onIncline`, but drei still adapts DPR internally, causing the canvas to repaint at a different resolution mid-session (visible as a flash / re-clarify).
-   - `mounted` is gated on `requestIdleCallback` on mobile, so the gradient fallback shows for up to 800ms before the canvas swaps in — on slower phones this looks like a reload every time the page re-hydrates a lazy chunk above the fold.
-4. **Heavy for the device.** 2800 leaves, shadow map 1024 with PCFSoft, `Environment preset="forest"` (downloads HDR), ambient birds, fireflies, and full orbit controls all run on mobile.
+The strip directly under the tree on mobile (green "Live" dot + "Anna S. donated $100") is the `LiveActivityBar` component. It flashes / disappears while swiping. Three concrete bugs are stacking up.
 
-## Changes
+## Root causes
 
-### 1. `src/components/landing/HeroSection.tsx`
-- Reduce mobile hero height from `h-[60vh]` to `h-[72vh]` so the scene has vertical room and the tree no longer feels like it dominates a short box. Keep `md:h-[88vh]`.
+1. **Stale closure → out-of-bounds index → component crash (primary suspect).**
+   In `src/components/landing/LiveActivityBar.tsx` the 3s interval does:
+   ```ts
+   setCurrentIndex(prev => (prev + 1) % donations.length);
+   setDonations(prev => [...prev.slice(-4), newDonation]); // length changes 3→4→5
+   ```
+   `donations.length` is captured from the render that scheduled the interval. When the array grows (3 → 4 → 5) but the effect hasn't re-bound yet, `currentIndex` can land at an index that no longer exists after a later prune, so `currentDonation` becomes `undefined` and the next render throws on `currentDonation.id`. The render throw makes the bar vanish until React retries — exactly the "blink while scrolling" symptom (scrolling on mobile is when the timer commonly fires alongside a paint).
 
-### 2. `src/components/landing/Tree3DScene.tsx` — camera + framing
-- Use a mobile-tuned camera: position `(0, 4.4, 16)` and FOV `32` on mobile (keeps `(0, 4.0, 13)` / FOV `38` on desktop). Pull `TARGET` slightly up to `(0, 3.6, 0)` on mobile so the canopy centers without the trunk eating the lower half.
-- Raise `OrbitControls` `minDistance` to `12` on mobile so accidental pinch can't push the tree into the camera.
-- This is the "reduce the size by very little" the user asked for — the tree visually shrinks ~15–20% on phones without changing desktop.
+2. **`LazyOnView` layout shift.**
+   `Index.tsx` wraps the bar in `<LazyOnView minHeight={80}>`. The placeholder reserves 80px, but the real bar on mobile renders ~140–160px tall (two stacked rows: live feed + stats row). When the user scrolls and the observer fires, the section jumps in height, shoving the bar up/down — visually reads as a flash.
 
-### 3. `src/components/landing/Tree3DScene.tsx` — stability fixes
-- Remove the `frameloop` toggle from `IntersectionObserver`; keep `frameloop="always"` while the canvas is mounted, and instead pause only on `document.hidden` (already tracked via `tabVisible`). Stops the mid-page freeze/resume flash.
-- Drop `PerformanceMonitor` (or pass a stable no-op factor) so drei doesn't auto-rescale DPR mid-session.
-- On mobile, mount the canvas immediately instead of waiting on `requestIdleCallback` — the idle defer is what creates the "flash of gradient then tree" reload feeling. Keep the idle defer only when `navigator.connection?.saveData` is true.
-- Add a `key` derived from a one-time `isMobile` capture so a viewport rotation does NOT remount the canvas. (Today the `useState(() => window.innerWidth < 768)` is fine, but we'll also add an explicit guard so address-bar resize never causes a remount.)
+3. **`key={currentDonation.id}` remounts the text every 3s.**
+   The `<p key=...>` with `animate-fade-in` fully unmounts/mounts every tick. Combined with bug #1 this looks like blinking even when no crash occurs.
 
-### 4. `src/components/landing/Tree3DScene.tsx` — mobile perf trim
-- `leafCount`: 2800 → 2000 on mobile.
-- `plantCap`: 20 → 12 on mobile.
-- `AmbientBirds count`: 4 → 2 on mobile.
-- Disable `Fireflies` on mobile (they're the bright dots in the screenshot — also a frame cost).
-- Replace `Environment preset="forest"` on mobile with a cheap `<hemisphereLight>` boost — saves the HDR download and a cubemap render.
-- Shadow map already drops to 1024 on mobile; lower to 512 and `shadow-blurSamples={2}` to reduce per-frame cost.
+Secondary contributor on mobile: the hero `Suspense` fallback for `Tree3DScene` is a plain gradient div — on slow mobile re-mounts (e.g. tab-visibility, idle remount) the fallback can briefly cover the area above the bar, drawing the eye to a "flash" right where the bar sits.
 
-### 5. `src/components/landing/hero/HeroHeadline.tsx`
-- Show the "CouponDonation is Transparent" rotating label on mobile too (remove `hidden md:flex`) so the headline area has clear content above the canopy.
-- Add a subtle `bg-background/60 backdrop-blur-sm rounded-full px-3 py-2` wrapper around the buttons on mobile so they remain legible against the canopy and don't appear to "disappear" behind leaves.
+## Fix plan (scope: LiveActivityBar + its lazy wrapper only)
 
-### 6. `src/components/landing/hero/TopDonorsPanel.tsx`
-- No change. Already `hidden md:block`.
+**File: `src/components/landing/LiveActivityBar.tsx`**
+- Stop indexing into a mutating array. Track the *currently displayed donation* in a single piece of state (or derive from a ref) so a stale index can never go out of bounds:
+  - Replace `currentIndex` + `donations[currentIndex]` with `currentDonation` state.
+  - Interval picks the next item from the latest `donations` via the functional updater on `setDonations`, then sets `currentDonation` to the chosen entry.
+  - Guard render: `if (!currentDonation) return null-safe fallback` so a transient undefined never throws.
+- Remove the unbounded `key={currentDonation.id}` remount on the `<p>`. Keep `animate-fade-in` on the wrapper but key it on a stable counter that only changes when text actually changes (or drop the key entirely and use a CSS transition).
+- Add `useEffect` cleanup that clears the interval on unmount (already done) and rebinds on `donations` identity change — but keep the array length stable (cap at 5 from the start) so the interval doesn't need to re-bind constantly.
+
+**File: `src/pages/Index.tsx`**
+- Bump the `LiveActivityBar`'s `LazyOnView minHeight` from `80` to a value matching the rendered mobile height (~`h={140}`) so the placeholder reserves the right space and there's no jump when it mounts. Alternatively, render `LiveActivityBar` eagerly (it's tiny, no heavy deps) — preferred, since it's directly below the fold and the lazy wrapper is the source of the layout shift.
+
+## Out of scope
+- No changes to `Tree3DScene`, hero sizing, top donors panel, or any visual design of the bar.
+- No copy changes.
 
 ## Technical notes
-
-- The `frameloop="demand"` switch during scroll-driven hydration is the most likely root cause of the "random loading" report. With `lazy()` + `LazyOnView` below the fold (see `src/pages/Index.tsx`), each new section that hydrates pushes layout and briefly changes the hero's intersection ratio. Keeping `frameloop="always"` while `tabVisible` is true removes that visible stutter without raising battery cost meaningfully (tab-hidden pause still applies).
-- We do NOT change the GLB model, lighting math, or interaction handlers — only mobile-conditional values and the stability toggles above.
-- Out of scope: redesigning the hero, changing copy, touching `DonationFlow` or below-the-fold sections, or modifying the privacy banner.
-
-## Files to edit
-- `src/components/landing/HeroSection.tsx`
-- `src/components/landing/Tree3DScene.tsx`
-- `src/components/landing/hero/HeroHeadline.tsx`
+- Bug #1 reproduces deterministically: after ~6 ticks the donations array stabilizes at length 5, but during ticks 1–4 it grows, and `currentIndex` set from a length-3 closure can equal 2 while the next render has length 4 then 5 — usually safe, but combined with React 18 batching and the `Math.random() > 0.5` branch the index occasionally points past the end after a slice. The functional-state rewrite removes the class of bug entirely.
+- No new dependencies. No CSS additions beyond what already exists.
