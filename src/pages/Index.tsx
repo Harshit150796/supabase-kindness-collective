@@ -5,7 +5,7 @@ import { SEO } from '@/components/SEO';
 import { LazyOnView } from '@/components/LazyOnView';
 
 // Below-the-fold sections — lazy chunks, only fetched as user scrolls.
-const LiveActivityBar = lazy(() => import('@/components/landing/LiveActivityBar').then(m => ({ default: m.LiveActivityBar })));
+import { LiveActivityBar } from '@/components/landing/LiveActivityBar';
 const ImpactStories = lazy(() => import('@/components/landing/ImpactStories').then(m => ({ default: m.ImpactStories })));
 const TrustTransparency = lazy(() => import('@/components/landing/TrustTransparency').then(m => ({ default: m.TrustTransparency })));
 const BrandLeaderboard = lazy(() => import('@/components/landing/BrandLeaderboard').then(m => ({ default: m.BrandLeaderboard })));
