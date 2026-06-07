@@ -26,33 +26,26 @@ const generateDonation = (id: number): DonationEvent => {
 };
 
 export const LiveActivityBar = () => {
-  const [donations, setDonations] = useState<DonationEvent[]>([
-    generateDonation(1),
-    generateDonation(2),
-    generateDonation(3)
-  ]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentDonation, setCurrentDonation] = useState<DonationEvent>(() => generateDonation(1));
   const [donationCount, setDonationCount] = useState(8234);
   const [amountRaised, setAmountRaised] = useState(127450);
 
-  // Rotate through donations
+  // Rotate through donations — uses functional updater so no stale closures.
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex(prev => (prev + 1) % donations.length);
-      
-      // Occasionally add new donation
+      const next = generateDonation(Date.now());
+      setCurrentDonation(next);
       if (Math.random() > 0.5) {
-        const newDonation = generateDonation(Date.now());
-        setDonations(prev => [...prev.slice(-4), newDonation]);
-        setDonationCount(prev => prev + 1);
-        setAmountRaised(prev => prev + newDonation.amount);
+        setDonationCount((c) => c + 1);
+        setAmountRaised((a) => a + next.amount);
       }
     }, 3000);
-    
-    return () => clearInterval(interval);
-  }, [donations.length]);
 
-  const currentDonation = donations[currentIndex];
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!currentDonation) return null;
+
 
   return (
     <section className="relative bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-y border-border/50 overflow-hidden">
@@ -74,7 +67,7 @@ export const LiveActivityBar = () => {
             <div className="flex items-center gap-2 bg-background md:bg-background/80 md:backdrop-blur-sm rounded-full px-3 md:px-4 py-1.5 md:py-2 border border-border/50 shadow-sm max-w-[280px] md:max-w-none">
               <Heart className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary fill-primary animate-pulse flex-shrink-0" />
               <div className="overflow-hidden">
-                <p className="text-xs md:text-sm font-medium text-foreground whitespace-nowrap animate-fade-in truncate" key={currentDonation.id}>
+                <p className="text-xs md:text-sm font-medium text-foreground whitespace-nowrap truncate">
                   <span className="font-semibold">{currentDonation.name}</span>
                   {' '}donated{' '}
                   <span className="text-primary font-bold">${currentDonation.amount}</span>
