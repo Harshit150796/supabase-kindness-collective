@@ -434,7 +434,7 @@ export function Tree3DScene() {
             controlsRef={controlsRef}
             zoomProgressRef={zoomProgressRef}
             dpr={dpr}
-            inView={tabVisible}
+            inView={inView && tabVisible}
             enablePost={enablePost}
             leafCount={leafCount}
             plantCap={plantCap}
