@@ -12,7 +12,12 @@ export function HeroSection() {
   const [chatOpen, setChatOpen] = useState(false);
 
   return (
-    <section className="relative w-full h-[62vh] md:h-[88vh] overflow-hidden">
+    // FIX #1: Replace h-[62vh] with h-[62svh] on mobile.
+    // `svh` (small viewport height) is fixed to the viewport with browser chrome *visible*
+    // and never changes as the URL bar hides/shows during scroll — eliminating the layout
+    // shift that caused LiveActivityBar to jump/blink on iOS Safari and Android Chrome.
+    // Tailwind 3.4 supports arbitrary svh/dvh units natively.
+    <section className="relative w-full h-[62svh] md:h-[88vh] overflow-hidden">
       <div className="absolute inset-0">
         <Suspense
           fallback={
