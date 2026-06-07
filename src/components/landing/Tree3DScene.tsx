@@ -162,8 +162,8 @@ function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
     }
   });
 
-  const shadowSize = isMobile ? 1024 : 4096;
-  const shadowBlur = isMobile ? 4 : 25;
+  const shadowSize = isMobile ? 512 : 4096;
+  const shadowBlur = isMobile ? 2 : 25;
 
   return (
     <>
@@ -292,16 +292,17 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
     <>
       <DayNightLights isMobile={isMobile} />
       <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />
+      {isMobile && <hemisphereLight args={['#cfe8d8', '#3a4a3a', 0.45]} />}
       <fog attach="fog" args={['#DCE6D5', 18, 45]} />
 
       <Sky />
       <Tree leafCount={leafCount} />
       <Ground y={GROUND_Y} isMobile={isMobile} />
       <HitZones />
-      <Fireflies />
+      {!isMobile && <Fireflies />}
       <TrunkRipple />
       <Bird />
-      <AmbientBirds count={isMobile ? 4 : 6} />
+      <AmbientBirds count={isMobile ? 2 : 6} />
       <PlantsLayer cap={plantCap} />
 
 
@@ -319,7 +320,7 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
         />
       ))}
 
-      <Environment preset="forest" background={false} />
+      {!isMobile && <Environment preset="forest" background={false} />}
     </>
   );
 }
@@ -450,8 +451,8 @@ export function Tree3DScene() {
     };
   }, []);
 
-  const leafCount = isMobile ? 2800 : 7000;
-  const plantCap = isMobile ? 20 : 40;
+  const leafCount = isMobile ? 2000 : 7000;
+  const plantCap = isMobile ? 12 : 40;
 
   return (
     <InteractionProvider>
