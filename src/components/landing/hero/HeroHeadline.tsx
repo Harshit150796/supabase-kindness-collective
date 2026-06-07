@@ -2,16 +2,19 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ROTATING_WORDS = ["Transparent", "Trackable", "Real-time"];
 
 export function HeroHeadline() {
+  const isMobile = useIsMobile();
   const [idx, setIdx] = useState(0);
 
   useEffect(() => {
+    if (isMobile) return; // static on mobile — avoids 2.8s "blink" over the tree
     const id = setInterval(() => setIdx((i) => (i + 1) % ROTATING_WORDS.length), 2800);
     return () => clearInterval(id);
-  }, []);
+  }, [isMobile]);
 
   return (
     <div
@@ -22,12 +25,18 @@ export function HeroHeadline() {
         <span className="text-xs uppercase tracking-[0.2em] text-foreground/70 font-semibold">
           CouponDonation is
         </span>
-        <span
-          key={ROTATING_WORDS[idx]}
-          className="inline-block text-xs uppercase tracking-[0.2em] font-bold text-emerald-700 animate-in fade-in slide-in-from-bottom-1 duration-500"
-        >
-          {ROTATING_WORDS[idx]}
-        </span>
+        {isMobile ? (
+          <span className="inline-block text-xs uppercase tracking-[0.2em] font-bold text-emerald-700">
+            {ROTATING_WORDS[0]}
+          </span>
+        ) : (
+          <span
+            key={ROTATING_WORDS[idx]}
+            className="inline-block text-xs uppercase tracking-[0.2em] font-bold text-emerald-700 animate-in fade-in slide-in-from-bottom-1 duration-500"
+          >
+            {ROTATING_WORDS[idx]}
+          </span>
+        )}
       </div>
       <div className="mt-3 md:mt-4 inline-flex items-center justify-center gap-2 bg-background/60 backdrop-blur-sm rounded-full px-2 py-1 md:bg-transparent md:backdrop-blur-0 md:p-0">
         <Button asChild size="sm" className="shadow-lg">

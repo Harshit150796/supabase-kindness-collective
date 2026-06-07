@@ -338,6 +338,8 @@ function WindTracker() {
 
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
+      // Mouse-only — touch swipes shouldn't shake the tree while scrolling.
+      if (e.pointerType !== 'mouse') return;
       const now = performance.now();
       if (lastRef.current) {
         const dx = e.clientX - lastRef.current.x;
@@ -393,62 +395,29 @@ export function Tree3DScene() {
 
 
 
-  // Scroll-to-zoom-then-release: intercept wheel + touch on the hero wrapper.
+  // Scroll-to-zoom-then-release: desktop wheel only. Mobile keeps native scroll.
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
+    if (isMobile) return; // never intercept touch swipes — they must scroll the page
 
     const WHEEL_SENSITIVITY = 0.0018;
-    const TOUCH_SENSITIVITY = 0.005;
 
     const onWheel = (e: WheelEvent) => {
       if (window.scrollY > 4) return;
       const cur = zoomProgressRef.current;
       const dy = e.deltaY;
-      if (dy > 0 && cur >= 1) return; // fully zoomed out → let page scroll
-      if (dy < 0 && cur <= 0) return; // fully zoomed in → let page scroll up (no-op at top)
+      if (dy > 0 && cur >= 1) return;
+      if (dy < 0 && cur <= 0) return;
       e.preventDefault();
       zoomProgressRef.current = Math.max(0, Math.min(1, cur + dy * WHEEL_SENSITIVITY));
     };
 
-    let lastTouchY: number | null = null;
-
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return;
-      lastTouchY = e.touches[0].clientY;
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      if (lastTouchY === null || e.touches.length !== 1) return;
-      if (window.scrollY > 4) return;
-      const y = e.touches[0].clientY;
-      const dy = lastTouchY - y; // swipe up = positive (zoom out)
-      lastTouchY = y;
-      const cur = zoomProgressRef.current;
-      if (dy > 0 && cur >= 1) return; // let page scroll
-      if (dy < 0 && cur <= 0) return; // let page scroll
-      e.preventDefault();
-      zoomProgressRef.current = Math.max(0, Math.min(1, cur + dy * TOUCH_SENSITIVITY));
-    };
-
-    const onTouchEnd = () => {
-      lastTouchY = null;
-    };
-
     el.addEventListener('wheel', onWheel, { passive: false });
-    el.addEventListener('touchstart', onTouchStart, { passive: true });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEnd, { passive: true });
-    el.addEventListener('touchcancel', onTouchEnd, { passive: true });
-
     return () => {
       el.removeEventListener('wheel', onWheel);
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
-      el.removeEventListener('touchcancel', onTouchEnd);
     };
-  }, []);
+  }, [isMobile]);
 
   const leafCount = isMobile ? 2000 : 7000;
   const plantCap = isMobile ? 12 : 40;
@@ -465,7 +434,7 @@ export function Tree3DScene() {
             controlsRef={controlsRef}
             zoomProgressRef={zoomProgressRef}
             dpr={dpr}
-            inView={inView && tabVisible}
+            inView={tabVisible}
             enablePost={enablePost}
             leafCount={leafCount}
             plantCap={plantCap}
@@ -514,9 +483,9 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
           toneMappingExposure: 1.05,
         }}
         style={{ background: 'transparent' }}
-        onPointerDown={() => setParallaxBoost(true)}
-        onPointerUp={() => setParallaxBoost(false)}
-        onPointerLeave={() => setParallaxBoost(false)}
+        onPointerDown={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(true); }}
+        onPointerUp={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(false); }}
+        onPointerLeave={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(false); }}
         onClick={() => {
           spawnRipple();
           const now = performance.now();
