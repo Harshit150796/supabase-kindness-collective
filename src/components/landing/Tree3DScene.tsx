@@ -392,6 +392,25 @@ export function Tree3DScene() {
     return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
 
+  // On mobile, switch frameloop to 'demand' while the user is actively scrolling.
+  // This prevents the 3D canvas from competing with scroll work, which was causing
+  // the area just below the hero (LiveActivityBar) to visually blink during swipes.
+  const [isScrolling, setIsScrolling] = useState(false);
+  useEffect(() => {
+    if (!isMobile) return;
+    let timer: number | undefined;
+    const onScroll = () => {
+      setIsScrolling(true);
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => setIsScrolling(false), 200);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [isMobile]);
+
 
 
 
@@ -434,7 +453,7 @@ export function Tree3DScene() {
             controlsRef={controlsRef}
             zoomProgressRef={zoomProgressRef}
             dpr={dpr}
-            inView={inView && tabVisible}
+            inView={inView && tabVisible && !isScrolling}
             enablePost={enablePost}
             leafCount={leafCount}
             plantCap={plantCap}

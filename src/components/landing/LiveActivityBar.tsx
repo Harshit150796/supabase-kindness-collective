@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Heart, TrendingUp, Users, Zap } from 'lucide-react';
 import { popularBrands } from '@/data/brandLogos';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DonationEvent {
   id: number;
@@ -15,7 +16,7 @@ const generateDonation = (id: number): DonationEvent => {
   const amounts = [25, 50, 75, 100, 150, 200, 250];
   const brands = popularBrands.map(b => b.name);
   const times = ['just now', '10s ago', '30s ago', '1m ago', '2m ago'];
-  
+
   return {
     id,
     name: names[Math.floor(Math.random() * names.length)],
@@ -26,46 +27,66 @@ const generateDonation = (id: number): DonationEvent => {
 };
 
 export const LiveActivityBar = () => {
+  const isMobile = useIsMobile();
   const [currentDonation, setCurrentDonation] = useState<DonationEvent>(() => generateDonation(1));
   const [donationCount, setDonationCount] = useState(8234);
   const [amountRaised, setAmountRaised] = useState(127450);
+  const scrollingRef = useRef(false);
 
-  // Rotate through donations — uses functional updater so no stale closures.
+  // Track scroll activity on mobile so we can pause text rotation during swipes
+  useEffect(() => {
+    if (!isMobile) return;
+    let timer: number | undefined;
+    const onScroll = () => {
+      scrollingRef.current = true;
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        scrollingRef.current = false;
+      }, 250);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [isMobile]);
+
   useEffect(() => {
     const interval = setInterval(() => {
+      // Don't change text mid-swipe on mobile — feels like blinking
+      if (scrollingRef.current) return;
       const next = generateDonation(Date.now());
       setCurrentDonation(next);
       if (Math.random() > 0.5) {
         setDonationCount((c) => c + 1);
         setAmountRaised((a) => a + next.amount);
       }
-    }, 3000);
+    }, 3500);
 
     return () => clearInterval(interval);
   }, []);
 
   if (!currentDonation) return null;
 
-
   return (
     <section className="relative bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-y border-border/50 overflow-hidden">
-      {/* Static soft tint — animated pulse removed on mobile for smoother scrolling */}
+      {/* Animated tint only on desktop — kept off mobile for stable rendering */}
       <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10 opacity-50 hidden md:block md:animate-pulse" />
-      
+
       <div className="container mx-auto px-4 py-3 md:py-4">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
-          
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 min-h-[44px]">
+
           {/* Live Donation Feed */}
-          <div className="flex items-center gap-2 md:gap-3 min-w-0 w-full md:w-auto justify-center md:justify-start">
+          <div className="flex items-center gap-2 md:gap-3 min-w-0 w-full md:w-auto justify-center md:justify-start min-h-[32px]">
             <div className="relative flex-shrink-0">
-              <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full animate-pulse" />
-              <div className="absolute inset-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full animate-ping" />
+              <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full md:animate-pulse" />
+              <div className="absolute inset-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full opacity-0 md:opacity-100 md:animate-ping" />
             </div>
             <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">Live</span>
-            
+
             {/* Opaque on mobile (no backdrop-blur) — eliminates blurred-during-scroll artifact */}
             <div className="flex items-center gap-2 bg-background md:bg-background/80 md:backdrop-blur-sm rounded-full px-3 md:px-4 py-1.5 md:py-2 border border-border/50 shadow-sm max-w-[280px] md:max-w-none">
-              <Heart className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary fill-primary animate-pulse flex-shrink-0" />
+              <Heart className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary fill-primary md:animate-pulse flex-shrink-0" />
               <div className="overflow-hidden">
                 <p className="text-xs md:text-sm font-medium text-foreground whitespace-nowrap truncate">
                   <span className="font-semibold">{currentDonation.name}</span>
@@ -81,7 +102,7 @@ export const LiveActivityBar = () => {
             </div>
           </div>
 
-          {/* Quick Stats - Now visible on mobile */}
+          {/* Quick Stats */}
           <div className="flex items-center gap-4 md:gap-6">
             <div className="flex items-center gap-1.5 md:gap-2">
               <Zap className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500" />
@@ -90,25 +111,25 @@ export const LiveActivityBar = () => {
                 <span className="hidden sm:inline"> donation</span>/8s
               </span>
             </div>
-            
+
             <div className="flex items-center gap-1.5 md:gap-2">
               <Users className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
               <span className="text-xs md:text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">{donationCount.toLocaleString()}</span>
+                <span className="font-semibold text-foreground tabular-nums">{donationCount.toLocaleString()}</span>
                 <span className="hidden sm:inline"> today</span>
               </span>
             </div>
-            
+
             <div className="flex items-center gap-1.5 md:gap-2">
               <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 text-green-500" />
               <span className="text-xs md:text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">${(amountRaised / 1000).toFixed(0)}K</span>
+                <span className="font-semibold text-foreground tabular-nums">${(amountRaised / 1000).toFixed(0)}K</span>
                 <span className="hidden sm:inline"> raised</span>
               </span>
             </div>
           </div>
 
-          {/* Scrolling Brand Logos - Fixed with proper img tags */}
+          {/* Scrolling Brand Logos */}
           <div className="hidden lg:flex items-center gap-3 overflow-hidden max-w-xs">
             <span className="text-xs text-muted-foreground whitespace-nowrap">Powered by</span>
             <div className="flex gap-4 overflow-hidden">
@@ -119,25 +140,16 @@ export const LiveActivityBar = () => {
                     className="flex items-center justify-center w-8 h-8 rounded-full bg-background border border-border/50 shadow-sm flex-shrink-0"
                     title={brand.name}
                   >
-                    <img 
-                      src={brand.logo} 
-                      alt={brand.name}
-                      className="w-5 h-5 object-contain"
-                    />
+                    <img src={brand.logo} alt={brand.name} className="w-5 h-5 object-contain" />
                   </div>
                 ))}
-                {/* Duplicate for seamless loop */}
                 {popularBrands.slice(0, 6).map((brand) => (
                   <div
                     key={`${brand.name}-dup`}
                     className="flex items-center justify-center w-8 h-8 rounded-full bg-background border border-border/50 shadow-sm flex-shrink-0"
                     title={brand.name}
                   >
-                    <img 
-                      src={brand.logo} 
-                      alt={brand.name}
-                      className="w-5 h-5 object-contain"
-                    />
+                    <img src={brand.logo} alt={brand.name} className="w-5 h-5 object-contain" />
                   </div>
                 ))}
               </div>
