@@ -23,6 +23,8 @@ import { PlantsLayer } from './tree3d/PlantsLayer';
 const GROUND_Y = -0.01;
 const DEFAULT_CAM = new THREE.Vector3(0, 4.0, 13);
 const TARGET = new THREE.Vector3(0, 3.4, 0);
+const MOBILE_CAM = new THREE.Vector3(0, 4.4, 16);
+const MOBILE_TARGET = new THREE.Vector3(0, 3.6, 0);
 
 function CameraRig({
   controlsRef,
