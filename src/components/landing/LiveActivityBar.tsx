@@ -67,7 +67,7 @@ export const LiveActivityBar = () => {
             <div className="flex items-center gap-2 bg-background md:bg-background/80 md:backdrop-blur-sm rounded-full px-3 md:px-4 py-1.5 md:py-2 border border-border/50 shadow-sm max-w-[280px] md:max-w-none">
               <Heart className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary fill-primary animate-pulse flex-shrink-0" />
               <div className="overflow-hidden">
-                <p className="text-xs md:text-sm font-medium text-foreground whitespace-nowrap animate-fade-in truncate" key={currentDonation.id}>
+                <p className="text-xs md:text-sm font-medium text-foreground whitespace-nowrap truncate">
                   <span className="font-semibold">{currentDonation.name}</span>
                   {' '}donated{' '}
                   <span className="text-primary font-bold">${currentDonation.amount}</span>
