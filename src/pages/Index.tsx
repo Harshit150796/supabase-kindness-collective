@@ -31,11 +31,8 @@ const Index = () => {
         {/* 1. Human-centered hero with featured story */}
         <HeroSection />
 
-        <Suspense fallback={<Fallback h={80} />}>
-          <LazyOnView minHeight={80}>
-            <LiveActivityBar />
-          </LazyOnView>
-        </Suspense>
+        <LiveActivityBar />
+
 
         <Suspense fallback={<Fallback h={600} />}>
           <LazyOnView minHeight={600}>
