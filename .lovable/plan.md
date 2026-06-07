@@ -1,44 +1,47 @@
-# Fix: "Live tracking" bar under the tree blinks on mobile
+# Mobile hero stability fix
 
-## What's happening
+## Root causes (verified in code)
 
-The strip directly under the tree on mobile (green "Live" dot + "Anna S. donated $100") is the `LiveActivityBar` component. It flashes / disappears while swiping. Three concrete bugs are stacking up.
+1. **Scroll-zoom interceptor hijacks vertical swipes on mobile.**
+   `Tree3DScene.tsx` attaches a `touchmove` listener with `passive: false` on the hero wrapper. While `window.scrollY <= 4` and `zoomProgress` is between 0 and 1, it calls `e.preventDefault()` on every swipe — so the browser can't scroll the page. The page intermittently stalls then jumps when the zoom hits 0 or 1, which is exactly the "blinks / texts disappear and reappear when I swipe" symptom.
 
-## Root causes
+2. **Parallax boost fires on every touch.**
+   `<Canvas onPointerDown={() => setParallaxBoost(true)} ...>` triggers on the very first touch of any swipe. The camera then drifts using `mouse.x/y` from R3F, which on touch devices keeps the last known position — producing a visible lurch each time the user puts a finger down.
 
-1. **Stale closure → out-of-bounds index → component crash (primary suspect).**
-   In `src/components/landing/LiveActivityBar.tsx` the 3s interval does:
-   ```ts
-   setCurrentIndex(prev => (prev + 1) % donations.length);
-   setDonations(prev => [...prev.slice(-4), newDonation]); // length changes 3→4→5
-   ```
-   `donations.length` is captured from the render that scheduled the interval. When the array grows (3 → 4 → 5) but the effect hasn't re-bound yet, `currentIndex` can land at an index that no longer exists after a later prune, so `currentDonation` becomes `undefined` and the next render throws on `currentDonation.id`. The render throw makes the bar vanish until React retries — exactly the "blink while scrolling" symptom (scrolling on mobile is when the timer commonly fires alongside a paint).
+3. **WindTracker reacts to touch-driven `pointermove`.**
+   It bumps wind/leaf sway on every swipe, so leaves shake while scrolling.
 
-2. **`LazyOnView` layout shift.**
-   `Index.tsx` wraps the bar in `<LazyOnView minHeight={80}>`. The placeholder reserves 80px, but the real bar on mobile renders ~140–160px tall (two stacked rows: live feed + stats row). When the user scrolls and the observer fires, the section jumps in height, shoving the bar up/down — visually reads as a flash.
+4. **`frameloop` flips between `always` and `demand`** based on IntersectionObserver. As the hero scrolls out and back in (during the scroll fight), the canvas pauses/resumes — perceived as flicker.
 
-3. **`key={currentDonation.id}` remounts the text every 3s.**
-   The `<p key=...>` with `animate-fade-in` fully unmounts/mounts every tick. Combined with bug #1 this looks like blinking even when no crash occurs.
+5. **HeroHeadline rotating word remounts every 2.8s with a slide-in animation.** On a narrow viewport this text sits over the tree and visibly "pops" — reads as blinking.
 
-Secondary contributor on mobile: the hero `Suspense` fallback for `Tree3DScene` is a plain gradient div — on slow mobile re-mounts (e.g. tab-visibility, idle remount) the fallback can briefly cover the area above the bar, drawing the eye to a "flash" right where the bar sits.
+6. **Hero height `h-[72vh]` on mobile** still covers most of small phones, leaving very little room before the LiveActivityBar — combined with #1 the bar appears to vanish.
 
-## Fix plan (scope: LiveActivityBar + its lazy wrapper only)
+## Changes
 
-**File: `src/components/landing/LiveActivityBar.tsx`**
-- Stop indexing into a mutating array. Track the *currently displayed donation* in a single piece of state (or derive from a ref) so a stale index can never go out of bounds:
-  - Replace `currentIndex` + `donations[currentIndex]` with `currentDonation` state.
-  - Interval picks the next item from the latest `donations` via the functional updater on `setDonations`, then sets `currentDonation` to the chosen entry.
-  - Guard render: `if (!currentDonation) return null-safe fallback` so a transient undefined never throws.
-- Remove the unbounded `key={currentDonation.id}` remount on the `<p>`. Keep `animate-fade-in` on the wrapper but key it on a stable counter that only changes when text actually changes (or drop the key entirely and use a CSS transition).
-- Add `useEffect` cleanup that clears the interval on unmount (already done) and rebinds on `donations` identity change — but keep the array length stable (cap at 5 from the start) so the interval doesn't need to re-bind constantly.
+### `src/components/landing/Tree3DScene.tsx`
+- **Disable the touch zoom-intercept entirely on mobile.** Keep wheel-based zoom for desktop only. Mobile gets native, uninterrupted vertical scroll. (Wrap the `touchstart/move/end` listeners in `if (!isMobile) return;` inside the effect.)
+- **Skip `onPointerDown`/`onPointerUp` parallax boost on touch events.** In the Canvas handlers, early-return when `e.pointerType !== 'mouse'`.
+- Pass `isMobile` to `Tree3DInner` for the above check (already passed).
+- **Keep `frameloop="always"` while `tabVisible`.** Remove the `inView` gating so partial scroll doesn't toggle the loop. (Tab-hidden still pauses.)
+- Reduce hero coverage: change `HeroSection` height from `h-[72vh]` to `h-[62vh]` on mobile (kept `md:h-[88vh]`).
 
-**File: `src/pages/Index.tsx`**
-- Bump the `LiveActivityBar`'s `LazyOnView minHeight` from `80` to a value matching the rendered mobile height (~`h={140}`) so the placeholder reserves the right space and there's no jump when it mounts. Alternatively, render `LiveActivityBar` eagerly (it's tiny, no heavy deps) — preferred, since it's directly below the fold and the lazy wrapper is the source of the layout shift.
+### `src/components/landing/Tree3DScene.tsx` — `WindTracker`
+- Filter `pointermove` to mouse only: `if (e.pointerType !== 'mouse') return;`. Leaves stop shaking during swipes.
+
+### `src/components/landing/hero/HeroHeadline.tsx`
+- On mobile, render the rotating word statically (pick one, no interval, no slide-in animation). Detect via `useIsMobile()`. Desktop behavior unchanged. Eliminates the 2.8s "blink" over the tree.
+
+### `src/components/landing/HeroSection.tsx`
+- Change `h-[72vh]` → `h-[62vh]` per above.
 
 ## Out of scope
-- No changes to `Tree3DScene`, hero sizing, top donors panel, or any visual design of the bar.
-- No copy changes.
+
+- No changes to LiveActivityBar (already fixed last round), TopDonorsPanel, 3D model, lighting, leaf counts, or DPR caps.
+- No new dependencies. No copy or visual-design changes beyond the hero height reduction.
 
 ## Technical notes
-- Bug #1 reproduces deterministically: after ~6 ticks the donations array stabilizes at length 5, but during ticks 1–4 it grows, and `currentIndex` set from a length-3 closure can equal 2 while the next render has length 4 then 5 — usually safe, but combined with React 18 batching and the `Math.random() > 0.5` branch the index occasionally points past the end after a slice. The functional-state rewrite removes the class of bug entirely.
-- No new dependencies. No CSS additions beyond what already exists.
+
+- The touch-zoom feature isn't useful on mobile anyway — users expect vertical swipes to scroll, not to dolly the camera. Removing it on mobile is the single biggest stability win.
+- Filtering parallax/wind to `pointerType === 'mouse'` is the standard pattern for hover-only effects and is supported in all evergreen browsers.
+- Keeping `frameloop="always"` adds negligible cost (already capped by DPR 1.5 + reduced leaves/plants/shadows on mobile) and prevents the pause/resume hitch.
