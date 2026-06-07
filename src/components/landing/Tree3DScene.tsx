@@ -29,15 +29,20 @@ const MOBILE_TARGET = new THREE.Vector3(0, 3.6, 0);
 function CameraRig({
   controlsRef,
   zoomProgressRef,
+  isMobile,
 }: {
   controlsRef: React.RefObject<OrbitControlsImpl>;
   zoomProgressRef: React.MutableRefObject<number>;
+  isMobile: boolean;
 }) {
   const { camera, mouse } = useThree();
   const { parallaxBoostRef } = useInteraction();
   const lastInteractionRef = useRef(performance.now() / 1000);
   const resetAnim = useRef<{ start: number; from: THREE.Vector3 } | null>(null);
-  const currentDistRef = useRef(13);
+  const defaultCam = isMobile ? MOBILE_CAM : DEFAULT_CAM;
+  const target = isMobile ? MOBILE_TARGET : TARGET;
+  const baseDist = isMobile ? 16 : 13;
+  const currentDistRef = useRef(baseDist);
 
   // Track interactions on the controls
   useEffect(() => {
@@ -77,8 +82,8 @@ function CameraRig({
     if (resetAnim.current) {
       const k = Math.min(1, (now - resetAnim.current.start) / 0.6);
       const eased = 1 - Math.pow(1 - k, 3);
-      camera.position.lerpVectors(resetAnim.current.from, DEFAULT_CAM, eased);
-      c.target.copy(TARGET);
+      camera.position.lerpVectors(resetAnim.current.from, defaultCam, eased);
+      c.target.copy(target);
       if (k >= 1) resetAnim.current = null;
     } else if (idle > 3 && c.getAzimuthalAngle() !== 0) {
       // Auto-return to center azimuth
@@ -93,7 +98,7 @@ function CameraRig({
     }
 
     // Drive camera distance from external zoomProgress (scroll-controlled)
-    const targetDist = 13 + zoomProgressRef.current * 4; // 13..17
+    const targetDist = baseDist + zoomProgressRef.current * 4;
     currentDistRef.current += (targetDist - currentDistRef.current) * Math.min(1, dt * 6);
     const offset = camera.position.clone().sub(c.target);
     const sph = new THREE.Spherical().setFromVector3(offset);
