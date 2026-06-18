@@ -298,7 +298,7 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
   return (
     <>
       <DayNightLights isMobile={isMobile} />
-      <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />
+      {!isMobile && <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />}
       {isMobile && <hemisphereLight args={['#cfe8d8', '#3a4a3a', 0.45]} />}
       <fog attach="fog" args={['#DCE6D5', 18, 45]} />
 
@@ -309,7 +309,7 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
       {!isMobile && <Fireflies />}
       <TrunkRipple />
       <Bird />
-      <AmbientBirds count={isMobile ? 2 : 6} />
+      <AmbientBirds count={isMobile ? 1 : 6} />
       <PlantsLayer cap={plantCap} />
 
 
