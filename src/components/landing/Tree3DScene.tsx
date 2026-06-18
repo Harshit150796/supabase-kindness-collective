@@ -300,9 +300,10 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
       <DayNightLights isMobile={isMobile} />
       {!isMobile && <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />}
       {isMobile && <hemisphereLight args={['#cfe8d8', '#3a4a3a', 0.45]} />}
-      <fog attach="fog" args={['#DCE6D5', 18, 45]} />
+      <fog attach="fog" args={isMobile ? ['#DCE6D5', 35, 90] : ['#DCE6D5', 18, 45]} />
 
-      <Sky />
+      <Sky isMobile={isMobile} />
+
       <Tree leafCount={leafCount} />
       <Ground y={GROUND_Y} isMobile={isMobile} />
       <HitZones />
@@ -364,10 +365,10 @@ export function Tree3DScene() {
   const [inView, setInView] = useState(true);
   const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
   const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
-  // DPR: 1.5 cap on mobile (visually indistinguishable at hero scale, ~30% cheaper),
-  // 2 cap on desktop for crisp rendering.
+  // DPR: mobile cap raised to 2 (sharper canopy edges; safe because AA, shadows,
+  // and tone-mapping are off on mobile). Desktop stays at 2.
   const stableDpr = useMemo<[number, number]>(() => {
-    const max = isMobile ? 1.5 : 2;
+    const max = isMobile ? 2 : 2;
     const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, max) : max;
     return [d, d];
   }, [isMobile]);
