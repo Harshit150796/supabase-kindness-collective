@@ -507,14 +507,15 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
   return (
     <>
       <Canvas
-        shadows={{ type: THREE.PCFSoftShadowMap }}
+        shadows={isMobile ? false : { type: THREE.PCFSoftShadowMap }}
         dpr={dpr}
         frameloop={inView ? 'always' : 'demand'}
         camera={{ position: isMobile ? [0, 4.4, 16] : [0, 4.0, 13], fov: isMobile ? 32 : 38 }}
         gl={{
-          antialias: true,
+          antialias: !isMobile,
           alpha: true,
-          toneMapping: THREE.ACESFilmicToneMapping,
+          powerPreference: isMobile ? 'low-power' : 'high-performance',
+          toneMapping: isMobile ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.05,
         }}
         style={{ background: 'transparent' }}
