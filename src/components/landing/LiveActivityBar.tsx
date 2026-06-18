@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { Heart, TrendingUp, Users, Zap } from 'lucide-react';
 import { popularBrands } from '@/data/brandLogos';
 import { useIsMobile } from '@/hooks/use-mobile';
