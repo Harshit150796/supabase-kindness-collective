@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { Heart, TrendingUp, Users, Zap } from 'lucide-react';
 import { popularBrands } from '@/data/brandLogos';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -83,23 +83,7 @@ export const LiveActivityBar = () => {
               <div className="absolute inset-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full opacity-0 md:opacity-100 md:animate-ping" />
             </div>
             <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">Live</span>
-
-            {/* Opaque on mobile (no backdrop-blur) — eliminates blurred-during-scroll artifact */}
-            <div className="flex items-center gap-2 bg-background md:bg-background/80 md:backdrop-blur-sm rounded-full px-3 md:px-4 py-1.5 md:py-2 border border-border/50 shadow-sm max-w-[280px] md:max-w-none">
-              <Heart className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary fill-primary md:animate-pulse flex-shrink-0" />
-              <div className="overflow-hidden">
-                <p className="text-xs md:text-sm font-medium text-foreground whitespace-nowrap truncate">
-                  <span className="font-semibold">{currentDonation.name}</span>
-                  {' '}donated{' '}
-                  <span className="text-primary font-bold">${currentDonation.amount}</span>
-                  <span className="hidden sm:inline">
-                    {' '}via{' '}
-                    <span className="text-muted-foreground">{currentDonation.brand}</span>
-                  </span>
-                </p>
-              </div>
-              <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">{currentDonation.timeAgo}</span>
-            </div>
+            <DonationPill donation={currentDonation} />
           </div>
 
           {/* Quick Stats */}
@@ -160,3 +144,26 @@ export const LiveActivityBar = () => {
     </section>
   );
 };
+
+// Memoised pill so the surrounding stats row and brand marquee don't reflow
+// every 3.5s when only the donation event changes.
+const DonationPill = memo(function DonationPill({ donation }: { donation: DonationEvent }) {
+  return (
+    <div className="flex items-center gap-2 bg-background md:bg-background/80 md:backdrop-blur-sm rounded-full px-3 md:px-4 py-1.5 md:py-2 border border-border/50 shadow-sm max-w-[280px] md:max-w-none">
+      <Heart className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary fill-primary md:animate-pulse flex-shrink-0" />
+      <div className="overflow-hidden">
+        <p className="text-xs md:text-sm font-medium text-foreground whitespace-nowrap truncate">
+          <span className="font-semibold">{donation.name}</span>
+          {' '}donated{' '}
+          <span className="text-primary font-bold">${donation.amount}</span>
+          <span className="hidden sm:inline">
+            {' '}via{' '}
+            <span className="text-muted-foreground">{donation.brand}</span>
+          </span>
+        </p>
+      </div>
+      <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">{donation.timeAgo}</span>
+    </div>
+  );
+});
+

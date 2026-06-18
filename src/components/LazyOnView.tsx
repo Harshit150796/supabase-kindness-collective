@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -8,6 +8,12 @@ interface Props {
   rootMargin?: string;
   /** Optional className passed to the wrapper. */
   className?: string;
+  /**
+   * Opt into CSS `content-visibility: auto` with `contain-intrinsic-size` so
+   * the browser skips layout/paint while the section is off-screen — large
+   * win on mobile for long landing pages.
+   */
+  contentVisibilityAuto?: boolean;
 }
 
 /**
@@ -15,7 +21,13 @@ interface Props {
  * Used to defer below-the-fold landing sections so their JS chunks aren't
  * fetched or hydrated until the user scrolls toward them.
  */
-export function LazyOnView({ children, minHeight = 400, rootMargin = '300px', className }: Props) {
+export function LazyOnView({
+  children,
+  minHeight = 400,
+  rootMargin = '300px',
+  className,
+  contentVisibilityAuto = false,
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [show, setShow] = useState(false);
 
@@ -40,8 +52,16 @@ export function LazyOnView({ children, minHeight = 400, rootMargin = '300px', cl
     return () => obs.disconnect();
   }, [show, rootMargin]);
 
+  const style: CSSProperties & Record<string, string | number> = {};
+  if (!show) style.minHeight = minHeight;
+  if (contentVisibilityAuto) {
+    style.contentVisibility = 'auto';
+    const intrinsic = typeof minHeight === 'number' ? `${minHeight}px` : minHeight;
+    style.containIntrinsicSize = `0 ${intrinsic}`;
+  }
+
   return (
-    <div ref={ref} className={className} style={show ? undefined : { minHeight }}>
+    <div ref={ref} className={className} style={style}>
       {show ? children : null}
     </div>
   );
