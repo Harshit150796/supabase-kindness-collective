@@ -16,8 +16,6 @@ const ImpactDashboard = lazy(() => import('@/components/landing/ImpactDashboard'
 const CTASection = lazy(() => import('@/components/landing/CTASection').then(m => ({ default: m.CTASection })));
 const Footer = lazy(() => import('@/components/layout/Footer').then(m => ({ default: m.Footer })));
 
-const Fallback = ({ h = 400 }: { h?: number }) => <div style={{ minHeight: h }} aria-hidden />;
-
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
@@ -33,60 +31,59 @@ const Index = () => {
 
         <LiveActivityBar />
 
-
-        <Suspense fallback={<Fallback h={600} />}>
-          <LazyOnView minHeight={600}>
+        <LazyOnView minHeight={600} contentVisibilityAuto>
+          <Suspense fallback={null}>
             <ImpactStories />
-          </LazyOnView>
-        </Suspense>
-
-        <Suspense fallback={<Fallback h={600} />}>
-          <LazyOnView minHeight={600}>
-            <TrustTransparency />
-          </LazyOnView>
-        </Suspense>
-
-        <Suspense fallback={<Fallback h={500} />}>
-          <LazyOnView minHeight={500}>
-            <BrandLeaderboard />
-          </LazyOnView>
-        </Suspense>
-
-        <Suspense fallback={<Fallback h={700} />}>
-          <LazyOnView minHeight={700}>
-            <DonationFlow />
-          </LazyOnView>
-        </Suspense>
-
-        <Suspense fallback={<Fallback h={300} />}>
-          <LazyOnView minHeight={300}>
-            <SecurityBadges />
-          </LazyOnView>
-        </Suspense>
-
-        <Suspense fallback={<Fallback h={500} />}>
-          <LazyOnView minHeight={500}>
-            <TestimonialsSection />
-          </LazyOnView>
-        </Suspense>
-
-        <Suspense fallback={<Fallback h={400} />}>
-          <LazyOnView minHeight={400}>
-            <ImpactDashboard />
-          </LazyOnView>
-        </Suspense>
-
-        <Suspense fallback={<Fallback h={300} />}>
-          <LazyOnView minHeight={300}>
-            <CTASection />
-          </LazyOnView>
-        </Suspense>
-      </main>
-      <Suspense fallback={<Fallback h={300} />}>
-        <LazyOnView minHeight={300}>
-          <Footer />
+          </Suspense>
         </LazyOnView>
-      </Suspense>
+
+        <LazyOnView minHeight={600} contentVisibilityAuto>
+          <Suspense fallback={null}>
+            <TrustTransparency />
+          </Suspense>
+        </LazyOnView>
+
+        <LazyOnView minHeight={500} contentVisibilityAuto>
+          <Suspense fallback={null}>
+            <BrandLeaderboard />
+          </Suspense>
+        </LazyOnView>
+
+        <LazyOnView minHeight={700} contentVisibilityAuto>
+          <Suspense fallback={null}>
+            <DonationFlow />
+          </Suspense>
+        </LazyOnView>
+
+        <LazyOnView minHeight={300} contentVisibilityAuto>
+          <Suspense fallback={null}>
+            <SecurityBadges />
+          </Suspense>
+        </LazyOnView>
+
+        <LazyOnView minHeight={500} contentVisibilityAuto>
+          <Suspense fallback={null}>
+            <TestimonialsSection />
+          </Suspense>
+        </LazyOnView>
+
+        <LazyOnView minHeight={400} contentVisibilityAuto>
+          <Suspense fallback={null}>
+            <ImpactDashboard />
+          </Suspense>
+        </LazyOnView>
+
+        <LazyOnView minHeight={300} contentVisibilityAuto>
+          <Suspense fallback={null}>
+            <CTASection />
+          </Suspense>
+        </LazyOnView>
+      </main>
+      <LazyOnView minHeight={300} contentVisibilityAuto>
+        <Suspense fallback={null}>
+          <Footer />
+        </Suspense>
+      </LazyOnView>
     </div>
   );
 };
