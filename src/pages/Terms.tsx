@@ -98,6 +98,7 @@ export default function Terms() {
                 <li>Attempt to circumvent security measures</li>
                 <li>Use automated systems to access the Platform</li>
                 <li>Infringe on intellectual property rights</li>
+                <li>Originate transactions from, or provide support to, prohibited jurisdictions including Cuba, Iran, North Korea, Syria, and the Crimea, Donetsk, and Luhansk regions, or persons subject to financial sanctions</li>
               </ul>
             </section>
 
