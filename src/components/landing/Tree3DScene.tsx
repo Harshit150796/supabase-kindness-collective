@@ -360,10 +360,9 @@ function WindTracker() {
 export function Tree3DScene() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
-  const zoomProgressRef = useRef(0); // 0 = zoomed in (13), 1 = zoomed out (17)
+  const zoomProgressRef = useRef(0); // 0 = zoomed in, 1 = zoomed out
   const [inView, setInView] = useState(true);
   const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
-  const [mounted, setMounted] = useState(true);
   const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
   // DPR: 1.5 cap on mobile (visually indistinguishable at hero scale, ~30% cheaper),
   // 2 cap on desktop for crisp rendering.
@@ -373,7 +372,6 @@ export function Tree3DScene() {
     return [d, d];
   }, [isMobile]);
   const dpr = stableDpr;
-  // Post-processing (bloom + vignette) softens the whole scene; keep it off for clarity.
   const enablePost = false;
 
   useEffect(() => {
@@ -392,33 +390,43 @@ export function Tree3DScene() {
     return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
 
-  // On mobile, switch frameloop to 'demand' while the user is actively scrolling.
-  // This prevents the 3D canvas from competing with scroll work, which was causing
-  // the area just below the hero (LiveActivityBar) to visually blink during swipes.
-  const [isScrolling, setIsScrolling] = useState(false);
+  // Scroll-aware state for mobile:
+  //  - aboveFold: hero is mostly in view (< 25% scrolled past). When false,
+  //    the canvas switches to `demand` frameloop so it doesn't compete with
+  //    scroll work and cause neighbouring DOM (LiveActivityBar) to blink.
+  //  - mounted: when the user has scrolled well past the hero we fully
+  //    unmount the Canvas to free GPU memory; remount when they return.
+  const [aboveFold, setAboveFold] = useState(true);
+  const [mounted, setMounted] = useState(true);
   useEffect(() => {
     if (!isMobile) return;
-    let timer: number | undefined;
-    const onScroll = () => {
-      setIsScrolling(true);
-      if (timer) window.clearTimeout(timer);
-      timer = window.setTimeout(() => setIsScrolling(false), 200);
+    let raf = 0;
+    let queued = false;
+    const evaluate = () => {
+      queued = false;
+      const y = window.scrollY;
+      const vh = window.innerHeight || 1;
+      setAboveFold(y < vh * 0.25);
+      setMounted(y < vh * 1.5);
     };
+    const onScroll = () => {
+      if (queued) return;
+      queued = true;
+      raf = requestAnimationFrame(evaluate);
+    };
+    evaluate();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       window.removeEventListener('scroll', onScroll);
-      if (timer) window.clearTimeout(timer);
+      if (raf) cancelAnimationFrame(raf);
     };
   }, [isMobile]);
-
-
-
 
   // Scroll-to-zoom-then-release: desktop wheel only. Mobile keeps native scroll.
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-    if (isMobile) return; // never intercept touch swipes — they must scroll the page
+    if (isMobile) return;
 
     const WHEEL_SENSITIVITY = 0.0018;
 
@@ -438,22 +446,30 @@ export function Tree3DScene() {
     };
   }, [isMobile]);
 
-  const leafCount = isMobile ? 2000 : 7000;
-  const plantCap = isMobile ? 12 : 40;
+  const leafCount = isMobile ? 1200 : 7000;
+  const plantCap = isMobile ? 8 : 40;
+
+  // Effective inView: on mobile we additionally require aboveFold so frameloop
+  // drops to `demand` as soon as the user scrolls past the hero.
+  const effectiveInView = inView && tabVisible && (!isMobile || aboveFold);
 
   return (
     <InteractionProvider>
       <div
         ref={wrapRef}
         className="absolute inset-0 w-full h-full"
-        style={{ touchAction: 'pan-y' }}
+        style={{
+          touchAction: 'pan-y',
+          contain: 'strict',
+          willChange: 'transform',
+        }}
       >
         {mounted ? (
           <Tree3DInner
             controlsRef={controlsRef}
             zoomProgressRef={zoomProgressRef}
             dpr={dpr}
-            inView={inView && tabVisible && !isScrolling}
+            inView={effectiveInView}
             enablePost={enablePost}
             leafCount={leafCount}
             plantCap={plantCap}
