@@ -52,13 +52,11 @@ export function LazyOnView({
     return () => obs.disconnect();
   }, [show, rootMargin]);
 
-  const style: CSSProperties = {};
+  const style: CSSProperties & Record<string, string | number> = {};
   if (!show) style.minHeight = minHeight;
   if (contentVisibilityAuto) {
-    // @ts-expect-error — non-standard but widely supported (Chromium, Safari 18+)
     style.contentVisibility = 'auto';
     const intrinsic = typeof minHeight === 'number' ? `${minHeight}px` : minHeight;
-    // @ts-expect-error — non-standard
     style.containIntrinsicSize = `0 ${intrinsic}`;
   }
 
