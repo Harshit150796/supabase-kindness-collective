@@ -9,7 +9,7 @@ const PALETTES = {
   night: { top: '#0A1530', mid: '#1F2C5C', bot: '#3A4A7E' },
 };
 
-export function Sky() {
+export function Sky({ isMobile = false }: { isMobile?: boolean } = {}) {
   const { timeOfDay } = useInteraction();
 
   const targets = useMemo(
