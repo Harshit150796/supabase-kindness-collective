@@ -83,7 +83,7 @@ export function Sky({ isMobile = false }: { isMobile?: boolean } = {}) {
           <meshBasicMaterial color="#E8EBF5" toneMapped={false} />
         </mesh>
       )}
-      <DustMotes />
+      {!isMobile && <DustMotes />}
     </>
   );
 }

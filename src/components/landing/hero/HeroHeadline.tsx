@@ -59,7 +59,7 @@ export function HeroHeadline() {
           backdrop-filter creates a GPU compositing layer; iOS Safari drops it during
           scroll momentum, making the container flash blank.  On desktop (md+) the blur
           is still applied because desktop scroll is compositor-threaded and doesn't drop layers. */}
-      <div className="mt-3 md:mt-4 inline-flex items-center justify-center gap-2 bg-background/70 rounded-full px-2 py-1 md:bg-transparent md:p-0 md:backdrop-blur-sm">
+      <div className="mt-3 md:mt-4 inline-flex items-center justify-center gap-2 bg-background rounded-full px-2 py-1 md:bg-transparent md:p-0 md:backdrop-blur-sm">
         <Button asChild size="sm" className="shadow-lg">
           <Link to="/donate">
             Donate now <ArrowRight className="ml-1 w-3.5 h-3.5" />
