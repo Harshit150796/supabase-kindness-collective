@@ -1,58 +1,49 @@
-# Mobile UI Smoothness & Load Performance — Optimization Plan
+# Smoothness Pass #2 — Delayed Tree Mount + Mobile Blur Cleanup
 
-After re-reading `Index.tsx`, `HeroSection.tsx`, `Tree3DScene.tsx`, `LiveActivityBar.tsx`, `HeroHeadline.tsx`, `TopDonorsPanel.tsx`, `LazyOnView.tsx`, and `use-mobile.tsx`, here is what is still costing mobile users smoothness — and the targeted fixes I will apply. Nothing below changes business logic, copy, routes, or data flow; this is presentation/perf only.
+After re-reading `Tree3DScene.tsx`, `Tree.tsx`, `Ground.tsx`, `Sky.tsx`, `HeroSection.tsx`, the hero overlays and the rest of the landing chain, here is what's still hurting mobile and what causes the "blurry tree" feeling.
 
-## Issues identified
+## Why the tree looks blurry on mobile
 
-1. **3D canvas is too heavy on mobile.** `Tree3DScene` still runs with `antialias: true`, `PCFSoftShadowMap` shadows, `ACESFilmicToneMapping`, 2000 leaves, 2 directional lights + hemisphere + ambient + extra orange dir light, and `Environment preset="forest"` PMREM generation. Each one is fine alone; combined on a 3.75× DPR phone they cause sustained jank and the very blinking the user is reporting.
+1. **DPR is capped at 1.5 on a ~3.75× phone.** That means the canvas is rendered at 40% of native pixel density and then upscaled by the browser — the upscale itself is a soft blur. The previous trade-off was performance, but with the other mobile cuts (no AA, no shadows, no tone mapping, fewer leaves) we now have headroom to raise the cap.
+2. **Fog is set very close: `[18, 45]`.** On mobile the camera sits at distance 16, so the back half of the canopy and the sky horizon get tinted/faded — reads as a haze/blur over the leaves.
+3. **`ContactShadows` runs at `resolution=1024 blur=2.8`** every frame. On mobile that's a 1024×1024 RT updated continuously — produces a soft smudge under the trunk and costs GPU.
+4. **`DustMotes` (140 animated point sprites)** in `Sky.tsx` run every frame on mobile and visually add atmospheric blur.
+5. **Hero overlays use translucent chips (`bg-background/70`)** on top of the tree, which makes the area behind feel washed out.
 
-2. **Frame loop keeps running while user scrolls past the hero.** `inView` is wired in, but the 200ms scroll debounce means every momentum-scroll keeps the GPU busy. We can also drop frameloop to `'demand'` whenever the hero is < 25% visible, and fully unmount the Canvas when scrolled well past it.
+## Why mounting the tree later helps
 
-3. **`Index.tsx` double-reserves vertical space.** Every section is wrapped in both a `<Suspense fallback={<Fallback h=N>}>` *and* a `<LazyOnView minHeight=N>`. That stacks 3800 px of empty placeholders on first paint, inflating scroll height, hurting CLS scoring, and making the page feel "empty then pops". One reservation is enough.
+Currently `Tree3DScene` mounts immediately inside the hero. On a cold first paint the phone is also parsing/executing the lazy chunks, decoding fonts, hydrating React, *and* booting Three.js + GLTFLoader + the GLB model on the same main thread. The competition causes the visible jank/blink during the first 1–2 s. If we hold the canvas back until the page is idle (≈1.5 s after first paint, or on `requestIdleCallback`), the rest of the page renders cleanly and the tree appears smoothly with a fade-in.
 
-4. **`useIsMobile()` starts as `undefined`** in `LiveActivityBar`, so the first paint always renders the desktop branch (with `animate-pulse`, `animate-ping`, `backdrop-blur`, marquee) for ~1 frame on a phone before swapping. That is a visible flash. `HeroHeadline` was already fixed locally — apply the same synchronous-init pattern in the shared hook so every consumer benefits.
+## Changes
 
-5. **`LiveActivityBar` re-renders the whole bar every 3.5 s** because three state setters fire together; the donation card is not memoised, so the surrounding flex container reflows. Split state and memoise the inner card.
+### A. `HeroSection.tsx` — defer tree mount
+- Add a `treeReady` boolean, default `false`.
+- On mount: wait for `requestIdleCallback` (fallback `setTimeout(1500)`); also gate on `document.readyState === 'complete'` so we don't compete with image/font loading.
+- While `!treeReady`, render the existing gradient fallback (`from-[#BFD8E8] via-[#CFE6F5] to-[#E8F1E0]`) full-bleed so layout is identical.
+- When `treeReady` flips, mount `<Tree3DScene />` inside a wrapper that animates `opacity 0 → 1` over 600 ms (`transition-opacity`).
+- Keep the existing `Suspense` fallback (same gradient) so the lazy chunk load is also covered.
 
-6. **No `content-visibility` on off-screen sections.** Adding `content-visibility: auto` with a `contain-intrinsic-size` to lazy sections lets the browser skip layout/paint until they scroll in — large win on mobile.
+### B. `Tree3DScene.tsx` — sharper mobile render, less haze
+- Raise mobile DPR cap from `1.5` → `Math.min(devicePixelRatio, 2)`. Combined with `antialias:false` this is still cheaper than the original `1.5 + AA` config, and the tree edges become noticeably crisper on phones.
+- Push fog far on mobile: `<fog args={['#DCE6D5', 35, 90]} />` when `isMobile`, leave `[18, 45]` on desktop.
+- `ContactShadows`: lower `resolution` 1024 → 256 on mobile, `blur` 2.8 → 1.5. Already saving meaningfully because mobile has `shadows={false}` on the renderer, but `ContactShadows` is a separate planar pass and was still running — keep it (visual anchor under tree) but cheap.
+- Make `DustMotes` desktop-only (`{!isMobile && <DustMotes />}` inside `Sky.tsx`).
 
-7. **Tree3D wrapper has no `contain` hint.** The Canvas changes pixels constantly; without `contain: strict` the browser may re-evaluate ancestors. Adds GPU/CPU cost on every frame.
+### C. `Sky.tsx` — gate DustMotes on a prop
+- Accept `isMobile?: boolean` and skip `<DustMotes />` when true.
 
-8. **Hero overlays use heavy `backdrop-blur-xl` (TopDonorsPanel).** It's already `hidden md:block` so mobile is fine — leave as-is. Noted to confirm no regression.
+### D. `Ground.tsx` — cheaper shadow on mobile
+- Already accepts `isMobile`. Reduce `ContactShadows` `resolution`/`blur` based on it (mentioned above; concretely implemented in this file because that's where `ContactShadows` lives).
 
-## Changes to apply
+### E. `HeroHeadline.tsx` — drop translucent chip when tree is behind
+- The mobile pill (`bg-background/70 rounded-full`) wraps the "Donate now" button only. Switch to a solid `bg-background` so it doesn't blur/wash the canopy directly behind it. Desktop unchanged.
 
-### A. `Tree3DScene.tsx` — mobile-tuned renderer
-- Set `antialias: false` on mobile (DPR cap 1.5 already gives a clean look; AA is the single biggest fragment-shader cost).
-- Skip `shadows` entirely on mobile (`shadows={!isMobile && { type: PCFSoftShadowMap }}`); remove `castShadow` paths via the `isMobile` flag already threaded into `DayNightLights`.
-- Drop `toneMapping` to `NoToneMapping` on mobile (cheaper, visually negligible at hero scale with current palette).
-- Reduce `leafCount` mobile 2000 → 1200, `plantCap` 12 → 8, `AmbientBirds count` 2 → 1.
-- Remove the extra `directionalLight position={[0,4,-8]}` on mobile (kept on desktop for rim light).
-- Wrap the outer `<div ref={wrapRef}>` with inline style `contain: 'strict', willChange: 'transform'`.
-- Use a tighter scroll-pause threshold: switch frameloop to `'demand'` whenever `window.scrollY > window.innerHeight * 0.25` on mobile (not only while actively scrolling). Add a `scroll` listener with rAF throttling and update an `aboveFold` boolean.
-- Fully unmount the Canvas (`mounted=false`) when `scrollY > window.innerHeight * 1.5`, remount when user scrolls back near the top. Keeps the gradient fallback visible so layout doesn't shift.
-
-### B. `Index.tsx` — collapse double placeholders
-- Remove the `<Suspense fallback={<Fallback h=…>}>` wrappers; rely on `LazyOnView`'s built-in `minHeight` only. Where `Suspense` is still needed for the lazy import boundary, use `fallback={null}` (the surrounding `LazyOnView` already reserves space).
-- Add `style={{ contentVisibility: 'auto', containIntrinsicSize: '<h>px' }}` to each `LazyOnView` placeholder div via a new `contentVisibilityAuto` prop on `LazyOnView`.
-
-### C. `LazyOnView.tsx` — `content-visibility` support
-- Add optional `contentVisibilityAuto?: boolean` prop. When true, also set `contentVisibility: 'auto'` and `containIntrinsicSize` on the wrapper. Default off to avoid surprising existing call sites; opt-in from `Index.tsx`.
-
-### D. `use-mobile.tsx` — synchronous initial value
-- Initialise state with `window.innerWidth < MOBILE_BREAKPOINT` instead of `undefined`, matching the local fix already in `HeroHeadline`. Removes the first-frame desktop flash for every consumer (`LiveActivityBar` chief among them).
-
-### E. `LiveActivityBar.tsx` — fewer reflows
-- Extract the donation pill into a memoised sub-component keyed by `currentDonation.id` so the stats row and marquee don't re-render every 3.5 s.
-- Keep the existing scroll-pause logic; no behaviour change.
-
-## Out of scope (intentionally)
-- No change to copy, donation flow, auth, or any non-hero route.
-- No new dependencies.
-- Desktop visuals unchanged (AA, shadows, tone mapping, full leaf count all preserved via the `isMobile` branch).
+## Out of scope
+- No business logic, no copy, no auth, no routes, no new dependencies.
+- Desktop hero visuals unchanged (full fog, full ContactShadows resolution, dust motes, AA).
 
 ## Verification
-After implementing, I will:
-1. Open the preview at 390×844, scroll through the landing page, screenshot the hero + the area right below to confirm no blink.
-2. Run `browser--performance_profile` to confirm LCP / INP improvements on mobile viewport.
-3. Visually confirm desktop hero looks identical (shadows, AA, lighting all intact at ≥ 768 px).
+1. Open the preview at 390×844; confirm hero shows the gradient for ~1.5 s, then the tree fades in smoothly.
+2. Scroll up/down on mobile; confirm no blink in `LiveActivityBar`.
+3. Confirm leaves/branches appear visibly sharper (higher DPR + farther fog).
+4. Switch to desktop viewport; confirm fog, shadows, dust motes, AA all look identical to before.
