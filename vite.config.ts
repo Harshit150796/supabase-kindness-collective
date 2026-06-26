@@ -15,4 +15,17 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Keep the 3D stack in a single chunk so the lazy Tree3DScene import
+        // doesn't fan out into a 3-step waterfall on mobile. Recharts is split
+        // separately so admin analytics never drags it into the landing bundle.
+        manualChunks: {
+          three: ['three', '@react-three/fiber', '@react-three/drei'],
+          charts: ['recharts'],
+        },
+      },
+    },
+  },
 }));

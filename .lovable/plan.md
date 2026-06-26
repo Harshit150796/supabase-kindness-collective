@@ -1,49 +1,67 @@
-# Smoothness Pass #2 — Delayed Tree Mount + Mobile Blur Cleanup
+# Landing-page Performance & Polish Pass #3
 
-After re-reading `Tree3DScene.tsx`, `Tree.tsx`, `Ground.tsx`, `Sky.tsx`, `HeroSection.tsx`, the hero overlays and the rest of the landing chain, here is what's still hurting mobile and what causes the "blurry tree" feeling.
+## Measured problems (mobile, 390×844, dpr=3.75)
 
-## Why the tree looks blurry on mobile
+From a live `performance_profile` + screenshot just now:
 
-1. **DPR is capped at 1.5 on a ~3.75× phone.** That means the canvas is rendered at 40% of native pixel density and then upscaled by the browser — the upscale itself is a soft blur. The previous trade-off was performance, but with the other mobile cuts (no AA, no shadows, no tone mapping, fewer leaves) we now have headroom to raise the cap.
-2. **Fog is set very close: `[18, 45]`.** On mobile the camera sits at distance 16, so the back half of the canopy and the sky horizon get tinted/faded — reads as a haze/blur over the leaves.
-3. **`ContactShadows` runs at `resolution=1024 blur=2.8`** every frame. On mobile that's a 1024×1024 RT updated continuously — produces a soft smudge under the trunk and costs GPU.
-4. **`DustMotes` (140 animated point sprites)** in `Sky.tsx` run every frame on mobile and visually add atmospheric blur.
-5. **Hero overlays use translucent chips (`bg-background/70`)** on top of the tree, which makes the area behind feel washed out.
+| Metric | Current | Target |
+|---|---|---|
+| First Contentful Paint | **7.17 s** | < 2.0 s |
+| DOMContentLoaded | **6.95 s** | < 3.0 s |
+| Cumulative Layout Shift | **0.40 (poor)** | < 0.1 |
+| Total JS shipped on landing | **3.89 MB** across 196 files | < 1.5 MB |
+| Event listeners | 2 486 | < 1 000 |
+| Largest single image | `favicon-192.png` **676 KB** | < 20 KB |
+| Logo | `src/assets/logo.png` **222 KB** | < 30 KB |
+| Tree model | `/models/tree.glb` **1.46 MB** | acceptable, but defer |
+| Brand logos | Google favicon endpoint, 1.5–1.8 s each, blocks paint | self-host, < 50 ms |
 
-## Why mounting the tree later helps
+Visible regressions on the screenshot:
+- The **Privacy banner** covers the hero CTAs and the bottom third of the tree on a 390 px screen — users can't reach "Donate now" until they dismiss it.
+- The single shifting element responsible for CLS 0.40 is the hero `div` swapping from gradient fallback to the 3D canvas (the canvas has no reserved aspect during the fade-in, the parent is sized via `h-[62svh]` but the inner wrapper re-layouts).
 
-Currently `Tree3DScene` mounts immediately inside the hero. On a cold first paint the phone is also parsing/executing the lazy chunks, decoding fonts, hydrating React, *and* booting Three.js + GLTFLoader + the GLB model on the same main thread. The competition causes the visible jank/blink during the first 1–2 s. If we hold the canvas back until the page is idle (≈1.5 s after first paint, or on `requestIdleCallback`), the rest of the page renders cleanly and the tree appears smoothly with a fade-in.
+## Plan — 5 small, independent fixes
 
-## Changes
+### Fix 1 — Eliminate CLS 0.40 on hero swap
+File: `src/components/landing/HeroSection.tsx`
+- The fallback `<GradientFallback />` and the `<Suspense>` wrapper currently render as siblings under a conditional. Replace the conditional with a single absolutely-positioned stack: gradient is always rendered, the canvas wrapper sits on top with `opacity` transition. No DOM swap → no shift.
+- Add `style={{ contain: 'layout paint' }}` to the hero section so child paints can't shift siblings.
 
-### A. `HeroSection.tsx` — defer tree mount
-- Add a `treeReady` boolean, default `false`.
-- On mount: wait for `requestIdleCallback` (fallback `setTimeout(1500)`); also gate on `document.readyState === 'complete'` so we don't compete with image/font loading.
-- While `!treeReady`, render the existing gradient fallback (`from-[#BFD8E8] via-[#CFE6F5] to-[#E8F1E0]`) full-bleed so layout is identical.
-- When `treeReady` flips, mount `<Tree3DScene />` inside a wrapper that animates `opacity 0 → 1` over 600 ms (`transition-opacity`).
-- Keep the existing `Suspense` fallback (same gradient) so the lazy chunk load is also covered.
+### Fix 2 — Hide privacy banner content overlap on small screens
+File: `src/components/PrivacyConsentBanner.tsx` (read first)
+- On `<sm` make the banner a compact bottom bar (single line + "Okay" + "More") instead of the tall card that covers the hero. Tall card stays for `md+`.
+- Add `pb-[env(safe-area-inset-bottom)]`.
 
-### B. `Tree3DScene.tsx` — sharper mobile render, less haze
-- Raise mobile DPR cap from `1.5` → `Math.min(devicePixelRatio, 2)`. Combined with `antialias:false` this is still cheaper than the original `1.5 + AA` config, and the tree edges become noticeably crisper on phones.
-- Push fog far on mobile: `<fog args={['#DCE6D5', 35, 90]} />` when `isMobile`, leave `[18, 45]` on desktop.
-- `ContactShadows`: lower `resolution` 1024 → 256 on mobile, `blur` 2.8 → 1.5. Already saving meaningfully because mobile has `shadows={false}` on the renderer, but `ContactShadows` is a separate planar pass and was still running — keep it (visual anchor under tree) but cheap.
-- Make `DustMotes` desktop-only (`{!isMobile && <DustMotes />}` inside `Sky.tsx`).
+### Fix 3 — Right-size the two heavyweight images
+- `public/favicon-192.png` — re-export at 192×192 PNG-8 (target ≤ 15 KB). It's currently a 676 KB PNG that the browser fetches as the apple-touch icon on every mobile visit.
+- `src/assets/logo.png` — re-export at 2× display size as WebP and update the import. Target ≤ 25 KB.
+- Add `<link rel="preload" as="image" href="/src/assets/logo.png" fetchpriority="high">` in `index.html` for LCP.
 
-### C. `Sky.tsx` — gate DustMotes on a prop
-- Accept `isMobile?: boolean` and skip `<DustMotes />` when true.
+(These are static-file replacements + one `<link>` edit — no logic changes.)
 
-### D. `Ground.tsx` — cheaper shadow on mobile
-- Already accepts `isMobile`. Reduce `ContactShadows` `resolution`/`blur` based on it (mentioned above; concretely implemented in this file because that's where `ContactShadows` lives).
+### Fix 4 — Self-host brand logos instead of Google favicon service
+File: `src/data/brandLogos.ts` + usage in `LiveActivityBar.tsx`, `BrandLeaderboard.tsx`, `PartnerBrands.tsx`
+- Today every brand logo hits `https://www.google.com/s2/favicons?...&sz=128`. Each one is 1.5–1.8 s, blocks the marquee, and leaks the user's IP to Google.
+- Download the ~10 brand favicons once into `public/brands/*.png` (16 KB each), point `brandLogos.ts` at the local paths. Marquee paints instantly and works offline / on flaky networks.
 
-### E. `HeroHeadline.tsx` — drop translucent chip when tree is behind
-- The mobile pill (`bg-background/70 rounded-full`) wraps the "Donate now" button only. Switch to a solid `bg-background` so it doesn't blur/wash the canopy directly behind it. Desktop unchanged.
+### Fix 5 — Shrink the JS waterfall
+- `index.html`: add `<link rel="modulepreload">` for the main entry chunk only; remove any other ad-hoc preloads.
+- `vite.config.ts`: add a `manualChunks` split so `three`, `@react-three/fiber`, `@react-three/drei` land in **one** chunk (currently they're split into `chunk-Z24DV3IB.js` 229 KB + `chunk-TAFHJI2K.js` 139 KB + `@react-three_drei.js` 775 KB which fetch sequentially behind the Vite dep optimizer in dev — in prod they're a single waterfall). Also chunk `recharts` separately so admin pages don't drag it into the landing bundle.
+- Confirm `Tree3DScene` import in `HeroSection` stays lazy (it already is) — the `manualChunks` only affects how the chunk is split, not when it loads.
 
 ## Out of scope
-- No business logic, no copy, no auth, no routes, no new dependencies.
-- Desktop hero visuals unchanged (full fog, full ContactShadows resolution, dust motes, AA).
+- No copy, auth, RLS, routing, business-logic, or new dependencies.
+- Desktop hero visuals must remain identical.
+- No changes to the 3D scene itself beyond what fix #1 requires.
 
 ## Verification
-1. Open the preview at 390×844; confirm hero shows the gradient for ~1.5 s, then the tree fades in smoothly.
-2. Scroll up/down on mobile; confirm no blink in `LiveActivityBar`.
-3. Confirm leaves/branches appear visibly sharper (higher DPR + farther fog).
-4. Switch to desktop viewport; confirm fog, shadows, dust motes, AA all look identical to before.
+1. Re-run `performance_profile` at 390×844. Expect CLS < 0.1, FCP < 3 s.
+2. Visual diff at 1440×900 — hero, marquee, leaderboard pixel-identical.
+3. DevTools Network — confirm 0 requests to `google.com/s2/favicons`, `favicon-192.png` < 20 KB, `logo.*` < 30 KB.
+4. Screenshot at 390×844 — Privacy banner no longer covers the "Donate now" button.
+
+## Technical notes (for the implementer)
+- For CLS, the fix is structural — don't try to animate `height`. Stack gradient + canvas in the same absolutely-positioned layer.
+- For favicon-192, use `pngquant --quality 60-80` or re-export from the source SVG at 192×192.
+- For brand logos, fetch once with `curl -o public/brands/walmart.png https://www.google.com/s2/favicons?domain=walmart.com&sz=128` for each brand during implementation.
+- The Vite `manualChunks` block goes inside `build.rollupOptions.output` and should look like `{ three: ['three','@react-three/fiber','@react-three/drei'], charts: ['recharts'] }`.

@@ -9,7 +9,10 @@ const Tree3DScene = lazy(() =>
 );
 
 const GradientFallback = () => (
-  <div className="w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#CFE6F5] to-[#E8F1E0]" />
+  <div
+    aria-hidden
+    className="absolute inset-0 w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#CFE6F5] to-[#E8F1E0]"
+  />
 );
 
 export function HeroSection() {
@@ -44,16 +47,21 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="relative w-full h-[62svh] md:h-[88vh] overflow-hidden">
-      <div className="absolute inset-0">
-        {treeReady ? (
-          <Suspense fallback={<GradientFallback />}>
-            <div className="w-full h-full animate-in fade-in duration-700">
-              <Tree3DScene />
-            </div>
+    <section
+      className="relative w-full h-[62svh] md:h-[88vh] overflow-hidden"
+      style={{ contain: 'layout paint' }}
+    >
+      {/* Stacked layers — no DOM swap, no CLS. The gradient always paints first;
+          the canvas wrapper sits on top and fades in once Tree3DScene is mounted. */}
+      <GradientFallback />
+      <div
+        className="absolute inset-0 w-full h-full transition-opacity duration-700 ease-out"
+        style={{ opacity: treeReady ? 1 : 0 }}
+      >
+        {treeReady && (
+          <Suspense fallback={null}>
+            <Tree3DScene />
           </Suspense>
-        ) : (
-          <GradientFallback />
         )}
       </div>
 
