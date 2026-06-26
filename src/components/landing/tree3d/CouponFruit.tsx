@@ -433,8 +433,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         >
           <div
             style={{
-              background: 'rgba(255,255,255,0.92)',
-              backdropFilter: 'blur(8px)',
+              background: '#FFFFFF',
               border: '1.5px solid #D4A017',
               borderRadius: '14px',
               padding: '10px 16px',
