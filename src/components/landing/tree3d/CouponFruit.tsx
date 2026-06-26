@@ -24,6 +24,7 @@ interface Props {
   onLanded: (idx: number, restPos: THREE.Vector3) => void;
   onRegrown: (idx: number) => void;
   onClickHanging: (idx: number) => void;
+  isMobile?: boolean;
 }
 
 const HANG_DROP = 1.0;
@@ -192,7 +193,7 @@ function CouponFace({ data }: { data: CouponData }) {
   );
 }
 
-export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging }: Props) {
+export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false }: Props) {
   const groupRef = useRef<THREE.Group>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const velocityRef = useRef({ y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 });
@@ -384,8 +385,10 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
           />
         </mesh>
 
-        {/* Crisp vector overlay anchored to the front face — follows sway/fall via parent group */}
-        {state.phase !== 'regrowing' && (
+        {/* Crisp vector overlay anchored to the front face — desktop only.
+            On mobile, CSS3D layers (Html transform) re-rasterize at unstable
+            resolutions during scroll, causing random blur around the coupons. */}
+        {!isMobile && state.phase !== 'regrowing' && (
           <Html
             transform
             sprite
@@ -430,8 +433,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         >
           <div
             style={{
-              background: 'rgba(255,255,255,0.92)',
-              backdropFilter: 'blur(8px)',
+              background: '#FFFFFF',
               border: '1.5px solid #D4A017',
               borderRadius: '14px',
               padding: '10px 16px',
