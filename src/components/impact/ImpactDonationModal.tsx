@@ -132,7 +132,7 @@ export function ImpactDonationModal({
     const [couponsRes, brandsRes] = await Promise.all([
       supabase
         .from('coupons')
-        .select('id, code, value, status, store_name, created_at')
+        .select('id, value, status, store_name, created_at')
         .eq('donation_id', donation.id)
         .order('store_name', { ascending: true })
         .order('created_at', { ascending: true }),
