@@ -347,7 +347,7 @@ export function ImpactDonationModal({
                                 <span className="text-xs">{statusConf.label}</span>
                               </div>
                               <p className="text-xs text-muted-foreground mt-1 font-mono truncate">
-                                {coupon.code}
+                                Code hidden
                               </p>
                             </div>
                           );
