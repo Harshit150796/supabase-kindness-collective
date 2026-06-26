@@ -169,8 +169,8 @@ function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
     }
   });
 
-  const shadowSize = isMobile ? 512 : 4096;
-  const shadowBlur = isMobile ? 2 : 25;
+  const shadowSize = isMobile ? 1024 : 4096;
+  const shadowBlur = isMobile ? 6 : 25;
 
   return (
     <>
