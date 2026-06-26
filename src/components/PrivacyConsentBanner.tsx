@@ -38,9 +38,33 @@ export function PrivacyConsentBanner() {
       role="dialog"
       aria-live="polite"
       aria-label="Privacy information"
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-3xl rounded-2xl border border-border bg-background shadow-2xl animate-in slide-in-from-bottom duration-500"
+      className="fixed bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-1rem)] md:w-[calc(100%-2rem)] max-w-3xl rounded-xl md:rounded-2xl border border-border bg-background shadow-2xl animate-in slide-in-from-bottom duration-500"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="p-5 md:p-6">
+      {/* Compact one-line bar on mobile so it doesn't cover the hero CTA. */}
+      <div className="md:hidden flex items-center gap-2 px-3 py-2">
+        <p className="text-xs text-muted-foreground flex-1 min-w-0 leading-snug">
+          We use cookies. See our{' '}
+          <Link to="/privacy" className="underline underline-offset-2">
+            Privacy
+          </Link>
+          {' & '}
+          <Link to="/terms" className="underline underline-offset-2">
+            Terms
+          </Link>
+          .
+        </p>
+        <Button
+          onClick={accept}
+          size="sm"
+          className="shrink-0 h-8 px-4 rounded-lg text-xs font-semibold"
+        >
+          Okay
+        </Button>
+      </div>
+
+      {/* Full card on md+ where there is room beside the hero. */}
+      <div className="hidden md:block p-5 md:p-6">
         <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-bold text-foreground mb-1">
