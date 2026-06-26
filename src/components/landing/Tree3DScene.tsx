@@ -308,9 +308,9 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
       <Ground y={GROUND_Y} isMobile={isMobile} />
       <HitZones />
       {!isMobile && <Fireflies />}
-      <TrunkRipple />
-      <Bird />
-      <AmbientBirds count={isMobile ? 1 : 6} />
+      {!isMobile && <TrunkRipple />}
+      {!isMobile && <Bird />}
+      {!isMobile && <AmbientBirds count={6} />}
       <PlantsLayer cap={plantCap} />
 
 
@@ -325,6 +325,7 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
           onLanded={handleLanded}
           onRegrown={handleRegrown}
           onClickHanging={dropOne}
+          isMobile={isMobile}
         />
       ))}
 
