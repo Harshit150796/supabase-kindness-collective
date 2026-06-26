@@ -483,7 +483,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
   return (
     <>
       <Canvas
-        shadows={isMobile ? false : { type: THREE.PCFSoftShadowMap }}
+        shadows={{ type: THREE.PCFSoftShadowMap }}
         dpr={dpr}
         frameloop={inView ? 'always' : 'demand'}
         camera={{ position: isMobile ? [0, 4.4, 16] : [0, 4.0, 13], fov: isMobile ? 32 : 38 }}
@@ -491,8 +491,8 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
           antialias: !isMobile,
           alpha: true,
           powerPreference: isMobile ? 'low-power' : 'high-performance',
-          toneMapping: isMobile ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.05,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: isMobile ? 1.1 : 1.05,
         }}
         style={{ background: 'transparent' }}
         onPointerDown={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(true); }}
