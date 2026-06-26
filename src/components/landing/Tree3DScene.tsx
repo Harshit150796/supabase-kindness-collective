@@ -329,7 +329,7 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
         />
       ))}
 
-      {!isMobile && <Environment preset="forest" background={false} />}
+      <Environment preset="forest" background={false} />
     </>
   );
 }
