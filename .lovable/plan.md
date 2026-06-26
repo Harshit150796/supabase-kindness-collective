@@ -1,41 +1,26 @@
-# Enlarge Mobile Landscape + Full Desktop Feature Parity
+## What's causing the "weird circle"
 
-## Goal
-Make the mobile hero landscape ~1 cm taller and remove every remaining mobile-only downgrade so phones get the same vibrant, full-featured 3D scene as desktop.
+In `src/components/landing/hero/HeroHeadline.tsx`, the buttons sit inside a mobile-only wrapper:
 
-## Changes
+```tsx
+<div className="... inline-flex ... bg-background rounded-full px-2 py-1 md:bg-transparent md:p-0 ...">
+```
 
-### 1. Increase mobile landscape height (~1 cm ≈ 38 px ≈ ~6 svh)
-- `src/components/landing/HeroSection.tsx`: mobile hero height `h-[52svh]` → `h-[58svh]`.
+That `bg-background rounded-full` creates the solid pill/oval ring that's showing around the Donate now button on phones. It was added earlier to stop the translucent button from looking blurry over the tree — but it reads as a stray circle.
 
-### 2. Bring all desktop features to mobile (full parity)
-In `src/components/landing/Tree3DScene.tsx`:
-- **Lighting:** add the desktop back-fill `<directionalLight position={[0,4,-8]} intensity={0.35} color="#FFD8A8" />` on mobile too; drop the mobile-only hemisphere stand-in.
-- **Fog:** use desktop values `[18, 45]` on mobile as well.
-- **Sky / Ground:** pass `isMobile={false}` so both render in full-quality desktop mode.
-- **Camera:** use the desktop camera (`[0, 4.0, 13]`, fov 38, target `[0, 3.4, 0]`).
-- **Leaves:** raise mobile `leafCount` 3000 → 7000 (desktop value).
-- **Plants:** raise mobile `plantCap` 14 → 40 (desktop value).
-- **Birds:** `AmbientBirds count={6}` on mobile (same as desktop).
-- **Antialiasing & power:** enable `antialias: true` and `powerPreference: 'high-performance'` on mobile.
-- **Shadow map:** raise to desktop 4096 with full blur samples.
-- **OrbitControls min/max distance:** use desktop `9 / 17`.
+## Plan
 
-### 3. CouponFruit overlay
-- `src/components/landing/tree3d/CouponFruit.tsx`: stop suppressing the CSS3D `<Html transform>` coupon face on mobile so the labels look identical to desktop.
+1. **Remove the mobile pill background** in `HeroHeadline.tsx`. Replace the wrapper with a plain flex row (no `bg-background`, no `rounded-full`, no `backdrop-blur`) so the buttons sit cleanly over the landscape on every screen size.
 
-### 4. InteractionContext
-- `src/components/landing/tree3d/InteractionContext.tsx`: remove the mobile-forced 'day' lock so mobile follows the same time-of-day behavior as desktop.
+2. **Bring back the "Apply as Recipient" CTA** next to "Donate now", visible on both mobile and desktop:
+   - Add a second `Button` (`variant="outline"`, `size="sm"`) linking to `/apply` (the existing `ApplyRecipient` page route).
+   - Drop the desktop-only "How it works" button so the hero stays to two primary CTAs — Donate now (primary) and Apply as Recipient (outline) — matching the rest of the site's pairing.
+   - Give the outline button a solid `bg-background` fill (not the translucent `bg-background/70 backdrop-blur-sm`) so it stays crisp over the tree on mobile without producing a halo.
 
-## Files to change
-- `src/components/landing/HeroSection.tsx`
-- `src/components/landing/Tree3DScene.tsx`
-- `src/components/landing/tree3d/CouponFruit.tsx`
-- `src/components/landing/tree3d/InteractionContext.tsx`
+3. **Keep spacing tight** so both buttons fit on a 384px-wide viewport: `gap-2`, `size="sm"`, short labels ("Donate now", "Apply as Recipient"). No layout/height changes to the hero container.
 
-## Trade-off the user should know
-Full desktop parity on phones (7000 leaves, 4096 shadows, AA, CSS3D coupon labels, forest IBL, post-effects-free but full lighting) will be noticeably heavier on mid/low-end phones — expect lower FPS and possibly some of the earlier blur/jank to return on weaker devices. This is the explicit "same as laptop" request; if any phone struggles, we can dial back individual items afterwards.
+### Files touched
+- `src/components/landing/hero/HeroHeadline.tsx` (only this file)
 
-## Out of scope
-- No layout/content changes outside hero height.
-- No changes to the live activity bar, headline, or other sections.
+### Out of scope
+- No changes to the 3D scene, live activity bar, routing, or other hero copy.
