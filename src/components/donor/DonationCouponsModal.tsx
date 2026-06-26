@@ -278,7 +278,7 @@ export function DonationCouponsModal({ donation, open, onOpenChange }: DonationC
                                   </div>
                                   <div>
                                     <p className="font-medium text-sm">${coupon.value?.toFixed(2)}</p>
-                                    <p className="text-xs text-muted-foreground font-mono">{coupon.code}</p>
+                                    <p className="text-xs text-muted-foreground font-mono">Code hidden</p>
                                   </div>
                                 </div>
                                 <Badge
