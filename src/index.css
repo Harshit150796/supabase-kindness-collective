@@ -168,8 +168,8 @@
   }
   
   @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-20px); }
+    0%, 100% { transform: translate3d(0, 0px, 0); }
+    50% { transform: translate3d(0, -20px, 0); }
   }
   
   /* Slow float for decorative elements */
@@ -178,8 +178,8 @@
   }
   
   @keyframes float-slow {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-15px) rotate(3deg); }
+    0%, 100% { transform: translate3d(0, 0px, 0) rotate(0deg); }
+    50% { transform: translate3d(0, -15px, 0) rotate(3deg); }
   }
   
   .float-slow-reverse {
@@ -187,8 +187,8 @@
   }
   
   @keyframes float-slow-reverse {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(12px) rotate(-2deg); }
+    0%, 100% { transform: translate3d(0, 0px, 0) rotate(0deg); }
+    50% { transform: translate3d(0, 12px, 0) rotate(-2deg); }
   }
   
   /* Pulse glow */
@@ -232,11 +232,11 @@
   @keyframes slide-up {
     from {
       opacity: 0;
-      transform: translateY(30px);
+      transform: translate3d(0, 30px, 0);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translate3d(0, 0, 0);
     }
   }
   
@@ -278,11 +278,11 @@
   @keyframes slide-in-right {
     from {
       opacity: 0;
-      transform: translateX(30px);
+      transform: translate3d(30px, 0, 0);
     }
     to {
       opacity: 1;
-      transform: translateX(0);
+      transform: translate3d(0, 0, 0);
     }
   }
   
@@ -294,11 +294,11 @@
   @keyframes slide-in-left {
     from {
       opacity: 0;
-      transform: translateX(-30px);
+      transform: translate3d(-30px, 0, 0);
     }
     to {
       opacity: 1;
-      transform: translateX(0);
+      transform: translate3d(0, 0, 0);
     }
   }
   
@@ -319,8 +319,8 @@
   }
   
   @keyframes bounce-subtle {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(0, -5px, 0); }
   }
   
   /* Sparkle rotation */
@@ -399,7 +399,7 @@
   }
   
   .hover-lift:hover {
-    transform: translateY(-2px);
+    transform: translate3d(0, -2px, 0);
     box-shadow: 0 8px 25px -5px hsl(var(--foreground) / 0.1);
   }
   
@@ -430,7 +430,7 @@
   }
   
   .pill-chip:hover {
-    transform: translateY(-1px);
+    transform: translate3d(0, -1px, 0);
     box-shadow: 0 4px 12px -2px hsl(var(--foreground) / 0.1);
   }
   
