@@ -38,7 +38,7 @@ export default function FAQ() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <SEO
         title="FAQ — Donations, Verification & Coupon Redemption"
         description="Answers about donating, recipient verification, coupon redemption, security, and how CouponDonation turns your gift into real grocery help for families."

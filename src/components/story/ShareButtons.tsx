@@ -96,30 +96,33 @@ export function ShareButtons({ title, url, compact = false }: ShareButtonsProps)
         <Button 
           variant="outline" 
           size="icon"
+          aria-label="Share on Twitter"
           className="flex-1"
           asChild
         >
-          <a href={shareLinks.twitter} target="_blank" rel="noopener noreferrer">
+          <a href={shareLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="Share on Twitter">
             <Twitter className="w-4 h-4" />
           </a>
         </Button>
         <Button 
           variant="outline" 
           size="icon"
+          aria-label="Share on Facebook"
           className="flex-1"
           asChild
         >
-          <a href={shareLinks.facebook} target="_blank" rel="noopener noreferrer">
+          <a href={shareLinks.facebook} target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook">
             <Facebook className="w-4 h-4" />
           </a>
         </Button>
         <Button 
           variant="outline" 
           size="icon"
+          aria-label="Share by email"
           className="flex-1"
           asChild
         >
-          <a href={shareLinks.email}>
+          <a href={shareLinks.email} aria-label="Share by email">
             <Mail className="w-4 h-4" />
           </a>
         </Button>

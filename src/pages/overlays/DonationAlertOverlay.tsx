@@ -97,7 +97,7 @@ const DonationAlertOverlay = () => {
   }, [fundraiserId]);
 
   return (
-    <div className="min-h-screen bg-transparent flex items-start justify-center pt-8">
+    <div className="min-h-dvh bg-transparent flex items-start justify-center pt-8">
       <div 
         className={`
           transition-all duration-500 ease-out

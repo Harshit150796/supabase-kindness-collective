@@ -14,7 +14,7 @@ export default function BlogPost() {
   const { data: post, isLoading } = useCMSPost(slug || '');
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       {post && (
         <SEO
           title={post.title}

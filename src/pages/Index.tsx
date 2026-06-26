@@ -18,7 +18,7 @@ const Footer = lazy(() => import('@/components/layout/Footer').then(m => ({ defa
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <SEO
         title="CouponDonation - Transforming Giving Through Generosity"
         description="CouponDonation converts your donation into grocery coupons for verified families in need. Donate to causes from Walmart, Target, Amazon and more."

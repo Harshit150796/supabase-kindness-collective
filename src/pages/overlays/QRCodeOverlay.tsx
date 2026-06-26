@@ -55,14 +55,14 @@ const QRCodeOverlay = () => {
   };
 
   if (!fundraiser) {
-    return <div className="min-h-screen bg-transparent" />;
+    return <div className="min-h-dvh bg-transparent" />;
   }
 
   const fundraiserUrl = `${window.location.origin}/f/${fundraiser.unique_slug}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(fundraiserUrl)}&bgcolor=1a1a2e&color=10b981`;
 
   return (
-    <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-transparent flex items-center justify-center p-4">
       <div className="bg-[#1a1a2e]/95 backdrop-blur-sm rounded-3xl p-8 border border-white/10 shadow-2xl">
         {/* QR Code */}
         <div className="bg-white rounded-2xl p-4 mb-6">

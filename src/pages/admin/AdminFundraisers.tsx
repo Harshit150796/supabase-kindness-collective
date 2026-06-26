@@ -522,12 +522,12 @@ export default function AdminFundraisers() {
                       {/* Actions */}
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         {f.unique_slug && (
-                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => window.open(`/f/${f.unique_slug}`, '_blank')} title="View public page">
+                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => window.open(`/f/${f.unique_slug}`, '_blank')} title="View public page" aria-label="View public fundraiser page">
                             <ExternalLink className="w-4 h-4 text-muted-foreground" />
                           </Button>
                         )}
                         <Select value={f.status || 'pending'} onValueChange={v => changeStatus(f.id, v)}>
-                          <SelectTrigger className="h-8 w-[100px] text-xs">
+                          <SelectTrigger className="h-8 w-[100px] text-xs" aria-label="Fundraiser status">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -537,10 +537,10 @@ export default function AdminFundraisers() {
                             <SelectItem value="completed">Completed</SelectItem>
                           </SelectContent>
                         </Select>
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(f)}>
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(f)} aria-label="Edit fundraiser">
                           <Pencil className="w-4 h-4 text-muted-foreground" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 hover:text-destructive" onClick={() => setDeleteId(f.id)}>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 hover:text-destructive" onClick={() => setDeleteId(f.id)} aria-label="Delete fundraiser">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>

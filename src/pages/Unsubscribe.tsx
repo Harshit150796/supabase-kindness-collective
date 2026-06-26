@@ -38,7 +38,7 @@ export default function Unsubscribe() {
   }, [token]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-dvh flex flex-col bg-background">
       <Navbar />
       <main className="flex-1 flex items-center justify-center p-4">
         <Card className="max-w-md w-full">

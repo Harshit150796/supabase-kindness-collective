@@ -326,6 +326,7 @@ export const ShareModal = ({
                 <Button
                   variant="outline"
                   size="icon"
+                  aria-label={copied ? 'Link copied' : 'Copy fundraiser link'}
                   onClick={handleCopy}
                   className="flex-shrink-0"
                 >

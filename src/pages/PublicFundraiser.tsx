@@ -204,7 +204,7 @@ const PublicFundraiser = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-dvh bg-background">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -215,7 +215,7 @@ const PublicFundraiser = () => {
 
   if (error || !fundraiser) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-dvh bg-background">
         <Navbar />
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
           <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -240,7 +240,7 @@ const PublicFundraiser = () => {
   const progressPercent = getProgressPercentage();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <SEO
         title={`${fundraiser.title} — Fundraiser`}
         description={(fundraiser.story || `Support ${fundraiser.title} on CouponDonation. Your donation becomes real grocery coupons for verified families.`).slice(0, 155)}

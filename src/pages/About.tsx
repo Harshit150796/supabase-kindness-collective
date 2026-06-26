@@ -110,7 +110,7 @@ export default function About() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <SEO
         title="About CouponDonation — Our Mission to Feed Families"
         description="Meet the team behind CouponDonation and learn how we convert donations into grocery coupons for verified families across America, with 95% efficiency."

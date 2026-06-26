@@ -4,7 +4,7 @@ import { Footer } from '@/components/layout/Footer';
 
 export default function Terms() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <SEO
         title="Terms of Service"
         description="Terms and conditions for using CouponDonation: donation policies, recipient eligibility, refunds, and platform usage."
