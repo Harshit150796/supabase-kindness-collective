@@ -55,11 +55,7 @@ export function HeroHeadline() {
           </span>
         )}
       </div>
-      {/* FIX #3: Remove backdrop-blur-sm on mobile.
-          backdrop-filter creates a GPU compositing layer; iOS Safari drops it during
-          scroll momentum, making the container flash blank.  On desktop (md+) the blur
-          is still applied because desktop scroll is compositor-threaded and doesn't drop layers. */}
-      <div className="mt-3 md:mt-4 inline-flex items-center justify-center gap-2 bg-background rounded-full px-2 py-1 md:bg-transparent md:p-0 md:backdrop-blur-sm">
+      <div className="mt-3 md:mt-4 flex items-center justify-center gap-2">
         <Button asChild size="sm" className="shadow-lg">
           <Link to="/donate">
             Donate now <ArrowRight className="ml-1 w-3.5 h-3.5" />
@@ -69,9 +65,9 @@ export function HeroHeadline() {
           asChild
           size="sm"
           variant="outline"
-          className="hidden md:inline-flex bg-background/70 backdrop-blur-sm"
+          className="bg-background shadow-lg"
         >
-          <Link to="/how-it-works">How it works</Link>
+          <Link to="/apply">Apply as Recipient</Link>
         </Button>
       </div>
     </div>
