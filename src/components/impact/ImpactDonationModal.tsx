@@ -417,9 +417,9 @@ export function ImpactDonationModal({
                         </span>
                       </div>
 
-                      {/* Code */}
+                      {/* Code is hidden from donors — only visible to the claiming recipient */}
                       <p className="text-xs text-muted-foreground mt-1 font-mono">
-                        {coupon.code}
+                        Code hidden
                       </p>
                     </div>
                   );
