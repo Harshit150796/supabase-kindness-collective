@@ -364,7 +364,8 @@ export function Tree3DScene() {
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const zoomProgressRef = useRef(0); // 0 = zoomed in, 1 = zoomed out
   const [inView, setInView] = useState(true);
-  const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  // Full desktop parity on mobile — user explicitly requested same features as laptop.
+  const isMobile = false;
   const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
   // DPR: mobile cap raised to 2 (sharper canopy edges; safe because AA, shadows,
   // and tone-mapping are off on mobile). Desktop stays at 2.
