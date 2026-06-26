@@ -7,7 +7,7 @@ import { Footer } from '@/components/layout/Footer';
 
 export default function DonationCancelled() {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-dvh flex flex-col bg-background">
       <Navbar />
       
       <main className="flex-1 flex items-center justify-center py-20 px-4">

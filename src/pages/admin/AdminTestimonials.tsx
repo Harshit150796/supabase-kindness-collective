@@ -164,12 +164,12 @@ export default function AdminTestimonials() {
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <div className="flex flex-col">
-                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => moveOrder(t.id, 'up')} disabled={idx === 0}><ChevronUp className="w-3 h-3" /></Button>
-                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => moveOrder(t.id, 'down')} disabled={idx === filtered.length - 1}><ChevronDown className="w-3 h-3" /></Button>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => moveOrder(t.id, 'up')} disabled={idx === 0} aria-label="Move up"><ChevronUp className="w-3 h-3" /></Button>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => moveOrder(t.id, 'down')} disabled={idx === filtered.length - 1} aria-label="Move down"><ChevronDown className="w-3 h-3" /></Button>
                     </div>
-                    <Switch checked={t.is_published} onCheckedChange={() => togglePublish(t.id, t.is_published)} />
-                    <Button size="sm" variant="outline" onClick={() => openEdit(t)}><Pencil className="w-3 h-3" /></Button>
-                    <Button size="sm" variant="outline" onClick={() => setDeleteId(t.id)}><Trash2 className="w-3 h-3" /></Button>
+                    <Switch checked={t.is_published} onCheckedChange={() => togglePublish(t.id, t.is_published)} aria-label={t.is_published ? 'Unpublish testimonial' : 'Publish testimonial'} />
+                    <Button size="sm" variant="outline" onClick={() => openEdit(t)} aria-label="Edit testimonial"><Pencil className="w-3 h-3" /></Button>
+                    <Button size="sm" variant="outline" onClick={() => setDeleteId(t.id)} aria-label="Delete testimonial"><Trash2 className="w-3 h-3" /></Button>
                   </div>
                 </CardContent>
               </Card>

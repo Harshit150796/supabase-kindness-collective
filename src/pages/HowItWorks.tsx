@@ -21,7 +21,7 @@ export default function HowItWorks() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <SEO
         title="How CouponDonation Works — Donate, Verify, Redeem"
         description="See how CouponDonation works in 3 steps: donors give, families get verified, recipients redeem real grocery coupons at Walmart, Target, and Amazon."

@@ -304,17 +304,18 @@ export default function AdminStories() {
                           className={`h-8 w-8 ${isFeatured ? 'bg-gold hover:bg-gold/90 text-white' : 'text-muted-foreground hover:text-gold'}`}
                           onClick={() => setAsFeatured(story.id)}
                           title="Set as featured story"
+                          aria-label="Set as featured story"
                           disabled={!story.is_published}
                         >
                           <Star className={`w-4 h-4 ${isFeatured ? 'fill-current' : ''}`} />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => togglePublish(story.id, story.is_published)} title={story.is_published ? 'Unpublish' : 'Publish'}>
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => togglePublish(story.id, story.is_published)} title={story.is_published ? 'Unpublish' : 'Publish'} aria-label={story.is_published ? 'Unpublish story' : 'Publish story'}>
                           {story.is_published ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(story)}>
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(story)} aria-label="Edit story">
                           <Pencil className="w-4 h-4 text-muted-foreground" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 hover:text-destructive" onClick={() => setDeleteId(story.id)}>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 hover:text-destructive" onClick={() => setDeleteId(story.id)} aria-label="Delete story">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>

@@ -6,7 +6,7 @@ import { SEO, breadcrumbJsonLd } from '@/components/SEO';
 
 export default function Donate() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <SEO
         title="Donate Now — Turn Your Gift Into Grocery Coupons"
         description="Make a tax-deductible donation that becomes real grocery coupons for verified families. Pick brands like Walmart, Target, or Amazon and see your impact."

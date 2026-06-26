@@ -54,7 +54,7 @@ export default function StoryDetail() {
   const progressPercent = (story.amountRaised / story.goal) * 100;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <SEO
         title={`${story.name} — Impact Story`}
         description={(story.story || `Read ${story.name}'s story on CouponDonation and see how donations are helping verified families.`).slice(0, 155)}

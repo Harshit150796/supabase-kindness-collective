@@ -89,7 +89,7 @@ export default function Stories() {
   const categories: CategoryFilter[] = ['all', 'family', 'child', 'emergency', 'community'];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <SEO
         title="Impact Stories - Real Lives Changed by Donations"
         description="Read real stories of families helped through CouponDonation. Browse active fundraisers and see the impact every donation makes in our community."

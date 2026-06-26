@@ -13,7 +13,7 @@ export default function Blog() {
   const { data: posts, isLoading } = useCMSPosts(true);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <SEO
         title="Blog & Updates"
         description="Latest news, impact updates, donor spotlights, and stories from CouponDonation. Stay connected with our mission to end food insecurity."

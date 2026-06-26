@@ -617,7 +617,7 @@ const ApplyRecipient = () => {
   // Render OTP verification screen
   if (screenState === "otp") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-dvh bg-background flex items-center justify-center p-4">
         <OTPVerification
           email={email}
           onVerified={handleOTPVerified}
@@ -630,7 +630,7 @@ const ApplyRecipient = () => {
   // Render sign-in prompt for existing users
   if (screenState === "signin-prompt") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-dvh bg-background flex items-center justify-center p-4">
         <SignInPrompt
           email={email}
           onSignIn={handleSignInAndContinue}

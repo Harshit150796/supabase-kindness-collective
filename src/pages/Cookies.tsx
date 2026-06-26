@@ -4,7 +4,7 @@ import { Footer } from '@/components/layout/Footer';
 
 export default function Cookies() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <SEO
         title="Cookie Policy"
         description="How CouponDonation uses cookies and similar technologies to operate the site, analyze usage, and remember your preferences."

@@ -75,13 +75,13 @@ const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const queryClient = new QueryClient();
 
 const RouteFallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">Loading...</div>
+  <div className="min-h-dvh flex items-center justify-center bg-background">Loading...</div>
 );
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: string[] }) {
   const { user, roles, loading } = useAuth();
   
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-background">Loading...</div>;
+  if (loading) return <div className="min-h-dvh flex items-center justify-center bg-background">Loading...</div>;
   if (!user) return <Navigate to="/auth" replace />;
   if (!allowedRoles.some(role => roles.includes(role as any))) return <Navigate to="/" replace />;
   

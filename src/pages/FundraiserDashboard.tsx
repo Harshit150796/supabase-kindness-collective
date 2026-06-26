@@ -260,7 +260,7 @@ const FundraiserDashboard = () => {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-dvh flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
@@ -268,7 +268,7 @@ const FundraiserDashboard = () => {
 
   if (!fundraiser) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
+      <div className="min-h-dvh flex flex-col items-center justify-center bg-background gap-4">
         <p className="text-muted-foreground">Fundraiser not found</p>
         <Button onClick={() => navigate("/my-fundraisers")}>Go to My Fundraisers</Button>
       </div>
@@ -287,7 +287,7 @@ const FundraiserDashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <Navbar />
       
       <div className="flex">
@@ -343,7 +343,7 @@ const FundraiserDashboard = () => {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 min-h-screen">
+        <main className="flex-1 min-h-dvh">
           {/* Gallery section - full width */}
           <div className="pt-16 lg:pt-0">
             <div className="relative rounded-b-2xl overflow-hidden">

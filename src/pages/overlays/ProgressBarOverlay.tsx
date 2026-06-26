@@ -57,13 +57,13 @@ const ProgressBarOverlay = () => {
   };
 
   if (!fundraiser) {
-    return <div className="min-h-screen bg-transparent" />;
+    return <div className="min-h-dvh bg-transparent" />;
   }
 
   const progress = Math.min((fundraiser.amount_raised / fundraiser.monthly_goal) * 100, 100);
 
   return (
-    <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-transparent flex items-center justify-center p-4">
       <div 
         className={`
           bg-[#1a1a2e]/95 backdrop-blur-sm rounded-2xl p-6 min-w-[400px] max-w-[500px]
