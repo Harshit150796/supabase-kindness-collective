@@ -7,7 +7,7 @@ interface ShareScreenProps {
 
 export const ShareScreen = ({ onGoToDashboard, onSkip }: ShareScreenProps) => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-primary p-6 animate-fade-in">
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-primary p-6 animate-fade-in">
       <div className="flex flex-col items-center text-center max-w-md">
         {/* Icon */}
         <div 

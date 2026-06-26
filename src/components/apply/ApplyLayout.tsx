@@ -44,7 +44,7 @@ export const ApplyLayout = ({
   userEmail,
 }: ApplyLayoutProps) => {
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row animate-fade-in">
+    <div className="min-h-dvh flex flex-col lg:flex-row animate-fade-in">
       {/* Left Panel - Info Section with gradient and decorative elements */}
       <div className="lg:w-[42%] relative overflow-hidden bg-gradient-to-br from-secondary via-secondary/80 to-primary/5 p-6 lg:p-10 flex flex-col">
         {/* Decorative floating shapes */}
@@ -130,7 +130,7 @@ export const ApplyLayout = ({
       </div>
 
       {/* Right Panel - Form Section */}
-      <div className="lg:w-[58%] bg-card flex flex-col min-h-[60vh] lg:min-h-screen shadow-[-10px_0_40px_-15px_rgba(0,0,0,0.05)]">
+      <div className="lg:w-[58%] bg-card flex flex-col min-h-[60vh] lg:min-h-dvh shadow-[-10px_0_40px_-15px_rgba(0,0,0,0.05)]">
         {/* Auth Status */}
         <div className="p-6 lg:p-10 flex justify-end">
           {isAuthenticated ? (

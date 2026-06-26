@@ -33,7 +33,7 @@ export const SuccessScreen = ({ onComplete }: SuccessScreenProps) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-background p-6">
       <div className="flex flex-col items-center">
         {/* Animated checkmark circle */}
         <div 

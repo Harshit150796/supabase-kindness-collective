@@ -66,7 +66,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const roleLabel = hasRole('admin') ? 'Admin' : hasRole('recipient') ? 'Recipient' : 'Donor';
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-dvh bg-muted/30">
       {/* Mobile Header */}
       <header className="lg:hidden bg-background border-b border-border p-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
@@ -157,7 +157,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 p-6 lg:p-8 min-h-screen">
+        <main className="flex-1 p-6 lg:p-8 min-h-dvh">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
