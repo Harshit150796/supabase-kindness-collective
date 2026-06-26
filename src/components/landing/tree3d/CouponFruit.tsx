@@ -24,6 +24,7 @@ interface Props {
   onLanded: (idx: number, restPos: THREE.Vector3) => void;
   onRegrown: (idx: number) => void;
   onClickHanging: (idx: number) => void;
+  isMobile?: boolean;
 }
 
 const HANG_DROP = 1.0;
