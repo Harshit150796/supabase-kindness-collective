@@ -169,8 +169,8 @@ function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
     }
   });
 
-  const shadowSize = isMobile ? 1024 : 4096;
-  const shadowBlur = isMobile ? 6 : 25;
+  const shadowSize = isMobile ? 512 : 4096;
+  const shadowBlur = isMobile ? 2 : 25;
 
   return (
     <>
@@ -300,17 +300,17 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
       <DayNightLights isMobile={isMobile} />
       {!isMobile && <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />}
       {isMobile && <hemisphereLight args={['#cfe8d8', '#3a4a3a', 0.45]} />}
-      <fog attach="fog" args={isMobile ? ['#DCE6D5', 45, 110] : ['#DCE6D5', 18, 45]} />
+      <fog attach="fog" args={isMobile ? ['#DCE6D5', 35, 90] : ['#DCE6D5', 18, 45]} />
 
       <Sky isMobile={isMobile} />
 
       <Tree leafCount={leafCount} />
       <Ground y={GROUND_Y} isMobile={isMobile} />
       <HitZones />
-      <Fireflies />
-      <TrunkRipple />
-      <Bird />
-      <AmbientBirds count={isMobile ? 3 : 6} />
+      {!isMobile && <Fireflies />}
+      {!isMobile && <TrunkRipple />}
+      {!isMobile && <Bird />}
+      {!isMobile && <AmbientBirds count={6} />}
       <PlantsLayer cap={plantCap} />
 
 
@@ -329,7 +329,7 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
         />
       ))}
 
-      <Environment preset="forest" background={false} />
+      {!isMobile && <Environment preset="forest" background={false} />}
     </>
   );
 }
@@ -421,8 +421,8 @@ export function Tree3DScene() {
     };
   }, [isMobile]);
 
-  const leafCount = isMobile ? 3000 : 7000;
-  const plantCap = isMobile ? 14 : 40;
+  const leafCount = isMobile ? 1200 : 7000;
+  const plantCap = isMobile ? 8 : 40;
 
   // Render while in view + tab visible. We no longer downgrade based on scroll
   // position on mobile — that caused visible pause/resume hitches.
@@ -483,7 +483,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
   return (
     <>
       <Canvas
-        shadows={{ type: THREE.PCFSoftShadowMap }}
+        shadows={isMobile ? false : { type: THREE.PCFSoftShadowMap }}
         dpr={dpr}
         frameloop={inView ? 'always' : 'demand'}
         camera={{ position: isMobile ? [0, 4.4, 16] : [0, 4.0, 13], fov: isMobile ? 32 : 38 }}
@@ -491,8 +491,8 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
           antialias: !isMobile,
           alpha: true,
           powerPreference: isMobile ? 'low-power' : 'high-performance',
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: isMobile ? 1.1 : 1.05,
+          toneMapping: isMobile ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.05,
         }}
         style={{ background: 'transparent' }}
         onPointerDown={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(true); }}
