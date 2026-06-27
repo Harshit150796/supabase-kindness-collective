@@ -66,7 +66,7 @@ export default function Blog() {
                             <h2 className="text-xl font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">{post.title}</h2>
                             <p className="text-muted-foreground text-sm line-clamp-2 mb-4">{post.excerpt || post.content.substring(0, 150)}</p>
                             <span className="text-primary text-sm font-medium flex items-center gap-1">
-                              Read full post: {post.title} <ArrowRight className="w-3 h-3" aria-hidden="true" />
+                              Read more <ArrowRight className="w-3 h-3" />
                             </span>
                           </div>
                         </div>

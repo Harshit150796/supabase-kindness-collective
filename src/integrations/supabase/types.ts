@@ -1403,7 +1403,6 @@ export type Database = {
         Returns: undefined
       }
       generate_card_number: { Args: never; Returns: string }
-      get_coupon_code: { Args: { _coupon_id: string }; Returns: string }
       get_impact_stats: {
         Args: never
         Returns: {

@@ -278,7 +278,7 @@ export function DonationCouponsModal({ donation, open, onOpenChange }: DonationC
                                   </div>
                                   <div>
                                     <p className="font-medium text-sm">${coupon.value?.toFixed(2)}</p>
-                                    <p className="text-xs text-muted-foreground font-mono">Code hidden</p>
+                                    <p className="text-xs text-muted-foreground font-mono">{coupon.code}</p>
                                   </div>
                                 </div>
                                 <Badge
@@ -318,7 +318,7 @@ export function DonationCouponsModal({ donation, open, onOpenChange }: DonationC
                               ${coupon.value?.toFixed(2)} {coupon.store_name}
                             </p>
                             <p className="text-xs text-muted-foreground font-mono">
-                              Code hidden
+                              {coupon.code}
                             </p>
                           </div>
                         </div>

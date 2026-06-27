@@ -38,29 +38,23 @@ export default function RecipientCoupons() {
     if (!user) return;
     setLoading(true);
 
-    // Available pool — `code` is not exposed here; only revealed after claim via RPC.
+    // Available pool (real codes only — pending_procurement coupons are hidden)
     const { data: pool } = await supabase
       .from('coupons')
-      .select('id, title, store_name, description, value, expiry_date, status, reserved_by, redeemed_by')
+      .select('id, title, code, store_name, description, value, expiry_date, status, reserved_by, redeemed_by')
       .eq('status', 'available')
+      .not('code', 'is', null)
       .order('created_at', { ascending: false });
 
-    // Coupons reserved or redeemed by me — fetch metadata, then resolve codes via secure RPC.
+    // Coupons reserved or redeemed by me
     const { data: ownClaimed } = await supabase
       .from('coupons')
-      .select('id, title, store_name, description, value, expiry_date, status, reserved_by, redeemed_by')
+      .select('id, title, code, store_name, description, value, expiry_date, status, reserved_by, redeemed_by')
       .or(`reserved_by.eq.${user.id},redeemed_by.eq.${user.id}`)
       .order('reserved_at', { ascending: false });
 
-    const ownWithCodes: Coupon[] = await Promise.all(
-      (ownClaimed || []).map(async (c) => {
-        const { data: code } = await supabase.rpc('get_coupon_code', { _coupon_id: c.id });
-        return { ...c, code: (code as string | null) ?? null };
-      })
-    );
-
-    setAvailable(((pool || []) as Coupon[]).map((c) => ({ ...c, code: null })));
-    setMine(ownWithCodes);
+    setAvailable(pool || []);
+    setMine(ownClaimed || []);
     setLoading(false);
   }, [user]);
 

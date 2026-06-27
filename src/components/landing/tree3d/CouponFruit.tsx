@@ -385,8 +385,10 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
           />
         </mesh>
 
-        {/* Crisp vector overlay anchored to the front face. */}
-        {state.phase !== 'regrowing' && (
+        {/* Crisp vector overlay anchored to the front face — desktop only.
+            On mobile, CSS3D layers (Html transform) re-rasterize at unstable
+            resolutions during scroll, causing random blur around the coupons. */}
+        {!isMobile && state.phase !== 'regrowing' && (
           <Html
             transform
             sprite

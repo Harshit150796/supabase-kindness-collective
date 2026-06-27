@@ -132,7 +132,7 @@ export function ImpactDonationModal({
     const [couponsRes, brandsRes] = await Promise.all([
       supabase
         .from('coupons')
-        .select('id, value, status, store_name, created_at')
+        .select('id, code, value, status, store_name, created_at')
         .eq('donation_id', donation.id)
         .order('store_name', { ascending: true })
         .order('created_at', { ascending: true }),
@@ -347,7 +347,7 @@ export function ImpactDonationModal({
                                 <span className="text-xs">{statusConf.label}</span>
                               </div>
                               <p className="text-xs text-muted-foreground mt-1 font-mono truncate">
-                                Code hidden
+                                {coupon.code}
                               </p>
                             </div>
                           );
@@ -417,9 +417,9 @@ export function ImpactDonationModal({
                         </span>
                       </div>
 
-                      {/* Code is hidden from donors — only visible to the claiming recipient */}
+                      {/* Code */}
                       <p className="text-xs text-muted-foreground mt-1 font-mono">
-                        Code hidden
+                        {coupon.code}
                       </p>
                     </div>
                   );

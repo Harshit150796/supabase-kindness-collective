@@ -48,7 +48,7 @@ export function HeroSection() {
 
   return (
     <section
-      className="relative w-full h-[58svh] md:h-[74vh] overflow-hidden"
+      className="relative w-full h-[52svh] md:h-[74vh] overflow-hidden"
       style={{ contain: 'layout paint' }}
     >
       {/* Stacked layers — no DOM swap, no CLS. The gradient always paints first;
