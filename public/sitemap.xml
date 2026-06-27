@@ -67,12 +67,6 @@
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://coupondonation.com/stories</loc>
-    <lastmod>2026-06-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://coupondonation.com/auth</loc>
     <lastmod>2026-04-28</lastmod>
     <changefreq>monthly</changefreq>
