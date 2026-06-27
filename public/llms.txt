@@ -1,0 +1,22 @@
+# CouponDonation
+
+> CouponDonation turns monetary donations into real grocery coupons for verified families in need, partnering with brands like Walmart, Target, and Amazon. 95% of every dollar reaches recipients.
+
+CouponDonation is a US-based giving platform. Donors contribute any amount; funds are converted into $5 and $10 grocery coupons that verified recipient families redeem at major retail partners. Every donation is tracked end-to-end for transparency.
+
+## Pages
+
+- [Home](/): Overview of the platform and live impact.
+- [About](/about): Mission, team, and how we operate.
+- [How It Works](/how-it-works): Step-by-step flow for donors and recipients.
+- [Donate](/donate): Make a tax-deductible donation that becomes grocery coupons.
+- [Apply for Help](/apply): Recipient application and verification flow.
+- [Stories](/stories): Real recipient stories and active fundraisers.
+- [Blog](/blog): News, impact updates, and donor spotlights.
+- [FAQ](/faq): Common questions about donations, coupons, and verification.
+
+## Optional
+
+- [Privacy Policy](/privacy): How we handle personal data.
+- [Terms of Service](/terms): Platform terms and Smart Voucher conditions.
+- [Cookie Policy](/cookies): Cookie usage and consent details.
