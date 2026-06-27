@@ -35,7 +35,7 @@ export function HeroHeadline() {
 
   return (
     <div
-      className="absolute top-4 md:top-6 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-2xl text-center pointer-events-auto transform-gpu antialiased"
+      className="absolute top-4 md:top-6 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-2xl text-center pointer-events-auto"
       style={{ textShadow: "0 2px 12px rgba(0,0,0,0.18)" }}
     >
       <div className="flex items-center justify-center gap-2 mb-2">

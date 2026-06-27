@@ -308,9 +308,9 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
       <Ground y={GROUND_Y} isMobile={isMobile} />
       <HitZones />
       {!isMobile && <Fireflies />}
-      {!isMobile && <TrunkRipple />}
-      {!isMobile && <Bird />}
-      {!isMobile && <AmbientBirds count={6} />}
+      <TrunkRipple />
+      <Bird />
+      <AmbientBirds count={isMobile ? 1 : 6} />
       <PlantsLayer cap={plantCap} />
 
 
@@ -325,7 +325,6 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
           onLanded={handleLanded}
           onRegrown={handleRegrown}
           onClickHanging={dropOne}
-          isMobile={isMobile}
         />
       ))}
 
@@ -392,10 +391,37 @@ export function Tree3DScene() {
     return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
 
-  // Mobile: keep canvas mounted and always animating while visible. Switching
-  // frameloop or unmounting mid-scroll causes blink/jitter around the live bar.
-  const aboveFold = true;
-  const mounted = true;
+  // Scroll-aware state for mobile:
+  //  - aboveFold: hero is mostly in view (< 25% scrolled past). When false,
+  //    the canvas switches to `demand` frameloop so it doesn't compete with
+  //    scroll work and cause neighbouring DOM (LiveActivityBar) to blink.
+  //  - mounted: when the user has scrolled well past the hero we fully
+  //    unmount the Canvas to free GPU memory; remount when they return.
+  const [aboveFold, setAboveFold] = useState(true);
+  const [mounted, setMounted] = useState(true);
+  useEffect(() => {
+    if (!isMobile) return;
+    let raf = 0;
+    let queued = false;
+    const evaluate = () => {
+      queued = false;
+      const y = window.scrollY;
+      const vh = window.innerHeight || 1;
+      setAboveFold(y < vh * 0.25);
+      setMounted(y < vh * 1.5);
+    };
+    const onScroll = () => {
+      if (queued) return;
+      queued = true;
+      raf = requestAnimationFrame(evaluate);
+    };
+    evaluate();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [isMobile]);
 
   // Scroll-to-zoom-then-release: desktop wheel only. Mobile keeps native scroll.
   useEffect(() => {
@@ -424,10 +450,9 @@ export function Tree3DScene() {
   const leafCount = isMobile ? 1200 : 7000;
   const plantCap = isMobile ? 8 : 40;
 
-  // Render while in view + tab visible. We no longer downgrade based on scroll
-  // position on mobile — that caused visible pause/resume hitches.
-  const effectiveInView = inView && tabVisible;
-  void aboveFold;
+  // Effective inView: on mobile we additionally require aboveFold so frameloop
+  // drops to `demand` as soon as the user scrolls past the hero.
+  const effectiveInView = inView && tabVisible && (!isMobile || aboveFold);
 
   return (
     <InteractionProvider>

@@ -96,12 +96,12 @@ export default {
           to: { height: "0" },
         },
         "fade-in": {
-          from: { opacity: "0", transform: "translate3d(0, 10px, 0)" },
-          to: { opacity: "1", transform: "translate3d(0, 0, 0)" },
+          from: { opacity: "0", transform: "translateY(10px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
         },
         "fade-in-up": {
-          from: { opacity: "0", transform: "translate3d(0, 20px, 0)" },
-          to: { opacity: "1", transform: "translate3d(0, 0, 0)" },
+          from: { opacity: "0", transform: "translateY(20px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
         },
         "scale-in": {
           from: { opacity: "0", transform: "scale(0.95)" },
@@ -116,20 +116,20 @@ export default {
           "50%": { opacity: "0.7" },
         },
         "bounce-subtle": {
-          "0%, 100%": { transform: "translate3d(0, 0, 0)" },
-          "50%": { transform: "translate3d(0, -5px, 0)" },
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-5px)" },
         },
         "count-up": {
-          from: { opacity: "0", transform: "translate3d(0, 10px, 0)" },
-          to: { opacity: "1", transform: "translate3d(0, 0, 0)" },
+          from: { opacity: "0", transform: "translateY(10px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
         },
         "marquee": {
-          "0%": { transform: "translate3d(0, 0, 0)" },
-          "100%": { transform: "translate3d(-50%, 0, 0)" },
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
         },
         "slide-in-left": {
-          from: { opacity: "0", transform: "translate3d(-20px, 0, 0)" },
-          to: { opacity: "1", transform: "translate3d(0, 0, 0)" },
+          from: { opacity: "0", transform: "translateX(-20px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
         },
         "draw-circle": {
           from: { strokeDashoffset: "var(--circumference)" },
@@ -140,8 +140,8 @@ export default {
           to: { opacity: "1", transform: "scale(1)" },
         },
         "content-fade-in": {
-          "0%": { opacity: "0", transform: "translate3d(0, 8px, 0)" },
-          "100%": { opacity: "1", transform: "translate3d(0, 0, 0)" },
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
         "step-pop": {
           "0%": { transform: "scale(0.5)", opacity: "0" },

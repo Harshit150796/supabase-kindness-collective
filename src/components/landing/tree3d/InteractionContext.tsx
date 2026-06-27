@@ -76,13 +76,8 @@ function getTimeOfDayFromClock(): TimeOfDay {
 }
 
 export function InteractionProvider({ children }: { children: ReactNode }) {
-  // Mobile: force daylight palette so brand colors stay consistent and premium
-  // regardless of local time of day. Desktop keeps the time-aware behaviour.
-  const isMobileInit = typeof window !== 'undefined' && window.innerWidth < 768;
-  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(() =>
-    isMobileInit ? 'day' : getTimeOfDayFromClock()
-  );
-  const userOverrodeRef = useRef(isMobileInit);
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(getTimeOfDayFromClock);
+  const userOverrodeRef = useRef(false);
   const [shakeEvent, setShakeEvent] = useState<ShakeEvent | null>(null);
   const [ripples, setRipples] = useState<RippleEvent[]>([]);
   const [birdEvent, setBirdEvent] = useState<BirdEvent | null>(null);
