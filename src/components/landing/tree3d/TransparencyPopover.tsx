@@ -26,7 +26,7 @@ export function TransparencyPopover() {
 
   return (
     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-md pointer-events-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="rounded-2xl border border-border bg-background md:bg-background/85 md:backdrop-blur-xl shadow-2xl p-5">
+      <div className="rounded-2xl border border-border bg-background/85 backdrop-blur-xl shadow-2xl p-5">
         <div className="flex items-start justify-between mb-3">
           <div>
             <h3 className="text-sm font-bold text-foreground">Where your money goes</h3>

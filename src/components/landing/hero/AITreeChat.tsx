@@ -94,7 +94,7 @@ export function AITreeChat({ open, onClose }: Props) {
 
   return (
     <div className="absolute bottom-4 right-4 z-40 pointer-events-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="flex flex-col w-[360px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-8rem)] rounded-2xl border border-border bg-background md:bg-background/95 md:backdrop-blur-xl shadow-2xl overflow-hidden">
+      <div className="flex flex-col w-[360px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-8rem)] rounded-2xl border border-border bg-background/95 backdrop-blur-xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-gradient-to-br from-emerald-500/10 to-emerald-700/10">
           <div className="flex items-center gap-2">
