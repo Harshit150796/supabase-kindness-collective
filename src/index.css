@@ -364,18 +364,26 @@
   .stagger-fast > *:nth-child(5) { animation-delay: 0.15s; }
   .stagger-fast > *:nth-child(6) { animation-delay: 0.18s; }
   
-  /* Glass effect */
+  /* Glass effect — blur only on md+ to avoid mobile compositor cost over animated content */
   .glass {
-    background: hsl(var(--card) / 0.8);
-    backdrop-filter: blur(12px);
+    background: hsl(var(--card) / 0.95);
     border: 1px solid hsl(var(--border) / 0.5);
   }
-  
-  /* Glass effect stronger */
+
   .glass-strong {
-    background: hsl(var(--card) / 0.9);
-    backdrop-filter: blur(20px);
+    background: hsl(var(--card) / 0.98);
     border: 1px solid hsl(var(--border) / 0.3);
+  }
+
+  @media (min-width: 768px) {
+    .glass {
+      background: hsl(var(--card) / 0.8);
+      backdrop-filter: blur(12px);
+    }
+    .glass-strong {
+      background: hsl(var(--card) / 0.9);
+      backdrop-filter: blur(20px);
+    }
   }
   
   /* Text gradient */
