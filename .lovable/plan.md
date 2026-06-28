@@ -1,43 +1,34 @@
-# Mobile Hero & Activity Bar Polish
+# Mobile Blurring Fix Plan
 
-Four focused mobile fixes on the landing page. No business logic changes.
+## Root cause
 
-## 1. Remove the white "bubble" around Donate now (mobile)
-File: `src/components/landing/hero/HeroHeadline.tsx`
+Three overlays sit on top of the animated WebGL tree on the mobile hero and all use `backdrop-blur-xl`. Mobile GPUs re-sample and blur the underlying animated pixels every frame, which causes the surrounding text/elements to look intermittently soft, ghosted, or to "shimmer" as the tree animates. This matches the known pattern: `backdrop-blur` over animated content is the culprit, not the tree itself.
 
-The CTA row currently wraps in a `bg-background rounded-full px-2 py-1` pill on mobile (added when we stripped `backdrop-blur` for iOS Safari). That pill is what's reading as a weird white bubble around the single visible button.
+Additional minor offenders: the global `.glass` / `.glass-strong` utilities (12–20px blur) and a handful of decorative `blur-xl/2xl/3xl` halos pile onto the mobile compositor.
 
-- Drop the mobile pill wrapper. Keep the row as a plain `inline-flex` with gap.
-- Keep the button's own shadow for legibility over the 3D scene; add a subtle `drop-shadow` on the row instead of a solid background.
+## Files to change
 
-## 2. Show "Apply as Recipient" next to "Donate now" on mobile
-Same file.
+1. `src/components/landing/hero/TopDonorsPanel.tsx`
+   - Line 38: `bg-background/85 backdrop-blur-xl` → `bg-background md:bg-background/85 md:backdrop-blur-xl`. Solid panel on mobile, glass only on desktop.
 
-- Remove the `hidden md:inline-flex` on the secondary button so it renders on mobile too.
-- Replace its label/target with the recipient CTA used on desktop nav: `Apply as Recipient` → `/apply-recipient` (matches existing route used elsewhere).
-- Use `size="sm"` on both, tighten gap to `gap-1.5`, allow wrap-none. Both buttons get matching height so they sit cleanly side-by-side at 384px width.
-- Outline button gets a solid `bg-background` (no backdrop-blur on mobile) so it stays readable.
+2. `src/components/landing/tree3d/TransparencyPopover.tsx`
+   - Line 29: same gating — drop `backdrop-blur-xl` and translucency on mobile, keep on `md+`.
 
-## 3. Shrink "Talk to Coupon" launcher on mobile
-File: `src/components/landing/hero/AITreeLauncher.tsx`
+3. `src/components/landing/hero/AITreeChat.tsx`
+   - Line 97: drop `bg-background/95 backdrop-blur-xl` on mobile; use solid `bg-background` and apply blur only at `md+`. The chat panel covers the tree on mobile anyway.
 
-- Mobile: render as a compact pill — small leaf icon + short label "Coupon" (or "Ask Coupon"). Reduce padding to `p-2`, icon circle to `w-6 h-6`, text to `text-[11px]`, drop the amber pulse dot on mobile.
-- Desktop (md+): keep the current larger pill with "Talk to Coupon" unchanged via responsive classes.
-- Keep `aria-label="Talk to Coupon, the AI tree"` for a11y.
+4. `src/index.css` (lines 367–379)
+   - Make `.glass` and `.glass-strong` solid on small screens; only apply `backdrop-filter: blur(...)` inside a `@media (min-width: 768px)` block. Keeps the desktop aesthetic, removes the per-frame cost on phones.
 
-## 4. Make the brand marquee visible on mobile in LiveActivityBar
-File: `src/components/landing/LiveActivityBar.tsx`
+5. `src/components/landing/hero/HeroHeadline.tsx`
+   - Line 59: the wrapper still has `md:backdrop-blur-sm` — leave as-is (already mobile-safe), but verify no nested child reintroduces blur on mobile.
 
-The brand strip is currently `hidden lg:flex`, so phones never see brands moving. Plan:
+## Out of scope
 
-- On mobile, render the marquee as its own full-width row **below** the live donation + stats rows (stacked layout already uses `flex-col` on mobile).
-- Use the existing `animate-marquee` keyframe with the duplicated logo set so the loop is seamless.
-- Keep desktop behaviour identical (inline strip in the same row at `lg+`).
-- Mark the row `aria-hidden="true"` (decorative) and `overflow-hidden` with mask-image fade on the edges so it doesn't feel cut.
-- No new data, no JS — same `popularBrands.slice(0, 6)` source already imported.
+- Decorative `blur-3xl` halos on `/about`, `/apply`, CTA section — not over the animated tree, low perceived cost. Leave untouched unless the issue persists.
+- 3D rendering settings (DPR, leaf count, shadows) — already tuned, do not regress.
+- `LiveActivityBar` pill (line 173) — already gated to `md:backdrop-blur-sm`.
 
-## Technical notes
+## Verification
 
-- Touch targets: both hero CTAs stay ≥ 36px tall (`size="sm"` in shadcn = h-9). Launcher stays ≥ 36px.
-- No layout-shift risk: hero overlay is absolutely positioned; adding the second button doesn't change container height. Marquee row adds a fixed ~32px strip on mobile inside the existing `LiveActivityBar` section, which is below-the-fold of the hero (no CLS into the 3D canvas).
-- No changes to `Tree3DScene`, routes, data, or styles tokens.
+After the edits, on a mobile viewport (≤390px) the hero should show solid panels with no shimmering as the tree animates. Drive Playwright at 384×800, scroll the hero, and screenshot mid-animation to confirm crisp text edges on the donors panel, transparency popover, and AI chat.
