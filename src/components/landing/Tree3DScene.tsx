@@ -169,8 +169,8 @@ function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
     }
   });
 
-  const shadowSize = isMobile ? 512 : 4096;
-  const shadowBlur = isMobile ? 2 : 25;
+  const shadowSize = isMobile ? 1024 : 4096;
+  const shadowBlur = isMobile ? 6 : 25;
 
   return (
     <>
@@ -300,17 +300,17 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
       <DayNightLights isMobile={isMobile} />
       {!isMobile && <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />}
       {isMobile && <hemisphereLight args={['#cfe8d8', '#3a4a3a', 0.45]} />}
-      <fog attach="fog" args={isMobile ? ['#DCE6D5', 35, 90] : ['#DCE6D5', 18, 45]} />
+      <fog attach="fog" args={isMobile ? ['#DCE6D5', 45, 110] : ['#DCE6D5', 18, 45]} />
 
       <Sky isMobile={isMobile} />
 
       <Tree leafCount={leafCount} />
       <Ground y={GROUND_Y} isMobile={isMobile} />
       <HitZones />
-      {!isMobile && <Fireflies />}
+      <Fireflies />
       <TrunkRipple />
       <Bird />
-      <AmbientBirds count={isMobile ? 1 : 6} />
+      <AmbientBirds count={isMobile ? 3 : 6} />
       <PlantsLayer cap={plantCap} />
 
 
@@ -325,10 +325,11 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
           onLanded={handleLanded}
           onRegrown={handleRegrown}
           onClickHanging={dropOne}
+          isMobile={isMobile}
         />
       ))}
 
-      {!isMobile && <Environment preset="forest" background={false} />}
+      <Environment preset="forest" background={false} />
     </>
   );
 }
@@ -363,7 +364,8 @@ export function Tree3DScene() {
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const zoomProgressRef = useRef(0); // 0 = zoomed in, 1 = zoomed out
   const [inView, setInView] = useState(true);
-  const [isMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  // Full desktop parity on mobile — user explicitly requested same features as laptop.
+  const isMobile = false;
   const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
   // DPR: mobile cap raised to 2 (sharper canopy edges; safe because AA, shadows,
   // and tone-mapping are off on mobile). Desktop stays at 2.
@@ -391,37 +393,10 @@ export function Tree3DScene() {
     return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
 
-  // Scroll-aware state for mobile:
-  //  - aboveFold: hero is mostly in view (< 25% scrolled past). When false,
-  //    the canvas switches to `demand` frameloop so it doesn't compete with
-  //    scroll work and cause neighbouring DOM (LiveActivityBar) to blink.
-  //  - mounted: when the user has scrolled well past the hero we fully
-  //    unmount the Canvas to free GPU memory; remount when they return.
-  const [aboveFold, setAboveFold] = useState(true);
-  const [mounted, setMounted] = useState(true);
-  useEffect(() => {
-    if (!isMobile) return;
-    let raf = 0;
-    let queued = false;
-    const evaluate = () => {
-      queued = false;
-      const y = window.scrollY;
-      const vh = window.innerHeight || 1;
-      setAboveFold(y < vh * 0.25);
-      setMounted(y < vh * 1.5);
-    };
-    const onScroll = () => {
-      if (queued) return;
-      queued = true;
-      raf = requestAnimationFrame(evaluate);
-    };
-    evaluate();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, [isMobile]);
+  // Mobile: keep canvas mounted and always animating while visible. Switching
+  // frameloop or unmounting mid-scroll causes blink/jitter around the live bar.
+  const aboveFold = true;
+  const mounted = true;
 
   // Scroll-to-zoom-then-release: desktop wheel only. Mobile keeps native scroll.
   useEffect(() => {
@@ -447,12 +422,13 @@ export function Tree3DScene() {
     };
   }, [isMobile]);
 
-  const leafCount = isMobile ? 1200 : 7000;
-  const plantCap = isMobile ? 8 : 40;
+  const leafCount = isMobile ? 3000 : 7000;
+  const plantCap = isMobile ? 14 : 40;
 
-  // Effective inView: on mobile we additionally require aboveFold so frameloop
-  // drops to `demand` as soon as the user scrolls past the hero.
-  const effectiveInView = inView && tabVisible && (!isMobile || aboveFold);
+  // Render while in view + tab visible. We no longer downgrade based on scroll
+  // position on mobile — that caused visible pause/resume hitches.
+  const effectiveInView = inView && tabVisible;
+  void aboveFold;
 
   return (
     <InteractionProvider>
@@ -508,7 +484,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
   return (
     <>
       <Canvas
-        shadows={isMobile ? false : { type: THREE.PCFSoftShadowMap }}
+        shadows={{ type: THREE.PCFSoftShadowMap }}
         dpr={dpr}
         frameloop={inView ? 'always' : 'demand'}
         camera={{ position: isMobile ? [0, 4.4, 16] : [0, 4.0, 13], fov: isMobile ? 32 : 38 }}
@@ -516,8 +492,8 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
           antialias: !isMobile,
           alpha: true,
           powerPreference: isMobile ? 'low-power' : 'high-performance',
-          toneMapping: isMobile ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.05,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: isMobile ? 1.1 : 1.05,
         }}
         style={{ background: 'transparent' }}
         onPointerDown={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(true); }}

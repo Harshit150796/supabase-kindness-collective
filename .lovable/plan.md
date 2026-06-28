@@ -1,14 +1,41 @@
+# Enlarge Mobile Landscape + Full Desktop Feature Parity
+
 ## Goal
-Shrink the hero landscape so the LiveActivityBar sits higher on both desktop and mobile.
+Make the mobile hero landscape ~1 cm taller and remove every remaining mobile-only downgrade so phones get the same vibrant, full-featured 3D scene as desktop.
 
-## Change
-In `src/components/landing/HeroSection.tsx`, reduce the section height:
+## Changes
 
-- Mobile: `h-[62svh]` → `h-[52svh]` (~1 inch shorter on phones)
-- Desktop: `md:h-[88vh]` → `md:h-[74vh]` (frees ~14vh on 16:9 laptops so the live tracking bar shows above the fold)
+### 1. Increase mobile landscape height (~1 cm ≈ 38 px ≈ ~6 svh)
+- `src/components/landing/HeroSection.tsx`: mobile hero height `h-[52svh]` → `h-[58svh]`.
 
-No other layout, camera, or tree-scene changes — the 3D scene already scales to its container, so it simply renders inside the smaller frame and the LiveActivityBar naturally moves up.
+### 2. Bring all desktop features to mobile (full parity)
+In `src/components/landing/Tree3DScene.tsx`:
+- **Lighting:** add the desktop back-fill `<directionalLight position={[0,4,-8]} intensity={0.35} color="#FFD8A8" />` on mobile too; drop the mobile-only hemisphere stand-in.
+- **Fog:** use desktop values `[18, 45]` on mobile as well.
+- **Sky / Ground:** pass `isMobile={false}` so both render in full-quality desktop mode.
+- **Camera:** use the desktop camera (`[0, 4.0, 13]`, fov 38, target `[0, 3.4, 0]`).
+- **Leaves:** raise mobile `leafCount` 3000 → 7000 (desktop value).
+- **Plants:** raise mobile `plantCap` 14 → 40 (desktop value).
+- **Birds:** `AmbientBirds count={6}` on mobile (same as desktop).
+- **Antialiasing & power:** enable `antialias: true` and `powerPreference: 'high-performance'` on mobile.
+- **Shadow map:** raise to desktop 4096 with full blur samples.
+- **OrbitControls min/max distance:** use desktop `9 / 17`.
+
+### 3. CouponFruit overlay
+- `src/components/landing/tree3d/CouponFruit.tsx`: stop suppressing the CSS3D `<Html transform>` coupon face on mobile so the labels look identical to desktop.
+
+### 4. InteractionContext
+- `src/components/landing/tree3d/InteractionContext.tsx`: remove the mobile-forced 'day' lock so mobile follows the same time-of-day behavior as desktop.
+
+## Files to change
+- `src/components/landing/HeroSection.tsx`
+- `src/components/landing/Tree3DScene.tsx`
+- `src/components/landing/tree3d/CouponFruit.tsx`
+- `src/components/landing/tree3d/InteractionContext.tsx`
+
+## Trade-off the user should know
+Full desktop parity on phones (7000 leaves, 4096 shadows, AA, CSS3D coupon labels, forest IBL, post-effects-free but full lighting) will be noticeably heavier on mid/low-end phones — expect lower FPS and possibly some of the earlier blur/jank to return on weaker devices. This is the explicit "same as laptop" request; if any phone struggles, we can dial back individual items afterwards.
 
 ## Out of scope
-- Camera/FOV tweaks inside `Tree3DScene` (current framing remains).
-- Any changes to LiveActivityBar itself.
+- No layout/content changes outside hero height.
+- No changes to the live activity bar, headline, or other sections.

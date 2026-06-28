@@ -35,9 +35,10 @@ export function HeroHeadline() {
 
   return (
     <div
-      className="absolute top-4 md:top-6 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-2xl text-center pointer-events-auto"
+      className="absolute top-4 md:top-6 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-2xl text-center pointer-events-auto transform-gpu antialiased"
       style={{ textShadow: "0 2px 12px rgba(0,0,0,0.18)" }}
     >
+      <h1 className="sr-only">CouponDonation — Turn Donations Into Grocery Coupons for Verified Families</h1>
       <div className="flex items-center justify-center gap-2 mb-2">
         <span className="text-xs uppercase tracking-[0.2em] text-foreground/70 font-semibold">
           CouponDonation is

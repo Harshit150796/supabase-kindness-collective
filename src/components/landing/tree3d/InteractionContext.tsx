@@ -76,7 +76,7 @@ function getTimeOfDayFromClock(): TimeOfDay {
 }
 
 export function InteractionProvider({ children }: { children: ReactNode }) {
-  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(getTimeOfDayFromClock);
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(() => getTimeOfDayFromClock());
   const userOverrodeRef = useRef(false);
   const [shakeEvent, setShakeEvent] = useState<ShakeEvent | null>(null);
   const [ripples, setRipples] = useState<RippleEvent[]>([]);
