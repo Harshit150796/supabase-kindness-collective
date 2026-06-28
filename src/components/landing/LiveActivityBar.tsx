@@ -113,7 +113,7 @@ export const LiveActivityBar = () => {
             </div>
           </div>
 
-          {/* Scrolling Brand Logos */}
+          {/* Scrolling Brand Logos — desktop inline */}
           <div className="hidden lg:flex items-center gap-3 overflow-hidden max-w-xs">
             <span className="text-xs text-muted-foreground whitespace-nowrap">Powered by</span>
             <div className="flex gap-4 overflow-hidden">
@@ -138,6 +138,27 @@ export const LiveActivityBar = () => {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Mobile-only brand marquee row */}
+        <div
+          aria-hidden="true"
+          className="lg:hidden mt-2 -mx-4 overflow-hidden"
+          style={{
+            maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
+            WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
+          }}
+        >
+          <div className="flex gap-3 animate-marquee w-max px-4">
+            {[...popularBrands, ...popularBrands].map((brand, i) => (
+              <div
+                key={`m-${brand.name}-${i}`}
+                className="flex items-center justify-center w-7 h-7 rounded-full bg-background border border-border/50 shadow-sm flex-shrink-0"
+              >
+                <img src={brand.logo} alt="" className="w-4 h-4 object-contain" />
+              </div>
+            ))}
           </div>
         </div>
       </div>
