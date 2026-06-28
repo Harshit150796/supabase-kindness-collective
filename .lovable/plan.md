@@ -1,41 +1,43 @@
-# Enlarge Mobile Landscape + Full Desktop Feature Parity
+# Mobile Hero & Activity Bar Polish
 
-## Goal
-Make the mobile hero landscape ~1 cm taller and remove every remaining mobile-only downgrade so phones get the same vibrant, full-featured 3D scene as desktop.
+Four focused mobile fixes on the landing page. No business logic changes.
 
-## Changes
+## 1. Remove the white "bubble" around Donate now (mobile)
+File: `src/components/landing/hero/HeroHeadline.tsx`
 
-### 1. Increase mobile landscape height (~1 cm ≈ 38 px ≈ ~6 svh)
-- `src/components/landing/HeroSection.tsx`: mobile hero height `h-[52svh]` → `h-[58svh]`.
+The CTA row currently wraps in a `bg-background rounded-full px-2 py-1` pill on mobile (added when we stripped `backdrop-blur` for iOS Safari). That pill is what's reading as a weird white bubble around the single visible button.
 
-### 2. Bring all desktop features to mobile (full parity)
-In `src/components/landing/Tree3DScene.tsx`:
-- **Lighting:** add the desktop back-fill `<directionalLight position={[0,4,-8]} intensity={0.35} color="#FFD8A8" />` on mobile too; drop the mobile-only hemisphere stand-in.
-- **Fog:** use desktop values `[18, 45]` on mobile as well.
-- **Sky / Ground:** pass `isMobile={false}` so both render in full-quality desktop mode.
-- **Camera:** use the desktop camera (`[0, 4.0, 13]`, fov 38, target `[0, 3.4, 0]`).
-- **Leaves:** raise mobile `leafCount` 3000 → 7000 (desktop value).
-- **Plants:** raise mobile `plantCap` 14 → 40 (desktop value).
-- **Birds:** `AmbientBirds count={6}` on mobile (same as desktop).
-- **Antialiasing & power:** enable `antialias: true` and `powerPreference: 'high-performance'` on mobile.
-- **Shadow map:** raise to desktop 4096 with full blur samples.
-- **OrbitControls min/max distance:** use desktop `9 / 17`.
+- Drop the mobile pill wrapper. Keep the row as a plain `inline-flex` with gap.
+- Keep the button's own shadow for legibility over the 3D scene; add a subtle `drop-shadow` on the row instead of a solid background.
 
-### 3. CouponFruit overlay
-- `src/components/landing/tree3d/CouponFruit.tsx`: stop suppressing the CSS3D `<Html transform>` coupon face on mobile so the labels look identical to desktop.
+## 2. Show "Apply as Recipient" next to "Donate now" on mobile
+Same file.
 
-### 4. InteractionContext
-- `src/components/landing/tree3d/InteractionContext.tsx`: remove the mobile-forced 'day' lock so mobile follows the same time-of-day behavior as desktop.
+- Remove the `hidden md:inline-flex` on the secondary button so it renders on mobile too.
+- Replace its label/target with the recipient CTA used on desktop nav: `Apply as Recipient` → `/apply-recipient` (matches existing route used elsewhere).
+- Use `size="sm"` on both, tighten gap to `gap-1.5`, allow wrap-none. Both buttons get matching height so they sit cleanly side-by-side at 384px width.
+- Outline button gets a solid `bg-background` (no backdrop-blur on mobile) so it stays readable.
 
-## Files to change
-- `src/components/landing/HeroSection.tsx`
-- `src/components/landing/Tree3DScene.tsx`
-- `src/components/landing/tree3d/CouponFruit.tsx`
-- `src/components/landing/tree3d/InteractionContext.tsx`
+## 3. Shrink "Talk to Coupon" launcher on mobile
+File: `src/components/landing/hero/AITreeLauncher.tsx`
 
-## Trade-off the user should know
-Full desktop parity on phones (7000 leaves, 4096 shadows, AA, CSS3D coupon labels, forest IBL, post-effects-free but full lighting) will be noticeably heavier on mid/low-end phones — expect lower FPS and possibly some of the earlier blur/jank to return on weaker devices. This is the explicit "same as laptop" request; if any phone struggles, we can dial back individual items afterwards.
+- Mobile: render as a compact pill — small leaf icon + short label "Coupon" (or "Ask Coupon"). Reduce padding to `p-2`, icon circle to `w-6 h-6`, text to `text-[11px]`, drop the amber pulse dot on mobile.
+- Desktop (md+): keep the current larger pill with "Talk to Coupon" unchanged via responsive classes.
+- Keep `aria-label="Talk to Coupon, the AI tree"` for a11y.
 
-## Out of scope
-- No layout/content changes outside hero height.
-- No changes to the live activity bar, headline, or other sections.
+## 4. Make the brand marquee visible on mobile in LiveActivityBar
+File: `src/components/landing/LiveActivityBar.tsx`
+
+The brand strip is currently `hidden lg:flex`, so phones never see brands moving. Plan:
+
+- On mobile, render the marquee as its own full-width row **below** the live donation + stats rows (stacked layout already uses `flex-col` on mobile).
+- Use the existing `animate-marquee` keyframe with the duplicated logo set so the loop is seamless.
+- Keep desktop behaviour identical (inline strip in the same row at `lg+`).
+- Mark the row `aria-hidden="true"` (decorative) and `overflow-hidden` with mask-image fade on the edges so it doesn't feel cut.
+- No new data, no JS — same `popularBrands.slice(0, 6)` source already imported.
+
+## Technical notes
+
+- Touch targets: both hero CTAs stay ≥ 36px tall (`size="sm"` in shadcn = h-9). Launcher stays ≥ 36px.
+- No layout-shift risk: hero overlay is absolutely positioned; adding the second button doesn't change container height. Marquee row adds a fixed ~32px strip on mobile inside the existing `LiveActivityBar` section, which is below-the-fold of the hero (no CLS into the 3D canvas).
+- No changes to `Tree3DScene`, routes, data, or styles tokens.
