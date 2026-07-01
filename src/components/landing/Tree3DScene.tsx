@@ -1,5 +1,6 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Environment, OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 // Postprocessing intentionally not imported — bloom/vignette disabled, keeps mobile bundle smaller.
