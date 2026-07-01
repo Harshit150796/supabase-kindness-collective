@@ -54,10 +54,7 @@ export function HeroSection() {
       {/* Stacked layers — no DOM swap, no CLS. The gradient always paints first;
           the canvas wrapper sits on top and fades in once Tree3DScene is mounted. */}
       <GradientFallback />
-      <div
-        className="absolute inset-0 w-full h-full transition-opacity duration-700 ease-out"
-        style={{ opacity: treeReady ? 1 : 0 }}
-      >
+      <div className="absolute inset-0 w-full h-full">
         {treeReady && (
           <Suspense fallback={null}>
             <Tree3DScene />

@@ -1,5 +1,6 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Environment, OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 // Postprocessing intentionally not imported — bloom/vignette disabled, keeps mobile bundle smaller.
@@ -300,17 +301,17 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
       <DayNightLights isMobile={isMobile} />
       {!isMobile && <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />}
       {isMobile && <hemisphereLight args={['#cfe8d8', '#3a4a3a', 0.45]} />}
-      <fog attach="fog" args={isMobile ? ['#DCE6D5', 45, 110] : ['#DCE6D5', 18, 45]} />
+      <fog attach="fog" args={isMobile ? ['#DCE6D5', 25, 70] : ['#DCE6D5', 18, 45]} />
 
       <Sky isMobile={isMobile} />
 
       <Tree leafCount={leafCount} />
       <Ground y={GROUND_Y} isMobile={isMobile} />
       <HitZones />
-      <Fireflies />
-      <TrunkRipple />
+      {!isMobile && <Fireflies />}
+      {!isMobile && <TrunkRipple />}
       <Bird />
-      <AmbientBirds count={isMobile ? 3 : 6} />
+      <AmbientBirds count={isMobile ? 2 : 6} />
       <PlantsLayer cap={plantCap} />
 
 
@@ -364,13 +365,15 @@ export function Tree3DScene() {
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const zoomProgressRef = useRef(0); // 0 = zoomed in, 1 = zoomed out
   const [inView, setInView] = useState(true);
-  // Full desktop parity on mobile — user explicitly requested same features as laptop.
-  const isMobile = false;
+  // Real mobile mode — matches device DPR, drops shadows/AA/tone-mapping so the
+  // canvas stays crisp and hits 60fps on phones instead of getting upscaled + smeared.
+  const isMobile = useIsMobile();
   const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
-  // DPR: mobile cap raised to 2 (sharper canopy edges; safe because AA, shadows,
-  // and tone-mapping are off on mobile). Desktop stays at 2.
+  // DPR: mobile cap raised to 3 to match modern phones (dpr up to ~3.75).
+  // Without this the canvas renders at 2x and the browser bilinearly upscales
+  // to the device — that's the "blurry hero" complaint.
   const stableDpr = useMemo<[number, number]>(() => {
-    const max = isMobile ? 2 : 2;
+    const max = isMobile ? 3 : 2;
     const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, max) : max;
     return [d, d];
   }, [isMobile]);
@@ -422,8 +425,8 @@ export function Tree3DScene() {
     };
   }, [isMobile]);
 
-  const leafCount = isMobile ? 3000 : 7000;
-  const plantCap = isMobile ? 14 : 40;
+  const leafCount = isMobile ? 2500 : 7000;
+  const plantCap = isMobile ? 10 : 40;
 
   // Render while in view + tab visible. We no longer downgrade based on scroll
   // position on mobile — that caused visible pause/resume hitches.
@@ -484,7 +487,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
   return (
     <>
       <Canvas
-        shadows={{ type: THREE.PCFSoftShadowMap }}
+        shadows={isMobile ? false : { type: THREE.PCFSoftShadowMap }}
         dpr={dpr}
         frameloop={inView ? 'always' : 'demand'}
         camera={{ position: isMobile ? [0, 4.4, 16] : [0, 4.0, 13], fov: isMobile ? 32 : 38 }}
@@ -492,8 +495,8 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
           antialias: !isMobile,
           alpha: true,
           powerPreference: isMobile ? 'low-power' : 'high-performance',
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: isMobile ? 1.1 : 1.05,
+          toneMapping: isMobile ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping,
+          toneMappingExposure: isMobile ? 1 : 1.05,
         }}
         style={{ background: 'transparent' }}
         onPointerDown={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(true); }}

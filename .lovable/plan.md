@@ -1,43 +1,51 @@
-# Mobile Hero & Activity Bar Polish
+# Fix mobile blurriness on the landing page
 
-Four focused mobile fixes on the landing page. No business logic changes.
+## Root cause
 
-## 1. Remove the white "bubble" around Donate now (mobile)
-File: `src/components/landing/hero/HeroHeadline.tsx`
+The mobile hero looks blurry and unstable because we are running the **full desktop 3D pipeline on phones** while also rendering the canvas at a lower resolution than the device's actual pixel ratio. Three things combine:
 
-The CTA row currently wraps in a `bg-background rounded-full px-2 py-1` pill on mobile (added when we stripped `backdrop-blur` for iOS Safari). That pill is what's reading as a weird white bubble around the single visible button.
+1. **`Tree3DScene.tsx` hard-codes `isMobile = false`.** Phones are forced to render 7,000 leaves, 4096×4096 shadow maps, antialiasing, ACES tone mapping, CSS3D `<Html transform>` coupon faces, fireflies, ambient birds, etc. The GPU can't keep up → dropped frames → the browser smears between frames, which reads as "blur".
+2. **DPR is capped at 2 while the device reports dpr ≈ 3.75.** WebGL renders at 2× and the browser bilinearly upscales to 3.75× — that upscale is literally a blur filter on the canvas.
+3. **CSS3D `<Html transform>` coupon overlays** (in `CouponFruit.tsx`) are composited by the browser as separate layers over WebGL. On mobile they get downsampled/repainted aggressively and look soft, and they jitter against the 3D scene.
 
-- Drop the mobile pill wrapper. Keep the row as a plain `inline-flex` with gap.
-- Keep the button's own shadow for legibility over the 3D scene; add a subtle `drop-shadow` on the row instead of a solid background.
+Secondary contributors: `backdrop-blur` pills on hero CTAs, ACES tone mapping on a low-power GPU, fog re-tinting every frame.
 
-## 2. Show "Apply as Recipient" next to "Donate now" on mobile
-Same file.
+## What to change
 
-- Remove the `hidden md:inline-flex` on the secondary button so it renders on mobile too.
-- Replace its label/target with the recipient CTA used on desktop nav: `Apply as Recipient` → `/apply-recipient` (matches existing route used elsewhere).
-- Use `size="sm"` on both, tighten gap to `gap-1.5`, allow wrap-none. Both buttons get matching height so they sit cleanly side-by-side at 384px width.
-- Outline button gets a solid `bg-background` (no backdrop-blur on mobile) so it stays readable.
+### 1. `src/components/landing/Tree3DScene.tsx` — re-enable real mobile mode
+- Replace `const isMobile = false;` with `const isMobile = useIsMobile();` (import from `@/hooks/use-mobile`).
+- Raise the mobile DPR cap from 2 → **3** so the canvas matches the screen and stops being upscaled. Keep desktop at 2.
+- On mobile:
+  - `antialias: false` (DPR 3 already gives effective supersampling)
+  - `shadows={false}` on the `<Canvas>` and skip `castShadow` / `shadow-mapSize` (huge win)
+  - `toneMapping: THREE.NoToneMapping`, `toneMappingExposure: 1`
+  - `frameloop="demand"` when off-screen; keep `"always"` when in view
+  - Drop `<directionalLight position={[0,4,-8]}>` rim light, keep the hemisphere fill
+  - `<AmbientBirds count={2}>`, drop `<Fireflies />` and `<TrunkRipple />`
+  - `leafCount = 2500`, `plantCap = 10`
+  - Fog: `[ '#DCE6D5', 25, 70 ]`
 
-## 3. Shrink "Talk to Coupon" launcher on mobile
-File: `src/components/landing/hero/AITreeLauncher.tsx`
+### 2. `src/components/landing/tree3d/CouponFruit.tsx` — no CSS3D on mobile
+- Accept the existing `isMobile` prop (already passed) and when true, render the coupon face as a **canvas texture on the mesh** (the existing `drawCouponTexture` path) instead of the `<Html transform>` DOM face. CSS3D over WebGL is the single biggest source of "blurry, jittery" coupons on phones.
 
-- Mobile: render as a compact pill — small leaf icon + short label "Coupon" (or "Ask Coupon"). Reduce padding to `p-2`, icon circle to `w-6 h-6`, text to `text-[11px]`, drop the amber pulse dot on mobile.
-- Desktop (md+): keep the current larger pill with "Talk to Coupon" unchanged via responsive classes.
-- Keep `aria-label="Talk to Coupon, the AI tree"` for a11y.
+### 3. `src/components/landing/hero/HeroHeadline.tsx` — drop backdrop blur on the CTA row
+- Remove `md:backdrop-blur-sm` and `md:bg-background/70` from the button wrapper and the outline button. Use a solid `bg-background` pill. `backdrop-blur` re-samples the animated canvas underneath every frame and is the second-biggest blur source on mobile.
 
-## 4. Make the brand marquee visible on mobile in LiveActivityBar
-File: `src/components/landing/LiveActivityBar.tsx`
+### 4. `src/components/landing/HeroSection.tsx` — stop fading the canvas in
+- The 700 ms opacity fade on the canvas wrapper triggers a compositor blur pass during the transition. Render the canvas with `opacity: 1` once `treeReady` is true (no transition), keep the gradient underneath as the pre-mount fallback.
 
-The brand strip is currently `hidden lg:flex`, so phones never see brands moving. Plan:
+### 5. `src/components/landing/tree3d/Ground.tsx` and `Sky.tsx` — lighter mobile path
+- When `isMobile`, skip the reflective floor pass in `Ground` (use a plain `MeshStandardMaterial`) and use a static gradient sky instead of the animated shader. These already accept an `isMobile` prop; just make sure both branches are wired.
 
-- On mobile, render the marquee as its own full-width row **below** the live donation + stats rows (stacked layout already uses `flex-col` on mobile).
-- Use the existing `animate-marquee` keyframe with the duplicated logo set so the loop is seamless.
-- Keep desktop behaviour identical (inline strip in the same row at `lg+`).
-- Mark the row `aria-hidden="true"` (decorative) and `overflow-hidden` with mask-image fade on the edges so it doesn't feel cut.
-- No new data, no JS — same `popularBrands.slice(0, 6)` source already imported.
+## Why this fixes the blur
 
-## Technical notes
+- Matching DPR to the device removes the canvas upscale → edges become crisp.
+- Cutting shadows + AA + tone mapping lets the GPU hit 60 fps → no inter-frame smearing.
+- Replacing CSS3D coupon faces with a baked texture removes the layer mismatch that makes coupons look soft.
+- Removing `backdrop-blur` over an animated canvas removes a per-frame re-sample of the hero.
 
-- Touch targets: both hero CTAs stay ≥ 36px tall (`size="sm"` in shadcn = h-9). Launcher stays ≥ 36px.
-- No layout-shift risk: hero overlay is absolutely positioned; adding the second button doesn't change container height. Marquee row adds a fixed ~32px strip on mobile inside the existing `LiveActivityBar` section, which is below-the-fold of the hero (no CLS into the 3D canvas).
-- No changes to `Tree3DScene`, routes, data, or styles tokens.
+## Out of scope
+No changes to copy, routes, business logic, donation flow, or any non-hero section. This is a presentation-layer perf/quality fix only.
+
+## Verification
+After implementing, open the preview on the mobile viewport and confirm: coupons read sharply, text on the CTA pill is crisp, the tree no longer "breathes" blur during idle, and the canvas resolution visibly matches the surrounding UI.
