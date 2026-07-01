@@ -308,10 +308,10 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
       <Tree leafCount={leafCount} />
       <Ground y={GROUND_Y} isMobile={isMobile} />
       <HitZones />
-      <Fireflies />
-      <TrunkRipple />
+      {!isMobile && <Fireflies />}
+      {!isMobile && <TrunkRipple />}
       <Bird />
-      <AmbientBirds count={isMobile ? 3 : 6} />
+      <AmbientBirds count={isMobile ? 2 : 6} />
       <PlantsLayer cap={plantCap} />
 
 
