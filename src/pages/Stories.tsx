@@ -81,9 +81,23 @@ const communityStats = {
 
 export default function Stories() {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
-  
+  const [fundraiserFilters, setFundraiserFilters] = useState<FundraiserFilters>({ category: 'all', state: 'all' });
+
   // Fetch real fundraisers from database
   const { data: fundraisers, isLoading: fundraisersLoading } = useFundraisers();
+  const stateMap = useZipStates(fundraisers || []);
+
+  const filteredFundraisers = useMemo(() => {
+    return (fundraisers || []).filter((f) => {
+      if (fundraiserFilters.category !== 'all' && f.category !== fundraiserFilters.category) return false;
+      if (fundraiserFilters.state !== 'all') {
+        const st = f.zip_code ? stateMap.get(f.zip_code) : null;
+        if (st !== fundraiserFilters.state) return false;
+      }
+      return true;
+    });
+  }, [fundraisers, fundraiserFilters, stateMap]);
+
 
   const filteredStories = activeCategory === 'all' 
     ? impactStories 
