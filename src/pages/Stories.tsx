@@ -18,6 +18,9 @@ import {
 import { impactStories, ImpactStory } from '@/data/impactStories';
 import { useFundraisers } from '@/hooks/useFundraisers';
 import { FundraiserCard } from '@/components/stories/FundraiserCard';
+import { FundraiserFilterBar, type FundraiserFilters } from '@/components/stories/FundraiserFilterBar';
+import { useZipStates } from '@/lib/zipStates';
+import { useMemo } from 'react';
 import { 
   Heart, 
   Users, 
@@ -78,9 +81,23 @@ const communityStats = {
 
 export default function Stories() {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
-  
+  const [fundraiserFilters, setFundraiserFilters] = useState<FundraiserFilters>({ category: 'all', state: 'all' });
+
   // Fetch real fundraisers from database
   const { data: fundraisers, isLoading: fundraisersLoading } = useFundraisers();
+  const stateMap = useZipStates(fundraisers || []);
+
+  const filteredFundraisers = useMemo(() => {
+    return (fundraisers || []).filter((f) => {
+      if (fundraiserFilters.category !== 'all' && f.category !== fundraiserFilters.category) return false;
+      if (fundraiserFilters.state !== 'all') {
+        const st = f.zip_code ? stateMap.get(f.zip_code) : null;
+        if (st !== fundraiserFilters.state) return false;
+      }
+      return true;
+    });
+  }, [fundraisers, fundraiserFilters, stateMap]);
+
 
   const filteredStories = activeCategory === 'all' 
     ? impactStories 
@@ -180,25 +197,30 @@ export default function Stories() {
             </Link>
           </div>
 
+          <div className="mb-6">
+            <FundraiserFilterBar filters={fundraiserFilters} onChange={setFundraiserFilters} />
+          </div>
+
           {fundraisersLoading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-card rounded-2xl border border-border overflow-hidden">
-                  <Skeleton className="h-48 w-full" />
-                  <div className="p-5 space-y-3">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-6 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-2 w-full" />
-                  </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="space-y-3">
+                  <Skeleton className="w-full aspect-[4/3] rounded-2xl" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-1.5 w-full" />
+                  <Skeleton className="h-3 w-24" />
                 </div>
               ))}
             </div>
-          ) : fundraisers && fundraisers.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {fundraisers.map((fundraiser) => (
+          ) : filteredFundraisers.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
+              {filteredFundraisers.map((fundraiser) => (
                 <FundraiserCard key={fundraiser.id} fundraiser={fundraiser} />
               ))}
+            </div>
+          ) : fundraisers && fundraisers.length > 0 ? (
+            <div className="text-center py-12 bg-muted/30 rounded-2xl border border-dashed border-border">
+              <p className="text-muted-foreground">No fundraisers match these filters yet. Try clearing them.</p>
             </div>
           ) : (
             <div className="text-center py-12 bg-muted/30 rounded-2xl border border-dashed border-border">
@@ -216,6 +238,7 @@ export default function Stories() {
             </div>
           )}
         </section>
+
 
         {/* Success Stories Section */}
         <section className="mb-16">

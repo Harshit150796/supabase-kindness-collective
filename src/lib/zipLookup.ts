@@ -44,7 +44,7 @@ async function fetchUsZip(zip: string): Promise<ZipLocation | null> {
   }
 }
 
-export function useZipLocation(zip?: string | null, country?: string | null) {
+function useZipData(zip?: string | null, country?: string | null) {
   const clean = (zip || '').trim().split('-')[0];
   const isUs = !country || country.toLowerCase() === 'us';
   const valid = isUs && /^\d{5}$/.test(clean);
@@ -58,8 +58,16 @@ export function useZipLocation(zip?: string | null, country?: string | null) {
     retry: false,
   });
 
-  if (valid && query.data) {
-    return `${query.data.city}, ${query.data.stateCode}`;
-  }
+  return { clean, valid, data: query.data };
+}
+
+export function useZipLocation(zip?: string | null, country?: string | null) {
+  const { clean, valid, data } = useZipData(zip, country);
+  if (valid && data) return `${data.city}, ${data.stateCode}`;
   return clean || null;
+}
+
+export function useZipState(zip?: string | null, country?: string | null): string | null {
+  const { valid, data } = useZipData(zip, country);
+  return valid && data ? data.stateCode : null;
 }
