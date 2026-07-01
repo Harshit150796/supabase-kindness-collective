@@ -38,7 +38,7 @@ export function ImpactStories() {
           </div>
           <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-[520px] rounded-3xl" />
+              <Skeleton key={i} className="h-[380px] rounded-2xl" />
             ))}
           </div>
         </div>

@@ -18,6 +18,7 @@ export interface Fundraiser {
   unique_slug: string;
   cover_photo_url: string | null;
   country: string | null;
+  zip_code: string | null;
   status: string;
   created_at: string;
   fundraiser_images?: FundraiserImage[];
@@ -31,7 +32,7 @@ export function useFundraisers(options?: { limit?: number; category?: string }) 
         .from('fundraisers')
         .select(`
           id, title, story, category, monthly_goal, amount_raised, donors_count, 
-          unique_slug, cover_photo_url, country, status, created_at,
+          unique_slug, cover_photo_url, country, zip_code, status, created_at,
           fundraiser_images (id, image_url, is_primary)
         `)
         .eq('status', 'active')
