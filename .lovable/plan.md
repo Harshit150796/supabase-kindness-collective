@@ -1,59 +1,43 @@
-# Fundraiser Card Redesign — Trust-Anchored
+# Fundraiser card: better location + tighter layout
 
-Redesign the fundraiser/help-request cards to feel credible, human, and clearly not a scam. Applies to both the landing page (`ImpactStories`) and the `/stories` page (`FundraiserCard`).
+## 1. Location as "City, ST"
 
-## Problems today
-- Location shown as raw `ca` / `us` — vague.
-- `Food Support` category tag competes with `Active` badge, both sitting on the image.
-- "Active Campaign" appears twice (image badge + button below).
-- No verification signal, no social proof, feels generic.
+The `fundraisers` table only stores `country` + `zip_code` (no city/state). To show "Syracuse, NY":
 
-## What changes
+- Add `src/lib/zipLookup.ts` — a tiny hook `useZipLocation(zip, country)` that:
+  - For US zips, calls `https://api.zippopotam.us/us/{zip}` via react-query with `staleTime: Infinity` + `localStorage` cache (so each unique zip is fetched once, ever).
+  - Returns `{ city, stateCode }` → rendered as `"Syracuse, NY"`.
+  - For non-US zips, returns just the zip.
+- In `FundraiserCard.tsx`, replace the country chip with the resolved `"City, ST"` string. While loading, show the zip (or nothing) — no skeleton flash.
+- Remove country display entirely (per your note: everyone is US right now, so "US" adds no value).
+- `formatCountry` / `countryNames.ts` stays for future international use but isn't rendered on the card.
 
-### `src/components/stories/FundraiserCard.tsx` (primary card component)
-Rebuild layout to match selected direction:
+## 2. Shrink the card
 
-1. **Image area** — clean image, only two floating chips:
-   - Top-left: white/blur pill with pulsing green dot + `LIVE CAMPAIGN` (only when `status === 'active'`).
-   - Top-right: circular white/blur badge with emerald shield-check icon, `title="Verified Recipient"`.
-   - Remove the hover "Support Now" pill on the image (moved to footer button).
+Current card is oversized (h-[520px] skeleton, `p-6`, `text-xl` title, `text-2xl` amount, big Support button). Tightening pass in `FundraiserCard.tsx`:
 
-2. **Meta row** (below image):
-   - Left: emerald pill `Food Support` (category label, dynamic via existing `categoryLabels` map).
-   - Right: slate pill with map-pin icon + **full country name** (see helper below).
+| Element              | From                       | To                         |
+| -------------------- | -------------------------- | -------------------------- |
+| Image aspect         | 16 / 10                    | 16 / 9                     |
+| Content padding      | `p-6 space-y-5`            | `p-4 space-y-3.5`          |
+| Title                | `text-xl`                  | `text-base md:text-lg`     |
+| Excerpt              | `text-[0.9375rem]` 2 lines | `text-sm` 2 lines          |
+| Amount raised        | `text-2xl font-black`      | `text-lg font-extrabold`   |
+| "% Funded" chip      | `text-sm`                  | `text-xs`                  |
+| Progress bar         | `h-3`                      | `h-2`                      |
+| Donor avatars        | `w-8 h-8`                  | `w-6 h-6`                  |
+| Support button       | `py-2.5 px-5 text-sm`      | `py-2 px-4 text-xs`        |
+| Category/loc chips   | `px-3 py-1 text-[11px]`    | `px-2 py-0.5 text-[10px]`  |
+| Live Campaign pill   | `px-3 py-1.5`              | `px-2 py-1 text-[10px]`    |
+| Verified badge       | `w-5 h-5` icon             | `w-4 h-4`                  |
+| Card radius/shadow   | `rounded-3xl` big shadow   | `rounded-2xl` softer       |
 
-3. **Title + excerpt** — larger title (`text-xl font-bold`), 2-line clamp excerpt.
+Also update the skeleton in `ImpactStories.tsx` from `h-[520px]` → `h-[380px]` so loading state matches.
 
-4. **Funding block**:
-   - Left: `$40.00` big black number, `raised of $500 target` subtitle.
-   - Right: amber chip `8% Funded` (Warm Gold accent).
-   - Progress bar: taller (`h-3`), emerald fill with subtle glow shadow.
+## 3. Files touched
 
-5. **Footer row**:
-   - Left: stacked donor avatar circles (show up to 3, with `+N` overflow when `donors_count > 3`) + `N Kind Donors`.
-   - Right: emerald `Support →` button (links to same fundraiser detail page via the wrapping `<Link>`).
+- `src/lib/zipLookup.ts` (new)
+- `src/components/stories/FundraiserCard.tsx`
+- `src/components/landing/ImpactStories.tsx` (skeleton height only)
 
-### Country name helper
-Add a small `countryName(code)` util (inline in the card or `src/lib/utils.ts`) that maps common ISO codes to full names:
-```
-us → United States, ca → Canada, gb → United Kingdom, in → India,
-au → Australia, de → Germany, fr → France, ...
-```
-Fallback: if unknown, uppercase the code. If `country` is null, hide the location chip entirely.
-
-### `src/components/landing/ImpactStories.tsx`
-Currently renders its own inline card markup. Refactor to render `<FundraiserCard />` for real fundraisers so the new design shows on the landing page too. Keep mock/success stories using the existing inline card (or a simple sibling variant), since they don't share the fundraiser data model.
-
-Alternative (simpler): update the inline card markup in `ImpactStories.tsx` to mirror the same visual language (remove duplicate active badge, full country name, verified icon, gold chip). Pick whichever keeps the diff smallest — likely refactor to use `<FundraiserCard />` and drop the mock stories from this section entirely (fundraisers already fill 8 slots with `limit: 8`).
-
-## Design tokens
-- Primary emerald: `#10b981` (existing).
-- Gold accent: `#f59e0b` (existing).
-- Card: `rounded-2xl`, `shadow-xl` on hover with emerald tint.
-- Uses existing `bg-card`, `text-foreground`, `border-border` semantic tokens — hex values only where the selected direction uses them for accent chips.
-
-## Out of scope
-- No data model changes.
-- No new API fields.
-- Verified badge shown for all active fundraisers (no per-record verification flag yet — can be wired later).
-- Donor avatars are placeholder circles (no real avatar data on card yet).
+No DB, no backend, no other pages affected.
