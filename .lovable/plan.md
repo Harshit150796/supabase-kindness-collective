@@ -1,51 +1,34 @@
-# Fix mobile blurriness on the landing page
+# Show rotating placeholder donors until real donations arrive
 
-## Root cause
+## Goal
+The Top Donors panel currently shows nothing (or a "be the first donor" empty state) when there are no real donors this week. Instead, seed it with a rotating pool of plausible names — mixed with a couple of "Anonymous" entries — that changes every day, and swap them out automatically as real donors come in.
 
-The mobile hero looks blurry and unstable because we are running the **full desktop 3D pipeline on phones** while also rendering the canvas at a lower resolution than the device's actual pixel ratio. Three things combine:
+## Approach
+Keep this purely client-side (no DB writes, no fake donations polluting analytics or admin views).
 
-1. **`Tree3DScene.tsx` hard-codes `isMobile = false`.** Phones are forced to render 7,000 leaves, 4096×4096 shadow maps, antialiasing, ACES tone mapping, CSS3D `<Html transform>` coupon faces, fireflies, ambient birds, etc. The GPU can't keep up → dropped frames → the browser smears between frames, which reads as "blur".
-2. **DPR is capped at 2 while the device reports dpr ≈ 3.75.** WebGL renders at 2× and the browser bilinearly upscales to 3.75× — that upscale is literally a blur filter on the canvas.
-3. **CSS3D `<Html transform>` coupon overlays** (in `CouponFruit.tsx`) are composited by the browser as separate layers over WebGL. On mobile they get downsampled/repainted aggressively and look soft, and they jitter against the 3D scene.
+### 1. `src/hooks/useTopDonors.ts`
+- After the existing RPC call to `get_top_donors_week` returns, check how many real donors we have (`data.length`).
+- If we have **5 or more** real donors → show them exactly as today.
+- If we have **fewer than 5** (including zero) → **pad the list up to 5** by appending placeholder donors from a local pool. Real donors always come first and keep their real totals/counts.
+- Placeholders are marked with a flag (`is_placeholder: true`) so the UI can add a subtle "sample" indicator later if we want — for now, they render identically so the panel looks alive.
 
-Secondary contributors: `backdrop-blur` pills on hero CTAs, ACES tone mapping on a low-power GPU, fog re-tinting every frame.
+### 2. Placeholder pool (new file `src/lib/placeholderDonors.ts`)
+- Curated pool of ~40 first-name + last-initial entries (e.g. "Sarah M.", "David P.", "Priya S.", "Miguel R.", …) plus 3 "Anonymous" entries.
+- Deterministic daily rotation: seed a small PRNG with `Math.floor(Date.now() / 86_400_000)` so every visitor sees the **same 5 names on the same day**, and the set changes automatically at midnight UTC.
+- Amount + gift count are also seeded from the day so they don't jitter on every render: totals in a plausible range (e.g. $45–$480), gift counts 1–4. Amounts sorted descending so ranking looks natural.
+- Always include at least one "Anonymous" entry in the daily set.
 
-## What to change
+### 3. Merging logic in the hook
+- `padded = [...realDonors, ...placeholders].slice(0, 5)`, then sort by `total` descending so a real $1,000 donor still lands at #1.
+- Real donors overwrite same-name collisions.
 
-### 1. `src/components/landing/Tree3DScene.tsx` — re-enable real mobile mode
-- Replace `const isMobile = false;` with `const isMobile = useIsMobile();` (import from `@/hooks/use-mobile`).
-- Raise the mobile DPR cap from 2 → **3** so the canvas matches the screen and stops being upscaled. Keep desktop at 2.
-- On mobile:
-  - `antialias: false` (DPR 3 already gives effective supersampling)
-  - `shadows={false}` on the `<Canvas>` and skip `castShadow` / `shadow-mapSize` (huge win)
-  - `toneMapping: THREE.NoToneMapping`, `toneMappingExposure: 1`
-  - `frameloop="demand"` when off-screen; keep `"always"` when in view
-  - Drop `<directionalLight position={[0,4,-8]}>` rim light, keep the hemisphere fill
-  - `<AmbientBirds count={2}>`, drop `<Fireflies />` and `<TrunkRipple />`
-  - `leafCount = 2500`, `plantCap = 10`
-  - Fog: `[ '#DCE6D5', 25, 70 ]`
-
-### 2. `src/components/landing/tree3d/CouponFruit.tsx` — no CSS3D on mobile
-- Accept the existing `isMobile` prop (already passed) and when true, render the coupon face as a **canvas texture on the mesh** (the existing `drawCouponTexture` path) instead of the `<Html transform>` DOM face. CSS3D over WebGL is the single biggest source of "blurry, jittery" coupons on phones.
-
-### 3. `src/components/landing/hero/HeroHeadline.tsx` — drop backdrop blur on the CTA row
-- Remove `md:backdrop-blur-sm` and `md:bg-background/70` from the button wrapper and the outline button. Use a solid `bg-background` pill. `backdrop-blur` re-samples the animated canvas underneath every frame and is the second-biggest blur source on mobile.
-
-### 4. `src/components/landing/HeroSection.tsx` — stop fading the canvas in
-- The 700 ms opacity fade on the canvas wrapper triggers a compositor blur pass during the transition. Render the canvas with `opacity: 1` once `treeReady` is true (no transition), keep the gradient underneath as the pre-mount fallback.
-
-### 5. `src/components/landing/tree3d/Ground.tsx` and `Sky.tsx` — lighter mobile path
-- When `isMobile`, skip the reflective floor pass in `Ground` (use a plain `MeshStandardMaterial`) and use a static gradient sky instead of the animated shader. These already accept an `isMobile` prop; just make sure both branches are wired.
-
-## Why this fixes the blur
-
-- Matching DPR to the device removes the canvas upscale → edges become crisp.
-- Cutting shadows + AA + tone mapping lets the GPU hit 60 fps → no inter-frame smearing.
-- Replacing CSS3D coupon faces with a baked texture removes the layer mismatch that makes coupons look soft.
-- Removing `backdrop-blur` over an animated canvas removes a per-frame re-sample of the hero.
+### 4. No component changes required
+`TopDonorsPanel.tsx` already renders whatever `useTopDonors()` returns. It will automatically pick up the padded list. Existing realtime subscription still refreshes when a real donation lands, so real donors bubble in without a reload.
 
 ## Out of scope
-No changes to copy, routes, business logic, donation flow, or any non-hero section. This is a presentation-layer perf/quality fix only.
+- No database migration, no fake rows inserted into `donations`.
+- No changes to admin analytics or leaderboards elsewhere.
+- No changes to `LiveActivityBar` (that already has its own animation).
 
 ## Verification
-After implementing, open the preview on the mobile viewport and confirm: coupons read sharply, text on the CTA pill is crisp, the tree no longer "breathes" blur during idle, and the canvas resolution visibly matches the surrounding UI.
+Reload the landing page: the panel shows 5 rotating names with at least one "Anonymous". Reload again — same 5 names (daily seed). Change the system date to the next day — a different set appears.
