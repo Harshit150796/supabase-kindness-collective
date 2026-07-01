@@ -18,6 +18,9 @@ import {
 import { impactStories, ImpactStory } from '@/data/impactStories';
 import { useFundraisers } from '@/hooks/useFundraisers';
 import { FundraiserCard } from '@/components/stories/FundraiserCard';
+import { FundraiserFilterBar, type FundraiserFilters } from '@/components/stories/FundraiserFilterBar';
+import { useZipStates } from '@/lib/zipStates';
+import { useMemo } from 'react';
 import { 
   Heart, 
   Users, 
