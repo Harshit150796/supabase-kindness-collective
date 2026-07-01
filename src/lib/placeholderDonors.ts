@@ -36,7 +36,7 @@ function daySeed() {
  * "Anonymous" entry. Totals + gift counts are seeded so they don't jitter on
  * re-render but rotate day to day.
  */
-export function getDailyPlaceholderDonors(count = 5): TopDonor[] {
+export function getDailyPlaceholderDonors(count = 3): TopDonor[] {
   const rand = mulberry32(daySeed());
 
   // Shuffle a copy of the name pool.
