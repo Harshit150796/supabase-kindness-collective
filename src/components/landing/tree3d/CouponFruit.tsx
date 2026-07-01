@@ -385,8 +385,10 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
           />
         </mesh>
 
-        {/* Crisp vector overlay anchored to the front face. */}
-        {state.phase !== 'regrowing' && (
+        {/* Crisp vector overlay anchored to the front face.
+            Skipped on mobile — CSS3D composited over WebGL causes soft/jittery
+            coupons on phones. The baked canvas texture on the mesh above is used instead. */}
+        {!isMobile && state.phase !== 'regrowing' && (
           <Html
             transform
             sprite
