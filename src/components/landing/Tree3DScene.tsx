@@ -425,8 +425,8 @@ export function Tree3DScene() {
     };
   }, [isMobile]);
 
-  const leafCount = isMobile ? 3000 : 7000;
-  const plantCap = isMobile ? 14 : 40;
+  const leafCount = isMobile ? 2500 : 7000;
+  const plantCap = isMobile ? 10 : 40;
 
   // Render while in view + tab visible. We no longer downgrade based on scroll
   // position on mobile — that caused visible pause/resume hitches.
