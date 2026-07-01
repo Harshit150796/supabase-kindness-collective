@@ -365,13 +365,15 @@ export function Tree3DScene() {
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const zoomProgressRef = useRef(0); // 0 = zoomed in, 1 = zoomed out
   const [inView, setInView] = useState(true);
-  // Full desktop parity on mobile — user explicitly requested same features as laptop.
-  const isMobile = false;
+  // Real mobile mode — matches device DPR, drops shadows/AA/tone-mapping so the
+  // canvas stays crisp and hits 60fps on phones instead of getting upscaled + smeared.
+  const isMobile = useIsMobile();
   const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
-  // DPR: mobile cap raised to 2 (sharper canopy edges; safe because AA, shadows,
-  // and tone-mapping are off on mobile). Desktop stays at 2.
+  // DPR: mobile cap raised to 3 to match modern phones (dpr up to ~3.75).
+  // Without this the canvas renders at 2x and the browser bilinearly upscales
+  // to the device — that's the "blurry hero" complaint.
   const stableDpr = useMemo<[number, number]>(() => {
-    const max = isMobile ? 2 : 2;
+    const max = isMobile ? 3 : 2;
     const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, max) : max;
     return [d, d];
   }, [isMobile]);
