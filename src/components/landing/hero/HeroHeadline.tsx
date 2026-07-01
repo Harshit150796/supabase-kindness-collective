@@ -56,7 +56,7 @@ export function HeroHeadline() {
           </span>
         )}
       </div>
-      <div className="mt-3 md:mt-4 inline-flex items-center justify-center gap-1.5 md:gap-2 md:backdrop-blur-sm md:rounded-full md:px-1 md:py-1">
+      <div className="mt-3 md:mt-4 inline-flex items-center justify-center gap-1.5 md:gap-2">
         <Button asChild size="sm" className="shadow-lg whitespace-nowrap">
           <Link to="/donate">
             Donate now <ArrowRight className="ml-1 w-3.5 h-3.5" />
@@ -66,7 +66,7 @@ export function HeroHeadline() {
           asChild
           size="sm"
           variant="outline"
-          className="whitespace-nowrap bg-background md:bg-background/70 md:backdrop-blur-sm shadow-lg"
+          className="whitespace-nowrap bg-background shadow-lg"
         >
           <Link to="/apply">Apply as Recipient</Link>
         </Button>
