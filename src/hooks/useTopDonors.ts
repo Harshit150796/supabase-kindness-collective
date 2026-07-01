@@ -10,7 +10,7 @@ export interface TopDonor {
   is_placeholder?: boolean;
 }
 
-const TARGET_COUNT = 5;
+const TARGET_COUNT = 3;
 
 function padWithPlaceholders(real: TopDonor[]): TopDonor[] {
   if (real.length >= TARGET_COUNT) return real.slice(0, TARGET_COUNT);
