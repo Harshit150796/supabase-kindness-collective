@@ -2,11 +2,24 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useInteraction } from './InteractionContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
-const N = 40;
+// Adaptive firefly count based on device capability
+const getFireflyCount = (isMobile: boolean): number => {
+  if (!isMobile) return 40;
+  // Mobile: reduce to 20 for better performance
+  // Further reduced for low-power devices
+  if (typeof navigator !== 'undefined') {
+    const cores = navigator.hardwareConcurrency || 2;
+    return cores >= 6 ? 20 : 12;
+  }
+  return 20;
+};
 
 export function Fireflies() {
+  const isMobile = useIsMobile();
   const { timeOfDay } = useInteraction();
+  const N = useMemo(() => getFireflyCount(isMobile), [isMobile]);
   const ref = useRef<THREE.InstancedMesh>(null);
   const matRef = useRef<THREE.MeshBasicMaterial>(null);
   const opacityRef = useRef(0);
@@ -27,7 +40,7 @@ export function Fireflies() {
       flicker: 0.6 + Math.random() * 0.6,
       seed: i,
     }));
-  }, []);
+  }, [N]);
 
   useFrame((_, dt) => {
     if (!ref.current || !matRef.current) return;
@@ -56,9 +69,13 @@ export function Fireflies() {
     ref.current.instanceMatrix.needsUpdate = true;
   });
 
+  // Reduce sphere geometry segments on mobile for better performance
+  const segmentsX = isMobile ? 6 : 8;
+  const segmentsY = isMobile ? 6 : 8;
+
   return (
     <instancedMesh ref={ref} args={[undefined, undefined, N]} frustumCulled={false}>
-      <sphereGeometry args={[1, 8, 8]} />
+      <sphereGeometry args={[1, segmentsX, segmentsY]} />
       <meshBasicMaterial
         ref={matRef}
         color="#FFEC8B"
