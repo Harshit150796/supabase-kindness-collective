@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.coupon-chat]
 verify_jwt = false
+
+[functions.procure-coupons]
+verify_jwt = false
