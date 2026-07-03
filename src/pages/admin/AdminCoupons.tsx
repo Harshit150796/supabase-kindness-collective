@@ -27,7 +27,8 @@ interface Coupon {
   created_at: string;
 }
 
-const STATUSES = ['available', 'reserved', 'redeemed', 'expired', 'pending_procurement', 'procurement_failed'] as const;
+type CouponStatus = 'available' | 'claimed' | 'reserved' | 'redeemed' | 'expired' | 'pending_procurement' | 'procurement_failed';
+const STATUSES: CouponStatus[] = ['available', 'reserved', 'redeemed', 'expired', 'pending_procurement', 'procurement_failed'];
 
 export default function AdminCoupons() {
   const { toast } = useToast();
@@ -79,7 +80,7 @@ export default function AdminCoupons() {
         store_name: editing.store_name,
         value: editing.value,
         expiry_date: editing.expiry_date,
-        status: editing.status as Coupon['status'],
+        status: editing.status as CouponStatus,
         code: editing.code,
       })
       .eq('id', editing.id);
