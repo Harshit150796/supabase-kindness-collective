@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      brand_procurement_map: {
+        Row: {
+          brand_name: string
+          created_at: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          provider: string
+          tremendous_product_id: string
+          updated_at: string
+        }
+        Insert: {
+          brand_name: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          provider?: string
+          tremendous_product_id: string
+          updated_at?: string
+        }
+        Update: {
+          brand_name?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          provider?: string
+          tremendous_product_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -340,15 +373,21 @@ export type Database = {
           expected_value: number | null
           expiry_date: string | null
           id: string
+          last_procurement_at: string | null
+          last_procurement_error: string | null
           min_purchase: number | null
           partner_id: string | null
+          procurement_attempts: number
           redeemed_at: string | null
           redeemed_by: string | null
+          redemption_url: string | null
           reserved_at: string | null
           reserved_by: string | null
           status: Database["public"]["Enums"]["coupon_status"]
           store_name: string
           title: string
+          tremendous_order_id: string | null
+          tremendous_reward_id: string | null
           updated_at: string
           value: number | null
         }
@@ -365,15 +404,21 @@ export type Database = {
           expected_value?: number | null
           expiry_date?: string | null
           id?: string
+          last_procurement_at?: string | null
+          last_procurement_error?: string | null
           min_purchase?: number | null
           partner_id?: string | null
+          procurement_attempts?: number
           redeemed_at?: string | null
           redeemed_by?: string | null
+          redemption_url?: string | null
           reserved_at?: string | null
           reserved_by?: string | null
           status?: Database["public"]["Enums"]["coupon_status"]
           store_name: string
           title: string
+          tremendous_order_id?: string | null
+          tremendous_reward_id?: string | null
           updated_at?: string
           value?: number | null
         }
@@ -390,15 +435,21 @@ export type Database = {
           expected_value?: number | null
           expiry_date?: string | null
           id?: string
+          last_procurement_at?: string | null
+          last_procurement_error?: string | null
           min_purchase?: number | null
           partner_id?: string | null
+          procurement_attempts?: number
           redeemed_at?: string | null
           redeemed_by?: string | null
+          redemption_url?: string | null
           reserved_at?: string | null
           reserved_by?: string | null
           status?: Database["public"]["Enums"]["coupon_status"]
           store_name?: string
           title?: string
+          tremendous_order_id?: string | null
+          tremendous_reward_id?: string | null
           updated_at?: string
           value?: number | null
         }
