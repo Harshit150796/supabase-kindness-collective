@@ -1441,6 +1441,7 @@ export type Database = {
         | "expired"
         | "pending_procurement"
         | "claimed"
+        | "procurement_failed"
       user_role: "recipient" | "donor" | "admin"
       verification_status: "pending" | "approved" | "rejected"
     }
@@ -1578,6 +1579,7 @@ export const Constants = {
         "expired",
         "pending_procurement",
         "claimed",
+        "procurement_failed",
       ],
       user_role: ["recipient", "donor", "admin"],
       verification_status: ["pending", "approved", "rejected"],
