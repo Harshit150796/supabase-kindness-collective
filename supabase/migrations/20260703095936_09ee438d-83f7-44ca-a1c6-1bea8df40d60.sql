@@ -1,0 +1,1 @@
+ALTER TYPE coupon_status ADD VALUE IF NOT EXISTS 'procurement_failed';

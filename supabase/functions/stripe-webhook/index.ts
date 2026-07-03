@@ -377,6 +377,23 @@ async function createCouponsFromMultiBrandDonation(
       // Don't throw - donation is already recorded, this is non-critical
     } else {
       console.log(`Created ${allCoupons.length} total coupons across ${brandAllocations.length} brand(s)`);
+
+      // Fire-and-forget: kick off auto-procurement via Tremendous.
+      // Non-blocking so the webhook responds fast to Stripe.
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        fetch(`${supabaseUrl}/functions/v1/procure-coupons`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify({ donation_id: donationId }),
+        }).catch((e) => console.error("procure-coupons kickoff failed:", e));
+      } catch (e) {
+        console.error("Could not kick off procure-coupons:", e);
+      }
     }
   } else {
     console.log(`No coupons created - allocated amounts too small`);
