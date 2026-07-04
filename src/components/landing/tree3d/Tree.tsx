@@ -3,6 +3,7 @@ import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useInteraction } from './InteractionContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const MODEL_URL = '/models/tree.glb';
 useGLTF.preload(MODEL_URL);
@@ -35,6 +36,7 @@ export function getBranchTips(): BranchTip[] {
 }
 
 export function Tree(_props: { leafCount?: number }) {
+  const isMobile = useIsMobile();
   const { scene } = useGLTF(MODEL_URL) as unknown as { scene: THREE.Group };
   const rootRef = useRef<THREE.Group>(null);
   const uTime = useRef({ value: 0 });
@@ -58,8 +60,13 @@ export function Tree(_props: { leafCount?: number }) {
     root.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (!mesh.isMesh) return;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
+      
+      // Disable shadows on mobile for better performance
+      if (!isMobile) {
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+      }
+      
       // Disable raycasting on tree meshes — hit zones handle clicks
       mesh.raycast = () => {};
 
@@ -106,9 +113,9 @@ export function Tree(_props: { leafCount?: number }) {
             );
           };
         } else {
-          m.roughness = 0.92;
-          m.metalness = 0.02;
-          if (m.map) m.map.anisotropy = 8;
+          m.roughness = isMobile ? 0.95 : 0.92; // Slightly higher roughness on mobile for faster rendering
+          m.metalness = isMobile ? 0 : 0.02;
+          if (m.map) m.map.anisotropy = isMobile ? 2 : 8; // Reduce anisotropy on mobile
         }
         m.needsUpdate = true;
         return m;
@@ -122,7 +129,7 @@ export function Tree(_props: { leafCount?: number }) {
     });
 
     return root;
-  }, [scene]);
+  }, [scene, isMobile]);
 
   useFrame((_, dt) => {
     uTime.current.value += dt;

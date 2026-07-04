@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useInteraction } from './InteractionContext';
 import { PlantSprout, pickArchetype, type PlantArchetype } from './PlantSprout';
 
@@ -12,10 +13,40 @@ interface Plant {
   seed: number;
 }
 
+// Adaptive plant cap based on device capability
+const getPlantCap = (isMobile: boolean, userCap: number | undefined): number => {
+  const baseCap = userCap ?? (isMobile ? 10 : 40);
+  
+  if (!isMobile) return baseCap;
+  
+  // On mobile, further reduce based on hardware
+  if (typeof navigator !== 'undefined') {
+    const cores = navigator.hardwareConcurrency || 2;
+    const memory = (navigator as any).deviceMemory || 4; // In GB
+    
+    // Low-end devices: fewer plants
+    if (cores <= 2 || memory <= 2) {
+      return Math.max(3, Math.floor(baseCap * 0.25));
+    }
+    // Mid-range devices
+    if (cores <= 4 || memory <= 4) {
+      return Math.max(5, Math.floor(baseCap * 0.5));
+    }
+  }
+  
+  return baseCap;
+};
+
 export function PlantsLayer({ cap = 40 }: { cap?: number }) {
+  const isMobile = useIsMobile();
+  const effectiveCap = useRef(getPlantCap(isMobile, cap));
   const { plantEvent } = useInteraction();
   const [plants, setPlants] = useState<Plant[]>([]);
   const lastIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    effectiveCap.current = getPlantCap(isMobile, cap);
+  }, [isMobile, cap]);
 
   useEffect(() => {
     if (!plantEvent) return;
@@ -54,13 +85,13 @@ export function PlantsLayer({ cap = 40 }: { cap?: number }) {
       let merged = [...prev, next];
       // FIFO cap: mark oldest non-fading as fading
       const activeCount = merged.filter((p) => !p.fadingOut).length;
-      if (activeCount > cap) {
+      if (activeCount > effectiveCap.current) {
         const idx = merged.findIndex((p) => !p.fadingOut);
         if (idx >= 0) merged[idx] = { ...merged[idx], fadingOut: true };
       }
       return merged;
     });
-  }, [plantEvent, cap]);
+  }, [plantEvent]);
 
   const handleFaded = (uid: string) => {
     setPlants((prev) => prev.filter((p) => p.id !== uid));
