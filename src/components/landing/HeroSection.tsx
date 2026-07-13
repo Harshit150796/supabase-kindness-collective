@@ -3,6 +3,24 @@ import { HeroHeadline } from '@/components/landing/hero/HeroHeadline';
 import { TopDonorsPanel } from '@/components/landing/hero/TopDonorsPanel';
 import { AITreeLauncher } from '@/components/landing/hero/AITreeLauncher';
 import { AITreeChat } from '@/components/landing/hero/AITreeChat';
+import { Tree3DErrorBoundary } from '@/components/landing/Tree3DErrorBoundary';
+
+const BOT_UA_RE = /(bot|crawler|spider|crawling|Googlebot|bingbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|Discordbot|HeadlessChrome|Lighthouse|PageSpeed)/i;
+
+function canRender3D(): boolean {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return false;
+  try {
+    if (BOT_UA_RE.test(navigator.userAgent || '')) return false;
+    const canvas = document.createElement('canvas');
+    const gl =
+      canvas.getContext('webgl2') ||
+      canvas.getContext('webgl') ||
+      (canvas.getContext('experimental-webgl') as WebGLRenderingContext | null);
+    return !!gl;
+  } catch {
+    return false;
+  }
+}
 
 const Tree3DScene = lazy(() =>
   import('@/components/landing/Tree3DScene').then((m) => ({ default: m.Tree3DScene }))
@@ -23,6 +41,11 @@ export function HeroSection() {
   const [treeReady, setTreeReady] = useState(false);
 
   useEffect(() => {
+    // Skip mounting the 3D scene entirely on clients that can't run WebGL
+    // (bots, ancient browsers, some in-app webviews). The gradient fallback
+    // stays visible and the rest of the page renders normally.
+    if (!canRender3D()) return;
+
     let cancelled = false;
     const start = () => {
       if (cancelled) return;
@@ -56,9 +79,11 @@ export function HeroSection() {
       <GradientFallback />
       <div className="absolute inset-0 w-full h-full">
         {treeReady && (
-          <Suspense fallback={null}>
-            <Tree3DScene />
-          </Suspense>
+          <Tree3DErrorBoundary>
+            <Suspense fallback={null}>
+              <Tree3DScene />
+            </Suspense>
+          </Tree3DErrorBoundary>
         )}
       </div>
 
