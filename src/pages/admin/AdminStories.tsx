@@ -357,7 +357,7 @@ export default function AdminStories() {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium">Location</label>
-                  <Input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder="e.g. Port-au-Prince, Haiti" />
+                  <Input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder="e.g. Syracuse, NY" />
                 </div>
               </div>
               <div className="space-y-1.5">

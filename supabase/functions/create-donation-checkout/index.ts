@@ -76,10 +76,13 @@ serve(async (req) => {
     // Create Checkout session with optimized settings for higher approval rates
     const session = await stripe.checkout.sessions.create({
       locale: "en",
-      
-      // Full billing address for AVS checks
+
+      // US-only underwriter compliance: card payments only, billing address required
+      // for AVS + post-hoc country audit. Non-US traffic is blocked at the Cloudflare
+      // WAF (see coupondonation.com > Security > WAF > "Block non-US traffic").
+      payment_method_types: ['card'],
       billing_address_collection: 'required',
-      
+
       // Phone collection improves bank trust score
       phone_number_collection: {
         enabled: true,

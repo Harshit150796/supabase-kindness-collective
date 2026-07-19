@@ -443,91 +443,11 @@ My health has stabilized. My doctor is pleased with my progress. And I no longer
       relationship: 'Neighbor and friend'
     }
   },
-  // Featured stories — detail page entries
-  {
-    id: 'featured-1',
-    name: "Children's Hope Program",
-    location: 'Poland',
-    image: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=400&h=400&fit=crop',
-    story: 'Children in conflict-affected areas are finding joy and normalcy through play, therapy, and community support activities.',
-    fullStory: `In the heart of Poland, near the Ukrainian border, the Children's Hope Program has been providing a safe haven for displaced children since early 2024. What started as a small community effort in a local school gymnasium has grown into a comprehensive support network serving over 300 children weekly.
-
-The program offers structured play therapy sessions, art workshops, and educational activities designed to help children process trauma and rebuild a sense of normalcy. Trained counselors work alongside volunteers to create an environment where kids can just be kids — laughing, playing, and learning without fear.
-
-Local families have opened their homes as host families, and community donations have funded everything from art supplies to warm winter clothing. The grocery coupons provided through our platform ensure that both the children and their host families have access to nutritious meals.
-
-One mother shared: "My daughter hadn't smiled in months after we fled. The first day at the program, she came home singing. That sound was everything."
-
-The program has expanded to three locations across southeastern Poland, and plans are underway to open a fourth center. With continued donor support, we aim to serve 500 children by end of 2026.`,
-    impact: 'Play therapy and nutrition for 300+ children',
-    category: 'child',
-    donorsCount: 187,
-    amountRaised: 12400,
-    goal: 18000,
-    dateHelped: 'Ongoing since 2024',
-    verified: true,
-    galleryImages: [
-      'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&h=600&fit=crop',
-    ],
-    updates: [
-      { date: '2026-02-20', title: 'Third center opened! 🎉', content: 'We opened our third location in Rzeszów, now serving over 300 children across southeastern Poland.' },
-      { date: '2026-01-10', title: 'Winter clothing drive success', content: 'Donors provided warm coats, gloves, and boots for all 250 children in the program.' },
-      { date: '2025-11-15', title: 'Art therapy expansion', content: 'New art therapy sessions launched with professional therapists. Children are showing remarkable progress.' },
-    ],
-    recentDonors: [
-      { name: 'European Relief Fund', amount: 500, message: 'For every child who deserves to play and learn.', date: '2026-02-25', isAnonymous: false },
-      { name: 'Anonymous', amount: 100, date: '2026-02-22', isAnonymous: true },
-      { name: 'Anna K.', amount: 75, message: 'Wishing strength to all the families.', date: '2026-02-18', isAnonymous: false },
-      { name: 'The Nowak Family', amount: 200, date: '2026-02-15', isAnonymous: false },
-    ],
-    brandPartners: ['Biedronka', 'Lidl', 'Carrefour'],
-    organizer: { name: 'Katarzyna Wiśniewska', relationship: 'Program Director' },
-  },
-  {
-    id: 'featured-2',
-    name: 'Rural Family Support',
-    location: 'Haiti',
-    image: 'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=400&fit=crop',
-    story: "Families in rural Haiti are receiving essential food supplies and grocery coupons, helping them through the most difficult times they've ever faced.",
-    fullStory: `In the remote villages of Haiti's Grand'Anse department, access to food has always been a challenge. But after multiple hurricanes and ongoing economic instability, many families found themselves on the brink of starvation.
-
-Our Rural Family Support initiative partners with local community leaders to identify the families most in need. Rather than shipping food — which is expensive and often doesn't match local diets — we work with regional markets and vendors to distribute coupons that families can redeem for rice, beans, cooking oil, fresh produce, and other staples they actually want and need.
-
-Jean-Pierre, a father of five, told us: "Before the coupons, I would walk three hours to find work, only to earn enough for one meal. Now my children eat every day. I can focus on rebuilding our farm."
-
-The program currently supports 134 families across 8 villages. Each family receives monthly coupons equivalent to $65 in groceries — enough to feed a family of four for the month. Local vendors benefit too, keeping the economic impact within the community.
-
-We've also introduced agricultural training workshops, teaching families sustainable farming techniques so they can eventually grow their own food. 23 families have already started small vegetable gardens with seeds provided through the program.`,
-    impact: 'Monthly groceries for 134 families',
-    category: 'family',
-    donorsCount: 134,
-    amountRaised: 8750,
-    goal: 15000,
-    dateHelped: 'Ongoing since 2025',
-    verified: true,
-    familySize: 4,
-    galleryImages: [
-      'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=800&h=600&fit=crop',
-    ],
-    updates: [
-      { date: '2026-02-10', title: 'Agricultural workshop #3 complete 🌱', content: '23 families now growing their own vegetables. Seed distribution expanded to 3 new villages.' },
-      { date: '2026-01-05', title: '134 families supported', content: 'We reached our milestone of 134 families receiving monthly grocery coupons across 8 villages.' },
-    ],
-    recentDonors: [
-      { name: 'Global Food Initiative', amount: 1000, message: 'Empowering communities to feed themselves.', date: '2026-02-08', isAnonymous: false },
-      { name: 'Anonymous', amount: 50, date: '2026-02-05', isAnonymous: true },
-      { name: 'Pierre L.', amount: 150, message: 'Ayiti cheri — Haiti forever in my heart.', date: '2026-01-30', isAnonymous: false },
-    ],
-    brandPartners: ['Caribbean Market Network', 'Local Vendors Coalition'],
-    organizer: { name: 'Jean-Baptiste Toussaint', relationship: 'Regional Coordinator' },
-  },
+  // Featured stories — detail page entries (US only)
   {
     id: 'featured-3',
     name: 'Hurricane Helene Relief',
-    location: 'North Carolina, USA',
+    location: 'Asheville, NC',
     image: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=400&h=400&fit=crop',
     story: 'After Hurricane Helene devastated communities in North Carolina, donors helped families rebuild with grocery support and essential supplies when they needed it most.',
     fullStory: `When Hurricane Helene made landfall in western North Carolina in September 2025, it left a trail of destruction that no one in the region had ever seen. Entire neighborhoods were underwater. Roads were impassable. Power was out for weeks.
@@ -565,46 +485,7 @@ Three months later, the recovery continues. We've transitioned from emergency re
     brandPartners: ['Ingles Markets', 'Food Lion', 'Walmart'],
     organizer: { name: 'Sheriff Tom Bradley', relationship: 'Community Relief Coordinator' },
   },
-  {
-    id: 'featured-4',
-    name: 'Children of Heroes',
-    location: 'Ukraine',
-    image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=400&fit=crop',
-    story: 'Children of fallen heroes in Ukraine are receiving nutrition, education supplies, and community care — ensuring they are never forgotten.',
-    fullStory: `Since the full-scale invasion began, thousands of Ukrainian children have lost a parent — mothers and fathers who gave their lives defending their country. These children are heroes in their own right, carrying burdens no child should bear.
-
-The Children of Heroes program was founded by a group of military widows who understood that while the nation mourned, practical support was desperately needed. Many of these families lost their primary breadwinner, plunging them into financial hardship on top of unimaginable grief.
-
-Our partnership provides monthly grocery coupons redeemable at Silpo, ATB, and other major Ukrainian retailers. But the program goes beyond food. We fund school supplies, winter clothing, and after-school activities that give these children a sense of community and belonging.
-
-Olena, mother of 8-year-old Dmytro, shared: "My husband was everything to us. When he didn't come home, I didn't know how we would survive. The grocery coupons mean Dmytro eats well. The after-school program means he has friends who understand. We are not forgotten."
-
-Currently supporting 245 families across Kyiv, Lviv, and Dnipro, the program aims to expand to Odesa and Kharkiv by mid-2026. Every donation directly impacts a child who has already sacrificed more than most of us ever will.`,
-    impact: 'Monthly support for 245 hero families',
-    category: 'child',
-    donorsCount: 245,
-    amountRaised: 16800,
-    goal: 20000,
-    dateHelped: 'Ongoing since 2024',
-    verified: true,
-    galleryImages: [
-      'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop',
-    ],
-    updates: [
-      { date: '2026-02-14', title: 'Valentine\'s Day celebration ❤️', content: 'Children created cards for their mothers and host families. A beautiful day filled with love and laughter.' },
-      { date: '2026-01-20', title: 'Expansion to Dnipro', content: 'Our third city hub is now operational, supporting 45 new families in the Dnipro region.' },
-      { date: '2025-12-25', title: 'Holiday gift packages delivered 🎄', content: 'Every child in the program received a gift package with toys, school supplies, and warm clothing.' },
-    ],
-    recentDonors: [
-      { name: 'United for Ukraine', amount: 1500, message: 'Slava Ukraini. We will never forget.', date: '2026-02-12', isAnonymous: false },
-      { name: 'Anonymous', amount: 200, date: '2026-02-10', isAnonymous: true },
-      { name: 'Oksana M.', amount: 100, message: 'For the children who carry the weight of the world.', date: '2026-02-08', isAnonymous: false },
-      { name: 'Diaspora Aid Network', amount: 750, date: '2026-02-05', isAnonymous: false },
-    ],
-    brandPartners: ['Silpo', 'ATB Market', 'Novus'],
-    organizer: { name: 'Iryna Bondarenko', relationship: 'Program Founder & Military Widow' },
-  },
 ];
 
 export const featuredStory = impactStories[0];
+
