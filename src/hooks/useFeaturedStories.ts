@@ -2,23 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getCurrentFeaturedStory, featuredStories } from '@/data/featuredStories';
 
-import childrensHopeImg from '@/assets/featured/childrens-hope.webp';
-import ruralFamilyImg from '@/assets/featured/rural-family-support.webp';
 import hurricaneReliefImg from '@/assets/featured/hurricane-relief.webp';
-import childrenOfHeroesImg from '@/assets/featured/children-of-heroes.jpeg';
 
 const imageMap: Record<string, string> = {
-  'childrens-hope': childrensHopeImg,
-  'rural-family': ruralFamilyImg,
   'hurricane-relief': hurricaneReliefImg,
-  'children-of-heroes': childrenOfHeroesImg,
 };
 
 const storyKeyToId: Record<string, string> = {
-  'childrens-hope': 'featured-1',
-  'rural-family': 'featured-2',
   'hurricane-relief': 'featured-3',
-  'children-of-heroes': 'featured-4',
 };
 
 export function useFeaturedStories() {
