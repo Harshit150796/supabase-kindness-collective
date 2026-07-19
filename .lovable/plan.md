@@ -1,55 +1,52 @@
-## Diagnosis (verified against your data)
+## What your screenshot tells us
 
-The error is not from our code. Stripe's API is returning HTTP 400 with:
+Stripe's "Account status → Tasks" panel shows **"No active tasks for your account"** — meaning Stripe isn't asking you for any documents. Yet the API still refuses live charges. That narrows the cause: it's not a missing KYC document, so it's one of:
 
-> `"Your account cannot currently make live charges."` — `type: invalid_request_error`, account `acct_1Sgpd8J31hV93H57`.
+1. **`charges_enabled = false`** on the account (capability disabled, e.g., `card_payments` or `transfers` capability was revoked or is `inactive` / `pending`).
+2. **A `disabled_reason`** set on the account (e.g. `requirements.past_due`, `under_review`, `platform_paused`, `rejected.fraud`, `rejected.other`) that Stripe surfaces via API but not always on the mobile "Tasks" view.
+3. The **secret key in Supabase belongs to a different Stripe account** than the one you're viewing in the screenshot (both start with `acct_1S...` — easy to confuse). The failing account is `acct_1Sgpd8J31hV93H57`; the screenshot URL cuts off at `acct_1Sgpd8J31hV93...` so it looks like a match, but we should confirm by asking the API.
 
-I confirmed by querying the `donations` table: every past successful donation (most recent June 12, 2026 — `pi_3ThNz6J31hV93H57...`) was on the **same account** `J31hV93H57`. So:
+The only way to know which one is to ask Stripe directly. I'll add a tiny diagnostic edge function that calls `stripe.accounts.retrieve()` with the same key the checkout function uses and reports back exactly why charges are blocked.
 
-- The key is correct.
-- The code path (`create-donation-checkout`) is unchanged and works — Stripe accepted the session request, evaluated the account, and rejected it.
-- Between June 12, 2026 and now (July 19, 2026), Stripe placed a restriction on this specific account. This is a common Stripe action triggered by:
-  - A new information request (updated KYC, beneficial ownership, tax ID re-verification)
-  - A chargeback / dispute threshold
-  - Bank account verification failure or payout hold
-  - Elevated fraud/risk review
-  - Expired identity document
+## Plan
 
-Our code cannot bypass this — Stripe blocks the charge server-side before a PaymentIntent is created.
+1. **Create a new edge function** `supabase/functions/stripe-account-diagnose/index.ts` (admin-only). It:
+   - Uses the same `STRIPE_SECRET_KEY` env var.
+   - Calls `stripe.accounts.retrieve()` and returns:
+     - `id` (which account the key belongs to)
+     - `charges_enabled`, `payouts_enabled`, `details_submitted`
+     - `requirements.disabled_reason`
+     - `requirements.currently_due`, `past_due`, `pending_verification`, `errors`
+     - `capabilities.card_payments`, `capabilities.transfers`
+   - Add it to `supabase/config.toml` with `verify_jwt = false` so we can hit it from the browser once.
 
-## What needs to happen (you, in Stripe Dashboard)
+2. **Call it once** and share the JSON back with you. That answer tells us exactly one of:
+   - "The key is for a different account" → replace `STRIPE_SECRET_KEY` with the right one.
+   - "`disabled_reason = under_review`" → contact Stripe support (there's no other fix).
+   - "`capabilities.card_payments = inactive`" → re-enable in Dashboard → Settings → Payment methods, or Stripe support.
+   - "`requirements.past_due = [tax_id_provided, ...]`" → fill those in Dashboard even though Tasks looked empty.
 
-1. Log in to https://dashboard.stripe.com/ with the account that owns `acct_1Sgpd8J31hV93H57`.
-2. Check the **red banner at the top of the Dashboard home** and the **Notifications bell** — Stripe always states exactly what it needs (document, bank re-verify, tax form, etc.).
-3. Open https://dashboard.stripe.com/settings/account and https://dashboard.stripe.com/account/status to see "Requirements" / "Restrictions".
-4. Submit whatever Stripe requests. Reactivation is typically minutes to 24h after Stripe verifies.
-5. Once the banner clears, our checkout will work again with zero code changes — the same key stays valid.
-
-## Optional code hardening (I can do after you confirm)
-
-To improve the user experience while Stripe is restricted (and for any future restriction), I can update `supabase/functions/create-donation-checkout/index.ts` to:
-
-- Detect the specific Stripe error string `cannot currently make live charges` and return a friendly 503 response like *"Payments are temporarily unavailable — please try again shortly."* instead of a raw 500.
-- Show the same friendly message in `DonationFlow.tsx` toast instead of the technical error.
-
-This does not fix the Stripe block — only masks it gracefully. The real fix is Step 1–4 above.
+3. Once resolved, delete the diagnostic function (it's a debug tool, not a permanent surface).
 
 ## Not doing
 
-- Swapping to a test key (you confirmed live must stay).
-- Switching payment providers.
-- Touching any donation, coupon, or webhook logic — none of that is implicated.
+- Not changing donation, coupon, or webhook logic.
+- Not switching payment providers.
+- Not rotating your key blindly — we'll only touch it if the diagnosis says the account ID doesn't match.
 
 ### Technical detail
 
-Error object from Stripe (from edge logs):
-```
-type: StripeInvalidRequestError
-statusCode: 400
-requestId: req_vE2c9wsQQpytFr
-account: acct_1Sgpd8J31hV93H57
-message: "Your account cannot currently make live charges."
+The diagnostic response is small and safe (no PII). Example shape:
+```json
+{
+  "account_id": "acct_1Sgpd8J31hV93H57",
+  "charges_enabled": false,
+  "payouts_enabled": true,
+  "disabled_reason": "requirements.past_due",
+  "currently_due": [],
+  "past_due": ["business_profile.url"],
+  "capabilities": { "card_payments": "inactive", "transfers": "active" }
+}
 ```
 
-Stripe's request log for direct debugging:
-https://dashboard.stripe.com/acct_1Sgpd8J31hV93H57/workbench/logs?object=req_vE2c9wsQQpytFr
+That single call ends the guessing.
