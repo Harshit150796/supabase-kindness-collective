@@ -347,7 +347,7 @@ I'm still job hunting, but the support from CouponDonation has taken the pressur
     location: 'Miami, FL',
     image: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=400&h=400&fit=crop',
     story: "We run an after-school program for 50 underprivileged children. The snack and meal coupons ensure no child goes hungry while learning and growing with us.",
-    fullStory: `Sunshine After School started in my living room five years ago with just three kids. Today, we serve 50 children from low-income families in Miami's Little Haiti neighborhood.
+    fullStory: `Sunshine After School started in my living room five years ago with just three kids. Today, we serve 50 children from low-income families in a Miami neighborhood.
 
 Our program runs from 3 PM to 7 PM, bridging the gap between school dismissal and when parents get off work. We provide homework help, tutoring, arts and crafts, and most importantly – snacks and dinner.
 
