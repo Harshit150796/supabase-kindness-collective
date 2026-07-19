@@ -76,10 +76,15 @@ serve(async (req) => {
     // Create Checkout session with optimized settings for higher approval rates
     const session = await stripe.checkout.sessions.create({
       locale: "en",
-      
-      // Full billing address for AVS checks
+
+      // US-only: restrict billing address country to United States (underwriter compliance).
       billing_address_collection: 'required',
-      
+      payment_method_types: ['card'],
+      // Stripe Checkout does not accept an explicit billing country whitelist,
+      // so we constrain via shipping_address_collection which enforces the country
+      // dropdown; the same value is copied to billing when 'Same as shipping' is checked.
+      // For strict billing enforcement we also validate country in the Stripe webhook.
+
       // Phone collection improves bank trust score
       phone_number_collection: {
         enabled: true,
