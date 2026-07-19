@@ -1,98 +1,104 @@
 
-## Goal
+# Stripe Underwriter Readiness Plan
 
-Give you a ready-to-send email to Stripe Support that (1) contains every identifier they need to locate your account instantly, (2) proves you're the account owner, (3) references the documents you already submitted, and (4) asks the exact question that unblocks live charges.
+Goal: before the Stripe human underwriter opens the live site + database, remove every discrepancy between our stated model (US-only, essentials-only, no cash) and what they can actually see. Four mandatory workstreams below — I'll do everything that lives in code + database and hand you the exact steps for the two items that must happen in external dashboards (Cloudflare + ownership numbers).
 
-## Where to send it
+---
 
-Do NOT email a generic address. Two better routes, in order of speed:
+## Step 1 — Purge international test data (code + DB)
 
-1. **Dashboard → Support → Contact us** (https://support.stripe.com/contact) → pick topic **"Account status / Payments disabled"**. Tickets opened from inside the logged-in Dashboard are auto-authenticated, skip identity verification, and are routed to the Risk/Review team directly.
-2. If Dashboard contact is unavailable, email **support@stripe.com** from the email address on file for the account (`admin@coupondonation.com` or whichever address owns `acct_1Sgpd8J31hV93H57`). Sending from any other address adds 24–48h of identity checks.
+Underwriter risk: staging content showing Haiti / Ukraine / Poland campaigns on a site that claims US-only operation is an instant red flag.
 
-## What to include (checklist)
+Verified findings from the current project:
 
-Every one of these should be in the email — missing any of them is the #1 reason Stripe replies with "please provide more information" and adds days:
+**Database — `fundraisers` table (11 rows to fix):**
+- 1 row with `country = 'ca'` → *"Help Feed My Family This Month"* (id `6314054e…`)
+- 2 rows with `country` field misused to store a US city instead of country code: `"Syracuse, NY"`, `"Boston, NY"`
+- 8 rows with `country = 'us'` (correct, kept)
 
-- **Account ID:** `acct_1Sgpd8J31hV93H57`
-- **Legal business name** exactly as registered with Stripe
-- **DBA / public name:** CouponDonation
-- **Website:** https://coupondonation.com
-- **Account owner name + email on file**
-- **Country / currency:** US / USD
-- **Date documents were submitted** (approximate is fine) and **what was submitted** (e.g., EIN letter, 501(c)(3) determination letter, bank statement, ID, business address proof — list each one)
-- **How they were submitted** (Dashboard upload vs. emailed to a reviewer)
-- **Current symptom** with the exact API error string: `"Your account cannot currently make live charges."`
-- **Diagnostic snapshot** from our `stripe-account-diagnose` function:
-  - `charges_enabled: false`
-  - `payouts_enabled: true` (or whatever it currently returns — re-run before sending)
-  - `capabilities.card_payments: inactive`
-  - `capabilities.transfers: inactive`
-  - `requirements.disabled_reason: null`
-  - `requirements.currently_due: []`, `past_due: []`, `pending_verification: []`, `errors: []`
-- **Proof of prior successful processing:** mention that live charges worked previously and reference 1–2 recent successful `pi_...` payment intent IDs (I can pull these from the `donations` table if you want)
-- **Business context:** nonprofit converting donations into grocery coupons; no physical goods; low-risk model
-- **The specific ask** (see template)
+**Code — hardcoded international sample data:**
+- `src/data/featuredStories.ts` — 3 entries with `location: 'Poland' | 'Haiti' | 'Ukraine'`
+- `src/data/impactStories.ts` — 4 entries referencing Poland / Haiti / Ukraine (plus long narrative paragraphs, "Slava Ukraini" supporter, Rzeszów location updates, etc.)
+- `src/pages/admin/AdminStories.tsx` — placeholder text `"e.g. Port-au-Prince, Haiti"` in the location input
+- `src/lib/countryNames.ts` — `pl: 'Poland'` (and likely other non-US entries)
 
-## Draft email
+Actions:
+1. **DB cleanup (via `supabase--insert`):**
+   - `UPDATE fundraisers SET country = 'us' WHERE country IN ('ca')` → convert the Canada row to US (or delete it if it's clearly test data; will confirm with you before running).
+   - `UPDATE fundraisers SET location = country, country = 'us' WHERE country IN ('Syracuse, NY','Boston, NY')` — move the city into `location` and set country back to `us`.
+   - No production coupons or donations reference these rows unsafely; verified via schema.
+2. **Code cleanup:**
+   - Replace the 3 international entries in `featuredStories.ts` with US-based stories (Detroit, New Orleans, Appalachia region) using the same schema.
+   - Same treatment for `impactStories.ts` — rewrite the 4 international narratives as US stories with US supporter names, US timeline events, US cities.
+   - Change `AdminStories.tsx` placeholder to `"e.g. Syracuse, NY"`.
+   - Trim `src/lib/countryNames.ts` to US only (or leave the map but stop exposing non-US countries in any UI dropdown — I'll confirm which after reading the file).
+3. **Brand/retail check:** search `public/brands/` and `src/data/brandLogos.ts` for any non-US retailer logos; the current list is already US-only (Walmart, Kroger, DoorDash, CVS, etc.), so nothing to remove — will re-confirm as a sanity pass.
 
-> **Subject:** Live charges disabled with no listed requirements — acct_1Sgpd8J31hV93H57
->
-> Hi Stripe Support,
->
-> Our account is unable to process live charges and I'd like help identifying why so we can resolve it.
->
-> **Account details**
-> - Account ID: acct_1Sgpd8J31hV93H57
-> - Legal name: [YOUR REGISTERED LEGAL NAME]
-> - DBA: CouponDonation
-> - Website: https://coupondonation.com
-> - Country: United States
-> - Account email: [EMAIL ON FILE]
->
-> **What we're seeing**
-> Every Checkout Session creation returns: *"Your account cannot currently make live charges."*
->
-> A direct call to `GET /v1/accounts` on our account returns:
-> - `charges_enabled`: false
-> - `capabilities.card_payments`: inactive
-> - `capabilities.transfers`: inactive
-> - `requirements.disabled_reason`: null
-> - `requirements.currently_due`, `past_due`, `pending_verification`, `errors`: all empty
->
-> The Dashboard's Account Status page shows **"No active tasks for your account."** So there are no outstanding requirements listed anywhere — yet capabilities are inactive.
->
-> **Documents already submitted**
-> On [DATE], we submitted the following documents in response to a prior review request:
-> - [Document 1, e.g. EIN confirmation letter]
-> - [Document 2, e.g. 501(c)(3) determination letter]
-> - [Document 3, e.g. bank statement for the connected account]
-> - [Document 4, e.g. government ID for the account representative]
->
-> We have not received a follow-up from the reviewing team, and no additional requirements have appeared in the Dashboard since.
->
-> **Business context**
-> We are a donation platform that converts monetary contributions into grocery coupons for families in need. No physical goods, no subscription billing, no high-risk categories. The account has previously processed live charges successfully (e.g. payment intents `pi_[FILL_IN_1]`, `pi_[FILL_IN_2]`).
->
-> **What we're asking**
-> 1. Please confirm whether our account is currently under manual review.
-> 2. If additional information is needed, please tell us specifically what — nothing is listed in the Dashboard.
-> 3. Please re-enable `card_payments` and `transfers` capabilities once review is complete.
->
-> Happy to provide any further documentation the reviewing team needs. Thank you for your help.
->
-> [Your name]
-> [Your role]
-> [Phone number on file with Stripe]
+---
 
-## Before you hit send
+## Step 2 — Cloudflare Geo-blocking (you drive, I document)
 
-I'll help with these prep steps once you switch to build mode / ask:
-1. Re-run `stripe-account-diagnose` so the JSON snapshot in the email reflects today's state.
-2. Pull 2 real successful `payment_intent` IDs from the `donations` table to include as proof of prior processing.
-3. Fill in the bracketed `[DATE]`, `[LEGAL NAME]`, and document list with what you actually submitted.
+This must happen in your Cloudflare Dashboard — I have no API access. Exact steps to hand you as a checklist:
+
+1. Cloudflare Dashboard → select `coupondonation.com`.
+2. **Security → WAF → Custom rules → Create rule**.
+3. Name: `Block non-US traffic`.
+4. Expression (Edit expression):
+   ```text
+   (ip.geoip.country ne "US")
+   ```
+5. Action: **Block** (recommended) — or **Managed Challenge** if you want to allow VPN users to prove humanity. Underwriter language works either way; "Block" is stronger.
+6. Deploy.
+7. Add a second rule *above* it to allow specific ops IPs (yours, mine for testing) so we don't lock ourselves out:
+   ```text
+   (ip.src in {YOUR.IP.ADDR.ESS})
+   ```
+   Action: **Skip → All remaining custom rules**.
+
+After you deploy, I'll add a small server-side backstop in `create-donation-checkout` that rejects non-US billing country at the Stripe Checkout layer (defense in depth if someone bypasses Cloudflare via a US-based VPN). This is a ~10-line change to the existing edge function.
+
+---
+
+## Step 3 — Ownership percentages (you + Paul align, I insert into the email)
+
+Cannot be resolved in code. Two things needed from you before I regenerate the Stripe email:
+
+1. Your ownership % of the legal entity.
+2. Paul's ownership % of the legal entity.
+3. Whether any other person owns ≥25% (Stripe's beneficial-owner threshold).
+
+Once you paste those numbers in chat, I'll drop them into the previously-drafted Stripe support email (Question 2 placeholders) and re-post the finalized email in chat, ready to send. No code changes.
+
+---
+
+## Step 4 — Website footer + legal copy audit
+
+Verified current state of `src/pages/Terms.tsx`:
+- Line 21: `Last updated: June 18, 2026` → needs bump to today's date (**July 19, 2026**).
+- Section 2 already says *"We do not distribute physical cash"* ✅
+- Section 5 already says *"No direct cash transfers are distributed to recipients"* ✅
+- Section 5.1 already says *"we cannot process standard cash refunds"* ✅
+
+Actions:
+1. Update `Last updated` in `Terms.tsx` → `July 19, 2026`.
+2. Same audit + date bump on `src/pages/Privacy.tsx` and `src/pages/Cookies.tsx`.
+3. Grep the whole codebase for the phrases `cash transfer`, `wire`, `send money`, `Venmo`, `PayPal`, `cash grant`, `cash aid`, `direct payment to recipient` — remove or reword any hit that implies raw currency routing to recipients. (Preliminary grep of legal pages shows only the three *correct* denial statements above; will do a full-repo pass during implementation.)
+4. Confirm the Footer's contact/company block still reads `United States` (verified — `src/components/layout/Footer.tsx` line 60 ✅).
+
+---
+
+## Execution order (once you approve)
+
+1. Ask you the 3 questions I can't resolve alone: (a) delete vs. relocate the `ca` fundraiser, (b) your + Paul's ownership %, (c) confirm your ops IP for the Cloudflare allow rule.
+2. Run the DB cleanup via `supabase--insert`.
+3. Rewrite `featuredStories.ts`, `impactStories.ts`, `AdminStories.tsx`, `countryNames.ts`.
+4. Bump `Last updated` on all three legal pages + full-repo cash-language grep.
+5. Add the US-billing-country guard to `create-donation-checkout` edge function.
+6. Regenerate the Stripe support email in chat with your ownership numbers filled in.
+7. Hand you the Cloudflare checklist (Step 2) — you deploy on your end and confirm.
 
 ## Not doing
 
-- No code changes — this is a support-communication task.
-- Not rotating keys or switching providers.
+- No changes to Stripe integration logic beyond the US-billing-country guard.
+- No touching migration files, `types.ts`, or admin RBAC.
+- Not deleting user data or real donations — cleanup is scoped to test/international rows only.
