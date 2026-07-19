@@ -1,52 +1,98 @@
-## What your screenshot tells us
 
-Stripe's "Account status → Tasks" panel shows **"No active tasks for your account"** — meaning Stripe isn't asking you for any documents. Yet the API still refuses live charges. That narrows the cause: it's not a missing KYC document, so it's one of:
+## Goal
 
-1. **`charges_enabled = false`** on the account (capability disabled, e.g., `card_payments` or `transfers` capability was revoked or is `inactive` / `pending`).
-2. **A `disabled_reason`** set on the account (e.g. `requirements.past_due`, `under_review`, `platform_paused`, `rejected.fraud`, `rejected.other`) that Stripe surfaces via API but not always on the mobile "Tasks" view.
-3. The **secret key in Supabase belongs to a different Stripe account** than the one you're viewing in the screenshot (both start with `acct_1S...` — easy to confuse). The failing account is `acct_1Sgpd8J31hV93H57`; the screenshot URL cuts off at `acct_1Sgpd8J31hV93...` so it looks like a match, but we should confirm by asking the API.
+Give you a ready-to-send email to Stripe Support that (1) contains every identifier they need to locate your account instantly, (2) proves you're the account owner, (3) references the documents you already submitted, and (4) asks the exact question that unblocks live charges.
 
-The only way to know which one is to ask Stripe directly. I'll add a tiny diagnostic edge function that calls `stripe.accounts.retrieve()` with the same key the checkout function uses and reports back exactly why charges are blocked.
+## Where to send it
 
-## Plan
+Do NOT email a generic address. Two better routes, in order of speed:
 
-1. **Create a new edge function** `supabase/functions/stripe-account-diagnose/index.ts` (admin-only). It:
-   - Uses the same `STRIPE_SECRET_KEY` env var.
-   - Calls `stripe.accounts.retrieve()` and returns:
-     - `id` (which account the key belongs to)
-     - `charges_enabled`, `payouts_enabled`, `details_submitted`
-     - `requirements.disabled_reason`
-     - `requirements.currently_due`, `past_due`, `pending_verification`, `errors`
-     - `capabilities.card_payments`, `capabilities.transfers`
-   - Add it to `supabase/config.toml` with `verify_jwt = false` so we can hit it from the browser once.
+1. **Dashboard → Support → Contact us** (https://support.stripe.com/contact) → pick topic **"Account status / Payments disabled"**. Tickets opened from inside the logged-in Dashboard are auto-authenticated, skip identity verification, and are routed to the Risk/Review team directly.
+2. If Dashboard contact is unavailable, email **support@stripe.com** from the email address on file for the account (`admin@coupondonation.com` or whichever address owns `acct_1Sgpd8J31hV93H57`). Sending from any other address adds 24–48h of identity checks.
 
-2. **Call it once** and share the JSON back with you. That answer tells us exactly one of:
-   - "The key is for a different account" → replace `STRIPE_SECRET_KEY` with the right one.
-   - "`disabled_reason = under_review`" → contact Stripe support (there's no other fix).
-   - "`capabilities.card_payments = inactive`" → re-enable in Dashboard → Settings → Payment methods, or Stripe support.
-   - "`requirements.past_due = [tax_id_provided, ...]`" → fill those in Dashboard even though Tasks looked empty.
+## What to include (checklist)
 
-3. Once resolved, delete the diagnostic function (it's a debug tool, not a permanent surface).
+Every one of these should be in the email — missing any of them is the #1 reason Stripe replies with "please provide more information" and adds days:
+
+- **Account ID:** `acct_1Sgpd8J31hV93H57`
+- **Legal business name** exactly as registered with Stripe
+- **DBA / public name:** CouponDonation
+- **Website:** https://coupondonation.com
+- **Account owner name + email on file**
+- **Country / currency:** US / USD
+- **Date documents were submitted** (approximate is fine) and **what was submitted** (e.g., EIN letter, 501(c)(3) determination letter, bank statement, ID, business address proof — list each one)
+- **How they were submitted** (Dashboard upload vs. emailed to a reviewer)
+- **Current symptom** with the exact API error string: `"Your account cannot currently make live charges."`
+- **Diagnostic snapshot** from our `stripe-account-diagnose` function:
+  - `charges_enabled: false`
+  - `payouts_enabled: true` (or whatever it currently returns — re-run before sending)
+  - `capabilities.card_payments: inactive`
+  - `capabilities.transfers: inactive`
+  - `requirements.disabled_reason: null`
+  - `requirements.currently_due: []`, `past_due: []`, `pending_verification: []`, `errors: []`
+- **Proof of prior successful processing:** mention that live charges worked previously and reference 1–2 recent successful `pi_...` payment intent IDs (I can pull these from the `donations` table if you want)
+- **Business context:** nonprofit converting donations into grocery coupons; no physical goods; low-risk model
+- **The specific ask** (see template)
+
+## Draft email
+
+> **Subject:** Live charges disabled with no listed requirements — acct_1Sgpd8J31hV93H57
+>
+> Hi Stripe Support,
+>
+> Our account is unable to process live charges and I'd like help identifying why so we can resolve it.
+>
+> **Account details**
+> - Account ID: acct_1Sgpd8J31hV93H57
+> - Legal name: [YOUR REGISTERED LEGAL NAME]
+> - DBA: CouponDonation
+> - Website: https://coupondonation.com
+> - Country: United States
+> - Account email: [EMAIL ON FILE]
+>
+> **What we're seeing**
+> Every Checkout Session creation returns: *"Your account cannot currently make live charges."*
+>
+> A direct call to `GET /v1/accounts` on our account returns:
+> - `charges_enabled`: false
+> - `capabilities.card_payments`: inactive
+> - `capabilities.transfers`: inactive
+> - `requirements.disabled_reason`: null
+> - `requirements.currently_due`, `past_due`, `pending_verification`, `errors`: all empty
+>
+> The Dashboard's Account Status page shows **"No active tasks for your account."** So there are no outstanding requirements listed anywhere — yet capabilities are inactive.
+>
+> **Documents already submitted**
+> On [DATE], we submitted the following documents in response to a prior review request:
+> - [Document 1, e.g. EIN confirmation letter]
+> - [Document 2, e.g. 501(c)(3) determination letter]
+> - [Document 3, e.g. bank statement for the connected account]
+> - [Document 4, e.g. government ID for the account representative]
+>
+> We have not received a follow-up from the reviewing team, and no additional requirements have appeared in the Dashboard since.
+>
+> **Business context**
+> We are a donation platform that converts monetary contributions into grocery coupons for families in need. No physical goods, no subscription billing, no high-risk categories. The account has previously processed live charges successfully (e.g. payment intents `pi_[FILL_IN_1]`, `pi_[FILL_IN_2]`).
+>
+> **What we're asking**
+> 1. Please confirm whether our account is currently under manual review.
+> 2. If additional information is needed, please tell us specifically what — nothing is listed in the Dashboard.
+> 3. Please re-enable `card_payments` and `transfers` capabilities once review is complete.
+>
+> Happy to provide any further documentation the reviewing team needs. Thank you for your help.
+>
+> [Your name]
+> [Your role]
+> [Phone number on file with Stripe]
+
+## Before you hit send
+
+I'll help with these prep steps once you switch to build mode / ask:
+1. Re-run `stripe-account-diagnose` so the JSON snapshot in the email reflects today's state.
+2. Pull 2 real successful `payment_intent` IDs from the `donations` table to include as proof of prior processing.
+3. Fill in the bracketed `[DATE]`, `[LEGAL NAME]`, and document list with what you actually submitted.
 
 ## Not doing
 
-- Not changing donation, coupon, or webhook logic.
-- Not switching payment providers.
-- Not rotating your key blindly — we'll only touch it if the diagnosis says the account ID doesn't match.
-
-### Technical detail
-
-The diagnostic response is small and safe (no PII). Example shape:
-```json
-{
-  "account_id": "acct_1Sgpd8J31hV93H57",
-  "charges_enabled": false,
-  "payouts_enabled": true,
-  "disabled_reason": "requirements.past_due",
-  "currently_due": [],
-  "past_due": ["business_profile.url"],
-  "capabilities": { "card_payments": "inactive", "transfers": "active" }
-}
-```
-
-That single call ends the guessing.
+- No code changes — this is a support-communication task.
+- Not rotating keys or switching providers.
