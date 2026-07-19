@@ -304,9 +304,15 @@ export function DonationFlow() {
         return handleContinue(retryCount + 1);
       }
       
+      const rawMsg = error instanceof Error ? error.message : '';
+      const isUnavailable =
+        /payments are temporarily unavailable|payments_unavailable|cannot currently make live charges/i.test(rawMsg);
+
       toast({
-        title: 'Payment Error',
-        description: error instanceof Error ? error.message : 'Unable to start checkout. Please try again.',
+        title: isUnavailable ? 'Payments Temporarily Unavailable' : 'Payment Error',
+        description: isUnavailable
+          ? "We can't process donations right now. Our team has been notified — please try again in a little while."
+          : (rawMsg || 'Unable to start checkout. Please try again.'),
         variant: 'destructive',
       });
       setIsProcessing(false);

@@ -156,9 +156,28 @@ serve(async (req) => {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     console.error("Error creating checkout session:", error);
+
+    // Detect Stripe account restriction and return a friendly, non-alarming message.
+    const isAccountRestricted =
+      /cannot currently make live charges|account.*(restricted|disabled|inactive)/i.test(errorMessage);
+
+    if (isAccountRestricted) {
+      return new Response(
+        JSON.stringify({
+          error: "Payments are temporarily unavailable. Our team has been notified — please try again shortly.",
+          code: "payments_unavailable",
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 503,
+        },
+      );
+    }
+
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
   }
 });
+

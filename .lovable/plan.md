@@ -1,37 +1,55 @@
-## Problem
+## Diagnosis (verified against your data)
 
-Fetching `https://coupondonation.com` from a client without full WebGL support (link‑preview bots, older browsers, some in‑app webviews, low‑end Android) returns the app‑wide **"Something went wrong / Reload Page"** screen instead of the site. I reproduced this by fetching the live domain — the top‑level `ErrorBoundary` in `src/App.tsx` is catching a throw from the lazy `Tree3DScene` (Three.js / `@react-three/fiber`) and replacing the entire page with its fallback.
+The error is not from our code. Stripe's API is returning HTTP 400 with:
 
-Playwright with software WebGL still renders the tree, so it only breaks for a subset of real users — but for those users **every** route (not just `/`) is dead, because the outer boundary wraps the whole `BrowserRouter`.
+> `"Your account cannot currently make live charges."` — `type: invalid_request_error`, account `acct_1Sgpd8J31hV93H57`.
 
-Secondary observation: the current preview URL is `/index`, which is not a defined route and correctly returns the 404 page. That's expected behaviour, not a bug — just noting so it isn't confused with the loading issue.
+I confirmed by querying the `donations` table: every past successful donation (most recent June 12, 2026 — `pi_3ThNz6J31hV93H57...`) was on the **same account** `J31hV93H57`. So:
 
-## Fix
+- The key is correct.
+- The code path (`create-donation-checkout`) is unchanged and works — Stripe accepted the session request, evaluated the account, and rejected it.
+- Between June 12, 2026 and now (July 19, 2026), Stripe placed a restriction on this specific account. This is a common Stripe action triggered by:
+  - A new information request (updated KYC, beneficial ownership, tax ID re-verification)
+  - A chargeback / dispute threshold
+  - Bank account verification failure or payout hold
+  - Elevated fraud/risk review
+  - Expired identity document
 
-Contain 3D failures to the hero and degrade gracefully to the gradient background that already exists as the pre‑mount fallback.
+Our code cannot bypass this — Stripe blocks the charge server-side before a PaymentIntent is created.
 
-1. **Local error boundary around `Tree3DScene`** in `src/components/landing/HeroSection.tsx`
-   - Wrap the lazy `<Tree3DScene />` in a small `<Tree3DErrorBoundary>` whose fallback is `null` (the `<GradientFallback />` layer underneath keeps painting).
-   - Log the caught error to console so we still see it in production diagnostics, but don't rethrow.
+## What needs to happen (you, in Stripe Dashboard)
 
-2. **WebGL capability gate before mounting**
-   - Before flipping `treeReady` to `true`, run a one‑time check: create a throwaway `<canvas>` and attempt `getContext('webgl2') || getContext('webgl')`. If both return `null`, keep `treeReady` at `false` permanently for this session.
-   - Also skip mounting when `navigator.userAgent` matches known headless/crawler patterns (`Googlebot`, `bingbot`, `facebookexternalhit`, `Twitterbot`, `LinkedInBot`, `Slackbot`, `WhatsApp`, `Discordbot`, `HeadlessChrome`) — they don't need the 3D scene and often can't run it.
+1. Log in to https://dashboard.stripe.com/ with the account that owns `acct_1Sgpd8J31hV93H57`.
+2. Check the **red banner at the top of the Dashboard home** and the **Notifications bell** — Stripe always states exactly what it needs (document, bank re-verify, tax form, etc.).
+3. Open https://dashboard.stripe.com/settings/account and https://dashboard.stripe.com/account/status to see "Requirements" / "Restrictions".
+4. Submit whatever Stripe requests. Reactivation is typically minutes to 24h after Stripe verifies.
+5. Once the banner clears, our checkout will work again with zero code changes — the same key stays valid.
 
-3. **Reduce blast radius of the top‑level boundary**
-   - Keep the existing outer `ErrorBoundary` (safety net), but ensure the hero‑scoped boundary catches first so the rest of the page renders. No API changes to `ErrorBoundary`.
+## Optional code hardening (I can do after you confirm)
 
-4. **Verify on the live domain after publish**
-   - Re‑run `fetch_website` on `https://coupondonation.com` and confirm the homepage renders with the gradient hero (no "Something went wrong").
-   - Load `/`, `/about`, `/donate`, `/stories`, `/f/:slug` in a WebGL‑disabled Playwright context and confirm each renders normally.
+To improve the user experience while Stripe is restricted (and for any future restriction), I can update `supabase/functions/create-donation-checkout/index.ts` to:
 
-## Files touched
+- Detect the specific Stripe error string `cannot currently make live charges` and return a friendly 503 response like *"Payments are temporarily unavailable — please try again shortly."* instead of a raw 500.
+- Show the same friendly message in `DonationFlow.tsx` toast instead of the technical error.
 
-- `src/components/landing/HeroSection.tsx` — add capability check + local error boundary wrapper
-- `src/components/landing/Tree3DErrorBoundary.tsx` *(new)* — tiny class component, fallback = `null`
+This does not fix the Stripe block — only masks it gracefully. The real fix is Step 1–4 above.
 
-## Out of scope
+## Not doing
 
-- Rewriting the 3D scene, changing Three.js versions, or removing the hero.
-- Tremendous / donation‑cycle work from earlier plans (unchanged, still awaiting your account).
-- The `/index` URL — that's not a real route; visit `/` instead.
+- Swapping to a test key (you confirmed live must stay).
+- Switching payment providers.
+- Touching any donation, coupon, or webhook logic — none of that is implicated.
+
+### Technical detail
+
+Error object from Stripe (from edge logs):
+```
+type: StripeInvalidRequestError
+statusCode: 400
+requestId: req_vE2c9wsQQpytFr
+account: acct_1Sgpd8J31hV93H57
+message: "Your account cannot currently make live charges."
+```
+
+Stripe's request log for direct debugging:
+https://dashboard.stripe.com/acct_1Sgpd8J31hV93H57/workbench/logs?object=req_vE2c9wsQQpytFr
