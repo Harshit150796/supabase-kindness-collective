@@ -35,3 +35,7 @@ verify_jwt = false
 
 [functions.procure-coupons]
 verify_jwt = false
+
+[functions.stripe-account-diagnose]
+verify_jwt = false
+
