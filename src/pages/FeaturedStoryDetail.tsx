@@ -22,16 +22,10 @@ import { Footer } from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
-import childrensHopeImg from "@/assets/featured/childrens-hope.webp";
-import ruralFamilyImg from "@/assets/featured/rural-family-support.webp";
 import hurricaneReliefImg from "@/assets/featured/hurricane-relief.webp";
-import childrenOfHeroesImg from "@/assets/featured/children-of-heroes.jpeg";
 
 const imageMap: Record<string, string> = {
-  "childrens-hope": childrensHopeImg,
-  "rural-family": ruralFamilyImg,
   "hurricane-relief": hurricaneReliefImg,
-  "children-of-heroes": childrenOfHeroesImg,
 };
 
 const categoryLabels: Record<string, string> = {
