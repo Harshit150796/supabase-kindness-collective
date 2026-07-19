@@ -77,13 +77,11 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       locale: "en",
 
-      // US-only: restrict billing address country to United States (underwriter compliance).
-      billing_address_collection: 'required',
+      // US-only underwriter compliance: card payments only, billing address required
+      // for AVS + post-hoc country audit. Non-US traffic is blocked at the Cloudflare
+      // WAF (see coupondonation.com > Security > WAF > "Block non-US traffic").
       payment_method_types: ['card'],
-      // Stripe Checkout does not accept an explicit billing country whitelist,
-      // so we constrain via shipping_address_collection which enforces the country
-      // dropdown; the same value is copied to billing when 'Same as shipping' is checked.
-      // For strict billing enforcement we also validate country in the Stripe webhook.
+      billing_address_collection: 'required',
 
       // Phone collection improves bank trust score
       phone_number_collection: {
