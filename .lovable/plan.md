@@ -1,53 +1,38 @@
-# Stripe Readiness — Finish Scrub + Fresh Diagnose
+## Goal
+Application-level geo-fencing: allow global read + donate, restrict campaign creation, recipient onboarding, and admin dashboards to US IPs. Non-US visitors to restricted routes get redirected home with a toast.
 
-Two workstreams, both fully executable by me. No Cloudflare or ownership-% work here (those are still on you — see hand-off notes at the end).
+## Approach
 
----
+### 1. Country detection utility — `src/lib/geo.ts`
+- `getUserCountry(): Promise<string | null>` with in-memory + `sessionStorage` cache (key `geo_country`, TTL 1h) so we hit the network at most once per session.
+- Primary: `fetch('https://ipapi.co/json/')` → read `country_code`.
+- Fallback: `fetch('https://api.country.is/')` → read `country`.
+- Fail-open: on error/timeout (3s AbortController), return `null`. The guard treats `null` as "allow" so a broken lookup never locks legitimate US users out (safer than fail-closed given Stripe just needs a good-faith geo control, not an airtight one).
 
-## Part A — Finish UI / legal scrub
+### 2. `GeoGuard` wrapper — `src/components/auth/GeoGuard.tsx`
+- Client component. On mount, calls `getUserCountry()`.
+- While loading: renders a lightweight centered "Checking access..." spinner (same style as `RouteFallback`).
+- If country resolves and `country !== 'US'` (and not `null`): fires `toast.error("Campaign creation and beneficiary onboarding are currently restricted to United States residents.")` via sonner and `<Navigate to="/" replace />`.
+- Otherwise renders `{children}`.
+- Uses a module-level flag so the toast fires only once per session even if the user tries several restricted routes.
 
-Complete the pending cleanup from the previous plan so nothing international remains visible to the Stripe underwriter.
+### 3. Route wiring — `src/App.tsx`
+Wrap these routes with `<GeoGuard>`:
+- Campaign creation / recipient onboarding: `/apply`, `/my-fundraisers`, `/fundraiser/:id`, `/recipient/*` (all 5 recipient routes).
+- Donor write surfaces stay open — donating is explicitly global.
+- All `/admin/*` routes (16 of them). GeoGuard sits *outside* the existing `ProtectedRoute` so the geo check runs first.
 
-1. **`src/pages/FeaturedStoryDetail.tsx`**
-   - Remove imports and `imageMap` entries for the three deleted international stories (`childrens-hope`, `rural-family`, `children-of-heroes`).
-   - Keep only the `hurricane-relief` mapping.
-   - Confirm the page still renders when the storyKey is `hurricane-relief`; add a graceful fallback if an unknown key hits the route.
+Left untouched (global read + donate):
+- `/`, `/about`, `/how-it-works`, `/faq`, `/stories`, `/story/*`, `/f/:slug`, `/featured/*`, `/story-detail/*`, `/blog`, `/blog/:slug`, `/donate`, `/donation-success`, `/donation-cancelled`, `/auth`, `/reset-password`, `/privacy`, `/terms`, `/cookies`, all overlay routes.
 
-2. **`src/pages/admin/AdminStories.tsx`**
-   - Change the location input placeholder from `"e.g. Port-au-Prince, Haiti"` to `"e.g. Asheville, NC"`.
+Ambiguous — need your call (see question below): `/donor/*` and `/profile`, `/settings`, `/my-impact`.
 
-3. **`src/lib/countryNames.ts`**
-   - Trim the `COUNTRY_NAMES` map to `us` only (keep the function signature and fallback behavior identical so existing callers still work for legacy rows).
+## Files to change
+- `src/lib/geo.ts` (new)
+- `src/components/auth/GeoGuard.tsx` (new)
+- `src/App.tsx` (wrap restricted routes)
 
-4. **Legal pages — bump "Last updated" to July 19, 2026**
-   - `src/pages/Terms.tsx`
-   - `src/pages/Privacy.tsx`
-   - `src/pages/Cookies.tsx`
-
-5. **Full-repo cash-language grep** (read-only pass, then targeted edits if hits found)
-   - Search: `cash transfer`, `wire transfer`, `send money`, `Venmo`, `PayPal`, `cash grant`, `cash aid`, `direct payment to recipient`.
-   - Reword any hit that implies raw currency routing to recipients. Existing "we do NOT distribute cash" statements in Terms stay as-is.
-
-6. **`src/data/impactStories.ts`** — verify no remaining Poland/Haiti/Ukraine references outside the already-cleaned featured section. Remove any stragglers.
-
-## Part B — Fresh Stripe diagnose snapshot
-
-7. Invoke the existing `stripe-account-diagnose` edge function via `supabase--curl_edge_functions`.
-8. Paste the returned JSON (account id, charges_enabled, capabilities, requirements, disabled_reason) directly into chat, formatted for copy-paste into the Stripe support ticket.
-
-## Verification
-
-- Re-read each edited file to confirm no international copy remains.
-- Grep the repo one more time for `Haiti|Ukraine|Poland|Port-au-Prince|Rzeszów|Slava` — expect zero hits in `src/`.
-- Confirm the diagnose JSON returns HTTP 200 and includes a `charges_enabled` field.
-
-## Hand-off (still on you — I cannot do these)
-
-- **Cloudflare WAF rule** — Dashboard → `coupondonation.com` → Security → WAF → Custom rules → `(ip.geoip.country ne "US")` → Block. Lovable has no Cloudflare API access.
-- **Ownership %** — reply "Me: X%, Paul: Y%, other ≥25%: none/…" and I'll drop it into the Stripe support email.
-
-## Not doing this pass
-
-- No Stripe billing-country guard in the edge function (you deselected it).
-- No changes to migrations, `types.ts`, admin RBAC, or the Stripe webhook.
-- No deletion of real donor/fundraiser data.
+## Out of scope
+- No Cloudflare rule (you explicitly opted for app-level only).
+- No server-side re-check in edge functions this pass — the existing `allowed_countries: ['US']` guard we added to `create-donation-checkout` is unrelated and stays as-is for the donor billing side.
+- No VPN detection; ipapi/country.is only see the raw IP.
