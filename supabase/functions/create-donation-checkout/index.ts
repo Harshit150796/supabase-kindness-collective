@@ -77,9 +77,10 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       locale: "en",
 
-      // US-only underwriter compliance: card payments only, billing address required
-      // for AVS + post-hoc country audit. Non-US traffic is blocked at the Cloudflare
-      // WAF (see coupondonation.com > Security > WAF > "Block non-US traffic").
+      // Donations are accepted globally. Billing address is collected worldwide for
+      // AVS + fraud scoring. US-only enforcement is applied only at the app-route
+      // layer (GeoGuard) for write actions like campaign creation and admin — never
+      // for the donor checkout flow.
       payment_method_types: ['card'],
       billing_address_collection: 'required',
 
