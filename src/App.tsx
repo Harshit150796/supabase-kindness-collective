@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SessionSecurityProvider } from "@/components/auth/SessionSecurityProvider";
+import { GeoGuard } from "@/components/auth/GeoGuard";
 import Index from "./pages/Index";
 import { PrivacyConsentBanner } from "./components/PrivacyConsentBanner";
 
@@ -112,20 +113,20 @@ const AppRoutes = () => (
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/donation-success" element={<DonationSuccess />} />
       <Route path="/donation-cancelled" element={<DonationCancelled />} />
-      <Route path="/apply" element={<ApplyRecipient />} />
+      <Route path="/apply" element={<GeoGuard><ApplyRecipient /></GeoGuard>} />
       <Route path="/donate" element={<Donate />} />
-      <Route path="/my-fundraisers" element={<MyFundraisers />} />
+      <Route path="/my-fundraisers" element={<GeoGuard><MyFundraisers /></GeoGuard>} />
       <Route path="/my-impact" element={<MyImpact />} />
-      <Route path="/fundraiser/:id" element={<FundraiserDashboard />} />
+      <Route path="/fundraiser/:id" element={<GeoGuard><FundraiserDashboard /></GeoGuard>} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/settings" element={<Settings />} />
 
-      {/* Recipient Routes */}
-      <Route path="/recipient" element={<ProtectedRoute allowedRoles={['recipient']}><RecipientDashboard /></ProtectedRoute>} />
-      <Route path="/recipient/coupons" element={<ProtectedRoute allowedRoles={['recipient']}><RecipientCoupons /></ProtectedRoute>} />
-      <Route path="/recipient/history" element={<ProtectedRoute allowedRoles={['recipient']}><RecipientHistory /></ProtectedRoute>} />
-      <Route path="/recipient/loyalty-card" element={<ProtectedRoute allowedRoles={['recipient']}><RecipientLoyaltyCard /></ProtectedRoute>} />
-      <Route path="/recipient/verification" element={<ProtectedRoute allowedRoles={['recipient']}><RecipientVerification /></ProtectedRoute>} />
+      {/* Recipient Routes (US-only) */}
+      <Route path="/recipient" element={<GeoGuard><ProtectedRoute allowedRoles={['recipient']}><RecipientDashboard /></ProtectedRoute></GeoGuard>} />
+      <Route path="/recipient/coupons" element={<GeoGuard><ProtectedRoute allowedRoles={['recipient']}><RecipientCoupons /></ProtectedRoute></GeoGuard>} />
+      <Route path="/recipient/history" element={<GeoGuard><ProtectedRoute allowedRoles={['recipient']}><RecipientHistory /></ProtectedRoute></GeoGuard>} />
+      <Route path="/recipient/loyalty-card" element={<GeoGuard><ProtectedRoute allowedRoles={['recipient']}><RecipientLoyaltyCard /></ProtectedRoute></GeoGuard>} />
+      <Route path="/recipient/verification" element={<GeoGuard><ProtectedRoute allowedRoles={['recipient']}><RecipientVerification /></ProtectedRoute></GeoGuard>} />
 
       {/* Donor Routes */}
       <Route path="/donor" element={<ProtectedRoute allowedRoles={['donor']}><DonorDashboard /></ProtectedRoute>} />
@@ -134,21 +135,21 @@ const AppRoutes = () => (
       <Route path="/donor/coupons" element={<ProtectedRoute allowedRoles={['donor']}><DonorCoupons /></ProtectedRoute>} />
       <Route path="/donor/history" element={<ProtectedRoute allowedRoles={['donor']}><DonorHistory /></ProtectedRoute>} />
 
-      {/* Admin Routes */}
-      <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
-      <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute>} />
-      <Route path="/admin/verifications" element={<ProtectedRoute allowedRoles={['admin']}><AdminVerifications /></ProtectedRoute>} />
-      <Route path="/admin/coupons" element={<ProtectedRoute allowedRoles={['admin']}><AdminCoupons /></ProtectedRoute>} />
-      <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={['admin']}><AdminAnalytics /></ProtectedRoute>} />
-      <Route path="/admin/content" element={<ProtectedRoute allowedRoles={['admin']}><AdminContent /></ProtectedRoute>} />
-      <Route path="/admin/stories" element={<ProtectedRoute allowedRoles={['admin']}><AdminStories /></ProtectedRoute>} />
-      <Route path="/admin/testimonials" element={<ProtectedRoute allowedRoles={['admin']}><AdminTestimonials /></ProtectedRoute>} />
-      <Route path="/admin/blog" element={<ProtectedRoute allowedRoles={['admin']}><AdminBlog /></ProtectedRoute>} />
-      <Route path="/admin/faq" element={<ProtectedRoute allowedRoles={['admin']}><AdminFAQ /></ProtectedRoute>} />
-      <Route path="/admin/fundraisers" element={<ProtectedRoute allowedRoles={['admin']}><AdminFundraisers /></ProtectedRoute>} />
-      <Route path="/admin/newsletters" element={<ProtectedRoute allowedRoles={['admin']}><AdminNewsletters /></ProtectedRoute>} />
-      <Route path="/admin/donations" element={<ProtectedRoute allowedRoles={['admin']}><AdminDonations /></ProtectedRoute>} />
-      <Route path="/admin/procurement" element={<ProtectedRoute allowedRoles={['admin']}><AdminProcurement /></ProtectedRoute>} />
+      {/* Admin Routes (US-only) */}
+      <Route path="/admin" element={<GeoGuard><ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/users" element={<GeoGuard><ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/verifications" element={<GeoGuard><ProtectedRoute allowedRoles={['admin']}><AdminVerifications /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/coupons" element={<GeoGuard><ProtectedRoute allowedRoles={['admin']}><AdminCoupons /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/analytics" element={<GeoGuard><ProtectedRoute allowedRoles={['admin']}><AdminAnalytics /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/content" element={<GeoGuard><ProtectedRoute allowedRoles={['admin']}><AdminContent /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/stories" element={<GeoGuard><ProtectedRoute allowedRoles={['admin']}><AdminStories /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/testimonials" element={<GeoGuard><ProtectedRoute allowedRoles={['admin']}><AdminTestimonials /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/blog" element={<GeoGuard><ProtectedRoute allowedRoles={['admin']}><AdminBlog /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/faq" element={<GeoGuard><ProtectedRoute allowedRoles={['admin']}><AdminFAQ /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/fundraisers" element={<GeoGuard><ProtectedRoute allowedRoles={['admin']}><AdminFundraisers /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/newsletters" element={<GeoGuard><ProtectedRoute allowedRoles={['admin']}><AdminNewsletters /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/donations" element={<GeoGuard><ProtectedRoute allowedRoles={['admin']}><AdminDonations /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/procurement" element={<GeoGuard><ProtectedRoute allowedRoles={['admin']}><AdminProcurement /></ProtectedRoute></GeoGuard>} />
 
       {/* Blog Routes */}
       <Route path="/blog" element={<Blog />} />
