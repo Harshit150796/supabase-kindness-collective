@@ -195,7 +195,7 @@ function CouponFace({ data }: { data: CouponData }) {
   );
 }
 
-export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false }: Props) {
+export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false, labelSuppressed = false }: Props) {
   const groupRef = useRef<THREE.Group>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const velocityRef = useRef({ y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 });
@@ -207,11 +207,14 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   const plantSpawnedRef = useRef(false);
 
   // Stable scatter target across the grass, deterministic per coupon slot.
+  // Phones frame the tree much tighter, so coupons land in a small ring around
+  // the trunk instead of drifting toward (or past) the viewport edges.
   const scatterTarget = useMemo(() => {
     const ang = (index * 2.3998) % (Math.PI * 2);
-    const rad = 1.8 + ((index * 0.6180339) % 1) * 3.7;
+    const unit = (index * 0.6180339) % 1;
+    const rad = isMobile ? 1.3 + unit * 1.3 : 1.8 + unit * 3.7;
     return { x: Math.cos(ang) * rad, z: Math.sin(ang) * rad };
-  }, [index]);
+  }, [index, isMobile]);
 
   useEffect(() => {
     if (state.phase === 'falling') {
@@ -222,10 +225,11 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       const tFall = Math.sqrt((2 * dropH) / 9.8);
       const dx = scatterTarget.x - branchTip.x;
       const dz = scatterTarget.z - branchTip.z;
+      const jitter = isMobile ? 0.06 : 0.2;
       velocityRef.current = {
         y: 0.4,
-        x: dx / tFall + (Math.random() - 0.5) * 0.2,
-        z: dz / tFall + (Math.random() - 0.5) * 0.2,
+        x: dx / tFall + (Math.random() - 0.5) * jitter,
+        z: dz / tFall + (Math.random() - 0.5) * jitter,
         rotX: (Math.random() - 0.5) * 5,
         rotY: (Math.random() - 0.5) * 3,
         rotZ: (Math.random() - 0.5) * 5,
