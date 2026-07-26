@@ -31,55 +31,55 @@ const Index = () => {
 
         <LiveActivityBar />
 
-        <LazyOnView minHeight={600} contentVisibilityAuto>
+        <LazyOnView minHeight={600} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <ImpactStories />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={600} contentVisibilityAuto>
+        <LazyOnView minHeight={600} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <TrustTransparency />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={500} contentVisibilityAuto>
+        <LazyOnView minHeight={500} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <BrandLeaderboard />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={700} contentVisibilityAuto>
+        <LazyOnView minHeight={700} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <DonationFlow />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={300} contentVisibilityAuto>
+        <LazyOnView minHeight={300} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <SecurityBadges />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={500} contentVisibilityAuto>
+        <LazyOnView minHeight={500} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <TestimonialsSection />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={400} contentVisibilityAuto>
+        <LazyOnView minHeight={400} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <ImpactDashboard />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={300} contentVisibilityAuto>
+        <LazyOnView minHeight={300} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <CTASection />
           </Suspense>
         </LazyOnView>
       </main>
-      <LazyOnView minHeight={300} contentVisibilityAuto>
+      <LazyOnView minHeight={300} rootMargin="900px" contentVisibilityAuto>
         <Suspense fallback={null}>
           <Footer />
         </Suspense>
