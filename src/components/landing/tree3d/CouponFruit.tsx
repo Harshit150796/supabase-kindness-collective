@@ -336,10 +336,13 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
     }
   });
 
-  const showLabel = state.phase === 'landed' && performance.now() / 1000 - state.landTime < 2.8;
+  const showLabel =
+    !labelSuppressed &&
+    state.phase === 'landed' &&
+    performance.now() / 1000 - state.landTime < 2.8;
   const safeDonorName =
     state.phase === 'landed'
-      ? (state.donation.donorName || 'A generous donor').slice(0, 18)
+      ? (state.donation.donorName || 'A generous donor').slice(0, isMobile ? 12 : 18)
       : '';
 
   return (
