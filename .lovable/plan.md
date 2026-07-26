@@ -1,39 +1,49 @@
-## Problem
+## Plan: Refine Mobile 3D Coupon Landing & Donor Label Visibility
 
-Two mobile issues in the hero tree scene, both from `src/components/landing/tree3d/CouponFruit.tsx`:
+### Goal
+Make the falling coupons in the hero tree land with a slightly wider, more natural spread on mobile, and increase the fallen donor-name labels by ~20% so they are easier to read, without clipping the screen edges or overlapping UI.
 
-1. **Scatter is too wide.** `scatterTarget` uses a fixed radius of `1.8 + rand*3.7` (up to ~5.5 world units) regardless of device. On the narrow mobile camera framing, coupons land far outside the tree, sometimes past the horizon/viewport edge (visible in screenshot 3, where the card sits half off-screen at the left).
-2. **The donor label doesn't fit.** The landed-donor `<Html distanceFactor={8}>` card is a fixed ~220px-wide nowrap pill with a 28px avatar. At mobile DPR/zoom it renders large relative to a 384px viewport and gets clipped at the edges ("arah M. / onated $25"), and it can also overlap the "Ask Coupon" button and the LIVE bar.
+### Current state
+- `CouponFruit.tsx` line 215: mobile scatter radius is `1.3 + unit * 1.3` (≈1.3–2.6 units). Users report coupons land too tightly under the tree.
+- Donor label (lines 449–508) uses `fontSize: 11px` on mobile and `13px` on desktop; avatar is `22px` mobile / `28px` desktop. Users say it is hard to read.
+- The label is vertically offset `+0.7` units on mobile and pulled `30%` toward the scene center to prevent edge clipping.
 
-## Fix
+### Changes to make
 
-All changes are presentation-only, inside the 3D hero components.
+1. **Slightly widen mobile scatter radius**
+   - File: `src/components/landing/tree3d/CouponFruit.tsx`
+   - Change the radius formula on mobile from `1.3 + unit * 1.3` to `1.6 + unit * 1.7` (≈1.6–3.3 units).
+   - Keep desktop radius unchanged (`1.8 + unit * 3.7`).
+   - Verify the `state.restPos.x * 0.7` clamp still keeps the label within the canvas after the wider spread; if test screenshots show clipping, nudge it to `0.62`.
 
-### 1. Mobile scatter radius (`CouponFruit.tsx`)
-- Pass the existing `isMobile` prop into the `scatterTarget` memo.
-- Mobile: radius `1.3 + rand * 1.3` (max ~2.6) so coupons land in a tight ring around the trunk, well inside frame.
-- Desktop: unchanged (`1.8 + rand * 3.7`).
-- Reduce mobile horizontal fall velocity jitter slightly so the arc stays inside the tight ring.
+2. **Increase donor label size by ~20%**
+   - File: `src/components/landing/tree3d/CouponFruit.tsx`
+   - Bump font sizes:
+     - Mobile label text: `11px` → `13px`
+     - Desktop label text: `13px` → `16px`
+     - Mobile subtext: `10px` → `12px`
+     - Desktop subtext: `11px` → `13px`
+   - Bump avatars:
+     - Mobile: `22px` → `26px`
+     - Desktop: `28px` → `34px`
+   - Bump amount/price text:
+     - Mobile: `11px` → `13px`
+     - Desktop: `13px` → `16px`
+   - Adjust padding and maxWidth to keep the label comfortable:
+     - Mobile padding: `7px 11px` → `8px 13px`
+     - Mobile maxWidth: `150px` → `170px`
+     - Name truncation: keep `12` mobile chars but widen the inner span so it uses the new maxWidth.
+   - Raise the mobile label anchor slightly to avoid the "Ask Coupon" button:
+     - Mobile Y offset: `+0.7` → `+0.85` units.
 
-### 2. Compact, on-screen donor label (`CouponFruit.tsx`)
-- Give the label a mobile variant:
-  - `distanceFactor` 8 → ~5.5 on mobile (smaller apparent size).
-  - Avatar 28px → 22px, name font 13px → 11px, amount line 11px → 10px, padding tightened.
-  - `maxWidth` 220 → 150 on mobile; name truncation length 18 → 12 chars.
-- Anchor label slightly higher above the coupon on mobile so it clears the grass and the "Ask Coupon" pill.
-- Keep the existing `center` + ellipsis truncation so long names never wrap awkwardly.
+3. **Verify with mobile preview**
+   - Check the user’s preview on a mobile viewport after the changes.
+   - Confirm coupons no longer clump directly under the tree, labels are readable, and no label overlaps the bottom-right action button.
 
-### 3. Keep labels inside the viewport
-- Clamp the label's world X/Z toward the scene center on mobile (pull the anchor ~30% toward `x=0`) so a card that lands at the ring edge still renders fully within the canvas instead of being cut off at the screen border.
+### No-go
+- Do not change desktop scatter radius (already looks good).
+- Do not re-enable multiple labels on mobile; keep single-label behavior to avoid stacking.
+- Do not change the coupon mesh size, only the label overlay.
 
-### 4. One label at a time on mobile
-- Currently multiple coupons can land within the 2.8s label window and stack overlapping cards on a narrow screen. On mobile, show the label only for the most recently landed coupon (track a "latest landed index" in `Tree3DScene`'s `handleLanded` and pass it down; desktop keeps current behavior).
-
-## Verification
-
-- Run Playwright at 384×673 (mobile UA/viewport), let the scene auto-drop coupons for ~15s, and capture screenshots at intervals to confirm: coupons land in a tight ring near the trunk, and every donor card renders fully inside the canvas with no clipping or overlap.
-- Capture a desktop 1280-wide screenshot to confirm no regression to the existing wide scatter and label size.
-
-## Out of scope
-
-No changes to donation data, the `useFallingDonations` hook, or any business logic.
+### Risk
+The larger label + wider radius could reintroduce edge clipping on the smallest phones. I will watch the first preview screenshot and dial back radius or clamp if needed.
