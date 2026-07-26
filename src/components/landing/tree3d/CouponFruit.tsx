@@ -25,6 +25,8 @@ interface Props {
   onRegrown: (idx: number) => void;
   onClickHanging: (idx: number) => void;
   isMobile?: boolean;
+  /** On mobile only the most recently landed coupon shows its donor label. */
+  labelSuppressed?: boolean;
 }
 
 const HANG_DROP = 1.0;
@@ -193,7 +195,7 @@ function CouponFace({ data }: { data: CouponData }) {
   );
 }
 
-export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false }: Props) {
+export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false, labelSuppressed = false }: Props) {
   const groupRef = useRef<THREE.Group>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const velocityRef = useRef({ y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 });
@@ -205,11 +207,14 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   const plantSpawnedRef = useRef(false);
 
   // Stable scatter target across the grass, deterministic per coupon slot.
+  // Phones frame the tree much tighter, so coupons land in a small ring around
+  // the trunk instead of drifting toward (or past) the viewport edges.
   const scatterTarget = useMemo(() => {
     const ang = (index * 2.3998) % (Math.PI * 2);
-    const rad = 1.8 + ((index * 0.6180339) % 1) * 3.7;
+    const unit = (index * 0.6180339) % 1;
+    const rad = isMobile ? 1.3 + unit * 1.3 : 1.8 + unit * 3.7;
     return { x: Math.cos(ang) * rad, z: Math.sin(ang) * rad };
-  }, [index]);
+  }, [index, isMobile]);
 
   useEffect(() => {
     if (state.phase === 'falling') {
@@ -220,10 +225,11 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       const tFall = Math.sqrt((2 * dropH) / 9.8);
       const dx = scatterTarget.x - branchTip.x;
       const dz = scatterTarget.z - branchTip.z;
+      const jitter = isMobile ? 0.06 : 0.2;
       velocityRef.current = {
         y: 0.4,
-        x: dx / tFall + (Math.random() - 0.5) * 0.2,
-        z: dz / tFall + (Math.random() - 0.5) * 0.2,
+        x: dx / tFall + (Math.random() - 0.5) * jitter,
+        z: dz / tFall + (Math.random() - 0.5) * jitter,
         rotX: (Math.random() - 0.5) * 5,
         rotY: (Math.random() - 0.5) * 3,
         rotZ: (Math.random() - 0.5) * 5,
@@ -330,10 +336,13 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
     }
   });
 
-  const showLabel = state.phase === 'landed' && performance.now() / 1000 - state.landTime < 2.8;
+  const showLabel =
+    !labelSuppressed &&
+    state.phase === 'landed' &&
+    performance.now() / 1000 - state.landTime < 2.8;
   const safeDonorName =
     state.phase === 'landed'
-      ? (state.donation.donorName || 'A generous donor').slice(0, 18)
+      ? (state.donation.donorName || 'A generous donor').slice(0, isMobile ? 12 : 18)
       : '';
 
   return (
@@ -426,34 +435,40 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
 
       {showLabel && state.phase === 'landed' && (
         <Html
-          position={[state.restPos.x, state.restPos.y + 0.55, state.restPos.z]}
+          position={[
+            // Pull the anchor toward the scene centre on phones so a card that
+            // landed on the edge of the ring still renders fully in-canvas.
+            state.restPos.x * (isMobile ? 0.7 : 1),
+            state.restPos.y + (isMobile ? 0.7 : 0.55),
+            state.restPos.z * (isMobile ? 0.7 : 1),
+          ]}
           center
-          distanceFactor={8}
+          distanceFactor={isMobile ? 5.5 : 8}
           style={{ pointerEvents: 'none' }}
         >
           <div
             style={{
               background: '#FFFFFF',
               border: '1.5px solid #D4A017',
-              borderRadius: '14px',
-              padding: '10px 16px',
+              borderRadius: isMobile ? '12px' : '14px',
+              padding: isMobile ? '7px 11px' : '10px 16px',
               fontFamily: 'system-ui, -apple-system, Arial',
-              fontSize: '13px',
+              fontSize: isMobile ? '11px' : '13px',
               fontWeight: 600,
               color: '#1f2937',
               boxShadow: '0 10px 30px rgba(212,160,23,0.35), 0 0 0 4px rgba(212,160,23,0.08)',
               whiteSpace: 'nowrap',
-              maxWidth: 220,
+              maxWidth: isMobile ? 150 : 220,
               display: 'flex',
               alignItems: 'center',
-              gap: 10,
+              gap: isMobile ? 7 : 10,
               animation: 'fadeIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)',
             }}
           >
             <div
               style={{
-                width: 28,
-                height: 28,
+                width: isMobile ? 22 : 28,
+                height: isMobile ? 22 : 28,
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, #10B981, #059669)',
                 color: '#fff',
@@ -461,7 +476,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: 800,
-                fontSize: 13,
+                fontSize: isMobile ? 11 : 13,
                 flexShrink: 0,
               }}
             >
@@ -472,7 +487,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
                 style={{
                   color: '#059669',
                   fontWeight: 700,
-                  maxWidth: 160,
+                  maxWidth: isMobile ? 104 : 160,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -480,9 +495,9 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
               >
                 {safeDonorName}
               </span>
-              <span style={{ color: '#6b7280', fontSize: 11, fontWeight: 500 }}>
+              <span style={{ color: '#6b7280', fontSize: isMobile ? 10 : 11, fontWeight: 500 }}>
                 donated{' '}
-                <span style={{ color: '#D4A017', fontWeight: 800, fontSize: 13 }}>
+                <span style={{ color: '#D4A017', fontWeight: 800, fontSize: isMobile ? 11 : 13 }}>
                   ${state.donation.amount}
                 </span>
               </span>

@@ -268,7 +268,12 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
     bumpWind(0.5);
   }, [shakeEvent, donations, bumpWind]);
 
+  // On phones only the most recently landed coupon shows its donor label,
+  // so overlapping cards can never stack on a narrow screen.
+  const [lastLandedIdx, setLastLandedIdx] = useState<number | null>(null);
+
   const handleLanded = useCallback((idx: number, restPos: THREE.Vector3) => {
+    setLastLandedIdx(idx);
     setStates((prev) => {
       if (prev[idx].phase !== 'falling') return prev;
       const donation = (prev[idx] as Extract<CouponState, { phase: 'falling' }>).donation;
@@ -327,6 +332,7 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
           onRegrown={handleRegrown}
           onClickHanging={dropOne}
           isMobile={isMobile}
+          labelSuppressed={isMobile && lastLandedIdx !== i}
         />
       ))}
 
