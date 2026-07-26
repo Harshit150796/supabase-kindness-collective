@@ -25,6 +25,8 @@ interface Props {
   onRegrown: (idx: number) => void;
   onClickHanging: (idx: number) => void;
   isMobile?: boolean;
+  /** On mobile only the most recently landed coupon shows its donor label. */
+  labelSuppressed?: boolean;
 }
 
 const HANG_DROP = 1.0;
