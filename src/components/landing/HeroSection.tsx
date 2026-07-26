@@ -35,38 +35,12 @@ const GradientFallback = () => (
 
 export function HeroSection() {
   const [chatOpen, setChatOpen] = useState(false);
-  // Defer the 3D canvas until the browser is idle so the rest of the page
-  // (fonts, hero overlays, lazy chunks) can finish without competing with
-  // Three.js + GLB parsing on the main thread.
-  const [treeReady, setTreeReady] = useState(false);
+  // Mount the 3D canvas immediately — only gated by WebGL/bot capability,
+  // which can't be evaluated during SSR/first render, so it's set on mount.
+  const [can3D, setCan3D] = useState(false);
 
   useEffect(() => {
-    // Skip mounting the 3D scene entirely on clients that can't run WebGL
-    // (bots, ancient browsers, some in-app webviews). The gradient fallback
-    // stays visible and the rest of the page renders normally.
-    if (!canRender3D()) return;
-
-    let cancelled = false;
-    const start = () => {
-      if (cancelled) return;
-      const w = window as Window & {
-        requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-      };
-      if (typeof w.requestIdleCallback === 'function') {
-        w.requestIdleCallback(() => !cancelled && setTreeReady(true), { timeout: 1800 });
-      } else {
-        setTimeout(() => !cancelled && setTreeReady(true), 1500);
-      }
-    };
-    if (document.readyState === 'complete') {
-      start();
-    } else {
-      window.addEventListener('load', start, { once: true });
-    }
-    return () => {
-      cancelled = true;
-      window.removeEventListener('load', start);
-    };
+    if (canRender3D()) setCan3D(true);
   }, []);
 
   return (
@@ -77,8 +51,11 @@ export function HeroSection() {
       {/* Stacked layers — no DOM swap, no CLS. The gradient always paints first;
           the canvas wrapper sits on top and fades in once Tree3DScene is mounted. */}
       <GradientFallback />
-      <div className="absolute inset-0 w-full h-full">
-        {treeReady && (
+      <div
+        className="absolute inset-0 w-full h-full transition-opacity duration-500"
+        style={{ opacity: can3D ? 1 : 0 }}
+      >
+        {can3D && (
           <Tree3DErrorBoundary>
             <Suspense fallback={null}>
               <Tree3DScene />
@@ -86,6 +63,7 @@ export function HeroSection() {
           </Tree3DErrorBoundary>
         )}
       </div>
+
 
       {/* Overlay layer — pointer-events isolated so 3D scene stays interactive */}
       <div className="absolute inset-0 pointer-events-none">
