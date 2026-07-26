@@ -212,7 +212,9 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   const scatterTarget = useMemo(() => {
     const ang = (index * 2.3998) % (Math.PI * 2);
     const unit = (index * 0.6180339) % 1;
-    const rad = isMobile ? 1.3 + unit * 1.3 : 1.8 + unit * 3.7;
+    // Mobile gets a slightly wider ring than before so coupons don't land in
+    // one tight cluster under the trunk, while still staying clear of the edges.
+    const rad = isMobile ? 1.6 + unit * 1.7 : 1.8 + unit * 3.7;
     return { x: Math.cos(ang) * rad, z: Math.sin(ang) * rad };
   }, [index, isMobile]);
 
@@ -439,7 +441,9 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
             // Pull the anchor toward the scene centre on phones so a card that
             // landed on the edge of the ring still renders fully in-canvas.
             state.restPos.x * (isMobile ? 0.7 : 1),
-            state.restPos.y + (isMobile ? 0.7 : 0.55),
+            // Raise the label a bit on mobile so the larger badge doesn't overlap
+            // the bottom-right action button.
+            state.restPos.y + (isMobile ? 0.85 : 0.55),
             state.restPos.z * (isMobile ? 0.7 : 1),
           ]}
           center
@@ -451,24 +455,24 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
               background: '#FFFFFF',
               border: '1.5px solid #D4A017',
               borderRadius: isMobile ? '12px' : '14px',
-              padding: isMobile ? '7px 11px' : '10px 16px',
+              padding: isMobile ? '8px 13px' : '12px 19px',
               fontFamily: 'system-ui, -apple-system, Arial',
-              fontSize: isMobile ? '11px' : '13px',
+              fontSize: isMobile ? '13px' : '16px',
               fontWeight: 600,
               color: '#1f2937',
               boxShadow: '0 10px 30px rgba(212,160,23,0.35), 0 0 0 4px rgba(212,160,23,0.08)',
               whiteSpace: 'nowrap',
-              maxWidth: isMobile ? 150 : 220,
+              maxWidth: isMobile ? 170 : 260,
               display: 'flex',
               alignItems: 'center',
-              gap: isMobile ? 7 : 10,
+              gap: isMobile ? 8 : 12,
               animation: 'fadeIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)',
             }}
           >
             <div
               style={{
-                width: isMobile ? 22 : 28,
-                height: isMobile ? 22 : 28,
+                width: isMobile ? 26 : 34,
+                height: isMobile ? 26 : 34,
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, #10B981, #059669)',
                 color: '#fff',
@@ -476,7 +480,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: 800,
-                fontSize: isMobile ? 11 : 13,
+                fontSize: isMobile ? 13 : 16,
                 flexShrink: 0,
               }}
             >
@@ -487,7 +491,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
                 style={{
                   color: '#059669',
                   fontWeight: 700,
-                  maxWidth: isMobile ? 104 : 160,
+                  maxWidth: isMobile ? 118 : 190,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -495,9 +499,9 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
               >
                 {safeDonorName}
               </span>
-              <span style={{ color: '#6b7280', fontSize: isMobile ? 10 : 11, fontWeight: 500 }}>
+              <span style={{ color: '#6b7280', fontSize: isMobile ? 12 : 13, fontWeight: 500 }}>
                 donated{' '}
-                <span style={{ color: '#D4A017', fontWeight: 800, fontSize: isMobile ? 11 : 13 }}>
+                <span style={{ color: '#D4A017', fontWeight: 800, fontSize: isMobile ? 13 : 16 }}>
                   ${state.donation.amount}
                 </span>
               </span>
