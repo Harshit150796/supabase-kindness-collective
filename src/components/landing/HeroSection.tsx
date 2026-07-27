@@ -1,9 +1,10 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { HeroHeadline } from '@/components/landing/hero/HeroHeadline';
 import { TopDonorsPanel } from '@/components/landing/hero/TopDonorsPanel';
 import { AITreeLauncher } from '@/components/landing/hero/AITreeLauncher';
 import { AITreeChat } from '@/components/landing/hero/AITreeChat';
 import { Tree3DErrorBoundary } from '@/components/landing/Tree3DErrorBoundary';
+import { Tree3DScene } from '@/components/landing/Tree3DScene';
 
 const BOT_UA_RE = /(bot|crawler|spider|crawling|Googlebot|bingbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|Discordbot|HeadlessChrome|Lighthouse|PageSpeed)/i;
 
@@ -22,10 +23,6 @@ function canRender3D(): boolean {
   }
 }
 
-const Tree3DScene = lazy(() =>
-  import('@/components/landing/Tree3DScene').then((m) => ({ default: m.Tree3DScene }))
-);
-
 const GradientFallback = () => (
   <div
     aria-hidden
@@ -35,13 +32,8 @@ const GradientFallback = () => (
 
 export function HeroSection() {
   const [chatOpen, setChatOpen] = useState(false);
-  // Mount the 3D canvas immediately — only gated by WebGL/bot capability,
-  // which can't be evaluated during SSR/first render, so it's set on mount.
-  const [can3D, setCan3D] = useState(false);
-
-  useEffect(() => {
-    if (canRender3D()) setCan3D(true);
-  }, []);
+  // Mount the 3D canvas on the first client render — only gated by WebGL/bot capability.
+  const [can3D] = useState(() => canRender3D());
 
   return (
     <section
@@ -49,17 +41,12 @@ export function HeroSection() {
       style={{ contain: 'layout paint' }}
     >
       {/* Stacked layers — no DOM swap, no CLS. The gradient always paints first;
-          the canvas wrapper sits on top and fades in once Tree3DScene is mounted. */}
+          the canvas wrapper sits on top immediately once WebGL capability is known. */}
       <GradientFallback />
-      <div
-        className="absolute inset-0 w-full h-full transition-opacity duration-500"
-        style={{ opacity: can3D ? 1 : 0 }}
-      >
+      <div className="absolute inset-0 w-full h-full">
         {can3D && (
           <Tree3DErrorBoundary>
-            <Suspense fallback={null}>
-              <Tree3DScene />
-            </Suspense>
+            <Tree3DScene />
           </Tree3DErrorBoundary>
         )}
       </div>

@@ -319,7 +319,6 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
       <AmbientBirds count={isMobile ? 2 : 6} />
       <PlantsLayer cap={plantCap} />
 
-
       {fruits.map((data, i) => (
         <CouponFruit
           key={i}
@@ -335,8 +334,6 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
           labelSuppressed={isMobile && lastLandedIdx !== i}
         />
       ))}
-
-      <Environment preset="forest" background={false} />
     </>
   );
 }
@@ -364,6 +361,26 @@ function WindTracker() {
   }, [bumpWind]);
 
   return null;
+}
+
+function DeferredEnvironment() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let frame = 0;
+    const timeout = window.setTimeout(() => {
+      frame = window.requestAnimationFrame(() => setReady(true));
+    }, 900);
+
+    return () => {
+      window.clearTimeout(timeout);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  if (!ready) return null;
+
+  return <Environment preset="forest" background={false} />;
 }
 
 export function Tree3DScene() {
@@ -537,6 +554,9 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
         <WindTracker />
         <Suspense fallback={null}>
           <Scene leafCount={leafCount} plantCap={plantCap} isMobile={isMobile} />
+        </Suspense>
+        <Suspense fallback={null}>
+          <DeferredEnvironment />
         </Suspense>
       </Canvas>
     </>
