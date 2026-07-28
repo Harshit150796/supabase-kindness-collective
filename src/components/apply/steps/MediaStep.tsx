@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { ImagePlus, X, Upload } from "lucide-react";
+import { ImagePlus, X, Upload, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
