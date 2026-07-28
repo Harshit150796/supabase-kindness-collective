@@ -1,31 +1,25 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getDailyPlaceholderDonors } from "@/lib/placeholderDonors";
 
 export interface TopDonor {
   display_name: string;
   is_anonymous: boolean;
   total: number;
   donations_count: number;
-  is_placeholder?: boolean;
 }
 
 const TARGET_COUNT = 3;
 
-function padWithPlaceholders(real: TopDonor[]): TopDonor[] {
-  if (real.length >= TARGET_COUNT) return real.slice(0, TARGET_COUNT);
-  const placeholders = getDailyPlaceholderDonors(TARGET_COUNT);
-  const realNames = new Set(real.map((d) => d.display_name.toLowerCase()));
-  const filtered = placeholders.filter((p) => !realNames.has(p.display_name.toLowerCase()));
-  const merged = [...real, ...filtered].slice(0, TARGET_COUNT);
-  merged.sort((a, b) => b.total - a.total);
-  return merged;
-}
-
+/**
+ * Top donors for the current week.
+ *
+ * Only real donors are returned. The list is deliberately NOT padded with
+ * invented names — an empty week shows an honest empty state instead.
+ */
 export function useTopDonors() {
-  // Seed synchronously with placeholders so the panel is never empty on first paint.
-  const [donors, setDonors] = useState<TopDonor[]>(() => padWithPlaceholders([]));
+  const [donors, setDonors] = useState<TopDonor[]>([]);
   const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     let cancelled = false;
