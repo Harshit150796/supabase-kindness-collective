@@ -68,7 +68,9 @@ export function LazyOnView({
   if (contentVisibilityAuto) {
     style.contentVisibility = 'auto';
     const intrinsic = typeof reserved === 'number' ? `${reserved}px` : reserved;
-    style.containIntrinsicSize = `0 ${intrinsic}`;
+    // `auto` lets the browser remember the real rendered size after the
+    // first paint, so the reserved estimate only matters once.
+    style.containIntrinsicSize = `auto ${intrinsic}`;
   }
 
 
