@@ -39,3 +39,6 @@ verify_jwt = false
 [functions.stripe-account-diagnose]
 verify_jwt = false
 
+
+[functions.purge-storage-objects]
+verify_jwt = false
