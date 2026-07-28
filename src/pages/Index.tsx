@@ -31,55 +31,55 @@ const Index = () => {
 
         <LiveActivityBar />
 
-        <LazyOnView minHeight={600} mobileMinHeight={1200} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={600} mobileMinHeight={2880} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <ImpactStories />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={600} mobileMinHeight={1100} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={600} mobileMinHeight={1030} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <TrustTransparency />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={500} mobileMinHeight={900} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={500} mobileMinHeight={1030} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <BrandLeaderboard />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={700} mobileMinHeight={1100} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={700} mobileMinHeight={1120} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <DonationFlow />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={300} mobileMinHeight={600} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={300} mobileMinHeight={830} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <SecurityBadges />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={500} mobileMinHeight={900} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={500} mobileMinHeight={1680} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <TestimonialsSection />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={400} mobileMinHeight={800} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={400} mobileMinHeight={910} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <ImpactDashboard />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={300} mobileMinHeight={480} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={300} mobileMinHeight={1170} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <CTASection />
           </Suspense>
         </LazyOnView>
       </main>
-      <LazyOnView minHeight={300} mobileMinHeight={700} rootMargin="900px" contentVisibilityAuto>
+      <LazyOnView minHeight={300} mobileMinHeight={900} rootMargin="900px" contentVisibilityAuto>
         <Suspense fallback={null}>
           <Footer />
         </Suspense>
