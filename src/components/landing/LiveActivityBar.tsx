@@ -1,36 +1,24 @@
-import { memo, useEffect, useRef, useState } from 'react';
-import { Heart, TrendingUp, Users, Zap } from 'lucide-react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { Heart, ShieldCheck, TrendingUp, Users } from 'lucide-react';
 import { popularBrands } from '@/data/brandLogos';
 import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  relativeTime,
+  usePublicDonationActivity,
+  type PublicDonation,
+} from '@/hooks/usePublicDonationActivity';
 
-interface DonationEvent {
-  id: number;
-  name: string;
-  amount: number;
-  brand: string;
-  timeAgo: string;
-}
-
-const generateDonation = (id: number): DonationEvent => {
-  const names = ['Sarah M.', 'John D.', 'Emily R.', 'Michael T.', 'Lisa K.', 'David P.', 'Anna S.', 'James W.'];
-  const amounts = [25, 50, 75, 100, 150, 200, 250];
-  const brands = popularBrands.map(b => b.name);
-  const times = ['just now', '10s ago', '30s ago', '1m ago', '2m ago'];
-
-  return {
-    id,
-    name: names[Math.floor(Math.random() * names.length)],
-    amount: amounts[Math.floor(Math.random() * amounts.length)],
-    brand: brands[Math.floor(Math.random() * brands.length)],
-    timeAgo: times[Math.floor(Math.random() * times.length)]
-  };
-};
-
+/**
+ * Live activity strip.
+ *
+ * Every figure shown here is a real completed donation read from the database.
+ * Nothing is simulated — when there is no activity yet the bar shows a neutral
+ * "be the first" state rather than invented names or totals.
+ */
 export const LiveActivityBar = () => {
   const isMobile = useIsMobile();
-  const [currentDonation, setCurrentDonation] = useState<DonationEvent>(() => generateDonation(1));
-  const [donationCount, setDonationCount] = useState(8234);
-  const [amountRaised, setAmountRaised] = useState(127450);
+  const { stats, recent } = usePublicDonationActivity();
+  const [cursor, setCursor] = useState(0);
   const scrollingRef = useRef(false);
 
   // Track scroll activity on mobile so we can pause text rotation during swipes
@@ -51,63 +39,92 @@ export const LiveActivityBar = () => {
     };
   }, [isMobile]);
 
+  // Cycle through the real recent donations only — no synthetic events.
   useEffect(() => {
+    if (recent.length < 2) return;
     const interval = setInterval(() => {
-      // Don't change text mid-swipe on mobile — feels like blinking
       if (scrollingRef.current) return;
-      const next = generateDonation(Date.now());
-      setCurrentDonation(next);
-      if (Math.random() > 0.5) {
-        setDonationCount((c) => c + 1);
-        setAmountRaised((a) => a + next.amount);
-      }
-    }, 3500);
-
+      setCursor((c) => (c + 1) % recent.length);
+    }, 4500);
     return () => clearInterval(interval);
+  }, [recent.length]);
+
+  const current: PublicDonation | null = recent.length
+    ? recent[cursor % recent.length]
+    : null;
+
+  // De-duplicated brand list so the marquee never repeats the same logo twice.
+  const marqueeBrands = useMemo(() => {
+    const seen = new Set<string>();
+    return popularBrands.filter((b) => {
+      const key = b.name.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }, []);
 
-  if (!currentDonation) return null;
+  const hasActivity = Boolean(stats && stats.donationsCount > 0);
+
+  const formatTotal = (n: number) =>
+    n >= 1000 ? `$${(n / 1000).toFixed(n >= 10_000 ? 0 : 1)}K` : `$${Math.round(n)}`;
 
   return (
-    <section className="relative bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-y border-border/50 overflow-hidden">
+    <section className="relative bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-y border-border/50 overflow-x-clip">
       {/* Animated tint only on desktop — kept off mobile for stable rendering */}
       <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10 opacity-50 hidden md:block md:animate-pulse" />
 
       <div className="container mx-auto px-4 py-3 md:py-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 min-h-[44px]">
 
-          {/* Live Donation Feed */}
+          {/* Donation feed — real events only */}
           <div className="flex items-center gap-2 md:gap-3 min-w-0 w-full md:w-auto justify-center md:justify-start min-h-[32px]">
-            <div className="relative flex-shrink-0">
-              <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full md:animate-pulse" />
-              <div className="absolute inset-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full opacity-0 md:opacity-100 md:animate-ping" />
-            </div>
-            <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">Live</span>
-            <DonationPill donation={currentDonation} />
+            {current ? (
+              <>
+                <div className="relative flex-shrink-0">
+                  <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full md:animate-pulse" />
+                  <div className="absolute inset-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full opacity-0 md:opacity-100 md:animate-ping" />
+                </div>
+                <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">
+                  Live
+                </span>
+                <DonationPill donation={current} />
+              </>
+            ) : (
+              <div className="flex items-center gap-2 rounded-full border border-border/50 bg-background px-3 py-1.5 shadow-sm">
+                <Heart className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary fill-primary flex-shrink-0" />
+                <p className="text-xs md:text-sm font-medium text-foreground whitespace-nowrap">
+                  Be the first to fund groceries today
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Quick Stats */}
+          {/* Verified totals */}
           <div className="flex items-center gap-4 md:gap-6">
             <div className="flex items-center gap-1.5 md:gap-2">
-              <Zap className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500" />
-              <span className="text-xs md:text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">1</span>
-                <span className="hidden sm:inline"> donation</span>/8s
+              <ShieldCheck className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
+              <span className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">
+                Verified totals
               </span>
             </div>
 
             <div className="flex items-center gap-1.5 md:gap-2">
               <Users className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
               <span className="text-xs md:text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground tabular-nums">{donationCount.toLocaleString()}</span>
-                <span className="hidden sm:inline"> today</span>
+                <span className="font-semibold text-foreground tabular-nums">
+                  {hasActivity ? stats!.donationsCount.toLocaleString() : '—'}
+                </span>
+                <span className="hidden sm:inline"> donations</span>
               </span>
             </div>
 
             <div className="flex items-center gap-1.5 md:gap-2">
               <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 text-green-500" />
               <span className="text-xs md:text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground tabular-nums">${(amountRaised / 1000).toFixed(0)}K</span>
+                <span className="font-semibold text-foreground tabular-nums">
+                  {hasActivity ? formatTotal(stats!.totalRaised) : '—'}
+                </span>
                 <span className="hidden sm:inline"> raised</span>
               </span>
             </div>
@@ -118,22 +135,22 @@ export const LiveActivityBar = () => {
             <span className="text-xs text-muted-foreground whitespace-nowrap">Powered by</span>
             <div className="flex gap-4 overflow-hidden">
               <div className="flex gap-4 animate-marquee">
-                {popularBrands.slice(0, 6).map((brand) => (
+                {[...marqueeBrands.slice(0, 6), ...marqueeBrands.slice(0, 6)].map((brand, i) => (
                   <div
-                    key={brand.name}
+                    key={`d-${brand.name}-${i}`}
                     className="flex items-center justify-center w-8 h-8 rounded-full bg-background border border-border/50 shadow-sm flex-shrink-0"
                     title={brand.name}
                   >
-                    <img src={brand.logo} alt={brand.name} className="w-5 h-5 object-contain" />
-                  </div>
-                ))}
-                {popularBrands.slice(0, 6).map((brand) => (
-                  <div
-                    key={`${brand.name}-dup`}
-                    className="flex items-center justify-center w-8 h-8 rounded-full bg-background border border-border/50 shadow-sm flex-shrink-0"
-                    title={brand.name}
-                  >
-                    <img src={brand.logo} alt={brand.name} className="w-5 h-5 object-contain" />
+                    <img
+                      src={brand.logo}
+                      alt={i < 6 ? brand.name : ''}
+                      aria-hidden={i >= 6}
+                      className="w-5 h-5 object-contain"
+                      width={20}
+                      height={20}
+                      loading="lazy"
+                      decoding="async"
+                    />
                   </div>
                 ))}
               </div>
@@ -151,12 +168,20 @@ export const LiveActivityBar = () => {
           }}
         >
           <div className="flex gap-3 animate-marquee w-max px-4">
-            {[...popularBrands, ...popularBrands].map((brand, i) => (
+            {[...marqueeBrands, ...marqueeBrands].map((brand, i) => (
               <div
                 key={`m-${brand.name}-${i}`}
                 className="flex items-center justify-center w-7 h-7 rounded-full bg-background border border-border/50 shadow-sm flex-shrink-0"
               >
-                <img src={brand.logo} alt="" className="w-4 h-4 object-contain" />
+                <img
+                  src={brand.logo}
+                  alt=""
+                  className="w-4 h-4 object-contain"
+                  width={16}
+                  height={16}
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
             ))}
           </div>
@@ -167,24 +192,27 @@ export const LiveActivityBar = () => {
 };
 
 // Memoised pill so the surrounding stats row and brand marquee don't reflow
-// every 3.5s when only the donation event changes.
-const DonationPill = memo(function DonationPill({ donation }: { donation: DonationEvent }) {
+// every few seconds when only the donation event changes.
+const DonationPill = memo(function DonationPill({ donation }: { donation: PublicDonation }) {
   return (
     <div className="flex items-center gap-2 bg-background md:bg-background/80 md:backdrop-blur-sm rounded-full px-3 md:px-4 py-1.5 md:py-2 border border-border/50 shadow-sm max-w-[280px] md:max-w-none">
       <Heart className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary fill-primary md:animate-pulse flex-shrink-0" />
       <div className="overflow-hidden">
         <p className="text-xs md:text-sm font-medium text-foreground whitespace-nowrap truncate">
-          <span className="font-semibold">{donation.name}</span>
-          {' '}donated{' '}
-          <span className="text-primary font-bold">${donation.amount}</span>
-          <span className="hidden sm:inline">
-            {' '}via{' '}
-            <span className="text-muted-foreground">{donation.brand}</span>
-          </span>
+          <span className="font-semibold">{donation.displayName}</span>
+          {' donated '}
+          <span className="text-primary font-bold">${Math.round(donation.amount)}</span>
+          {donation.brand ? (
+            <span className="hidden sm:inline">
+              {' via '}
+              <span className="text-muted-foreground">{donation.brand}</span>
+            </span>
+          ) : null}
         </p>
       </div>
-      <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">{donation.timeAgo}</span>
+      <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">
+        {relativeTime(donation.createdAt)}
+      </span>
     </div>
   );
 });
-
