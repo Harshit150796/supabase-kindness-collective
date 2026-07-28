@@ -6,7 +6,10 @@ import { LazyOnView } from '@/components/LazyOnView';
 
 // Below-the-fold sections — lazy chunks, only fetched as user scrolls.
 import { LiveActivityBar } from '@/components/landing/LiveActivityBar';
-const ImpactStories = lazy(() => import('@/components/landing/ImpactStories').then(m => ({ default: m.ImpactStories })));
+// ImpactStories sits directly under the hero and is always in view on load.
+// Lazy-loading it made the page grow by ~2800px a second after first paint,
+// which was the entire layout-shift score on mobile. It ships eagerly instead.
+import { ImpactStories } from '@/components/landing/ImpactStories';
 const TrustTransparency = lazy(() => import('@/components/landing/TrustTransparency').then(m => ({ default: m.TrustTransparency })));
 const BrandLeaderboard = lazy(() => import('@/components/landing/BrandLeaderboard').then(m => ({ default: m.BrandLeaderboard })));
 const DonationFlow = lazy(() => import('@/components/landing/DonationFlow').then(m => ({ default: m.DonationFlow })));
@@ -31,11 +34,7 @@ const Index = () => {
 
         <LiveActivityBar />
 
-        <LazyOnView minHeight={600} mobileMinHeight={2880} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
-            <ImpactStories />
-          </Suspense>
-        </LazyOnView>
+        <ImpactStories />
 
         <LazyOnView minHeight={600} mobileMinHeight={1030} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
