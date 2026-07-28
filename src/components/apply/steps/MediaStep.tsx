@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { ImagePlus, X, Upload } from "lucide-react";
+import { ImagePlus, X, Upload, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -102,6 +102,18 @@ export const MediaStep = ({
           Cover media helps tell your story. If you find a better photo later, you can always change it.
         </p>
       </div>
+
+      {/* Privacy guard — cover photos are shown publicly to every visitor. */}
+      <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
+        <ShieldAlert className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+        <p className="text-sm text-foreground/80 leading-relaxed">
+          <span className="font-semibold">This photo is public.</span> Never upload a driver&apos;s
+          licence, passport, Social Security card, bank statement or any other identity document
+          here. Verification documents belong in the separate verification step, where only our
+          review team can see them.
+        </p>
+      </div>
+
 
       {/* Upload Area */}
       {!coverPhotoPreview ? (

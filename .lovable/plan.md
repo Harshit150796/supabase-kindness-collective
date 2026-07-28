@@ -1,43 +1,78 @@
-## Plan: make the tree launch immediately and feel smooth
+- Mobile audit — what I measured
 
-### Goal
-Make the 3D tree start loading and rendering as soon as the landing page opens, with no delayed mount or fade-in wait, while preserving the existing tree detail/leaf counts and visual quality.
+Ran the live site in a real phone viewport (390×844, dpr 3, iPhone UA), captured 10 scroll screenshots, and measured load metrics, overflow, images and tap targets.
 
-### Current confirmed bottlenecks
-- `HeroSection.tsx` still lazy-loads `Tree3DScene`, so the browser waits for the main React app to render before requesting the 3D chunk.
-- The tree is hidden behind a `500ms` opacity transition, so even after it is ready the user sees a delayed reveal.
-- `Tree3DScene.tsx` loads the Drei `Environment preset="forest"`, which can add startup work during the first render.
-- The current preload only preloads `/models/tree.glb`; the active tree code does not appear to use that GLB in the files inspected, so it may not help this hero startup.
+**Measured numbers**
 
-### Implementation steps
-1. **Make the 3D tree part of the first landing bundle**
-   - Replace the `React.lazy` import of `Tree3DScene` in `HeroSection.tsx` with a normal static import.
-   - Keep the existing WebGL/bot safety check so unsupported browsers still get the fallback.
+- FCP 1.31s, LCP 2.84s, **CLS 0.198** (Google's "poor" threshold is >0.25; good is <0.1)
+- Hero canvas renders at **1170×1468 px** for a 390px-wide box (dpr 3)
+- ~20MB of JS transferred in dev (three/drei ~3.8MB, tree.glb 1.46MB, recharts 1.04MB loaded on the homepage)
+- 17 tap targets under the 36px minimum
+- Horizontal overflow detected in the brand marquee and the category chip row
 
-2. **Remove the visual reveal delay**
-   - Remove the `duration-500` fade behavior from the tree wrapper.
-   - Show the canvas immediately once WebGL capability is known instead of fading it in slowly.
+### What's good
 
-3. **Start capability detection earlier and avoid extra renders where possible**
-   - Initialize the `can3D` state from `canRender3D()` on the client, instead of always starting as `false` and waiting for `useEffect` to flip it.
-   - Keep a safe server/SSR fallback path.
+- Tree loads immediately now, no blank hero, gradient paints first so there's no flash
+- Hero CTAs ("Donate now" / "Apply as Recipient") are visible above the fold
+- Transparency donut + 95/3/2 breakdown reads clearly and is well-sized for mobile
+- Colors are consistent with the emerald/gold system; text contrast is fine throughout
+- Cookie bar is correctly compacted to one line on mobile
 
-4. **Reduce first-frame startup work without reducing quality**
-   - Replace or defer the Drei `<Environment preset="forest" />` startup load if it is contributing to the initial pause.
-   - Preserve lighting, camera, leaf counts, shadows, DPR, and all visible tree quality settings.
+### What's bad (ordered by impact on a new visitor)
 
-5. **Clean misleading preload if needed**
-   - If `/models/tree.glb` is unused by this tree, remove that preload so the browser does not spend early bandwidth on an irrelevant asset.
-   - If it is used indirectly, keep it.
+**1. Real user-photo problem: a driver's licence is used as a campaign cover image.**
+Two fundraiser cards on the homepage show a scan of a New York State driver's licence (verification document uploaded as a campaign photo). This is exposed PII on a public page and looks unprofessional to both donors and the Stripe underwriter. Highest priority.
 
-6. **Verify on mobile-sized preview**
-   - Check the page at the current mobile viewport.
-   - Confirm the hero paints immediately, no blank wait/fade occurs, and no tree quality settings were changed.
+**2. No headline on mobile.** The `<h1>` is `sr-only`; visually a phone user sees only a tiny "COUPONDONATION IS TRANSPARENT" eyebrow and two buttons. There is no sentence explaining what the site does above the fold.
 
-### Files expected to change
-- `src/components/landing/HeroSection.tsx`
-- Possibly `src/components/landing/Tree3DScene.tsx`
-- Possibly `index.html` only if the existing GLB preload is confirmed unused or counterproductive
+**3. Fabricated live stats.** The activity bar generates fake donor names, "8,235 donors", "$127K raised" and "Total this month $3,300" client-side with `Math.random()`. Given the account is under Stripe manual review, invented traction numbers on a donation site are a real trust and compliance risk.
 
-### What will not change
-- No changes to leaves, tree geometry, coupon behavior, donor label layout, camera framing, or mobile visual quality.
+**4. CLS 0.198 — visible content jumping.** Caused by lazy sections mounting with `minHeight` placeholders shorter than the real content, plus the cookie bar animating in at 400ms.
+
+**5. Sticky navbar clips section headings.** Scrolling lands with "Where Your Money Goes" half-hidden behind the 72px sticky bar — no scroll padding is set.
+
+**6. Hero canvas is oversized for phones.** dpr is capped at 3, so a 390px box renders 1.7 million pixels every frame. That's the residual heaviness/heat on mid-range phones; dpr 2 is visually identical at this size.
+
+**7. Horizontal overflow.** The brand marquee and the category chip row extend past the viewport edge, so a sideways rubber-band happens on swipe.
+
+**8. Cards are enormous.** Fundraiser cards stack one-per-screen at 4:3, so scrolling past three campaigns takes several full swipes.
+
+**9. Smaller issues.** Starbucks logo appears twice in the marquee row; 17 tap targets below 36px (footer links, pagination dots); brand favicons served at 128px into a 16px slot; recharts (1MB) loads on the homepage.
+
+---
+
+## Proposed fixes
+
+### Phase 1 — trust and correctness
+
+- Replace/remove the licence-scan cover images on the affected fundraisers, and prevent verification documents from ever being selectable as a public campaign photo.
+- Make the activity bar honest: drive counts and totals from real donation data, and when there is no data show a neutral state instead of invented names and dollar figures.
+
+### Phase 2 — hero and above-the-fold
+
+&nbsp;
+
+&nbsp;
+
+- Shorten the deferred environment lighting delay so the lighting settles before the user notices a shift, still after first paint.
+
+### Phase 3 — layout and stability
+
+- Set `scroll-padding-top` for the sticky navbar so headings never land behind it.
+- Give each lazy section a placeholder height matching its real rendered height to cut CLS toward <0.1.
+- Contain the marquee and chip rows so nothing exceeds the viewport width.
+- Tighten mobile fundraiser cards (16:10 image, denser meta) so ~2 fit per screen.
+
+### Phase 4 — polish
+
+- Deduplicate the brand marquee logos; request 32px favicons instead of 128px.
+- Raise sub-36px tap targets in the footer and pagination to 44px.
+- Move recharts out of the homepage bundle (it is only used in admin analytics).
+
+### Technical notes
+
+Work is confined to presentation and data-source wiring: `HeroHeadline.tsx`, `Tree3DScene.tsx` (dpr only), `Index.tsx`, `LiveActivityBar.tsx`, `FundraiserCard.tsx`, `index.css`, plus removing the offending cover images. No changes to tree geometry, leaves, materials or quality.
+
+### One decision I need from you
+
+The fake live-activity numbers (Phase 1) are the only item that changes what visitors see as fact. Options: wire to real donation totals, keep the ticker but label it clearly as a demo, or remove the ticker entirely. Tell me which and I'll build it that way — everything else I'll proceed with as written.
