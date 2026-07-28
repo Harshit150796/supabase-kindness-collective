@@ -35,7 +35,7 @@ export function useTopDonors() {
           total: Number(d.total),
           donations_count: Number(d.donations_count),
         }));
-        setDonors(padWithPlaceholders(real));
+        setDonors(real.slice(0, TARGET_COUNT));
       }
       setLoading(false);
     };
