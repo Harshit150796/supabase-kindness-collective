@@ -64,12 +64,13 @@ export function LazyOnView({
   }, [show, rootMargin]);
 
   const style: CSSProperties & Record<string, string | number> = {};
-  if (!show) style.minHeight = minHeight;
+  if (!show) style.minHeight = reserved;
   if (contentVisibilityAuto) {
     style.contentVisibility = 'auto';
-    const intrinsic = typeof minHeight === 'number' ? `${minHeight}px` : minHeight;
+    const intrinsic = typeof reserved === 'number' ? `${reserved}px` : reserved;
     style.containIntrinsicSize = `0 ${intrinsic}`;
   }
+
 
   return (
     <div ref={ref} className={className} style={style}>
