@@ -1,78 +1,101 @@
-- Mobile audit — what I measured
+# Payment Provider Alternatives Plan
 
-Ran the live site in a real phone viewport (390×844, dpr 3, iPhone UA), captured 10 scroll screenshots, and measured load metrics, overflow, images and tap targets.
+## Context
 
-**Measured numbers**
+Stripe has not responded after documents were submitted and the account may be restricted. The current stack uses a BYOK Stripe integration (`STRIPE_SECRET_KEY`) called through a Supabase Edge Function (`create-donation-checkout`) from `DonationFlow.tsx`. The site must keep the multi-brand coupon selection experience (Walmart, Target, Amazon, etc.) and accept donations from anywhere in the world.
 
-- FCP 1.31s, LCP 2.84s, **CLS 0.198** (Google's "poor" threshold is >0.25; good is <0.1)
-- Hero canvas renders at **1170×1468 px** for a 390px-wide box (dpr 3)
-- ~20MB of JS transferred in dev (three/drei ~3.8MB, tree.glb 1.46MB, recharts 1.04MB loaded on the homepage)
-- 17 tap targets under the 36px minimum
-- Horizontal overflow detected in the brand marquee and the category chip row
+## Short answer
 
-### What's good
+**Donorbox is not a good fit for this project.** Donorbox is designed for registered nonprofits, charges an extra 1.5% platform fee on top of processor fees, and it still runs on Stripe or PayPal as the underlying processor. Since the goal is to replace Stripe entirely, Donorbox connected to Stripe does not solve the problem.
 
-- Tree loads immediately now, no blank hero, gradient paints first so there's no flash
-- Hero CTAs ("Donate now" / "Apply as Recipient") are visible above the fold
-- Transparency donut + 95/3/2 breakdown reads clearly and is well-sized for mobile
-- Colors are consistent with the emerald/gold system; text contrast is fine throughout
-- Cookie bar is correctly compacted to one line on mobile
+## Providers evaluated
 
-### What's bad (ordered by impact on a new visitor)
+| Provider | Fits for-profit? | Depends on Stripe? | Best for | Notes |
+|---|---|---|---|---|
+| **PayPal** | Yes | No | Direct replacement | Nonprofit discounts unavailable, but standard rates apply. Has donation buttons and Checkout. Strong buyer trust. |
+| **Square** | Yes | No | Retail + donations | Good for card payments, but international coverage is weaker than PayPal. |
+| **Lovable Payments (built-in Stripe)** | Yes | Yes (Stripe account) | Managed setup | Requires Lovable Cloud. This project uses an external Supabase instance, so it is likely not available. |
+| **Lovable Payments (Paddle)** | Yes | No | Digital products/SaaS | Not designed for donations; product classification may reject charity/donation model. |
+| **Donorbox** | No | Yes (Stripe/PayPal) | Nonprofits | 1.5% platform fee + processor fees. Not suitable for for-profit. |
+| **Authorize.net** | Yes | No | High-volume custom setup | Higher complexity, monthly gateway fee, needs merchant account. |
+| **GoFundMe/YouCaring** | N/A | N/A | Hosted fundraising | Would move donors off-site; breaks the multi-brand coupon experience. |
 
-**1. Real user-photo problem: a driver's licence is used as a campaign cover image.**
-Two fundraiser cards on the homepage show a scan of a New York State driver's licence (verification document uploaded as a campaign photo). This is exposed PII on a public page and looks unprofessional to both donors and the Stripe underwriter. Highest priority.
+## Recommended path
 
-**2. No headline on mobile.** The `<h1>` is `sr-only`; visually a phone user sees only a tiny "COUPONDONATION IS TRANSPARENT" eyebrow and two buttons. There is no sentence explaining what the site does above the fold.
+Replace Stripe with **PayPal** as the primary payment processor because:
 
-**3. Fabricated live stats.** The activity bar generates fake donor names, "8,235 donors", "$127K raised" and "Total this month $3,300" client-side with `Math.random()`. Given the account is under Stripe manual review, invented traction numbers on a donation site are a real trust and compliance risk.
+1. It does not depend on Stripe at all.
+2. It accepts cards, PayPal balances, and PayPal Credit globally.
+3. It has a hosted checkout flow that can be opened in a new tab (matching the current UX pattern).
+4. It supports webhooks for payment confirmation, so coupon generation and donor history can still be automated.
+5. It is one of the most trusted donation payment options among US donors.
 
-**4. CLS 0.198 — visible content jumping.** Caused by lazy sections mounting with `minHeight` placeholders shorter than the real content, plus the cookie bar animating in at 400ms.
+Square is a secondary option if PayPal approval is slow, but it has less global donor reach.
 
-**5. Sticky navbar clips section headings.** Scrolling lands with "Where Your Money Goes" half-hidden behind the 72px sticky bar — no scroll padding is set.
+## What changes to build
 
-**6. Hero canvas is oversized for phones.** dpr is capped at 3, so a 390px box renders 1.7 million pixels every frame. That's the residual heaviness/heat on mid-range phones; dpr 2 is visually identical at this size.
+### 1. PayPal account and credentials
+- Create a PayPal Business account.
+- Generate Sandbox and Live API credentials (`PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` or `PAYPAL_SECRET`).
+- Store the live secret in Supabase Edge Function secrets via the secure secret form.
 
-**7. Horizontal overflow.** The brand marquee and the category chip row extend past the viewport edge, so a sideways rubber-band happens on swipe.
+### 2. New edge function: `create-paypal-donation-checkout`
+- Receives the same payload as the current Stripe function: `amount`, `brandName`, `brandId`, `brandAllocations`, `userId`, `userEmail`, `fundraiserId`.
+- Validates amount ($5–$10,000) and brand allocations.
+- Creates a PayPal order with the same product description and metadata.
+- Returns an `approvalUrl` so the frontend can open it in a new tab.
+- Uses the same `idempotency`-style key or a PayPal `invoice_id` to prevent duplicates.
 
-**8. Cards are enormous.** Fundraiser cards stack one-per-screen at 4:3, so scrolling past three campaigns takes several full swipes.
+### 3. New edge function: `paypal-webhook`
+- Receives PayPal `CHECKOUT.ORDER.APPROVED` or `PAYMENT.CAPTURE.COMPLETED` events.
+- Verifies the webhook signature using PayPal's certificates/API.
+- Inserts the donation record into the `donations` table.
+- Triggers the same coupon generation logic currently used by `stripe-webhook` (reuse the coupon logic rather than duplicating it).
 
-**9. Smaller issues.** Starbucks logo appears twice in the marquee row; 17 tap targets below 36px (footer links, pagination dots); brand favicons served at 128px into a 16px slot; recharts (1MB) loads on the homepage.
+### 4. Frontend updates
+- `DonationFlow.tsx`: add a "Pay with PayPal" path in the final step.
+- Replace the Stripe card icons with PayPal + card icons (or keep both if a fallback is wanted).
+- Keep the multi-brand selection and allocation UI exactly as it is; only the checkout handler changes.
+- Keep the `window.open(url, '_blank')` pattern for the new checkout URL.
+- Update `SecurityBadges.tsx` to remove "PCI Compliant" if it was only referencing Stripe, or replace with PayPal's verified messaging.
 
----
+### 5. Donation success / cancellation pages
+- `DonationSuccess.tsx` currently reads `amount` and `coupons` from query params. Update it to also accept PayPal's `token`/`PayerID` and verify the order server-side if needed, or keep it as a static thank-you page while the webhook records the donation.
+- `DonationCancelled.tsx` can remain unchanged.
 
-## Proposed fixes
+### 6. Webhook infrastructure
+- Expose the new `paypal-webhook` function as the PayPal webhook URL in the PayPal dashboard.
+- Ensure the function is set to `verify_jwt = false` in `supabase/config.toml` so PayPal can call it without authentication.
 
-### Phase 1 — trust and correctness
+### 7. Admin and reporting
+- Donor history and admin dashboards read from the `donations` table, which already stores provider metadata. Add a `provider` column (or use existing metadata) to distinguish Stripe vs PayPal donations.
+- No UI changes needed unless the admin wants to filter by payment provider.
 
-- Replace/remove the licence-scan cover images on the affected fundraisers, and prevent verification documents from ever being selectable as a public campaign photo.
-- Make the activity bar honest: drive counts and totals from real donation data, and when there is no data show a neutral state instead of invented names and dollar figures.
+### 8. Fallback / hybrid strategy
+- If the Stripe restriction is temporary, the Stripe function can remain in place and the frontend can present both options. Once PayPal is live, Stripe can be disabled by removing the Stripe option from the UI.
 
-### Phase 2 — hero and above-the-fold
+## Migration sequence
 
-&nbsp;
+1. Set up PayPal Business account and store credentials.
+2. Build the `create-paypal-donation-checkout` edge function and test it in Sandbox.
+3. Build the `paypal-webhook` edge function and verify coupon generation logic is triggered correctly.
+4. Update `DonationFlow.tsx` to call the new function and display PayPal branding.
+5. Update the donation success/cancel flow and run end-to-end tests.
+6. Update `SecurityBadges.tsx` and any trust language referencing Stripe.
+7. After live testing, remove Stripe as the primary option (or keep it as a hidden backup if desired).
 
-&nbsp;
+## Risks and mitigation
 
-- Shorten the deferred environment lighting delay so the lighting settles before the user notices a shift, still after first paint.
+| Risk | Mitigation |
+|---|---|
+| PayPal account also gets restricted | Apply the same compliance cleanup already done (US-only admin, no cash-transfer language, real campaign data). Use a fresh PayPal Business account with the company EIN. |
+| PayPal fees are higher than Stripe nonprofit | This is unavoidable for a for-profit entity. Build the fee into the model or ask donors to cover processing fees (PayPal supports donor-covered fees). |
+| Multi-brand metadata not preserved in PayPal | Store the same `brandAllocations` JSON in the PayPal order `purchase_units[].custom_id` or `description` fields, and read it back in the webhook. |
+| Webhook reliability | PayPal webhooks can be slower or retry. Add idempotency checks and a reconciliation job similar to the existing `backfill-stripe-donations` function. |
+| Donor does not have PayPal | PayPal Checkout accepts cards without a PayPal account, so this is rarely a blocker. |
 
-### Phase 3 — layout and stability
+## Open decision before building
 
-- Set `scroll-padding-top` for the sticky navbar so headings never land behind it.
-- Give each lazy section a placeholder height matching its real rendered height to cut CLS toward <0.1.
-- Contain the marquee and chip rows so nothing exceeds the viewport width.
-- Tighten mobile fundraiser cards (16:10 image, denser meta) so ~2 fit per screen.
-
-### Phase 4 — polish
-
-- Deduplicate the brand marquee logos; request 32px favicons instead of 128px.
-- Raise sub-36px tap targets in the footer and pagination to 44px.
-- Move recharts out of the homepage bundle (it is only used in admin analytics).
-
-### Technical notes
-
-Work is confined to presentation and data-source wiring: `HeroHeadline.tsx`, `Tree3DScene.tsx` (dpr only), `Index.tsx`, `LiveActivityBar.tsx`, `FundraiserCard.tsx`, `index.css`, plus removing the offending cover images. No changes to tree geometry, leaves, materials or quality.
-
-### One decision I need from you
-
-The fake live-activity numbers (Phase 1) are the only item that changes what visitors see as fact. Options: wire to real donation totals, keep the ticker but label it clearly as a demo, or remove the ticker entirely. Tell me which and I'll build it that way — everything else I'll proceed with as written.
+1. Should Stripe remain as a backup option in the UI while PayPal is being tested, or be removed immediately? Removing it is cleaner but leaves no fallback if PayPal review is also slow.
+2. Is the business open to applying for a 501(c)(3) or fiscal sponsorship? This would unlock Donorbox, PayPal nonprofit rates, and other charity-specific platforms in the future.
+3. Should we add a "cover processing fees" checkbox to the donation flow? This is a common pattern on donation sites and can offset the higher PayPal for-profit rate.
