@@ -138,18 +138,11 @@
     @apply border-border;
   }
 
-  /* Keep anchor targets clear of the sticky navbar instead of hiding
-     the first lines of a section underneath it. */
-  html {
-    scroll-padding-top: 5rem;
-  }
-
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
-
 
 @layer utilities {
   /* Gold coin shine effect */

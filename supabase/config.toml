@@ -38,3 +38,4 @@ verify_jwt = false
 
 [functions.stripe-account-diagnose]
 verify_jwt = false
+

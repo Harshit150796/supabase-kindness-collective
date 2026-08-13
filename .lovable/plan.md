@@ -1,54 +1,43 @@
-# Plan: Compliance Update for "Your Security Matters" Section
+## Plan: make the tree launch immediately and feel smooth
 
-## Goal
-Update the `SecurityBadges` section on the homepage (and `/donate`) so it is
-Stripe-underwriting compliant and reads like a polished, modern SaaS landing page.
+### Goal
+Make the 3D tree start loading and rendering as soon as the landing page opens, with no delayed mount or fade-in wait, while preserving the existing tree detail/leaf counts and visual quality.
 
-## What changes (single file)
-`src/components/landing/SecurityBadges.tsx` — the only file edited.
+### Current confirmed bottlenecks
+- `HeroSection.tsx` still lazy-loads `Tree3DScene`, so the browser waits for the main React app to render before requesting the 3D chunk.
+- The tree is hidden behind a `500ms` opacity transition, so even after it is ready the user sees a delayed reveal.
+- `Tree3DScene.tsx` loads the Drei `Environment preset="forest"`, which can add startup work during the first render.
+- The current preload only preloads `/models/tree.glb`; the active tree code does not appear to use that GLB in the files inspected, so it may not help this hero startup.
 
-## Copy change
-Remove the middle badge's non-compliant copy:
-- DELETE label: `Verified 501(c)(3)`
-- DELETE sublabel: `Tax-deductible`
+### Implementation steps
+1. **Make the 3D tree part of the first landing bundle**
+   - Replace the `React.lazy` import of `Tree3DScene` in `HeroSection.tsx` with a normal static import.
+   - Keep the existing WebGL/bot safety check so unsupported browsers still get the fallback.
 
-Replace with:
-- label: `Verified Secure Platform`
-- sublabel: `Operating as a B2B technology provider, we utilize a zero-trust architecture to convert funds directly into restricted digital retail vouchers, ensuring complete transparency and zero cash disbursements.`
+2. **Remove the visual reveal delay**
+   - Remove the `duration-500` fade behavior from the tree wrapper.
+   - Show the canvas immediately once WebGL capability is known instead of fading it in slowly.
 
-The other two badges (`SSL Secure` / `256-bit encryption`, `PCI Compliant` / `Secure payments`) stay unchanged.
+3. **Start capability detection earlier and avoid extra renders where possible**
+   - Initialize the `can3D` state from `canRender3D()` on the client, instead of always starting as `false` and waiting for `useEffect` to flip it.
+   - Keep a safe server/SSR fallback path.
 
-## Layout decision (resolves the "polished SaaS" requirement)
-The replacement sublabel is ~40 words; placing it as a plain card sublabel next to
-two 2-word sublabels makes the middle card a tall paragraph and breaks the grid's
-visual hierarchy. To keep it production-grade while keeping ALL required copy:
+4. **Reduce first-frame startup work without reducing quality**
+   - Replace or defer the Drei `<Environment preset="forest" />` startup load if it is contributing to the initial pause.
+   - Preserve lighting, camera, leaf counts, shadows, DPR, and all visible tree quality settings.
 
-1. Middle card keeps the **short** sublabel `Zero cash disbursements` so the three
-   cards stay visually balanced (equal-height, top-aligned).
-2. The **full compliance sentence** (the long B2B / zero-trust / voucher text) is
-   rendered as a centered footnote directly beneath the three-card grid — styled
-   in muted foreground, `text-sm`, `text-balance`, capped at `max-w-2xl`. This is
-   the "underneath as subtext" placement, just styled for balance.
+5. **Clean misleading preload if needed**
+   - If `/models/tree.glb` is unused by this tree, remove that preload so the browser does not spend early bandwidth on an irrelevant asset.
+   - If it is used indirectly, keep it.
 
-This includes every word of the required copy and matches a real SaaS compliance
-footnote pattern.
+6. **Verify on mobile-sized preview**
+   - Check the page at the current mobile viewport.
+   - Confirm the hero paints immediately, no blank wait/fade occurs, and no tree quality settings were changed.
 
-## Styling refinements for seamless blend (all semantic tokens, no hardcoded colors)
-- Grid: add `items-stretch` so the three cards share equal height.
-- Each `Card`: add `h-full` + `flex flex-col` so content aligns top; icon block stays
-  centered.
-- Sublabel: `text-pretty leading-relaxed` for clean wrapping.
-- Footnote: a `mt-8` centered line with a subtle top divider (`border-t border-border/60`)
-  to read as a compliance statement, not loose text.
-- Keep existing `hover:shadow-lg transition-shadow`, `bg-primary/10` icon chip, and
-  emerald `text-primary` icon color — no new color tokens.
+### Files expected to change
+- `src/components/landing/HeroSection.tsx`
+- Possibly `src/components/landing/Tree3DScene.tsx`
+- Possibly `index.html` only if the existing GLB preload is confirmed unused or counterproductive
 
-## Verification
-- Build passes (harness runs it automatically).
-- Visual check via Playwright on a 1280px desktop + 390px mobile viewport: confirm
-  three balanced cards, footnote reads cleanly on both, no 501(c)(3) / tax-deductible
-  text remains anywhere on the section, no layout shift.
-
-## Out of scope
-- No changes to the 3D tree, other landing sections, backend, or routing.
-- No changes to legal pages (already updated in a prior step).
+### What will not change
+- No changes to leaves, tree geometry, coupon behavior, donor label layout, camera framing, or mobile visual quality.

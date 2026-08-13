@@ -6,10 +6,7 @@ import { LazyOnView } from '@/components/LazyOnView';
 
 // Below-the-fold sections — lazy chunks, only fetched as user scrolls.
 import { LiveActivityBar } from '@/components/landing/LiveActivityBar';
-// ImpactStories sits directly under the hero and is always in view on load.
-// Lazy-loading it made the page grow by ~2800px a second after first paint,
-// which was the entire layout-shift score on mobile. It ships eagerly instead.
-import { ImpactStories } from '@/components/landing/ImpactStories';
+const ImpactStories = lazy(() => import('@/components/landing/ImpactStories').then(m => ({ default: m.ImpactStories })));
 const TrustTransparency = lazy(() => import('@/components/landing/TrustTransparency').then(m => ({ default: m.TrustTransparency })));
 const BrandLeaderboard = lazy(() => import('@/components/landing/BrandLeaderboard').then(m => ({ default: m.BrandLeaderboard })));
 const DonationFlow = lazy(() => import('@/components/landing/DonationFlow').then(m => ({ default: m.DonationFlow })));
@@ -34,56 +31,59 @@ const Index = () => {
 
         <LiveActivityBar />
 
-        <ImpactStories />
+        <LazyOnView minHeight={600} rootMargin="900px" contentVisibilityAuto>
+          <Suspense fallback={null}>
+            <ImpactStories />
+          </Suspense>
+        </LazyOnView>
 
-        <LazyOnView minHeight={600} mobileMinHeight={1030} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={600} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <TrustTransparency />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={500} mobileMinHeight={1030} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={500} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <BrandLeaderboard />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={700} mobileMinHeight={1120} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={700} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <DonationFlow />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={300} mobileMinHeight={830} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={300} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <SecurityBadges />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={500} mobileMinHeight={1680} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={500} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <TestimonialsSection />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={400} mobileMinHeight={910} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={400} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <ImpactDashboard />
           </Suspense>
         </LazyOnView>
 
-        <LazyOnView minHeight={300} mobileMinHeight={1170} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={300} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <CTASection />
           </Suspense>
         </LazyOnView>
       </main>
-      <LazyOnView minHeight={300} mobileMinHeight={900} rootMargin="900px" contentVisibilityAuto>
+      <LazyOnView minHeight={300} rootMargin="900px" contentVisibilityAuto>
         <Suspense fallback={null}>
           <Footer />
         </Suspense>
       </LazyOnView>
-
     </div>
   );
 };

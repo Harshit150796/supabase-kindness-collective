@@ -38,21 +38,13 @@ export function HeroHeadline() {
       className="absolute top-4 md:top-6 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-2xl text-center pointer-events-auto transform-gpu antialiased"
       style={{ textShadow: "0 2px 12px rgba(0,0,0,0.18)" }}
     >
-      <h1 className="text-[19px] leading-tight sm:text-2xl md:text-3xl font-extrabold text-foreground">
-        Turn your donation into groceries
-        <span className="sr-only">
-          {' '}— CouponDonation converts donations into grocery coupons for verified US families
-        </span>
-      </h1>
-      <p className="mt-1.5 text-[13px] sm:text-sm text-foreground/75 font-medium">
-        100% of your gift becomes grocery coupons for verified families.
-      </p>
-      <div className="flex items-center justify-center gap-2 mt-2">
-        <span className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-foreground/70 font-semibold">
+      <h1 className="sr-only">CouponDonation — Turn Donations Into Grocery Coupons for Verified Families</h1>
+      <div className="flex items-center justify-center gap-2 mb-2">
+        <span className="text-xs uppercase tracking-[0.2em] text-foreground/70 font-semibold">
           CouponDonation is
         </span>
         {isMobile ? (
-          <span className="inline-block text-[10px] sm:text-xs uppercase tracking-[0.2em] font-bold text-emerald-700">
+          <span className="inline-block text-xs uppercase tracking-[0.2em] font-bold text-emerald-700">
             {ROTATING_WORDS[0]}
           </span>
         ) : (
@@ -64,7 +56,6 @@ export function HeroHeadline() {
           </span>
         )}
       </div>
-
       <div className="mt-3 md:mt-4 inline-flex items-center justify-center gap-1.5 md:gap-2">
         <Button asChild size="sm" className="shadow-lg whitespace-nowrap">
           <Link to="/donate">

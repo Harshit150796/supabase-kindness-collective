@@ -1,16 +1,9 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Props {
   children: ReactNode;
   /** Minimum height reserved before children render — prevents layout shift. */
   minHeight?: number | string;
-  /**
-   * Height reserved on phones. Sections stack vertically on mobile and are
-   * usually far taller than on desktop, so reusing the desktop number makes the
-   * page jump when the real content swaps in. Falls back to `minHeight`.
-   */
-  mobileMinHeight?: number | string;
   /** rootMargin for the IntersectionObserver. */
   rootMargin?: string;
   /** Optional className passed to the wrapper. */
@@ -31,14 +24,10 @@ interface Props {
 export function LazyOnView({
   children,
   minHeight = 400,
-  mobileMinHeight,
   rootMargin = '300px',
   className,
   contentVisibilityAuto = false,
 }: Props) {
-  const isMobile = useIsMobile();
-  const reserved = isMobile && mobileMinHeight !== undefined ? mobileMinHeight : minHeight;
-
   const ref = useRef<HTMLDivElement>(null);
   const [show, setShow] = useState(false);
 
@@ -64,15 +53,12 @@ export function LazyOnView({
   }, [show, rootMargin]);
 
   const style: CSSProperties & Record<string, string | number> = {};
-  if (!show) style.minHeight = reserved;
+  if (!show) style.minHeight = minHeight;
   if (contentVisibilityAuto) {
     style.contentVisibility = 'auto';
-    const intrinsic = typeof reserved === 'number' ? `${reserved}px` : reserved;
-    // `auto` lets the browser remember the real rendered size after the
-    // first paint, so the reserved estimate only matters once.
-    style.containIntrinsicSize = `auto ${intrinsic}`;
+    const intrinsic = typeof minHeight === 'number' ? `${minHeight}px` : minHeight;
+    style.containIntrinsicSize = `0 ${intrinsic}`;
   }
-
 
   return (
     <div ref={ref} className={className} style={style}>

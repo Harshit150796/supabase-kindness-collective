@@ -1466,23 +1466,6 @@ export type Database = {
           total_raised: number
         }[]
       }
-      get_public_donation_stats: {
-        Args: never
-        Returns: {
-          donations_count: number
-          total_raised: number
-        }[]
-      }
-      get_recent_public_donations: {
-        Args: { _limit?: number }
-        Returns: {
-          amount: number
-          brand_partner: string
-          created_at: string
-          display_name: string
-          id: string
-        }[]
-      }
       get_top_donors_week: {
         Args: never
         Returns: {
