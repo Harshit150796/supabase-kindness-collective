@@ -1,101 +1,54 @@
-# Payment Provider Alternatives Plan
+# Plan: Compliance Update for "Your Security Matters" Section
 
-## Context
+## Goal
+Update the `SecurityBadges` section on the homepage (and `/donate`) so it is
+Stripe-underwriting compliant and reads like a polished, modern SaaS landing page.
 
-Stripe has not responded after documents were submitted and the account may be restricted. The current stack uses a BYOK Stripe integration (`STRIPE_SECRET_KEY`) called through a Supabase Edge Function (`create-donation-checkout`) from `DonationFlow.tsx`. The site must keep the multi-brand coupon selection experience (Walmart, Target, Amazon, etc.) and accept donations from anywhere in the world.
+## What changes (single file)
+`src/components/landing/SecurityBadges.tsx` — the only file edited.
 
-## Short answer
+## Copy change
+Remove the middle badge's non-compliant copy:
+- DELETE label: `Verified 501(c)(3)`
+- DELETE sublabel: `Tax-deductible`
 
-**Donorbox is not a good fit for this project.** Donorbox is designed for registered nonprofits, charges an extra 1.5% platform fee on top of processor fees, and it still runs on Stripe or PayPal as the underlying processor. Since the goal is to replace Stripe entirely, Donorbox connected to Stripe does not solve the problem.
+Replace with:
+- label: `Verified Secure Platform`
+- sublabel: `Operating as a B2B technology provider, we utilize a zero-trust architecture to convert funds directly into restricted digital retail vouchers, ensuring complete transparency and zero cash disbursements.`
 
-## Providers evaluated
+The other two badges (`SSL Secure` / `256-bit encryption`, `PCI Compliant` / `Secure payments`) stay unchanged.
 
-| Provider | Fits for-profit? | Depends on Stripe? | Best for | Notes |
-|---|---|---|---|---|
-| **PayPal** | Yes | No | Direct replacement | Nonprofit discounts unavailable, but standard rates apply. Has donation buttons and Checkout. Strong buyer trust. |
-| **Square** | Yes | No | Retail + donations | Good for card payments, but international coverage is weaker than PayPal. |
-| **Lovable Payments (built-in Stripe)** | Yes | Yes (Stripe account) | Managed setup | Requires Lovable Cloud. This project uses an external Supabase instance, so it is likely not available. |
-| **Lovable Payments (Paddle)** | Yes | No | Digital products/SaaS | Not designed for donations; product classification may reject charity/donation model. |
-| **Donorbox** | No | Yes (Stripe/PayPal) | Nonprofits | 1.5% platform fee + processor fees. Not suitable for for-profit. |
-| **Authorize.net** | Yes | No | High-volume custom setup | Higher complexity, monthly gateway fee, needs merchant account. |
-| **GoFundMe/YouCaring** | N/A | N/A | Hosted fundraising | Would move donors off-site; breaks the multi-brand coupon experience. |
+## Layout decision (resolves the "polished SaaS" requirement)
+The replacement sublabel is ~40 words; placing it as a plain card sublabel next to
+two 2-word sublabels makes the middle card a tall paragraph and breaks the grid's
+visual hierarchy. To keep it production-grade while keeping ALL required copy:
 
-## Recommended path
+1. Middle card keeps the **short** sublabel `Zero cash disbursements` so the three
+   cards stay visually balanced (equal-height, top-aligned).
+2. The **full compliance sentence** (the long B2B / zero-trust / voucher text) is
+   rendered as a centered footnote directly beneath the three-card grid — styled
+   in muted foreground, `text-sm`, `text-balance`, capped at `max-w-2xl`. This is
+   the "underneath as subtext" placement, just styled for balance.
 
-Replace Stripe with **PayPal** as the primary payment processor because:
+This includes every word of the required copy and matches a real SaaS compliance
+footnote pattern.
 
-1. It does not depend on Stripe at all.
-2. It accepts cards, PayPal balances, and PayPal Credit globally.
-3. It has a hosted checkout flow that can be opened in a new tab (matching the current UX pattern).
-4. It supports webhooks for payment confirmation, so coupon generation and donor history can still be automated.
-5. It is one of the most trusted donation payment options among US donors.
+## Styling refinements for seamless blend (all semantic tokens, no hardcoded colors)
+- Grid: add `items-stretch` so the three cards share equal height.
+- Each `Card`: add `h-full` + `flex flex-col` so content aligns top; icon block stays
+  centered.
+- Sublabel: `text-pretty leading-relaxed` for clean wrapping.
+- Footnote: a `mt-8` centered line with a subtle top divider (`border-t border-border/60`)
+  to read as a compliance statement, not loose text.
+- Keep existing `hover:shadow-lg transition-shadow`, `bg-primary/10` icon chip, and
+  emerald `text-primary` icon color — no new color tokens.
 
-Square is a secondary option if PayPal approval is slow, but it has less global donor reach.
+## Verification
+- Build passes (harness runs it automatically).
+- Visual check via Playwright on a 1280px desktop + 390px mobile viewport: confirm
+  three balanced cards, footnote reads cleanly on both, no 501(c)(3) / tax-deductible
+  text remains anywhere on the section, no layout shift.
 
-## What changes to build
-
-### 1. PayPal account and credentials
-- Create a PayPal Business account.
-- Generate Sandbox and Live API credentials (`PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` or `PAYPAL_SECRET`).
-- Store the live secret in Supabase Edge Function secrets via the secure secret form.
-
-### 2. New edge function: `create-paypal-donation-checkout`
-- Receives the same payload as the current Stripe function: `amount`, `brandName`, `brandId`, `brandAllocations`, `userId`, `userEmail`, `fundraiserId`.
-- Validates amount ($5–$10,000) and brand allocations.
-- Creates a PayPal order with the same product description and metadata.
-- Returns an `approvalUrl` so the frontend can open it in a new tab.
-- Uses the same `idempotency`-style key or a PayPal `invoice_id` to prevent duplicates.
-
-### 3. New edge function: `paypal-webhook`
-- Receives PayPal `CHECKOUT.ORDER.APPROVED` or `PAYMENT.CAPTURE.COMPLETED` events.
-- Verifies the webhook signature using PayPal's certificates/API.
-- Inserts the donation record into the `donations` table.
-- Triggers the same coupon generation logic currently used by `stripe-webhook` (reuse the coupon logic rather than duplicating it).
-
-### 4. Frontend updates
-- `DonationFlow.tsx`: add a "Pay with PayPal" path in the final step.
-- Replace the Stripe card icons with PayPal + card icons (or keep both if a fallback is wanted).
-- Keep the multi-brand selection and allocation UI exactly as it is; only the checkout handler changes.
-- Keep the `window.open(url, '_blank')` pattern for the new checkout URL.
-- Update `SecurityBadges.tsx` to remove "PCI Compliant" if it was only referencing Stripe, or replace with PayPal's verified messaging.
-
-### 5. Donation success / cancellation pages
-- `DonationSuccess.tsx` currently reads `amount` and `coupons` from query params. Update it to also accept PayPal's `token`/`PayerID` and verify the order server-side if needed, or keep it as a static thank-you page while the webhook records the donation.
-- `DonationCancelled.tsx` can remain unchanged.
-
-### 6. Webhook infrastructure
-- Expose the new `paypal-webhook` function as the PayPal webhook URL in the PayPal dashboard.
-- Ensure the function is set to `verify_jwt = false` in `supabase/config.toml` so PayPal can call it without authentication.
-
-### 7. Admin and reporting
-- Donor history and admin dashboards read from the `donations` table, which already stores provider metadata. Add a `provider` column (or use existing metadata) to distinguish Stripe vs PayPal donations.
-- No UI changes needed unless the admin wants to filter by payment provider.
-
-### 8. Fallback / hybrid strategy
-- If the Stripe restriction is temporary, the Stripe function can remain in place and the frontend can present both options. Once PayPal is live, Stripe can be disabled by removing the Stripe option from the UI.
-
-## Migration sequence
-
-1. Set up PayPal Business account and store credentials.
-2. Build the `create-paypal-donation-checkout` edge function and test it in Sandbox.
-3. Build the `paypal-webhook` edge function and verify coupon generation logic is triggered correctly.
-4. Update `DonationFlow.tsx` to call the new function and display PayPal branding.
-5. Update the donation success/cancel flow and run end-to-end tests.
-6. Update `SecurityBadges.tsx` and any trust language referencing Stripe.
-7. After live testing, remove Stripe as the primary option (or keep it as a hidden backup if desired).
-
-## Risks and mitigation
-
-| Risk | Mitigation |
-|---|---|
-| PayPal account also gets restricted | Apply the same compliance cleanup already done (US-only admin, no cash-transfer language, real campaign data). Use a fresh PayPal Business account with the company EIN. |
-| PayPal fees are higher than Stripe nonprofit | This is unavoidable for a for-profit entity. Build the fee into the model or ask donors to cover processing fees (PayPal supports donor-covered fees). |
-| Multi-brand metadata not preserved in PayPal | Store the same `brandAllocations` JSON in the PayPal order `purchase_units[].custom_id` or `description` fields, and read it back in the webhook. |
-| Webhook reliability | PayPal webhooks can be slower or retry. Add idempotency checks and a reconciliation job similar to the existing `backfill-stripe-donations` function. |
-| Donor does not have PayPal | PayPal Checkout accepts cards without a PayPal account, so this is rarely a blocker. |
-
-## Open decision before building
-
-1. Should Stripe remain as a backup option in the UI while PayPal is being tested, or be removed immediately? Removing it is cleaner but leaves no fallback if PayPal review is also slow.
-2. Is the business open to applying for a 501(c)(3) or fiscal sponsorship? This would unlock Donorbox, PayPal nonprofit rates, and other charity-specific platforms in the future.
-3. Should we add a "cover processing fees" checkbox to the donation flow? This is a common pattern on donation sites and can offset the higher PayPal for-profit rate.
+## Out of scope
+- No changes to the 3D tree, other landing sections, backend, or routing.
+- No changes to legal pages (already updated in a prior step).
