@@ -1,43 +1,47 @@
-## Plan: make the tree launch immediately and feel smooth
+# Stripe Compliance: "Your Security Matters" Copy Update
 
-### Goal
-Make the 3D tree start loading and rendering as soon as the landing page opens, with no delayed mount or fade-in wait, while preserving the existing tree detail/leaf counts and visual quality.
+## Goal
+Remove the non-compliant "Verified 501(c)(3) Tax-deductible" text from the front-page security section and replace it with B2B zero-trust language that satisfies Stripe underwriting, while elevating the section to a polished, modern SaaS aesthetic.
 
-### Current confirmed bottlenecks
-- `HeroSection.tsx` still lazy-loads `Tree3DScene`, so the browser waits for the main React app to render before requesting the 3D chunk.
-- The tree is hidden behind a `500ms` opacity transition, so even after it is ready the user sees a delayed reveal.
-- `Tree3DScene.tsx` loads the Drei `Environment preset="forest"`, which can add startup work during the first render.
-- The current preload only preloads `/models/tree.glb`; the active tree code does not appear to use that GLB in the files inspected, so it may not help this hero startup.
+## Current State (verified)
+- `src/components/landing/SecurityBadges.tsx` renders a 3-card grid: `SSL Secure` / `Verified 501(c)(3)` / `PCI Compliant`.
+- The non-compliant strings live on line 6: `label: 'Verified 501(c)(3)', sublabel: 'Tax-deductible'`.
+- The component is consumed by `src/pages/Index.tsx` (front page, lazy-loaded), `src/pages/Donate.tsx`, and `src/pages/donor/DonorDonate.tsx`.
+- Design tokens: primary emerald `--primary: 160 84% 22%`, gold gradient, card components from shadcn. No hardcoded colors are used.
 
-### Implementation steps
-1. **Make the 3D tree part of the first landing bundle**
-   - Replace the `React.lazy` import of `Tree3DScene` in `HeroSection.tsx` with a normal static import.
-   - Keep the existing WebGL/bot safety check so unsupported browsers still get the fallback.
+## Changes (single file: `src/components/landing/SecurityBadges.tsx`)
 
-2. **Remove the visual reveal delay**
-   - Remove the `duration-500` fade behavior from the tree wrapper.
-   - Show the canvas immediately once WebGL capability is known instead of fading it in slowly.
+### 1. Replace the middle badge copy
+- Remove `Verified 501(c)(3)` / `Tax-deductible`.
+- New badge: icon `ShieldCheck`, label `Verified Secure Platform`.
+- New sublabel (the B2B zero-trust copy):
+  > Operating as a B2B technology provider, we utilize a zero-trust architecture to convert funds directly into restricted digital retail vouchers, ensuring complete transparency and zero cash disbursements.
 
-3. **Start capability detection earlier and avoid extra renders where possible**
-   - Initialize the `can3D` state from `canRender3D()` on the client, instead of always starting as `false` and waiting for `useEffect` to flip it.
-   - Keep a safe server/SSR fallback path.
+### 2. Restructure the middle card to hold the longer copy without breaking layout
+- Keep the 3-column grid on desktop.
+- Middle card: badge label on top, then the B2B subtext as a `text-sm text-muted-foreground leading-relaxed` paragraph (multi-line is fine).
+- The two flanking cards (`SSL Secure`, `PCI Compliant`) keep their current compact styling.
+- Add `items-stretch` to the grid so the tall middle card lifts siblings evenly; cards already use shadcn `Card`.
 
-4. **Reduce first-frame startup work without reducing quality**
-   - Replace or defer the Drei `<Environment preset="forest" />` startup load if it is contributing to the initial pause.
-   - Preserve lighting, camera, leaf counts, shadows, DPR, and all visible tree quality settings.
+### 3. Polish the section to a modern SaaS aesthetic (no new dependencies)
+- Section heading: keep `Your Security Matters`, add a small uppercase `text-xs tracking-widest text-primary/70` eyebrow ("Platform Security").
+- Add a subtle top divider hairline (`border-t border-border`) so it separates cleanly from the preceding `DonationFlow` section.
+- Wrap the icon circle with a ring (`ring-1 ring-primary/15`) and a faint emerald tint consistent with existing tokens.
+- Add `hover:-translate-y-1` and `transition-all duration-300` for a subtle lift on hover (matches the existing `hover:shadow-lg` intent but more refined).
+- Constrain paragraph width (`max-w-md mx-auto`) so the long subtext reads as a clean centered block, not edge-to-edge.
+- Keep all colors as semantic tokens (`text-foreground`, `text-muted-foreground`, `bg-primary/10`, `text-primary`, `border-border`). No hardcoded hex/white/black.
 
-5. **Clean misleading preload if needed**
-   - If `/models/tree.glb` is unused by this tree, remove that preload so the browser does not spend early bandwidth on an irrelevant asset.
-   - If it is used indirectly, keep it.
+### 4. Responsive behavior
+- Mobile (`grid-cols-1`): cards stack; middle card's paragraph wraps naturally.
+- `sm:` and up: 3 columns, middle card taller — acceptable and intentional (feature-card emphasis).
+- No layout shift: the grid reserves height via `items-stretch`; the existing `LazyOnView minHeight={300}` wrapper on Index remains accurate.
 
-6. **Verify on mobile-sized preview**
-   - Check the page at the current mobile viewport.
-   - Confirm the hero paints immediately, no blank wait/fade occurs, and no tree quality settings were changed.
+## Out of Scope
+- No changes to `Index.tsx`, `Donate.tsx`, or `DonorDonate.tsx` (they import the component unchanged).
+- No changes to the Terms/Privacy legal pages (already updated previously).
+- No backend, routing, or Stripe edge-function changes.
 
-### Files expected to change
-- `src/components/landing/HeroSection.tsx`
-- Possibly `src/components/landing/Tree3DScene.tsx`
-- Possibly `index.html` only if the existing GLB preload is confirmed unused or counterproductive
-
-### What will not change
-- No changes to leaves, tree geometry, coupon behavior, donor label layout, camera framing, or mobile visual quality.
+## Verification
+- `tsgo` typecheck on the edited file.
+- Visual check via Playwright (desktop + mobile viewport) on `/` to confirm the section renders with the new copy, the 3 cards align, and the paragraph wraps cleanly.
+- Grep `src/` to confirm zero remaining `501(c)(3)` or `Tax-deductible` references.
