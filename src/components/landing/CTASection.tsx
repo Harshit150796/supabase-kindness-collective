@@ -30,7 +30,7 @@ export function CTASection() {
               </div>
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5" />
-                <span className="text-sm">15K+ Families Helped</span>
+                <span className="text-sm">Help us reach 15,000 families</span>
               </div>
             </div>
             <Button 
@@ -51,7 +51,7 @@ export function CTASection() {
             </div>
             <h3 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">For Companies</h3>
             <p className="text-muted-foreground mb-8 leading-relaxed">
-              Partner with us to amplify your social impact. Join DoorDash, Uber, and 50+ brands making a difference.
+              Partner with us to amplify your social impact. Support campaigns alongside 50+ available retail networks.
             </p>
             <div className="flex items-center gap-4 mb-8 text-foreground flex-wrap">
               <div className="flex items-center gap-2">

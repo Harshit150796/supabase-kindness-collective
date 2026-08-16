@@ -2,8 +2,8 @@ import { TrendingUp, Users, Globe, Award } from 'lucide-react';
 
 const stats = [
   { icon: TrendingUp, value: '$10,000', label: 'Total Value Donated', sublabel: 'And growing daily' },
-  { icon: Users, value: '20', label: 'Families Supported', sublabel: 'Across 3 countries' },
-  { icon: Globe, value: '6', label: 'Partner Brands', sublabel: 'Trusted retailers' },
+  { icon: Users, value: '20', label: 'Families Supported', sublabel: 'Across the United States' },
+  { icon: Globe, value: '6', label: 'Available Retailers', sublabel: 'Digital voucher networks' },
   { icon: Award, value: '98%', label: 'Satisfaction Rate', sublabel: 'From recipients' },
 ];
 
