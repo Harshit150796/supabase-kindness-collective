@@ -6,7 +6,7 @@ const impactStats = [
   { icon: Heart, value: '$10,000', label: 'Total Donated', color: 'text-primary' },
   { icon: Users, value: '20', label: 'Families Helped', color: 'text-gold' },
   { icon: ShoppingBag, value: '50+', label: 'Coupons Delivered', color: 'text-primary' },
-  { icon: Globe, value: '3+', label: 'Countries Reached', color: 'text-gold' },
+  { icon: Globe, value: 'US', label: 'Communities Served', color: 'text-gold' },
 ];
 
 function AnimatedNumber({ value }: { value: string }) {
@@ -32,14 +32,14 @@ export function ImpactDashboard() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-2 rounded-full mb-6">
             <Globe className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Global Impact</span>
+            <span className="text-sm font-medium text-primary">Beta Impact</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             <span className="text-foreground">See the </span>
             <span className="text-gradient-emerald">Real Impact</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Every donation creates a ripple effect. Watch how your generosity transforms lives across the globe.
+            Every donation creates a ripple effect. Watch how your generosity transforms lives in communities across the United States.
           </p>
         </div>
 
