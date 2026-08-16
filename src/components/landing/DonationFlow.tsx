@@ -376,8 +376,8 @@ export function DonationFlow() {
           {step === 1 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center">
-                <h3 className="text-xl font-bold mb-2 text-foreground">Choose Partner Brands</h3>
-                <p className="text-muted-foreground text-sm">Select one or more brands for your donation (up to {maxBrandsForAmount})</p>
+                <h3 className="text-xl font-bold mb-2 text-foreground">Select Available Retailers</h3>
+                <p className="text-muted-foreground text-sm">Select one or more retailers for your donation (up to {maxBrandsForAmount})</p>
               </div>
               
               {/* Selected brands chips */}

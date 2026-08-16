@@ -32,10 +32,10 @@ export const testimonials: Testimonial[] = [
   },
   {
     id: '3',
-    quote: "As a DoorDash restaurant partner, we love that donations through our platform help feed families while supporting local businesses. It's a win-win-win.",
+    quote: "As a local restaurant owner, we love that donations through this platform help feed families while supporting local businesses. It's a win-win-win.",
     name: "James Wilson",
     role: 'partner',
-    roleLabel: 'Partner - DoorDash',
+    roleLabel: 'Local Restaurant Owner',
     location: 'New York, NY',
     image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
     verified: true

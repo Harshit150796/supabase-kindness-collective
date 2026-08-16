@@ -34,7 +34,7 @@ export function PartnerBrands() {
             <span className="text-gradient-gold">Brands</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Join 50+ industry leaders making a difference. Your donation is backed by the world's most trusted companies.
+            Donations convert into digital vouchers redeemable across 50+ available retail networks.
           </p>
         </div>
 
