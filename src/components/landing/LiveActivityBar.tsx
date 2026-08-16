@@ -88,8 +88,8 @@ export const LiveActivityBar = () => {
             <div className="flex items-center gap-1.5 md:gap-2">
               <Zap className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500" />
               <span className="text-xs md:text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">1</span>
-                <span className="hidden sm:inline"> donation</span>/8s
+                <span className="font-semibold text-foreground">Beta</span>
+                <span className="hidden sm:inline"> program</span>
               </span>
             </div>
 
@@ -97,22 +97,21 @@ export const LiveActivityBar = () => {
               <Users className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
               <span className="text-xs md:text-sm text-muted-foreground">
                 <span className="font-semibold text-foreground tabular-nums">{donationCount.toLocaleString()}</span>
-                <span className="hidden sm:inline"> today</span>
+                <span className="hidden sm:inline"> donations</span>
               </span>
             </div>
 
             <div className="flex items-center gap-1.5 md:gap-2">
               <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 text-green-500" />
               <span className="text-xs md:text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground tabular-nums">${(amountRaised / 1000).toFixed(0)}K</span>
-                <span className="hidden sm:inline"> raised</span>
+                <span className="font-semibold text-foreground tabular-nums">${amountRaised.toLocaleString()}</span>
+                <span className="hidden sm:inline"> raised during beta</span>
               </span>
             </div>
           </div>
 
           {/* Scrolling Brand Logos — desktop inline */}
           <div className="hidden lg:flex items-center gap-3 overflow-hidden max-w-xs">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">Powered by</span>
             <div className="flex gap-4 overflow-hidden">
               <div className="flex gap-4 animate-marquee">
                 {popularBrands.slice(0, 6).map((brand) => (

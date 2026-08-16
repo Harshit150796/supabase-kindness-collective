@@ -24,9 +24,10 @@ function formatAmount(n: number) {
 
 export function TopDonorsPanel() {
   const { donors, loading } = useTopDonors();
+  // Collapsed by default; expands only if the visitor opts in.
   const [collapsed, setCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem(STORAGE_KEY) === "1";
+    if (typeof window === "undefined") return true;
+    return window.localStorage.getItem(STORAGE_KEY) !== "0";
   });
 
   useEffect(() => {
