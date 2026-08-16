@@ -29,8 +29,9 @@ const generateDonation = (id: number): DonationEvent => {
 export const LiveActivityBar = () => {
   const isMobile = useIsMobile();
   const [currentDonation, setCurrentDonation] = useState<DonationEvent>(() => generateDonation(1));
-  const [donationCount, setDonationCount] = useState(8234);
-  const [amountRaised, setAmountRaised] = useState(127450);
+  // Fixed beta-baseline figures — no simulated growth.
+  const donationCount = 24;
+  const amountRaised = 1250;
   const scrollingRef = useRef(false);
 
   // Track scroll activity on mobile so we can pause text rotation during swipes
@@ -57,10 +58,6 @@ export const LiveActivityBar = () => {
       if (scrollingRef.current) return;
       const next = generateDonation(Date.now());
       setCurrentDonation(next);
-      if (Math.random() > 0.5) {
-        setDonationCount((c) => c + 1);
-        setAmountRaised((a) => a + next.amount);
-      }
     }, 3500);
 
     return () => clearInterval(interval);
