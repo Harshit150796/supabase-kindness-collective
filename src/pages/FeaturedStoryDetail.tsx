@@ -251,7 +251,7 @@ const FeaturedStoryDetail = () => {
               <div className="bg-card rounded-2xl shadow-lg p-6 lg:p-8 border border-border/50">
                 <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Shield className="w-5 h-5 text-primary" />
-                  Partner Brands
+                  Available Retailers
                 </h2>
                 <p className="text-sm text-muted-foreground mb-3">
                   Coupons for this cause are provided by these trusted partners
