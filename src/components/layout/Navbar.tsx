@@ -64,7 +64,10 @@ export function Navbar() {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" {...({ fetchpriority: 'high' } as any)} />
+            <span className="relative flex items-center justify-center">
+              <span className="pointer-events-none absolute inset-0 rounded-full bg-glow-warm/0 blur-lg transition-all duration-500 group-hover:bg-glow-warm/30 group-hover:scale-125" />
+              <img src={logo} alt="CouponDonation" className="relative w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" {...({ fetchpriority: 'high' } as any)} />
+            </span>
             <div className="flex flex-col">
               <span className="font-bold text-base sm:text-lg leading-tight">
                 <span className="text-[#2e7d32]">Coupon</span>
@@ -75,38 +78,25 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-8">
-            <Link 
-              to="/about" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              About Us
-            </Link>
-            <Link 
-              to="/stories" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Stories
-            </Link>
-            <Link 
-              to="/how-it-works" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              How It Works
-            </Link>
-            <Link 
-              to="/faq" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              FAQ
-            </Link>
-            <Link 
-              to="/blog" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Blog
-            </Link>
+          <div className="hidden lg:flex items-center gap-2">
+            {[
+              { to: '/about', label: 'About Us' },
+              { to: '/stories', label: 'Stories' },
+              { to: '/how-it-works', label: 'How It Works' },
+              { to: '/faq', label: 'FAQ' },
+              { to: '/blog', label: 'Blog' },
+            ].map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="group relative rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-300 hover:text-foreground hover:bg-glass-highlight/40"
+              >
+                {item.label}
+                <span className="pointer-events-none absolute bottom-1 left-1/2 h-px w-0 -translate-x-1/2 bg-primary/50 transition-all duration-300 group-hover:w-1/2" />
+              </Link>
+            ))}
           </div>
+
 
           {/* Auth Buttons */}
           <div className="hidden lg:flex items-center gap-3">
