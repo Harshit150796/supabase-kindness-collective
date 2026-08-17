@@ -42,7 +42,7 @@ export function Navbar() {
   return (
     <nav
       className={cn(
-        'sticky top-0 z-50 transition-[background-color,box-shadow,border-color] duration-500 ease-out',
+        'sticky top-0 z-50 relative transition-[background-color,box-shadow,border-color] duration-500 ease-out',
         'bg-gradient-glass backdrop-blur-xl backdrop-saturate-150',
         'border-b',
         scrolled
