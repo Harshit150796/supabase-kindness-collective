@@ -37,7 +37,7 @@ export function HeroSection() {
 
   return (
     <section
-      className="relative w-full h-[58svh] md:h-[74vh] overflow-hidden"
+      className="relative w-full -mt-16 sm:-mt-[72px] h-[calc(58svh+64px)] md:h-[calc(74vh+72px)] overflow-hidden"
       style={{ contain: 'layout paint' }}
     >
       {/* Stacked layers — no DOM swap, no CLS. The gradient always paints first;
@@ -52,8 +52,10 @@ export function HeroSection() {
       </div>
 
 
-      {/* Overlay layer — pointer-events isolated so 3D scene stays interactive */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/* Overlay layer — offset below the transparent masthead, pointer-events
+          isolated so the 3D scene stays interactive */}
+      <div className="absolute inset-x-0 bottom-0 top-16 sm:top-[72px] pointer-events-none">
+
         <HeroHeadline />
         <TopDonorsPanel />
         <AITreeLauncher onClick={() => setChatOpen(true)} hidden={chatOpen} />
