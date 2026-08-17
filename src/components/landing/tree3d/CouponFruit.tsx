@@ -8,6 +8,8 @@ import type { FallingDonation } from '@/hooks/useFallingDonations';
 import { useInteraction } from './InteractionContext';
 import { SparkleBurst } from './SparkleBurst';
 import { toast } from 'sonner';
+import { useDeviceTier } from '@/hooks/use-mobile';
+
 
 export type CouponState =
   | { phase: 'hanging' }
