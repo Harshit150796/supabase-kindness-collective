@@ -103,11 +103,15 @@ export function Navbar() {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <User className="w-4 h-4" />
-                    My Account
-                  </Button>
+                  <div className="group relative">
+                    <span className="pointer-events-none absolute -inset-2 rounded-full bg-glow-warm/15 blur-xl transition-all duration-500 group-hover:bg-glow-warm/30" />
+                    <Button variant="outline" size="sm" className="relative gap-2 bg-glass/50 backdrop-blur-sm border-glass-border/70">
+                      <User className="w-4 h-4" />
+                      My Account
+                    </Button>
+                  </div>
                 </DropdownMenuTrigger>
+
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
                     <User className="w-4 h-4 mr-3" />
