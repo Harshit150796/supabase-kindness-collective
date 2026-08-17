@@ -18,6 +18,14 @@ export function Navbar() {
   const { user, hasRole, signOut } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -32,9 +40,28 @@ export function Navbar() {
   };
 
   return (
-    <nav className="bg-background lg:bg-background/80 lg:backdrop-blur-lg lg:supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b border-border/50">
-      <div className="container mx-auto px-4">
+    <nav
+      className={cn(
+        'sticky top-0 z-50 transition-[background-color,box-shadow,border-color] duration-500 ease-out',
+        'bg-gradient-glass backdrop-blur-xl backdrop-saturate-150',
+        'border-b',
+        scrolled
+          ? 'border-glass-border/60 shadow-glass'
+          : 'border-transparent shadow-none'
+      )}
+    >
+      {/* Inner glass highlight */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-glass-highlight/60" />
+      {/* Soft haze at the sky/nav seam */}
+      <div
+        className={cn(
+          'pointer-events-none absolute inset-x-0 top-full bg-gradient-haze transition-opacity duration-500 ease-out',
+          scrolled ? 'h-6 opacity-70' : 'h-10 opacity-100'
+        )}
+      />
+      <div className="container relative mx-auto px-4">
         <div className="flex h-18 items-center justify-between py-3">
+
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" {...({ fetchpriority: 'high' } as any)} />
