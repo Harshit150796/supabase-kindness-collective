@@ -195,7 +195,36 @@ function CouponFace({ data }: { data: CouponData }) {
   );
 }
 
+/**
+ * Screen-space placement for the donor badge on tablet/desktop.
+ * Projects the anchor to pixels, then clamps it into a padded safe area so the
+ * badge is never clipped by the hero edges and never collides with the headline
+ * (top), the Top Donors panel (top-right) or the chat launcher (bottom-right).
+ */
+const projected = new THREE.Vector3();
+function clampedPosition(
+  el: THREE.Object3D,
+  camera: THREE.Camera,
+  size: { width: number; height: number }
+): [number, number] {
+  projected.setFromMatrixPosition(el.matrixWorld).project(camera);
+  const halfW = size.width / 2;
+  const halfH = size.height / 2;
+  let x = projected.x * halfW + halfW;
+  let y = -(projected.y * halfH) + halfH;
+
+  const padX = Math.min(170, size.width * 0.28);
+  const padTop = Math.min(140, size.height * 0.3);
+  const padBottom = Math.min(110, size.height * 0.24);
+
+  x = Math.min(Math.max(x, padX), size.width - padX);
+  y = Math.min(Math.max(y, padTop), size.height - padBottom);
+  return [x, y];
+}
+
 export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false, labelSuppressed = false }: Props) {
+  const tier = useDeviceTier();
+  const isTablet = tier === 'tablet';
   const groupRef = useRef<THREE.Group>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const velocityRef = useRef({ y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 });
@@ -205,6 +234,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   const [sparkle, setSparkle] = useState<{ pos: THREE.Vector3; time: number } | null>(null);
   const { openStory, spawnPlant } = useInteraction();
   const plantSpawnedRef = useRef(false);
+
 
   // Stable scatter target across the grass, deterministic per coupon slot.
   // Phones frame the tree much tighter, so coupons land in a small ring around
