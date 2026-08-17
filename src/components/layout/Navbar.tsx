@@ -12,10 +12,32 @@ import {
 } from '@/components/ui/dropdown-menu';
 import logo from '@/assets/logo.png';
 
-export function Navbar() {
+export function Navbar({ overlay = false }: { overlay?: boolean }) {
   const { user, hasRole, signOut } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    if (!overlay) return;
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        setScrolled(window.scrollY > 24);
+      });
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [overlay]);
+
+  // Transparent masthead only at the very top of a page that owns the sky scene.
+  const isTransparent = overlay && !scrolled && !mobileMenuOpen;
 
   const handleSignOut = async () => {
     await signOut();
@@ -30,9 +52,35 @@ export function Navbar() {
   };
 
   return (
-    <nav className="bg-background lg:bg-background/80 lg:backdrop-blur-lg lg:supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b border-border/50">
-      <div className="container mx-auto px-4">
-        <div className="flex h-18 items-center justify-between py-3">
+    <nav className="sticky top-0 z-50 isolate">
+      {/* Layer 1 — frosted glass surface, cross-fades in on scroll */}
+      <div
+        aria-hidden
+        className={`absolute inset-0 -z-10 border-b border-border/50 bg-background lg:bg-background/80 lg:backdrop-blur-lg lg:supports-[backdrop-filter]:bg-background/60 transition-opacity duration-500 ${
+          isTransparent ? 'opacity-0' : 'opacity-100'
+        }`}
+      />
+      {/* Layer 2 — soft light scrim keeping type legible over the live sky */}
+      <div
+        aria-hidden
+        className={`absolute inset-0 -z-10 bg-gradient-to-b from-background/45 via-background/20 to-transparent transition-opacity duration-500 ${
+          isTransparent ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+      {/* Layer 3 — sun-glow hairline instead of a hard UI divider */}
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-x-0 bottom-0 h-px -z-10 transition-opacity duration-500 ${
+          isTransparent ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{
+          background:
+            'linear-gradient(90deg, transparent 0%, hsl(var(--primary) / 0.25) 22%, hsl(38 92% 60% / 0.85) 50%, hsl(var(--primary) / 0.25) 78%, transparent 100%)',
+        }}
+      />
+      <div className={`container mx-auto px-4 ${isTransparent ? '[text-shadow:0_1px_10px_hsl(var(--background)/0.65)]' : ''}`}>
+        <div className="flex h-16 sm:h-[72px] items-center justify-between">
+
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" {...({ fetchpriority: 'high' } as any)} />
