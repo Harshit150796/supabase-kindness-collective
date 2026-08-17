@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Coins, Menu, X, User, LogOut, Megaphone, Heart, Settings, DollarSign, Gift } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -89,7 +89,10 @@ export function Navbar({ overlay = false }: { overlay?: boolean }) {
                 <span className="text-[#2e7d32]">Coupon</span>
                 <span className="text-[#1565c0]">Donation</span>
               </span>
-              <span className="text-[10px] text-muted-foreground leading-tight">Transforming Giving</span>
+              <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground leading-tight">
+                Transforming Giving
+              </span>
+
             </div>
           </Link>
 
