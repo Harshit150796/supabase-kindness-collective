@@ -331,7 +331,7 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
           onRegrown={handleRegrown}
           onClickHanging={dropOne}
           isMobile={isMobile}
-          labelSuppressed={isMobile && lastLandedIdx !== i}
+          labelSuppressed={lastLandedIdx !== i}
         />
       ))}
     </>

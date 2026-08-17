@@ -214,7 +214,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
     const unit = (index * 0.6180339) % 1;
     // Mobile gets a slightly wider ring than before so coupons don't land in
     // one tight cluster under the trunk, while still staying clear of the edges.
-    const rad = isMobile ? 1.6 + unit * 1.7 : 1.8 + unit * 3.7;
+    const rad = isMobile ? 1.6 + unit * 1.7 : 1.8 + unit * 3.2;
     return { x: Math.cos(ang) * rad, z: Math.sin(ang) * rad };
   }, [index, isMobile]);
 
@@ -227,7 +227,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       const tFall = Math.sqrt((2 * dropH) / 9.8);
       const dx = scatterTarget.x - branchTip.x;
       const dz = scatterTarget.z - branchTip.z;
-      const jitter = isMobile ? 0.06 : 0.2;
+      const jitter = isMobile ? 0.06 : 0.12;
       velocityRef.current = {
         y: 0.4,
         x: dx / tFall + (Math.random() - 0.5) * jitter,
@@ -344,7 +344,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
     performance.now() / 1000 - state.landTime < 2.8;
   const safeDonorName =
     state.phase === 'landed'
-      ? (state.donation.donorName || 'A generous donor').slice(0, isMobile ? 12 : 18)
+      ? (state.donation.donorName || 'A generous donor').slice(0, isMobile ? 12 : 14)
       : '';
 
   return (
@@ -438,41 +438,41 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       {showLabel && state.phase === 'landed' && (
         <Html
           position={[
-            // Pull the anchor toward the scene centre on phones so a card that
-            // landed on the edge of the ring still renders fully in-canvas.
-            state.restPos.x * (isMobile ? 0.7 : 1),
-            // Raise the label a bit on mobile so the larger badge doesn't overlap
-            // the bottom-right action button.
-            state.restPos.y + (isMobile ? 0.85 : 0.55),
-            state.restPos.z * (isMobile ? 0.7 : 1),
+            // Pull the anchor toward the scene centre so a card that landed on
+            // the edge of the ring still renders fully in-canvas.
+            state.restPos.x * (isMobile ? 0.7 : 0.8),
+            // Raise the label so the badge isn't clipped at the canvas bottom
+            // or overlapped by the bottom-right action button.
+            state.restPos.y + (isMobile ? 0.85 : 0.75),
+            state.restPos.z * (isMobile ? 0.7 : 0.8),
           ]}
           center
-          distanceFactor={isMobile ? 5.5 : 8}
+          distanceFactor={isMobile ? 5.5 : 6.5}
           style={{ pointerEvents: 'none' }}
         >
           <div
             style={{
               background: '#FFFFFF',
               border: '1.5px solid #D4A017',
-              borderRadius: isMobile ? '12px' : '14px',
-              padding: isMobile ? '8px 13px' : '12px 19px',
+              borderRadius: isMobile ? '12px' : '13px',
+              padding: isMobile ? '8px 13px' : '10px 15px',
               fontFamily: 'system-ui, -apple-system, Arial',
-              fontSize: isMobile ? '13px' : '16px',
+              fontSize: isMobile ? '13px' : '14px',
               fontWeight: 600,
               color: '#1f2937',
               boxShadow: '0 10px 30px rgba(212,160,23,0.35), 0 0 0 4px rgba(212,160,23,0.08)',
               whiteSpace: 'nowrap',
-              maxWidth: isMobile ? 170 : 260,
+              maxWidth: isMobile ? 170 : 210,
               display: 'flex',
               alignItems: 'center',
-              gap: isMobile ? 8 : 12,
+              gap: isMobile ? 8 : 10,
               animation: 'fadeIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)',
             }}
           >
             <div
               style={{
-                width: isMobile ? 26 : 34,
-                height: isMobile ? 26 : 34,
+                width: isMobile ? 26 : 29,
+                height: isMobile ? 26 : 29,
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, #10B981, #059669)',
                 color: '#fff',
@@ -480,7 +480,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: 800,
-                fontSize: isMobile ? 13 : 16,
+                fontSize: isMobile ? 13 : 14,
                 flexShrink: 0,
               }}
             >
@@ -491,7 +491,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
                 style={{
                   color: '#059669',
                   fontWeight: 700,
-                  maxWidth: isMobile ? 118 : 190,
+                  maxWidth: isMobile ? 118 : 150,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -499,9 +499,9 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
               >
                 {safeDonorName}
               </span>
-              <span style={{ color: '#6b7280', fontSize: isMobile ? 12 : 13, fontWeight: 500 }}>
+              <span style={{ color: '#6b7280', fontSize: isMobile ? 12 : 12, fontWeight: 500 }}>
                 donated{' '}
-                <span style={{ color: '#D4A017', fontWeight: 800, fontSize: isMobile ? 13 : 16 }}>
+                <span style={{ color: '#D4A017', fontWeight: 800, fontSize: isMobile ? 13 : 14 }}>
                   ${state.donation.amount}
                 </span>
               </span>
