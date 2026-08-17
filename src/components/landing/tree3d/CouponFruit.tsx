@@ -342,10 +342,12 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
     !labelSuppressed &&
     state.phase === 'landed' &&
     performance.now() / 1000 - state.landTime < 2.8;
+  const nameLimit = isMobile ? 12 : isTablet ? 16 : 20;
   const safeDonorName =
     state.phase === 'landed'
-      ? (state.donation.donorName || 'A generous donor').slice(0, isMobile ? 12 : 18)
+      ? (state.donation.donorName || 'A generous donor').slice(0, nameLimit)
       : '';
+
 
   return (
     <>
