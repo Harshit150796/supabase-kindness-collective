@@ -24,7 +24,7 @@ const Index = () => {
         description="CouponDonation converts your donation into grocery coupons for verified families in need. Donate to causes from Walmart, Target, Amazon and more."
         path="/"
       />
-      <Navbar overlay />
+      <Navbar />
       <main>
         {/* 1. Human-centered hero with featured story */}
         <HeroSection />
