@@ -438,18 +438,22 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       {showLabel && state.phase === 'landed' && (
         <Html
           position={[
-            // Pull the anchor toward the scene centre on phones so a card that
-            // landed on the edge of the ring still renders fully in-canvas.
-            state.restPos.x * (isMobile ? 0.7 : 1),
-            // Raise the label a bit on mobile so the larger badge doesn't overlap
-            // the bottom-right action button.
-            state.restPos.y + (isMobile ? 0.85 : 0.55),
-            state.restPos.z * (isMobile ? 0.7 : 1),
+            // Pull the anchor toward the scene centre so a card that landed on
+            // the edge of the ring still renders fully in-canvas.
+            state.restPos.x * (isMobile ? 0.7 : isTablet ? 0.55 : 0.7),
+            state.restPos.y + (isMobile ? 0.85 : 0.7),
+            state.restPos.z * (isMobile ? 0.7 : isTablet ? 0.55 : 0.7),
           ]}
           center
-          distanceFactor={isMobile ? 5.5 : 8}
+          // Mobile keeps the world-scaled badge (already tuned). Tablet/desktop
+          // render screen-space at a fixed pixel size and clamp the projected
+          // point into a padded safe area so the name can never be cut off.
+          {...(isMobile
+            ? { distanceFactor: 5.5 }
+            : { calculatePosition: clampedPosition })}
           style={{ pointerEvents: 'none' }}
         >
+
           <div
             style={{
               background: '#FFFFFF',
