@@ -24,32 +24,3 @@ export function useIsMobile() {
 
   return isMobile;
 }
-
-export type DeviceTier = "mobile" | "tablet" | "desktop";
-
-const TABLET_BREAKPOINT = 1280;
-
-function getTier(): DeviceTier {
-  if (typeof window === "undefined") return "desktop";
-  const w = window.innerWidth;
-  if (w < MOBILE_BREAKPOINT) return "mobile";
-  if (w < TABLET_BREAKPOINT) return "tablet";
-  return "desktop";
-}
-
-/**
- * Presentation-only breakpoint tier (mobile / tablet / desktop).
- * Used for sizing DOM overlays inside the 3D hero — never for 3D quality knobs.
- */
-export function useDeviceTier(): DeviceTier {
-  const [tier, setTier] = React.useState<DeviceTier>(getTier);
-
-  React.useEffect(() => {
-    const onResize = () => setTier(getTier());
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  return tier;
-}
-

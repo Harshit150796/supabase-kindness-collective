@@ -8,8 +8,6 @@ import type { FallingDonation } from '@/hooks/useFallingDonations';
 import { useInteraction } from './InteractionContext';
 import { SparkleBurst } from './SparkleBurst';
 import { toast } from 'sonner';
-import { useDeviceTier } from '@/hooks/use-mobile';
-
 
 export type CouponState =
   | { phase: 'hanging' }
@@ -197,36 +195,7 @@ function CouponFace({ data }: { data: CouponData }) {
   );
 }
 
-/**
- * Screen-space placement for the donor badge on tablet/desktop.
- * Projects the anchor to pixels, then clamps it into a padded safe area so the
- * badge is never clipped by the hero edges and never collides with the headline
- * (top), the Top Donors panel (top-right) or the chat launcher (bottom-right).
- */
-const projected = new THREE.Vector3();
-function clampedPosition(
-  el: THREE.Object3D,
-  camera: THREE.Camera,
-  size: { width: number; height: number }
-): [number, number] {
-  projected.setFromMatrixPosition(el.matrixWorld).project(camera);
-  const halfW = size.width / 2;
-  const halfH = size.height / 2;
-  let x = projected.x * halfW + halfW;
-  let y = -(projected.y * halfH) + halfH;
-
-  const padX = Math.min(170, size.width * 0.28);
-  const padTop = Math.min(140, size.height * 0.3);
-  const padBottom = Math.min(110, size.height * 0.24);
-
-  x = Math.min(Math.max(x, padX), size.width - padX);
-  y = Math.min(Math.max(y, padTop), size.height - padBottom);
-  return [x, y];
-}
-
 export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false, labelSuppressed = false }: Props) {
-  const tier = useDeviceTier();
-  const isTablet = tier === 'tablet';
   const groupRef = useRef<THREE.Group>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const velocityRef = useRef({ y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 });
@@ -236,7 +205,6 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   const [sparkle, setSparkle] = useState<{ pos: THREE.Vector3; time: number } | null>(null);
   const { openStory, spawnPlant } = useInteraction();
   const plantSpawnedRef = useRef(false);
-
 
   // Stable scatter target across the grass, deterministic per coupon slot.
   // Phones frame the tree much tighter, so coupons land in a small ring around
@@ -374,12 +342,10 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
     !labelSuppressed &&
     state.phase === 'landed' &&
     performance.now() / 1000 - state.landTime < 2.8;
-  const nameLimit = isMobile ? 12 : isTablet ? 16 : 20;
   const safeDonorName =
     state.phase === 'landed'
-      ? (state.donation.donorName || 'A generous donor').slice(0, nameLimit)
+      ? (state.donation.donorName || 'A generous donor').slice(0, isMobile ? 12 : 18)
       : '';
-
 
   return (
     <>
@@ -472,44 +438,41 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       {showLabel && state.phase === 'landed' && (
         <Html
           position={[
-            // Pull the anchor toward the scene centre so a card that landed on
-            // the edge of the ring still renders fully in-canvas.
-            state.restPos.x * (isMobile ? 0.7 : isTablet ? 0.55 : 0.7),
-            state.restPos.y + (isMobile ? 0.85 : 0.7),
-            state.restPos.z * (isMobile ? 0.7 : isTablet ? 0.55 : 0.7),
+            // Pull the anchor toward the scene centre on phones so a card that
+            // landed on the edge of the ring still renders fully in-canvas.
+            state.restPos.x * (isMobile ? 0.7 : 1),
+            // Raise the label a bit on mobile so the larger badge doesn't overlap
+            // the bottom-right action button.
+            state.restPos.y + (isMobile ? 0.85 : 0.55),
+            state.restPos.z * (isMobile ? 0.7 : 1),
           ]}
           center
-          // Mobile keeps the world-scaled badge (already tuned). Tablet/desktop
-          // render screen-space at a fixed pixel size and clamp the projected
-          // point into a padded safe area so the name can never be cut off.
-          {...(isMobile
-            ? { distanceFactor: 5.5 }
-            : { calculatePosition: clampedPosition })}
+          distanceFactor={isMobile ? 5.5 : 8}
           style={{ pointerEvents: 'none' }}
         >
           <div
             style={{
               background: '#FFFFFF',
               border: '1.5px solid #D4A017',
-              borderRadius: isMobile ? '12px' : '12px',
-              padding: isMobile ? '8px 13px' : isTablet ? '8px 13px' : '9px 14px',
+              borderRadius: isMobile ? '12px' : '14px',
+              padding: isMobile ? '8px 13px' : '12px 19px',
               fontFamily: 'system-ui, -apple-system, Arial',
-              fontSize: isMobile ? '13px' : isTablet ? '14px' : '15px',
+              fontSize: isMobile ? '13px' : '16px',
               fontWeight: 600,
               color: '#1f2937',
               boxShadow: '0 10px 30px rgba(212,160,23,0.35), 0 0 0 4px rgba(212,160,23,0.08)',
               whiteSpace: 'nowrap',
-              maxWidth: isMobile ? 170 : isTablet ? 250 : 280,
+              maxWidth: isMobile ? 170 : 260,
               display: 'flex',
               alignItems: 'center',
-              gap: isMobile ? 8 : 10,
+              gap: isMobile ? 8 : 12,
               animation: 'fadeIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)',
             }}
           >
             <div
               style={{
-                width: isMobile ? 26 : isTablet ? 30 : 32,
-                height: isMobile ? 26 : isTablet ? 30 : 32,
+                width: isMobile ? 26 : 34,
+                height: isMobile ? 26 : 34,
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, #10B981, #059669)',
                 color: '#fff',
@@ -517,7 +480,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: 800,
-                fontSize: isMobile ? 13 : isTablet ? 14 : 15,
+                fontSize: isMobile ? 13 : 16,
                 flexShrink: 0,
               }}
             >
@@ -528,7 +491,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
                 style={{
                   color: '#059669',
                   fontWeight: 700,
-                  maxWidth: isMobile ? 118 : isTablet ? 170 : 195,
+                  maxWidth: isMobile ? 118 : 190,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -536,13 +499,12 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
               >
                 {safeDonorName}
               </span>
-              <span style={{ color: '#6b7280', fontSize: isMobile ? 12 : isTablet ? 12 : 13, fontWeight: 500 }}>
+              <span style={{ color: '#6b7280', fontSize: isMobile ? 12 : 13, fontWeight: 500 }}>
                 donated{' '}
-                <span style={{ color: '#D4A017', fontWeight: 800, fontSize: isMobile ? 13 : isTablet ? 14 : 15 }}>
+                <span style={{ color: '#D4A017', fontWeight: 800, fontSize: isMobile ? 13 : 16 }}>
                   ${state.donation.amount}
                 </span>
               </span>
-
             </div>
           </div>
         </Html>
