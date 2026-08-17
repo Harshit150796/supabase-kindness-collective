@@ -487,30 +487,29 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
             : { calculatePosition: clampedPosition })}
           style={{ pointerEvents: 'none' }}
         >
-
           <div
             style={{
               background: '#FFFFFF',
               border: '1.5px solid #D4A017',
-              borderRadius: isMobile ? '12px' : '14px',
-              padding: isMobile ? '8px 13px' : '12px 19px',
+              borderRadius: isMobile ? '12px' : '12px',
+              padding: isMobile ? '8px 13px' : isTablet ? '8px 13px' : '9px 14px',
               fontFamily: 'system-ui, -apple-system, Arial',
-              fontSize: isMobile ? '13px' : '16px',
+              fontSize: isMobile ? '13px' : isTablet ? '14px' : '15px',
               fontWeight: 600,
               color: '#1f2937',
               boxShadow: '0 10px 30px rgba(212,160,23,0.35), 0 0 0 4px rgba(212,160,23,0.08)',
               whiteSpace: 'nowrap',
-              maxWidth: isMobile ? 170 : 260,
+              maxWidth: isMobile ? 170 : isTablet ? 250 : 280,
               display: 'flex',
               alignItems: 'center',
-              gap: isMobile ? 8 : 12,
+              gap: isMobile ? 8 : 10,
               animation: 'fadeIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)',
             }}
           >
             <div
               style={{
-                width: isMobile ? 26 : 34,
-                height: isMobile ? 26 : 34,
+                width: isMobile ? 26 : isTablet ? 30 : 32,
+                height: isMobile ? 26 : isTablet ? 30 : 32,
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, #10B981, #059669)',
                 color: '#fff',
@@ -518,7 +517,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: 800,
-                fontSize: isMobile ? 13 : 16,
+                fontSize: isMobile ? 13 : isTablet ? 14 : 15,
                 flexShrink: 0,
               }}
             >
@@ -529,7 +528,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
                 style={{
                   color: '#059669',
                   fontWeight: 700,
-                  maxWidth: isMobile ? 118 : 190,
+                  maxWidth: isMobile ? 118 : isTablet ? 170 : 195,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -537,12 +536,13 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
               >
                 {safeDonorName}
               </span>
-              <span style={{ color: '#6b7280', fontSize: isMobile ? 12 : 13, fontWeight: 500 }}>
+              <span style={{ color: '#6b7280', fontSize: isMobile ? 12 : isTablet ? 12 : 13, fontWeight: 500 }}>
                 donated{' '}
-                <span style={{ color: '#D4A017', fontWeight: 800, fontSize: isMobile ? 13 : 16 }}>
+                <span style={{ color: '#D4A017', fontWeight: 800, fontSize: isMobile ? 13 : isTablet ? 14 : 15 }}>
                   ${state.donation.amount}
                 </span>
               </span>
+
             </div>
           </div>
         </Html>
