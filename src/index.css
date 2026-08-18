@@ -70,7 +70,18 @@
     --gradient-gold: linear-gradient(135deg, hsl(45 93% 47%), hsl(38 93% 55%));
     --gradient-emerald: linear-gradient(135deg, hsl(160 84% 22%), hsl(160 60% 30%));
     --gradient-hero: linear-gradient(180deg, hsl(160 84% 22% / 0.03) 0%, hsl(45 93% 47% / 0.05) 100%);
+
+    /* Atmospheric glass */
+    --glass-surface: 60 25% 99%;
+    --glass-border: 160 20% 80%;
+    --glass-highlight: 0 0% 100%;
+    --haze: 60 30% 98%;
+    --glow-warm: 45 93% 55%;
+    --shadow-glass: 0 10px 30px -14px hsl(160 30% 20% / 0.18);
+    --gradient-haze: linear-gradient(180deg, hsl(var(--haze) / 0.55) 0%, hsl(var(--haze) / 0.18) 45%, hsl(var(--haze) / 0) 100%);
+    --gradient-glass: linear-gradient(180deg, hsl(var(--glass-surface) / 0.82) 0%, hsl(var(--glass-surface) / 0.62) 100%);
   }
+
 
   .dark {
     /* Emerald Trust - Dark Mode */
@@ -130,7 +141,18 @@
     --gradient-gold: linear-gradient(135deg, hsl(45 93% 52%), hsl(38 93% 45%));
     --gradient-emerald: linear-gradient(135deg, hsl(160 70% 45%), hsl(160 60% 35%));
     --gradient-hero: linear-gradient(180deg, hsl(160 70% 45% / 0.05) 0%, hsl(45 93% 52% / 0.08) 100%);
+
+    /* Atmospheric glass - Dark */
+    --glass-surface: 160 18% 9%;
+    --glass-border: 160 20% 24%;
+    --glass-highlight: 160 30% 70%;
+    --haze: 160 20% 10%;
+    --glow-warm: 45 93% 58%;
+    --shadow-glass: 0 12px 34px -14px hsl(160 60% 4% / 0.7);
+    --gradient-haze: linear-gradient(180deg, hsl(var(--haze) / 0.6) 0%, hsl(var(--haze) / 0.2) 45%, hsl(var(--haze) / 0) 100%);
+    --gradient-glass: linear-gradient(180deg, hsl(var(--glass-surface) / 0.78) 0%, hsl(var(--glass-surface) / 0.55) 100%);
   }
+
 }
 
 @layer base {
