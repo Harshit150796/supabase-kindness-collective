@@ -19,8 +19,9 @@ Findings from a pass over the legal/informational pages and shared UI copy. Each
   - "Global Partnerships / Local and international aid" → "US Retail Partnerships / Nationwide retail networks aligned to measurable outcomes and transparent reporting."
   - "scale that same life-saving model globally" → "…nationwide".
   - "strengthen communities worldwide" → "strengthen communities across the US".
-- `src/components/landing/DonationFlow.tsx` (~line 812) — "International cards accepted · Your bank handles currency conversion". This directly contradicts the US-only billing restriction already enforced in `create-donation-checkout`.
-  - Replace with: "US-issued cards accepted · Payments processed securely by Stripe".
+- `src/components/landing/DonationFlow.tsx` (~line 812) — "International cards accepted · Your bank handles currency conversion" is fine to keep: donations are accepted globally; only campaign creation and beneficiary onboarding are US-only. However, `create-donation-checkout` currently restricts billing to US addresses, which contradicts this copy.
+  - Remove the US-only `billing_address_collection`/allowed-country restriction in `create-donation-checkout` so global donors can pay, and keep the copy as is.
+
 - `index.html` keywords include "charity" — swap for "digital vouchers, retail vouchers, food assistance".
 
 ## 3. Charity / nonprofit framing
