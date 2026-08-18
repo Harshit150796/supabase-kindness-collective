@@ -1,10 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { cn } from '@/lib/utils';
 import { Coins, Menu, X, User, LogOut, Megaphone, Heart, Settings, DollarSign, Gift } from 'lucide-react';
-import { useEffect, useState } from 'react';
-
+import { useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,14 +16,6 @@ export function Navbar() {
   const { user, hasRole, signOut } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -40,34 +30,12 @@ export function Navbar() {
   };
 
   return (
-    <nav
-      className={cn(
-        'sticky top-0 z-50 relative transition-[background-color,box-shadow,border-color] duration-500 ease-out',
-        'bg-gradient-glass backdrop-blur-xl backdrop-saturate-150',
-        'border-b',
-        scrolled
-          ? 'border-glass-border/60 shadow-glass'
-          : 'border-transparent shadow-none'
-      )}
-    >
-      {/* Inner glass highlight */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-glass-highlight/60" />
-      {/* Soft haze at the sky/nav seam */}
-      <div
-        className={cn(
-          'pointer-events-none absolute inset-x-0 top-full bg-gradient-haze transition-opacity duration-500 ease-out',
-          scrolled ? 'h-6 opacity-70' : 'h-10 opacity-100'
-        )}
-      />
-      <div className="container relative mx-auto px-4">
+    <nav className="bg-background lg:bg-background/80 lg:backdrop-blur-lg lg:supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b border-border/50">
+      <div className="container mx-auto px-4">
         <div className="flex h-18 items-center justify-between py-3">
-
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <span className="relative flex items-center justify-center">
-              <span className="pointer-events-none absolute inset-0 rounded-full bg-glow-warm/0 blur-lg transition-all duration-500 group-hover:bg-glow-warm/30 group-hover:scale-125" />
-              <img src={logo} alt="CouponDonation" className="relative w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" {...({ fetchpriority: 'high' } as any)} />
-            </span>
+            <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" {...({ fetchpriority: 'high' } as any)} />
             <div className="flex flex-col">
               <span className="font-bold text-base sm:text-lg leading-tight">
                 <span className="text-[#2e7d32]">Coupon</span>
@@ -78,40 +46,49 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-2">
-            {[
-              { to: '/about', label: 'About Us' },
-              { to: '/stories', label: 'Stories' },
-              { to: '/how-it-works', label: 'How It Works' },
-              { to: '/faq', label: 'FAQ' },
-              { to: '/blog', label: 'Blog' },
-            ].map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="group relative rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-300 hover:text-foreground hover:bg-glass-highlight/40"
-              >
-                {item.label}
-                <span className="pointer-events-none absolute bottom-1 left-1/2 h-px w-0 -translate-x-1/2 bg-primary/50 transition-all duration-300 group-hover:w-1/2" />
-              </Link>
-            ))}
+          <div className="hidden lg:flex items-center gap-8">
+            <Link 
+              to="/about" 
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              About Us
+            </Link>
+            <Link 
+              to="/stories" 
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Stories
+            </Link>
+            <Link 
+              to="/how-it-works" 
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              How It Works
+            </Link>
+            <Link 
+              to="/faq" 
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              FAQ
+            </Link>
+            <Link 
+              to="/blog" 
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Blog
+            </Link>
           </div>
-
 
           {/* Auth Buttons */}
           <div className="hidden lg:flex items-center gap-3">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <div className="group relative">
-                    <span className="pointer-events-none absolute -inset-2 rounded-full bg-glow-warm/15 blur-xl transition-all duration-500 group-hover:bg-glow-warm/30" />
-                    <Button variant="outline" size="sm" className="relative gap-2 bg-glass/50 backdrop-blur-sm border-glass-border/70">
-                      <User className="w-4 h-4" />
-                      My Account
-                    </Button>
-                  </div>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <User className="w-4 h-4" />
+                    My Account
+                  </Button>
                 </DropdownMenuTrigger>
-
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
                     <User className="w-4 h-4 mr-3" />
@@ -161,28 +138,25 @@ export function Navbar() {
                   variant="ghost" 
                   size="sm" 
                   onClick={() => navigate('/auth')}
-                  className="text-muted-foreground hover:text-foreground hover:bg-glass-highlight/40 rounded-full"
+                  className="text-muted-foreground hover:text-foreground"
                 >
                   Sign In
                 </Button>
-                <div className="group relative">
-                  <span className="pointer-events-none absolute -inset-3 rounded-full bg-glow-warm/25 blur-2xl transition-all duration-500 group-hover:bg-glow-warm/45 group-hover:-inset-4" />
-                  <Button 
-                    size="sm" 
-                    onClick={() => navigate('/donate')}
-                    className="relative gap-2 shadow-emerald hover:shadow-gold transition-shadow"
-                  >
-                    <Coins className="w-4 h-4" />
-                    Start Donating
-                  </Button>
-                </div>
+                <Button 
+                  size="sm" 
+                  onClick={() => navigate('/donate')}
+                  className="gap-2 shadow-emerald hover:shadow-gold transition-shadow"
+                >
+                  <Coins className="w-4 h-4" />
+                  Start Donating
+                </Button>
               </>
             )}
           </div>
 
           {/* Mobile Menu Button */}
           <button
-            className="lg:hidden p-2 rounded-lg border border-glass-border/50 bg-glass/40 backdrop-blur-sm hover:bg-glass-highlight/50 transition-colors flex-shrink-0"
+            className="lg:hidden p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -191,8 +165,7 @@ export function Navbar() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden -mx-4 px-4 py-6 space-y-4 border-t border-glass-border/50 bg-gradient-glass backdrop-blur-xl backdrop-saturate-150 animate-fade-in">
-
+          <div className="lg:hidden py-6 space-y-4 border-t border-border animate-fade-in">
             <Link 
               to="/about" 
               className="block py-2 text-muted-foreground hover:text-foreground transition-colors"

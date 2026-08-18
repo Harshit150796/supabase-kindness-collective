@@ -72,17 +72,6 @@ export default {
           dark: "hsl(var(--emerald-dark))",
         },
         charcoal: "hsl(var(--charcoal))",
-        glass: {
-          DEFAULT: "hsl(var(--glass-surface))",
-          border: "hsl(var(--glass-border))",
-          highlight: "hsl(var(--glass-highlight))",
-        },
-        haze: "hsl(var(--haze))",
-        "glow-warm": "hsl(var(--glow-warm))",
-      },
-      backgroundImage: {
-        'gradient-haze': 'var(--gradient-haze)',
-        'gradient-glass': 'var(--gradient-glass)',
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -96,9 +85,7 @@ export default {
         'gold-lg': '0 10px 40px -4px hsl(var(--gold) / 0.35)',
         'emerald': '0 4px 20px -2px hsl(var(--primary) / 0.25)',
         'card-hover': '0 20px 40px -12px hsl(var(--foreground) / 0.15)',
-        'glass': 'var(--shadow-glass)',
       },
-
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
