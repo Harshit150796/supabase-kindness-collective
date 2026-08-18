@@ -447,57 +447,9 @@ export default function About() {
           </div>
         </section>
 
-        {/* Tax Benefits */}
-        <section className="py-20 bg-background">
-          <div className="container mx-auto px-4">
-            <Card className="max-w-4xl mx-auto p-8 md:p-10 bg-card border-border">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                  <FileCheck className="w-6 h-6 text-primary" />
-                </div>
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                  Tax Benefits & Accounting Considerations
-                </h2>
-              </div>
-              
-              <p className="text-muted-foreground mb-6">
-                CouponDonation.com encourages donors to consider potential tax advantages of charitable 
-                giving where applicable. In many jurisdictions, including the United States, donations 
-                to qualified charitable organizations may be tax-deductible if donors meet eligibility 
-                requirements, itemize where necessary, and maintain proper documentation.
-              </p>
-              
-              <h3 className="text-lg font-semibold text-foreground mb-4">Key Reminders:</h3>
-              <ul className="space-y-3 text-muted-foreground mb-6">
-                <li className="flex items-start gap-3">
-                  <ChevronRight className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  Tax treatment varies by jurisdiction, filing status, income level, and recipient eligibility
-                </li>
-                <li className="flex items-start gap-3">
-                  <ChevronRight className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  Individual donation deductions differ widely based on local law and filing method
-                </li>
-                <li className="flex items-start gap-3">
-                  <ChevronRight className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  Businesses may deduct qualifying donations depending on corporate structure and tax rules
-                </li>
-                <li className="flex items-start gap-3">
-                  <ChevronRight className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  Documentation matters: keep receipts, acknowledgments, and records of amounts and dates
-                </li>
-              </ul>
-              
-              <div className="p-4 bg-muted/50 rounded-lg border border-border">
-                <p className="text-sm text-muted-foreground">
-                  <strong className="text-foreground">Note:</strong> CouponDonation.com will provide 
-                  donation confirmations and supporting records as appropriate for eligible donation 
-                  pathways. Donors are encouraged to consult a licensed tax professional or accountant 
-                  for guidance tailored to their specific situation.
-                </p>
-              </div>
-            </Card>
-          </div>
         </section>
+
+
 
         {/* Updated Stats */}
         <section className="py-20 bg-muted/30">
