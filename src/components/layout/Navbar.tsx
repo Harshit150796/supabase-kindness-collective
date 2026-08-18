@@ -161,25 +161,28 @@ export function Navbar() {
                   variant="ghost" 
                   size="sm" 
                   onClick={() => navigate('/auth')}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground hover:bg-glass-highlight/40 rounded-full"
                 >
                   Sign In
                 </Button>
-                <Button 
-                  size="sm" 
-                  onClick={() => navigate('/donate')}
-                  className="gap-2 shadow-emerald hover:shadow-gold transition-shadow"
-                >
-                  <Coins className="w-4 h-4" />
-                  Start Donating
-                </Button>
+                <div className="group relative">
+                  <span className="pointer-events-none absolute -inset-3 rounded-full bg-glow-warm/25 blur-2xl transition-all duration-500 group-hover:bg-glow-warm/45 group-hover:-inset-4" />
+                  <Button 
+                    size="sm" 
+                    onClick={() => navigate('/donate')}
+                    className="relative gap-2 shadow-emerald hover:shadow-gold transition-shadow"
+                  >
+                    <Coins className="w-4 h-4" />
+                    Start Donating
+                  </Button>
+                </div>
               </>
             )}
           </div>
 
           {/* Mobile Menu Button */}
           <button
-            className="lg:hidden p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+            className="lg:hidden p-2 rounded-lg border border-glass-border/50 bg-glass/40 backdrop-blur-sm hover:bg-glass-highlight/50 transition-colors flex-shrink-0"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -188,7 +191,8 @@ export function Navbar() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden py-6 space-y-4 border-t border-border animate-fade-in">
+          <div className="lg:hidden -mx-4 px-4 py-6 space-y-4 border-t border-glass-border/50 bg-gradient-glass backdrop-blur-xl backdrop-saturate-150 animate-fade-in">
+
             <Link 
               to="/about" 
               className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
