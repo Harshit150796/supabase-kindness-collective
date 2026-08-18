@@ -19,7 +19,6 @@ import {
   Building2, 
   Utensils, 
   ShoppingBag, 
-  Calculator, 
   HandHeart,
   Shield,
   TrendingUp,
@@ -35,7 +34,6 @@ import {
   Baby,
   Home,
   Truck,
-  FileCheck
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -83,8 +81,8 @@ const whatWeSupport = [
   },
   { 
     icon: Globe, 
-    title: 'Global Partnerships', 
-    description: 'Local and international aid aligned to measurable outcomes and transparent reporting.',
+    title: 'US Retail Partnerships', 
+    description: 'Nationwide retail networks aligned to measurable outcomes and transparent reporting.',
     color: 'text-gold'
   },
 ];
@@ -101,8 +99,8 @@ const partnerships = [
   { icon: Building2, title: 'Hospitality & Lodging', description: 'Hotels, travel platforms, and operators' },
   { icon: Utensils, title: 'Food Industry', description: 'Restaurants, grocers, suppliers, and delivery networks' },
   { icon: ShoppingBag, title: 'Consumer Brands', description: 'Retailers and loyalty/coupon ecosystems' },
-  { icon: Calculator, title: 'Tax & Accounting', description: 'Professionals supporting donation strategy' },
-  { icon: HandHeart, title: 'Nonprofits', description: 'Community organizations enabling on-the-ground distribution' },
+  { icon: Shield, title: 'Compliance & Risk', description: 'Partners supporting verification and fraud controls' },
+  { icon: HandHeart, title: 'Nonprofits', description: 'Community organizations enabling recipient referrals' },
   { icon: Truck, title: 'Logistics Networks', description: 'Partners helping with last-mile delivery' },
 ];
 
@@ -140,12 +138,12 @@ export default function About() {
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground text-center mb-6 animate-fade-in">
               Transforming Everyday Savings Into{' '}
-              <span className="text-gradient-gold">Global Hunger Relief</span>
+              <span className="text-gradient-gold">US Hunger Relief</span>
             </h1>
             
             <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto text-center mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
               A mission-first digital donation marketplace designed to expand access to food assistance, 
-              basic necessities, and essential care for children, teens, and adults worldwide.
+              basic necessities, and essential care for children, teens, and adults across the United States.
             </p>
 
             <div className="flex flex-wrap justify-center gap-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
@@ -174,7 +172,7 @@ export default function About() {
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Meet Our Founders</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Two visionaries committed to making charitable giving transparent, efficient, and scalable.
+                Two visionaries committed to making verified giving transparent, efficient, and scalable.
               </p>
             </div>
             
@@ -193,7 +191,7 @@ export default function About() {
                   <p className="text-gold font-medium mb-4">Founder & CEO</p>
                   <p className="text-muted-foreground mb-6">
                     Developed CouponDonation.com after witnessing how consistent support can change lives 
-                    locally in New York, choosing to scale that same life-saving model globally.
+                    locally in New York, choosing to scale that same life-saving model nationwide.
                   </p>
                   <blockquote className="italic text-muted-foreground border-l-2 border-gold pl-4 text-left mb-6">
                     "Every donation counts, and it adds up faster than people realize. No child, teen, 
@@ -362,7 +360,7 @@ export default function About() {
                   <AccordionContent className="px-4 md:px-8 pb-6 md:pb-8">
                     <div className="pt-4 md:pt-6 border-t border-gold/20">
                       <p className="text-muted-foreground mb-6 text-sm md:text-base">
-                        Your contributions create scalable outcomes that strengthen communities worldwide.
+                        Your contributions create scalable outcomes that strengthen communities across the US.
                       </p>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
