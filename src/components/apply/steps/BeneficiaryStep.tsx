@@ -22,7 +22,7 @@ const beneficiaryOptions = [
     id: "organization",
     icon: Building2,
     title: "Community Organization",
-    description: "Coupons are distributed through your nonprofit",
+    description: "Vouchers are issued to verified recipients referred by your organization",
   },
 ];
 
