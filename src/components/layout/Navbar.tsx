@@ -30,7 +30,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="bg-background lg:bg-background/80 lg:backdrop-blur-lg lg:supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b border-border/50">
+    <nav className="bg-background lg:bg-background/80 lg:backdrop-blur-lg lg:supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 shadow-[0_8px_30px_-14px_rgba(0,0,0,0.18)]">
       <div className="container mx-auto px-4">
         <div className="flex h-18 items-center justify-between py-3">
           {/* Logo */}
