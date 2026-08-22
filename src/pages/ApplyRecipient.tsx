@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useZipLocation } from "@/lib/zipLookup";
+import { MediaItem, uploadMediaFile } from "@/lib/mediaUpload";
 import {
   saveScopedDraft,
   loadScopedDraft,
@@ -142,8 +143,7 @@ const ApplyRecipient = () => {
     setBeneficiaryType(defaults.beneficiaryType);
     setMonthlyGoal(defaults.monthlyGoal);
     setSmartMatching(defaults.smartMatching);
-    setCoverPhotoPreview("");
-    setCoverPhoto(null);
+    setMedia([]);
     setStory(defaults.story);
     setIsLongTerm(defaults.isLongTerm);
     setTitle(defaults.title);
@@ -162,8 +162,7 @@ const ApplyRecipient = () => {
     if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== currentUserId) {
       // User changed - reset form and clear cover photo preview
       resetForm();
-      setCoverPhotoPreview("");
-      setCoverPhoto(null);
+      setMedia([]);
     }
 
     prevUserIdRef.current = currentUserId;
@@ -177,7 +176,7 @@ const ApplyRecipient = () => {
       setBeneficiaryType((saved.beneficiaryType as string) || "");
       setMonthlyGoal((saved.monthlyGoal as string) || "");
       setSmartMatching(saved.smartMatching !== false);
-      // Don't restore coverPhotoPreview for security - user must re-upload
+      // Don't restore media for security - user must re-attach photos
       setStory((saved.story as string) || "");
       setIsLongTerm(saved.isLongTerm as boolean | null);
       setTitle((saved.title as string) || "");
@@ -193,7 +192,7 @@ const ApplyRecipient = () => {
 
     const userId = user?.id ?? null;
     
-    // Don't persist coverPhotoPreview for security
+    // Don't persist media for security
     saveScopedDraft(userId, {
       country,
       zipCode,
@@ -232,7 +231,12 @@ const ApplyRecipient = () => {
       case 2: {
         const storyText = story || "";
         const enoughWords = storyText.trim().split(/\s+/).filter(Boolean).length >= 10;
-        return enoughWords && !!coverPhoto;
+        return (
+          enoughWords &&
+          media.length > 0 &&
+          !media.some((m) => m.status === "uploading") &&
+          media.some((m) => m.status === "done" || m.status === "ready")
+        );
       }
       case 3:
         return monthlyGoal && parseInt(monthlyGoal) > 0;
