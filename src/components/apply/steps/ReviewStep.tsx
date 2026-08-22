@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Camera, ImagePlus, Sparkles, Check, ShieldCheck } from "lucide-react";
 import { getSuggestedTitles } from "@/lib/suggestedTitles";
 import { Input } from "@/components/ui/input";
+import { MediaItem, formatDuration } from "@/lib/mediaUpload";
 
 interface ReviewStepProps {
-  coverPhotoPreview: string;
+  media: MediaItem[];
   title: string;
   setTitle: (title: string) => void;
   story: string;
@@ -69,7 +70,7 @@ const Row = ({ label, onEdit, children, align = "center" }: RowProps) => (
 );
 
 export const ReviewStep = ({
-  coverPhotoPreview,
+  media,
   title,
   setTitle,
   story,
@@ -82,6 +83,9 @@ export const ReviewStep = ({
   onEditStory,
   onEditDetails,
 }: ReviewStepProps) => {
+  const cover = media[0];
+  const coverPhotoPreview = cover?.previewUrl || "";
+  const extras = media.slice(1);
   const suggestions = getSuggestedTitles(category);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const cityState = locationLabel && locationLabel.includes(",") ? locationLabel : null;
@@ -117,6 +121,11 @@ export const ReviewStep = ({
             <Camera className="w-3.5 h-3.5" />
             Change photo
           </span>
+          {media.length > 1 && (
+            <span className="absolute top-3 left-3 rounded-full bg-background/85 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-foreground">
+              1 / {media.length}
+            </span>
+          )}
         </button>
       ) : (
         <button
@@ -130,8 +139,39 @@ export const ReviewStep = ({
             <ImagePlus className="w-5 h-5 text-primary" />
           </span>
           <span className="text-sm font-medium text-foreground">Add a photo</span>
-          <span className="text-xs text-muted-foreground">Optional, but it helps people connect</span>
+          <span className="text-xs text-muted-foreground">Required — it helps people connect</span>
         </button>
+      )}
+
+      {/* Extra media strip */}
+      {extras.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {extras.map((item, index) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={onEditStory}
+              className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-border/60 bg-muted/30"
+            >
+              {item.previewUrl ? (
+                <img
+                  src={item.previewUrl}
+                  alt={`Additional media ${index + 2}`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground">
+                  Video
+                </span>
+              )}
+              {item.kind === "video" && item.durationSec ? (
+                <span className="absolute bottom-1 right-1 rounded bg-background/85 px-1 text-[10px] font-medium text-foreground">
+                  {formatDuration(item.durationSec)}
+                </span>
+              ) : null}
+            </button>
+          ))}
+        </div>
       )}
 
       {/* Title */}

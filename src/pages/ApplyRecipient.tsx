@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useZipLocation } from "@/lib/zipLookup";
+import { MediaItem, uploadMediaFile } from "@/lib/mediaUpload";
 import {
   saveScopedDraft,
   loadScopedDraft,
@@ -29,22 +30,22 @@ interface ApplicationData {
   beneficiaryType: string;
   monthlyGoal: string;
   smartMatching: boolean;
-  coverPhoto: File | null;
-  coverPhotoPreview: string;
+  media: MediaItem[];
+
   story: string;
   isLongTerm: boolean | null;
   title: string;
   titleSource: "suggested" | "custom";
 }
 
-const getDefaults = (): Omit<ApplicationData, "coverPhoto"> => ({
+const getDefaults = (): Omit<ApplicationData, "media"> => ({
   country: "us",
   zipCode: "",
   category: "",
   beneficiaryType: "",
   monthlyGoal: "",
   smartMatching: true,
-  coverPhotoPreview: "",
+
   story: "",
   isLongTerm: null,
   title: "",
@@ -121,8 +122,8 @@ const ApplyRecipient = () => {
   const [beneficiaryType, setBeneficiaryType] = useState("");
   const [monthlyGoal, setMonthlyGoal] = useState("");
   const [smartMatching, setSmartMatching] = useState(true);
-  const [coverPhoto, setCoverPhoto] = useState<File | null>(null);
-  const [coverPhotoPreview, setCoverPhotoPreview] = useState("");
+  const [media, setMedia] = useState<MediaItem[]>([]);
+
   const [story, setStory] = useState("");
   const [isLongTerm, setIsLongTerm] = useState<boolean | null>(null);
   const [title, setTitle] = useState("");
@@ -142,8 +143,7 @@ const ApplyRecipient = () => {
     setBeneficiaryType(defaults.beneficiaryType);
     setMonthlyGoal(defaults.monthlyGoal);
     setSmartMatching(defaults.smartMatching);
-    setCoverPhotoPreview("");
-    setCoverPhoto(null);
+    setMedia([]);
     setStory(defaults.story);
     setIsLongTerm(defaults.isLongTerm);
     setTitle(defaults.title);
@@ -162,8 +162,7 @@ const ApplyRecipient = () => {
     if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== currentUserId) {
       // User changed - reset form and clear cover photo preview
       resetForm();
-      setCoverPhotoPreview("");
-      setCoverPhoto(null);
+      setMedia([]);
     }
 
     prevUserIdRef.current = currentUserId;
@@ -177,7 +176,7 @@ const ApplyRecipient = () => {
       setBeneficiaryType((saved.beneficiaryType as string) || "");
       setMonthlyGoal((saved.monthlyGoal as string) || "");
       setSmartMatching(saved.smartMatching !== false);
-      // Don't restore coverPhotoPreview for security - user must re-upload
+      // Don't restore media for security - user must re-attach photos
       setStory((saved.story as string) || "");
       setIsLongTerm(saved.isLongTerm as boolean | null);
       setTitle((saved.title as string) || "");
@@ -193,7 +192,7 @@ const ApplyRecipient = () => {
 
     const userId = user?.id ?? null;
     
-    // Don't persist coverPhotoPreview for security
+    // Don't persist media for security
     saveScopedDraft(userId, {
       country,
       zipCode,
@@ -232,7 +231,12 @@ const ApplyRecipient = () => {
       case 2: {
         const storyText = story || "";
         const enoughWords = storyText.trim().split(/\s+/).filter(Boolean).length >= 10;
-        return enoughWords && !!coverPhoto;
+        return (
+          enoughWords &&
+          media.length > 0 &&
+          !media.some((m) => m.status === "uploading") &&
+          media.some((m) => m.status === "done" || m.status === "ready")
+        );
       }
       case 3:
         return monthlyGoal && parseInt(monthlyGoal) > 0;
@@ -335,30 +339,25 @@ const ApplyRecipient = () => {
 
   // Helper function to create fundraiser for a user
   const createFundraiserForUser = async (userId: string) => {
-    let coverPhotoUrl: string | null = null;
+    // Upload any media that hasn't reached storage yet (guest flow), keeping order
+    const uploadedUrls: string[] = [];
 
-    // Upload cover photo if provided
-    if (coverPhoto) {
-      const fileExt = coverPhoto.name.split('.').pop();
-      const fileName = `${userId}/${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase
-        .storage
-        .from('fundraiser-covers')
-        .upload(fileName, coverPhoto);
-
-      if (uploadError) {
-        console.error('Cover photo upload error:', uploadError);
-        // Continue without cover photo rather than failing the whole submission
-      } else {
-        const { data: urlData } = supabase
-          .storage
-          .from('fundraiser-covers')
-          .getPublicUrl(fileName);
-
-        coverPhotoUrl = urlData.publicUrl;
+    for (const item of media) {
+      if (item.publicUrl) {
+        uploadedUrls.push(item.publicUrl);
+        continue;
+      }
+      try {
+        const { publicUrl } = await uploadMediaFile(item.file, userId);
+        uploadedUrls.push(publicUrl);
+      } catch (err) {
+        console.error("Media upload error:", err);
+        // Continue without this item rather than failing the whole submission
       }
     }
+
+    const coverPhotoUrl = uploadedUrls[0] ?? null;
+
 
     const { data: fundraiserData, error: fundraiserError } = await supabase
       .from("fundraisers")
@@ -383,6 +382,20 @@ const ApplyRecipient = () => {
       console.error("Fundraiser creation error:", fundraiserError);
       throw fundraiserError;
     }
+
+    // Save the full gallery (cover first)
+    if (uploadedUrls.length > 0) {
+      const { error: imagesError } = await supabase.from("fundraiser_images").insert(
+        uploadedUrls.map((url, index) => ({
+          fundraiser_id: fundraiserData.id,
+          image_url: url,
+          display_order: index,
+          is_primary: index === 0,
+        }))
+      );
+      if (imagesError) console.error("Gallery save error:", imagesError);
+    }
+
 
     // Also create the verification/application record for admin review
     await supabase.from("recipient_verifications").insert({
@@ -679,10 +692,9 @@ const ApplyRecipient = () => {
             isLongTerm={isLongTerm}
             setIsLongTerm={setIsLongTerm}
             category={category}
-            coverPhoto={coverPhoto}
-            setCoverPhoto={setCoverPhoto}
-            coverPhotoPreview={coverPhotoPreview}
-            setCoverPhotoPreview={setCoverPhotoPreview}
+            media={media}
+            setMedia={setMedia}
+            userId={user?.id ?? null}
           />
         )}
 
@@ -698,7 +710,7 @@ const ApplyRecipient = () => {
 
         {currentStep === 4 && (
           <ReviewStep
-            coverPhotoPreview={coverPhotoPreview}
+            media={media}
             title={title}
             setTitle={setTitle}
             story={story}
@@ -712,6 +724,7 @@ const ApplyRecipient = () => {
             onEditDetails={() => goToStep(1)}
           />
         )}
+
 
 
         {currentStep === 5 && !isAuthenticated && (

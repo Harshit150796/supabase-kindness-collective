@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Sparkles, HelpCircle, ImagePlus, Upload, X, Camera, Video, Folder } from "lucide-react";
+import { Sparkles, HelpCircle, ImagePlus, Upload, Camera, Video, Folder } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -9,11 +9,18 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_VIDEO_SIZE = 25 * 1024 * 1024; // 25MB
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"];
-const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm", "video/3gpp"];
+import { MediaTray } from "./MediaTray";
+import {
+  ALLOWED_IMAGE_TYPES,
+  ALLOWED_VIDEO_TYPES,
+  MAX_IMAGE_SIZE,
+  MAX_MEDIA_ITEMS,
+  MAX_VIDEO_SECONDS,
+  MAX_VIDEO_SIZE,
+  MediaItem,
+  readVideoMeta,
+  uploadMediaFile,
+} from "@/lib/mediaUpload";
 
 interface StoryStepProps {
   story: string;
@@ -21,54 +28,10 @@ interface StoryStepProps {
   isLongTerm: boolean | null;
   setIsLongTerm: (value: boolean | null) => void;
   category: string;
-  coverPhoto: File | null;
-  setCoverPhoto: (file: File | null) => void;
-  coverPhotoPreview: string;
-  setCoverPhotoPreview: (url: string) => void;
+  media: MediaItem[];
+  setMedia: React.Dispatch<React.SetStateAction<MediaItem[]>>;
+  userId?: string | null;
 }
-
-// Grab a poster frame from a video file so the review step still has a hero image
-const getVideoPoster = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const video = document.createElement("video");
-    video.preload = "metadata";
-    video.muted = true;
-    (video as HTMLVideoElement & { playsInline: boolean }).playsInline = true;
-    video.src = url;
-
-    const cleanup = () => URL.revokeObjectURL(url);
-
-    video.onloadeddata = () => {
-      try {
-        video.currentTime = Math.min(0.1, video.duration || 0.1);
-      } catch {
-        /* seek unsupported, fall through to onseeked/timeout */
-      }
-    };
-
-    const capture = () => {
-      try {
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth || 1280;
-        canvas.height = video.videoHeight || 720;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) throw new Error("no canvas context");
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        cleanup();
-        resolve(canvas.toDataURL("image/jpeg", 0.85));
-      } catch (err) {
-        cleanup();
-        reject(err);
-      }
-    };
-
-    video.onseeked = capture;
-    video.onerror = () => {
-      cleanup();
-      reject(new Error("Could not read video"));
-    };
-  });
 
 const PickerTile = ({
   icon,
@@ -95,6 +58,13 @@ const PickerTile = ({
   </button>
 );
 
+const readImagePreview = (file: File): Promise<string> =>
+  new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
 
 export const StoryStep = ({
   story,
@@ -102,10 +72,9 @@ export const StoryStep = ({
   isLongTerm,
   setIsLongTerm,
   category,
-  coverPhoto,
-  setCoverPhoto,
-  coverPhotoPreview,
-  setCoverPhotoPreview,
+  media,
+  setMedia,
+  userId,
 }: StoryStepProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -121,50 +90,113 @@ export const StoryStep = ({
   const minWords = 50;
   const progress = Math.min((wordCount / minWords) * 100, 100);
 
-  const handleFile = async (file: File) => {
-    const isVideo = file.type.startsWith("video/") || ALLOWED_VIDEO_TYPES.includes(file.type);
-    const isImage = file.type.startsWith("image/") || ALLOWED_IMAGE_TYPES.includes(file.type);
+  const patchItem = (id: string, patch: Partial<MediaItem>) =>
+    setMedia((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
 
-    if (!isImage && !isVideo) {
+  const startUpload = async (item: MediaItem) => {
+    if (!userId) {
+      patchItem(item.id, { status: "ready", progress: 0 });
+      return;
+    }
+    patchItem(item.id, { status: "uploading", progress: 0, error: undefined });
+    try {
+      const { path, publicUrl } = await uploadMediaFile(item.file, userId, (percent) =>
+        patchItem(item.id, { progress: percent })
+      );
+      patchItem(item.id, { status: "done", progress: 100, storagePath: path, publicUrl });
+    } catch (err: any) {
+      patchItem(item.id, { status: "error", error: err?.message || "Upload failed" });
       toast({
-        title: "Unsupported file",
-        description: "Please choose a photo (JPEG, PNG, WebP, GIF) or a short video.",
+        title: "Upload failed",
+        description: `${item.file.name} couldn't be uploaded. Tap retry to try again.`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFiles = async (files: File[]) => {
+    const remaining = MAX_MEDIA_ITEMS - media.length;
+    if (remaining <= 0) {
+      toast({
+        title: "Limit reached",
+        description: `You can add up to ${MAX_MEDIA_ITEMS} photos or videos.`,
         variant: "destructive",
       });
       return;
     }
 
-    const limit = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
-    if (file.size > limit) {
+    const selected = files.slice(0, remaining);
+    if (files.length > remaining) {
       toast({
-        title: "File too large",
-        description: isVideo
-          ? "Please choose a video smaller than 25MB."
-          : "Please choose an image smaller than 5MB.",
-        variant: "destructive",
+        title: "Some files skipped",
+        description: `Only ${remaining} more ${remaining === 1 ? "item" : "items"} can be added.`,
       });
-      return;
     }
 
-    setCoverPhoto(file);
+    for (const file of selected) {
+      const isVideo = file.type.startsWith("video/") || ALLOWED_VIDEO_TYPES.includes(file.type);
+      const isImage = file.type.startsWith("image/") || ALLOWED_IMAGE_TYPES.includes(file.type);
 
-    if (isVideo) {
-      try {
-        const poster = await getVideoPoster(file);
-        setCoverPhotoPreview(poster);
-      } catch {
+      if (!isImage && !isVideo) {
         toast({
-          title: "Preview unavailable",
-          description: "We saved your video, but couldn't create a preview image.",
+          title: "Unsupported file",
+          description: `${file.name} isn't a photo or video we can use.`,
+          variant: "destructive",
         });
-        setCoverPhotoPreview("");
+        continue;
       }
-      return;
-    }
 
-    const reader = new FileReader();
-    reader.onloadend = () => setCoverPhotoPreview(reader.result as string);
-    reader.readAsDataURL(file);
+      const limit = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+      if (file.size > limit) {
+        toast({
+          title: "File too large",
+          description: isVideo
+            ? "Please choose a video smaller than 100MB."
+            : "Please choose an image smaller than 10MB.",
+          variant: "destructive",
+        });
+        continue;
+      }
+
+      let previewUrl = "";
+      let durationSec: number | undefined;
+
+      if (isVideo) {
+        try {
+          const meta = await readVideoMeta(file);
+          previewUrl = meta.poster;
+          durationSec = meta.durationSec;
+          if (durationSec && durationSec > MAX_VIDEO_SECONDS + 1) {
+            toast({
+              title: "Video too long",
+              description: `Please keep videos under ${MAX_VIDEO_SECONDS} seconds.`,
+              variant: "destructive",
+            });
+            continue;
+          }
+        } catch {
+          toast({
+            title: "Preview unavailable",
+            description: "We added your video, but couldn't create a thumbnail.",
+          });
+        }
+      } else {
+        previewUrl = await readImagePreview(file);
+      }
+
+      const item: MediaItem = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        file,
+        kind: isVideo ? "video" : "image",
+        previewUrl,
+        durationSec,
+        status: userId ? "uploading" : "ready",
+        progress: 0,
+      };
+
+      setMedia((prev) => [...prev, item]);
+      void startUpload(item);
+    }
   };
 
   const openPicker = () => {
@@ -181,16 +213,32 @@ export const StoryStep = ({
     setTimeout(() => ref.current?.click(), 120);
   };
 
-  const handleRemove = () => {
-    setCoverPhoto(null);
-    setCoverPhotoPreview("");
+  const handleRemove = (id: string) => {
+    setMedia((prev) => prev.filter((item) => item.id !== id));
     [photoCaptureRef, videoCaptureRef, libraryRef].forEach((r) => {
       if (r.current) r.current.value = "";
     });
   };
 
-  const isVideoSelected = !!coverPhoto?.type.startsWith("video/");
+  const handleSetCover = (id: string) =>
+    setMedia((prev) => {
+      const index = prev.findIndex((item) => item.id === id);
+      if (index <= 0) return prev;
+      const next = [...prev];
+      const [picked] = next.splice(index, 1);
+      return [picked, ...next];
+    });
 
+  const handleRetry = (id: string) => {
+    const item = media.find((m) => m.id === id);
+    if (item) void startUpload(item);
+  };
+
+  const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length) void handleFiles(files);
+    e.target.value = "";
+  };
 
   const getPlaceholder = () => {
     switch (category) {
@@ -262,14 +310,14 @@ export const StoryStep = ({
         </div>
       </div>
 
-      {/* Required photo or video */}
+      {/* Required photos or videos */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-foreground">Add a photo or video</h3>
+          <h3 className="font-semibold text-foreground">Add photos or videos</h3>
           <span className="text-xs font-medium text-primary">Required</span>
         </div>
 
-        {!coverPhoto ? (
+        {media.length === 0 ? (
           <button
             type="button"
             onClick={openPicker}
@@ -284,52 +332,20 @@ export const StoryStep = ({
               </div>
             </div>
             <div className="min-w-0">
-              <p className="text-foreground font-medium">Upload a photo or video</p>
+              <p className="text-foreground font-medium">Upload photos or videos</p>
               <p className="text-sm text-muted-foreground">
-                A bright, clear photo helps donors connect with your story
+                Add up to {MAX_MEDIA_ITEMS} — the first one becomes your cover
               </p>
             </div>
           </button>
         ) : (
-          <div className="relative rounded-xl overflow-hidden animate-scale-in bg-muted/30">
-            {coverPhotoPreview ? (
-              <img
-                src={coverPhotoPreview}
-                alt="Cover preview"
-                className="w-full h-48 object-cover"
-              />
-            ) : (
-              <div className="w-full h-48 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                <Video className="w-7 h-7" />
-                <span className="text-sm font-medium text-foreground">Video attached</span>
-              </div>
-            )}
-            {isVideoSelected && coverPhotoPreview && (
-              <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-background/90 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-foreground">
-                <Video className="w-3.5 h-3.5" />
-                Video
-              </span>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent">
-              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={openPicker}
-                  className="px-4 py-2 bg-background/90 backdrop-blur-sm text-foreground font-medium rounded-full hover:bg-background transition-colors text-sm"
-                >
-                  Change
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRemove}
-                  aria-label="Remove media"
-                  className="w-9 h-9 bg-background/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-background transition-colors"
-                >
-                  <X className="w-4 h-4 text-foreground" />
-                </button>
-              </div>
-            </div>
-          </div>
+          <MediaTray
+            items={media}
+            onAdd={openPicker}
+            onRemove={handleRemove}
+            onSetCover={handleSetCover}
+            onRetry={handleRetry}
+          />
         )}
 
         {/* Hidden inputs: direct camera photo, camera video, and files/gallery */}
@@ -338,10 +354,7 @@ export const StoryStep = ({
           type="file"
           accept="image/*"
           capture="environment"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleFile(file);
-          }}
+          onChange={onInputChange}
           className="hidden"
         />
         <input
@@ -349,20 +362,15 @@ export const StoryStep = ({
           type="file"
           accept="video/*"
           capture="environment"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleFile(file);
-          }}
+          onChange={onInputChange}
           className="hidden"
         />
         <input
           ref={libraryRef}
           type="file"
           accept="image/*,video/*"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleFile(file);
-          }}
+          multiple
+          onChange={onInputChange}
           className="hidden"
         />
 
