@@ -663,9 +663,7 @@ const ApplyRecipient = () => {
         userEmail={userEmail}
       >
         {currentStep === 1 && (
-          <LocationCategoryStep
-            zipCode={zipCode}
-            setZipCode={setZipCode}
+          <BasicsStep
             category={category}
             setCategory={setCategory}
             beneficiaryType={beneficiaryType}
@@ -674,16 +672,6 @@ const ApplyRecipient = () => {
         )}
 
         {currentStep === 2 && (
-          <GoalStep
-            monthlyGoal={monthlyGoal}
-            setMonthlyGoal={setMonthlyGoal}
-            smartMatching={smartMatching}
-            setSmartMatching={setSmartMatching}
-            category={category}
-          />
-        )}
-
-        {currentStep === 3 && (
           <StoryStep
             story={story}
             setStory={setStory}
@@ -697,6 +685,16 @@ const ApplyRecipient = () => {
           />
         )}
 
+        {currentStep === 3 && (
+          <GoalStep
+            monthlyGoal={monthlyGoal}
+            setMonthlyGoal={setMonthlyGoal}
+            smartMatching={smartMatching}
+            setSmartMatching={setSmartMatching}
+            category={category}
+          />
+        )}
+
         {currentStep === 4 && (
           <ReviewStep
             coverPhotoPreview={coverPhotoPreview}
@@ -707,11 +705,13 @@ const ApplyRecipient = () => {
             beneficiaryType={beneficiaryType}
             monthlyGoal={monthlyGoal}
             zipCode={zipCode}
+            setZipCode={setZipCode}
             locationLabel={locationLabel}
-            onEditStory={() => goToStep(3)}
+            onEditStory={() => goToStep(2)}
             onEditDetails={() => goToStep(1)}
           />
         )}
+
 
         {currentStep === 5 && !isAuthenticated && (
           <AccountStep
