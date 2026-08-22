@@ -121,8 +121,8 @@ const ApplyRecipient = () => {
   const [beneficiaryType, setBeneficiaryType] = useState("");
   const [monthlyGoal, setMonthlyGoal] = useState("");
   const [smartMatching, setSmartMatching] = useState(true);
-  const [coverPhoto, setCoverPhoto] = useState<File | null>(null);
-  const [coverPhotoPreview, setCoverPhotoPreview] = useState("");
+  const [media, setMedia] = useState<MediaItem[]>([]);
+
   const [story, setStory] = useState("");
   const [isLongTerm, setIsLongTerm] = useState<boolean | null>(null);
   const [title, setTitle] = useState("");
