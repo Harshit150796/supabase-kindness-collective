@@ -54,7 +54,7 @@ const Row = ({ label, onEdit, children, align = "center" }: RowProps) => (
       align === "center" ? "items-center" : "items-start"
     }`}
   >
-    <span className="w-28 shrink-0 text-sm text-muted-foreground">{label}</span>
+    <span className="w-20 sm:w-28 shrink-0 text-sm text-muted-foreground">{label}</span>
     <div className="flex-1 min-w-0 text-sm text-foreground">{children}</div>
     {onEdit && (
       <button
@@ -203,7 +203,7 @@ export const ReviewStep = ({
         </Row>
 
         <Row label="Location">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <Input
               id="apply-zip"
               type="text"
