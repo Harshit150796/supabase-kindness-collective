@@ -1,44 +1,37 @@
-# Merge "Is your need long-term?" into the Goal step
+# Drop "how long do you need it" — one goal, one time
 
-## How this works on other platforms
+## The call
 
-On GoFundMe / Fundly-style platforms, the norm is **one campaign, one total goal**, run for a limited stretch and then closed. Recurring/monthly asks exist (Patreon, GoFundMe's "monthly giving" nudge, church/mutual-aid funds) but they are the exception, and they're always framed as *ongoing support*, not a one-off target. Most people asking for help with groceries, rent, medical bills post a **one-time** goal.
+Remove the "Is your need long-term?" question completely and make every request a **single, finite goal**. This is how GoFundMe and every mainstream crowdfunding platform works: one campaign, one total, closes when it's met. It removes the confusion you spotted and it removes the abuse path — nobody sits on an open-ended monthly drip they no longer need, because there is no monthly drip.
 
-Our product is closer to the recurring case than most, because coupons are issued in monthly $5/$10 batches — but not every recipient needs help forever. Someone recovering from a single hospital bill needs one round; a single parent on a tight budget needs monthly help.
+Your instinct about community organizations is right, but the cleanest version is not a second billing mode — it's just a **bigger goal and a longer horizon**. An organization asking for "$500/month for 6 months" is the same thing as asking for "$3,000 to cover 6 months of groceries for 12 families", and the second version is easier to understand, easier to verify, and self-closing. So organizations get higher amount presets and copy that invites a program-scale total, not a recurring switch.
 
-So: the two questions are genuinely the same question asked twice, badly. Today the yes/no toggle sits in the Story step and only ends up in an admin notes string, while the money question always says "each month" even for people with a one-time need.
+If a recipient still needs help after their goal is met, they create a new request. That's a natural re-verification checkpoint rather than a silent forever-subscription — and it reads much better to an underwriter than open-ended collection.
 
-## What to change
+## What changes in the flow
 
-Delete the standalone "Is your need long-term?" yes/no from the Story step. Ask it once, at the top of the Goal step, as the framing for the amount:
+**Story step:** delete the "Is your need long-term?" yes/no card and its tooltip. Nothing replaces it.
 
-**"How often do you need this help?"** — two cards:
+**Goal step:** becomes a single clean question — **"How much do you need?"**
 
-- **Just once** — "A one-time need, like a single bill or a rough month."
-- **Every month** — "An ongoing need while things stabilize."
+- Heading: "How much do you need?" · sub-line: "One goal. Once it's fully funded, your request closes."
+- Field suffix changes from `USD / month` to `USD total`.
+- Presets adapt to who it's for:
+  - Yourself / My Family: **$100 · $250 · $500 · $1,000**, helper "Most personal requests are $150–$600."
+  - Community Organization: **$500 · $1,500 · $3,000 · $5,000**, helper "Organizations often request $1,500–$5,000 to cover a program period — tell donors the timeframe in your story."
+- Impact preview keeps working off the entered number; wording drops "monthly" ("Your goal equals ≈ 8 weeks of groceries").
+- Continue rule is unchanged: a positive amount.
 
-Then the amount field below adapts:
+**Review step:** the row reads **Goal** with `$X total` instead of "Monthly goal".
 
-| Choice | Heading | Field label | Chips | Helper line |
-|---|---|---|---|---|
-| Just once | "How much do you need in total?" | USD total | $100 / $250 / $500 / $1,000 | "Most one-time requests are $150–$600." |
-| Every month | "How much do you need each month?" | USD / month | $50 / $100 / $200 / $500 | "Families like yours typically request $100–$300 per month." |
-
-The impact preview ("≈ 4 weeks of groceries") keeps working off the entered number either way; only the wording around it changes ("Your goal equals" vs "Your monthly goal equals").
-
-Continue stays disabled until both the frequency and a positive amount are set (a small tightening of today's rule, which only checks the amount).
-
-## Downstream framing
-
-- Review step shows "One-time need · $400 total" or "Ongoing need · $200 / month" in the summary row, with the Edit link pointing at the Goal step.
-- Public fundraiser page and cards read "Goal $400" for one-time and "$200 / month" for ongoing, so donors know what they're funding.
-- Ongoing campaigns get a "Monthly need" tag; one-time campaigns close out once the goal is fully couponed instead of collecting forever — good for the Stripe/compliance story too, since it caps open-ended collection.
+**Public pages / cards / dashboards:** "$X goal" and "raised of $X" — no "per month", no "Monthly need" tag. Once `amount_raised >= goal`, the request shows **Fully funded** and stops accepting new donations, so it closes itself.
 
 ## Technical notes
 
-- `is_long_term` (boolean on `fundraisers`) already exists and is written on submit — it becomes the source of truth for this choice, no schema change. `monthly_goal` stays the amount column; it means "total" when `is_long_term` is false and "per month" when true, and every display site reads the flag to label it.
-- `StoryStep.tsx`: remove the toggle block, its `isLongTerm`/`setIsLongTerm` props, and the now-unused tooltip state.
-- `GoalStep.tsx`: takes `isLongTerm` / `setIsLongTerm`, renders the frequency cards, and switches heading/suffix/chips/helper text off it.
-- `ApplyRecipient.tsx`: move the props, and require `isLongTerm !== null` plus a positive amount in `canContinue()` for the Goal step. The verification `notes` string keeps recording it.
-- `ReviewStep.tsx`, `PublicFundraiser.tsx`, `FundraiserCard.tsx`, `FundraiserDashboard.tsx`: label the amount from `is_long_term`.
+- No schema change. `fundraisers.monthly_goal` keeps holding the number but now means the **total goal** everywhere; `is_long_term` stops being written (left as `false`) and every read of it in the UI is removed.
+- `StoryStep.tsx`: remove the long-term block, the `isLongTerm` / `setIsLongTerm` props, and the unused tooltip state.
+- `GoalStep.tsx`: drop the "each month" copy, take `beneficiaryType` to pick the preset set and helper line, change the suffix to `USD total`.
+- `ApplyRecipient.tsx`: remove `isLongTerm` from state, the draft payload, the props it passes down, and the `recipient_verifications.notes` string; insert `is_long_term: false`.
+- `ReviewStep.tsx`: relabel the goal row and rename the `monthlyGoal` prop to `goalAmount` for clarity.
+- `PublicFundraiser.tsx`, `FundraiserCard.tsx`, `FundraiserDashboard.tsx`, `AdminFundraisers.tsx`: strip the `is_long_term` / "per month" labels; add the "Fully funded" state and disable the donate CTA when the goal is reached.
 - No database, RLS, or edge-function changes.
