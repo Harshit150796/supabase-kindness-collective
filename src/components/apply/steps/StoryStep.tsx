@@ -237,17 +237,18 @@ export const StoryStep = ({
         </div>
       </div>
 
-      {/* Optional photo */}
+      {/* Required photo or video */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-foreground">Add a photo</h3>
-          <span className="text-xs text-muted-foreground">Optional</span>
+          <h3 className="font-semibold text-foreground">Add a photo or video</h3>
+          <span className="text-xs font-medium text-primary">Required</span>
         </div>
 
-        {!coverPhotoPreview ? (
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className="cursor-pointer rounded-xl border-2 border-dashed border-border/60 hover:border-primary/50 hover:bg-secondary/40 transition-all duration-300 flex items-center gap-4 p-4"
+        {!coverPhoto ? (
+          <button
+            type="button"
+            onClick={openPicker}
+            className="w-full text-left cursor-pointer rounded-xl border-2 border-dashed border-border/60 hover:border-primary/50 hover:bg-secondary/40 transition-all duration-300 flex items-center gap-4 p-4"
           >
             <div className="relative">
               <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center">
@@ -258,32 +259,45 @@ export const StoryStep = ({
               </div>
             </div>
             <div className="min-w-0">
-              <p className="text-foreground font-medium">Upload a photo</p>
+              <p className="text-foreground font-medium">Upload a photo or video</p>
               <p className="text-sm text-muted-foreground">
                 A bright, clear photo helps donors connect with your story
               </p>
             </div>
-          </div>
+          </button>
         ) : (
-          <div className="relative rounded-xl overflow-hidden animate-scale-in">
-            <img
-              src={coverPhotoPreview}
-              alt="Cover preview"
-              className="w-full h-48 object-cover"
-            />
+          <div className="relative rounded-xl overflow-hidden animate-scale-in bg-muted/30">
+            {coverPhotoPreview ? (
+              <img
+                src={coverPhotoPreview}
+                alt="Cover preview"
+                className="w-full h-48 object-cover"
+              />
+            ) : (
+              <div className="w-full h-48 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                <Video className="w-7 h-7" />
+                <span className="text-sm font-medium text-foreground">Video attached</span>
+              </div>
+            )}
+            {isVideoSelected && coverPhotoPreview && (
+              <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-background/90 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-foreground">
+                <Video className="w-3.5 h-3.5" />
+                Video
+              </span>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent">
               <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={openPicker}
                   className="px-4 py-2 bg-background/90 backdrop-blur-sm text-foreground font-medium rounded-full hover:bg-background transition-colors text-sm"
                 >
-                  Change photo
+                  Change
                 </button>
                 <button
                   type="button"
                   onClick={handleRemove}
-                  aria-label="Remove photo"
+                  aria-label="Remove media"
                   className="w-9 h-9 bg-background/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-background transition-colors"
                 >
                   <X className="w-4 h-4 text-foreground" />
@@ -293,16 +307,81 @@ export const StoryStep = ({
           </div>
         )}
 
+        {/* Hidden inputs: direct camera photo, camera video, and files/gallery */}
         <input
-          ref={fileInputRef}
+          ref={photoCaptureRef}
           type="file"
           accept="image/*"
+          capture="environment"
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) handleFile(file);
           }}
           className="hidden"
         />
+        <input
+          ref={videoCaptureRef}
+          type="file"
+          accept="video/*"
+          capture="environment"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFile(file);
+          }}
+          className="hidden"
+        />
+        <input
+          ref={libraryRef}
+          type="file"
+          accept="image/*,video/*"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFile(file);
+          }}
+          className="hidden"
+        />
+
+        {isMobile ? (
+          <Drawer open={pickerOpen} onOpenChange={setPickerOpen}>
+            <DrawerContent>
+              <DrawerHeader className="text-left">
+                <DrawerTitle>Choose an action</DrawerTitle>
+              </DrawerHeader>
+              <div className="grid grid-cols-3 gap-2 px-4 pb-8">
+                <PickerTile
+                  icon={<Camera className="w-7 h-7" />}
+                  label="Camera"
+                  onClick={() => choose(photoCaptureRef)}
+                />
+                <PickerTile
+                  icon={<Video className="w-7 h-7" />}
+                  label="Camera"
+                  sublabel="Camcorder"
+                  onClick={() => choose(videoCaptureRef)}
+                />
+                <PickerTile
+                  icon={<Folder className="w-7 h-7" />}
+                  label="Files"
+                  onClick={() => choose(libraryRef)}
+                />
+              </div>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+            <DialogContent className="sm:max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Choose an action</DialogTitle>
+              </DialogHeader>
+              <PickerTile
+                icon={<Folder className="w-7 h-7" />}
+                label="Choose from Files"
+                onClick={() => choose(libraryRef)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
+
       </div>
 
       {/* Long-term toggle */}
