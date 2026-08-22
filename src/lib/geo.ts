@@ -74,7 +74,9 @@ export async function getUserCountry(): Promise<string | null> {
   if (inflight) return inflight;
   inflight = (async () => {
     const country = await lookup();
-    writeCache(country);
+    // Only cache US / failed lookups. A bad non-US answer from a free IP
+    // database (common on VPN exit ranges) must not stick for the session.
+    if (country === null || country === "US") writeCache(country);
     inflight = null;
     return country;
   })();
