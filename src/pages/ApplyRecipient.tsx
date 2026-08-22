@@ -222,31 +222,29 @@ const ApplyRecipient = () => {
 
   const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
 
+  const locationLabel = useZipLocation(zipCode, "us");
+
   const canContinue = () => {
     switch (currentStep) {
       case 1:
-        return country && zipCode && category;
+        return /^\d{5}$/.test(zipCode) && !!category && !!beneficiaryType;
       case 2:
-        return beneficiaryType;
-      case 3:
         return monthlyGoal && parseInt(monthlyGoal) > 0;
-      case 4:
-        return true; // Media is optional
-      case 5:
+      case 3: {
         const storyText = story || "";
         return storyText.trim().split(/\s+/).filter(Boolean).length >= 10;
-      case 6:
-        const titleText = title || "";
-        return titleText.trim().length > 0;
-      case 7:
-        return true; // Review step - also final step for authenticated users
-      case 8:
+      }
+      case 4:
+        // Review step - also final step for authenticated users
+        return (title || "").trim().length > 0;
+      case 5:
         // Only reached by non-authenticated users
         return email && password.length >= 8 && fullName;
       default:
         return false;
     }
   };
+
 
   // Handler for authenticated user submission (skips account creation)
   const handleAuthenticatedSubmit = async () => {
