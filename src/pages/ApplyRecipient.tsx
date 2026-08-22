@@ -339,30 +339,25 @@ const ApplyRecipient = () => {
 
   // Helper function to create fundraiser for a user
   const createFundraiserForUser = async (userId: string) => {
-    let coverPhotoUrl: string | null = null;
+    // Upload any media that hasn't reached storage yet (guest flow), keeping order
+    const uploadedUrls: string[] = [];
 
-    // Upload cover photo if provided
-    if (coverPhoto) {
-      const fileExt = coverPhoto.name.split('.').pop();
-      const fileName = `${userId}/${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase
-        .storage
-        .from('fundraiser-covers')
-        .upload(fileName, coverPhoto);
-
-      if (uploadError) {
-        console.error('Cover photo upload error:', uploadError);
-        // Continue without cover photo rather than failing the whole submission
-      } else {
-        const { data: urlData } = supabase
-          .storage
-          .from('fundraiser-covers')
-          .getPublicUrl(fileName);
-
-        coverPhotoUrl = urlData.publicUrl;
+    for (const item of media) {
+      if (item.publicUrl) {
+        uploadedUrls.push(item.publicUrl);
+        continue;
+      }
+      try {
+        const { publicUrl } = await uploadMediaFile(item.file, userId);
+        uploadedUrls.push(publicUrl);
+      } catch (err) {
+        console.error("Media upload error:", err);
+        // Continue without this item rather than failing the whole submission
       }
     }
+
+    const coverPhotoUrl = uploadedUrls[0] ?? null;
+
 
     const { data: fundraiserData, error: fundraiserError } = await supabase
       .from("fundraisers")
