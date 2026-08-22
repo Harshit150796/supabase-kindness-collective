@@ -16,16 +16,22 @@ New flow:
 
 Nothing is dropped from the data we collect; the same fields still reach the `fundraisers` and `recipient_verifications` records.
 
-## Less hassle on the location step
+## Page 1: ZIP only, no country dropdown
 
 - Remove the country dropdown entirely. Country is fixed to US, shown as a static, non-editable line: "United States (US) — vouchers are redeemable at US retailers only".
-- ZIP becomes the only location input: numeric keyboard, 5-digit mask, and the existing ZIP lookup auto-shows "City, ST" as confirmation so nothing else needs typing.
-- Continue stays disabled only until ZIP is 5 digits + category + beneficiary are chosen.
+- ZIP is the only location input: numeric keyboard, 5-digit mask. The existing ZIP lookup instantly shows "City, ST" underneath as confirmation, so nothing else is typed. No state dropdown.
+- If the lookup fails, we still accept the ZIP and simply skip the "City, ST" confirmation line; nothing blocks the user.
+- Page 1 holds three things on one screen: ZIP, assistance category, and who it's for. Continue enables once ZIP is 5 digits + category + beneficiary are chosen.
+
+## Donor-facing location
+
+- Stories, fundraiser cards, and the public fundraiser page show "City, ST" (e.g. "Austin, TX") derived from the ZIP — never the bare ZIP, never lowercase "us".
 
 ## "US" capitalization across the frontend
 
 - `formatCountry` returns "United States" for the `us` code and uppercases any bare 2–3 letter code, so no UI ever renders lowercase "us".
 - Sweep visible strings so the abbreviation always reads `US` (never "us"/"Us"): geo toasts, advisory notices, footer, apply steps, FAQ/About/Donate copy, and story/fundraiser location labels.
+
 
 ## Technical notes
 
