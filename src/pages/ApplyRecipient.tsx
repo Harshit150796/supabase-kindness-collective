@@ -383,6 +383,20 @@ const ApplyRecipient = () => {
       throw fundraiserError;
     }
 
+    // Save the full gallery (cover first)
+    if (uploadedUrls.length > 0) {
+      const { error: imagesError } = await supabase.from("fundraiser_images").insert(
+        uploadedUrls.map((url, index) => ({
+          fundraiser_id: fundraiserData.id,
+          image_url: url,
+          display_order: index,
+          is_primary: index === 0,
+        }))
+      );
+      if (imagesError) console.error("Gallery save error:", imagesError);
+    }
+
+
     // Also create the verification/application record for admin review
     await supabase.from("recipient_verifications").insert({
       user_id: userId,
