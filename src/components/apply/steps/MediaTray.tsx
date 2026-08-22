@@ -2,7 +2,6 @@ import { Check, Play, Plus, RotateCcw, Star, X, AlertCircle } from "lucide-react
 import {
   MAX_MEDIA_ITEMS,
   MediaItem,
-  formatBytes,
   formatDuration,
 } from "@/lib/mediaUpload";
 
@@ -201,8 +200,8 @@ export const MediaTray = ({ items, onAdd, onRemove, onSetCover, onRetry }: Media
       <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
         <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
         <span>
-          Tap a thumbnail to make it the cover. Photos up to {formatBytes(10 * 1024 * 1024)}, videos up
-          to {formatBytes(100 * 1024 * 1024)} and 90 seconds.
+          Tap a thumbnail to make it the cover. Photos up to 10 MB, videos up to 100 MB and 90
+          seconds.
         </span>
       </p>
     </div>
