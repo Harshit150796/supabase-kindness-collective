@@ -576,7 +576,7 @@ const ApplyRecipient = () => {
 
   // Get step config based on current step (adjust headline for authenticated users on review step)
   const getStepConfig = (step: number) => {
-    if (isAuthenticated && step === 7) {
+    if (isAuthenticated && step === 4) {
       return {
         headline: "Review and submit your request",
         subtext: "Let's make sure your request is complete.",
@@ -586,14 +586,15 @@ const ApplyRecipient = () => {
   };
 
   const getContinueLabel = () => {
-    if (isAuthenticated && currentStep === 7) {
+    if (isAuthenticated && currentStep === 4) {
       return isSubmitting ? "Submitting..." : "Submit Fundraiser";
     }
-    if (currentStep === 8) {
+    if (currentStep === 5) {
       return isSubmitting ? "Sending code..." : "Continue";
     }
     return "Continue";
   };
+
 
   // Render OTP verification screen
   if (screenState === "otp") {
