@@ -1,54 +1,32 @@
-# Moving to Stripe Connect
+# Relax geo-fencing for recipient applications
 
-## The conflict we have to resolve first
+## What's blocking you
 
-Stripe requires crowdfunding platforms to use Connect for one specific reason: **money collected on behalf of someone else must land in that person's own Stripe account**, not in the platform's balance. The platform keeps only a fee (Connect's `application_fee_amount`).
+`/apply` and all `/recipient/*` routes are wrapped in `GeoGuard` (`src/App.tsx`). The guard calls `getUserCountry()` (`src/lib/geo.ts`), which asks ipapi.co and then api.country.is, and redirects to the home page with an error toast for any country code that isn't exactly `US`. It fails open only when both lookups fail or time out.
 
-Your answers describe the opposite: CouponDonation receives 100% of every donation, buys vouchers itself, and keeps a tip. That is exactly the "platform collects funds for itself" pattern Stripe just restricted. Enabling Connect without changing the money flow will not fix the underwriting decision — an underwriter reviewing a Connect application with zero connected-account payouts sees the same risk profile as today.
+With a US VPN this can still block you: many VPN exit ranges are geolocated inaccurately or flagged by these free IP databases, and if the first provider answers with a non-US code the guard blocks even though your traffic is US-exit. The lookup is also cached for an hour in `sessionStorage`, so an early bad answer sticks for the rest of the session.
 
-So there are two viable directions, and they are mutually exclusive. Everything below Step 1 depends on which one you pick.
+## What to change
 
-### Direction A — True Connect crowdfunding platform (what Stripe is asking for)
-Verified recipients (or fundraiser organizers) onboard as **connected accounts**. Each donation is a destination charge: funds settle into the recipient's connected account, and CouponDonation takes a platform fee/tip via `application_fee_amount`.
+Split the guard into two strictness levels instead of one hard block:
 
-- Matches Stripe's crowdfunding guidance; strongest path to approval.
-- Requires abandoning "zero cash disbursements" — recipients receive money, which contradicts the compliance email we already sent Stripe and the voucher-only copy across the site.
-- Requires KYC on every payee (Stripe handles it in Express onboarding), plus payout UI, tax forms, and dispute handling per account.
+**Advisory (recipient side)** — `/apply`, `/my-fundraisers`, `/fundraiser/:id`, and `/recipient/*` stop redirecting. A non-US lookup shows a one-time informational toast ("Vouchers are redeemable at US retailers only") and lets the user continue. Risk stays low because coupons are only redeemable at US stores, and the actual eligibility control remains the manual document review in `recipient_verifications`.
 
-### Direction B — Keep voucher-only, stop calling it crowdfunding
-No Connect. CouponDonation is a merchant selling/gifting restricted retail vouchers; "fundraisers" are needs listings, not money-raising campaigns.
+**Strict (admin only)** — `/admin/*` keeps the current redirect behavior, so the admin surface is still US-gated.
 
-- Consistent with everything we told Stripe and everything on the site now.
-- Needs the site's remaining crowdfunding signals removed (progress bars framed as "raised", "goal", "donate to this campaign", per-campaign donation panels) because those signals are what classify us as crowdfunding.
-- Does not resolve the current restriction by itself — it needs a new merchant application (or a different provider) presented as a voucher commerce business, not a donation platform.
+Implementation: add a `mode` prop to `GeoGuard` (`"advisory" | "strict"`, defaulting to advisory), and pass `mode="strict"` on the admin routes in `App.tsx`. Advisory mode renders children immediately with no "Checking access..." screen — the lookup runs in the background purely to decide whether to show the notice, so there's no added load delay on the apply flow.
 
-You cannot present Direction A to Stripe while the site says zero cash ever reaches recipients, and you cannot present Direction B while campaign pages read like GoFundMe.
+Also make the lookup less sticky: don't cache a *non-US* result, so a single bad IP-database answer can't follow the user around for an hour.
 
-## Step 1 — Decide the model (you, not code)
-Confirm Direction A or B. If A, also confirm who the payee is: the individual recipient, or the organizer who created the fundraiser.
+Nothing changes for donors — donation routes were never gated.
 
-## Step 2 (Direction A only) — Apply for Connect on a fresh footing
-- The restricted account very likely cannot host the platform. Open a Connect platform application for the entity, disclosing the prior restriction and the corrected model (funds flow to verified US recipient accounts; platform keeps a stated fee).
-- Do not build integration code before Stripe confirms the platform is approved and `card_payments` plus `transfers` capabilities are active — otherwise we ship dead code again.
+## Compliance note
 
-## Step 3 (Direction A only) — Technical implementation
-Once approved:
+This weakens what we described to Stripe as "IP blocking & geo-fencing" on beneficiary onboarding. It remains true for the admin surface, and beneficiary eligibility is still enforced by document review before any voucher is issued, but if Stripe asks specifically about onboarding geo-restriction, the accurate answer becomes "US-only enforced at verification review, with an IP-based advisory notice at onboarding." Worth knowing before we say anything further to them.
 
-1. **Data model** — add `stripe_connect_accounts` (user_id, account_id, charges_enabled, payouts_enabled, details_submitted, requirements JSON), with grants for `authenticated` (own row) and `service_role`, RLS scoped to `auth.uid()`.
-2. **Onboarding function** — `connect-onboard`: creates an Express account (`country: 'US'`, `capabilities: card_payments + transfers`) and returns an Account Link URL. Called from the recipient verification flow.
-3. **Onboarding status UI** — a card in the recipient dashboard showing "Payouts not set up / pending verification / active", driven by the stored capability flags.
-4. **Checkout rewrite** — `create-donation-checkout` becomes a destination charge: `payment_intent_data.transfer_data.destination = <connected account>` plus `application_fee_amount` for the platform tip, and it must refuse to create a session when the target account is not `charges_enabled`. Fundraiser-less general donations either go to the platform account (no Connect) or are disallowed — decide with you.
-5. **Webhooks** — extend `stripe-webhook` for `account.updated` (sync capability flags), `transfer.*`, and `charge.dispute.created`; keep existing coupon-generation logic for platform-retained funds only.
-6. **Tip disclosure** — the platform fee must be shown to the donor before payment (regulatory requirement for tip-based crowdfunding), so the donation flow needs an explicit "platform tip" line item.
-7. **Copy and legal** — Terms and Privacy need payout, KYC, and fee-disclosure sections; the "zero cash disbursements" claim has to be replaced everywhere it appears (`SecurityBadges.tsx`, About, FAQ, Donate SEO).
+## Technical details
 
-## Step 3 (Direction B only) — Remove crowdfunding signals
-Reframe fundraiser pages as verified need listings: replace "raised / goal / donate to this campaign" language and money progress bars with voucher-coverage language, keep donations flowing to the platform's own checkout, and prepare a merchant application describing voucher commerce.
-
-## Technical notes
-- Current code has no Connect surface at all: `create-donation-checkout` creates a plain platform charge, and `stripe-webhook` (504 lines) assumes all funds are platform funds when generating coupons. Direction A touches both.
-- Connect Express onboarding replaces the manual `recipient_verifications` document review for payees — that is a meaningful simplification, and it makes the "third-party KYC vendor" statement true without Persona.
-- `supabase/config.toml` needs `verify_jwt = false` entries for any new functions that Stripe calls.
-
-## Recommendation
-Direction A is the only path that answers Stripe's actual objection, but it changes the product from "voucher gifting" to "peer-to-peer fundraising with payouts". If the voucher-only model is non-negotiable, Connect is the wrong tool and the real task is Direction B plus a new merchant application.
+- `src/components/auth/GeoGuard.tsx` — add `mode` prop; advisory path returns children right away and fires the toast from the resolved promise; strict path keeps the checking state and `<Navigate to="/" replace />`.
+- `src/lib/geo.ts` — only `writeCache` when the resolved country is `US` or `null`.
+- `src/App.tsx` — add `mode="strict"` to the 14 `/admin/*` route guards; leave the recipient/apply guards as-is (they inherit advisory).
+- Verify by loading `/apply` with a simulated non-US lookup and confirming the wizard renders with a toast instead of redirecting.
