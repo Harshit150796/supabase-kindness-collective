@@ -679,10 +679,9 @@ const ApplyRecipient = () => {
             isLongTerm={isLongTerm}
             setIsLongTerm={setIsLongTerm}
             category={category}
-            coverPhoto={coverPhoto}
-            setCoverPhoto={setCoverPhoto}
-            coverPhotoPreview={coverPhotoPreview}
-            setCoverPhotoPreview={setCoverPhotoPreview}
+            media={media}
+            setMedia={setMedia}
+            userId={user?.id ?? null}
           />
         )}
 
@@ -698,7 +697,7 @@ const ApplyRecipient = () => {
 
         {currentStep === 4 && (
           <ReviewStep
-            coverPhotoPreview={coverPhotoPreview}
+            media={media}
             title={title}
             setTitle={setTitle}
             story={story}
@@ -712,6 +711,7 @@ const ApplyRecipient = () => {
             onEditDetails={() => goToStep(1)}
           />
         )}
+
 
 
         {currentStep === 5 && !isAuthenticated && (
