@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { ImagePlus, Pencil, FileText, Target, User, Sparkles } from "lucide-react";
+import { ImagePlus, Pencil, FileText, Target, User, Sparkles, MapPin, Check } from "lucide-react";
 import { getSuggestedTitles } from "@/lib/suggestedTitles";
+import { Input } from "@/components/ui/input";
 
 interface ReviewStepProps {
   coverPhotoPreview: string;
@@ -11,10 +12,12 @@ interface ReviewStepProps {
   beneficiaryType: string;
   monthlyGoal: string;
   zipCode: string;
+  setZipCode: (value: string) => void;
   locationLabel?: string | null;
   onEditStory: () => void;
   onEditDetails: () => void;
 }
+
 
 const getCategoryLabel = (category: string): string => {
   const labels: Record<string, string> = {
