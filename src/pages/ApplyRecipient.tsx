@@ -53,26 +53,27 @@ const getDefaults = (): Omit<ApplicationData, "coverPhoto"> => ({
 
 const stepConfig = [
   {
-    headline: "Let's start with your basics",
-    subtext: "Just your ZIP code, what you need, and who it's for. Coupons are redeemable at US retailers only.",
-  },
-  {
-    headline: "Set your monthly goal",
-    subtext: "Tell us how much assistance you need each month.",
+    headline: "Who are we helping?",
+    subtext: "Two quick taps — no typing yet. The whole application takes about 3 minutes.",
   },
   {
     headline: "Tell donors your story",
-    subtext: "Add a photo if you have one — it's optional.",
+    subtext: "A few sentences about your situation. Add a photo if you have one — it's optional.",
   },
   {
-    headline: "Review your request",
-    subtext: "Let's make sure your request is complete.",
+    headline: "How much do you need each month?",
+    subtext: "Pick an amount that covers your monthly essentials.",
+  },
+  {
+    headline: "Last details, then you're done",
+    subtext: "Your ZIP code, a title, and a quick look at everything you've written.",
   },
   {
     headline: "Create your account",
     subtext: "Set up your account to submit your request.",
   },
 ];
+
 
 
 type ScreenState = "form" | "otp" | "success" | "share" | "signin-prompt";
