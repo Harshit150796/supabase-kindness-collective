@@ -39,5 +39,11 @@ Nothing is dropped from the data we collect; the same fields still reach the `fu
 - `src/components/apply/steps/LocationCategoryStep.tsx`: drop the `countries` array and Select, add the fixed-US line, add beneficiary options (reusing `BeneficiaryStep`'s cards) into this step.
 - `src/components/apply/steps/StoryStep.tsx`: absorb the media uploader from `MediaStep`; `MediaStep`/`BeneficiaryStep` become sub-components or are removed once unused.
 - `src/components/apply/steps/ReviewStep.tsx`: add the editable title input (suggested-title chips from `TitleStep` logic kept as a collapsed "suggestions" row).
-- `src/lib/countryNames.ts`: uppercase fallback for codes.
+- `src/lib/countryNames.ts`: uppercase fallback for codes. `useZipLocation` already returns "City, ST" and is reused for both the step-1 confirmation and donor-facing labels.
 - No database, RLS, or edge-function changes.
+
+## Order of work
+
+1. Page 1 (ZIP + category + beneficiary) — review live before continuing.
+2. Steps 2–4 merges, then step 5 (guest account).
+3. US capitalization sweep across the frontend.
