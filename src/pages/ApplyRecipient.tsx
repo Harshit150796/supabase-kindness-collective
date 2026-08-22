@@ -58,7 +58,7 @@ const stepConfig = [
   },
   {
     headline: "Tell donors your story",
-    subtext: "A few sentences about your situation. Add a photo if you have one — it's optional.",
+    subtext: "A few sentences about your situation, plus a photo or short video so donors can connect.",
   },
   {
     headline: "How much do you need each month?",
