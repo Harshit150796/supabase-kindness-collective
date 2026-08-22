@@ -84,43 +84,88 @@ export const StoryStep = ({
 }: StoryStepProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const photoCaptureRef = useRef<HTMLInputElement>(null);
+  const videoCaptureRef = useRef<HTMLInputElement>(null);
+  const libraryRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const storyText = story || "";
   const wordCount = storyText.trim() ? storyText.trim().split(/\s+/).length : 0;
   const minWords = 50;
   const progress = Math.min((wordCount / minWords) * 100, 100);
 
-  const handleFile = (file: File) => {
-    if (!ALLOWED_TYPES.includes(file.type)) {
+  const handleFile = async (file: File) => {
+    const isVideo = file.type.startsWith("video/") || ALLOWED_VIDEO_TYPES.includes(file.type);
+    const isImage = file.type.startsWith("image/") || ALLOWED_IMAGE_TYPES.includes(file.type);
+
+    if (!isImage && !isVideo) {
       toast({
-        title: "Invalid file type",
-        description: "Please upload a JPEG, PNG, WebP, or GIF image.",
+        title: "Unsupported file",
+        description: "Please choose a photo (JPEG, PNG, WebP, GIF) or a short video.",
         variant: "destructive",
       });
       return;
     }
-    if (file.size > MAX_FILE_SIZE) {
+
+    const limit = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+    if (file.size > limit) {
       toast({
         title: "File too large",
-        description: "Please upload an image smaller than 5MB.",
+        description: isVideo
+          ? "Please choose a video smaller than 25MB."
+          : "Please choose an image smaller than 5MB.",
         variant: "destructive",
       });
       return;
     }
 
     setCoverPhoto(file);
+
+    if (isVideo) {
+      try {
+        const poster = await getVideoPoster(file);
+        setCoverPhotoPreview(poster);
+      } catch {
+        toast({
+          title: "Preview unavailable",
+          description: "We saved your video, but couldn't create a preview image.",
+        });
+        setCoverPhotoPreview("");
+      }
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => setCoverPhotoPreview(reader.result as string);
     reader.readAsDataURL(file);
   };
 
+  const openPicker = () => {
+    if (isMobile) {
+      setPickerOpen(true);
+    } else {
+      libraryRef.current?.click();
+    }
+  };
+
+  const choose = (ref: React.RefObject<HTMLInputElement>) => {
+    setPickerOpen(false);
+    // let the sheet close before the native chooser opens
+    setTimeout(() => ref.current?.click(), 120);
+  };
+
   const handleRemove = () => {
     setCoverPhoto(null);
     setCoverPhotoPreview("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    [photoCaptureRef, videoCaptureRef, libraryRef].forEach((r) => {
+      if (r.current) r.current.value = "";
+    });
   };
+
+  const isVideoSelected = !!coverPhoto?.type.startsWith("video/");
+
 
   const getPlaceholder = () => {
     switch (category) {
