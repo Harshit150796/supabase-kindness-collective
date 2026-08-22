@@ -11,7 +11,7 @@ interface ReviewStepProps {
   story: string;
   category: string;
   beneficiaryType: string;
-  monthlyGoal: string;
+  goalAmount: string;
   zipCode: string;
   setZipCode: (value: string) => void;
   locationLabel?: string | null;
@@ -76,7 +76,7 @@ export const ReviewStep = ({
   story,
   category,
   beneficiaryType,
-  monthlyGoal,
+  goalAmount,
   zipCode,
   setZipCode,
   locationLabel,
@@ -238,8 +238,11 @@ export const ReviewStep = ({
           <span className="font-medium">{getBeneficiaryLabel(beneficiaryType)}</span>
         </Row>
 
-        <Row label="Monthly goal" onEdit={onEditDetails}>
-          <span className="font-semibold">${monthlyGoal}</span>
+        <Row label="Goal" onEdit={onEditDetails}>
+          <span className="font-semibold">
+            ${Number(goalAmount || 0).toLocaleString()}{" "}
+            <span className="font-normal text-muted-foreground">total</span>
+          </span>
         </Row>
 
         <Row label="Location">
