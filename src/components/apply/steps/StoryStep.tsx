@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Sparkles, HelpCircle, ImagePlus, Upload, Camera, Video, Folder } from "lucide-react";
+import { Sparkles, ImagePlus, Upload, Camera, Video, Folder } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -25,8 +25,6 @@ import {
 interface StoryStepProps {
   story: string;
   setStory: (story: string) => void;
-  isLongTerm: boolean | null;
-  setIsLongTerm: (value: boolean | null) => void;
   category: string;
   media: MediaItem[];
   setMedia: React.Dispatch<React.SetStateAction<MediaItem[]>>;
@@ -69,15 +67,12 @@ const readImagePreview = (file: File): Promise<string> =>
 export const StoryStep = ({
   story,
   setStory,
-  isLongTerm,
-  setIsLongTerm,
   category,
   media,
   setMedia,
   userId,
 }: StoryStepProps) => {
   const [isFocused, setIsFocused] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const photoCaptureRef = useRef<HTMLInputElement>(null);
   const videoCaptureRef = useRef<HTMLInputElement>(null);
@@ -417,50 +412,6 @@ export const StoryStep = ({
 
       </div>
 
-      {/* Long-term toggle */}
-      <div className="p-4 rounded-xl bg-secondary/50 border border-border/30">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-foreground font-medium">Is your need long-term?</span>
-            <button
-              type="button"
-              onMouseEnter={() => setShowTooltip(true)}
-              onMouseLeave={() => setShowTooltip(false)}
-              className="relative text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <HelpCircle className="w-4 h-4" />
-              {showTooltip && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-foreground text-background text-xs rounded-lg shadow-xl z-10 animate-fade-in">
-                  If you need ongoing support, we'll encourage donors to give monthly coupons.
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-foreground" />
-                </div>
-              )}
-            </button>
-          </div>
-
-          <div className="flex items-center gap-1 p-1 bg-background rounded-full border border-border/50">
-            {[
-              { value: true, label: "Yes" },
-              { value: false, label: "No" },
-            ].map(({ value, label }) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => setIsLongTerm(value)}
-                className={`
-                  px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200
-                  ${isLongTerm === value
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                  }
-                `}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

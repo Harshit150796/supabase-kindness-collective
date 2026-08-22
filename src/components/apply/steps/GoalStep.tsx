@@ -4,14 +4,16 @@ import { Switch } from "@/components/ui/switch";
 import { Sparkles, ShoppingCart, Heart, GraduationCap, TrendingUp, Check } from "lucide-react";
 
 interface GoalStepProps {
-  monthlyGoal: string;
-  setMonthlyGoal: (value: string) => void;
+  goalAmount: string;
+  setGoalAmount: (value: string) => void;
   smartMatching: boolean;
   setSmartMatching: (value: boolean) => void;
   category: string;
+  beneficiaryType: string;
 }
 
-const suggestedAmounts = [50, 100, 200, 500];
+const personalAmounts = [100, 250, 500, 1000];
+const organizationAmounts = [500, 1500, 3000, 5000];
 
 const getCategoryImpact = (category: string, amount: number) => {
   const impacts: Record<string, { icon: typeof ShoppingCart; text: string; color: string }> = {
@@ -51,16 +53,24 @@ const getCategoryImpact = (category: string, amount: number) => {
 };
 
 export const GoalStep = ({
-  monthlyGoal,
-  setMonthlyGoal,
+  goalAmount,
+  setGoalAmount,
   smartMatching,
   setSmartMatching,
   category,
+  beneficiaryType,
 }: GoalStepProps) => {
-  const numericGoal = parseInt(monthlyGoal) || 0;
+  const numericGoal = parseInt(goalAmount) || 0;
   const impact = getCategoryImpact(category, numericGoal);
   const ImpactIcon = impact.icon;
   const [displayAmount, setDisplayAmount] = useState(0);
+
+  const isOrganization = beneficiaryType === "organization";
+  const suggestedAmounts = isOrganization ? organizationAmounts : personalAmounts;
+  const helperText = isOrganization
+    ? "Organizations often request $1,500–$5,000 to cover a program period — tell donors the timeframe in your story."
+    : "Most personal requests are $150–$600.";
+  const progressCeiling = isOrganization ? 5000 : 1000;
 
   // Animate the display amount when goal changes
   useEffect(() => {
@@ -95,9 +105,12 @@ export const GoalStep = ({
           <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
             <TrendingUp className="w-5 h-5 text-accent" />
           </div>
-          <h2 className="text-xl font-semibold text-foreground">
-            How much do you need each month?
-          </h2>
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">How much do you need?</h2>
+            <p className="text-sm text-muted-foreground">
+              One goal. Once it's fully funded, your request closes.
+            </p>
+          </div>
         </div>
 
         {/* Large Amount Input */}
@@ -108,23 +121,23 @@ export const GoalStep = ({
           <Input
             type="number"
             placeholder="0"
-            value={monthlyGoal}
-            onChange={(e) => setMonthlyGoal(e.target.value)}
+            value={goalAmount}
+            onChange={(e) => setGoalAmount(e.target.value)}
             className="h-20 text-3xl font-bold pl-14 pr-24 rounded-2xl border-2 border-border/60 bg-card hover:border-primary/30 focus:border-primary transition-all input-focus-ring"
           />
           <div className="absolute right-5 top-1/2 -translate-y-1/2 bg-secondary/80 px-4 py-1.5 rounded-lg text-sm font-semibold text-muted-foreground">
-            USD / month
+            USD total
           </div>
         </div>
 
         {/* Suggested Amounts */}
         <div className="flex flex-wrap gap-3">
           {suggestedAmounts.map((amount) => {
-            const isSelected = monthlyGoal === amount.toString();
+            const isSelected = goalAmount === amount.toString();
             return (
               <button
                 key={amount}
-                onClick={() => setMonthlyGoal(amount.toString())}
+                onClick={() => setGoalAmount(amount.toString())}
                 className={`
                   pill-chip px-6 py-2.5 rounded-full border-2 font-semibold
                   ${isSelected 
@@ -133,16 +146,16 @@ export const GoalStep = ({
                   }
                 `}
               >
-                ${amount}
+                ${amount.toLocaleString()}
                 {isSelected && <Check className="w-4 h-4 ml-2 inline animate-check-pop" />}
               </button>
             );
           })}
         </div>
 
-        <p className="text-sm text-muted-foreground flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-accent/80" />
-          Families like yours typically request $100-$300 per month
+        <p className="text-sm text-muted-foreground flex items-start gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent/80 mt-1.5 shrink-0" />
+          {helperText}
         </p>
       </div>
 
@@ -181,7 +194,7 @@ export const GoalStep = ({
               <ImpactIcon className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Your monthly goal equals</p>
+              <p className="text-sm text-muted-foreground">Your goal equals</p>
               <p className="text-foreground font-bold text-lg">
                 ≈ {impact.text}
               </p>
@@ -192,12 +205,12 @@ export const GoalStep = ({
           <div className="mt-4 pt-4 border-t border-border/50">
             <div className="flex items-center justify-between text-sm mb-2">
               <span className="text-muted-foreground">Impact preview</span>
-              <span className="font-semibold text-primary">${displayAmount}</span>
+              <span className="font-semibold text-primary">${displayAmount.toLocaleString()}</span>
             </div>
             <div className="h-2 bg-border/50 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-primary to-emerald-light rounded-full transition-all duration-500 ease-out progress-glow"
-                style={{ width: `${Math.min((numericGoal / 500) * 100, 100)}%` }}
+                style={{ width: `${Math.min((numericGoal / progressCeiling) * 100, 100)}%` }}
               />
             </div>
             <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">

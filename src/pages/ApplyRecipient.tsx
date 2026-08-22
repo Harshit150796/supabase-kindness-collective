@@ -33,7 +33,6 @@ interface ApplicationData {
   media: MediaItem[];
 
   story: string;
-  isLongTerm: boolean | null;
   title: string;
   titleSource: "suggested" | "custom";
 }
@@ -47,7 +46,6 @@ const getDefaults = (): Omit<ApplicationData, "media"> => ({
   smartMatching: true,
 
   story: "",
-  isLongTerm: null,
   title: "",
   titleSource: "suggested" as const,
 });
@@ -62,8 +60,8 @@ const stepConfig = [
     subtext: "A few sentences about your situation, plus a photo or short video so donors can connect.",
   },
   {
-    headline: "How much do you need each month?",
-    subtext: "Pick an amount that covers your monthly essentials.",
+    headline: "How much do you need?",
+    subtext: "One goal. Once it's fully funded, your request closes.",
   },
   {
     headline: "Last details, then you're done",
@@ -125,7 +123,6 @@ const ApplyRecipient = () => {
   const [media, setMedia] = useState<MediaItem[]>([]);
 
   const [story, setStory] = useState("");
-  const [isLongTerm, setIsLongTerm] = useState<boolean | null>(null);
   const [title, setTitle] = useState("");
   const [titleSource, setTitleSource] = useState<"suggested" | "custom">("suggested");
 
@@ -145,7 +142,6 @@ const ApplyRecipient = () => {
     setSmartMatching(defaults.smartMatching);
     setMedia([]);
     setStory(defaults.story);
-    setIsLongTerm(defaults.isLongTerm);
     setTitle(defaults.title);
     setTitleSource(defaults.titleSource);
     setCurrentStep(1);
@@ -178,7 +174,6 @@ const ApplyRecipient = () => {
       setSmartMatching(saved.smartMatching !== false);
       // Don't restore media for security - user must re-attach photos
       setStory((saved.story as string) || "");
-      setIsLongTerm(saved.isLongTerm as boolean | null);
       setTitle((saved.title as string) || "");
       setTitleSource((saved.titleSource as "suggested" | "custom") || "suggested");
     }
@@ -201,7 +196,6 @@ const ApplyRecipient = () => {
       monthlyGoal,
       smartMatching,
       story,
-      isLongTerm,
       title,
       titleSource,
     });
@@ -215,7 +209,6 @@ const ApplyRecipient = () => {
     monthlyGoal,
     smartMatching,
     story,
-    isLongTerm,
     title,
     titleSource,
   ]);
@@ -368,7 +361,7 @@ const ApplyRecipient = () => {
         category: category,
         beneficiary_type: beneficiaryType,
         monthly_goal: parseFloat(monthlyGoal),
-        is_long_term: isLongTerm || false,
+        is_long_term: false,
         unique_slug: generateUniqueSlug(title),
         country: country,
         zip_code: zipCode,
@@ -401,7 +394,7 @@ const ApplyRecipient = () => {
     await supabase.from("recipient_verifications").insert({
       user_id: userId,
       verification_type: beneficiaryType,
-      notes: `Category: ${category}, Monthly goal: $${monthlyGoal}, Smart matching: ${smartMatching}, Title: ${title}, Long-term: ${isLongTerm}`,
+      notes: `Category: ${category}, Goal: $${monthlyGoal} total, Smart matching: ${smartMatching}, Title: ${title}`,
       status: "pending",
     });
 
@@ -689,8 +682,6 @@ const ApplyRecipient = () => {
           <StoryStep
             story={story}
             setStory={setStory}
-            isLongTerm={isLongTerm}
-            setIsLongTerm={setIsLongTerm}
             category={category}
             media={media}
             setMedia={setMedia}
@@ -700,11 +691,12 @@ const ApplyRecipient = () => {
 
         {currentStep === 3 && (
           <GoalStep
-            monthlyGoal={monthlyGoal}
-            setMonthlyGoal={setMonthlyGoal}
+            goalAmount={monthlyGoal}
+            setGoalAmount={setMonthlyGoal}
             smartMatching={smartMatching}
             setSmartMatching={setSmartMatching}
             category={category}
+            beneficiaryType={beneficiaryType}
           />
         )}
 
@@ -716,7 +708,7 @@ const ApplyRecipient = () => {
             story={story}
             category={category}
             beneficiaryType={beneficiaryType}
-            monthlyGoal={monthlyGoal}
+            goalAmount={monthlyGoal}
             zipCode={zipCode}
             setZipCode={setZipCode}
             locationLabel={locationLabel}

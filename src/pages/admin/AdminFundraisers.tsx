@@ -5,7 +5,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -485,8 +484,7 @@ export default function AdminFundraisers() {
                               <h3 className="font-semibold text-foreground">{f.title}</h3>
                               {statusBadge(f.status)}
                               <Badge variant="outline" className="text-[10px] font-normal capitalize">{f.category}</Badge>
-                              {f.is_long_term && <Badge variant="outline" className="text-[10px] font-normal">Long-term</Badge>}
-                            </div>
+                                                          </div>
                             <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{f.story}</p>
                           </div>
                         </div>
@@ -630,7 +628,7 @@ export default function AdminFundraisers() {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label>Monthly Goal ($)</Label>
+                <Label>Goal ($)</Label>
                 <Input type="number" value={form.monthly_goal} onChange={e => setForm(p => ({ ...p, monthly_goal: Number(e.target.value) }))} />
               </div>
               <div>
@@ -739,10 +737,6 @@ export default function AdminFundraisers() {
                     <SelectItem value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="flex items-center gap-3 pt-6">
-                <Switch checked={form.is_long_term} onCheckedChange={v => setForm(p => ({ ...p, is_long_term: v }))} />
-                <Label>Long-term campaign</Label>
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-2">

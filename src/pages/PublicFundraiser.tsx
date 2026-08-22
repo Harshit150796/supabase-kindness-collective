@@ -182,6 +182,9 @@ const PublicFundraiser = () => {
     return Math.min((fundraiser.amount_raised / fundraiser.monthly_goal) * 100, 100);
   };
 
+  const isFullyFunded = !!fundraiser && fundraiser.monthly_goal > 0
+    && fundraiser.amount_raised >= fundraiser.monthly_goal;
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "long",
@@ -442,14 +445,21 @@ const PublicFundraiser = () => {
 
                 {/* Action buttons */}
                 <div className="space-y-3">
-                  <Button 
-                    size="lg" 
-                    className="w-full text-lg font-semibold h-14 rounded-full shadow-lg hover:shadow-xl transition-all"
-                    onClick={() => navigate(`/donate?fundraiser=${fundraiser.id}`)}
-                  >
-                    <Heart className="w-5 h-5 mr-2" />
-                    Donate Now
-                  </Button>
+                  {isFullyFunded ? (
+                    <div className="w-full h-14 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center gap-2 text-primary font-semibold">
+                      <CheckCircle2 className="w-5 h-5" />
+                      Fully funded
+                    </div>
+                  ) : (
+                    <Button 
+                      size="lg" 
+                      className="w-full text-lg font-semibold h-14 rounded-full shadow-lg hover:shadow-xl transition-all"
+                      onClick={() => navigate(`/donate?fundraiser=${fundraiser.id}`)}
+                    >
+                      <Heart className="w-5 h-5 mr-2" />
+                      Donate Now
+                    </Button>
+                  )}
                   <Button 
                     variant="outline" 
                     size="lg" 
@@ -493,10 +503,20 @@ const PublicFundraiser = () => {
           <Button 
             size="lg" 
             className="flex-1 font-semibold"
+            disabled={isFullyFunded}
             onClick={() => navigate(`/donate?fundraiser=${fundraiser.id}`)}
           >
-            <Heart className="w-5 h-5 mr-2" />
-            Donate Now
+            {isFullyFunded ? (
+              <>
+                <CheckCircle2 className="w-5 h-5 mr-2" />
+                Fully funded
+              </>
+            ) : (
+              <>
+                <Heart className="w-5 h-5 mr-2" />
+                Donate Now
+              </>
+            )}
           </Button>
         </div>
       </div>
