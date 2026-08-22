@@ -231,7 +231,8 @@ const ApplyRecipient = () => {
         return !!beneficiaryType && !!category;
       case 2: {
         const storyText = story || "";
-        return storyText.trim().split(/\s+/).filter(Boolean).length >= 10;
+        const enoughWords = storyText.trim().split(/\s+/).filter(Boolean).length >= 10;
+        return enoughWords && !!coverPhoto;
       }
       case 3:
         return monthlyGoal && parseInt(monthlyGoal) > 0;
