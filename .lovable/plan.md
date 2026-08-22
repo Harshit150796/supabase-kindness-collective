@@ -12,7 +12,7 @@ Split the guard into two strictness levels instead of one hard block:
 
 **Advisory (recipient side)** — `/apply`, `/my-fundraisers`, `/fundraiser/:id`, and `/recipient/*` stop redirecting. A non-US lookup shows a one-time informational toast ("Vouchers are redeemable at US retailers only") and lets the user continue. Risk stays low because coupons are only redeemable at US stores, and the actual eligibility control remains the manual document review in `recipient_verifications`.
 
-**Strict (admin only)** — `/admin/*` keeps the current redirect behavior, so the admin surface is still US-gated.
+**Strict (admin only)** — `/admin/*` keeps the redirect behavior for everyone *except* users who already hold the `admin` role: the guard checks roles from `useAuth()` first and skips the geo check for admins, so you can sign in from India (or anywhere) without being redirected. Admin access stays protected by the existing role check in `ProtectedRoute` plus RLS, which is the real control; the geo redirect only stops non-admin traffic from probing admin URLs.
 
 Implementation: add a `mode` prop to `GeoGuard` (`"advisory" | "strict"`, defaulting to advisory), and pass `mode="strict"` on the admin routes in `App.tsx`. Advisory mode renders children immediately with no "Checking access..." screen — the lookup runs in the background purely to decide whether to show the notice, so there's no added load delay on the apply flow.
 
