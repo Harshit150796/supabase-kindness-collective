@@ -70,6 +70,31 @@ const getVideoPoster = (file: File): Promise<string> =>
     };
   });
 
+const PickerTile = ({
+  icon,
+  label,
+  sublabel,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  sublabel?: string;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="flex flex-col items-center gap-2 rounded-2xl border border-border/60 bg-secondary/30 px-2 py-4
+      transition-all duration-200 active:scale-[0.97] hover:border-primary/40 hover:bg-primary/5"
+  >
+    <span className="w-14 h-14 rounded-2xl bg-background flex items-center justify-center text-primary shadow-sm">
+      {icon}
+    </span>
+    <span className="text-sm font-medium text-foreground leading-tight text-center">{label}</span>
+    {sublabel && <span className="text-xs text-muted-foreground leading-none">{sublabel}</span>}
+  </button>
+);
+
 
 export const StoryStep = ({
   story,
