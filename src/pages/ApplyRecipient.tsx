@@ -101,8 +101,9 @@ const ApplyRecipient = () => {
   const userEmail = user?.email || "";
   const userName = user?.user_metadata?.full_name || userEmail.split("@")[0];
 
-  // Dynamic total steps: 7 for authenticated users (skip account creation), 8 for guests
-  const totalSteps = isAuthenticated ? 7 : 8;
+  // Dynamic total steps: 4 for authenticated users (skip account creation), 5 for guests
+  const totalSteps = isAuthenticated ? 4 : 5;
+
 
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
