@@ -652,11 +652,9 @@ const ApplyRecipient = () => {
         headline={config.headline}
         subtext={config.subtext}
         showBack={currentStep > 1}
-        showSkip={currentStep === 4}
         continueDisabled={!canContinue()}
         onBack={handleBack}
         onContinue={handleContinue}
-        onSkip={handleSkip}
         progress={progress}
         continueLabel={getContinueLabel()}
         isAuthenticated={isAuthenticated}
@@ -664,23 +662,16 @@ const ApplyRecipient = () => {
       >
         {currentStep === 1 && (
           <LocationCategoryStep
-            country={country}
-            setCountry={setCountry}
             zipCode={zipCode}
             setZipCode={setZipCode}
             category={category}
             setCategory={setCategory}
-          />
-        )}
-
-        {currentStep === 2 && (
-          <BeneficiaryStep
             beneficiaryType={beneficiaryType}
             setBeneficiaryType={setBeneficiaryType}
           />
         )}
 
-        {currentStep === 3 && (
+        {currentStep === 2 && (
           <GoalStep
             monthlyGoal={monthlyGoal}
             setMonthlyGoal={setMonthlyGoal}
@@ -690,8 +681,13 @@ const ApplyRecipient = () => {
           />
         )}
 
-        {currentStep === 4 && (
-          <MediaStep
+        {currentStep === 3 && (
+          <StoryStep
+            story={story}
+            setStory={setStory}
+            isLongTerm={isLongTerm}
+            setIsLongTerm={setIsLongTerm}
+            category={category}
             coverPhoto={coverPhoto}
             setCoverPhoto={setCoverPhoto}
             coverPhotoPreview={coverPhotoPreview}
@@ -699,42 +695,23 @@ const ApplyRecipient = () => {
           />
         )}
 
-        {currentStep === 5 && (
-          <StoryStep
-            story={story}
-            setStory={setStory}
-            isLongTerm={isLongTerm}
-            setIsLongTerm={setIsLongTerm}
-            category={category}
-          />
-        )}
-
-        {currentStep === 6 && (
-          <TitleStep
-            title={title}
-            setTitle={setTitle}
-            titleSource={titleSource}
-            setTitleSource={setTitleSource}
-            category={category}
-          />
-        )}
-
-        {currentStep === 7 && (
+        {currentStep === 4 && (
           <ReviewStep
             coverPhotoPreview={coverPhotoPreview}
             title={title}
+            setTitle={setTitle}
             story={story}
             category={category}
             beneficiaryType={beneficiaryType}
             monthlyGoal={monthlyGoal}
-            onEditMedia={() => goToStep(4)}
-            onEditTitle={() => goToStep(6)}
-            onEditStory={() => goToStep(5)}
+            zipCode={zipCode}
+            locationLabel={locationLabel}
+            onEditStory={() => goToStep(3)}
             onEditDetails={() => goToStep(1)}
           />
         )}
 
-        {currentStep === 8 && !isAuthenticated && (
+        {currentStep === 5 && !isAuthenticated && (
           <AccountStep
             email={email}
             setEmail={setEmail}
@@ -745,6 +722,7 @@ const ApplyRecipient = () => {
             onGoogleAuth={handleGoogleAuth}
           />
         )}
+
       </ApplyLayout>
 
       {/* ShareModal removed - now handled by FundraiserDashboard */}
