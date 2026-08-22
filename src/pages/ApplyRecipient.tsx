@@ -287,8 +287,8 @@ const ApplyRecipient = () => {
   };
 
   const handleContinue = () => {
-    // For authenticated users, step 7 is the final step - submit directly
-    if (isAuthenticated && currentStep === 7) {
+    // For authenticated users, step 4 (review) is the final step - submit directly
+    if (isAuthenticated && currentStep === 4) {
       handleAuthenticatedSubmit();
       return;
     }
@@ -296,7 +296,7 @@ const ApplyRecipient = () => {
     if (currentStep < totalSteps) {
       setDirection("forward");
       setCurrentStep(currentStep + 1);
-    } else if (currentStep === 8 && !isAuthenticated) {
+    } else if (currentStep === 5 && !isAuthenticated) {
       handleSendOTP();
     }
   };
@@ -308,12 +308,6 @@ const ApplyRecipient = () => {
     }
   };
 
-  const handleSkip = () => {
-    if (currentStep === 4) {
-      setDirection("forward");
-      setCurrentStep(5);
-    }
-  };
 
   const goToStep = (step: number) => {
     setDirection(step > currentStep ? "forward" : "backward");
