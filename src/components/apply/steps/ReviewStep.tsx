@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ImagePlus, Pencil, FileText, Target, User, Sparkles, MapPin, Check } from "lucide-react";
+import { Camera, ImagePlus, Sparkles, Check, ShieldCheck } from "lucide-react";
 import { getSuggestedTitles } from "@/lib/suggestedTitles";
 import { Input } from "@/components/ui/input";
 
@@ -17,7 +17,6 @@ interface ReviewStepProps {
   onEditStory: () => void;
   onEditDetails: () => void;
 }
-
 
 const getCategoryLabel = (category: string): string => {
   const labels: Record<string, string> = {
@@ -41,6 +40,33 @@ const getBeneficiaryLabel = (type: string): string => {
   };
   return labels[type] || type;
 };
+
+interface RowProps {
+  label: string;
+  onEdit?: () => void;
+  children: React.ReactNode;
+  align?: "center" | "start";
+}
+
+const Row = ({ label, onEdit, children, align = "center" }: RowProps) => (
+  <div
+    className={`group flex gap-4 px-4 py-3.5 transition-colors duration-200 hover:bg-secondary/40 ${
+      align === "center" ? "items-center" : "items-start"
+    }`}
+  >
+    <span className="w-28 shrink-0 text-sm text-muted-foreground">{label}</span>
+    <div className="flex-1 min-w-0 text-sm text-foreground">{children}</div>
+    {onEdit && (
+      <button
+        type="button"
+        onClick={onEdit}
+        className="shrink-0 text-sm font-medium text-primary/70 hover:text-primary transition-colors duration-200 md:opacity-60 md:group-hover:opacity-100"
+      >
+        Edit
+      </button>
+    )}
+  </div>
+);
 
 export const ReviewStep = ({
   coverPhotoPreview,
@@ -69,181 +95,156 @@ export const ReviewStep = ({
   }, []);
 
   return (
-    <div className="space-y-6 stagger-children">
-      {/* Location */}
-      <div className="rounded-xl border border-border/60 overflow-hidden">
-        <div className="p-4 bg-secondary/30 border-b border-border/40 flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium text-foreground">Where will you use the coupons?</span>
+    <div className="space-y-5 stagger-children">
+      {/* Cover photo hero */}
+      {coverPhotoPreview ? (
+        <button
+          type="button"
+          onClick={onEditStory}
+          className="group relative block w-full aspect-[16/9] rounded-2xl overflow-hidden border border-border/60 bg-muted/30 shadow-[0_10px_40px_-24px_rgba(0,0,0,0.35)]"
+        >
+          <img
+            src={coverPhotoPreview}
+            alt="Your request cover photo"
+            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
+          />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background/70 to-transparent opacity-70" />
+          <span
+            className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-background/85 backdrop-blur-sm px-3 py-1.5
+              text-xs font-medium text-foreground shadow-sm transition-all duration-200
+              opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0"
+          >
+            <Camera className="w-3.5 h-3.5" />
+            Change photo
+          </span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onEditStory}
+          className="group w-full aspect-[16/9] max-h-44 rounded-2xl border border-dashed border-border/70 bg-secondary/25
+            flex flex-col items-center justify-center gap-2 transition-all duration-200
+            hover:border-primary/40 hover:bg-primary/5"
+        >
+          <span className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
+            <ImagePlus className="w-5 h-5 text-primary" />
+          </span>
+          <span className="text-sm font-medium text-foreground">Add a photo</span>
+          <span className="text-xs text-muted-foreground">Optional, but it helps people connect</span>
+        </button>
+      )}
+
+      {/* Title */}
+      <div className="space-y-2">
+        <div className="relative">
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={80}
+            placeholder="Give your request a title..."
+            aria-label="Request title"
+            className="w-full bg-transparent text-xl lg:text-2xl font-semibold text-foreground leading-snug
+              placeholder:text-muted-foreground/50 rounded-lg px-2 -mx-2 py-1.5
+              border border-transparent hover:border-border/60 focus:border-primary/50
+              focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all duration-200"
+          />
         </div>
-        <div className="p-4 space-y-3">
-          <div className="max-w-xs space-y-2">
-            <label htmlFor="apply-zip" className="text-sm font-medium text-foreground">
-              ZIP code
-            </label>
+        <div className="flex items-center justify-between gap-3 px-0.5">
+          <button
+            type="button"
+            onClick={() => setShowSuggestions((v) => !v)}
+            className="text-xs font-medium text-primary hover:text-primary/80 inline-flex items-center gap-1.5 transition-colors duration-200"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            {showSuggestions ? "Hide suggestions" : "Need ideas?"}
+          </button>
+          <span
+            className={`text-xs tabular-nums transition-opacity duration-200 ${
+              title.length > 60 ? "opacity-100 text-muted-foreground" : "opacity-0"
+            }`}
+          >
+            {title.length}/80
+          </span>
+        </div>
+
+        {showSuggestions && (
+          <div className="flex flex-wrap gap-2 pt-1 animate-fade-in">
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setTitle(s)}
+                className={`px-3 py-1.5 rounded-full border text-xs transition-all duration-200 ${
+                  title === s
+                    ? "border-primary bg-primary/10 text-foreground"
+                    : "border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Summary card */}
+      <div className="rounded-2xl border border-border/60 overflow-hidden divide-y divide-border/50 bg-card">
+        <Row label="Category" onEdit={onEditDetails}>
+          <span className="font-medium">{getCategoryLabel(category)}</span>
+        </Row>
+
+        <Row label="Beneficiary" onEdit={onEditDetails}>
+          <span className="font-medium">{getBeneficiaryLabel(beneficiaryType)}</span>
+        </Row>
+
+        <Row label="Monthly goal" onEdit={onEditDetails}>
+          <span className="font-semibold">${monthlyGoal}</span>
+        </Row>
+
+        <Row label="Location">
+          <div className="flex items-center gap-3">
             <Input
               id="apply-zip"
               type="text"
               inputMode="numeric"
               autoComplete="postal-code"
               maxLength={5}
-              placeholder="e.g. 78701"
+              placeholder="ZIP code"
+              aria-label="ZIP code"
               value={zipCode}
               onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
-              className="h-12 rounded-xl border-border/80 bg-card hover:border-primary/50 transition-colors input-focus-ring text-base tracking-widest"
+              className="h-10 w-28 rounded-xl border-border/80 bg-background text-base tracking-widest
+                hover:border-primary/50 focus-visible:ring-primary/20 transition-colors duration-200"
             />
-            {cityState && (
-              <p className="text-sm font-medium text-primary flex items-center gap-1.5 animate-fade-in">
-                <Check className="w-4 h-4" />
-                {cityState}
-              </p>
-            )}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            So we can match retailers near you.{" "}
-            <span className="font-medium text-foreground">United States (US)</span> — vouchers are
-            redeemable at US retailers only.
-          </p>
-        </div>
-      </div>
-
-      {/* Title (editable) */}
-      <div className="rounded-xl border border-border/60 overflow-hidden">
-        <div className="p-4 bg-secondary/30 border-b border-border/40 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileText className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium text-foreground">Title</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setShowSuggestions((v) => !v)}
-            className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            {showSuggestions ? "Hide suggestions" : "Suggestions"}
-          </button>
-        </div>
-        <div className="p-4 space-y-3">
-          <div className="relative">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={80}
-              placeholder="Enter a title for your request..."
-              className="w-full px-4 py-3.5 pr-16 rounded-xl border-2 border-border/60 bg-background
-                text-foreground font-medium placeholder:text-muted-foreground/60
-                focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none
-                transition-all duration-200"
-            />
-            <span className="absolute top-1/2 -translate-y-1/2 right-3 text-xs text-muted-foreground">
-              {title.length}/80
+            {/* Reserved space so the row never jumps when the city resolves */}
+            <span className="min-h-5 flex items-center">
+              {cityState && (
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary animate-fade-in">
+                  <Check className="w-4 h-4" />
+                  {cityState}
+                </span>
+              )}
             </span>
           </div>
+        </Row>
 
-          {showSuggestions && (
-            <div className="flex flex-wrap gap-2 animate-fade-in">
-              {suggestions.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setTitle(s)}
-                  className={`px-3 py-2 rounded-full border text-sm transition-colors ${
-                    title === s
-                      ? "border-primary bg-primary/10 text-foreground"
-                      : "border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Story + photo */}
-      <div className="rounded-xl border border-border/60 overflow-hidden">
-        <div className="p-4 bg-secondary/30 border-b border-border/40 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileText className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium text-foreground">Story & photo</span>
-          </div>
-          <button
-            type="button"
-            onClick={onEditStory}
-            className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
-          >
-            <Pencil className="w-3 h-3" />
-            Edit
-          </button>
-        </div>
-        <div className="p-4 space-y-3">
-          {coverPhotoPreview ? (
-            <img
-              src={coverPhotoPreview}
-              alt="Cover"
-              className="w-full h-40 object-cover rounded-lg"
-            />
-          ) : (
-            <div
-              onClick={onEditStory}
-              className="w-full h-24 rounded-lg border-2 border-dashed border-border/60 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-secondary/30 transition-all"
-            >
-              <ImagePlus className="w-6 h-6 text-muted-foreground mb-1" />
-              <span className="text-sm text-muted-foreground">Add a photo (optional)</span>
-            </div>
-          )}
+        <Row label="Story" onEdit={onEditStory} align="start">
           {story ? (
-            <p className="text-foreground text-sm line-clamp-4">{story}</p>
+            <p className="text-muted-foreground leading-relaxed line-clamp-2">{story}</p>
           ) : (
-            <p className="text-muted-foreground italic">No story written</p>
+            <p className="text-muted-foreground/70 italic">No story written yet</p>
           )}
-        </div>
+        </Row>
       </div>
 
-      {/* Details Section */}
-      <div className="rounded-xl border border-border/60 overflow-hidden">
-        <div className="p-4 bg-secondary/30 border-b border-border/40 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Target className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium text-foreground">Request Details</span>
-          </div>
-          <button
-            type="button"
-            onClick={onEditDetails}
-            className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
-          >
-            <Pencil className="w-3 h-3" />
-            Edit
-          </button>
-        </div>
-        <div className="p-4 space-y-3">
-          <div className="flex items-center justify-between">
-
-            <span className="text-muted-foreground text-sm">Category</span>
-            <span className="text-foreground font-medium text-sm">{getCategoryLabel(category)}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-sm">Beneficiary</span>
-            <div className="flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-foreground font-medium text-sm">{getBeneficiaryLabel(beneficiaryType)}</span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-sm">Monthly Goal</span>
-            <span className="text-foreground font-semibold">${monthlyGoal}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Ready message */}
-      <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-        <p className="text-sm text-foreground">
-          <span className="font-medium">Almost there!</span> Review your request above and submit when
-          you're ready.
+      {/* Footnote */}
+      <div className="flex items-start gap-2.5 px-1">
+        <ShieldCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Vouchers are redeemable at <span className="font-medium text-foreground">US</span> retailers
+          only, so we use your ZIP code to match retailers near you. You can edit any detail after
+          submitting.
         </p>
       </div>
     </div>
