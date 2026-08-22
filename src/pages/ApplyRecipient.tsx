@@ -2,11 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApplyLayout } from "@/components/apply/ApplyLayout";
 import { LocationCategoryStep } from "@/components/apply/steps/LocationCategoryStep";
-import { BeneficiaryStep } from "@/components/apply/steps/BeneficiaryStep";
 import { GoalStep } from "@/components/apply/steps/GoalStep";
-import { MediaStep } from "@/components/apply/steps/MediaStep";
 import { StoryStep } from "@/components/apply/steps/StoryStep";
-import { TitleStep } from "@/components/apply/steps/TitleStep";
 import { ReviewStep } from "@/components/apply/steps/ReviewStep";
 import { AccountStep } from "@/components/apply/steps/AccountStep";
 import { SuccessScreen } from "@/components/apply/SuccessScreen";
@@ -17,11 +14,13 @@ import { OTPVerification } from "@/components/auth/OTPVerification";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useZipLocation } from "@/lib/zipLookup";
 import {
   saveScopedDraft,
   loadScopedDraft,
   clearScopedDraft,
 } from "@/lib/draftStorage";
+
 
 interface ApplicationData {
   country: string;
