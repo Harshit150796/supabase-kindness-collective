@@ -37,14 +37,14 @@ interface ApplicationData {
   titleSource: "suggested" | "custom";
 }
 
-const getDefaults = (): Omit<ApplicationData, "coverPhoto"> => ({
+const getDefaults = (): Omit<ApplicationData, "media"> => ({
   country: "us",
   zipCode: "",
   category: "",
   beneficiaryType: "",
   monthlyGoal: "",
   smartMatching: true,
-  coverPhotoPreview: "",
+
   story: "",
   isLongTerm: null,
   title: "",
