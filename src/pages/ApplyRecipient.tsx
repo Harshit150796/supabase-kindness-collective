@@ -29,8 +29,8 @@ interface ApplicationData {
   beneficiaryType: string;
   monthlyGoal: string;
   smartMatching: boolean;
-  coverPhoto: File | null;
-  coverPhotoPreview: string;
+  media: MediaItem[];
+
   story: string;
   isLongTerm: boolean | null;
   title: string;
