@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApplyLayout } from "@/components/apply/ApplyLayout";
-import { LocationCategoryStep } from "@/components/apply/steps/LocationCategoryStep";
+import { BasicsStep } from "@/components/apply/steps/BasicsStep";
 import { GoalStep } from "@/components/apply/steps/GoalStep";
 import { StoryStep } from "@/components/apply/steps/StoryStep";
 import { ReviewStep } from "@/components/apply/steps/ReviewStep";
