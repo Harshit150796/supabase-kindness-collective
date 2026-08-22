@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { ImagePlus, Pencil, FileText, Target, User, Sparkles } from "lucide-react";
+import { ImagePlus, Pencil, FileText, Target, User, Sparkles, MapPin, Check } from "lucide-react";
 import { getSuggestedTitles } from "@/lib/suggestedTitles";
+import { Input } from "@/components/ui/input";
 
 interface ReviewStepProps {
   coverPhotoPreview: string;
@@ -11,10 +12,12 @@ interface ReviewStepProps {
   beneficiaryType: string;
   monthlyGoal: string;
   zipCode: string;
+  setZipCode: (value: string) => void;
   locationLabel?: string | null;
   onEditStory: () => void;
   onEditDetails: () => void;
 }
+
 
 const getCategoryLabel = (category: string): string => {
   const labels: Record<string, string> = {
@@ -48,12 +51,14 @@ export const ReviewStep = ({
   beneficiaryType,
   monthlyGoal,
   zipCode,
+  setZipCode,
   locationLabel,
   onEditStory,
   onEditDetails,
 }: ReviewStepProps) => {
   const suggestions = getSuggestedTitles(category);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const cityState = locationLabel && locationLabel.includes(",") ? locationLabel : null;
 
   // Pre-fill the title with the first suggestion the first time we land here
   useEffect(() => {
@@ -65,6 +70,43 @@ export const ReviewStep = ({
 
   return (
     <div className="space-y-6 stagger-children">
+      {/* Location */}
+      <div className="rounded-xl border border-border/60 overflow-hidden">
+        <div className="p-4 bg-secondary/30 border-b border-border/40 flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">Where will you use the coupons?</span>
+        </div>
+        <div className="p-4 space-y-3">
+          <div className="max-w-xs space-y-2">
+            <label htmlFor="apply-zip" className="text-sm font-medium text-foreground">
+              ZIP code
+            </label>
+            <Input
+              id="apply-zip"
+              type="text"
+              inputMode="numeric"
+              autoComplete="postal-code"
+              maxLength={5}
+              placeholder="e.g. 78701"
+              value={zipCode}
+              onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
+              className="h-12 rounded-xl border-border/80 bg-card hover:border-primary/50 transition-colors input-focus-ring text-base tracking-widest"
+            />
+            {cityState && (
+              <p className="text-sm font-medium text-primary flex items-center gap-1.5 animate-fade-in">
+                <Check className="w-4 h-4" />
+                {cityState}
+              </p>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            So we can match retailers near you.{" "}
+            <span className="font-medium text-foreground">United States (US)</span> — vouchers are
+            redeemable at US retailers only.
+          </p>
+        </div>
+      </div>
+
       {/* Title (editable) */}
       <div className="rounded-xl border border-border/60 overflow-hidden">
         <div className="p-4 bg-secondary/30 border-b border-border/40 flex items-center justify-between">
@@ -72,6 +114,7 @@ export const ReviewStep = ({
             <FileText className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium text-foreground">Title</span>
           </div>
+
           <button
             type="button"
             onClick={() => setShowSuggestions((v) => !v)}
@@ -178,12 +221,7 @@ export const ReviewStep = ({
         </div>
         <div className="p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-sm">Location</span>
-            <span className="text-foreground font-medium text-sm">
-              {locationLabel || zipCode}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
+
             <span className="text-muted-foreground text-sm">Category</span>
             <span className="text-foreground font-medium text-sm">{getCategoryLabel(category)}</span>
           </div>
