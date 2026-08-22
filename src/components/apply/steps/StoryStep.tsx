@@ -1,9 +1,19 @@
 import { useState, useRef } from "react";
-import { Sparkles, HelpCircle, ImagePlus, Upload, X } from "lucide-react";
+import { Sparkles, HelpCircle, ImagePlus, Upload, X, Camera, Video, Folder } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_VIDEO_SIZE = 25 * 1024 * 1024; // 25MB
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"];
+const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm", "video/3gpp"];
 
 interface StoryStepProps {
   story: string;
@@ -16,6 +26,50 @@ interface StoryStepProps {
   coverPhotoPreview: string;
   setCoverPhotoPreview: (url: string) => void;
 }
+
+// Grab a poster frame from a video file so the review step still has a hero image
+const getVideoPoster = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.muted = true;
+    (video as HTMLVideoElement & { playsInline: boolean }).playsInline = true;
+    video.src = url;
+
+    const cleanup = () => URL.revokeObjectURL(url);
+
+    video.onloadeddata = () => {
+      try {
+        video.currentTime = Math.min(0.1, video.duration || 0.1);
+      } catch {
+        /* seek unsupported, fall through to onseeked/timeout */
+      }
+    };
+
+    const capture = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 720;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("no canvas context");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        cleanup();
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      } catch (err) {
+        cleanup();
+        reject(err);
+      }
+    };
+
+    video.onseeked = capture;
+    video.onerror = () => {
+      cleanup();
+      reject(new Error("Could not read video"));
+    };
+  });
+
 
 export const StoryStep = ({
   story,
