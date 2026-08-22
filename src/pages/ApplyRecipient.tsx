@@ -2,11 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApplyLayout } from "@/components/apply/ApplyLayout";
 import { LocationCategoryStep } from "@/components/apply/steps/LocationCategoryStep";
-import { BeneficiaryStep } from "@/components/apply/steps/BeneficiaryStep";
 import { GoalStep } from "@/components/apply/steps/GoalStep";
-import { MediaStep } from "@/components/apply/steps/MediaStep";
 import { StoryStep } from "@/components/apply/steps/StoryStep";
-import { TitleStep } from "@/components/apply/steps/TitleStep";
 import { ReviewStep } from "@/components/apply/steps/ReviewStep";
 import { AccountStep } from "@/components/apply/steps/AccountStep";
 import { SuccessScreen } from "@/components/apply/SuccessScreen";
@@ -17,11 +14,13 @@ import { OTPVerification } from "@/components/auth/OTPVerification";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useZipLocation } from "@/lib/zipLookup";
 import {
   saveScopedDraft,
   loadScopedDraft,
   clearScopedDraft,
 } from "@/lib/draftStorage";
+
 
 interface ApplicationData {
   country: string;
@@ -54,28 +53,16 @@ const getDefaults = (): Omit<ApplicationData, "coverPhoto"> => ({
 
 const stepConfig = [
   {
-    headline: "Let's begin your coupon assistance journey",
-    subtext: "We're here to guide you every step of the way.",
-  },
-  {
-    headline: "Tell us who needs the coupons",
-    subtext: "This helps us understand your needs better and personalize your experience.",
+    headline: "Let's start with your basics",
+    subtext: "Just your ZIP code, what you need, and who it's for. Coupons are redeemable at US retailers only.",
   },
   {
     headline: "Set your monthly goal",
     subtext: "Tell us how much assistance you need each month.",
   },
   {
-    headline: "Add media",
-    subtext: "Using a bright and clear photo helps donors connect to your story right away.",
-  },
-  {
     headline: "Tell donors your story",
-    subtext: "",
-  },
-  {
-    headline: "Give your request a title",
-    subtext: "We've created a few titles from your story. Select one or write your own.",
+    subtext: "Add a photo if you have one — it's optional.",
   },
   {
     headline: "Review your request",
@@ -86,6 +73,7 @@ const stepConfig = [
     subtext: "Set up your account to submit your request.",
   },
 ];
+
 
 type ScreenState = "form" | "otp" | "success" | "share" | "signin-prompt";
 
@@ -113,8 +101,9 @@ const ApplyRecipient = () => {
   const userEmail = user?.email || "";
   const userName = user?.user_metadata?.full_name || userEmail.split("@")[0];
 
-  // Dynamic total steps: 7 for authenticated users (skip account creation), 8 for guests
-  const totalSteps = isAuthenticated ? 7 : 8;
+  // Dynamic total steps: 4 for authenticated users (skip account creation), 5 for guests
+  const totalSteps = isAuthenticated ? 4 : 5;
+
 
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
@@ -233,31 +222,29 @@ const ApplyRecipient = () => {
 
   const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
 
+  const locationLabel = useZipLocation(zipCode, "us");
+
   const canContinue = () => {
     switch (currentStep) {
       case 1:
-        return country && zipCode && category;
+        return /^\d{5}$/.test(zipCode) && !!category && !!beneficiaryType;
       case 2:
-        return beneficiaryType;
-      case 3:
         return monthlyGoal && parseInt(monthlyGoal) > 0;
-      case 4:
-        return true; // Media is optional
-      case 5:
+      case 3: {
         const storyText = story || "";
         return storyText.trim().split(/\s+/).filter(Boolean).length >= 10;
-      case 6:
-        const titleText = title || "";
-        return titleText.trim().length > 0;
-      case 7:
-        return true; // Review step - also final step for authenticated users
-      case 8:
+      }
+      case 4:
+        // Review step - also final step for authenticated users
+        return (title || "").trim().length > 0;
+      case 5:
         // Only reached by non-authenticated users
         return email && password.length >= 8 && fullName;
       default:
         return false;
     }
   };
+
 
   // Handler for authenticated user submission (skips account creation)
   const handleAuthenticatedSubmit = async () => {
@@ -300,8 +287,8 @@ const ApplyRecipient = () => {
   };
 
   const handleContinue = () => {
-    // For authenticated users, step 7 is the final step - submit directly
-    if (isAuthenticated && currentStep === 7) {
+    // For authenticated users, step 4 (review) is the final step - submit directly
+    if (isAuthenticated && currentStep === 4) {
       handleAuthenticatedSubmit();
       return;
     }
@@ -309,7 +296,7 @@ const ApplyRecipient = () => {
     if (currentStep < totalSteps) {
       setDirection("forward");
       setCurrentStep(currentStep + 1);
-    } else if (currentStep === 8 && !isAuthenticated) {
+    } else if (currentStep === 5 && !isAuthenticated) {
       handleSendOTP();
     }
   };
@@ -321,12 +308,6 @@ const ApplyRecipient = () => {
     }
   };
 
-  const handleSkip = () => {
-    if (currentStep === 4) {
-      setDirection("forward");
-      setCurrentStep(5);
-    }
-  };
 
   const goToStep = (step: number) => {
     setDirection(step > currentStep ? "forward" : "backward");
@@ -595,7 +576,7 @@ const ApplyRecipient = () => {
 
   // Get step config based on current step (adjust headline for authenticated users on review step)
   const getStepConfig = (step: number) => {
-    if (isAuthenticated && step === 7) {
+    if (isAuthenticated && step === 4) {
       return {
         headline: "Review and submit your request",
         subtext: "Let's make sure your request is complete.",
@@ -605,14 +586,15 @@ const ApplyRecipient = () => {
   };
 
   const getContinueLabel = () => {
-    if (isAuthenticated && currentStep === 7) {
+    if (isAuthenticated && currentStep === 4) {
       return isSubmitting ? "Submitting..." : "Submit Fundraiser";
     }
-    if (currentStep === 8) {
+    if (currentStep === 5) {
       return isSubmitting ? "Sending code..." : "Continue";
     }
     return "Continue";
   };
+
 
   // Render OTP verification screen
   if (screenState === "otp") {
@@ -670,11 +652,9 @@ const ApplyRecipient = () => {
         headline={config.headline}
         subtext={config.subtext}
         showBack={currentStep > 1}
-        showSkip={currentStep === 4}
         continueDisabled={!canContinue()}
         onBack={handleBack}
         onContinue={handleContinue}
-        onSkip={handleSkip}
         progress={progress}
         continueLabel={getContinueLabel()}
         isAuthenticated={isAuthenticated}
@@ -682,23 +662,16 @@ const ApplyRecipient = () => {
       >
         {currentStep === 1 && (
           <LocationCategoryStep
-            country={country}
-            setCountry={setCountry}
             zipCode={zipCode}
             setZipCode={setZipCode}
             category={category}
             setCategory={setCategory}
-          />
-        )}
-
-        {currentStep === 2 && (
-          <BeneficiaryStep
             beneficiaryType={beneficiaryType}
             setBeneficiaryType={setBeneficiaryType}
           />
         )}
 
-        {currentStep === 3 && (
+        {currentStep === 2 && (
           <GoalStep
             monthlyGoal={monthlyGoal}
             setMonthlyGoal={setMonthlyGoal}
@@ -708,8 +681,13 @@ const ApplyRecipient = () => {
           />
         )}
 
-        {currentStep === 4 && (
-          <MediaStep
+        {currentStep === 3 && (
+          <StoryStep
+            story={story}
+            setStory={setStory}
+            isLongTerm={isLongTerm}
+            setIsLongTerm={setIsLongTerm}
+            category={category}
             coverPhoto={coverPhoto}
             setCoverPhoto={setCoverPhoto}
             coverPhotoPreview={coverPhotoPreview}
@@ -717,42 +695,23 @@ const ApplyRecipient = () => {
           />
         )}
 
-        {currentStep === 5 && (
-          <StoryStep
-            story={story}
-            setStory={setStory}
-            isLongTerm={isLongTerm}
-            setIsLongTerm={setIsLongTerm}
-            category={category}
-          />
-        )}
-
-        {currentStep === 6 && (
-          <TitleStep
-            title={title}
-            setTitle={setTitle}
-            titleSource={titleSource}
-            setTitleSource={setTitleSource}
-            category={category}
-          />
-        )}
-
-        {currentStep === 7 && (
+        {currentStep === 4 && (
           <ReviewStep
             coverPhotoPreview={coverPhotoPreview}
             title={title}
+            setTitle={setTitle}
             story={story}
             category={category}
             beneficiaryType={beneficiaryType}
             monthlyGoal={monthlyGoal}
-            onEditMedia={() => goToStep(4)}
-            onEditTitle={() => goToStep(6)}
-            onEditStory={() => goToStep(5)}
+            zipCode={zipCode}
+            locationLabel={locationLabel}
+            onEditStory={() => goToStep(3)}
             onEditDetails={() => goToStep(1)}
           />
         )}
 
-        {currentStep === 8 && !isAuthenticated && (
+        {currentStep === 5 && !isAuthenticated && (
           <AccountStep
             email={email}
             setEmail={setEmail}
@@ -763,6 +722,7 @@ const ApplyRecipient = () => {
             onGoogleAuth={handleGoogleAuth}
           />
         )}
+
       </ApplyLayout>
 
       {/* ShareModal removed - now handled by FundraiserDashboard */}

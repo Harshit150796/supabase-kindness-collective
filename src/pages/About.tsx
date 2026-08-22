@@ -224,7 +224,7 @@ export default function About() {
                   <p className="text-gold font-medium mb-4">Co-Founder, COO & CMO</p>
                   <p className="text-muted-foreground mb-6">
                     A technology executive shaped by firsthand experiences witnessing extreme hardship 
-                    in major U.S. cities, driving scalable platforms for measurable humanitarian impact.
+                    in major US cities, driving scalable platforms for measurable humanitarian impact.
                   </p>
                   <blockquote className="italic text-muted-foreground border-l-2 border-gold pl-4 text-left mb-6">
                     "Reducing hunger and lack of basic care is a real-world logistics and accountability 
@@ -459,7 +459,7 @@ export default function About() {
               </Card>
               <Card className="p-6 text-center bg-card border-border hover:border-gold/50 hover:shadow-[0_0_20px_hsl(var(--gold)/0.2)] transition-all duration-300">
                 <div className="text-4xl font-bold text-primary mb-2">2</div>
-                <div className="text-sm text-muted-foreground">U.S. Locations</div>
+                <div className="text-sm text-muted-foreground">US Locations</div>
               </Card>
               <Card className="p-6 text-center bg-card border-border hover:border-gold/50 hover:shadow-[0_0_20px_hsl(var(--gold)/0.2)] transition-all duration-300">
                 <div className="text-4xl font-bold text-gold mb-2">6</div>

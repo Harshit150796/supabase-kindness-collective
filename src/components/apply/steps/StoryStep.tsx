@@ -1,5 +1,9 @@
-import { useState } from "react";
-import { Sparkles, Image, Video, Bold, Italic, Link, List, HelpCircle } from "lucide-react";
+import { useState, useRef } from "react";
+import { Sparkles, HelpCircle, ImagePlus, Upload, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 interface StoryStepProps {
   story: string;
@@ -7,6 +11,10 @@ interface StoryStepProps {
   isLongTerm: boolean | null;
   setIsLongTerm: (value: boolean | null) => void;
   category: string;
+  coverPhoto: File | null;
+  setCoverPhoto: (file: File | null) => void;
+  coverPhotoPreview: string;
+  setCoverPhotoPreview: (url: string) => void;
 }
 
 export const StoryStep = ({
@@ -15,14 +23,50 @@ export const StoryStep = ({
   isLongTerm,
   setIsLongTerm,
   category,
+  coverPhoto,
+  setCoverPhoto,
+  coverPhotoPreview,
+  setCoverPhotoPreview,
 }: StoryStepProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const storyText = story || "";
   const wordCount = storyText.trim() ? storyText.trim().split(/\s+/).length : 0;
   const minWords = 50;
   const progress = Math.min((wordCount / minWords) * 100, 100);
+
+  const handleFile = (file: File) => {
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a JPEG, PNG, WebP, or GIF image.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        title: "File too large",
+        description: "Please upload an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCoverPhoto(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setCoverPhotoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemove = () => {
+    setCoverPhoto(null);
+    setCoverPhotoPreview("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const getPlaceholder = () => {
     switch (category) {
@@ -39,19 +83,6 @@ export const StoryStep = ({
 
   return (
     <div className="space-y-6 stagger-children">
-      {/* Toolbar - Decorative */}
-      <div className="flex items-center gap-1 p-2 bg-secondary/50 rounded-xl border border-border/30">
-        {[Image, Video, Bold, Italic, Link, List].map((Icon, index) => (
-          <button
-            key={index}
-            type="button"
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-          >
-            <Icon className="w-4 h-4" />
-          </button>
-        ))}
-      </div>
-
       {/* Textarea */}
       <div className="relative">
         <textarea
@@ -61,19 +92,18 @@ export const StoryStep = ({
           onBlur={() => setIsFocused(false)}
           placeholder={getPlaceholder()}
           className={`
-            w-full min-h-[200px] lg:min-h-[240px] p-4 rounded-xl
+            w-full min-h-[200px] lg:min-h-[220px] p-4 rounded-xl
             bg-background border-2 resize-none
             text-foreground placeholder:text-muted-foreground/60
             transition-all duration-300 ease-out
             focus:outline-none
-            ${isFocused 
-              ? "border-primary ring-4 ring-primary/10" 
+            ${isFocused
+              ? "border-primary ring-4 ring-primary/10"
               : "border-border/60 hover:border-border"
             }
           `}
         />
-        
-        {/* Word counter */}
+
         <div className="absolute bottom-3 right-3 text-xs text-muted-foreground">
           {wordCount} words
         </div>
@@ -90,15 +120,13 @@ export const StoryStep = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
-                  {wordCount >= minWords 
-                    ? "Great! Your story is detailed enough" 
-                    : `${minWords - wordCount} more words needed`
-                  }
+                  {wordCount >= minWords
+                    ? "Great! Your story is detailed enough"
+                    : `${minWords - wordCount} more words needed`}
                 </span>
               </div>
-              {/* Progress bar */}
               <div className="h-2 bg-background rounded-full overflow-hidden">
-                <div 
+                <div
                   className={`h-full rounded-full transition-all duration-500 ease-out ${
                     progress >= 100 ? "bg-primary" : "bg-gold"
                   }`}
@@ -108,6 +136,74 @@ export const StoryStep = ({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Optional photo */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-foreground">Add a photo</h3>
+          <span className="text-xs text-muted-foreground">Optional</span>
+        </div>
+
+        {!coverPhotoPreview ? (
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="cursor-pointer rounded-xl border-2 border-dashed border-border/60 hover:border-primary/50 hover:bg-secondary/40 transition-all duration-300 flex items-center gap-4 p-4"
+          >
+            <div className="relative">
+              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center">
+                <ImagePlus className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                <Upload className="w-3 h-3 text-primary-foreground" />
+              </div>
+            </div>
+            <div className="min-w-0">
+              <p className="text-foreground font-medium">Upload a photo</p>
+              <p className="text-sm text-muted-foreground">
+                A bright, clear photo helps donors connect with your story
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="relative rounded-xl overflow-hidden animate-scale-in">
+            <img
+              src={coverPhotoPreview}
+              alt="Cover preview"
+              className="w-full h-48 object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent">
+              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-4 py-2 bg-background/90 backdrop-blur-sm text-foreground font-medium rounded-full hover:bg-background transition-colors text-sm"
+                >
+                  Change photo
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemove}
+                  aria-label="Remove photo"
+                  className="w-9 h-9 bg-background/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-background transition-colors"
+                >
+                  <X className="w-4 h-4 text-foreground" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFile(file);
+          }}
+          className="hidden"
+        />
       </div>
 
       {/* Long-term toggle */}
@@ -131,7 +227,6 @@ export const StoryStep = ({
             </button>
           </div>
 
-          {/* Pill toggle */}
           <div className="flex items-center gap-1 p-1 bg-background rounded-full border border-border/50">
             {[
               { value: true, label: "Yes" },
