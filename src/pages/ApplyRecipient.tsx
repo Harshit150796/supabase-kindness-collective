@@ -228,16 +228,16 @@ const ApplyRecipient = () => {
   const canContinue = () => {
     switch (currentStep) {
       case 1:
-        return /^\d{5}$/.test(zipCode) && !!category && !!beneficiaryType;
-      case 2:
-        return monthlyGoal && parseInt(monthlyGoal) > 0;
-      case 3: {
+        return !!beneficiaryType && !!category;
+      case 2: {
         const storyText = story || "";
         return storyText.trim().split(/\s+/).filter(Boolean).length >= 10;
       }
+      case 3:
+        return monthlyGoal && parseInt(monthlyGoal) > 0;
       case 4:
         // Review step - also final step for authenticated users
-        return (title || "").trim().length > 0;
+        return /^\d{5}$/.test(zipCode) && (title || "").trim().length > 0;
       case 5:
         // Only reached by non-authenticated users
         return email && password.length >= 8 && fullName;
@@ -245,6 +245,7 @@ const ApplyRecipient = () => {
         return false;
     }
   };
+
 
 
   // Handler for authenticated user submission (skips account creation)
