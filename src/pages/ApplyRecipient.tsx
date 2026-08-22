@@ -58,7 +58,7 @@ const stepConfig = [
   },
   {
     headline: "Tell donors your story",
-    subtext: "A few sentences about your situation. Add a photo if you have one — it's optional.",
+    subtext: "A few sentences about your situation, plus a photo or short video so donors can connect.",
   },
   {
     headline: "How much do you need each month?",
@@ -231,7 +231,8 @@ const ApplyRecipient = () => {
         return !!beneficiaryType && !!category;
       case 2: {
         const storyText = story || "";
-        return storyText.trim().split(/\s+/).filter(Boolean).length >= 10;
+        const enoughWords = storyText.trim().split(/\s+/).filter(Boolean).length >= 10;
+        return enoughWords && !!coverPhoto;
       }
       case 3:
         return monthlyGoal && parseInt(monthlyGoal) > 0;
