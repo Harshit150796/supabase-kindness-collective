@@ -221,12 +221,7 @@ export const ReviewStep = ({
         </div>
         <div className="p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-sm">Location</span>
-            <span className="text-foreground font-medium text-sm">
-              {locationLabel || zipCode}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
+
             <span className="text-muted-foreground text-sm">Category</span>
             <span className="text-foreground font-medium text-sm">{getCategoryLabel(category)}</span>
           </div>
