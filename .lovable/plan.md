@@ -17,30 +17,33 @@
 ## The account popup (guests only)
 
 A single account card, shown as a popup over the current step — sign up with name /
-email / password, "Continue with Google", plus a "Already have an account? Sign in"
-switch. It appears at two moments:
+email / password, "Continue with Google", plus automatic routing to sign-in if the
+email already has an account. It appears at two moments:
 
-1. **Leaving step 3**, once amount + ZIP are filled and they tap Continue. This is
-   the psychological moment they're most likely to convert.
-   - Sign up (or sign in) there → they land on the review step already signed in.
-   - Dismiss it → they still move on to the review step; nothing is lost.
-2. **On Submit from step 4**, if they're still a guest. Same card, and on success the
-   fundraiser is submitted immediately and they go to the success/share screen.
+1. **On Continue from step 3**, once amount + ZIP are filled. This is the moment they
+   are most likely to convert.
+   - They sign up (or sign in) → after email verification they are dropped back on
+     **step 3, exactly as they left it**, everything still filled in, and they simply
+     tap Continue to reach step 4. Nothing is retyped, nothing is lost, and there is
+     no "save my progress" action for them to take — saving is automatic.
+   - They dismiss it → they still move on to step 4 as a guest.
+2. **On Submit from step 4**, only if they are still a guest. On success the
+   fundraiser is submitted and they go to the success/share screen.
 
-Everything they typed stays exactly where it was while the popup is open or after it
-is dismissed. Signed-in users never see the popup.
+Once signed in, the popup never appears again — step 3 continues straight to step 4
+and step 4's button submits the request.
 
-Email verification stays as it is today: after the sign-up form, the 6-digit code
-screen appears, and once verified the fundraiser is created. If the email already has
-an account, the popup switches to the "Account found — sign in to continue" state
-instead of erroring.
+Email verification stays as it is today: the 6-digit code screen, then back to the
+application. If the email already has an account, the "Account found — sign in to
+continue" screen shows instead of an error, and the same return-to-step-3 behaviour
+applies.
 
-## Two suggestions for you to decide later (not in this build)
+## One suggestion for later (not in this build)
 
-- After a guest dismisses the popup on step 3, we could show a small inline
-  "Save my progress" line on the review step so they know an account is coming.
-- The popup could show a one-line reminder of what they're about to submit
-  (title + goal), which usually lifts sign-up completion a few points.
+The popup shows a one-line reminder of what they're saving (title + goal amount),
+which usually lifts sign-up completion — included here, but easy to drop if you'd
+rather keep the card minimal.
+
 
 ## Technical notes
 
