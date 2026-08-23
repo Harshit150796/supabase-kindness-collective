@@ -312,36 +312,15 @@ export default function Auth() {
 
                   <form onSubmit={handleSubmit}>
                     <TabsContent value="signup" className="space-y-4">
-                      {/* Role Selection */}
-                      <div className="space-y-3">
-                        <Label>I want to</Label>
-                        <RadioGroup value={role} onValueChange={(v) => setRole(v as AppRole)} className="grid grid-cols-2 gap-3">
-                          <Label
-                            htmlFor="donor"
-                            className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${
-                              role === 'donor' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-                            }`}
-                          >
-                            <RadioGroupItem value="donor" id="donor" className="sr-only" />
-                            <Users className={`w-5 h-5 ${role === 'donor' ? 'text-primary' : 'text-muted-foreground'}`} />
-                            <span className={role === 'donor' ? 'text-foreground font-medium' : 'text-muted-foreground'}>
-                              Donate
-                            </span>
-                          </Label>
-                          <Label
-                            htmlFor="recipient"
-                            className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${
-                              role === 'recipient' ? 'border-gold bg-gold/5' : 'border-border hover:border-gold/50'
-                            }`}
-                          >
-                            <RadioGroupItem value="recipient" id="recipient" className="sr-only" />
-                            <Gift className={`w-5 h-5 ${role === 'recipient' ? 'text-gold' : 'text-muted-foreground'}`} />
-                            <span className={role === 'recipient' ? 'text-foreground font-medium' : 'text-muted-foreground'}>
-                              Receive
-                            </span>
-                          </Label>
-                        </RadioGroup>
+                      <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/40 p-4">
+                        <Heart className="w-5 h-5 mt-0.5 text-primary shrink-0" />
+                        <p className="text-sm text-muted-foreground">
+                          One account does both — give support, or ask for it. You can switch
+                          between the two any time from your dashboard.
+                        </p>
                       </div>
+
+
 
                       <div className="space-y-2">
                         <Label htmlFor="fullName">Full Name</Label>
