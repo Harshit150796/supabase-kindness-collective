@@ -126,21 +126,21 @@ export const GoalStep = ({
       </div>
 
       {/* ZIP code */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <MapPin className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">Where are you located?</h2>
-            <p className="text-sm text-muted-foreground">
-              Your ZIP code matches you with retailers near you. Vouchers are redeemable at US
-              retailers only.
-            </p>
-          </div>
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+            Where are you located?
+          </h2>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Your ZIP code matches you with retailers near you. Vouchers are redeemable at US
+            retailers only.
+          </p>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative group">
+          <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+            <MapPin className="w-5 h-5 text-muted-foreground/70 group-focus-within:text-primary transition-colors" />
+          </div>
           <Input
             id="apply-zip"
             type="text"
@@ -151,19 +151,27 @@ export const GoalStep = ({
             aria-label="ZIP code"
             value={zipCode}
             onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
-            className="h-14 w-40 rounded-xl border-2 border-border/60 bg-card text-lg tracking-[0.2em]
-              hover:border-primary/30 focus:border-primary transition-all input-focus-ring"
+            className={`h-14 w-full rounded-2xl bg-muted/40 border border-border pl-12 text-lg
+              font-medium tracking-normal transition-all hover:border-primary/30
+              focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20
+              ${cityState ? "pr-36" : "pr-4"}`}
           />
-          <span className="min-h-6 flex items-center">
-            {cityState && (
-              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary animate-fade-in">
-                <Check className="w-4 h-4" />
-                {cityState}
-              </span>
-            )}
-          </span>
+          {cityState && (
+            <div className="absolute inset-y-0 right-4 hidden xs:flex items-center gap-1.5 pointer-events-none animate-fade-in">
+              <Check className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold text-primary">{cityState}</span>
+            </div>
+          )}
         </div>
+
+        {cityState && (
+          <p className="xs:hidden flex items-center gap-1.5 text-sm font-medium text-primary animate-fade-in">
+            <Check className="w-4 h-4" />
+            {cityState}
+          </p>
+        )}
       </div>
+
 
       {/* Smart Matching Card - Glass effect */}
       <div className="glass-strong rounded-2xl p-6 border border-accent/20 hover:border-accent/40 transition-all duration-300 hover:shadow-lg hover:shadow-accent/5">
