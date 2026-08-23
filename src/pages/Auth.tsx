@@ -86,13 +86,36 @@ export default function Auth() {
 
   const sendOTP = async (emailAddress: string) => {
     const { data, error } = await supabase.functions.invoke('send-otp', {
-      body: { email: emailAddress },
+      body: { email: emailAddress, purpose: 'signup' },
     });
 
     if (error) throw error;
     if (!data.success) throw new Error(data.error);
 
     return data;
+  };
+
+  const emailAlreadyRegistered = async (emailAddress: string) => {
+    const { data, error } = await supabase.functions.invoke('check-email-exists', {
+      body: { email: emailAddress },
+    });
+    // If the check itself fails, don't block the user — the server-side guard
+    // on send-otp and the post-signup check still catch duplicates.
+    if (error) {
+      console.error('Email existence check failed:', error);
+      return false;
+    }
+    return Boolean(data?.exists);
+  };
+
+  const promptSignInInstead = () => {
+    toast.error('This email is already registered', {
+      description: 'Please sign in with your existing account.',
+    });
+    setAuthStep('form');
+    setMode('signin');
+    setPassword('');
+    setPendingSignupData(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -103,6 +126,13 @@ export default function Auth() {
 
     try {
       if (mode === 'signup') {
+        // Pre-check: never spend an OTP email on an address that already has
+        // an account — send the person straight to sign in.
+        if (await emailAlreadyRegistered(email)) {
+          promptSignInInstead();
+          return;
+        }
+
         // Send OTP for email verification before signup
         await sendOTP(email);
         setPendingSignupData({ email, password, fullName });
@@ -119,11 +149,20 @@ export default function Auth() {
       }
     } catch (error: any) {
       console.error('Auth error:', error);
-      toast.error(error.message || 'Something went wrong');
+      const msg = error?.message || '';
+      if (
+        msg.toLowerCase().includes('already registered') ||
+        msg.toLowerCase().includes('already exists')
+      ) {
+        promptSignInInstead();
+      } else {
+        toast.error(msg || 'Something went wrong');
+      }
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleOTPVerified = async () => {
     if (!pendingSignupData) return;
