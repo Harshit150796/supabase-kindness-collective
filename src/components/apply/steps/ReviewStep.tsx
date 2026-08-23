@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Camera, ImagePlus, Sparkles, Check, ShieldCheck } from "lucide-react";
 import { getSuggestedTitles } from "@/lib/suggestedTitles";
-import { Input } from "@/components/ui/input";
 import { MediaItem, formatDuration } from "@/lib/mediaUpload";
 
 interface ReviewStepProps {
