@@ -50,6 +50,22 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Signup guard: never send a verification code to an address that already
+    // has an account — the caller should route the person to sign in instead.
+    if (purpose === "signup") {
+      const exists = await emailExists(supabase, email);
+      if (exists) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            code: "email_exists",
+            error: "This email is already registered. Please sign in instead.",
+          }),
+          { status: 409, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
+
     // Rate limiting: Check if user has requested OTP in the last 60 seconds
     const { data: recentOTP } = await supabase
       .from("otp_codes")
