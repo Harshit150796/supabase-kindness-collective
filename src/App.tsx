@@ -39,20 +39,19 @@ const FundraiserDashboard = lazy(() => import("./pages/FundraiserDashboard"));
 const Donate = lazy(() => import("./pages/Donate"));
 const FeaturedStoryDetail = lazy(() => import("./pages/FeaturedStoryDetail"));
 const CMSStoryDetail = lazy(() => import("./pages/CMSStoryDetail"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
 
-// Recipient pages
-const RecipientDashboard = lazy(() => import("./pages/recipient/RecipientDashboard"));
+// Receiving-side pages
 const RecipientCoupons = lazy(() => import("./pages/recipient/RecipientCoupons"));
 const RecipientHistory = lazy(() => import("./pages/recipient/RecipientHistory"));
 const RecipientLoyaltyCard = lazy(() => import("./pages/recipient/RecipientLoyaltyCard"));
 const RecipientVerification = lazy(() => import("./pages/recipient/RecipientVerification"));
 
-// Donor pages
-const DonorDashboard = lazy(() => import("./pages/donor/DonorDashboard"));
+// Giving-side pages
 const DonorDonate = lazy(() => import("./pages/donor/DonorDonate"));
 const DonorImpact = lazy(() => import("./pages/donor/DonorImpact"));
 const DonorHistory = lazy(() => import("./pages/donor/DonorHistory"));
-const DonorCoupons = lazy(() => import("./pages/donor/DonorCoupons"));
+
 
 // Admin pages
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
