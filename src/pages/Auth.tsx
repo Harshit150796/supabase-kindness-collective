@@ -22,7 +22,6 @@ const authSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters').optional(),
 });
 
-type AppRole = 'donor' | 'recipient';
 type AuthStep = 'form' | 'otp';
 type AuthView = 'auth' | 'forgot-password';
 
@@ -30,13 +29,13 @@ export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, signIn, signUp, hasRole, loading: authLoading, rolesLoaded } = useAuth();
-  
+
   const [mode, setMode] = useState<'signin' | 'signup'>(
     searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
   );
-  const [role, setRole] = useState<AppRole>(
-    (searchParams.get('role') as AppRole) || 'donor'
-  );
+  // Signup intent only decides where we land first — it never limits the account.
+  const intent = searchParams.get('intent') || searchParams.get('role');
+  const nextPath = searchParams.get('next');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -49,18 +48,18 @@ export default function Auth() {
     email: string;
     password: string;
     fullName: string;
-    role: AppRole;
   } | null>(null);
 
   useEffect(() => {
     if (user && !authLoading && rolesLoaded) {
-      // Redirect based on role
       if (hasRole('admin')) navigate('/admin');
-      else if (hasRole('donor')) navigate('/donor');
-      else if (hasRole('recipient')) navigate('/recipient');
-      else navigate('/');
+      else if (nextPath) navigate(nextPath);
+      else if (intent === 'recipient') navigate('/apply');
+      else if (intent === 'donor') navigate('/dashboard/donate');
+      else navigate('/dashboard');
     }
-  }, [user, authLoading, rolesLoaded, hasRole, navigate]);
+  }, [user, authLoading, rolesLoaded, hasRole, navigate, intent, nextPath]);
+
 
   const validateForm = () => {
     try {
