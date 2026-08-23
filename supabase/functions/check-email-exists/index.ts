@@ -6,6 +6,46 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Case-insensitive existence check against profiles first (fast, indexed-ish),
+// then against auth users so accounts without a profile row are still detected.
+export async function emailExists(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  normalizedEmail: string
+): Promise<boolean> {
+  const { data: profileData, error: profileError } = await supabaseAdmin
+    .from("profiles")
+    .select("id")
+    .ilike("email", normalizedEmail)
+    .maybeSingle();
+
+  if (profileError) {
+    console.error("Error checking email in profiles:", profileError);
+  } else if (profileData) {
+    return true;
+  }
+
+  // Authoritative fallback: scan auth users (paged) for a case-insensitive match.
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+      page,
+      perPage: 200,
+    });
+    if (error) {
+      console.error("Error listing auth users:", error);
+      break;
+    }
+    const users = data?.users ?? [];
+    if (users.some((u: any) => (u.email ?? "").toLowerCase() === normalizedEmail)) {
+      return true;
+    }
+    if (users.length < 200) break;
+  }
+
+  return false;
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -15,35 +55,22 @@ serve(async (req) => {
   try {
     const { email } = await req.json();
 
-    if (!email) {
+    if (!email || typeof email !== "string" || !emailRegex.test(email.trim())) {
       return new Response(
-        JSON.stringify({ error: "Email is required" }),
+        JSON.stringify({ error: "A valid email is required" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
+
+    const normalizedEmail = email.trim().toLowerCase();
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Check profiles table for this email (more reliable approach)
-    const { data: profileData, error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
-
-    if (profileError) {
-      console.error("Error checking email in profiles:", profileError);
-      return new Response(
-        JSON.stringify({ error: "Failed to check email" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    const exists = !!profileData;
-    console.log(`Email check for ${email}: exists = ${exists}`);
+    const exists = await emailExists(supabaseAdmin, normalizedEmail);
+    console.log(`Email check completed: exists = ${exists}`);
 
     return new Response(
       JSON.stringify({ exists }),
