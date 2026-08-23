@@ -37,6 +37,9 @@ export const GoalStep = ({
     : "Most personal requests are $150–$600.";
   const progressCeiling = isOrganization ? 5000 : 1000;
   const cityState = locationLabel && locationLabel.includes(",") ? locationLabel : null;
+  // Long labels ("San Luis Obispo, CA") would collide with the digits on narrow
+  // screens, so they confirm on a line below the field instead of inside it.
+  const inlineCityState = !!cityState && cityState.length <= 16;
 
   // Animate the display amount when goal changes
   useEffect(() => {
