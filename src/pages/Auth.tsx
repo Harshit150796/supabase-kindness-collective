@@ -105,7 +105,7 @@ export default function Auth() {
       if (mode === 'signup') {
         // Send OTP for email verification before signup
         await sendOTP(email);
-        setPendingSignupData({ email, password, fullName, role });
+        setPendingSignupData({ email, password, fullName });
         setAuthStep('otp');
         toast.success('OTP sent to your email!', {
           description: `Check ${email} for your 6-digit verification code`,
