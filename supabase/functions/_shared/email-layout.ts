@@ -156,15 +156,15 @@ export function renderOtpEmail(opts: { code: string; expiresInMinutes: number })
   const spaced = code.split("").join(" ");
 
   const bodyBlocks = `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0fdf6;border:1px solid #b9ecd2;border-radius:14px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f6f7f8;border:1px solid ${BORDER};border-radius:6px;">
       <tr>
-        <td align="center" style="padding:22px 12px 18px 12px;">
-          <div style="font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#0f7a53;">Verification code</div>
-          <div style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:30px;line-height:40px;font-weight:700;letter-spacing:6px;color:#064e3b;white-space:nowrap;margin-top:8px;">${escapeHtml(spaced)}</div>
-          <div style="font-family:${FONT};font-size:13px;line-height:20px;color:#0f7a53;margin-top:6px;">Expires in ${expiresInMinutes} minutes</div>
+        <td align="center" style="padding:20px 12px 16px 12px;">
+          <div style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:30px;line-height:38px;font-weight:700;letter-spacing:6px;color:${INK};white-space:nowrap;">${escapeHtml(spaced)}</div>
+          <div style="font-family:${FONT};font-size:13px;line-height:20px;color:${MUTED};margin-top:6px;">Expires in ${expiresInMinutes} minutes</div>
         </td>
       </tr>
     </table>`;
+
 
   const html = shell({
     preheader: `Your CouponDonation verification code is ${code}. It expires in ${expiresInMinutes} minutes.`,
