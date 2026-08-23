@@ -24,10 +24,9 @@ export function Navbar() {
 
   const getDashboardLink = () => {
     if (hasRole('admin')) return '/admin';
-    if (hasRole('donor')) return '/donor';
-    if (hasRole('recipient')) return '/recipient';
-    return '/';
+    return '/dashboard';
   };
+
 
   return (
     <nav className="bg-background lg:bg-background/80 lg:backdrop-blur-lg lg:supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 shadow-[0_8px_30px_-14px_rgba(0,0,0,0.18)]">
