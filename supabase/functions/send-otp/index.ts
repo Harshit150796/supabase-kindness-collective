@@ -14,6 +14,7 @@ const corsHeaders = {
 
 interface SendOTPRequest {
   email: string;
+  purpose?: "signup" | "verify";
 }
 
 const generateOTP = (): string => {
