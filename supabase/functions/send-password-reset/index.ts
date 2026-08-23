@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { renderPasswordResetEmail, EMAIL_SENDER } from "../_shared/email-layout.ts";
+
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -102,6 +104,7 @@ const handler = async (req: Request): Promise<Response> => {
     const resetUrl = `https://www.coupondonation.com/reset-password?token=${token}`;
 
     // Send email via Resend
+    const rendered = renderPasswordResetEmail({ resetUrl, expiresInMinutes: 60 });
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -109,54 +112,15 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "CouponDonation <verify@coupondonation.com>",
+        from: EMAIL_SENDER.from,
+        reply_to: EMAIL_SENDER.replyTo,
         to: [email],
-        subject: "Reset Your CouponDonation Password",
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          </head>
-          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5; margin: 0; padding: 40px 20px;">
-            <div style="max-width: 460px; margin: 0 auto; background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
-              <div style="text-align: center; margin-bottom: 32px;">
-                <h1 style="color: #10b981; font-size: 28px; margin: 0 0 8px;">CouponDonation</h1>
-                <p style="color: #71717a; font-size: 14px; margin: 0;">Transforming Giving</p>
-              </div>
-              
-              <h2 style="color: #18181b; font-size: 20px; text-align: center; margin-bottom: 16px;">Reset Your Password</h2>
-              
-              <p style="color: #52525b; font-size: 16px; text-align: center; margin-bottom: 24px;">
-                Click the button below to reset your password:
-              </p>
-              
-              <div style="text-align: center; margin-bottom: 24px;">
-                <a href="${resetUrl}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                  Reset Password
-                </a>
-              </div>
-              
-              <p style="color: #71717a; font-size: 14px; text-align: center; margin-bottom: 0;">
-                This link expires in <strong>1 hour</strong>.
-              </p>
-              <p style="color: #a1a1aa; font-size: 12px; text-align: center; margin-top: 24px;">
-                If you didn't request this password reset, you can safely ignore this email.
-              </p>
-              
-              <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e4e4e7;">
-                <p style="color: #a1a1aa; font-size: 11px; text-align: center; margin: 0;">
-                  If the button doesn't work, copy and paste this link:<br>
-                  <a href="${resetUrl}" style="color: #10b981; word-break: break-all;">${resetUrl}</a>
-                </p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `,
+        subject: rendered.subject,
+        html: rendered.html,
+        text: rendered.text,
       }),
     });
+
 
     if (!emailResponse.ok) {
       let errorData: any = null;
