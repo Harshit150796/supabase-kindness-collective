@@ -27,7 +27,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email }: SendOTPRequest = await req.json();
+    const { email, purpose }: SendOTPRequest = await req.json();
 
     if (!email) {
       return new Response(
