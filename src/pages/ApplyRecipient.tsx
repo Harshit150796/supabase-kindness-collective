@@ -480,14 +480,13 @@ const ApplyRecipient = () => {
     setIsSubmitting(true);
 
     try {
-      // Use the unified signUp from useAuth with BOTH roles
+      // One generic account — both giving and receiving are enabled
       const { error: signUpError } = await signUp(
         email,
         password,
-        fullName,
-        'recipient',
-        ['donor']
+        fullName
       );
+
 
       if (signUpError) {
         // Check if it's a "user already exists" error
@@ -624,7 +623,7 @@ const ApplyRecipient = () => {
     if (createdFundraiserId) {
       navigate(`/fundraiser/${createdFundraiserId}?share=true`);
     } else {
-      navigate("/recipient/dashboard");
+      navigate("/dashboard");
     }
   };
 
@@ -632,7 +631,7 @@ const ApplyRecipient = () => {
     if (createdFundraiserId) {
       navigate(`/fundraiser/${createdFundraiserId}`);
     } else {
-      navigate("/recipient/dashboard");
+      navigate("/dashboard");
     }
   };
 

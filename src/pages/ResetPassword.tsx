@@ -52,14 +52,11 @@ export default function ResetPassword() {
     if (success && user && rolesLoaded && roles.length > 0) {
       if (roles.includes('admin')) {
         navigate('/admin');
-      } else if (roles.includes('donor')) {
-        navigate('/donor');
-      } else if (roles.includes('recipient')) {
-        navigate('/recipient');
       } else {
-        navigate('/');
+        navigate('/dashboard');
       }
     }
+
   }, [success, user, roles, rolesLoaded, navigate]);
 
   const validateForm = () => {

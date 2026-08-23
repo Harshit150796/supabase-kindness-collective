@@ -24,10 +24,9 @@ export function Navbar() {
 
   const getDashboardLink = () => {
     if (hasRole('admin')) return '/admin';
-    if (hasRole('donor')) return '/donor';
-    if (hasRole('recipient')) return '/recipient';
-    return '/';
+    return '/dashboard';
   };
+
 
   return (
     <nav className="bg-background lg:bg-background/80 lg:backdrop-blur-lg lg:supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 shadow-[0_8px_30px_-14px_rgba(0,0,0,0.18)]">
@@ -97,14 +96,15 @@ export function Navbar() {
                   
                   <DropdownMenuSeparator />
                   
-                  <DropdownMenuItem onClick={() => navigate('/donor')}>
+                  <DropdownMenuItem onClick={() => navigate('/dashboard/donate')}>
                     <DollarSign className="w-4 h-4 mr-3" />
-                    Donor Portal
+                    Donate
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/recipient')}>
+                  <DropdownMenuItem onClick={() => navigate('/dashboard/wallet')}>
                     <Gift className="w-4 h-4 mr-3" />
-                    Recipient Portal
+                    Voucher Wallet
                   </DropdownMenuItem>
+
                   
                   <DropdownMenuSeparator />
                   
@@ -231,19 +231,20 @@ export function Navbar() {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start gap-2" 
-                    onClick={() => { navigate('/donor'); setMobileMenuOpen(false); }}
+                    onClick={() => { navigate('/dashboard/donate'); setMobileMenuOpen(false); }}
                   >
                     <DollarSign className="w-4 h-4" />
-                    Donor Portal
+                    Donate
                   </Button>
                   <Button 
                     variant="outline" 
                     className="w-full justify-start gap-2" 
-                    onClick={() => { navigate('/recipient'); setMobileMenuOpen(false); }}
+                    onClick={() => { navigate('/dashboard/wallet'); setMobileMenuOpen(false); }}
                   >
                     <Gift className="w-4 h-4" />
-                    Recipient Portal
+                    Voucher Wallet
                   </Button>
+
                   <Button 
                     variant="ghost" 
                     className="w-full text-destructive justify-start gap-2" 

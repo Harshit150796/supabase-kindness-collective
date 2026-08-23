@@ -39,20 +39,19 @@ const FundraiserDashboard = lazy(() => import("./pages/FundraiserDashboard"));
 const Donate = lazy(() => import("./pages/Donate"));
 const FeaturedStoryDetail = lazy(() => import("./pages/FeaturedStoryDetail"));
 const CMSStoryDetail = lazy(() => import("./pages/CMSStoryDetail"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
 
-// Recipient pages
-const RecipientDashboard = lazy(() => import("./pages/recipient/RecipientDashboard"));
+// Receiving-side pages
 const RecipientCoupons = lazy(() => import("./pages/recipient/RecipientCoupons"));
 const RecipientHistory = lazy(() => import("./pages/recipient/RecipientHistory"));
 const RecipientLoyaltyCard = lazy(() => import("./pages/recipient/RecipientLoyaltyCard"));
 const RecipientVerification = lazy(() => import("./pages/recipient/RecipientVerification"));
 
-// Donor pages
-const DonorDashboard = lazy(() => import("./pages/donor/DonorDashboard"));
+// Giving-side pages
 const DonorDonate = lazy(() => import("./pages/donor/DonorDonate"));
 const DonorImpact = lazy(() => import("./pages/donor/DonorImpact"));
 const DonorHistory = lazy(() => import("./pages/donor/DonorHistory"));
-const DonorCoupons = lazy(() => import("./pages/donor/DonorCoupons"));
+
 
 // Admin pages
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -121,19 +120,28 @@ const AppRoutes = () => (
       <Route path="/profile" element={<Profile />} />
       <Route path="/settings" element={<Settings />} />
 
-      {/* Recipient Routes (US-only) */}
-      <Route path="/recipient" element={<GeoGuard><ProtectedRoute allowedRoles={['recipient']}><RecipientDashboard /></ProtectedRoute></GeoGuard>} />
-      <Route path="/recipient/coupons" element={<GeoGuard><ProtectedRoute allowedRoles={['recipient']}><RecipientCoupons /></ProtectedRoute></GeoGuard>} />
-      <Route path="/recipient/history" element={<GeoGuard><ProtectedRoute allowedRoles={['recipient']}><RecipientHistory /></ProtectedRoute></GeoGuard>} />
-      <Route path="/recipient/loyalty-card" element={<GeoGuard><ProtectedRoute allowedRoles={['recipient']}><RecipientLoyaltyCard /></ProtectedRoute></GeoGuard>} />
-      <Route path="/recipient/verification" element={<GeoGuard><ProtectedRoute allowedRoles={['recipient']}><RecipientVerification /></ProtectedRoute></GeoGuard>} />
+      {/* Unified account routes — one account, giving + receiving */}
+      <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><Dashboard /></ProtectedRoute>} />
+      <Route path="/dashboard/donate" element={<ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><DonorDonate /></ProtectedRoute>} />
+      <Route path="/dashboard/giving" element={<ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><DonorHistory /></ProtectedRoute>} />
+      <Route path="/dashboard/impact" element={<ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><DonorImpact /></ProtectedRoute>} />
+      <Route path="/dashboard/wallet" element={<GeoGuard><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><RecipientCoupons /></ProtectedRoute></GeoGuard>} />
+      <Route path="/dashboard/loyalty-card" element={<GeoGuard><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><RecipientLoyaltyCard /></ProtectedRoute></GeoGuard>} />
+      <Route path="/dashboard/verification" element={<GeoGuard><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><RecipientVerification /></ProtectedRoute></GeoGuard>} />
+      <Route path="/dashboard/history" element={<GeoGuard><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><RecipientHistory /></ProtectedRoute></GeoGuard>} />
 
-      {/* Donor Routes */}
-      <Route path="/donor" element={<ProtectedRoute allowedRoles={['donor']}><DonorDashboard /></ProtectedRoute>} />
-      <Route path="/donor/donate" element={<ProtectedRoute allowedRoles={['donor']}><DonorDonate /></ProtectedRoute>} />
-      <Route path="/donor/impact" element={<ProtectedRoute allowedRoles={['donor']}><DonorImpact /></ProtectedRoute>} />
-      <Route path="/donor/coupons" element={<ProtectedRoute allowedRoles={['donor']}><DonorCoupons /></ProtectedRoute>} />
-      <Route path="/donor/history" element={<ProtectedRoute allowedRoles={['donor']}><DonorHistory /></ProtectedRoute>} />
+      {/* Legacy role-split paths — kept as redirects so old links keep working */}
+      <Route path="/recipient" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/recipient/coupons" element={<Navigate to="/dashboard/wallet" replace />} />
+      <Route path="/recipient/history" element={<Navigate to="/dashboard/history" replace />} />
+      <Route path="/recipient/loyalty-card" element={<Navigate to="/dashboard/loyalty-card" replace />} />
+      <Route path="/recipient/verification" element={<Navigate to="/dashboard/verification" replace />} />
+      <Route path="/donor" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/donor/donate" element={<Navigate to="/dashboard/donate" replace />} />
+      <Route path="/donor/impact" element={<Navigate to="/dashboard/impact" replace />} />
+      <Route path="/donor/coupons" element={<Navigate to="/dashboard/wallet" replace />} />
+      <Route path="/donor/history" element={<Navigate to="/dashboard/giving" replace />} />
+
 
       {/* Admin Routes (US-only) */}
       <Route path="/admin" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute></GeoGuard>} />

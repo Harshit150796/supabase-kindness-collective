@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, Gift, Users } from 'lucide-react';
+import { Loader2, Gift, Heart } from 'lucide-react';
+
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,7 +22,6 @@ const authSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters').optional(),
 });
 
-type AppRole = 'donor' | 'recipient';
 type AuthStep = 'form' | 'otp';
 type AuthView = 'auth' | 'forgot-password';
 
@@ -30,13 +29,13 @@ export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, signIn, signUp, hasRole, loading: authLoading, rolesLoaded } = useAuth();
-  
+
   const [mode, setMode] = useState<'signin' | 'signup'>(
     searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
   );
-  const [role, setRole] = useState<AppRole>(
-    (searchParams.get('role') as AppRole) || 'donor'
-  );
+  // Signup intent only decides where we land first — it never limits the account.
+  const intent = searchParams.get('intent') || searchParams.get('role');
+  const nextPath = searchParams.get('next');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -49,18 +48,18 @@ export default function Auth() {
     email: string;
     password: string;
     fullName: string;
-    role: AppRole;
   } | null>(null);
 
   useEffect(() => {
     if (user && !authLoading && rolesLoaded) {
-      // Redirect based on role
       if (hasRole('admin')) navigate('/admin');
-      else if (hasRole('donor')) navigate('/donor');
-      else if (hasRole('recipient')) navigate('/recipient');
-      else navigate('/');
+      else if (nextPath) navigate(nextPath);
+      else if (intent === 'recipient') navigate('/apply');
+      else if (intent === 'donor') navigate('/dashboard/donate');
+      else navigate('/dashboard');
     }
-  }, [user, authLoading, rolesLoaded, hasRole, navigate]);
+  }, [user, authLoading, rolesLoaded, hasRole, navigate, intent, nextPath]);
+
 
   const validateForm = () => {
     try {
@@ -106,7 +105,7 @@ export default function Auth() {
       if (mode === 'signup') {
         // Send OTP for email verification before signup
         await sendOTP(email);
-        setPendingSignupData({ email, password, fullName, role });
+        setPendingSignupData({ email, password, fullName });
         setAuthStep('otp');
         toast.success('OTP sent to your email!', {
           description: `Check ${email} for your 6-digit verification code`,
@@ -129,21 +128,17 @@ export default function Auth() {
   const handleOTPVerified = async () => {
     if (!pendingSignupData) return;
 
-    const { email: signupEmail, password: signupPassword, fullName: signupFullName, role: targetRole } = pendingSignupData;
+    const { email: signupEmail, password: signupPassword, fullName: signupFullName } = pendingSignupData;
     setLoading(true);
-    
-    // Determine the additional role (opposite of selected) - all users get both roles
-    const additionalRole = targetRole === 'donor' ? 'recipient' : 'donor';
-    
+
     try {
-      // Step 1: Create the account with both roles
+      // Step 1: Create the account (one generic account — give and receive)
       const { error: signupError } = await signUp(
         signupEmail,
         signupPassword,
-        signupFullName,
-        targetRole,
-        [additionalRole]
+        signupFullName
       );
+
 
       if (signupError) {
         if (signupError.message.includes('already registered')) {
@@ -317,36 +312,15 @@ export default function Auth() {
 
                   <form onSubmit={handleSubmit}>
                     <TabsContent value="signup" className="space-y-4">
-                      {/* Role Selection */}
-                      <div className="space-y-3">
-                        <Label>I want to</Label>
-                        <RadioGroup value={role} onValueChange={(v) => setRole(v as AppRole)} className="grid grid-cols-2 gap-3">
-                          <Label
-                            htmlFor="donor"
-                            className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${
-                              role === 'donor' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-                            }`}
-                          >
-                            <RadioGroupItem value="donor" id="donor" className="sr-only" />
-                            <Users className={`w-5 h-5 ${role === 'donor' ? 'text-primary' : 'text-muted-foreground'}`} />
-                            <span className={role === 'donor' ? 'text-foreground font-medium' : 'text-muted-foreground'}>
-                              Donate
-                            </span>
-                          </Label>
-                          <Label
-                            htmlFor="recipient"
-                            className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${
-                              role === 'recipient' ? 'border-gold bg-gold/5' : 'border-border hover:border-gold/50'
-                            }`}
-                          >
-                            <RadioGroupItem value="recipient" id="recipient" className="sr-only" />
-                            <Gift className={`w-5 h-5 ${role === 'recipient' ? 'text-gold' : 'text-muted-foreground'}`} />
-                            <span className={role === 'recipient' ? 'text-foreground font-medium' : 'text-muted-foreground'}>
-                              Receive
-                            </span>
-                          </Label>
-                        </RadioGroup>
+                      <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/40 p-4">
+                        <Heart className="w-5 h-5 mt-0.5 text-primary shrink-0" />
+                        <p className="text-sm text-muted-foreground">
+                          One account does both — give support, or ask for it. You can switch
+                          between the two any time from your dashboard.
+                        </p>
                       </div>
+
+
 
                       <div className="space-y-2">
                         <Label htmlFor="fullName">Full Name</Label>
