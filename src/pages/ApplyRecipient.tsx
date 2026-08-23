@@ -5,7 +5,7 @@ import { BasicsStep } from "@/components/apply/steps/BasicsStep";
 import { GoalStep } from "@/components/apply/steps/GoalStep";
 import { StoryStep } from "@/components/apply/steps/StoryStep";
 import { ReviewStep } from "@/components/apply/steps/ReviewStep";
-import { AccountStep } from "@/components/apply/steps/AccountStep";
+import { AccountDialog } from "@/components/apply/AccountDialog";
 import { SuccessScreen } from "@/components/apply/SuccessScreen";
 import { ShareScreen } from "@/components/apply/ShareScreen";
 
@@ -61,15 +61,11 @@ const stepConfig = [
   },
   {
     headline: "How much do you need?",
-    subtext: "One goal. Once it's fully funded, your request closes.",
+    subtext: "One goal and your ZIP code. Once it's fully funded, your request closes.",
   },
   {
     headline: "Last details, then you're done",
-    subtext: "Your ZIP code, a title, and a quick look at everything you've written.",
-  },
-  {
-    headline: "Create your account",
-    subtext: "Set up your account to submit your request.",
+    subtext: "Give your request a title and take a quick look at everything you've written.",
   },
 ];
 
@@ -101,8 +97,8 @@ const ApplyRecipient = () => {
   const userEmail = user?.email || "";
   const userName = user?.user_metadata?.full_name || userEmail.split("@")[0];
 
-  // Dynamic total steps: 4 for authenticated users (skip account creation), 5 for guests
-  const totalSteps = isAuthenticated ? 4 : 5;
+  // Always 4 steps — account creation happens in a popup, not as a step
+  const totalSteps = 4;
 
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -126,7 +122,11 @@ const ApplyRecipient = () => {
   const [title, setTitle] = useState("");
   const [titleSource, setTitleSource] = useState<"suggested" | "custom">("suggested");
 
-  // Account step state (only used for non-authenticated users)
+  // Account state (only used for non-authenticated users)
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [authIntent, setAuthIntent] = useState<"advance" | "submit">("advance");
+  // Set while the account popup flow is running so an auth change doesn't wipe progress
+  const preserveOnAuthRef = useRef(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -156,6 +156,15 @@ const ApplyRecipient = () => {
 
     // Detect user change (including logout)
     if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== currentUserId) {
+      if (preserveOnAuthRef.current) {
+        // They just signed up / signed in from the account popup mid-application:
+        // keep everything they typed and migrate the anonymous draft to their account.
+        prevUserIdRef.current = currentUserId;
+        preserveOnAuthRef.current = false;
+        clearScopedDraft(null);
+        setInitialized(true);
+        return;
+      }
       // User changed - reset form and clear cover photo preview
       resetForm();
       setMedia([]);
@@ -232,13 +241,10 @@ const ApplyRecipient = () => {
         );
       }
       case 3:
-        return monthlyGoal && parseInt(monthlyGoal) > 0;
+        return !!monthlyGoal && parseInt(monthlyGoal) > 0 && /^\d{5}$/.test(zipCode);
       case 4:
-        // Review step - also final step for authenticated users
-        return /^\d{5}$/.test(zipCode) && (title || "").trim().length > 0;
-      case 5:
-        // Only reached by non-authenticated users
-        return email && password.length >= 8 && fullName;
+        // Review step - final step for everyone
+        return (title || "").trim().length > 0;
       default:
         return false;
     }
@@ -286,18 +292,30 @@ const ApplyRecipient = () => {
     }
   };
 
+  const openAccountDialog = (intent: "advance" | "submit") => {
+    setAuthIntent(intent);
+    setAccountOpen(true);
+  };
+
   const handleContinue = () => {
-    // For authenticated users, step 4 (review) is the final step - submit directly
-    if (isAuthenticated && currentStep === 4) {
-      handleAuthenticatedSubmit();
+    if (currentStep === 4) {
+      if (isAuthenticated) {
+        handleAuthenticatedSubmit();
+      } else {
+        openAccountDialog("submit");
+      }
+      return;
+    }
+
+    // Guests are asked to create an account right after the amount + ZIP step
+    if (currentStep === 3 && !isAuthenticated) {
+      openAccountDialog("advance");
       return;
     }
 
     if (currentStep < totalSteps) {
       setDirection("forward");
       setCurrentStep(currentStep + 1);
-    } else if (currentStep === 5 && !isAuthenticated) {
-      handleSendOTP();
     }
   };
 
@@ -401,6 +419,11 @@ const ApplyRecipient = () => {
     return fundraiserData;
   };
 
+  const handleAccountSubmit = async () => {
+    preserveOnAuthRef.current = true;
+    await handleSendOTP();
+  };
+
   const handleSendOTP = async () => {
     setIsSubmitting(true);
     
@@ -418,6 +441,7 @@ const ApplyRecipient = () => {
           title: "Account already exists",
           description: "Please sign in with your existing account to continue.",
         });
+        setAccountOpen(false);
         setScreenState("signin-prompt");
         setIsSubmitting(false);
         return;
@@ -435,6 +459,7 @@ const ApplyRecipient = () => {
           title: "Verification code sent",
           description: `Check ${email} for your 6-digit code`,
         });
+        setAccountOpen(false);
         setScreenState("otp");
       } else {
         throw new Error(data.error || "Failed to send verification code");
@@ -472,6 +497,7 @@ const ApplyRecipient = () => {
             title: "Account already exists",
             description: "Please sign in with your existing account.",
           });
+          setAccountOpen(false);
           setScreenState("signin-prompt");
           return;
         }
@@ -485,10 +511,23 @@ const ApplyRecipient = () => {
       // Get the current user
       const { data: { user: currentUser } } = await supabase.auth.getUser();
 
+      // Signed up mid-application: come straight back to the step they left
+      if (authIntent === "advance") {
+        setAccountOpen(false);
+        setScreenState("form");
+        setCurrentStep(3);
+        setPassword("");
+        toast({
+          title: "You're signed in",
+          description: "Everything you entered is saved — pick up where you left off.",
+        });
+        return;
+      }
+
       if (currentUser) {
         const fundraiserData = await createFundraiserForUser(currentUser.id);
         setCreatedFundraiserId(fundraiserData.id);
-        
+
         // Clear drafts after successful submission
         clearScopedDraft(currentUser.id);
         clearScopedDraft(null); // Also clear any anonymous draft
@@ -515,6 +554,7 @@ const ApplyRecipient = () => {
 
   const handleSignInAndContinue = async (signInPassword: string) => {
     setIsSubmitting(true);
+    preserveOnAuthRef.current = true;
 
     try {
       const { error } = await signIn(email, signInPassword);
@@ -534,6 +574,19 @@ const ApplyRecipient = () => {
         
         if (roleError) {
           console.error("Role upsert error:", roleError);
+        }
+
+        // Signed in mid-application: return to the step they left
+        if (authIntent === "advance") {
+          setAccountOpen(false);
+          setScreenState("form");
+          setCurrentStep(3);
+          setPassword("");
+          toast({
+            title: "You're signed in",
+            description: "Everything you entered is saved — pick up where you left off.",
+          });
+          return;
         }
 
         // Create the fundraiser for this existing user
@@ -585,7 +638,7 @@ const ApplyRecipient = () => {
 
   // Get step config based on current step (adjust headline for authenticated users on review step)
   const getStepConfig = (step: number) => {
-    if (isAuthenticated && step === 4) {
+    if (step === 4) {
       return {
         headline: "Review and submit your request",
         subtext: "Let's make sure your request is complete.",
@@ -595,11 +648,9 @@ const ApplyRecipient = () => {
   };
 
   const getContinueLabel = () => {
-    if (isAuthenticated && currentStep === 4) {
-      return isSubmitting ? "Submitting..." : "Submit Fundraiser";
-    }
-    if (currentStep === 5) {
-      return isSubmitting ? "Sending code..." : "Continue";
+    if (currentStep === 4) {
+      if (isAuthenticated) return isSubmitting ? "Submitting..." : "Submit Fundraiser";
+      return "Submit Fundraiser";
     }
     return "Continue";
   };
@@ -695,8 +746,10 @@ const ApplyRecipient = () => {
             setGoalAmount={setMonthlyGoal}
             smartMatching={smartMatching}
             setSmartMatching={setSmartMatching}
-            category={category}
             beneficiaryType={beneficiaryType}
+            zipCode={zipCode}
+            setZipCode={setZipCode}
+            locationLabel={locationLabel}
           />
         )}
 
@@ -710,28 +763,42 @@ const ApplyRecipient = () => {
             beneficiaryType={beneficiaryType}
             goalAmount={monthlyGoal}
             zipCode={zipCode}
-            setZipCode={setZipCode}
             locationLabel={locationLabel}
             onEditStory={() => goToStep(2)}
             onEditDetails={() => goToStep(1)}
+            onEditLocation={() => goToStep(3)}
           />
         )}
 
 
-
-        {currentStep === 5 && !isAuthenticated && (
-          <AccountStep
-            email={email}
-            setEmail={setEmail}
-            password={password}
-            setPassword={setPassword}
-            fullName={fullName}
-            setFullName={setFullName}
-            onGoogleAuth={handleGoogleAuth}
-          />
-        )}
 
       </ApplyLayout>
+
+      {!isAuthenticated && (
+        <AccountDialog
+          open={accountOpen}
+          onOpenChange={(open) => {
+            setAccountOpen(open);
+            if (!open && authIntent === "advance" && currentStep === 3) {
+              // Dismissed — let them keep going as a guest
+              setDirection("forward");
+              setCurrentStep(4);
+            }
+          }}
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          fullName={fullName}
+          setFullName={setFullName}
+          onGoogleAuth={handleGoogleAuth}
+          onSubmit={handleAccountSubmit}
+          isLoading={isSubmitting}
+          intent={authIntent}
+          goalAmount={monthlyGoal}
+          title={title}
+        />
+      )}
 
       {/* ShareModal removed - now handled by FundraiserDashboard */}
     </>
