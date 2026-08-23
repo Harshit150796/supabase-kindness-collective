@@ -449,7 +449,7 @@ const ApplyRecipient = () => {
 
       // Email doesn't exist, send OTP for new account
       const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: { email },
+        body: { email, purpose: 'signup' },
       });
 
       if (error) throw error;
