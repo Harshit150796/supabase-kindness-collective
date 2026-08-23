@@ -2,12 +2,14 @@ import { ReactNode, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { 
-  Home, Gift, CreditCard, Clock, Shield, 
+import {
+  Home, Gift, CreditCard, Clock, Shield,
   BarChart, Users, LogOut, Menu, X,
   DollarSign, TrendingUp, FileText, BookOpen,
-  MessageSquare, HelpCircle, Newspaper, Megaphone, Mail, Package
+  MessageSquare, HelpCircle, Newspaper, Megaphone, Mail, Package,
+  Heart, Wallet
 } from 'lucide-react';
+
 import logo from '@/assets/logo.png';
 
 interface DashboardLayoutProps {
