@@ -97,14 +97,15 @@ export function Navbar() {
                   
                   <DropdownMenuSeparator />
                   
-                  <DropdownMenuItem onClick={() => navigate('/donor')}>
+                  <DropdownMenuItem onClick={() => navigate('/dashboard/donate')}>
                     <DollarSign className="w-4 h-4 mr-3" />
-                    Donor Portal
+                    Donate
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/recipient')}>
+                  <DropdownMenuItem onClick={() => navigate('/dashboard/wallet')}>
                     <Gift className="w-4 h-4 mr-3" />
-                    Recipient Portal
+                    Voucher Wallet
                   </DropdownMenuItem>
+
                   
                   <DropdownMenuSeparator />
                   
