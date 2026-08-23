@@ -128,21 +128,17 @@ export default function Auth() {
   const handleOTPVerified = async () => {
     if (!pendingSignupData) return;
 
-    const { email: signupEmail, password: signupPassword, fullName: signupFullName, role: targetRole } = pendingSignupData;
+    const { email: signupEmail, password: signupPassword, fullName: signupFullName } = pendingSignupData;
     setLoading(true);
-    
-    // Determine the additional role (opposite of selected) - all users get both roles
-    const additionalRole = targetRole === 'donor' ? 'recipient' : 'donor';
-    
+
     try {
-      // Step 1: Create the account with both roles
+      // Step 1: Create the account (one generic account — give and receive)
       const { error: signupError } = await signUp(
         signupEmail,
         signupPassword,
-        signupFullName,
-        targetRole,
-        [additionalRole]
+        signupFullName
       );
+
 
       if (signupError) {
         if (signupError.message.includes('already registered')) {
