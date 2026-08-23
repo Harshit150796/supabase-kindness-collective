@@ -48,26 +48,34 @@ rather keep the card minimal.
 ## Technical notes
 
 - `GoalStep.tsx`: delete `getCategoryImpact`, the impact estimate block and its
-  `category` prop; add a ZIP input (5-digit numeric, `inputMode="numeric"`) with the
-  `useZipLocation` city/state resolution line beneath it. Keeps presets, helper text,
-  progress bar and smart-matching switch.
+  `category` prop; add a ZIP input (5-digit numeric, `inputMode="numeric"`,
+  `autoComplete="postal-code"`) with the `useZipLocation` city/state confirmation line
+  beside it. Keeps presets, helper text, progress bar and smart-matching switch.
 - `ReviewStep.tsx`: replace the ZIP input with a read-only location row +
-  `onEditLocation` callback; drop `setZipCode`.
+  `onEditLocation` callback (jumps to step 3); drop `setZipCode`.
 - `ApplyRecipient.tsx`:
-  - `totalSteps` = 4 always; `stepConfig` trimmed to 4 entries with step 3 subtext
-    mentioning ZIP; remove the `AccountStep` render and step-5 branches.
+  - `totalSteps` = 4 always; `stepConfig` trimmed to 4 entries; remove the
+    `AccountStep` render and all step-5 branches.
   - `canContinue()` case 3 requires `monthlyGoal > 0` **and** `/^\d{5}$/` ZIP;
-    case 4 requires a non-empty title only.
-  - `handleContinue`: step 3 + guest → open account dialog (with a
-    `pendingAction: "advance"`); step 4 + guest → open dialog with
-    `pendingAction: "submit"`; step 4 + authenticated → `handleAuthenticatedSubmit()`.
-  - Dialog dismiss with `pendingAction: "advance"` advances to step 4.
-  - After OTP verification: if the pending action was "advance", sign in and go to
-    step 4; if "submit", keep the existing `handleOTPVerified` submit path.
-  - `SignInPrompt` / `handleSignInAndContinue` reused, branching on the same
-    pending action.
+    case 4 requires a non-empty title.
+  - New `authIntent` state (`"advance" | "submit" | null`). `handleContinue`:
+    step 3 + guest → open dialog with `authIntent: "advance"`; step 4 + guest → open
+    dialog with `authIntent: "submit"`; step 4 + authenticated →
+    `handleAuthenticatedSubmit()`. Dismissing the dialog advances/leaves the step as
+    a guest.
+  - **Progress survival across auth:** a `preserveOnAuthRef` flag is set when the
+    dialog opens. The `user?.id` change effect skips `resetForm()` and skips
+    reloading the draft while that flag is set, so all in-memory answers (including
+    the attached media, which lives in component state) stay intact; the autosave
+    effect then rewrites the same values under the new user's draft scope and the
+    anonymous draft is cleared.
+  - `handleOTPVerified` / `handleSignInAndContinue` branch on `authIntent`:
+    `"submit"` keeps the existing create-fundraiser path; `"advance"` closes the
+    dialog, returns `screenState` to `"form"` and leaves `currentStep` at 3 with a
+    short "Signed in — pick up where you left off" toast.
 - New `src/components/apply/AccountDialog.tsx`: `Dialog` on desktop, `Drawer` on
   mobile (same responsive pattern as the media picker in `StoryStep.tsx`), wrapping
   the account fields and password-strength UI lifted from `AccountStep.tsx`.
   `AccountStep.tsx` is deleted once unreferenced.
-- Draft autosave keys, media upload and submission payloads unchanged.
+- Draft autosave keys, media upload and submission payloads otherwise unchanged.
+
