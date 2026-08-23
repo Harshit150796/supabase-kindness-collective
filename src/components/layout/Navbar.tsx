@@ -231,19 +231,20 @@ export function Navbar() {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start gap-2" 
-                    onClick={() => { navigate('/donor'); setMobileMenuOpen(false); }}
+                    onClick={() => { navigate('/dashboard/donate'); setMobileMenuOpen(false); }}
                   >
                     <DollarSign className="w-4 h-4" />
-                    Donor Portal
+                    Donate
                   </Button>
                   <Button 
                     variant="outline" 
                     className="w-full justify-start gap-2" 
-                    onClick={() => { navigate('/recipient'); setMobileMenuOpen(false); }}
+                    onClick={() => { navigate('/dashboard/wallet'); setMobileMenuOpen(false); }}
                   >
                     <Gift className="w-4 h-4" />
-                    Recipient Portal
+                    Voucher Wallet
                   </Button>
+
                   <Button 
                     variant="ghost" 
                     className="w-full text-destructive justify-start gap-2" 
