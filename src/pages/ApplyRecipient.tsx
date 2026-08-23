@@ -623,7 +623,7 @@ const ApplyRecipient = () => {
     if (createdFundraiserId) {
       navigate(`/fundraiser/${createdFundraiserId}?share=true`);
     } else {
-      navigate("/recipient/dashboard");
+      navigate("/dashboard");
     }
   };
 
@@ -631,7 +631,7 @@ const ApplyRecipient = () => {
     if (createdFundraiserId) {
       navigate(`/fundraiser/${createdFundraiserId}`);
     } else {
-      navigate("/recipient/dashboard");
+      navigate("/dashboard");
     }
   };
 

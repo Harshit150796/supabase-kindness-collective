@@ -29,7 +29,7 @@ export default function DonationSuccess() {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          navigate('/donor/history');
+          navigate('/dashboard/giving');
           return 0;
         }
         return prev - 1;
@@ -110,7 +110,7 @@ export default function DonationSuccess() {
           {user ? (
             <div className="space-y-3">
               <Button asChild className="w-full">
-                <Link to="/donor/history">
+                <Link to="/dashboard/giving">
                   <History className="w-4 h-4 mr-2" />
                   View Your Donations
                 </Link>
