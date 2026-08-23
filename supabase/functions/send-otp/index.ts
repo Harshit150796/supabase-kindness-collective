@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { renderOtpEmail, EMAIL_SENDER } from "../_shared/email-layout.ts";
+import { emailExists } from "../_shared/email-exists.ts";
+
 
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -12,6 +14,7 @@ const corsHeaders = {
 
 interface SendOTPRequest {
   email: string;
+  purpose?: "signup" | "verify";
 }
 
 const generateOTP = (): string => {
@@ -25,7 +28,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email }: SendOTPRequest = await req.json();
+    const { email, purpose }: SendOTPRequest = await req.json();
 
     if (!email) {
       return new Response(
@@ -47,6 +50,22 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Signup guard: never send a verification code to an address that already
+    // has an account — the caller should route the person to sign in instead.
+    if (purpose === "signup") {
+      const exists = await emailExists(supabase, email);
+      if (exists) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            code: "email_exists",
+            error: "This email is already registered. Please sign in instead.",
+          }),
+          { status: 409, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
 
     // Rate limiting: Check if user has requested OTP in the last 60 seconds
     const { data: recentOTP } = await supabase

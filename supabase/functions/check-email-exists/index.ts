@@ -1,10 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { emailExists } from "../_shared/email-exists.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -15,9 +18,9 @@ serve(async (req) => {
   try {
     const { email } = await req.json();
 
-    if (!email) {
+    if (!email || typeof email !== "string" || !emailRegex.test(email.trim())) {
       return new Response(
-        JSON.stringify({ error: "Email is required" }),
+        JSON.stringify({ error: "A valid email is required" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -27,23 +30,8 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Check profiles table for this email (more reliable approach)
-    const { data: profileData, error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
-
-    if (profileError) {
-      console.error("Error checking email in profiles:", profileError);
-      return new Response(
-        JSON.stringify({ error: "Failed to check email" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    const exists = !!profileData;
-    console.log(`Email check for ${email}: exists = ${exists}`);
+    const exists = await emailExists(supabaseAdmin, email);
+    console.log(`Email check completed: exists = ${exists}`);
 
     return new Response(
       JSON.stringify({ exists }),
