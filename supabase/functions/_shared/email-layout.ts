@@ -119,7 +119,7 @@ function shell(opts: {
 
           <!-- Footer -->
           <tr>
-            <td style="padding:24px 32px 28px 32px;">
+            <td style="padding:26px 24px 32px 24px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr><td style="border-top:1px solid ${BORDER};font-size:0;line-height:0;height:1px;">&nbsp;</td></tr>
               </table>
