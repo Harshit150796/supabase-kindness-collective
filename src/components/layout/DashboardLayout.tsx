@@ -44,26 +44,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         { icon: Mail, label: 'Newsletters', path: '/admin/newsletters' },
       ];
     }
-    if (hasRole('recipient')) {
-      return [
-        { icon: Home, label: 'Dashboard', path: '/recipient' },
-        { icon: Gift, label: 'Coupons', path: '/recipient/coupons' },
-        { icon: CreditCard, label: 'Loyalty Card', path: '/recipient/loyalty-card' },
-        { icon: Clock, label: 'History', path: '/recipient/history' },
-        { icon: Shield, label: 'Verification', path: '/recipient/verification' },
-      ];
-    }
+    // One generic account: giving and receiving are capabilities, not account types.
     return [
-      { icon: Home, label: 'Dashboard', path: '/donor' },
-      { icon: DollarSign, label: 'Donate', path: '/donor/donate' },
-      { icon: Gift, label: 'My Coupons', path: '/donor/coupons' },
-      { icon: TrendingUp, label: 'Impact', path: '/donor/impact' },
-      { icon: Clock, label: 'History', path: '/donor/history' },
+      { icon: Home, label: 'Home', path: '/dashboard' },
+      { icon: Heart, label: 'Donate', path: '/dashboard/donate' },
+      { icon: DollarSign, label: 'Your Giving', path: '/dashboard/giving' },
+      { icon: TrendingUp, label: 'Your Impact', path: '/dashboard/impact' },
+      { icon: Wallet, label: 'Voucher Wallet', path: '/dashboard/wallet' },
+      { icon: CreditCard, label: 'Loyalty Card', path: '/dashboard/loyalty-card' },
+      { icon: Megaphone, label: 'Your Requests', path: '/my-fundraisers' },
+      { icon: Shield, label: 'Verification', path: '/dashboard/verification' },
     ];
   };
 
   const navItems = getNavItems();
-  const roleLabel = hasRole('admin') ? 'Admin' : hasRole('recipient') ? 'Recipient' : 'Donor';
+  const roleLabel = hasRole('admin') ? 'Admin' : 'My Account';
+
 
   return (
     <div className="min-h-dvh bg-muted/30">
