@@ -65,56 +65,61 @@ function shell(opts: {
   <meta name="supported-color-schemes" content="light only" />
   <title>${escapeHtml(opts.heading)}</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f4f4f5;">
-  <div style="display:none;font-size:1px;color:#f4f4f5;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${escapeHtml(opts.preheader)}</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f5;">
+<body style="margin:0;padding:0;background-color:#ffffff;">
+  <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${escapeHtml(opts.preheader)}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff;">
     <tr>
-      <td align="center" style="padding:32px 16px;">
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid ${BORDER};border-radius:16px;">
+      <td align="center" style="padding:0;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;">
           <!-- Header -->
           <tr>
-            <td style="padding:28px 32px 8px 32px;">
+            <td style="padding:28px 24px 16px 24px;">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="padding-right:10px;" valign="middle">
-                    <img src="${LOGO_URL}" width="36" height="36" alt="CouponDonation" style="display:block;width:36px;height:36px;border:0;outline:none;text-decoration:none;" />
+                    <img src="${LOGO_URL}" width="32" height="32" alt="CouponDonation" style="display:block;width:32px;height:32px;border:0;outline:none;text-decoration:none;" />
                   </td>
-                  <td valign="middle" style="font-family:${FONT};font-size:19px;font-weight:700;letter-spacing:-0.2px;white-space:nowrap;">
+                  <td valign="middle" style="font-family:${FONT};font-size:18px;font-weight:700;letter-spacing:-0.2px;white-space:nowrap;">
                     <span style="color:${GREEN};">Coupon</span><span style="color:${BLUE};">Donation</span>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
-
-          <!-- Content -->
           <tr>
-            <td style="padding:20px 32px 4px 32px;">
-              <h1 style="margin:0 0 10px 0;font-family:${FONT};font-size:22px;line-height:30px;font-weight:700;color:${INK};">${escapeHtml(opts.heading)}</h1>
-              <p style="margin:0 0 20px 0;font-family:${FONT};font-size:15px;line-height:23px;color:${BODY_TEXT};">${opts.intro}</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:0 32px;">${opts.bodyBlocks}</td>
-          </tr>
-
-          <!-- Security notice -->
-          <tr>
-            <td style="padding:24px 32px 0 32px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f7f8f9;border:1px solid ${BORDER};border-radius:12px;">
-                <tr>
-                  <td style="padding:16px 18px;">
-                    <p style="margin:0 0 10px 0;font-family:${FONT};font-size:12px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:${INK};">Security notice</p>
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${security}</table>
-                  </td>
-                </tr>
+            <td style="padding:0 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr><td style="border-top:1px solid ${BORDER};font-size:0;line-height:0;height:1px;">&nbsp;</td></tr>
               </table>
             </td>
           </tr>
 
+          <!-- Content -->
+          <tr>
+            <td style="padding:24px 24px 4px 24px;">
+              <h1 style="margin:0 0 10px 0;font-family:${FONT};font-size:21px;line-height:29px;font-weight:700;color:${INK};">${escapeHtml(opts.heading)}</h1>
+              <p style="margin:0 0 20px 0;font-family:${FONT};font-size:15px;line-height:23px;color:${BODY_TEXT};">${opts.intro}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 24px;">${opts.bodyBlocks}</td>
+          </tr>
+
+          <!-- Security notice -->
+          <tr>
+            <td style="padding:26px 24px 0 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr><td style="border-top:1px solid ${BORDER};font-size:0;line-height:0;height:1px;">&nbsp;</td></tr>
+              </table>
+              <p style="margin:18px 0 10px 0;font-family:${FONT};font-size:12px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:${INK};">Security notice</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${security}</table>
+            </td>
+          </tr>
+
+
           <!-- Footer -->
           <tr>
-            <td style="padding:24px 32px 28px 32px;">
+            <td style="padding:26px 24px 32px 24px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr><td style="border-top:1px solid ${BORDER};font-size:0;line-height:0;height:1px;">&nbsp;</td></tr>
               </table>
@@ -151,15 +156,15 @@ export function renderOtpEmail(opts: { code: string; expiresInMinutes: number })
   const spaced = code.split("").join(" ");
 
   const bodyBlocks = `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0fdf6;border:1px solid #b9ecd2;border-radius:14px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f6f7f8;border:1px solid ${BORDER};border-radius:6px;">
       <tr>
-        <td align="center" style="padding:22px 12px 18px 12px;">
-          <div style="font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#0f7a53;">Verification code</div>
-          <div style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:30px;line-height:40px;font-weight:700;letter-spacing:6px;color:#064e3b;white-space:nowrap;margin-top:8px;">${escapeHtml(spaced)}</div>
-          <div style="font-family:${FONT};font-size:13px;line-height:20px;color:#0f7a53;margin-top:6px;">Expires in ${expiresInMinutes} minutes</div>
+        <td align="center" style="padding:20px 12px 16px 12px;">
+          <div style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:30px;line-height:38px;font-weight:700;letter-spacing:6px;color:${INK};white-space:nowrap;">${escapeHtml(spaced)}</div>
+          <div style="font-family:${FONT};font-size:13px;line-height:20px;color:${MUTED};margin-top:6px;">Expires in ${expiresInMinutes} minutes</div>
         </td>
       </tr>
     </table>`;
+
 
   const html = shell({
     preheader: `Your CouponDonation verification code is ${code}. It expires in ${expiresInMinutes} minutes.`,
