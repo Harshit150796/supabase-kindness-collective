@@ -17,54 +17,65 @@
 ## The account popup (guests only)
 
 A single account card, shown as a popup over the current step — sign up with name /
-email / password, "Continue with Google", plus a "Already have an account? Sign in"
-switch. It appears at two moments:
+email / password, "Continue with Google", plus automatic routing to sign-in if the
+email already has an account. It appears at two moments:
 
-1. **Leaving step 3**, once amount + ZIP are filled and they tap Continue. This is
-   the psychological moment they're most likely to convert.
-   - Sign up (or sign in) there → they land on the review step already signed in.
-   - Dismiss it → they still move on to the review step; nothing is lost.
-2. **On Submit from step 4**, if they're still a guest. Same card, and on success the
-   fundraiser is submitted immediately and they go to the success/share screen.
+1. **On Continue from step 3**, once amount + ZIP are filled. This is the moment they
+   are most likely to convert.
+   - They sign up (or sign in) → after email verification they are dropped back on
+     **step 3, exactly as they left it**, everything still filled in, and they simply
+     tap Continue to reach step 4. Nothing is retyped, nothing is lost, and there is
+     no "save my progress" action for them to take — saving is automatic.
+   - They dismiss it → they still move on to step 4 as a guest.
+2. **On Submit from step 4**, only if they are still a guest. On success the
+   fundraiser is submitted and they go to the success/share screen.
 
-Everything they typed stays exactly where it was while the popup is open or after it
-is dismissed. Signed-in users never see the popup.
+Once signed in, the popup never appears again — step 3 continues straight to step 4
+and step 4's button submits the request.
 
-Email verification stays as it is today: after the sign-up form, the 6-digit code
-screen appears, and once verified the fundraiser is created. If the email already has
-an account, the popup switches to the "Account found — sign in to continue" state
-instead of erroring.
+Email verification stays as it is today: the 6-digit code screen, then back to the
+application. If the email already has an account, the "Account found — sign in to
+continue" screen shows instead of an error, and the same return-to-step-3 behaviour
+applies.
 
-## Two suggestions for you to decide later (not in this build)
+## One suggestion for later (not in this build)
 
-- After a guest dismisses the popup on step 3, we could show a small inline
-  "Save my progress" line on the review step so they know an account is coming.
-- The popup could show a one-line reminder of what they're about to submit
-  (title + goal), which usually lifts sign-up completion a few points.
+The popup shows a one-line reminder of what they're saving (title + goal amount),
+which usually lifts sign-up completion — included here, but easy to drop if you'd
+rather keep the card minimal.
+
 
 ## Technical notes
 
 - `GoalStep.tsx`: delete `getCategoryImpact`, the impact estimate block and its
-  `category` prop; add a ZIP input (5-digit numeric, `inputMode="numeric"`) with the
-  `useZipLocation` city/state resolution line beneath it. Keeps presets, helper text,
-  progress bar and smart-matching switch.
+  `category` prop; add a ZIP input (5-digit numeric, `inputMode="numeric"`,
+  `autoComplete="postal-code"`) with the `useZipLocation` city/state confirmation line
+  beside it. Keeps presets, helper text, progress bar and smart-matching switch.
 - `ReviewStep.tsx`: replace the ZIP input with a read-only location row +
-  `onEditLocation` callback; drop `setZipCode`.
+  `onEditLocation` callback (jumps to step 3); drop `setZipCode`.
 - `ApplyRecipient.tsx`:
-  - `totalSteps` = 4 always; `stepConfig` trimmed to 4 entries with step 3 subtext
-    mentioning ZIP; remove the `AccountStep` render and step-5 branches.
+  - `totalSteps` = 4 always; `stepConfig` trimmed to 4 entries; remove the
+    `AccountStep` render and all step-5 branches.
   - `canContinue()` case 3 requires `monthlyGoal > 0` **and** `/^\d{5}$/` ZIP;
-    case 4 requires a non-empty title only.
-  - `handleContinue`: step 3 + guest → open account dialog (with a
-    `pendingAction: "advance"`); step 4 + guest → open dialog with
-    `pendingAction: "submit"`; step 4 + authenticated → `handleAuthenticatedSubmit()`.
-  - Dialog dismiss with `pendingAction: "advance"` advances to step 4.
-  - After OTP verification: if the pending action was "advance", sign in and go to
-    step 4; if "submit", keep the existing `handleOTPVerified` submit path.
-  - `SignInPrompt` / `handleSignInAndContinue` reused, branching on the same
-    pending action.
+    case 4 requires a non-empty title.
+  - New `authIntent` state (`"advance" | "submit" | null`). `handleContinue`:
+    step 3 + guest → open dialog with `authIntent: "advance"`; step 4 + guest → open
+    dialog with `authIntent: "submit"`; step 4 + authenticated →
+    `handleAuthenticatedSubmit()`. Dismissing the dialog advances/leaves the step as
+    a guest.
+  - **Progress survival across auth:** a `preserveOnAuthRef` flag is set when the
+    dialog opens. The `user?.id` change effect skips `resetForm()` and skips
+    reloading the draft while that flag is set, so all in-memory answers (including
+    the attached media, which lives in component state) stay intact; the autosave
+    effect then rewrites the same values under the new user's draft scope and the
+    anonymous draft is cleared.
+  - `handleOTPVerified` / `handleSignInAndContinue` branch on `authIntent`:
+    `"submit"` keeps the existing create-fundraiser path; `"advance"` closes the
+    dialog, returns `screenState` to `"form"` and leaves `currentStep` at 3 with a
+    short "Signed in — pick up where you left off" toast.
 - New `src/components/apply/AccountDialog.tsx`: `Dialog` on desktop, `Drawer` on
   mobile (same responsive pattern as the media picker in `StoryStep.tsx`), wrapping
   the account fields and password-strength UI lifted from `AccountStep.tsx`.
   `AccountStep.tsx` is deleted once unreferenced.
-- Draft autosave keys, media upload and submission payloads unchanged.
+- Draft autosave keys, media upload and submission payloads otherwise unchanged.
+
