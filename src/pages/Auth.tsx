@@ -180,14 +180,19 @@ export default function Auth() {
 
 
       if (signupError) {
-        if (signupError.message.includes('already registered')) {
-          toast.error('This email is already registered. Please sign in instead.');
-          setAuthStep('form');
-          setMode('signin');
+        const msg = (signupError.message || '').toLowerCase();
+        if (
+          msg.includes('already registered') ||
+          msg.includes('already exists') ||
+          msg.includes('user_already_exists') ||
+          (signupError as any).code === 'user_already_exists'
+        ) {
+          promptSignInInstead();
           return;
         }
         throw signupError;
       }
+
 
       // Step 2: Sign in immediately after signup to establish session
       const { error: signinError } = await signIn(signupEmail, signupPassword);
