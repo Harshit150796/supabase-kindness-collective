@@ -89,15 +89,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // One generic account: every user can both give and receive. Roles are
+  // capabilities, not account types, so both are always written.
   const signUp = async (
-    email: string, 
-    password: string, 
-    fullName: string, 
-    role: AppRole,
-    additionalRoles?: AppRole[]
+    email: string,
+    password: string,
+    fullName: string
   ) => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -108,39 +108,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (!error && data.user) {
-      // Add primary user role
-      await supabase.from('user_roles').insert({
+      await supabase.from('user_roles').insert([
+        { user_id: data.user.id, role: 'donor' as AppRole },
+        { user_id: data.user.id, role: 'recipient' as AppRole },
+      ]);
+
+      const cardNumber = `CD${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      await supabase.from('loyalty_cards').insert({
         user_id: data.user.id,
-        role: role
+        card_number: cardNumber
       });
-
-      // Add additional roles if provided
-      if (additionalRoles && additionalRoles.length > 0) {
-        const additionalInserts = additionalRoles
-          .filter(r => r !== role) // Avoid duplicates
-          .map(r => ({
-            user_id: data.user.id,
-            role: r
-          }));
-        
-        if (additionalInserts.length > 0) {
-          await supabase.from('user_roles').insert(additionalInserts);
-        }
-      }
-
-      // Create loyalty card for recipients
-      const hasRecipientRole = role === 'recipient' || additionalRoles?.includes('recipient');
-      if (hasRecipientRole) {
-        const cardNumber = `CD${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-        await supabase.from('loyalty_cards').insert({
-          user_id: data.user.id,
-          card_number: cardNumber
-        });
-      }
     }
 
     return { error: error as Error | null, user: data?.user };
   };
+
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
