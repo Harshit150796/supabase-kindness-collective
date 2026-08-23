@@ -13,10 +13,10 @@ interface ReviewStepProps {
   beneficiaryType: string;
   goalAmount: string;
   zipCode: string;
-  setZipCode: (value: string) => void;
   locationLabel?: string | null;
   onEditStory: () => void;
   onEditDetails: () => void;
+  onEditLocation: () => void;
 }
 
 const getCategoryLabel = (category: string): string => {
@@ -78,10 +78,10 @@ export const ReviewStep = ({
   beneficiaryType,
   goalAmount,
   zipCode,
-  setZipCode,
   locationLabel,
   onEditStory,
   onEditDetails,
+  onEditLocation,
 }: ReviewStepProps) => {
   const cover = media[0];
   const coverPhotoPreview = cover?.previewUrl || "";
@@ -238,36 +238,20 @@ export const ReviewStep = ({
           <span className="font-medium">{getBeneficiaryLabel(beneficiaryType)}</span>
         </Row>
 
-        <Row label="Goal" onEdit={onEditDetails}>
+        <Row label="Goal" onEdit={onEditLocation}>
           <span className="font-semibold">
             ${Number(goalAmount || 0).toLocaleString()}{" "}
             <span className="font-normal text-muted-foreground">total</span>
           </span>
         </Row>
 
-        <Row label="Location">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <Input
-              id="apply-zip"
-              type="text"
-              inputMode="numeric"
-              autoComplete="postal-code"
-              maxLength={5}
-              placeholder="ZIP code"
-              aria-label="ZIP code"
-              value={zipCode}
-              onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
-              className="h-10 w-28 rounded-xl border-border/80 bg-background text-base tracking-widest
-                hover:border-primary/50 focus-visible:ring-primary/20 transition-colors duration-200"
-            />
-            {/* Reserved space so the row never jumps when the city resolves */}
-            <span className="min-h-5 flex items-center">
-              {cityState && (
-                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary animate-fade-in">
-                  <Check className="w-4 h-4" />
-                  {cityState}
-                </span>
-              )}
+        <Row label="Location" onEdit={onEditLocation}>
+          <div className="flex items-center gap-2 flex-wrap">
+            {cityState ? (
+              <span className="font-medium">{cityState}</span>
+            ) : null}
+            <span className={cityState ? "text-muted-foreground" : "font-medium"}>
+              {zipCode || "Not set"}
             </span>
           </div>
         </Row>
