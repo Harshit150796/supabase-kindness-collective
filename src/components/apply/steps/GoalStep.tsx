@@ -157,22 +157,23 @@ export const GoalStep = ({
             className={`h-14 w-full rounded-2xl bg-muted/40 border border-border pl-12 text-lg
               font-medium tracking-normal transition-all hover:border-primary/30
               focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20
-              ${cityState ? "pr-36" : "pr-4"}`}
+              ${inlineCityState ? "pr-36" : "pr-4"}`}
           />
-          {cityState && (
-            <div className="absolute inset-y-0 right-4 hidden xs:flex items-center gap-1.5 pointer-events-none animate-fade-in">
+          {inlineCityState && (
+            <div className="absolute inset-y-0 right-4 flex items-center gap-1.5 pointer-events-none animate-fade-in">
               <Check className="w-4 h-4 text-primary" />
               <span className="text-sm font-semibold text-primary">{cityState}</span>
             </div>
           )}
         </div>
 
-        {cityState && (
-          <p className="xs:hidden flex items-center gap-1.5 text-sm font-medium text-primary animate-fade-in">
+        {cityState && !inlineCityState && (
+          <p className="flex items-center gap-1.5 text-sm font-medium text-primary animate-fade-in">
             <Check className="w-4 h-4" />
             {cityState}
           </p>
         )}
+
       </div>
 
 
