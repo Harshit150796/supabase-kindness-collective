@@ -86,6 +86,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Send email with OTP using Resend API
+    const rendered = renderOtpEmail({ code: otp, expiresInMinutes: 10 });
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -93,45 +94,15 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "CouponDonation <verify@coupondonation.com>",
+        from: EMAIL_SENDER.from,
+        reply_to: EMAIL_SENDER.replyTo,
         to: [email],
-        subject: "Your CouponDonation Verification Code",
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          </head>
-          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5; margin: 0; padding: 40px 20px;">
-            <div style="max-width: 460px; margin: 0 auto; background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
-              <div style="text-align: center; margin-bottom: 32px;">
-                <h1 style="color: #10b981; font-size: 28px; margin: 0 0 8px;">CouponDonation</h1>
-                <p style="color: #71717a; font-size: 14px; margin: 0;">Transforming Giving</p>
-              </div>
-              
-              <h2 style="color: #18181b; font-size: 20px; text-align: center; margin-bottom: 16px;">Verify Your Email</h2>
-              
-              <p style="color: #52525b; font-size: 16px; text-align: center; margin-bottom: 24px;">
-                Enter this verification code to continue:
-              </p>
-              
-              <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
-                <span style="font-family: 'Courier New', monospace; font-size: 36px; font-weight: bold; color: white; letter-spacing: 8px;">${otp}</span>
-              </div>
-              
-              <p style="color: #71717a; font-size: 14px; text-align: center; margin-bottom: 0;">
-                This code expires in <strong>10 minutes</strong>.
-              </p>
-              <p style="color: #a1a1aa; font-size: 12px; text-align: center; margin-top: 24px;">
-                If you didn't request this code, you can safely ignore this email.
-              </p>
-            </div>
-          </body>
-          </html>
-        `,
+        subject: rendered.subject,
+        html: rendered.html,
+        text: rendered.text,
       }),
     });
+
 
     if (!emailResponse.ok) {
       let errorData: any = null;
