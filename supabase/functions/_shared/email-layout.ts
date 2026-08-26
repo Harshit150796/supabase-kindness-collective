@@ -12,7 +12,7 @@
 const LOGO_URL = "https://coupondonation.com/favicon-192.png";
 const SITE_URL = "https://www.coupondonation.com";
 const SUPPORT_EMAIL = "connect@coupondonation.com";
-const SECURITY_EMAIL = "security@coupondonation.com";
+const SECURITY_EMAIL = "support@coupondonation.com";
 const COMPANY_LINE = "CouponDonation · United States";
 
 const GREEN = "#2e7d32";
