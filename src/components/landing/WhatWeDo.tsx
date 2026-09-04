@@ -323,9 +323,6 @@ function BranchScene({ layout, progress, reduced }: { layout: BranchLayout; prog
   const glowId = `branch-glow-${rawId}`;
 
   const outbound = useTransform(progress, (value) => Math.min(1, value / TURN_AT));
-  const goldLength = useTransform(outbound, (value) => Math.min(value, LOCK_AT / TURN_AT));
-  const greenLength = useTransform(outbound, (value) => Math.max(0, value - LOCK_AT / TURN_AT));
-  const greenOffset = LOCK_AT / TURN_AT;
   const coinProgress = useTransform(progress, (value) => Math.min(1, value / TURN_AT));
   const receiptProgress = useTransform(progress, (value) => {
     if (value <= TURN_AT) return 1;
