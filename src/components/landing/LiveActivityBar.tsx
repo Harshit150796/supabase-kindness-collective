@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react';
-import { Heart, TrendingUp, Users, Zap } from 'lucide-react';
+import { Heart, TrendingUp, Users } from 'lucide-react';
 import { popularBrands } from '@/data/brandLogos';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -85,14 +85,6 @@ export const LiveActivityBar = () => {
 
           {/* Quick Stats */}
           <div className="flex items-center gap-4 md:gap-6">
-            <div className="flex items-center gap-1.5 md:gap-2">
-              <Zap className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500" />
-              <span className="text-xs md:text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">Live</span>
-                <span className="hidden sm:inline"> program</span>
-              </span>
-            </div>
-
             <div className="flex items-center gap-1.5 md:gap-2">
               <Users className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
               <span className="text-xs md:text-sm text-muted-foreground">
