@@ -626,6 +626,7 @@ function TrackerCanvas({
   // motion ignores static numbers for them in `style`.
   const amberLen = useTransform(progress, (p) => Math.min(p, lockT));
   const amberOpacity = useTransform(progress, (p) => (p > 0.002 ? 1 : 0));
+  const amberGlow = useTransform(progress, (p) => (p > 0.002 ? 0.32 : 0));
   const emeraldLen = useTransform(progress, (p) => Math.max(0, p - lockT));
   const emeraldOffset = useTransform(progress, () => lockT);
   const emeraldOpacity = useTransform(progress, (p) => (p > lockT + 0.002 ? 1 : 0));
@@ -643,7 +644,8 @@ function TrackerCanvas({
   const tail2Offset = useTransform(progress, (p) => Math.max(0, p - TAIL * 0.4));
   const tail2Len = useTransform(progress, (p) => Math.min(p, TAIL * 0.4));
   const tailColor = useTransform(progress, (p) => (p >= lockT ? EMERALD : AMBER));
-  const tailOpacity = useTransform(progress, (p) => (p > 0.004 && p < ARRIVE_AT ? 1 : 0));
+  const tailOpacity = useTransform(progress, (p) => (p > 0.004 && p < ARRIVE_AT ? 0.28 : 0));
+  const tail2Opacity = useTransform(progress, (p) => (p > 0.004 && p < ARRIVE_AT ? 0.6 : 0));
 
   // Marker position (arc-length lookup)
   const mx = useTransform(progress, (p) => route.pointAt(p).x);
@@ -702,8 +704,7 @@ function TrackerCanvas({
             strokeLinecap="round"
             strokeLinejoin="round"
             filter={`url(#${id('glow')})`}
-            style={{ pathLength: amberLen, opacity: amberOpacity }}
-            opacity={0.32}
+            style={{ pathLength: amberLen, opacity: amberGlow }}
           />
           <motion.path
             d={route.d}
@@ -744,7 +745,6 @@ function TrackerCanvas({
             strokeLinecap="round"
             strokeLinejoin="round"
             style={{ pathLength: tailLen, pathOffset: tailOffset, stroke: tailColor, opacity: tailOpacity }}
-            opacity={0.28}
           />
           <motion.path
             d={route.d}
@@ -752,8 +752,7 @@ function TrackerCanvas({
             strokeWidth="3.2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{ pathLength: tail2Len, pathOffset: tail2Offset, stroke: tailColor, opacity: tailOpacity }}
-            opacity={0.6}
+            style={{ pathLength: tail2Len, pathOffset: tail2Offset, stroke: tailColor, opacity: tail2Opacity }}
           />
 
           {/* Node markers on the path */}
