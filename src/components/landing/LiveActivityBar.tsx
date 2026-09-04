@@ -81,12 +81,12 @@ export const LiveActivityBar = () => {
           </div>
 
           {/* Redeemable-at label + scrolling brand logos — pinned to the right edge */}
-          <div className="hidden lg:flex items-center justify-end gap-2.5 flex-1 min-w-0">
+          <div className="hidden md:flex items-center justify-end gap-2.5 flex-1 min-w-0">
             <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/80 whitespace-nowrap flex-shrink-0">
               Redeemable at
             </span>
             <div
-              className="overflow-hidden max-w-[180px]"
+              className="overflow-hidden max-w-[120px] lg:max-w-[180px]"
               style={{
                 maskImage: 'linear-gradient(to right, transparent, black 14%, black 100%)',
                 WebkitMaskImage: 'linear-gradient(to right, transparent, black 14%, black 100%)',
@@ -108,14 +108,14 @@ export const LiveActivityBar = () => {
         </div>
 
         {/* Mobile-only brand marquee row */}
-        <div className="lg:hidden mt-1.5 flex items-center justify-center">
+        <div className="md:hidden mt-1.5 flex items-center justify-center">
           <span className="text-[9px] font-medium uppercase tracking-[0.14em] text-muted-foreground/80">
             Redeemable at
           </span>
         </div>
         <div
           aria-hidden="true"
-          className="lg:hidden mt-1 -mx-4 overflow-hidden"
+          className="md:hidden mt-1 -mx-4 overflow-hidden"
           style={{
             maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
             WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
