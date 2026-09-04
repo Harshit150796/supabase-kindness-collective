@@ -364,9 +364,15 @@ function BranchScene({ layout, progress, reduced }: { layout: BranchLayout; prog
           className="absolute inset-0 h-full w-full overflow-visible"
         >
           <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
-              <stop offset={`${greenOffset * 100}%`} stopColor={GOLD} />
-              <stop offset={`${greenOffset * 100}%`} stopColor={PRIMARY} />
+            <linearGradient
+              id={gradientId}
+              x1="0"
+              y1="0"
+              x2={branch.width > branch.height ? '1' : '0'}
+              y2={branch.width > branch.height ? '0' : '1'}
+            >
+              <stop offset={`${branch.width > branch.height ? 47.7 : 49.5}%`} stopColor={GOLD} />
+              <stop offset={`${branch.width > branch.height ? 47.7 : 49.5}%`} stopColor={PRIMARY} />
             </linearGradient>
             <filter id={glowId} x="-60%" y="-60%" width="220%" height="220%">
               <feGaussianBlur stdDeviation="7" />
@@ -377,18 +383,11 @@ function BranchScene({ layout, progress, reduced }: { layout: BranchLayout; prog
           <motion.path
             d={branch.d}
             fill="none"
-            stroke={GOLD}
+            stroke={`url(#${gradientId})`}
             strokeWidth="4"
             strokeLinecap="round"
-            style={{ pathLength: goldLength }}
-          />
-          <motion.path
-            d={branch.d}
-            fill="none"
-            stroke={PRIMARY}
-            strokeWidth="4"
-            strokeLinecap="round"
-            style={{ pathLength: greenLength, pathOffset: greenOffset }}
+            strokeLinejoin="round"
+            style={{ pathLength: outbound }}
           />
 
           <Leaf point={branch.lock} angle={layout.leafAngle} visible={isLocked} reduced={reduced} />
