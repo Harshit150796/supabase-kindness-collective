@@ -190,18 +190,19 @@ export function WhatWeDo() {
                           'absolute z-20 flex items-center justify-center transition-all motion-reduce:transition-none',
                           isLockedToken ? 'h-8 w-11 rounded-md bg-primary text-primary-foreground' : 'h-8 w-8 rounded-full bg-accent text-accent-foreground',
                           isCurrent ? 'scale-100 opacity-100' : 'scale-50 opacity-0',
-                          isCurrent && isLockedToken && 'duration-300 ease-out shadow-emerald',
+                          isCurrent && isLockedToken && 'duration-300 ease-out shadow-emerald ring-4 ring-primary/15',
                           isCurrent && !isLockedToken && 'duration-500',
+                          isCurrent && index === 2 && 'motion-safe:animate-check-pop',
                         )}
                       >
                         {isLockedToken ? (
-                          <LockKeyhole className={cn('h-4 w-4', isCurrent && index === 2 && 'motion-safe:animate-bounce')} />
+                          <LockKeyhole className="h-4 w-4" />
                         ) : (
                           <CircleDollarSign className="h-5 w-5" />
                         )}
                       </div>
                       {isCurrent && index === 2 && (
-                        <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-primary/20 motion-reduce:hidden" />
+                        <span className="absolute inset-0 -z-10 rounded-full bg-primary/25 motion-safe:animate-[ping_600ms_cubic-bezier(0,0,0.2,1)_1] motion-reduce:hidden" />
                       )}
                     </div>
 
