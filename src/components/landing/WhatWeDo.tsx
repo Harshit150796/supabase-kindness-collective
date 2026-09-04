@@ -622,11 +622,19 @@ function TrackerCanvas({
   const id = (name: string) => `wd-${name}-${rawId}`;
   const lockT = route.marks.n3;
 
-  // Path layers
+  // Path layers. Note: SVG path props (pathLength/pathOffset) must be MotionValues —
+  // motion ignores static numbers for them in `style`.
   const amberLen = useTransform(progress, (p) => Math.min(p, lockT));
   const amberOpacity = useTransform(progress, (p) => (p > 0.002 ? 1 : 0));
   const emeraldLen = useTransform(progress, (p) => Math.max(0, p - lockT));
+  const emeraldOffset = useTransform(progress, () => lockT);
   const emeraldOpacity = useTransform(progress, (p) => (p > lockT + 0.002 ? 1 : 0));
+  // The emerald glow deepens once the receipt lands — the loop "settles".
+  const emeraldGlowTarget = useTransform(progress, (p) =>
+    p > lockT + 0.002 ? (p >= ARRIVE_AT ? 0.58 : 0.36) : 0,
+  );
+  const emeraldGlowSpring = useSpring(emeraldGlowTarget, { stiffness: 90, damping: 24 });
+  const emeraldGlow = reduced ? emeraldGlowTarget : emeraldGlowSpring;
 
   // Comet tail (two lengths for a stepped fade)
   const TAIL = 0.055;
@@ -647,8 +655,6 @@ function TrackerCanvas({
 
   const spring = (stiffness: number, damping: number, mass = 1, delay = 0): Transition =>
     reduced ? { duration: 0 } : { type: 'spring', stiffness, damping, mass, delay };
-
-  const glowOpacity = phase.arrived ? 0.55 : 0.36;
 
   return (
     <div style={{ containerType: 'inline-size' }}>
