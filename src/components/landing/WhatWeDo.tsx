@@ -203,7 +203,7 @@ const DESKTOP_LAYOUT: Layout = {
     n4: { x: 772, y: 224, w: 190, anchor: 'top' },
     r: { x: 445, y: 374, w: 210, anchor: 'top' },
   },
-  panel: { x: 170, y: 208, w: 220 },
+  panel: { x: 170, y: 205, w: 220 },
   tether: { x1: 84, y1: 214, x2: 166, y2: 214 },
   originLabel: { x: 70, y: 236, align: 'center' },
 };
@@ -545,7 +545,7 @@ function TraceHeader({ phase, reduced }: { phase: Phase; reduced: boolean }) {
       style={{ borderColor: hsl(HUE.line, 0.9), color: FAINT }}
     >
       <span className="sr-only">Illustrative sample trace, not live platform data.</span>
-      <span className="flex items-center gap-2.5">
+      <span className="flex w-full items-center justify-between gap-2.5 sm:w-auto sm:justify-start">
         <span>
           Trace id <span style={{ color: hsl(HUE.text, 0.85) }}>· {TRACE_ID}</span>
         </span>
@@ -574,7 +574,7 @@ function TraceHeader({ phase, reduced }: { phase: Phase; reduced: boolean }) {
           </AnimatePresence>
         </span>
       </span>
-      <span className="ml-auto flex items-center gap-2">
+      <span className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
         Status
         <span className="relative inline-grid overflow-hidden align-bottom">
           <AnimatePresence initial={false} mode="popLayout">
