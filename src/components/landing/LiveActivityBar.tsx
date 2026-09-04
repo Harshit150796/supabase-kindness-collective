@@ -29,7 +29,7 @@ const generateDonation = (id: number): DonationEvent => {
 export const LiveActivityBar = () => {
   const isMobile = useIsMobile();
   const [currentDonation, setCurrentDonation] = useState<DonationEvent>(() => generateDonation(1));
-  // Fixed beta-baseline figures — no simulated growth.
+  // Fixed baseline figures — no simulated growth.
   const donationCount = 24;
   const amountRaised = 1250;
   const scrollingRef = useRef(false);
@@ -88,7 +88,7 @@ export const LiveActivityBar = () => {
             <div className="flex items-center gap-1.5 md:gap-2">
               <Zap className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500" />
               <span className="text-xs md:text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">Beta</span>
+                <span className="font-semibold text-foreground">Live</span>
                 <span className="hidden sm:inline"> program</span>
               </span>
             </div>
@@ -105,7 +105,7 @@ export const LiveActivityBar = () => {
               <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 text-green-500" />
               <span className="text-xs md:text-sm text-muted-foreground">
                 <span className="font-semibold text-foreground tabular-nums">${amountRaised.toLocaleString()}</span>
-                <span className="hidden sm:inline"> raised during beta</span>
+                <span className="hidden sm:inline"> raised to date</span>
               </span>
             </div>
           </div>
