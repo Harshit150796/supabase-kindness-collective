@@ -74,7 +74,7 @@ export const LiveActivityBar = () => {
               <div className="absolute inset-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full opacity-0 md:opacity-100 md:animate-ping" />
             </div>
             <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">Live</span>
-            <DonationPill donation={currentDonation} />
+            {currentDonation && <DonationPill donation={currentDonation} />}
           </div>
 
           {/* Quick Stats */}
@@ -149,7 +149,7 @@ export const LiveActivityBar = () => {
 };
 
 // Memoised pill so the surrounding stats row and brand marquee don't reflow
-// every 3.5s when only the donation event changes.
+// when the donation record refreshes.
 const DonationPill = memo(function DonationPill({ donation }: { donation: DonationEvent }) {
   return (
     <div className="flex items-center gap-2 bg-background md:bg-background/80 md:backdrop-blur-sm rounded-full px-3 md:px-4 py-1.5 md:py-2 border border-border/50 shadow-sm max-w-[280px] md:max-w-none">
@@ -159,13 +159,15 @@ const DonationPill = memo(function DonationPill({ donation }: { donation: Donati
           <span className="font-semibold">{donation.name}</span>
           {' '}donated{' '}
           <span className="text-primary font-bold">${donation.amount}</span>
-          <span className="hidden sm:inline">
-            {' '}via{' '}
-            <span className="text-muted-foreground">{donation.brand}</span>
-          </span>
+          {donation.brand && (
+            <span className="hidden sm:inline">
+              {' '}via{' '}
+              <span className="text-muted-foreground">{donation.brand}</span>
+            </span>
+          )}
         </p>
       </div>
-      <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">{donation.timeAgo}</span>
+      <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">{timeAgo(donation.createdAt)}</span>
     </div>
   );
 });
