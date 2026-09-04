@@ -174,8 +174,8 @@ export const HeroActivityStrip = () => {
           {/* Zone 2 — progress to goal */}
           <Link
             to="/donate"
-            
             className="group min-w-0 w-full rounded-xl px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+
           >
             <div className="flex items-baseline justify-between gap-3 mb-1.5">
               <span className="text-xs md:text-sm font-semibold text-foreground truncate">
@@ -187,7 +187,10 @@ export const HeroActivityStrip = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="relative h-2.5 flex-1 min-w-[120px] rounded-full bg-muted overflow-hidden">
+              <div
+                ref={barRef}
+                className="relative h-2.5 flex-1 min-w-[120px] rounded-full bg-muted overflow-hidden"
+              >
                 {/* milestone ticks */}
                 {[25, 50, 75].map((t) => (
                   <span
@@ -198,7 +201,8 @@ export const HeroActivityStrip = () => {
                 ))}
                 <div
                   className={cn(
-                    'relative h-full rounded-full bg-gradient-to-r from-primary to-accent',
+                    'relative h-full rounded-full bg-primary',
+
                     !reducedMotion && 'transition-[width] duration-[900ms] ease-out',
                   )}
                   style={{ width: filled ? `${percent}%` : '0%' }}
