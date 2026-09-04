@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { HeroSection } from '@/components/landing/HeroSection';
+import { WhatWeDo } from '@/components/landing/WhatWeDo';
 import { SEO } from '@/components/SEO';
 import { LazyOnView } from '@/components/LazyOnView';
 
@@ -30,6 +31,8 @@ const Index = () => {
         <HeroSection />
 
         <LiveActivityBar />
+
+        <WhatWeDo />
 
         <LazyOnView minHeight={600} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
