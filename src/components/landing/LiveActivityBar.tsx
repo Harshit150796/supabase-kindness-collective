@@ -1,69 +1,63 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Heart, TrendingUp, Users } from 'lucide-react';
 import { popularBrands } from '@/data/brandLogos';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DonationEvent {
-  id: number;
+  id: string;
   name: string;
   amount: number;
   brand: string;
-  timeAgo: string;
+  createdAt: string;
 }
 
-const generateDonation = (id: number): DonationEvent => {
-  const names = ['Sarah M.', 'John D.', 'Emily R.', 'Michael T.', 'Lisa K.', 'David P.', 'Anna S.', 'James W.'];
-  const amounts = [25, 50, 75, 100, 150, 200, 250];
-  const brands = popularBrands.map(b => b.name);
-  const times = ['just now', '10s ago', '30s ago', '1m ago', '2m ago'];
-
-  return {
-    id,
-    name: names[Math.floor(Math.random() * names.length)],
-    amount: amounts[Math.floor(Math.random() * amounts.length)],
-    brand: brands[Math.floor(Math.random() * brands.length)],
-    timeAgo: times[Math.floor(Math.random() * times.length)]
-  };
+const timeAgo = (iso: string) => {
+  const diff = Math.max(0, Date.now() - new Date(iso).getTime());
+  const s = Math.floor(diff / 1000);
+  if (s < 45) return 'just now';
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${Math.max(1, m)}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d} day${d === 1 ? '' : 's'} ago`;
+  const mo = Math.floor(d / 30);
+  if (mo < 12) return `${mo} month${mo === 1 ? '' : 's'} ago`;
+  const y = Math.floor(mo / 12);
+  return `${y} year${y === 1 ? '' : 's'} ago`;
 };
 
 export const LiveActivityBar = () => {
-  const isMobile = useIsMobile();
-  const [currentDonation, setCurrentDonation] = useState<DonationEvent>(() => generateDonation(1));
+  const [currentDonation, setCurrentDonation] = useState<DonationEvent | null>(null);
   // Fixed baseline figures — no simulated growth.
   const donationCount = 24;
   const amountRaised = 1250;
-  const scrollingRef = useRef(false);
 
-  // Track scroll activity on mobile so we can pause text rotation during swipes
+  // Real most-recent donation from the database; refreshed quietly every 60s.
   useEffect(() => {
-    if (!isMobile) return;
-    let timer: number | undefined;
-    const onScroll = () => {
-      scrollingRef.current = true;
-      if (timer) window.clearTimeout(timer);
-      timer = window.setTimeout(() => {
-        scrollingRef.current = false;
-      }, 250);
+    let cancelled = false;
+
+    const load = async () => {
+      const { data, error } = await supabase.rpc('get_recent_public_donations', { _limit: 1 });
+      if (cancelled || error || !data || data.length === 0) return;
+      const row = data[0];
+      setCurrentDonation({
+        id: row.id,
+        name: row.display_name || 'A supporter',
+        amount: Number(row.amount) || 0,
+        brand: row.brand_partner || '',
+        createdAt: row.created_at,
+      });
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
+
+    load();
+    const interval = setInterval(load, 60000);
     return () => {
-      window.removeEventListener('scroll', onScroll);
-      if (timer) window.clearTimeout(timer);
+      cancelled = true;
+      clearInterval(interval);
     };
-  }, [isMobile]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Don't change text mid-swipe on mobile — feels like blinking
-      if (scrollingRef.current) return;
-      const next = generateDonation(Date.now());
-      setCurrentDonation(next);
-    }, 3500);
-
-    return () => clearInterval(interval);
   }, []);
 
-  if (!currentDonation) return null;
 
   return (
     <section className="relative bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-y border-border/50 overflow-hidden">
@@ -80,7 +74,7 @@ export const LiveActivityBar = () => {
               <div className="absolute inset-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full opacity-0 md:opacity-100 md:animate-ping" />
             </div>
             <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">Live</span>
-            <DonationPill donation={currentDonation} />
+            {currentDonation && <DonationPill donation={currentDonation} />}
           </div>
 
           {/* Quick Stats */}
@@ -155,7 +149,7 @@ export const LiveActivityBar = () => {
 };
 
 // Memoised pill so the surrounding stats row and brand marquee don't reflow
-// every 3.5s when only the donation event changes.
+// when the donation record refreshes.
 const DonationPill = memo(function DonationPill({ donation }: { donation: DonationEvent }) {
   return (
     <div className="flex items-center gap-2 bg-background md:bg-background/80 md:backdrop-blur-sm rounded-full px-3 md:px-4 py-1.5 md:py-2 border border-border/50 shadow-sm max-w-[280px] md:max-w-none">
@@ -165,13 +159,15 @@ const DonationPill = memo(function DonationPill({ donation }: { donation: Donati
           <span className="font-semibold">{donation.name}</span>
           {' '}donated{' '}
           <span className="text-primary font-bold">${donation.amount}</span>
-          <span className="hidden sm:inline">
-            {' '}via{' '}
-            <span className="text-muted-foreground">{donation.brand}</span>
-          </span>
+          {donation.brand && (
+            <span className="hidden sm:inline">
+              {' '}via{' '}
+              <span className="text-muted-foreground">{donation.brand}</span>
+            </span>
+          )}
         </p>
       </div>
-      <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">{donation.timeAgo}</span>
+      <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">{timeAgo(donation.createdAt)}</span>
     </div>
   );
 });
