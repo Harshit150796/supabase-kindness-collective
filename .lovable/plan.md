@@ -1,15 +1,11 @@
-# Remove the Live Activity bar under the hero
+# Remove only the "Live program" box from the Live Activity bar
 
 ## Change
 
-Remove the `<LiveActivityBar />` section from the home page (`src/pages/Index.tsx`), so the hero runs straight into the ImpactStories section. Nothing else changes — the component file stays in place untouched in case you want it later.
-
-## Why
-
-You've decided to drop the simulated live feed and the hardcoded stats rather than rebuild it right now. The progress-to-goal bar idea (fund 1,000 vouchers, 116/1,000) is a strong follow-up, but that's a separate step you can revisit after deciding the goal number and whether it promotes a specific fundraiser. For now: just take the bar out, leave everything else exactly as is.
+In the Live Activity bar under the hero, remove just the small box that shows the Zap icon and the words "Live program". Keep everything else in the bar exactly as it is — the live donation feed pill, the donations count, the "raised to date" figure, and the scrolling brand logos all stay.
 
 ## Technical notes
 
-- Edit `src/pages/Index.tsx`: remove the `import { LiveActivityBar }` line and the `<LiveActivityBar />` usage. Keep the import ordering and the rest of the page structure intact.
-- Leave `src/components/landing/LiveActivityBar.tsx` as-is — not deleted, not edited.
-- No data, routing, or styling changes anywhere else.
+- Edit `src/components/landing/LiveActivityBar.tsx`: delete the single block that renders the Zap icon + "Live program" text (the `<div className="flex items-center gap-1.5 md:gap-2">` containing `<Zap ... />`).
+- Remove the now-unused `Zap` import from the lucide-react import line at the top of the file.
+- No other changes to the bar, the page, or any other file.
