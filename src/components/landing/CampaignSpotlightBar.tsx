@@ -93,7 +93,7 @@ export const CampaignSpotlightBar = () => {
                     {funded.toLocaleString('en-US')}
                   </span>{' '}
                   of {goal.toLocaleString('en-US')} funded
-                  <span className="mx-1.5 text-border">·</span>
+                  <span className="mx-1.5 text-muted-foreground/60">·</span>
                   {remaining.toLocaleString('en-US')} to go
                 </>
               )}
