@@ -713,9 +713,7 @@ function TrackerCanvas({
             strokeLinecap="round"
             strokeLinejoin="round"
             filter={`url(#${id('glow')})`}
-            style={{ pathLength: emeraldLen, pathOffset: lockT, opacity: emeraldOpacity }}
-            animate={{ opacity: glowOpacity }}
-            transition={spring(120, 26)}
+            style={{ pathLength: emeraldLen, pathOffset: emeraldOffset, opacity: emeraldGlow }}
           />
 
           {/* Lit strokes */}
@@ -735,7 +733,7 @@ function TrackerCanvas({
             strokeWidth="2.2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{ pathLength: emeraldLen, pathOffset: lockT, opacity: emeraldOpacity }}
+            style={{ pathLength: emeraldLen, pathOffset: emeraldOffset, opacity: emeraldOpacity }}
           />
 
           {/* Comet tail */}
