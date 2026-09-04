@@ -5,7 +5,7 @@ import { SEO } from '@/components/SEO';
 import { LazyOnView } from '@/components/LazyOnView';
 
 // Below-the-fold sections — lazy chunks, only fetched as user scrolls.
-import { LiveActivityBar } from '@/components/landing/LiveActivityBar';
+import { CampaignSpotlightBar } from '@/components/landing/CampaignSpotlightBar';
 const ImpactStories = lazy(() => import('@/components/landing/ImpactStories').then(m => ({ default: m.ImpactStories })));
 const TrustTransparency = lazy(() => import('@/components/landing/TrustTransparency').then(m => ({ default: m.TrustTransparency })));
 const BrandLeaderboard = lazy(() => import('@/components/landing/BrandLeaderboard').then(m => ({ default: m.BrandLeaderboard })));
@@ -29,7 +29,7 @@ const Index = () => {
         {/* 1. Human-centered hero with featured story */}
         <HeroSection />
 
-        <LiveActivityBar />
+        <CampaignSpotlightBar />
 
         <LazyOnView minHeight={600} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
