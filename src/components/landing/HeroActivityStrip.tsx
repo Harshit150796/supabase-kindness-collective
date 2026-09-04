@@ -174,7 +174,7 @@ export const HeroActivityStrip = () => {
           {/* Zone 2 — progress to goal */}
           <Link
             to="/donate"
-            ref={barRef as any}
+            
             className="group min-w-0 w-full rounded-xl px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <div className="flex items-baseline justify-between gap-3 mb-1.5">
