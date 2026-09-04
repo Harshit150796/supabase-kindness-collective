@@ -142,20 +142,20 @@ const DESKTOP_ROUTE = buildRoute(1100, 450, { x: 70, y: 214 }, [
   { c1: { x: 595, y: 68 }, c2: { x: 662, y: 96 }, to: { x: 748, y: 96 }, mark: 'n3' },
   { c1: { x: 860, y: 96 }, c2: { x: 1030, y: 120 }, to: { x: 1030, y: 214 }, mark: 'n4' },
   { c1: { x: 1030, y: 305 }, c2: { x: 820, y: 356 }, to: { x: 550, y: 356 }, mark: 'r' },
-  { c1: { x: 280, y: 356 }, c2: { x: 70, y: 305 }, to: { x: 70, y: 214 }, mark: 'home' },
+  { c1: { x: 250, y: 360 }, c2: { x: 70, y: 318 }, to: { x: 70, y: 214 }, mark: 'home' },
 ]);
 
 /** Tall loop: down the left spine, across the bottom, up the right, home over the top. */
-const MOBILE_ROUTE = buildRoute(360, 860, { x: 40, y: 104 }, [
-  { to: { x: 40, y: 240 }, mark: 'n1' },
-  { to: { x: 40, y: 376 }, mark: 'n2' },
-  { to: { x: 40, y: 512 }, mark: 'n3' },
-  { to: { x: 40, y: 648 }, mark: 'n4' },
-  { c1: { x: 40, y: 720 }, c2: { x: 104, y: 770 }, to: { x: 182, y: 770 }, mark: 'r' },
-  { c1: { x: 260, y: 770 }, c2: { x: 324, y: 720 }, to: { x: 324, y: 648 } },
-  { to: { x: 324, y: 176 } },
-  { c1: { x: 324, y: 104 }, c2: { x: 268, y: 40 }, to: { x: 182, y: 40 } },
-  { c1: { x: 104, y: 40 }, c2: { x: 40, y: 56 }, to: { x: 40, y: 104 }, mark: 'home' },
+const MOBILE_ROUTE = buildRoute(360, 880, { x: 40, y: 96 }, [
+  { to: { x: 40, y: 252 }, mark: 'n1' },
+  { to: { x: 40, y: 388 }, mark: 'n2' },
+  { to: { x: 40, y: 524 }, mark: 'n3' },
+  { to: { x: 40, y: 660 }, mark: 'n4' },
+  { c1: { x: 40, y: 732 }, c2: { x: 104, y: 782 }, to: { x: 182, y: 782 }, mark: 'r' },
+  { c1: { x: 260, y: 782 }, c2: { x: 324, y: 732 }, to: { x: 324, y: 660 } },
+  { to: { x: 324, y: 168 } },
+  { c1: { x: 324, y: 96 }, c2: { x: 268, y: 32 }, to: { x: 182, y: 32 } },
+  { c1: { x: 104, y: 32 }, c2: { x: 40, y: 48 }, to: { x: 40, y: 96 }, mark: 'home' },
 ]);
 
 /* -------------------------------------------------------------------------- */
@@ -189,33 +189,36 @@ type Layout = {
   route: Route;
   chips: Record<NodeKey, ChipPlacement>;
   panel: { x: number; y: number; w: number };
+  /** Optional dashed line from the origin node to the receipt panel (desktop). */
+  tether?: { x1: number; y1: number; x2: number; y2: number };
   originLabel: { x: number; y: number; align: 'center' | 'right' };
 };
 
 const DESKTOP_LAYOUT: Layout = {
   route: DESKTOP_ROUTE,
   chips: {
-    n1: { x: 164, y: 118, w: 196, anchor: 'top' },
-    n2: { x: 407, y: 90, w: 196, anchor: 'top' },
+    n1: { x: 164, y: 112, w: 196, anchor: 'top' },
+    n2: { x: 407, y: 88, w: 196, anchor: 'top' },
     n3: { x: 630, y: 120, w: 236, anchor: 'top' },
     n4: { x: 772, y: 224, w: 190, anchor: 'top' },
-    r: { x: 445, y: 372, w: 210, anchor: 'top' },
+    r: { x: 445, y: 374, w: 210, anchor: 'top' },
   },
-  panel: { x: 140, y: 196, w: 220 },
+  panel: { x: 170, y: 208, w: 220 },
+  tether: { x1: 84, y1: 214, x2: 166, y2: 214 },
   originLabel: { x: 70, y: 236, align: 'center' },
 };
 
 const MOBILE_LAYOUT: Layout = {
   route: MOBILE_ROUTE,
   chips: {
-    n1: { x: 64, y: 240, w: 244, anchor: 'middle' },
-    n2: { x: 64, y: 376, w: 244, anchor: 'middle' },
-    n3: { x: 64, y: 512, w: 244, anchor: 'middle' },
-    n4: { x: 64, y: 648, w: 244, anchor: 'middle' },
-    r: { x: 62, y: 792, w: 240, anchor: 'top' },
+    n1: { x: 64, y: 252, w: 244, anchor: 'middle' },
+    n2: { x: 64, y: 388, w: 244, anchor: 'middle' },
+    n3: { x: 64, y: 524, w: 244, anchor: 'middle' },
+    n4: { x: 64, y: 660, w: 244, anchor: 'middle' },
+    r: { x: 62, y: 804, w: 240, anchor: 'top' },
   },
-  panel: { x: 64, y: 118, w: 244 },
-  originLabel: { x: 26, y: 104, align: 'right' },
+  panel: { x: 64, y: 108, w: 244 },
+  originLabel: { x: 26, y: 96, align: 'right' },
 };
 
 /* -------------------------------------------------------------------------- */
@@ -538,12 +541,21 @@ function TraceHeader({ phase, reduced }: { phase: Phase; reduced: boolean }) {
 
   return (
     <div
-      className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b pb-3 font-mono text-[10px] uppercase tracking-[0.2em] md:gap-x-8 md:text-[11px]"
+      className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b pb-3 font-mono text-[9.5px] uppercase tracking-[0.18em] sm:text-[10px] sm:tracking-[0.2em] md:gap-x-8 md:text-[11px]"
       style={{ borderColor: hsl(HUE.line, 0.9), color: FAINT }}
     >
       <span className="sr-only">Illustrative sample trace, not live platform data.</span>
-      <span>
-        Trace id <span style={{ color: hsl(HUE.text, 0.85) }}>· {TRACE_ID}</span>
+      <span className="flex items-center gap-2.5">
+        <span>
+          Trace id <span style={{ color: hsl(HUE.text, 0.85) }}>· {TRACE_ID}</span>
+        </span>
+        <span
+          className="rounded-sm border px-1.5 py-0.5 text-[8px] tracking-[0.18em] md:text-[9px]"
+          style={{ borderColor: LINE2, color: DIM }}
+          title="Illustrative sample, not live platform data"
+        >
+          Sample
+        </span>
       </span>
       <span className="hidden sm:inline">
         Leg{' '}
@@ -590,13 +602,6 @@ function TraceHeader({ phase, reduced }: { phase: Phase; reduced: boolean }) {
           }
           transition={phase.arrived ? { type: 'spring', stiffness: 300, damping: 18 } : { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
         />
-      </span>
-      <span
-        className="rounded-sm border px-1.5 py-0.5 text-[9px] tracking-[0.18em]"
-        style={{ borderColor: LINE2, color: DIM }}
-        title="Illustrative sample, not live platform data"
-      >
-        Sample
       </span>
     </div>
   );
@@ -779,6 +784,22 @@ function TrackerCanvas({
               </g>
             );
           })}
+
+          {layout.tether && (
+            <motion.line
+              x1={layout.tether.x1}
+              y1={layout.tether.y1}
+              x2={layout.tether.x2}
+              y2={layout.tether.y2}
+              stroke={EMERALD}
+              strokeWidth="1.2"
+              strokeLinecap="round"
+              strokeDasharray="3 4"
+              initial={false}
+              animate={{ pathLength: phase.arrived ? 1 : 0, opacity: phase.arrived ? 0.7 : 0 }}
+              transition={reduced ? { duration: 0 } : { duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
+            />
+          )}
 
           <OriginNode route={route} phase={phase} reduced={reduced} haloId={id('haloEmerald')} />
 
@@ -1304,10 +1325,10 @@ function ReceiptPanel({ layout, arrived, reduced }: { layout: Layout; arrived: b
         borderRadius: u(10),
         borderColor: hsl(HUE.emerald, 0.55),
         background: `linear-gradient(180deg, ${hsl('158 30% 12%')} 0%, ${hsl(HUE.surface)} 100%)`,
-        padding: `${u(10)} ${u(12)} ${u(10)}`,
+        padding: `${u(8)} ${u(12)} ${u(9)}`,
         fontSize: u(9),
         letterSpacing: '0.18em',
-        transformOrigin: '10% 100%',
+        transformOrigin: '0% 20%',
         pointerEvents: 'none',
       }}
     >
