@@ -60,7 +60,7 @@ export const LiveActivityBar = () => {
           </div>
 
           {/* Quick Stats */}
-          <div className="flex items-center gap-4 md:gap-6">
+          <div className="flex items-center gap-3 md:gap-4">
             <div className="flex items-center gap-1.5 md:gap-2">
               <Users className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
               <span className="text-xs md:text-sm text-muted-foreground">
@@ -78,11 +78,14 @@ export const LiveActivityBar = () => {
             </div>
           </div>
 
-          {/* Scrolling Brand Logos — desktop inline */}
-          <div className="hidden lg:flex items-center gap-3 overflow-hidden max-w-xs">
+          {/* Redeemable-at label + scrolling brand logos — desktop inline */}
+          <div className="hidden lg:flex items-center gap-3 overflow-hidden">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground whitespace-nowrap flex-shrink-0">
+              Redeemable at
+            </span>
             <div className="flex gap-4 overflow-hidden">
               <div className="flex gap-4 animate-marquee">
-                {popularBrands.slice(0, 6).map((brand) => (
+                {popularBrands.slice(0, 5).map((brand) => (
                   <div
                     key={brand.name}
                     className="flex items-center justify-center w-8 h-8 rounded-full bg-background border border-border/50 shadow-sm flex-shrink-0"
@@ -91,7 +94,7 @@ export const LiveActivityBar = () => {
                     <img src={brand.logo} alt={brand.name} className="w-5 h-5 object-contain" />
                   </div>
                 ))}
-                {popularBrands.slice(0, 6).map((brand) => (
+                {popularBrands.slice(0, 5).map((brand) => (
                   <div
                     key={`${brand.name}-dup`}
                     className="flex items-center justify-center w-8 h-8 rounded-full bg-background border border-border/50 shadow-sm flex-shrink-0"
