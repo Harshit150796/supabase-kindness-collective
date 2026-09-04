@@ -433,12 +433,13 @@ export function Tree3DScene() {
     if (!el) return;
     if (isMobile) return;
 
-    const WHEEL_SENSITIVITY = 0.0018;
+    const WHEEL_SENSITIVITY = 0.006;
 
     const onWheel = (e: WheelEvent) => {
       if (window.scrollY > 4) return;
       const cur = zoomProgressRef.current;
-      const dy = e.deltaY;
+      // Normalise Firefox line/page deltas to pixels.
+      const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
       if (dy > 0 && cur >= 1) return;
       if (dy < 0 && cur <= 0) return;
       e.preventDefault();
