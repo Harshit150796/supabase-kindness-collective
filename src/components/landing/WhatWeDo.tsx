@@ -351,7 +351,7 @@ export function WhatWeDo() {
             <motion.h2
               {...reveal(0.05)}
               id="what-we-do-title"
-              className="mt-6 max-w-[14ch] font-bold"
+              className="mt-6 font-bold"
               style={{
                 fontSize: 'clamp(2.75rem, 7.6vw, 7.75rem)',
                 lineHeight: 0.93,
