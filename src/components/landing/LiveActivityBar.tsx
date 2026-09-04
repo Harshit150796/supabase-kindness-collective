@@ -51,8 +51,8 @@ export const LiveActivityBar = () => {
       {/* Animated tint only on desktop — kept off mobile for stable rendering */}
       <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10 opacity-50 hidden md:block md:animate-pulse" />
 
-      <div className="container mx-auto px-4 py-3 md:py-4">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 min-h-[44px]">
+      <div className="container mx-auto px-4 py-1.5 md:py-2">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 min-h-[40px]">
 
           {/* Latest donation (real, from the database) */}
           <div className="flex items-center min-w-0 w-full md:w-auto justify-center md:justify-start min-h-[32px]">
