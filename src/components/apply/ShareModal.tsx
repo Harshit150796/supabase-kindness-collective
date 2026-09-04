@@ -300,9 +300,6 @@ export const ShareModal = ({
             </button>
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-foreground">Live fundraising tools</h3>
-              <span className="px-2 py-0.5 bg-orange-500/20 text-orange-500 text-xs font-medium rounded-full">
-                Beta
-              </span>
             </div>
             <button
               onClick={onClose}
