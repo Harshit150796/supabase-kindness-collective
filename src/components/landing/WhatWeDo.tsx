@@ -17,8 +17,6 @@ const GOLD = 'hsl(var(--gold))';
 const PRIMARY = 'hsl(var(--primary))';
 const BACKGROUND = 'hsl(var(--background))';
 const CARD = 'hsl(var(--card))';
-const FOREGROUND = 'hsl(var(--foreground))';
-const MUTED = 'hsl(var(--muted-foreground))';
 
 const VERSE = [
   'Someone asks for one real thing.',
