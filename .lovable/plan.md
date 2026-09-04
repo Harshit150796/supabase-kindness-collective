@@ -1,67 +1,69 @@
-# Rethinking the strip under the hero
+# Rebuild the strip under the hero: real last donation + progress-to-goal
 
-## The honest read on what's there
+## What changes
 
-Today's strip is a simulated activity ticker: donor names, amounts, retailers and "10s ago" timestamps are generated in the browser every 3.5 seconds. Alongside it sit a "Live program" badge and a hardcoded "24 donations".
+Three decisions, now locked:
 
-What the database actually holds: 19 completed donations, $1,214 raised, 116 vouchers created, 10 live campaigns, 4 active retail partners, 3 distinct donors.
+1. **"Live program" box: gone.** It said nothing and it read as filler.
+2. **The donation pill becomes real.** One donation — the most recent completed one in the database — with its real donor display name, real amount, real retailer and a real timestamp. No rotation every 3.5s, no generated names, no fake "10s ago".
+3. **The hardcoded counters are replaced by a progress-to-goal bar** promoting one goal, with a "Fund the next voucher" call to action.
 
-Two independent problems:
+## The reality check that shapes this
 
-1. **Credibility.** A simulated feed is the single easiest thing for a payments underwriter or a sharp donor to catch — the numbers don't reconcile with the ledger, and the moment a visitor notices "David P." reappears with a different amount, everything else on the page becomes suspect.
-2. **Job to be done.** The strip is prime real estate — the first thing after the hero, seen by 100% of visitors — and it currently spends that on ambient noise instead of answering the one question a first-time visitor has: *what actually happens to my money?*
+Live database values:
 
-Removing the fake parts is settled. The real question is what earns that space.
+- Most recent completed donation: `Harshit A. · $10 · DoorDash · Jun 12, 2026` — that is ~3 months old.
+- 19 completed donations, $1,214 converted, 116 vouchers created, 10 live campaigns.
+- Biggest live campaign: "Warm Meals for a Man and His Best Friend" — $60 of $200, 4 donors.
 
-## Four patterns worth considering
+So a literal "3 months ago" under the hero would be honest but self-defeating. The standard solution used by GoFundMe and Kickstarter on quiet campaigns: **stop framing it as recency, frame it as the ledger.** Label the pill "Latest donation" and show an absolute date (`Jun 12`) instead of a relative age. Relative time only appears when the donation is genuinely recent — under 7 days it renders "2h ago", "3d ago", and only then does the live dot pulse. Older than that, the dot goes calm and the date shows. Nothing is fabricated, nothing draws attention to a gap.
 
-### A. Mechanism strip — "money in, voucher out" (recommended)
-A single horizontal three-beat: `You give $25` → `We buy a retailer voucher` → `A US family redeems it`, with small retailer logos sitting on the middle beat and a "no cash ever leaves the platform" micro-line. Beats connect with a thin animated line that draws once on scroll.
-
-This is what Stripe, Wise, Plaid and Ramp all do directly under the hero: explain the mechanism in one glance before asking for anything. It's the strongest fit here because the product is genuinely unusual — visitors don't yet know that donations become vouchers, and that's the differentiator. Every word is defensible under compliance review, and nothing depends on volume, so it looks just as strong at 19 donations as at 19,000.
-
-### B. Verified metrics bar
-Same layout as today but every number pulled live from the database with a "verified from ledger" tooltip: funds converted, vouchers created, live campaigns, retail partners. Honest and cheap to build.
-Weakness: at current volume, real numbers read small. Charity: Water only leads with counters because the counters are big. A truthful `19 donations` under the hero invites the wrong comparison.
-
-### C. Progress-to-goal bar
-One community goal — "Fund 1,000 grocery vouchers" — with a real progress bar at 116/1,000, plus a "fund the next voucher" button. GoFundMe, Kickstarter and Wikipedia's fundraiser all use this: small absolute numbers become a *motivating* story rather than a weak one, because the frame is distance-to-goal, not size-of-crowd.
-Strong conversion pattern; needs a goal number chosen and owned.
-
-### D. Retailer proof rail
-Just the retailer logos with a clear label: "Vouchers redeemable at" — the way Klarna and Afterpay run merchant rails. Borrowed credibility from Walmart, Target, Amazon, Starbucks, and factually precise.
-Too thin on its own, but excellent as a supporting element.
-
-## Recommended build: A + D in one row, C as the follow-on
-
-One strip, three mechanism beats, retailer logos anchored to the voucher beat, and the "zero cash disbursement" line as the closing note. It answers the visitor's real question, borrows retailer credibility, survives underwriter scrutiny word-for-word, and does not depend on donation volume.
-
-Then the goal bar (C) becomes the closing CTA band further down the page, where distance-to-goal drives action instead of competing with the hero. Verified live metrics (B) move into the existing Impact Dashboard section, where numbers belong and where a small number reads as transparency rather than weakness.
-
-Deleted for good: the donor-name pill and its generator, "Live program", and the hardcoded "24 donations".
-
-## Layout
+## New layout — one row, three zones
 
 ```text
-desktop
-  You give $25  ──→   We buy a retail voucher   ──→   A US family redeems it
-                     [W] [T] [A] [S] [D] [U]
-            Funds convert directly to vouchers · zero cash disbursement · US only
+desktop (single row, aligned baselines, no wrapping)
+┌──────────────────────────────┬───────────────────────────────────────────┬──────────────┐
+│ LATEST DONATION              │  Fund 1,000 grocery vouchers              │ Redeemable   │
+│ ♥ Harshit A. · $10 DoorDash  │  ███████░░░░░░░░░░  116 of 1,000 funded   │ at [logos]   │
+│   Jun 12                     │  [ Fund the next voucher → ]              │              │
+└──────────────────────────────┴───────────────────────────────────────────┴──────────────┘
 
-mobile
-  three stacked beats, each one line, connector becomes a vertical rule;
-  retailer logos keep the existing marquee treatment beneath
+mobile / tablet
+  LATEST DONATION pill (full width, one line, truncating)
+  goal label + progress bar + count
+  full-width "Fund the next voucher" button
+  retailer marquee
 ```
+
+Overlap is prevented structurally: the row is a three-column grid with a fixed-width left pill, a flexible center that owns the extra space, and a fixed-width right rail — not a `justify-between` flex row where a long donor name can push the stats into the logos. The pill truncates with ellipsis; the goal label truncates; the bar never shrinks below a legible width. Below `lg`, the grid collapses to stacked rows.
+
+## Making the goal bar compelling
+
+The bar is the emotional center of the strip, so it gets the craft:
+
+- **Frame is distance, not size.** Headline reads "884 vouchers to go" with "116 of 1,000 funded" as the quiet sub-line — the deficit is the motivator, the achievement is the proof.
+- **Fill animates once** from 0 to 11.6% on first view, easing over ~900ms, with a soft gradient in the brand emerald and a subtle sheen that sweeps once and stops. No looping shimmer — looping reads as decoration, one sweep reads as progress.
+- **Real texture:** small tick marks at 25 / 50 / 75% so 11.6% still reads as "started" rather than "empty", the way Kickstarter's segmented bars do.
+- **The CTA is the only filled button in the strip**, sized small, and it links to `/donate` — one click from proof to action, which is the entire point of this real estate.
+- The whole center zone is one focusable link target on mobile, so a thumb can't miss it.
+
+## The goal number
+
+"Fund 1,000 grocery vouchers" against the real 116 already created. It is round, publishable, and grounded in a real count that grows on its own as vouchers are issued — no manual bookkeeping, and never a number that contradicts the ledger. If you'd prefer 500 (a nearer, more credible first milestone at current volume) say so and I'll swap it; 1,000 is the default I'll build.
+
+Promoting one *specific* campaign here was considered and set aside: the largest live campaign is at $60 of $200 with 4 donors, and headlining a single small campaign under the hero invites the "is anyone actually using this?" read. A platform-wide voucher goal aggregates all the real activity into one number that looks like momentum, and individual campaigns still get their spotlight in the Stories section below.
+
+## Compliance
+
+Every element is factual and traceable to a row: the donation is a real ledger entry, the voucher count is a real count, the retailer rail states where vouchers can be spent. Language stays inside the approved frame — restricted digital retail vouchers, US only, zero cash disbursement, no tax-deductibility claim, no "beta".
 
 ## Technical notes
 
-- Replace `src/components/landing/LiveActivityBar.tsx` with `src/components/landing/VoucherPipelineStrip.tsx`; delete `generateDonation`, `DonationPill` and the 3.5s interval; update the import in `src/pages/Index.tsx`.
-- Fully static and presentational — no data fetching, so it costs nothing on first paint and cannot show a wrong number.
-- Retailer logos reuse `popularBrands` from `src/data/brandLogos.ts` and the existing `animate-marquee` + mask treatment on mobile.
-- Connector line draws on first view via an IntersectionObserver-gated CSS transition; respects `prefers-reduced-motion`.
-- Semantic tokens only (primary / accent / muted / foreground), no hardcoded colors, contrast checked in both themes.
-- Goal band (C) and live metrics in the Impact Dashboard (B) are follow-up steps, not part of this change — flag them as pending after approval.
-
-## Open question before build
-
-The goal band needs a target you're willing to publish. Suggested: "Fund 1,000 grocery vouchers" (currently 116). Confirm or replace that number when we get to that step.
+- Rewrite `src/components/landing/LiveActivityBar.tsx` → `src/components/landing/HeroActivityStrip.tsx`; update the import in `src/pages/Index.tsx`. Delete `generateDonation`, the 3.5s interval, and the mobile scroll-pause logic that only existed to hide the flicker.
+- Latest donation comes from the existing `get_recent_public_donations(1)` RPC (already returns a privacy-safe "First L." display name, amount, retailer and timestamp — anonymous donors render as "Anonymous"). Voucher count and totals come from the existing `get_impact_stats()` RPC. No schema changes, no new functions.
+- One combined fetch on mount plus a 60s refresh; a realtime `INSERT` subscription on `donations` updates the pill and the bar in place (subscribed inside `useEffect`, cleaned up with `removeChannel`).
+- Loading state renders skeleton blocks at the exact final dimensions so nothing shifts; on RPC failure the strip renders the goal bar with the voucher count omitted rather than showing zeros.
+- Relative-vs-absolute timestamp helper lives in the component: `< 7 days` → relative, otherwise `MMM d`.
+- Retailer rail keeps `popularBrands` and the existing `animate-marquee` + mask treatment, now labelled "Redeemable at".
+- Semantic tokens only; count-up, bar fill and marquee all respect `prefers-reduced-motion`.
+- Verified after build with desktop (1280), tablet (834) and mobile (390) screenshots, checking the three zones for overlap and truncation, plus a clean build log.
