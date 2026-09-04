@@ -43,7 +43,9 @@ function CameraRig({
   const defaultCam = isMobile ? MOBILE_CAM : DEFAULT_CAM;
   const target = isMobile ? MOBILE_TARGET : TARGET;
   const baseDist = isMobile ? 16 : 13;
-  const currentDistRef = useRef(baseDist);
+  // Seed at the current zoom progress so the initial (already pulled-back) view
+  // paints immediately instead of animating outward on load.
+  const currentDistRef = useRef(baseDist + zoomProgressRef.current * 4);
 
   // Track interactions on the controls
   useEffect(() => {
