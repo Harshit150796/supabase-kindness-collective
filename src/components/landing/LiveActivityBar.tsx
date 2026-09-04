@@ -108,9 +108,14 @@ export const LiveActivityBar = () => {
         </div>
 
         {/* Mobile-only brand marquee row */}
+        <div className="lg:hidden mt-1.5 flex items-center justify-center">
+          <span className="text-[9px] font-medium uppercase tracking-[0.14em] text-muted-foreground/80">
+            Redeemable at
+          </span>
+        </div>
         <div
           aria-hidden="true"
-          className="lg:hidden mt-2 -mx-4 overflow-hidden"
+          className="lg:hidden mt-1 -mx-4 overflow-hidden"
           style={{
             maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
             WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
