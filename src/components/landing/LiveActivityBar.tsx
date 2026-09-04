@@ -54,13 +54,8 @@ export const LiveActivityBar = () => {
       <div className="container mx-auto px-4 py-3 md:py-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 min-h-[44px]">
 
-          {/* Live Donation Feed */}
-          <div className="flex items-center gap-2 md:gap-3 min-w-0 w-full md:w-auto justify-center md:justify-start min-h-[32px]">
-            <div className="relative flex-shrink-0">
-              <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full md:animate-pulse" />
-              <div className="absolute inset-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full opacity-0 md:opacity-100 md:animate-ping" />
-            </div>
-            <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">Live</span>
+          {/* Latest donation (real, from the database) */}
+          <div className="flex items-center min-w-0 w-full md:w-auto justify-center md:justify-start min-h-[32px]">
             {currentDonation && <DonationPill donation={currentDonation} />}
           </div>
 
@@ -139,22 +134,22 @@ export const LiveActivityBar = () => {
 // when the donation record refreshes.
 const DonationPill = memo(function DonationPill({ donation }: { donation: DonationEvent }) {
   return (
-    <div className="flex items-center gap-2 bg-background md:bg-background/80 md:backdrop-blur-sm rounded-full px-3 md:px-4 py-1.5 md:py-2 border border-border/50 shadow-sm max-w-[280px] md:max-w-none">
-      <Heart className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary fill-primary md:animate-pulse flex-shrink-0" />
-      <div className="overflow-hidden">
-        <p className="text-xs md:text-sm font-medium text-foreground whitespace-nowrap truncate">
-          <span className="font-semibold">{donation.name}</span>
-          {' '}donated{' '}
-          <span className="text-primary font-bold">${donation.amount}</span>
+    <div className="flex items-center gap-3 md:gap-3.5 bg-background rounded-full pl-4 pr-5 md:pl-5 md:pr-7 py-2.5 md:py-3 border border-border/40 shadow-[0_6px_24px_-12px_rgba(0,0,0,0.18)] max-w-full">
+      <Heart className="w-5 h-5 md:w-[22px] md:h-[22px] text-primary fill-primary flex-shrink-0" />
+      <div className="min-w-0">
+        <p className="text-[10px] md:text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground leading-none mb-1">
+          Latest donation
+        </p>
+        <p className="text-sm md:text-base leading-tight whitespace-nowrap truncate">
+          <span className="font-bold text-foreground">{donation.name}</span>
+          <span className="text-muted-foreground"> · </span>
+          <span className="font-bold text-primary">${donation.amount}</span>
           {donation.brand && (
-            <span className="hidden sm:inline">
-              {' '}via{' '}
-              <span className="text-muted-foreground">{donation.brand}</span>
-            </span>
+            <span className="text-muted-foreground"> {donation.brand}</span>
           )}
+          <span className="text-muted-foreground"> · {shortDate(donation.createdAt)}</span>
         </p>
       </div>
-      <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">{timeAgo(donation.createdAt)}</span>
     </div>
   );
 });
