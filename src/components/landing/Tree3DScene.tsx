@@ -388,7 +388,8 @@ function DeferredEnvironment() {
 export function Tree3DScene() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
-  const zoomProgressRef = useRef(0); // 0 = zoomed in, 1 = zoomed out
+  // 0 = zoomed in, 1 = zoomed out. Start mostly out so one wheel gesture finishes it.
+  const zoomProgressRef = useRef(0.7);
   const [inView, setInView] = useState(true);
   // Real mobile mode — matches device DPR, drops shadows/AA/tone-mapping so the
   // canvas stays crisp and hits 60fps on phones instead of getting upscaled + smeared.
