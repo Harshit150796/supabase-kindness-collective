@@ -43,7 +43,9 @@ function CameraRig({
   const defaultCam = isMobile ? MOBILE_CAM : DEFAULT_CAM;
   const target = isMobile ? MOBILE_TARGET : TARGET;
   const baseDist = isMobile ? 16 : 13;
-  const currentDistRef = useRef(baseDist);
+  // Seed at the current zoom progress so the initial (already pulled-back) view
+  // paints immediately instead of animating outward on load.
+  const currentDistRef = useRef(baseDist + zoomProgressRef.current * 4);
 
   // Track interactions on the controls
   useEffect(() => {
@@ -386,7 +388,8 @@ function DeferredEnvironment() {
 export function Tree3DScene() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
-  const zoomProgressRef = useRef(0); // 0 = zoomed in, 1 = zoomed out
+  // 0 = zoomed in, 1 = zoomed out. Start mostly out so one wheel gesture finishes it.
+  const zoomProgressRef = useRef(0.7);
   const [inView, setInView] = useState(true);
   // Real mobile mode — matches device DPR, drops shadows/AA/tone-mapping so the
   // canvas stays crisp and hits 60fps on phones instead of getting upscaled + smeared.
@@ -430,12 +433,13 @@ export function Tree3DScene() {
     if (!el) return;
     if (isMobile) return;
 
-    const WHEEL_SENSITIVITY = 0.0018;
+    const WHEEL_SENSITIVITY = 0.006;
 
     const onWheel = (e: WheelEvent) => {
       if (window.scrollY > 4) return;
       const cur = zoomProgressRef.current;
-      const dy = e.deltaY;
+      // Normalise Firefox line/page deltas to pixels.
+      const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
       if (dy > 0 && cur >= 1) return;
       if (dy < 0 && cur <= 0) return;
       e.preventDefault();
