@@ -51,8 +51,8 @@ export const LiveActivityBar = () => {
       {/* Animated tint only on desktop — kept off mobile for stable rendering */}
       <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10 opacity-50 hidden md:block md:animate-pulse" />
 
-      <div className="container mx-auto px-4 py-3 md:py-4">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 min-h-[44px]">
+      <div className="container mx-auto px-4 py-1.5 md:py-2">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 min-h-[40px]">
 
           {/* Latest donation (real, from the database) */}
           <div className="flex items-center min-w-0 w-full md:w-auto justify-center md:justify-start min-h-[32px]">
@@ -134,13 +134,13 @@ export const LiveActivityBar = () => {
 // when the donation record refreshes.
 const DonationPill = memo(function DonationPill({ donation }: { donation: DonationEvent }) {
   return (
-    <div className="flex items-center gap-3 md:gap-3.5 bg-background rounded-full pl-4 pr-5 md:pl-5 md:pr-7 py-2.5 md:py-3 border border-border/40 shadow-[0_6px_24px_-12px_rgba(0,0,0,0.18)] max-w-full">
-      <Heart className="w-5 h-5 md:w-[22px] md:h-[22px] text-primary fill-primary flex-shrink-0" />
+    <div className="flex items-center gap-3 md:gap-3.5 bg-background rounded-full pl-3.5 pr-4 md:pl-4 md:pr-5 py-1 md:py-1.5 border border-border/40 shadow-[0_6px_24px_-12px_rgba(0,0,0,0.18)] max-w-full">
+      <Heart className="w-4 h-4 md:w-[18px] md:h-[18px] text-primary fill-primary flex-shrink-0" />
       <div className="min-w-0">
-        <p className="text-[10px] md:text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground leading-none mb-1">
+        <p className="text-[9px] md:text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground leading-none mb-0.5">
           Latest donation
         </p>
-        <p className="text-sm md:text-base leading-tight whitespace-nowrap truncate">
+        <p className="text-xs md:text-sm leading-tight whitespace-nowrap truncate">
           <span className="font-bold text-foreground">{donation.name}</span>
           <span className="text-muted-foreground"> · </span>
           <span className="font-bold text-primary">${donation.amount}</span>
