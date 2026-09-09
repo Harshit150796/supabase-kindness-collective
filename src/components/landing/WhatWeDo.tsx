@@ -392,7 +392,7 @@ function CouponVisual() {
         <motion.g
           initial={{ opacity: 0, y: -34, scale: 0.55 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ ...emphaticSpring, delay: 0.62, stiffness: 430, damping: 15 }}
+          transition={{ ...emphaticSpring, delay: 0.26, stiffness: 430, damping: 15 }}
           style={{ transformOrigin: '446px 124px' }}
         >
           <circle cx="446" cy="119" r="31" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="3" />
