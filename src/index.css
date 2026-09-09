@@ -38,6 +38,9 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 60 20% 98%;
 
+    --verify: 210 90% 45%;
+    --verify-foreground: 0 0% 100%;
+
     --border: 160 15% 88%;
     --input: 160 15% 88%;
     --ring: 160 84% 22%;
@@ -99,6 +102,9 @@
 
     --destructive: 0 62% 35%;
     --destructive-foreground: 60 15% 95%;
+
+    --verify: 210 85% 58%;
+    --verify-foreground: 210 40% 10%;
 
     --border: 160 15% 18%;
     --input: 160 15% 18%;
