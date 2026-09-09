@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Environment, OrbitControls } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 // Postprocessing intentionally not imported — bloom/vignette disabled, keeps mobile bundle smaller.
 import * as THREE from 'three';
@@ -136,9 +136,9 @@ function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
 
   const targets: Record<TimeOfDay, { dirCol: string; dirInt: number; ambCol: string; ambInt: number; fillCol: string; fillInt: number; fog: string }> = useMemo(
     () => ({
-      day: { dirCol: '#FFF4E0', dirInt: 1.35, ambCol: '#F4F1E8', ambInt: 0.75, fillCol: '#BFD8E8', fillInt: 0.45, fog: '#DCE6D5' },
-      sunset: { dirCol: '#FFA060', dirInt: 1.0, ambCol: '#FFD0A0', ambInt: 0.55, fillCol: '#9B7BB5', fillInt: 0.35, fog: '#E8B890' },
-      night: { dirCol: '#9DB4E6', dirInt: 0.45, ambCol: '#5A6B8A', ambInt: 0.35, fillCol: '#3A4A7E', fillInt: 0.2, fog: '#1A2440' },
+      day: { dirCol: '#FFF4E0', dirInt: 1.35, ambCol: '#F4F1E8', ambInt: 0.95, fillCol: '#BFD8E8', fillInt: 0.62, fog: '#DCE6D5' },
+      sunset: { dirCol: '#FFA060', dirInt: 1.0, ambCol: '#FFD0A0', ambInt: 0.72, fillCol: '#9B7BB5', fillInt: 0.48, fog: '#E8B890' },
+      night: { dirCol: '#9DB4E6', dirInt: 0.45, ambCol: '#5A6B8A', ambInt: 0.46, fillCol: '#3A4A7E', fillInt: 0.28, fog: '#1A2440' },
     }),
     []
   );
@@ -146,22 +146,29 @@ function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
   const dirColor = useMemo(() => new THREE.Color(targets.day.dirCol), [targets]);
   const ambColor = useMemo(() => new THREE.Color(targets.day.ambCol), [targets]);
   const fillColor = useMemo(() => new THREE.Color(targets.day.fillCol), [targets]);
+  // Scratch colours — mutated each frame instead of allocating new THREE.Color objects.
+  const tmpDir = useMemo(() => new THREE.Color(), []);
+  const tmpAmb = useMemo(() => new THREE.Color(), []);
+  const tmpFill = useMemo(() => new THREE.Color(), []);
 
   useFrame((_, dt) => {
     const t = targets[timeOfDay];
     const k = Math.min(1, dt * 1.5);
     if (dirRef.current) {
-      dirColor.lerp(new THREE.Color(t.dirCol), k);
+      tmpDir.set(t.dirCol);
+      dirColor.lerp(tmpDir, k);
       dirRef.current.color.copy(dirColor);
       dirRef.current.intensity += (t.dirInt - dirRef.current.intensity) * k;
     }
     if (ambRef.current) {
-      ambColor.lerp(new THREE.Color(t.ambCol), k);
+      tmpAmb.set(t.ambCol);
+      ambColor.lerp(tmpAmb, k);
       ambRef.current.color.copy(ambColor);
       ambRef.current.intensity += (t.ambInt - ambRef.current.intensity) * k;
     }
     if (fillRef.current) {
-      fillColor.lerp(new THREE.Color(t.fillCol), k);
+      tmpFill.set(t.fillCol);
+      fillColor.lerp(tmpFill, k);
       fillRef.current.color.copy(fillColor);
       fillRef.current.intensity += (t.fillInt - fillRef.current.intensity) * k;
     }
@@ -172,12 +179,12 @@ function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
     }
   });
 
-  const shadowSize = isMobile ? 1024 : 4096;
-  const shadowBlur = isMobile ? 6 : 25;
+  const shadowSize = isMobile ? 1024 : 2048;
+  const shadowBlur = isMobile ? 6 : 9;
 
   return (
     <>
-      <ambientLight ref={ambRef} intensity={0.75} color="#F4F1E8" />
+      <ambientLight ref={ambRef} intensity={0.95} color="#F4F1E8" />
       <directionalLight
         ref={dirRef}
         position={[6, 11, 5]}
@@ -194,7 +201,7 @@ function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
         shadow-radius={8}
         shadow-blurSamples={shadowBlur}
       />
-      <directionalLight ref={fillRef} position={[-6, 5, -3]} intensity={0.45} color="#BFD8E8" />
+      <directionalLight ref={fillRef} position={[-6, 5, -3]} intensity={0.62} color="#BFD8E8" />
     </>
   );
 }
@@ -307,7 +314,7 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
     <>
       <DayNightLights isMobile={isMobile} />
       {!isMobile && <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />}
-      {isMobile && <hemisphereLight args={['#cfe8d8', '#3a4a3a', 0.45]} />}
+      <hemisphereLight args={['#cfe8d8', '#3a4a3a', isMobile ? 0.45 : 0.38]} />
       <fog attach="fog" args={isMobile ? ['#DCE6D5', 25, 70] : ['#DCE6D5', 18, 45]} />
 
       <Sky isMobile={isMobile} />
@@ -363,26 +370,6 @@ function WindTracker() {
   }, [bumpWind]);
 
   return null;
-}
-
-function DeferredEnvironment() {
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    let frame = 0;
-    const timeout = window.setTimeout(() => {
-      frame = window.requestAnimationFrame(() => setReady(true));
-    }, 900);
-
-    return () => {
-      window.clearTimeout(timeout);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, []);
-
-  if (!ready) return null;
-
-  return <Environment preset="forest" background={false} />;
 }
 
 export function Tree3DScene() {
@@ -558,9 +545,6 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
         <WindTracker />
         <Suspense fallback={null}>
           <Scene leafCount={leafCount} plantCap={plantCap} isMobile={isMobile} />
-        </Suspense>
-        <Suspense fallback={null}>
-          <DeferredEnvironment />
         </Suspense>
       </Canvas>
     </>
