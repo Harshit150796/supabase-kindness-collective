@@ -211,8 +211,12 @@ function DonationStory({ reducedMotion }: { reducedMotion: boolean }) {
   return (
     <div ref={stageRef} className="mt-16 md:mt-24">
       <div
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
+        onPointerEnter={(event) => {
+          if (event.pointerType === 'mouse') setPaused(true);
+        }}
+        onPointerLeave={(event) => {
+          if (event.pointerType === 'mouse') setPaused(false);
+        }}
         onPointerDown={(event) => {
           if (event.pointerType !== 'mouse') pointerStartRef.current = event.clientX;
         }}
@@ -382,17 +386,19 @@ function CouponVisual() {
         <circle cx="545" cy="246" r="12" fill="hsl(var(--background))" stroke="hsl(var(--primary))" strokeWidth="3" />
         <path d="M 486 101 V 259" stroke="hsl(var(--primary))" strokeWidth="3" strokeDasharray="10 9" />
         <text x="137" y="132" fill="hsl(var(--primary))" fontSize="18" fontWeight="700" letterSpacing="2">GROCERY</text>
-        <text x="137" y="195" fill="hsl(var(--foreground))" fontSize="49" fontWeight="750">$10 COUPON</text>
+        <text x="137" y="191" fill="hsl(var(--foreground))" fontSize="42" fontWeight="750">$10 COUPON</text>
         <text x="138" y="231" fill="hsl(var(--muted-foreground))" fontSize="15">Locked for approved essentials</text>
-        <Barcode x={386} y={145} active={false} />
+        <Barcode x={368} y={146} active={false} />
         <motion.g
           initial={{ opacity: 0, y: -34, scale: 0.55 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ ...emphaticSpring, delay: 0.62, stiffness: 430, damping: 15 }}
+          style={{ transformOrigin: '446px 124px' }}
         >
-          <path d="M 500 149 v -14 a 18 18 0 0 1 36 0 v 14" fill="none" stroke="hsl(var(--primary))" strokeWidth="7" strokeLinecap="round" />
-          <rect x="492" y="147" width="52" height="43" rx="9" fill="hsl(var(--primary))" />
-          <circle cx="518" cy="166" r="5" fill="hsl(var(--primary-foreground))" />
+          <circle cx="446" cy="119" r="31" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="3" />
+          <path d="M 434 119 v -9 a 12 12 0 0 1 24 0 v 9" fill="none" stroke="hsl(var(--primary))" strokeWidth="5" strokeLinecap="round" />
+          <rect x="429" y="117" width="34" height="28" rx="6" fill="hsl(var(--primary))" />
+          <circle cx="446" cy="130" r="3.5" fill="hsl(var(--primary-foreground))" />
         </motion.g>
       </motion.svg>
     </div>
