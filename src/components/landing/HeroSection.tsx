@@ -28,12 +28,15 @@ function canRender3D(): boolean {
   }
 }
 
+// Ends on the page background tone so the pre-3D placeholder blends into the
+// section below instead of stopping on a cool green-blue.
 const GradientFallback = () => (
   <div
     aria-hidden
-    className="absolute inset-0 w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#CFE6F5] to-[#E8F1E0]"
+    className="absolute inset-0 w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#CFE6F5] to-background"
   />
 );
+
 
 /**
  * Fades the 3D canvas up once its first frame has painted, so the scene
@@ -95,8 +98,22 @@ export function HeroSection() {
         </Suspense>
       )}
 
+      {/* Colour-temperature blend: melts the cool hero into the warm page
+          background so the boundary with the next section is invisible.
+          Sits above the canvas, below the interactive overlay layer. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[22%]"
+        style={{
+          background:
+            'linear-gradient(to bottom, hsl(var(--background) / 0) 0%, hsl(var(--background) / 0.28) 38%, hsl(var(--background) / 0.72) 66%, hsl(var(--background)) 88%, hsl(var(--background)) 100%)',
+        }}
+
+      />
+
       {/* Overlay layer — pointer-events isolated so 3D scene stays interactive */}
       <div className="absolute inset-0 pointer-events-none">
+
         <HeroHeadline />
         <TopDonorsPanel />
         <AITreeLauncher onClick={() => setChatOpen(true)} hidden={chatOpen} />
