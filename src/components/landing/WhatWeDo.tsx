@@ -495,7 +495,7 @@ function ProofVisual({ year, reduced }: { year: number; reduced: boolean }) {
             initial={reduced ? false : { scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ ...emphaticSpring, delay: 0.22 }}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-verify text-verify-foreground sm:h-14 sm:w-14"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--verify))] text-[hsl(var(--verify-foreground))] sm:h-14 sm:w-14"
           >
             <svg viewBox="0 0 24 24" className="h-6 w-6 sm:h-7 sm:w-7">
               <path d="m6 12 4 4 8-9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -528,7 +528,7 @@ function ProofVisual({ year, reduced }: { year: number; reduced: boolean }) {
           initial={reduced ? false : { opacity: 0, scale: 1.65, rotate: -11 }}
           animate={{ opacity: 1, scale: 1, rotate: -5 }}
           transition={{ ...emphaticSpring, delay: 0.68, stiffness: 420, damping: 15 }}
-          className="absolute -bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full border-2 border-verify bg-card text-[10px] font-bold text-verify shadow-[0_8px_26px_-12px_hsl(var(--verify)/0.65)] sm:-bottom-6 sm:right-8 sm:h-24 sm:w-24 sm:text-sm"
+          className="absolute -bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full border-2 border-[hsl(var(--verify))] bg-card text-[10px] font-bold text-[hsl(var(--verify))] shadow-[0_8px_26px_-12px_hsl(var(--verify)/0.65)] sm:-bottom-6 sm:right-8 sm:h-24 sm:w-24 sm:text-sm"
           style={{ letterSpacing: '0.08em' }}
         >
           VERIFIED
@@ -551,7 +551,7 @@ function Climax({ visible }: { visible: boolean }) {
         Give $10 today. Check where it went in 2036.
       </p>
       <p className="mt-5 text-base text-muted-foreground sm:text-lg md:text-xl">
-        Every donation keeps its receipt. <span className="font-semibold text-verify">Permanently verifiable.</span>
+        Every donation keeps its receipt. <span className="font-semibold text-[hsl(var(--verify))]">Permanently verifiable.</span>
       </p>
     </motion.div>
   );
