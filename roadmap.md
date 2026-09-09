@@ -7,6 +7,13 @@
 - [x] Keep the standalone privacy-first statement, two equal doorways, and closing prompt.
 - [x] Verify build, desktop/mobile layouts, reduced motion, one h2, ordered-list semantics, links, and no horizontal overflow.
 
+## In progress
+- [ ] Keep permanent anchor objects visible throughout every `WhatWeDo` illustration cycle.
+- [ ] Replace independent animation loops with one parent-owned six-second clock and phase-derived scenes.
+- [ ] Simplify the grocery scene to a permanent bag with three dropping items and no van.
+- [ ] Recompose the lower section with a raised transparency band, receipt holding on 2036, tighter spacing, anchored dignity line, and lively equal-weight doors.
+- [ ] Verify five full synchronized cycles and all requested responsive widths.
+
 - [x] Replace the branch journey with a one-stage, four-act donation transformation.
 - [x] Prioritize recognizable coupon art, warm grocery imagery, an unhurried 2026–2036 proof roll, and polished spring motion.
 - [x] Add accessible auto-advance, pause, step selection, swipe, and reduced-motion behavior.
