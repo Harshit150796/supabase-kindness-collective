@@ -152,7 +152,7 @@ function CameraRig({
   return null;
 }
 
-function DayNightLights({ shadowSize = 4096, shadowBlur = 25 }: { shadowSize?: number; shadowBlur?: number }) {
+function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = false }: { shadowSize?: number; shadowBlur?: number; tightShadow?: boolean }) {
   const { timeOfDay } = useInteraction();
   const dirRef = useRef<THREE.DirectionalLight>(null);
   const ambRef = useRef<THREE.AmbientLight>(null);
@@ -225,10 +225,10 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25 }: { shadowSize?: n
         castShadow
         shadow-mapSize-width={shadowSize}
         shadow-mapSize-height={shadowSize}
-        shadow-camera-left={-12}
-        shadow-camera-right={12}
-        shadow-camera-top={12}
-        shadow-camera-bottom={-3}
+        shadow-camera-left={tightShadow ? -5 : -12}
+        shadow-camera-right={tightShadow ? 5 : 12}
+        shadow-camera-top={tightShadow ? 9 : 12}
+        shadow-camera-bottom={tightShadow ? -1.5 : -3}
         shadow-bias={-0.0005}
         shadow-radius={8}
         shadow-blurSamples={shadowBlur}
