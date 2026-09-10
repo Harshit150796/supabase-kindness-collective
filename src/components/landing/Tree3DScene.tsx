@@ -642,9 +642,12 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
         />
         <CameraRig controlsRef={controlsRef} zoomProgressRef={zoomProgressRef} isMobile={isMobile} />
         <WindTracker />
+        <ShadowSwitch enabled={settings.shadows} />
+        <PerfWatchdog onSlow={onSlow} />
         <Suspense fallback={null}>
-          <Scene leafCount={leafCount} plantCap={plantCap} isMobile={isMobile} />
+          <Scene settings={settings} isMobile={isMobile} />
         </Suspense>
+
         <Suspense fallback={null}>
           <DeferredEnvironment />
         </Suspense>
