@@ -20,12 +20,18 @@ import { AmbientBirds } from './tree3d/AmbientBirds';
 import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
 import { TransparencyPopover } from './tree3d/TransparencyPopover';
 import { PlantsLayer } from './tree3d/PlantsLayer';
+import { useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
 
 const GROUND_Y = -0.01;
 const DEFAULT_CAM = new THREE.Vector3(0, 4.0, 13);
 const TARGET = new THREE.Vector3(0, 3.4, 0);
 const MOBILE_CAM = new THREE.Vector3(0, 4.4, 16);
 const MOBILE_TARGET = new THREE.Vector3(0, 3.6, 0);
+
+// Frame-loop scratch objects — avoids per-frame allocation inside useFrame.
+const TMP_OFFSET = new THREE.Vector3();
+const TMP_SPHERICAL = new THREE.Spherical();
+
 
 function CameraRig({
   controlsRef,
