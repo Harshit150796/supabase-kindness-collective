@@ -132,13 +132,12 @@ function CameraRig({
   return null;
 }
 
-function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
+function DayNightLights({ shadowSize = 4096, shadowBlur = 25 }: { shadowSize?: number; shadowBlur?: number }) {
   const { timeOfDay } = useInteraction();
   const dirRef = useRef<THREE.DirectionalLight>(null);
   const ambRef = useRef<THREE.AmbientLight>(null);
   const fillRef = useRef<THREE.DirectionalLight>(null);
   const fogColorRef = useRef(new THREE.Color('#DCE6D5'));
-  const targetFog = useMemo(() => new THREE.Color(), []);
   const { scene } = useThree();
 
   const targets: Record<TimeOfDay, { dirCol: string; dirInt: number; ambCol: string; ambInt: number; fillCol: string; fillInt: number; fog: string }> = useMemo(
@@ -150,37 +149,50 @@ function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
     []
   );
 
+  // Pre-built target colours — identical values, just allocated once instead of
+  // three `new THREE.Color()` per frame.
+  const targetColors = useMemo(() => {
+    const build = (k: TimeOfDay) => ({
+      dir: new THREE.Color(targets[k].dirCol),
+      amb: new THREE.Color(targets[k].ambCol),
+      fill: new THREE.Color(targets[k].fillCol),
+      fog: new THREE.Color(targets[k].fog),
+    });
+    return { day: build('day'), sunset: build('sunset'), night: build('night') } as Record<
+      TimeOfDay,
+      { dir: THREE.Color; amb: THREE.Color; fill: THREE.Color; fog: THREE.Color }
+    >;
+  }, [targets]);
+
   const dirColor = useMemo(() => new THREE.Color(targets.day.dirCol), [targets]);
   const ambColor = useMemo(() => new THREE.Color(targets.day.ambCol), [targets]);
   const fillColor = useMemo(() => new THREE.Color(targets.day.fillCol), [targets]);
 
   useFrame((_, dt) => {
     const t = targets[timeOfDay];
+    const tc = targetColors[timeOfDay];
     const k = Math.min(1, dt * 1.5);
     if (dirRef.current) {
-      dirColor.lerp(new THREE.Color(t.dirCol), k);
+      dirColor.lerp(tc.dir, k);
       dirRef.current.color.copy(dirColor);
       dirRef.current.intensity += (t.dirInt - dirRef.current.intensity) * k;
     }
     if (ambRef.current) {
-      ambColor.lerp(new THREE.Color(t.ambCol), k);
+      ambColor.lerp(tc.amb, k);
       ambRef.current.color.copy(ambColor);
       ambRef.current.intensity += (t.ambInt - ambRef.current.intensity) * k;
     }
     if (fillRef.current) {
-      fillColor.lerp(new THREE.Color(t.fillCol), k);
+      fillColor.lerp(tc.fill, k);
       fillRef.current.color.copy(fillColor);
       fillRef.current.intensity += (t.fillInt - fillRef.current.intensity) * k;
     }
     if (scene.fog) {
-      targetFog.set(t.fog);
-      fogColorRef.current.lerp(targetFog, k);
+      fogColorRef.current.lerp(tc.fog, k);
       (scene.fog as THREE.Fog).color.copy(fogColorRef.current);
     }
   });
 
-  const shadowSize = isMobile ? 1024 : 4096;
-  const shadowBlur = isMobile ? 6 : 25;
 
   return (
     <>
