@@ -99,21 +99,22 @@ function CameraRig({
       const az = c.getAzimuthalAngle();
       const newAz = az * Math.pow(0.04, dt);
       // Rotate camera around target on Y-axis to approach az=0
-      const offset = camera.position.clone().sub(c.target);
-      const sph = new THREE.Spherical().setFromVector3(offset);
-      sph.theta = newAz;
-      offset.setFromSpherical(sph);
-      camera.position.copy(c.target).add(offset);
+      TMP_OFFSET.copy(camera.position).sub(c.target);
+      TMP_SPHERICAL.setFromVector3(TMP_OFFSET);
+      TMP_SPHERICAL.theta = newAz;
+      TMP_OFFSET.setFromSpherical(TMP_SPHERICAL);
+      camera.position.copy(c.target).add(TMP_OFFSET);
     }
 
     // Drive camera distance from external zoomProgress (scroll-controlled)
     const targetDist = baseDist + zoomProgressRef.current * 4;
     currentDistRef.current += (targetDist - currentDistRef.current) * Math.min(1, dt * 6);
-    const offset = camera.position.clone().sub(c.target);
-    const sph = new THREE.Spherical().setFromVector3(offset);
-    sph.radius = currentDistRef.current;
-    offset.setFromSpherical(sph);
-    camera.position.copy(c.target).add(offset);
+    TMP_OFFSET.copy(camera.position).sub(c.target);
+    TMP_SPHERICAL.setFromVector3(TMP_OFFSET);
+    TMP_SPHERICAL.radius = currentDistRef.current;
+    TMP_OFFSET.setFromSpherical(TMP_SPHERICAL);
+    camera.position.copy(c.target).add(TMP_OFFSET);
+
 
     // Subtle parallax overlay when not actively dragging (idle > 0.2s)
     if (idle > 0.2 && !resetAnim.current) {
