@@ -25,8 +25,28 @@ import { useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDe
 const GROUND_Y = -0.01;
 const DEFAULT_CAM = new THREE.Vector3(0, 4.0, 13);
 const TARGET = new THREE.Vector3(0, 3.4, 0);
-const MOBILE_CAM = new THREE.Vector3(0, 4.4, 16);
-const MOBILE_TARGET = new THREE.Vector3(0, 3.6, 0);
+// Mobile framing: pulled in from 16 → 13.5 with a wider fov so the canopy fills
+// the phone frame while staying clear of the headline / donors panel.
+const MOBILE_CAM = new THREE.Vector3(0, 4.2, 13.5);
+const MOBILE_TARGET = new THREE.Vector3(0, 3.5, 0);
+const MOBILE_BASE_DIST = 13.5;
+const MOBILE_FOV = 36;
+
+/**
+ * Mobile rebalance: spend the budget on tone mapping, MSAA, shadows and canopy
+ * density rather than raw pixels. Values only — no colours change.
+ */
+function mobileSettings(s: TierSettings): TierSettings {
+  if (s.tier === 'low') return s;
+  return {
+    ...s,
+    dprCap: 2,
+    shadows: true,
+    shadowMapSize: s.tier === 'high' ? 1024 : 512,
+    antialias: true,
+    leafCount: s.tier === 'high' ? 6000 : 4500,
+  };
+}
 
 // Frame-loop scratch objects — avoids per-frame allocation inside useFrame.
 const TMP_OFFSET = new THREE.Vector3();
@@ -48,7 +68,7 @@ function CameraRig({
   const resetAnim = useRef<{ start: number; from: THREE.Vector3 } | null>(null);
   const defaultCam = isMobile ? MOBILE_CAM : DEFAULT_CAM;
   const target = isMobile ? MOBILE_TARGET : TARGET;
-  const baseDist = isMobile ? 16 : 13;
+  const baseDist = isMobile ? MOBILE_BASE_DIST : 13;
   // Seed at the current zoom progress so the initial (already pulled-back) view
   // paints immediately instead of animating outward on load.
   const currentDistRef = useRef(baseDist + zoomProgressRef.current * 4);
@@ -132,7 +152,7 @@ function CameraRig({
   return null;
 }
 
-function DayNightLights({ shadowSize = 4096, shadowBlur = 25 }: { shadowSize?: number; shadowBlur?: number }) {
+function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = false }: { shadowSize?: number; shadowBlur?: number; tightShadow?: boolean }) {
   const { timeOfDay } = useInteraction();
   const dirRef = useRef<THREE.DirectionalLight>(null);
   const ambRef = useRef<THREE.AmbientLight>(null);
@@ -205,10 +225,10 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25 }: { shadowSize?: n
         castShadow
         shadow-mapSize-width={shadowSize}
         shadow-mapSize-height={shadowSize}
-        shadow-camera-left={-12}
-        shadow-camera-right={12}
-        shadow-camera-top={12}
-        shadow-camera-bottom={-3}
+        shadow-camera-left={tightShadow ? -5 : -12}
+        shadow-camera-right={tightShadow ? 5 : 12}
+        shadow-camera-top={tightShadow ? 9 : 12}
+        shadow-camera-bottom={tightShadow ? -1.5 : -3}
         shadow-bias={-0.0005}
         shadow-radius={8}
         shadow-blurSamples={shadowBlur}
