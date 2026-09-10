@@ -38,7 +38,7 @@ function roundRect(
   ctx.closePath();
 }
 
-export function drawCouponTexture(data: CouponData, logoUrl?: string): THREE.CanvasTexture {
+export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
   // 4× resolution upgrade for crisp coupons (was 512×320)
   const S = 4;
   const W = 512 * S;
@@ -68,14 +68,12 @@ export function drawCouponTexture(data: CouponData, logoUrl?: string): THREE.Can
   // square off bottom of stripe
   ctx.fillRect(8 * S, 70 * S, W - 16 * S, 28 * S);
 
-  // Brand name — nudged right when a logo badge sits on the left of the stripe.
-  const nameOffset = logoUrl ? 26 * S : 0;
+  // Brand name
   ctx.fillStyle = '#FFFFFF';
   ctx.font = `bold ${44 * S}px system-ui, -apple-system, Arial`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(data.brand.toUpperCase(), W / 2 + nameOffset, 53 * S);
-
+  ctx.fillText(data.brand.toUpperCase(), W / 2, 53 * S);
 
   // Trait pill
   const pillW = 280 * S;
@@ -110,31 +108,8 @@ export function drawCouponTexture(data: CouponData, logoUrl?: string): THREE.Can
   tex.generateMipmaps = true;
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.needsUpdate = true;
-
-  // Brand logo badge — same-origin PNG from /public/brands, drawn once it decodes.
-  if (logoUrl) {
-    const img = new Image();
-    img.decoding = 'async';
-    img.onload = () => {
-      const size = 66 * S;
-      const bx = 34 * S;
-      const by = 53 * S - size / 2;
-      ctx.save();
-      ctx.fillStyle = '#FFFFFF';
-      roundRect(ctx, bx, by, size, size, 14 * S);
-      ctx.fill();
-      ctx.clip();
-      const pad = 7 * S;
-      ctx.drawImage(img, bx + pad, by + pad, size - pad * 2, size - pad * 2);
-      ctx.restore();
-      tex.needsUpdate = true;
-    };
-    img.src = logoUrl;
-  }
-
   return tex;
 }
-
 
 // Curated set of coupon fruits
 export const COUPON_FRUITS: CouponData[] = [
