@@ -218,7 +218,63 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25 }: { shadowSize?: n
   );
 }
 
-function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap: number; isMobile: boolean }) {
+/**
+ * Toggles shadow rendering in place so a runtime tier downgrade never remounts
+ * the Canvas.
+ */
+function ShadowSwitch({ enabled }: { enabled: boolean }) {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  useEffect(() => {
+    gl.shadowMap.enabled = enabled;
+    gl.shadowMap.needsUpdate = true;
+    scene.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh || !mesh.material) return;
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      mats.forEach((m) => (m.needsUpdate = true));
+    });
+  }, [gl, scene, enabled]);
+  return null;
+}
+
+/**
+ * Rolling 2s frame-rate sampler. Ignores the first 2s of warm-up and fires at
+ * most once; the hook itself enforces one downgrade per session.
+ */
+function PerfWatchdog({ onSlow }: { onSlow: () => void }) {
+  const startRef = useRef(performance.now());
+  const windowStartRef = useRef(0);
+  const framesRef = useRef(0);
+  const firedRef = useRef(false);
+
+  useFrame(() => {
+    if (firedRef.current) return;
+    const now = performance.now();
+    if (now - startRef.current < 2000) return;
+    if (windowStartRef.current === 0) {
+      windowStartRef.current = now;
+      framesRef.current = 0;
+      return;
+    }
+    framesRef.current++;
+    const elapsed = now - windowStartRef.current;
+    if (elapsed < 2000) return;
+    const fps = (framesRef.current * 1000) / elapsed;
+    windowStartRef.current = now;
+    framesRef.current = 0;
+    if (fps < 45) {
+      firedRef.current = true;
+      onSlow();
+    }
+  });
+
+  return null;
+}
+
+function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boolean }) {
+  const { leafCount, plantCap } = settings;
+
   const branchTips = useMemo(() => getBranchTips().map((b) => b.tip), []);
   const fruits = useMemo(() => COUPON_FRUITS.slice(0, branchTips.length), [branchTips.length]);
 
