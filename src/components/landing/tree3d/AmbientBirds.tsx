@@ -70,7 +70,7 @@ export function AmbientBirds({ count = 6 }: { count?: number }) {
 
       // Fade
       mat.opacity += (targetOpacity - mat.opacity) * 0.05;
-      mat.color.lerp(new THREE.Color(tint), 0.05);
+      mat.color.lerp(tint, 0.05);
       mesh.visible = mat.opacity > 0.01;
 
       const elapsed = now - path.start;
