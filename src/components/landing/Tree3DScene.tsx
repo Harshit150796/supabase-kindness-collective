@@ -380,21 +380,22 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
 
   return (
     <>
-      <DayNightLights isMobile={isMobile} />
+      <DayNightLights shadowSize={settings.shadowMapSize} shadowBlur={settings.shadows && settings.tier === 'high' ? 25 : 6} />
       {!isMobile && <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />}
       {isMobile && <hemisphereLight args={['#cfe8d8', '#3a4a3a', 0.45]} />}
       <fog attach="fog" args={isMobile ? ['#DCE6D5', 25, 70] : ['#DCE6D5', 18, 45]} />
 
       <Sky isMobile={isMobile} />
 
-      <Tree leafCount={leafCount} />
+      <Tree leafCount={leafCount} lowPower={settings.tier === 'low'} />
       <Ground y={GROUND_Y} isMobile={isMobile} />
       <HitZones />
-      {!isMobile && <Fireflies />}
-      {!isMobile && <TrunkRipple />}
+      {settings.fireflies && <Fireflies />}
+      {settings.trunkRipple && <TrunkRipple />}
       <Bird />
-      <AmbientBirds count={isMobile ? 2 : 6} />
+      <AmbientBirds count={settings.ambientBirds} />
       <PlantsLayer cap={plantCap} />
+
 
       {fruits.map((data, i) => (
         <CouponFruit
