@@ -42,6 +42,10 @@ export function AmbientBirds({ count = 6 }: { count?: number }) {
   const materials = useRef<THREE.MeshBasicMaterial[]>([]);
   const paths = useRef<Path[]>([]);
   const tmp = useMemo(() => new THREE.Vector3(), []);
+  // Reused tint colours — same values, allocated once instead of every frame.
+  const tintSunset = useMemo(() => new THREE.Color('#FFD0A0'), []);
+  const tintPlain = useMemo(() => new THREE.Color('#FFFFFF'), []);
+
 
   // Initialize paths once based on count
   const initialPaths = useMemo(() => {
