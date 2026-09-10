@@ -584,31 +584,33 @@ interface InnerProps {
   dpr: [number, number];
   inView: boolean;
   enablePost: boolean;
-  leafCount: number;
-  plantCap: number;
+  settings: TierSettings;
+  antialias: boolean;
   isMobile: boolean;
-  onDecline: () => void;
-  onIncline: () => void;
+  onSlow: () => void;
 }
 
-function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, isMobile, onDecline, onIncline }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, settings, antialias, isMobile, onSlow }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const lastClickRef = useRef(0);
+  // Fixed at first render so the WebGL context is never recreated.
+  const initialShadows = useRef(settings.shadows).current;
 
   return (
     <>
       <Canvas
-        shadows={isMobile ? false : { type: THREE.PCFSoftShadowMap }}
+        shadows={initialShadows ? { type: THREE.PCFSoftShadowMap } : false}
         dpr={dpr}
         frameloop={inView ? 'always' : 'demand'}
         camera={{ position: isMobile ? [0, 4.4, 16] : [0, 4.0, 13], fov: isMobile ? 32 : 38 }}
         gl={{
-          antialias: !isMobile,
+          antialias,
           alpha: true,
           powerPreference: isMobile ? 'low-power' : 'high-performance',
           toneMapping: isMobile ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping,
           toneMappingExposure: isMobile ? 1 : 1.05,
         }}
+
         style={{ background: 'transparent' }}
         onPointerDown={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(true); }}
         onPointerUp={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(false); }}
