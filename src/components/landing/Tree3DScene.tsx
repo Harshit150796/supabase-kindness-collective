@@ -461,26 +461,39 @@ function DeferredEnvironment() {
   return <Environment preset="forest" background={false} />;
 }
 
+function readForcedTier(): DeviceTier | undefined {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    const v = new URLSearchParams(window.location.search).get('tier3d');
+    return v === 'low' || v === 'medium' || v === 'high' ? v : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function Tree3DScene() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   // 0 = zoomed in, 1 = zoomed out. Start mostly out so one wheel gesture finishes it.
   const zoomProgressRef = useRef(0.7);
   const [inView, setInView] = useState(true);
-  // Real mobile mode — matches device DPR, drops shadows/AA/tone-mapping so the
-  // canvas stays crisp and hits 60fps on phones instead of getting upscaled + smeared.
   const isMobile = useIsMobile();
   const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
-  // DPR: mobile cap raised to 3 to match modern phones (dpr up to ~3.75).
-  // Without this the canvas renders at 2x and the browser bilinearly upscales
-  // to the device — that's the "blurry hero" complaint.
-  const stableDpr = useMemo<[number, number]>(() => {
-    const max = isMobile ? 3 : 2;
+
+  // Tier is resolved synchronously on first render and never re-detected, so the
+  // Canvas never re-initialises. `?tier3d=low|medium|high` forces a tier for QA.
+  const forced = useMemo(() => readForcedTier(), []);
+  const { settings, initialTier, requestDowngrade } = useDeviceTier(forced);
+
+  // DPR follows the tier cap; changing it later only calls setPixelRatio in place.
+  const dpr = useMemo<[number, number]>(() => {
+    const max = settings.dprCap;
     const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, max) : max;
     return [d, d];
-  }, [isMobile]);
-  const dpr = stableDpr;
+  }, [settings.dprCap]);
   const enablePost = false;
+  // Antialias must be fixed at context creation time — derived from the first tier.
+  const antialias = useMemo(() => initialTier !== 'low', [initialTier]);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -500,7 +513,6 @@ export function Tree3DScene() {
 
   // Mobile: keep canvas mounted and always animating while visible. Switching
   // frameloop or unmounting mid-scroll causes blink/jitter around the live bar.
-  const aboveFold = true;
   const mounted = true;
 
   // Scroll-to-zoom-then-release: desktop wheel only. Mobile keeps native scroll.
@@ -528,13 +540,9 @@ export function Tree3DScene() {
     };
   }, [isMobile]);
 
-  const leafCount = isMobile ? 2500 : 7000;
-  const plantCap = isMobile ? 10 : 40;
-
   // Render while in view + tab visible. We no longer downgrade based on scroll
   // position on mobile — that caused visible pause/resume hitches.
   const effectiveInView = inView && tabVisible;
-  void aboveFold;
 
   return (
     <InteractionProvider>
@@ -554,11 +562,10 @@ export function Tree3DScene() {
             dpr={dpr}
             inView={effectiveInView}
             enablePost={enablePost}
-            leafCount={leafCount}
-            plantCap={plantCap}
+            settings={settings}
+            antialias={antialias}
             isMobile={isMobile}
-            onDecline={() => {}}
-            onIncline={() => {}}
+            onSlow={requestDowngrade}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#FFF2D8] to-[#D8E0CC]" />
@@ -569,6 +576,7 @@ export function Tree3DScene() {
     </InteractionProvider>
   );
 }
+
 
 interface InnerProps {
   controlsRef: React.RefObject<OrbitControlsImpl>;
