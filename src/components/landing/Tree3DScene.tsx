@@ -236,18 +236,10 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
     [donations]
   );
 
-  // Auto drops — self-rescheduling timer with jitter so the rhythm never feels
-  // metronomic. Roughly 1 in 5 waits releases a pair ~250ms apart. Physics,
-  // landing, regrow and the donation data itself are untouched.
+  // Auto drops on timer
   useEffect(() => {
     if (donations.length === 0) return;
-    const BASE = isMobile ? 3200 : 2600;
-    const JITTER = 600;
-    let timer: ReturnType<typeof setTimeout>;
-    let pairTimer: ReturnType<typeof setTimeout> | undefined;
-    let cancelled = false;
-
-    const dropRandom = () => {
+    const interval = setInterval(() => {
       setStates((prev) => {
         const hangingIdx = prev.map((s, i) => (s.phase === 'hanging' ? i : -1)).filter((i) => i >= 0);
         if (hangingIdx.length === 0) return prev;
@@ -258,30 +250,9 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
         next[pick] = { phase: 'falling', startTime: performance.now() / 1000, donation };
         return next;
       });
-    };
-
-    const schedule = () => {
-      const wait = BASE + (Math.random() * 2 - 1) * JITTER;
-      timer = setTimeout(() => {
-        if (cancelled) return;
-        dropRandom();
-        if (Math.random() < 0.2) {
-          pairTimer = setTimeout(() => {
-            if (!cancelled) dropRandom();
-          }, 250);
-        }
-        schedule();
-      }, wait);
-    };
-    schedule();
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-      if (pairTimer) clearTimeout(pairTimer);
-    };
-  }, [donations, isMobile]);
-
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [donations]);
 
   // Shake event → cascade drop 3-5 hanging coupons
   useEffect(() => {
@@ -444,54 +415,22 @@ export function Tree3DScene() {
   const mounted = true;
 
   // Scroll-to-zoom-then-release: desktop wheel only. Mobile keeps native scroll.
-  // Safety valves so a visitor can never feel stuck: the handler may hold the
-  // page for at most 600ms and ~400px of cumulative wheel delta, after which it
-  // permanently releases for the session. Reduced motion skips it entirely.
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
     if (isMobile) return;
 
-    const prefersReduced =
-      typeof window !== 'undefined' &&
-      !!window.matchMedia &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    if (prefersReduced) {
-      // Resting value — camera sits where a completed zoom would leave it.
-      zoomProgressRef.current = 1;
-      return;
-    }
-
     const WHEEL_SENSITIVITY = 0.006;
-    const TIME_BUDGET_MS = 600;
-    const DELTA_BUDGET_PX = 400;
-
-    let firstWheelAt = 0;
-    let consumedDelta = 0;
-    let released = false;
 
     const onWheel = (e: WheelEvent) => {
-      if (released) return;
       if (window.scrollY > 4) return;
       const cur = zoomProgressRef.current;
       // Normalise Firefox line/page deltas to pixels.
       const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
       if (dy > 0 && cur >= 1) return;
       if (dy < 0 && cur <= 0) return;
-
-      const now = performance.now();
-      if (firstWheelAt === 0) firstWheelAt = now;
-      if (now - firstWheelAt > TIME_BUDGET_MS) {
-        released = true;
-        return;
-      }
-
       e.preventDefault();
       zoomProgressRef.current = Math.max(0, Math.min(1, cur + dy * WHEEL_SENSITIVITY));
-
-      consumedDelta += Math.abs(dy);
-      if (consumedDelta >= DELTA_BUDGET_PX) released = true;
     };
 
     el.addEventListener('wheel', onWheel, { passive: false });
@@ -499,7 +438,6 @@ export function Tree3DScene() {
       el.removeEventListener('wheel', onWheel);
     };
   }, [isMobile]);
-
 
   const leafCount = isMobile ? 2500 : 7000;
   const plantCap = isMobile ? 10 : 40;
