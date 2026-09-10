@@ -60,7 +60,7 @@ export function AmbientBirds({ count = 6 }: { count?: number }) {
   useFrame(() => {
     const now = performance.now() / 1000;
     const targetOpacity = timeOfDay === 'night' ? 0 : 1;
-    const tint = timeOfDay === 'sunset' ? '#FFD0A0' : '#FFFFFF';
+    const tint = timeOfDay === 'sunset' ? tintSunset : tintPlain;
 
     for (let i = 0; i < count; i++) {
       const mesh = meshes.current[i];
