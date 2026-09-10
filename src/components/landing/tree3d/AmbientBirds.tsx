@@ -42,6 +42,10 @@ export function AmbientBirds({ count = 6 }: { count?: number }) {
   const materials = useRef<THREE.MeshBasicMaterial[]>([]);
   const paths = useRef<Path[]>([]);
   const tmp = useMemo(() => new THREE.Vector3(), []);
+  // Reused tint colours — same values, allocated once instead of every frame.
+  const tintSunset = useMemo(() => new THREE.Color('#FFD0A0'), []);
+  const tintPlain = useMemo(() => new THREE.Color('#FFFFFF'), []);
+
 
   // Initialize paths once based on count
   const initialPaths = useMemo(() => {
@@ -56,7 +60,7 @@ export function AmbientBirds({ count = 6 }: { count?: number }) {
   useFrame(() => {
     const now = performance.now() / 1000;
     const targetOpacity = timeOfDay === 'night' ? 0 : 1;
-    const tint = timeOfDay === 'sunset' ? '#FFD0A0' : '#FFFFFF';
+    const tint = timeOfDay === 'sunset' ? tintSunset : tintPlain;
 
     for (let i = 0; i < count; i++) {
       const mesh = meshes.current[i];
@@ -66,7 +70,7 @@ export function AmbientBirds({ count = 6 }: { count?: number }) {
 
       // Fade
       mat.opacity += (targetOpacity - mat.opacity) * 0.05;
-      mat.color.lerp(new THREE.Color(tint), 0.05);
+      mat.color.lerp(tint, 0.05);
       mesh.visible = mat.opacity > 0.01;
 
       const elapsed = now - path.start;

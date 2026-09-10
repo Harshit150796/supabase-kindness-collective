@@ -20,12 +20,18 @@ import { AmbientBirds } from './tree3d/AmbientBirds';
 import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
 import { TransparencyPopover } from './tree3d/TransparencyPopover';
 import { PlantsLayer } from './tree3d/PlantsLayer';
+import { useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
 
 const GROUND_Y = -0.01;
 const DEFAULT_CAM = new THREE.Vector3(0, 4.0, 13);
 const TARGET = new THREE.Vector3(0, 3.4, 0);
 const MOBILE_CAM = new THREE.Vector3(0, 4.4, 16);
 const MOBILE_TARGET = new THREE.Vector3(0, 3.6, 0);
+
+// Frame-loop scratch objects — avoids per-frame allocation inside useFrame.
+const TMP_OFFSET = new THREE.Vector3();
+const TMP_SPHERICAL = new THREE.Spherical();
+
 
 function CameraRig({
   controlsRef,
@@ -93,21 +99,22 @@ function CameraRig({
       const az = c.getAzimuthalAngle();
       const newAz = az * Math.pow(0.04, dt);
       // Rotate camera around target on Y-axis to approach az=0
-      const offset = camera.position.clone().sub(c.target);
-      const sph = new THREE.Spherical().setFromVector3(offset);
-      sph.theta = newAz;
-      offset.setFromSpherical(sph);
-      camera.position.copy(c.target).add(offset);
+      TMP_OFFSET.copy(camera.position).sub(c.target);
+      TMP_SPHERICAL.setFromVector3(TMP_OFFSET);
+      TMP_SPHERICAL.theta = newAz;
+      TMP_OFFSET.setFromSpherical(TMP_SPHERICAL);
+      camera.position.copy(c.target).add(TMP_OFFSET);
     }
 
     // Drive camera distance from external zoomProgress (scroll-controlled)
     const targetDist = baseDist + zoomProgressRef.current * 4;
     currentDistRef.current += (targetDist - currentDistRef.current) * Math.min(1, dt * 6);
-    const offset = camera.position.clone().sub(c.target);
-    const sph = new THREE.Spherical().setFromVector3(offset);
-    sph.radius = currentDistRef.current;
-    offset.setFromSpherical(sph);
-    camera.position.copy(c.target).add(offset);
+    TMP_OFFSET.copy(camera.position).sub(c.target);
+    TMP_SPHERICAL.setFromVector3(TMP_OFFSET);
+    TMP_SPHERICAL.radius = currentDistRef.current;
+    TMP_OFFSET.setFromSpherical(TMP_SPHERICAL);
+    camera.position.copy(c.target).add(TMP_OFFSET);
+
 
     // Subtle parallax overlay when not actively dragging (idle > 0.2s)
     if (idle > 0.2 && !resetAnim.current) {
@@ -125,13 +132,12 @@ function CameraRig({
   return null;
 }
 
-function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
+function DayNightLights({ shadowSize = 4096, shadowBlur = 25 }: { shadowSize?: number; shadowBlur?: number }) {
   const { timeOfDay } = useInteraction();
   const dirRef = useRef<THREE.DirectionalLight>(null);
   const ambRef = useRef<THREE.AmbientLight>(null);
   const fillRef = useRef<THREE.DirectionalLight>(null);
   const fogColorRef = useRef(new THREE.Color('#DCE6D5'));
-  const targetFog = useMemo(() => new THREE.Color(), []);
   const { scene } = useThree();
 
   const targets: Record<TimeOfDay, { dirCol: string; dirInt: number; ambCol: string; ambInt: number; fillCol: string; fillInt: number; fog: string }> = useMemo(
@@ -143,37 +149,50 @@ function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
     []
   );
 
+  // Pre-built target colours — identical values, just allocated once instead of
+  // three `new THREE.Color()` per frame.
+  const targetColors = useMemo(() => {
+    const build = (k: TimeOfDay) => ({
+      dir: new THREE.Color(targets[k].dirCol),
+      amb: new THREE.Color(targets[k].ambCol),
+      fill: new THREE.Color(targets[k].fillCol),
+      fog: new THREE.Color(targets[k].fog),
+    });
+    return { day: build('day'), sunset: build('sunset'), night: build('night') } as Record<
+      TimeOfDay,
+      { dir: THREE.Color; amb: THREE.Color; fill: THREE.Color; fog: THREE.Color }
+    >;
+  }, [targets]);
+
   const dirColor = useMemo(() => new THREE.Color(targets.day.dirCol), [targets]);
   const ambColor = useMemo(() => new THREE.Color(targets.day.ambCol), [targets]);
   const fillColor = useMemo(() => new THREE.Color(targets.day.fillCol), [targets]);
 
   useFrame((_, dt) => {
     const t = targets[timeOfDay];
+    const tc = targetColors[timeOfDay];
     const k = Math.min(1, dt * 1.5);
     if (dirRef.current) {
-      dirColor.lerp(new THREE.Color(t.dirCol), k);
+      dirColor.lerp(tc.dir, k);
       dirRef.current.color.copy(dirColor);
       dirRef.current.intensity += (t.dirInt - dirRef.current.intensity) * k;
     }
     if (ambRef.current) {
-      ambColor.lerp(new THREE.Color(t.ambCol), k);
+      ambColor.lerp(tc.amb, k);
       ambRef.current.color.copy(ambColor);
       ambRef.current.intensity += (t.ambInt - ambRef.current.intensity) * k;
     }
     if (fillRef.current) {
-      fillColor.lerp(new THREE.Color(t.fillCol), k);
+      fillColor.lerp(tc.fill, k);
       fillRef.current.color.copy(fillColor);
       fillRef.current.intensity += (t.fillInt - fillRef.current.intensity) * k;
     }
     if (scene.fog) {
-      targetFog.set(t.fog);
-      fogColorRef.current.lerp(targetFog, k);
+      fogColorRef.current.lerp(tc.fog, k);
       (scene.fog as THREE.Fog).color.copy(fogColorRef.current);
     }
   });
 
-  const shadowSize = isMobile ? 1024 : 4096;
-  const shadowBlur = isMobile ? 6 : 25;
 
   return (
     <>
@@ -199,7 +218,63 @@ function DayNightLights({ isMobile = false }: { isMobile?: boolean }) {
   );
 }
 
-function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap: number; isMobile: boolean }) {
+/**
+ * Toggles shadow rendering in place so a runtime tier downgrade never remounts
+ * the Canvas.
+ */
+function ShadowSwitch({ enabled }: { enabled: boolean }) {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  useEffect(() => {
+    gl.shadowMap.enabled = enabled;
+    gl.shadowMap.needsUpdate = true;
+    scene.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh || !mesh.material) return;
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      mats.forEach((m) => (m.needsUpdate = true));
+    });
+  }, [gl, scene, enabled]);
+  return null;
+}
+
+/**
+ * Rolling 2s frame-rate sampler. Ignores the first 2s of warm-up and fires at
+ * most once; the hook itself enforces one downgrade per session.
+ */
+function PerfWatchdog({ onSlow }: { onSlow: () => void }) {
+  const startRef = useRef(performance.now());
+  const windowStartRef = useRef(0);
+  const framesRef = useRef(0);
+  const firedRef = useRef(false);
+
+  useFrame(() => {
+    if (firedRef.current) return;
+    const now = performance.now();
+    if (now - startRef.current < 2000) return;
+    if (windowStartRef.current === 0) {
+      windowStartRef.current = now;
+      framesRef.current = 0;
+      return;
+    }
+    framesRef.current++;
+    const elapsed = now - windowStartRef.current;
+    if (elapsed < 2000) return;
+    const fps = (framesRef.current * 1000) / elapsed;
+    windowStartRef.current = now;
+    framesRef.current = 0;
+    if (fps < 45) {
+      firedRef.current = true;
+      onSlow();
+    }
+  });
+
+  return null;
+}
+
+function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boolean }) {
+  const { leafCount, plantCap } = settings;
+
   const branchTips = useMemo(() => getBranchTips().map((b) => b.tip), []);
   const fruits = useMemo(() => COUPON_FRUITS.slice(0, branchTips.length), [branchTips.length]);
 
@@ -305,21 +380,22 @@ function Scene({ leafCount, plantCap, isMobile }: { leafCount: number; plantCap:
 
   return (
     <>
-      <DayNightLights isMobile={isMobile} />
+      <DayNightLights shadowSize={settings.shadowMapSize} shadowBlur={settings.shadows && settings.tier === 'high' ? 25 : 6} />
       {!isMobile && <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />}
       {isMobile && <hemisphereLight args={['#cfe8d8', '#3a4a3a', 0.45]} />}
       <fog attach="fog" args={isMobile ? ['#DCE6D5', 25, 70] : ['#DCE6D5', 18, 45]} />
 
       <Sky isMobile={isMobile} />
 
-      <Tree leafCount={leafCount} />
+      <Tree leafCount={leafCount} lowPower={settings.tier === 'low'} />
       <Ground y={GROUND_Y} isMobile={isMobile} />
       <HitZones />
-      {!isMobile && <Fireflies />}
-      {!isMobile && <TrunkRipple />}
+      {settings.fireflies && <Fireflies />}
+      {settings.trunkRipple && <TrunkRipple />}
       <Bird />
-      <AmbientBirds count={isMobile ? 2 : 6} />
+      <AmbientBirds count={settings.ambientBirds} />
       <PlantsLayer cap={plantCap} />
+
 
       {fruits.map((data, i) => (
         <CouponFruit
@@ -385,26 +461,39 @@ function DeferredEnvironment() {
   return <Environment preset="forest" background={false} />;
 }
 
+function readForcedTier(): DeviceTier | undefined {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    const v = new URLSearchParams(window.location.search).get('tier3d');
+    return v === 'low' || v === 'medium' || v === 'high' ? v : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function Tree3DScene() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   // 0 = zoomed in, 1 = zoomed out. Start mostly out so one wheel gesture finishes it.
   const zoomProgressRef = useRef(0.7);
   const [inView, setInView] = useState(true);
-  // Real mobile mode — matches device DPR, drops shadows/AA/tone-mapping so the
-  // canvas stays crisp and hits 60fps on phones instead of getting upscaled + smeared.
   const isMobile = useIsMobile();
   const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
-  // DPR: mobile cap raised to 3 to match modern phones (dpr up to ~3.75).
-  // Without this the canvas renders at 2x and the browser bilinearly upscales
-  // to the device — that's the "blurry hero" complaint.
-  const stableDpr = useMemo<[number, number]>(() => {
-    const max = isMobile ? 3 : 2;
+
+  // Tier is resolved synchronously on first render and never re-detected, so the
+  // Canvas never re-initialises. `?tier3d=low|medium|high` forces a tier for QA.
+  const forced = useMemo(() => readForcedTier(), []);
+  const { settings, initialTier, requestDowngrade } = useDeviceTier(forced);
+
+  // DPR follows the tier cap; changing it later only calls setPixelRatio in place.
+  const dpr = useMemo<[number, number]>(() => {
+    const max = settings.dprCap;
     const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, max) : max;
     return [d, d];
-  }, [isMobile]);
-  const dpr = stableDpr;
+  }, [settings.dprCap]);
   const enablePost = false;
+  // Antialias must be fixed at context creation time — derived from the first tier.
+  const antialias = useMemo(() => initialTier !== 'low', [initialTier]);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -424,7 +513,6 @@ export function Tree3DScene() {
 
   // Mobile: keep canvas mounted and always animating while visible. Switching
   // frameloop or unmounting mid-scroll causes blink/jitter around the live bar.
-  const aboveFold = true;
   const mounted = true;
 
   // Scroll-to-zoom-then-release: desktop wheel only. Mobile keeps native scroll.
@@ -452,13 +540,9 @@ export function Tree3DScene() {
     };
   }, [isMobile]);
 
-  const leafCount = isMobile ? 2500 : 7000;
-  const plantCap = isMobile ? 10 : 40;
-
   // Render while in view + tab visible. We no longer downgrade based on scroll
   // position on mobile — that caused visible pause/resume hitches.
   const effectiveInView = inView && tabVisible;
-  void aboveFold;
 
   return (
     <InteractionProvider>
@@ -478,11 +562,10 @@ export function Tree3DScene() {
             dpr={dpr}
             inView={effectiveInView}
             enablePost={enablePost}
-            leafCount={leafCount}
-            plantCap={plantCap}
+            settings={settings}
+            antialias={antialias}
             isMobile={isMobile}
-            onDecline={() => {}}
-            onIncline={() => {}}
+            onSlow={requestDowngrade}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#FFF2D8] to-[#D8E0CC]" />
@@ -494,37 +577,40 @@ export function Tree3DScene() {
   );
 }
 
+
 interface InnerProps {
   controlsRef: React.RefObject<OrbitControlsImpl>;
   zoomProgressRef: React.MutableRefObject<number>;
   dpr: [number, number];
   inView: boolean;
   enablePost: boolean;
-  leafCount: number;
-  plantCap: number;
+  settings: TierSettings;
+  antialias: boolean;
   isMobile: boolean;
-  onDecline: () => void;
-  onIncline: () => void;
+  onSlow: () => void;
 }
 
-function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, leafCount, plantCap, isMobile, onDecline, onIncline }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, settings, antialias, isMobile, onSlow }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const lastClickRef = useRef(0);
+  // Fixed at first render so the WebGL context is never recreated.
+  const initialShadows = useRef(settings.shadows).current;
 
   return (
     <>
       <Canvas
-        shadows={isMobile ? false : { type: THREE.PCFSoftShadowMap }}
+        shadows={initialShadows ? { type: THREE.PCFSoftShadowMap } : false}
         dpr={dpr}
         frameloop={inView ? 'always' : 'demand'}
         camera={{ position: isMobile ? [0, 4.4, 16] : [0, 4.0, 13], fov: isMobile ? 32 : 38 }}
         gl={{
-          antialias: !isMobile,
+          antialias,
           alpha: true,
           powerPreference: isMobile ? 'low-power' : 'high-performance',
           toneMapping: isMobile ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping,
           toneMappingExposure: isMobile ? 1 : 1.05,
         }}
+
         style={{ background: 'transparent' }}
         onPointerDown={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(true); }}
         onPointerUp={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(false); }}
@@ -556,9 +642,12 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, le
         />
         <CameraRig controlsRef={controlsRef} zoomProgressRef={zoomProgressRef} isMobile={isMobile} />
         <WindTracker />
+        <ShadowSwitch enabled={settings.shadows} />
+        <PerfWatchdog onSlow={onSlow} />
         <Suspense fallback={null}>
-          <Scene leafCount={leafCount} plantCap={plantCap} isMobile={isMobile} />
+          <Scene settings={settings} isMobile={isMobile} />
         </Suspense>
+
         <Suspense fallback={null}>
           <DeferredEnvironment />
         </Suspense>
