@@ -34,3 +34,8 @@
 - [x] Prove sticky pinning, reverse motion, viewport stability, responsive overflow safety, and clean runtime behavior.
 - [x] Record the actual 390px branch, sticky top, container height, and scroll-progress values before changing the mobile story.
 - [x] Inspect every morph handoff for a continuously visible object with no empty or ghosted frame.
+
+## In progress
+- [ ] Replace mobile/tablet sticky How It Works with replayable in-view step blocks.
+- [ ] Verify the actual reduced-motion and mobile branch selection behavior.
+- [ ] Capture all requested mobile proof frames and responsive overflow checks.
