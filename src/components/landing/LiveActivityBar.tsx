@@ -1,163 +1,63 @@
-import { memo, useEffect, useState } from 'react';
-import { Heart, TrendingUp, Users } from 'lucide-react';
-import { popularBrands } from '@/data/brandLogos';
-import { supabase } from '@/integrations/supabase/client';
-import { useLandingStats, formatUSD } from '@/hooks/useLandingStats';
-
-interface DonationEvent {
-  id: string;
-  name: string;
-  amount: number;
-  brand: string;
-  createdAt: string;
-}
-
-const shortDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+import { brandList } from '@/data/brandLogos';
 
 export const LiveActivityBar = () => {
-  const [currentDonation, setCurrentDonation] = useState<DonationEvent | null>(null);
-  const stats = useLandingStats();
-  const shimmer = <span className="inline-block h-3 w-8 rounded bg-muted animate-pulse align-middle" />;
-
-  // Real most-recent donation from the database; refreshed quietly every 60s.
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
-      const { data, error } = await supabase.rpc('get_recent_public_donations', { _limit: 1 });
-      if (cancelled || error || !data || data.length === 0) return;
-      const row = data[0];
-      setCurrentDonation({
-        id: row.id,
-        name: row.display_name || 'A supporter',
-        amount: Number(row.amount) || 0,
-        brand: row.brand_partner || '',
-        createdAt: row.created_at,
-      });
-    };
-
-    load();
-    const interval = setInterval(load, 60000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, []);
-
-
   return (
-    <section className="relative bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-y border-border/50 overflow-hidden">
-      {/* Animated tint only on desktop — kept off mobile for stable rendering */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10 opacity-50 hidden md:block md:animate-pulse" />
+    <section
+      aria-labelledby="redeemable-at-heading"
+      className="relative overflow-hidden border-y border-border/60 bg-gradient-to-r from-primary/5 via-background to-accent/5"
+    >
+      <div aria-hidden="true" className="absolute -left-16 -top-20 h-40 w-40 rounded-full bg-primary/5 blur-3xl" />
+      <div aria-hidden="true" className="absolute -bottom-20 -right-16 h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
 
-      <div className="container mx-auto px-4 py-1.5 md:py-2">
-        <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 min-h-[40px]">
-
-          {/* Latest donation (real, from the database) — anchored left */}
-          <div className="flex items-center min-w-0 w-full md:w-auto md:flex-1 justify-center md:justify-start min-h-[32px]">
-            {currentDonation && <DonationPill donation={currentDonation} />}
-          </div>
-
-          {/* Quick Stats — optically centered */}
-          <div className="flex items-center justify-center gap-2.5 md:gap-3 flex-shrink-0">
-            <div className="flex items-center gap-1.5 md:gap-2">
-              <Users className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
-              <span className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">
-                <span className="font-semibold text-foreground tabular-nums">{stats ? stats.donations_count.toLocaleString() : shimmer}</span>
-                <span className="hidden sm:inline"> donations</span>
-              </span>
-            </div>
-
-            <span aria-hidden="true" className="h-4 w-px bg-border/70" />
-
-            <div className="flex items-center gap-1.5 md:gap-2">
-              <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 text-green-500" />
-              <span className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">
-                <span className="font-semibold text-foreground tabular-nums">{stats ? formatUSD(stats.total_raised) : shimmer}</span>
-                <span className="hidden sm:inline"> raised to date</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Redeemable-at label + scrolling brand logos — pinned to the right edge */}
-          <div className="hidden md:flex items-center justify-end gap-2.5 flex-1 min-w-0">
-            <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/80 whitespace-nowrap flex-shrink-0">
+      <div className="container relative mx-auto px-4 py-4 md:py-5">
+        <div className="flex flex-col items-center gap-4 md:flex-row md:gap-8 lg:gap-12">
+          <div className="shrink-0 text-center md:w-[230px] md:text-left">
+            <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/70">
+              Shop with choice
+            </p>
+            <h2 id="redeemable-at-heading" className="text-lg font-bold text-foreground md:text-xl">
               Redeemable at
-            </span>
-            <div
-              className="overflow-hidden max-w-[120px] lg:max-w-[180px]"
-              style={{
-                maskImage: 'linear-gradient(to right, transparent, black 14%, black 100%)',
-                WebkitMaskImage: 'linear-gradient(to right, transparent, black 14%, black 100%)',
-              }}
-            >
-              <div className="flex gap-4 animate-marquee w-max">
-                {[...popularBrands.slice(0, 4), ...popularBrands.slice(0, 4)].map((brand, i) => (
-                  <div
-                    key={`d-${brand.name}-${i}`}
-                    className="flex items-center justify-center w-8 h-8 rounded-full bg-background border border-border/50 shadow-sm flex-shrink-0"
-                    title={brand.name}
-                  >
-                    <img src={brand.logo} alt={i < 4 ? brand.name : ''} className="w-5 h-5 object-contain" />
-                  </div>
-                ))}
-              </div>
-            </div>
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">
+              Choose familiar brands for every coupon.
+            </p>
           </div>
-        </div>
 
-        {/* Mobile-only brand marquee row */}
-        <div className="md:hidden mt-1.5 flex items-center justify-center">
-          <span className="text-[9px] font-medium uppercase tracking-[0.14em] text-muted-foreground/80">
-            Redeemable at
-          </span>
-        </div>
-        <div
-          aria-hidden="true"
-          className="md:hidden mt-1 -mx-4 overflow-hidden"
-          style={{
-            maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
-            WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
-          }}
-        >
-          <div className="flex gap-3 animate-marquee w-max px-4">
-            {[...popularBrands, ...popularBrands].map((brand, i) => (
-              <div
-                key={`m-${brand.name}-${i}`}
-                className="flex items-center justify-center w-7 h-7 rounded-full bg-background border border-border/50 shadow-sm flex-shrink-0"
-              >
-                <img src={brand.logo} alt="" className="w-4 h-4 object-contain" />
-              </div>
-            ))}
+          <div
+            className="w-full min-w-0 overflow-hidden"
+            style={{
+              maskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)',
+              WebkitMaskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)',
+            }}
+          >
+            <div className="flex w-max motion-safe:animate-marquee motion-reduce:translate-x-0">
+              {[0, 1].map((group) => (
+                <div
+                  key={group}
+                  aria-hidden={group === 1}
+                  className="flex shrink-0 items-center gap-4 pr-4 md:gap-5 md:pr-5"
+                >
+                  {brandList.map((brand) => (
+                    <div
+                      key={`${group}-${brand.name}`}
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-card shadow-[0_8px_24px_-12px_hsl(var(--foreground)/0.28)] transition-transform duration-300 hover:-translate-y-0.5 md:h-14 md:w-14"
+                      title={brand.name}
+                    >
+                      <img
+                        src={brand.logo}
+                        alt={group === 0 ? brand.name : ''}
+                        className="h-7 w-7 object-contain md:h-8 md:w-8"
+                        loading="eager"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
     </section>
   );
 };
-
-// Memoised pill so the surrounding stats row and brand marquee don't reflow
-// when the donation record refreshes.
-const DonationPill = memo(function DonationPill({ donation }: { donation: DonationEvent }) {
-  return (
-    <div className="flex items-center gap-3 md:gap-3.5 bg-background rounded-full pl-3.5 pr-4 md:pl-4 md:pr-5 py-1 md:py-1.5 border border-border/40 shadow-[0_6px_24px_-12px_rgba(0,0,0,0.18)] max-w-full">
-      <Heart className="w-4 h-4 md:w-[18px] md:h-[18px] text-primary fill-primary flex-shrink-0" />
-      <div className="min-w-0">
-        <p className="text-[9px] md:text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground leading-none mb-0.5">
-          Latest donation
-        </p>
-        <p className="text-xs md:text-sm leading-tight whitespace-nowrap truncate">
-          <span className="font-bold text-foreground">{donation.name}</span>
-          <span className="text-muted-foreground"> · </span>
-          <span className="font-bold text-primary">${donation.amount}</span>
-          {donation.brand && (
-            <span className="text-muted-foreground"> {donation.brand}</span>
-          )}
-          <span className="text-muted-foreground"> · {shortDate(donation.createdAt)}</span>
-        </p>
-      </div>
-    </div>
-  );
-});
 
