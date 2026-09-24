@@ -32,3 +32,5 @@
 - [ ] Restore the tree's bright ambient sheen with a procedural no-download environment and matched exposure.
 - [ ] Replace the mobile How It Works cross-fades with one reversible continuous transformation.
 - [ ] Prove sticky pinning, reverse motion, viewport stability, responsive overflow safety, and clean runtime behavior.
+- [ ] Record the actual 390px branch, sticky top, container height, and scroll-progress values before changing the mobile story.
+- [ ] Inspect every morph handoff for a continuously visible object with no empty or ghosted frame.
