@@ -18,7 +18,7 @@ export const LiveActivityBar = () => {
               Every dollar, redeemable at
             </h2>
             <p className="mt-0.5 text-[11px] text-muted-foreground md:text-xs">
-              Pick the familiar brands where your coupons are spent.
+              Pick the familiar brands where your kindness is spent.
             </p>
           </div>
 
