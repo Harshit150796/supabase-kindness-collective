@@ -6,6 +6,7 @@ import {
   useMotionValueEvent,
   useReducedMotion,
   useScroll,
+  useSpring,
   useTransform,
   type MotionValue,
 } from 'motion/react';
@@ -248,30 +249,102 @@ function ApplyDoorIcon() {
 
 type Step = (typeof steps)[number];
 
+function ContinuousJourneyArt({ progress }: { progress: MotionValue<number> }) {
+  const parallaxY = mapValue(progress, [0, 1], [8, -8]);
+  const coinSpread = mapValue(progress, [0, 0.18, 0.25], [1, 1, 0]);
+  const coinY = mapValue(progress, [0, 0.18, 0.25], [0, 0, 24]);
+  const coinOpacity = mapValue(progress, [0, 0.2, 0.25], [1, 1, 0]);
+  const couponScaleX = mapValue(progress, [0, 0.18, 0.27, 0.43, 0.52], [0.55, 0.55, 1, 1, 0.72]);
+  const couponScaleY = mapValue(progress, [0, 0.18, 0.27, 0.43, 0.52], [0.55, 0.55, 1, 1, 1.22]);
+  const couponOpacity = mapValue(progress, [0, 0.16, 0.24, 0.46, 0.54], [0, 0, 1, 1, 0]);
+  const scanX = mapValue(progress, [0, 0.31, 0.44, 0.5], [-44, -44, 44, 44]);
+  const scanOpacity = mapValue(progress, [0, 0.3, 0.34, 0.46, 0.5], [0, 0, 1, 1, 0]);
+  const bagScale = mapValue(progress, [0, 0.43, 0.54, 0.72, 0.82], [0.72, 0.72, 1, 1, 0.72]);
+  const bagOpacity = mapValue(progress, [0, 0.43, 0.52, 0.76, 0.84], [0, 0, 1, 1, 0]);
+  const itemDrop = (start: number) => mapValue(progress, [start, start + 0.08, start + 0.13], [-42, 4, 0]);
+  const itemOneY = itemDrop(0.54);
+  const itemTwoY = itemDrop(0.6);
+  const itemThreeY = itemDrop(0.66);
+  const receiptScaleX = mapValue(progress, [0, 0.76, 0.86, 1], [0.7, 0.7, 1, 1]);
+  const receiptScaleY = mapValue(progress, [0, 0.76, 0.86, 1], [1.18, 1.18, 1, 1]);
+  const receiptOpacity = mapValue(progress, [0, 0.75, 0.83, 1], [0, 0, 1, 1]);
+  const checkPath = mapValue(progress, [0, 0.88, 0.96, 1], [0, 0, 1, 1]);
+
+  const auraOpacities = [
+    mapValue(progress, [0, 0.18, 0.32], [1, 1, 0]),
+    mapValue(progress, [0.12, 0.28, 0.48, 0.6], [0, 1, 1, 0]),
+    mapValue(progress, [0.4, 0.56, 0.73, 0.86], [0, 1, 1, 0]),
+    mapValue(progress, [0.68, 0.84, 1], [0, 1, 1]),
+  ];
+
+  return (
+    <motion.div className="relative h-[min(60vw,280px)] w-[min(60vw,280px)]" style={{ y: parallaxY }}>
+      {[GOLD, EMERALD, EMERALD, VERIFY].map((accent, index) => (
+        <motion.div key={index} aria-hidden="true" className="absolute inset-[8%] rounded-full blur-2xl" style={{ opacity: auraOpacities[index], background: `radial-gradient(circle, color-mix(in hsl, ${accent} 18%, transparent), transparent 68%)` }} />
+      ))}
+      <svg viewBox="0 0 160 160" className="relative h-full w-full overflow-visible" aria-hidden="true">
+        <motion.g style={{ opacity: coinOpacity }}>
+          {[-1, 0, 1].map((slot) => (
+            <motion.g key={slot} style={{ x: useTransform(coinSpread, (v) => slot * 38 * v), y: coinY, transformOrigin: '80px 67px' }}>
+              <circle cx="80" cy="67" r="15" fill="hsl(var(--gold) / 0.2)" stroke={GOLD} strokeWidth="3" />
+              <text x="80" y="73" textAnchor="middle" fontSize="15" fontWeight="700" fill={GOLD}>$</text>
+            </motion.g>
+          ))}
+        </motion.g>
+
+        <motion.g style={{ opacity: couponOpacity, scaleX: couponScaleX, scaleY: couponScaleY, transformOrigin: '80px 82px' }}>
+          <rect x="24" y="49" width="112" height="66" rx="12" fill="hsl(var(--card))" stroke={EMERALD} strokeWidth="3" />
+          <path d="M99 51v62" stroke="hsl(var(--primary) / 0.55)" strokeWidth="2" strokeDasharray="6 5" />
+          <circle cx="99" cy="49" r="6" fill="hsl(var(--background))" /><circle cx="99" cy="115" r="6" fill="hsl(var(--background))" />
+          <text x="61" y="67" textAnchor="middle" fontSize="9" fontWeight="700" fill={EMERALD}>GROCERY</text>
+          {[42,48,55,63,70,78].map((x, i) => <rect key={x} x={x} y="77" width={i % 2 ? 3 : 4} height="23" rx="1" fill={EMERALD} />)}
+          <rect x="110" y="76" width="15" height="14" rx="3" fill={EMERALD} />
+          <path d="M113 76v-4a4.5 4.5 0 0 1 9 0v4" fill="none" stroke={EMERALD} strokeWidth="2.5" />
+          <motion.rect x="70" y="47" width="8" height="70" rx="4" fill="hsl(var(--gold) / 0.35)" style={{ x: scanX, opacity: scanOpacity }} />
+        </motion.g>
+
+        <motion.g style={{ opacity: bagOpacity, scale: bagScale, transformOrigin: '80px 91px' }}>
+          <motion.g style={{ y: itemOneY }}><path d="M47 67c0-9 7-16 16-16h7v24H47z" fill="hsl(var(--gold) / 0.26)" stroke={GOLD} strokeWidth="3" /></motion.g>
+          <motion.g style={{ y: itemTwoY }}><path d="M70 74V48l9-8h12l7 9v25z" fill="hsl(var(--card))" stroke={EMERALD} strokeWidth="3" /><path d="M79 40v12h19" fill="none" stroke={EMERALD} strokeWidth="3" /></motion.g>
+          <motion.g style={{ y: itemThreeY }}><circle cx="108" cy="60" r="13" fill="hsl(var(--primary) / 0.16)" stroke={EMERALD} strokeWidth="3" /><path d="M108 47v-7m0 3c5-5 9-3 10 0" fill="none" stroke={EMERALD} strokeWidth="3" /></motion.g>
+          <path d="M39 72h82l-8 55a8 8 0 0 1-8 7H57a8 8 0 0 1-8-7z" fill="hsl(var(--gold) / 0.12)" stroke={EMERALD} strokeWidth="3" />
+          <path d="M58 72v-9a22 22 0 0 1 44 0v9" fill="none" stroke={EMERALD} strokeWidth="3" />
+        </motion.g>
+
+        <motion.g style={{ opacity: receiptOpacity, scaleX: receiptScaleX, scaleY: receiptScaleY, transformOrigin: '80px 82px' }}>
+          <rect x="42" y="31" width="76" height="104" rx="14" fill="hsl(var(--card))" stroke={VERIFY} strokeWidth="3" />
+          <circle cx="80" cy="65" r="17" fill="hsl(var(--verify) / 0.12)" stroke={VERIFY} strokeWidth="3" />
+          <motion.path d="M71 65l7 7 13-16" fill="none" stroke={VERIFY} strokeWidth="4" style={{ pathLength: checkPath }} />
+          <rect x="57" y="94" width="46" height="5" rx="2.5" fill="hsl(var(--muted-foreground) / 0.35)" />
+          <rect x="57" y="106" width="34" height="5" rx="2.5" fill="hsl(var(--muted-foreground) / 0.24)" />
+        </motion.g>
+      </svg>
+    </motion.div>
+  );
+}
+
 function MobileJourneyStep({ step, index, progress }: { step: Step; index: number; progress: MotionValue<number> }) {
-  const Art = step.Art;
   const bandStart = index / steps.length;
   const bandEnd = (index + 1) / steps.length;
   const localProgress = useTransform(progress, [bandStart, bandEnd], [0, 0.99], { clamp: true });
-  const opacity = useTransform(progress, (value) => {
+  const rawOpacity = useTransform(progress, (value) => {
     const local = (value - bandStart) / (bandEnd - bandStart);
     if (index > 0 && local < 0) return Math.max(0, 1 + local * 8);
     if (index < steps.length - 1 && local > 0.86) return Math.max(0, (1 - local) / 0.14);
     return local >= 0 || index === 0 ? 1 : 0;
   });
-  const y = useTransform(progress, (value) => {
+  const rawY = useTransform(progress, (value) => {
     const local = (value - bandStart) / (bandEnd - bandStart);
     if (local < 0) return Math.min(18, -local * 144);
     if (index < steps.length - 1 && local > 0.86) return Math.max(-18, -(local - 0.86) * 129);
     return 0;
   });
+  const opacity = useSpring(rawOpacity, { stiffness: 260, damping: 32, mass: 0.55 });
+  const y = useSpring(rawY, { stiffness: 260, damping: 32, mass: 0.55 });
 
   return (
-    <motion.li className="absolute inset-0 flex flex-col items-center justify-center text-center" style={{ opacity, y }} aria-hidden={undefined}>
-      <div className="h-[min(55vw,260px)] w-[min(55vw,260px)] overflow-hidden">
-        <Art progress={localProgress} still={false} offset={0} />
-      </div>
-      <div className="mt-5 flex items-center justify-center gap-2">
+    <motion.li className="absolute inset-0 flex flex-col items-center justify-end pb-2 text-center" style={{ opacity, y }} aria-hidden={undefined}>
+      <div className="flex items-center justify-center gap-2">
         <span className="flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold" style={{ color: step.accent, borderColor: step.accent }}>{index + 1}</span>
         <h3 className="text-xl font-semibold text-foreground sm:text-2xl">{step.title}</h3>
       </div>
@@ -360,8 +433,10 @@ export function WhatWeDo() {
   };
 
   return (
-    <section ref={sectionRef} className="relative overflow-x-clip bg-background py-20 md:py-28">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(60% 40% at 12% 18%, hsl(var(--gold) / 0.05), transparent 70%), radial-gradient(60% 40% at 88% 82%, hsl(var(--primary) / 0.05), transparent 70%)' }} />
+    <section ref={sectionRef} className="relative bg-background py-20 md:py-28">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(60% 40% at 12% 18%, hsl(var(--gold) / 0.05), transparent 70%), radial-gradient(60% 40% at 88% 82%, hsl(var(--primary) / 0.05), transparent 70%)' }} />
+      </div>
       <div className="container relative mx-auto px-4">
         <div className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">How it works</p>
@@ -392,8 +467,9 @@ export function WhatWeDo() {
         ) : (
           <>
             <div ref={mobileJourneyRef} className="relative mt-8 h-[240svh] lg:hidden">
-              <div className="sticky top-0 flex h-[100svh] flex-col items-center justify-center overflow-hidden py-6">
-                <ol className="relative h-[min(68svh,620px)] w-full">
+              <div data-mobile-journey-stage className="sticky top-0 flex h-[100svh] flex-col items-center justify-center overflow-hidden py-6">
+                <ContinuousJourneyArt progress={mobileScroll} />
+                <ol className="relative mt-2 h-[190px] w-full sm:h-[210px]">
                   {steps.map((step, index) => (
                     <MobileJourneyStep key={step.title} step={step} index={index} progress={mobileScroll} />
                   ))}

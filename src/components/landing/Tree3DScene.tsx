@@ -5,6 +5,7 @@ import { OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 // Postprocessing intentionally not imported — bloom/vignette disabled, keeps mobile bundle smaller.
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { Tree, getBranchTips } from './tree3d/Tree';
 import { CouponFruit, type CouponState } from './tree3d/CouponFruit';
 import { Ground } from './tree3d/Ground';
@@ -48,6 +49,33 @@ function mobileSettings(s: TierSettings): TierSettings {
 // Frame-loop scratch objects — avoids per-frame allocation inside useFrame.
 const TMP_OFFSET = new THREE.Vector3();
 const TMP_SPHERICAL = new THREE.Spherical();
+
+/**
+ * Procedural image-based lighting. RoomEnvironment is bundled with Three.js,
+ * so this restores material sheen without downloading an HDR asset.
+ */
+function ProceduralEnvironment() {
+  const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
+
+  useEffect(() => {
+    const previousEnvironment = scene.environment;
+    const room = new RoomEnvironment();
+    const generator = new THREE.PMREMGenerator(gl);
+    generator.compileEquirectangularShader();
+    const target = generator.fromScene(room, 0.04);
+    scene.environment = target.texture;
+
+    return () => {
+      if (scene.environment === target.texture) scene.environment = previousEnvironment;
+      target.dispose();
+      generator.dispose();
+      room.dispose();
+    };
+  }, [gl, scene]);
+
+  return null;
+}
 
 
 function CameraRig({
@@ -398,6 +426,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
   return (
     <>
       <DayNightLights shadowSize={settings.shadowMapSize} shadowBlur={isMobile ? 5 : settings.shadows && settings.tier === 'high' ? 25 : 6} tightShadow={isMobile} />
+      <ProceduralEnvironment />
       {!isMobile && <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />}
       {isMobile && <hemisphereLight args={['#cfe8d8', '#3a4a3a', 0.45]} />}
       <fog attach="fog" args={isMobile ? ['#DCE6D5', 25, 70] : ['#DCE6D5', 18, 45]} />
@@ -612,7 +641,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
           alpha: true,
           powerPreference: isMobile && settings.tier === 'low' ? 'low-power' : 'high-performance',
           toneMapping: isMobile && settings.tier === 'low' ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping,
-          toneMappingExposure: isMobile && settings.tier === 'low' ? 1 : 1.05,
+          toneMappingExposure: isMobile && settings.tier === 'low' ? 1.2 : 1.25,
         }}
 
         style={{ background: 'transparent' }}
