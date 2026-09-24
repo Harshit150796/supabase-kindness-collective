@@ -253,13 +253,18 @@ function MobileJourneyStep({ step, index, progress }: { step: Step; index: numbe
   const bandStart = index / steps.length;
   const bandEnd = (index + 1) / steps.length;
   const localProgress = useTransform(progress, [bandStart, bandEnd], [0, 0.99], { clamp: true });
-  const opacity = useTransform(
-    progress,
-    [bandStart - 0.035, bandStart, bandEnd - 0.035, bandEnd],
-    index === 0 ? [1, 1, 1, 0] : index === steps.length - 1 ? [0, 1, 1, 1] : [0, 1, 1, 0],
-    { clamp: true },
-  );
-  const y = useTransform(progress, [bandStart - 0.035, bandStart, bandEnd - 0.035, bandEnd], [18, 0, 0, -18], { clamp: true });
+  const opacity = useTransform(progress, (value) => {
+    const local = (value - bandStart) / (bandEnd - bandStart);
+    if (index > 0 && local < 0) return Math.max(0, 1 + local * 8);
+    if (index < steps.length - 1 && local > 0.86) return Math.max(0, (1 - local) / 0.14);
+    return local >= 0 || index === 0 ? 1 : 0;
+  });
+  const y = useTransform(progress, (value) => {
+    const local = (value - bandStart) / (bandEnd - bandStart);
+    if (local < 0) return Math.min(18, -local * 144);
+    if (local > 0.86) return Math.max(-18, -(local - 0.86) * 129);
+    return 0;
+  });
 
   return (
     <motion.li className="absolute inset-0 flex flex-col items-center justify-center text-center" style={{ opacity, y }} aria-hidden={undefined}>
