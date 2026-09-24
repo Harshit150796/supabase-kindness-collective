@@ -252,6 +252,8 @@ type Step = (typeof steps)[number];
 function ContinuousJourneyArt({ progress }: { progress: MotionValue<number> }) {
   const parallaxY = mapValue(progress, [0, 1], [8, -8]);
   const coinSpread = mapValue(progress, [0, 0.18, 0.25], [1, 1, 0]);
+  const leftCoinX = useTransform(coinSpread, (value) => -38 * value);
+  const rightCoinX = useTransform(coinSpread, (value) => 38 * value);
   const coinY = mapValue(progress, [0, 0.18, 0.25], [0, 0, 24]);
   const coinOpacity = mapValue(progress, [0, 0.2, 0.25], [1, 1, 0]);
   const couponScaleX = mapValue(progress, [0, 0.18, 0.27, 0.43, 0.52], [0.55, 0.55, 1, 1, 0.72]);
@@ -284,8 +286,8 @@ function ContinuousJourneyArt({ progress }: { progress: MotionValue<number> }) {
       ))}
       <svg viewBox="0 0 160 160" className="relative h-full w-full overflow-visible" aria-hidden="true">
         <motion.g style={{ opacity: coinOpacity }}>
-          {[-1, 0, 1].map((slot) => (
-            <motion.g key={slot} style={{ x: useTransform(coinSpread, (v) => slot * 38 * v), y: coinY, transformOrigin: '80px 67px' }}>
+          {[leftCoinX, undefined, rightCoinX].map((x, slot) => (
+            <motion.g key={slot} style={{ x, y: coinY, transformOrigin: '80px 67px' }}>
               <circle cx="80" cy="67" r="15" fill="hsl(var(--gold) / 0.2)" stroke={GOLD} strokeWidth="3" />
               <text x="80" y="73" textAnchor="middle" fontSize="15" fontWeight="700" fill={GOLD}>$</text>
             </motion.g>
@@ -326,7 +328,6 @@ function ContinuousJourneyArt({ progress }: { progress: MotionValue<number> }) {
 function MobileJourneyStep({ step, index, progress }: { step: Step; index: number; progress: MotionValue<number> }) {
   const bandStart = index / steps.length;
   const bandEnd = (index + 1) / steps.length;
-  const localProgress = useTransform(progress, [bandStart, bandEnd], [0, 0.99], { clamp: true });
   const rawOpacity = useTransform(progress, (value) => {
     const local = (value - bandStart) / (bandEnd - bandStart);
     if (index > 0 && local < 0) return Math.max(0, 1 + local * 8);
@@ -339,11 +340,10 @@ function MobileJourneyStep({ step, index, progress }: { step: Step; index: numbe
     if (index < steps.length - 1 && local > 0.86) return Math.max(-18, -(local - 0.86) * 129);
     return 0;
   });
-  const opacity = useSpring(rawOpacity, { stiffness: 260, damping: 32, mass: 0.55 });
   const y = useSpring(rawY, { stiffness: 260, damping: 32, mass: 0.55 });
 
   return (
-    <motion.li className="absolute inset-0 flex flex-col items-center justify-end pb-2 text-center" style={{ opacity, y }} aria-hidden={undefined}>
+    <motion.li className="absolute inset-0 flex flex-col items-center justify-end pb-2 text-center" style={{ opacity: rawOpacity, y }} aria-hidden={undefined}>
       <div className="flex items-center justify-center gap-2">
         <span className="flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold" style={{ color: step.accent, borderColor: step.accent }}>{index + 1}</span>
         <h3 className="text-xl font-semibold text-foreground sm:text-2xl">{step.title}</h3>
