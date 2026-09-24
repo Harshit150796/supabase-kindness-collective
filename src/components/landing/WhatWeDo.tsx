@@ -360,7 +360,7 @@ export function WhatWeDo() {
   };
 
   return (
-    <section ref={sectionRef} className="relative overflow-x-hidden bg-background py-20 md:py-28">
+    <section ref={sectionRef} className="relative overflow-x-clip bg-background py-20 md:py-28">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(60% 40% at 12% 18%, hsl(var(--gold) / 0.05), transparent 70%), radial-gradient(60% 40% at 88% 82%, hsl(var(--primary) / 0.05), transparent 70%)' }} />
       <div className="container relative mx-auto px-4">
         <div className="max-w-3xl">
