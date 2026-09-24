@@ -74,18 +74,6 @@ export default {
           dark: "hsl(var(--emerald-dark))",
         },
         charcoal: "hsl(var(--charcoal))",
-        editorial: {
-          ink: "hsl(var(--editorial-ink))",
-          blue: "hsl(var(--editorial-blue))",
-          teal: "hsl(var(--editorial-teal))",
-          paper: "hsl(var(--editorial-paper))",
-          wash: "hsl(var(--editorial-wash))",
-          line: "hsl(var(--editorial-line))",
-          muted: "hsl(var(--editorial-muted))",
-          soft: "hsl(var(--editorial-soft))",
-          accent: "hsl(var(--editorial-accent))",
-          glow: "hsl(var(--editorial-glow))",
-        },
       },
       borderRadius: {
         lg: "var(--radius)",
