@@ -4,9 +4,9 @@ import {
   motion,
   useMotionValue,
   useMotionValueEvent,
+  useInView,
   useReducedMotion,
   useScroll,
-  useSpring,
   useTransform,
   type MotionValue,
 } from 'motion/react';
@@ -249,131 +249,102 @@ function ApplyDoorIcon() {
 
 type Step = (typeof steps)[number];
 
-function ContinuousJourneyArt({ progress }: { progress: MotionValue<number> }) {
-  const parallaxY = mapValue(progress, [0, 1], [8, -8]);
-  const coinSpread = mapValue(progress, [0, 0.18, 0.25], [1, 1, 0]);
-  const leftCoinX = useTransform(coinSpread, (value) => -38 * value);
-  const rightCoinX = useTransform(coinSpread, (value) => 38 * value);
-  const coinY = mapValue(progress, [0, 0.18, 0.25], [0, 0, 24]);
-  const coinOpacity = mapValue(progress, [0, 0.2, 0.25], [1, 1, 0]);
-  const couponScaleX = mapValue(progress, [0, 0.18, 0.27, 0.43, 0.52], [0.55, 0.55, 1, 1, 0.72]);
-  const couponScaleY = mapValue(progress, [0, 0.18, 0.27, 0.43, 0.52], [0.55, 0.55, 1, 1, 1.22]);
-  const couponOpacity = mapValue(progress, [0, 0.16, 0.24, 0.46, 0.54], [0, 0, 1, 1, 0]);
-  const scanX = mapValue(progress, [0, 0.31, 0.44, 0.5], [-44, -44, 44, 44]);
-  const scanOpacity = mapValue(progress, [0, 0.3, 0.34, 0.46, 0.5], [0, 0, 1, 1, 0]);
-  const bagScale = mapValue(progress, [0, 0.43, 0.54, 0.72, 0.82], [0.72, 0.72, 1, 1, 0.72]);
-  const bagOpacity = mapValue(progress, [0, 0.43, 0.52, 0.76, 0.84], [0, 0, 1, 1, 0]);
-  const itemDrop = (start: number) => mapValue(progress, [start, start + 0.08, start + 0.13], [-42, 4, 0]);
-  const itemOneY = itemDrop(0.54);
-  const itemTwoY = itemDrop(0.6);
-  const itemThreeY = itemDrop(0.66);
-  const receiptScaleX = mapValue(progress, [0, 0.76, 0.86, 1], [0.7, 0.7, 1, 1]);
-  const receiptScaleY = mapValue(progress, [0, 0.76, 0.86, 1], [1.18, 1.18, 1, 1]);
-  const receiptOpacity = mapValue(progress, [0, 0.75, 0.83, 1], [0, 0, 1, 1]);
-  const checkPath = mapValue(progress, [0, 0.88, 0.96, 1], [0, 0, 1, 1]);
+function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
+  step: Step;
+  index: number;
+  reduced: boolean;
+  onRegister: (index: number, node: HTMLLIElement | null) => void;
+  onNavigate: (index: number) => void;
+}) {
+  const itemRef = useRef<HTMLLIElement>(null);
+  const progress = useMotionValue(step.offset);
+  const inView = useInView(itemRef, { amount: 0.45 });
+  const animationRef = useRef<ReturnType<typeof animate> | null>(null);
+  const Art = step.Art;
 
-  const auraOpacities = [
-    mapValue(progress, [0, 0.18, 0.32], [1, 1, 0]),
-    mapValue(progress, [0.12, 0.28, 0.48, 0.6], [0, 1, 1, 0]),
-    mapValue(progress, [0.4, 0.56, 0.73, 0.86], [0, 1, 1, 0]),
-    mapValue(progress, [0.68, 0.84, 1], [0, 1, 1]),
-  ];
+  useEffect(() => {
+    onRegister(index, itemRef.current);
+    return () => onRegister(index, null);
+  }, [index, onRegister]);
 
-  return (
-    <motion.div className="relative h-[min(60vw,280px)] w-[min(60vw,280px)]" style={{ y: parallaxY }}>
-      {[GOLD, EMERALD, EMERALD, VERIFY].map((accent, index) => (
-        <motion.div key={index} aria-hidden="true" className="absolute inset-[8%] rounded-full blur-2xl" style={{ opacity: auraOpacities[index], background: `radial-gradient(circle, color-mix(in hsl, ${accent} 18%, transparent), transparent 68%)` }} />
-      ))}
-      <svg viewBox="0 0 160 160" className="relative h-full w-full overflow-visible" aria-hidden="true">
-        <motion.g style={{ opacity: coinOpacity }}>
-          {[leftCoinX, undefined, rightCoinX].map((x, slot) => (
-            <motion.g key={slot} style={{ x, y: coinY, transformOrigin: '80px 67px' }}>
-              <circle cx="80" cy="67" r="15" fill="hsl(var(--gold) / 0.2)" stroke={GOLD} strokeWidth="3" />
-              <text x="80" y="73" textAnchor="middle" fontSize="15" fontWeight="700" fill={GOLD}>$</text>
-            </motion.g>
-          ))}
-        </motion.g>
-
-        <motion.g style={{ opacity: couponOpacity, scaleX: couponScaleX, scaleY: couponScaleY, transformOrigin: '80px 82px' }}>
-          <rect x="24" y="49" width="112" height="66" rx="12" fill="hsl(var(--card))" stroke={EMERALD} strokeWidth="3" />
-          <path d="M99 51v62" stroke="hsl(var(--primary) / 0.55)" strokeWidth="2" strokeDasharray="6 5" />
-          <circle cx="99" cy="49" r="6" fill="hsl(var(--background))" /><circle cx="99" cy="115" r="6" fill="hsl(var(--background))" />
-          <text x="61" y="67" textAnchor="middle" fontSize="9" fontWeight="700" fill={EMERALD}>GROCERY</text>
-          {[42,48,55,63,70,78].map((x, i) => <rect key={x} x={x} y="77" width={i % 2 ? 3 : 4} height="23" rx="1" fill={EMERALD} />)}
-          <rect x="110" y="76" width="15" height="14" rx="3" fill={EMERALD} />
-          <path d="M113 76v-4a4.5 4.5 0 0 1 9 0v4" fill="none" stroke={EMERALD} strokeWidth="2.5" />
-          <motion.rect x="70" y="47" width="8" height="70" rx="4" fill="hsl(var(--gold) / 0.35)" style={{ x: scanX, opacity: scanOpacity }} />
-        </motion.g>
-
-        <motion.g style={{ opacity: bagOpacity, scale: bagScale, transformOrigin: '80px 91px' }}>
-          <motion.g style={{ y: itemOneY }}><path d="M47 67c0-9 7-16 16-16h7v24H47z" fill="hsl(var(--gold) / 0.26)" stroke={GOLD} strokeWidth="3" /></motion.g>
-          <motion.g style={{ y: itemTwoY }}><path d="M70 74V48l9-8h12l7 9v25z" fill="hsl(var(--card))" stroke={EMERALD} strokeWidth="3" /><path d="M79 40v12h19" fill="none" stroke={EMERALD} strokeWidth="3" /></motion.g>
-          <motion.g style={{ y: itemThreeY }}><circle cx="108" cy="60" r="13" fill="hsl(var(--primary) / 0.16)" stroke={EMERALD} strokeWidth="3" /><path d="M108 47v-7m0 3c5-5 9-3 10 0" fill="none" stroke={EMERALD} strokeWidth="3" /></motion.g>
-          <path d="M39 72h82l-8 55a8 8 0 0 1-8 7H57a8 8 0 0 1-8-7z" fill="hsl(var(--gold) / 0.12)" stroke={EMERALD} strokeWidth="3" />
-          <path d="M58 72v-9a22 22 0 0 1 44 0v9" fill="none" stroke={EMERALD} strokeWidth="3" />
-        </motion.g>
-
-        <motion.g style={{ opacity: receiptOpacity, scaleX: receiptScaleX, scaleY: receiptScaleY, transformOrigin: '80px 82px' }}>
-          <rect x="42" y="31" width="76" height="104" rx="14" fill="hsl(var(--card))" stroke={VERIFY} strokeWidth="3" />
-          <circle cx="80" cy="65" r="17" fill="hsl(var(--verify) / 0.12)" stroke={VERIFY} strokeWidth="3" />
-          <motion.path d="M71 65l7 7 13-16" fill="none" stroke={VERIFY} strokeWidth="4" style={{ pathLength: checkPath }} />
-          <rect x="57" y="94" width="46" height="5" rx="2.5" fill="hsl(var(--muted-foreground) / 0.35)" />
-          <rect x="57" y="106" width="34" height="5" rx="2.5" fill="hsl(var(--muted-foreground) / 0.24)" />
-        </motion.g>
-      </svg>
-    </motion.div>
-  );
-}
-
-function MobileJourneyStep({ step, index, progress }: { step: Step; index: number; progress: MotionValue<number> }) {
-  const bandStart = index / steps.length;
-  const bandEnd = (index + 1) / steps.length;
-  const rawOpacity = useTransform(progress, (value) => {
-    const local = (value - bandStart) / (bandEnd - bandStart);
-    if (index > 0 && local < 0) return Math.max(0, 1 + local * 8);
-    if (index < steps.length - 1 && local > 0.86) return Math.max(0, (1 - local) / 0.14);
-    return local >= 0 || index === 0 ? 1 : 0;
-  });
-  const rawY = useTransform(progress, (value) => {
-    const local = (value - bandStart) / (bandEnd - bandStart);
-    if (local < 0) return Math.min(18, -local * 144);
-    if (index < steps.length - 1 && local > 0.86) return Math.max(-18, -(local - 0.86) * 129);
-    return 0;
-  });
-  const y = useSpring(rawY, { stiffness: 260, damping: 32, mass: 0.55 });
+  useEffect(() => {
+    animationRef.current?.stop();
+    if (reduced) {
+      progress.set(step.offset + 0.82);
+      return;
+    }
+    if (inView) {
+      progress.set(step.offset);
+      animationRef.current = animate(progress, step.offset + 0.82, { duration: 1.8, ease: [0.22, 1, 0.36, 1] });
+    } else {
+      progress.set(step.offset);
+    }
+    return () => animationRef.current?.stop();
+  }, [inView, progress, reduced, step.offset]);
 
   return (
-    <motion.li className="absolute inset-0 flex flex-col items-center justify-end pb-2 text-center" style={{ opacity: rawOpacity, y }} aria-hidden={undefined}>
-      <div className="flex items-center justify-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold" style={{ color: step.accent, borderColor: step.accent }}>{index + 1}</span>
-        <h3 className="text-xl font-semibold text-foreground sm:text-2xl">{step.title}</h3>
-      </div>
-      <p className="mt-3 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">{step.body}</p>
-    </motion.li>
-  );
-}
-
-function ProgressSegment({ progress, index }: { progress: MotionValue<number>; index: number }) {
-  const start = index / steps.length;
-  const end = (index + 1) / steps.length;
-  const scaleX = useTransform(progress, [start, end], [0, 1], { clamp: true });
-
-  return (
-    <span className="relative block h-1.5 w-full overflow-hidden rounded-full bg-border">
-      <motion.span className="absolute inset-0 origin-left rounded-full bg-primary" style={{ scaleX }} />
-    </span>
+    <li
+      ref={itemRef}
+      data-mobile-step={index + 1}
+      data-in-view={inView ? 'true' : 'false'}
+      className={`relative flex flex-col items-center justify-center py-12 text-center ${reduced ? 'min-h-0' : 'min-h-[clamp(620px,80dvh,760px)]'}`}
+    >
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-[43%] h-[min(68vw,290px)] w-[min(68vw,290px)] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
+        style={{ background: `radial-gradient(circle, color-mix(in hsl, ${step.accent} 18%, transparent), transparent 68%)` }}
+        initial={false}
+        animate={{ opacity: reduced || inView ? 1 : 0 }}
+        transition={{ duration: 0.55 }}
+      />
+      <motion.div
+        data-mobile-step-art
+        className="relative h-[clamp(200px,60vw,260px)] w-[clamp(200px,60vw,260px)] overflow-hidden"
+        initial={false}
+        animate={{ opacity: reduced || inView ? 1 : 0.45, scale: reduced || inView ? 1 : 0.94, y: reduced || inView ? 0 : 12 }}
+        transition={{ type: 'spring', stiffness: 190, damping: 24 }}
+      >
+        <Art progress={progress} still={reduced} offset={step.offset} />
+      </motion.div>
+      <motion.div
+        className="relative mt-7 max-w-lg"
+        initial={false}
+        animate={{ opacity: reduced || inView ? 1 : 0, y: reduced || inView ? 0 : 24 }}
+        transition={{ type: 'spring', stiffness: 220, damping: 26, delay: reduced ? 0 : 0.16 }}
+      >
+        <div className="flex items-center justify-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold" style={{ color: step.accent, borderColor: step.accent }}>{index + 1}</span>
+          <h3 className="text-xl font-semibold text-foreground sm:text-2xl">{step.title}</h3>
+        </div>
+        <p className="mt-3 text-base leading-relaxed text-muted-foreground sm:text-lg">{step.body}</p>
+      </motion.div>
+      <nav className="relative mt-6 flex items-center justify-center" aria-label={`How it works, step ${index + 1} of 4`}>
+        {steps.map((target, targetIndex) => (
+          <Button
+            key={target.title}
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11"
+            onClick={() => onNavigate(targetIndex)}
+            aria-label={`Go to step ${targetIndex + 1}: ${target.title}`}
+          >
+            <span className={`block h-1.5 rounded-full transition-[width,background-color] duration-300 ${targetIndex === index ? 'w-7 bg-primary' : 'w-2 bg-border'}`} />
+          </Button>
+        ))}
+      </nav>
+    </li>
   );
 }
 
 export function WhatWeDo() {
   const reduced = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
-  const mobileJourneyRef = useRef<HTMLDivElement>(null);
+  const mobileStepRefs = useRef<Array<HTMLLIElement | null>>([]);
   const progress = useMotionValue(0);
-  const still = !!reduced;
+  const still = reduced === true;
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
   const { scrollYProgress: desktopScroll } = useScroll({ target: sectionRef, offset: ['start end', 'end start'] });
-  const { scrollYProgress: mobileScroll } = useScroll({ target: mobileJourneyRef, offset: ['start start', 'end end'] });
   const idleTimerRef = useRef<number | null>(null);
   const idleAnimationRef = useRef<ReturnType<typeof animate> | null>(null);
 
@@ -403,10 +374,6 @@ export function WhatWeDo() {
     idleTimerRef.current = window.setTimeout(startIdleMotion, 1500);
   });
 
-  useMotionValueEvent(mobileScroll, 'change', (value) => {
-    if (!still && !isDesktop) progress.set(value);
-  });
-
   useEffect(() => () => {
     idleAnimationRef.current?.stop();
     if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
@@ -425,12 +392,13 @@ export function WhatWeDo() {
     }
   };
 
-  const jumpToStep = (index: number) => {
-    const container = mobileJourneyRef.current;
-    if (!container) return;
-    const scrollable = container.offsetHeight - window.innerHeight;
-    window.scrollTo({ top: container.offsetTop + scrollable * (index / 4), behavior: 'smooth' });
-  };
+  const registerMobileStep = useCallback((index: number, node: HTMLLIElement | null) => {
+    mobileStepRefs.current[index] = node;
+  }, []);
+
+  const jumpToStep = useCallback((index: number) => {
+    mobileStepRefs.current[index]?.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'center' });
+  }, [still]);
 
   return (
     <section ref={sectionRef} className="relative bg-background py-20 md:py-28">
@@ -444,47 +412,15 @@ export function WhatWeDo() {
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">CouponDonation turns your donation into coupons, gift cards and credits — so it arrives as food, medicine or transport, never as cash. And you can always see exactly where it went.</p>
         </div>
 
-        {still ? (
-          <div className="relative mt-14 md:mt-16">
-            <ol className="relative grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-4">
-              {steps.map((step, index) => {
-                const Art = step.Art;
-                return (
-                  <li key={step.title} className="relative pl-8 lg:pl-0">
-                    <div className="mx-auto h-[130px] w-[130px] overflow-hidden sm:h-[150px] sm:w-[150px] lg:mx-0">
-                      <Art progress={progress} still offset={step.offset} />
-                    </div>
-                    <div className="mt-4 flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full border text-xs font-semibold" style={{ color: step.accent, borderColor: step.accent }}>{index + 1}</span>
-                      <h3 className="text-lg font-semibold text-foreground md:text-xl">{step.title}</h3>
-                    </div>
-                    <p className="mt-2 text-base leading-relaxed text-muted-foreground">{step.body}</p>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        ) : (
-          <>
-            <div ref={mobileJourneyRef} className="relative mt-8 h-[240svh] lg:hidden">
-              <div data-mobile-journey-stage className="sticky top-0 flex h-[100svh] flex-col items-center justify-center overflow-hidden py-6">
-                <ContinuousJourneyArt progress={mobileScroll} />
-                <ol className="relative mt-2 h-[190px] w-full sm:h-[210px]">
-                  {steps.map((step, index) => (
-                    <MobileJourneyStep key={step.title} step={step} index={index} progress={mobileScroll} />
-                  ))}
-                </ol>
-                <div className="mt-3 grid w-full max-w-sm grid-cols-4 gap-2" role="navigation" aria-label="How it works steps">
-                  {steps.map((step, index) => (
-                    <Button key={step.title} type="button" variant="ghost" size="sm" className="group h-11 min-w-11 px-1" onClick={() => jumpToStep(index)} aria-label={`Go to step ${index + 1}: ${step.title}`}>
-                      <ProgressSegment progress={mobileScroll} index={index} />
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </div>
+        <div className="relative mt-8 lg:hidden">
+          <ol>
+            {steps.map((step, index) => (
+              <MobileInViewStep key={step.title} step={step} index={index} reduced={still} onRegister={registerMobileStep} onNavigate={jumpToStep} />
+            ))}
+          </ol>
+        </div>
 
-            <div className="relative mt-14 hidden md:mt-16 lg:block">
+        <div className="relative mt-14 hidden md:mt-16 lg:block">
           <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[86px] hidden lg:block">
             <div className="relative mx-[12%] h-px bg-border">
               {!still && <motion.span className="absolute -top-[3px] h-[7px] w-[7px] rounded-full bg-primary/70" style={{ left: connectorLeft }} />}
@@ -507,9 +443,7 @@ export function WhatWeDo() {
               );
             })}
           </ol>
-            </div>
-          </>
-        )}
+        </div>
 
         <div className="mt-12 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.06] to-gold/[0.05] px-6 py-8 shadow-[0_18px_48px_-30px_hsl(var(--primary)/0.45)] md:mt-16 md:px-10 md:py-10">
           <div className="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_280px] md:gap-12">
