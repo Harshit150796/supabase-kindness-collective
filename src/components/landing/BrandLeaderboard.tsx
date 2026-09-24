@@ -1,31 +1,18 @@
 import { Card } from '@/components/ui/card';
-import { Trophy, TrendingUp, Crown, Heart, Clock } from 'lucide-react';
+import { Trophy, Crown, Heart, Clock } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip, LabelList } from 'recharts';
 import { useState, useEffect } from 'react';
 import { brandLogos } from '@/data/brandLogos';
+import { supabase } from '@/integrations/supabase/client';
+import { useLandingStats, formatUSD } from '@/hooks/useLandingStats';
 
-const leaderboardData = [
-  { name: 'DoorDash', donations: 1000 },
-  { name: 'Walmart', donations: 800 },
-  { name: 'Uber', donations: 600 },
-  { name: 'Amazon', donations: 500 },
-  { name: 'Target', donations: 400 },
-  { name: 'Starbucks', donations: 0 },
-];
-
-const topBrands = [
-  { rank: 1, name: 'DoorDash', amount: '$1,000', change: '+12%' },
-  { rank: 2, name: 'Walmart', amount: '$800', change: '+8%' },
-  { rank: 3, name: 'Uber', amount: '$600', change: '+15%' },
-];
-
-const recentDonations = [
-  { name: 'Anonymous', amount: 50, brand: 'Walmart', time: '2 min ago' },
-  { name: 'Sarah M.', amount: 100, brand: 'DoorDash', time: '5 min ago' },
-  { name: 'Michael K.', amount: 25, brand: 'Uber', time: '8 min ago' },
-  { name: 'Anonymous', amount: 75, brand: 'Target', time: '12 min ago' },
-  { name: 'Jennifer L.', amount: 200, brand: 'Amazon', time: '15 min ago' },
-];
+const timeAgo = (iso: string) => {
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 60) return `${Math.max(m, 1)} min ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
 
 // Custom tooltip for the chart
 const CustomTooltip = ({ active, payload }: any) => {
@@ -91,17 +78,33 @@ const CustomLabel = ({ x, y, width, value }: any) => {
 };
 
 export function BrandLeaderboard() {
-  const [latestDonation, setLatestDonation] = useState(recentDonations[0]);
+  const stats = useLandingStats();
+  const leaderboardData = (stats?.brands ?? []).slice(0, 6).map((b) => ({ name: b.name, donations: Math.round(b.total) }));
+  const topBrands = leaderboardData.slice(0, 3).map((b, i) => ({ rank: i + 1, name: b.name, amount: formatUSD(b.donations) }));
+  const [recent, setRecent] = useState<{ name: string; amount: number; brand: string; time: string }[]>([]);
   const [donationIndex, setDonationIndex] = useState(0);
 
-  // Simulate live donation updates
   useEffect(() => {
-    const interval = setInterval(() => {
-      setDonationIndex((prev) => (prev + 1) % recentDonations.length);
-      setLatestDonation(recentDonations[(donationIndex + 1) % recentDonations.length]);
-    }, 4000);
+    let alive = true;
+    supabase.rpc('get_recent_public_donations', { _limit: 5 }).then(({ data }) => {
+      if (!alive || !data) return;
+      setRecent(data.map((r: any) => ({
+        name: r.display_name || 'A supporter',
+        amount: Number(r.amount) || 0,
+        brand: r.brand_partner || '',
+        time: timeAgo(r.created_at),
+      })));
+    });
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    if (recent.length < 2) return;
+    const interval = setInterval(() => setDonationIndex((p) => (p + 1) % recent.length), 4000);
     return () => clearInterval(interval);
-  }, [donationIndex]);
+  }, [recent.length]);
+
+  const latestDonation = recent[donationIndex];
 
   return (
     <section className="py-16 md:py-24 bg-secondary/30">
@@ -123,7 +126,7 @@ export function BrandLeaderboard() {
           <div>
             <h3 className="text-base md:text-lg font-semibold text-foreground mb-3 md:mb-4 flex items-center gap-2 px-1">
               <Crown className="w-4 h-4 md:w-5 md:h-5 text-gold" />
-              Top Donors This Month
+              Top Retailers Supported
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
               {topBrands.map((brand) => {
@@ -152,10 +155,6 @@ export function BrandLeaderboard() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-lg md:text-xl font-bold text-foreground">{brand.amount}</span>
-                        <div className="flex items-center gap-1 text-primary text-xs md:text-sm">
-                          <TrendingUp className="w-3 h-3" />
-                          <span className="font-medium">{brand.change}</span>
-                        </div>
                       </div>
                     </div>
                   </Card>
@@ -218,7 +217,7 @@ export function BrandLeaderboard() {
             </div>
 
             {/* Live Donation Ticker */}
-            <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-border">
+            {latestDonation && <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-border">
               <div 
                 key={donationIndex}
                 className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg bg-primary/5 border border-primary/10 animate-fade-in"
@@ -237,7 +236,7 @@ export function BrandLeaderboard() {
                     <span className="font-bold text-primary">${latestDonation.amount}</span>
                   </div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <span className="truncate">to {latestDonation.brand}</span>
+                    {latestDonation.brand && <span className="truncate">to {latestDonation.brand}</span>}
                     <span className="hidden sm:inline">•</span>
                     <Clock className="w-3 h-3 hidden sm:inline" />
                     <span className="hidden sm:inline">{latestDonation.time}</span>
@@ -245,13 +244,8 @@ export function BrandLeaderboard() {
                 </div>
                 <Heart className="w-4 h-4 text-primary animate-pulse flex-shrink-0" />
               </div>
-            </div>
+            </div>}
 
-            {/* Footer Stats */}
-            <div className="flex items-center justify-between mt-3 md:mt-4 pt-3 md:pt-4 border-t border-border">
-              <span className="text-xs md:text-sm text-muted-foreground">Total this month</span>
-              <span className="text-lg md:text-xl font-bold text-foreground">$3,300</span>
-            </div>
           </Card>
         </div>
       </div>

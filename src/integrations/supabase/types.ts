@@ -1466,6 +1466,7 @@ export type Database = {
           total_raised: number
         }[]
       }
+      get_landing_stats: { Args: never; Returns: Json }
       get_public_donation_stats: {
         Args: never
         Returns: {

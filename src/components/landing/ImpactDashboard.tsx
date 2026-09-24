@@ -1,13 +1,8 @@
 import { Card } from '@/components/ui/card';
-import { Globe, Users, ShoppingBag, Heart } from 'lucide-react';
+import { Globe, Users, ShoppingBag, Heart, Store } from 'lucide-react';
 import { useEffect, useState } from 'react';
-
-const impactStats = [
-  { icon: Heart, value: '$10,000', label: 'Total Donated', color: 'text-primary' },
-  { icon: Users, value: '20', label: 'Families Helped', color: 'text-gold' },
-  { icon: ShoppingBag, value: '50+', label: 'Coupons Delivered', color: 'text-primary' },
-  { icon: Globe, value: 'US', label: 'Communities Served', color: 'text-gold' },
-];
+import { useLandingStats } from '@/hooks/useLandingStats';
+import { popularBrands } from '@/data/brandLogos';
 
 function AnimatedNumber({ value }: { value: string }) {
   const [isVisible, setIsVisible] = useState(false);
@@ -25,6 +20,16 @@ function AnimatedNumber({ value }: { value: string }) {
 }
 
 export function ImpactDashboard() {
+  const stats = useLandingStats();
+  const impactStats = [
+    { icon: ShoppingBag, value: stats ? stats.coupons_created.toLocaleString() : null, label: 'Coupons Created', color: 'text-primary' },
+    // Families Helped appears only once coupons are genuinely claimed.
+    stats && stats.coupons_claimed > 0
+      ? { icon: Users, value: stats.coupons_claimed.toLocaleString(), label: 'Coupons Claimed', color: 'text-gold' }
+      : { icon: Heart, value: stats ? stats.active_fundraisers.toLocaleString() : null, label: 'Active Fundraisers', color: 'text-gold' },
+    { icon: Store, value: String(popularBrands.length), label: 'Retailers Available', color: 'text-primary' },
+    { icon: Globe, value: 'US', label: 'Communities Served', color: 'text-gold' },
+  ];
   return (
     <section className="py-24 bg-secondary/30">
       <div className="container mx-auto px-4">
@@ -54,7 +59,11 @@ export function ImpactDashboard() {
                 <stat.icon className={`w-7 h-7 ${stat.color}`} />
               </div>
               <div className={`text-3xl md:text-4xl font-bold mb-1 ${stat.color}`}>
-                <AnimatedNumber value={stat.value} />
+                {stat.value === null ? (
+                  <span className="inline-block h-9 w-16 rounded bg-muted animate-pulse" />
+                ) : (
+                  <AnimatedNumber value={stat.value} />
+                )}
               </div>
               <div className="text-sm text-muted-foreground">{stat.label}</div>
             </Card>

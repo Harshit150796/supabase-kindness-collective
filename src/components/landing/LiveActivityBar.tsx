@@ -2,6 +2,7 @@ import { memo, useEffect, useState } from 'react';
 import { Heart, TrendingUp, Users } from 'lucide-react';
 import { popularBrands } from '@/data/brandLogos';
 import { supabase } from '@/integrations/supabase/client';
+import { useLandingStats, formatUSD } from '@/hooks/useLandingStats';
 
 interface DonationEvent {
   id: string;
@@ -16,9 +17,8 @@ const shortDate = (iso: string) =>
 
 export const LiveActivityBar = () => {
   const [currentDonation, setCurrentDonation] = useState<DonationEvent | null>(null);
-  // Fixed baseline figures — no simulated growth.
-  const donationCount = 24;
-  const amountRaised = 1250;
+  const stats = useLandingStats();
+  const shimmer = <span className="inline-block h-3 w-8 rounded bg-muted animate-pulse align-middle" />;
 
   // Real most-recent donation from the database; refreshed quietly every 60s.
   useEffect(() => {
@@ -64,7 +64,7 @@ export const LiveActivityBar = () => {
             <div className="flex items-center gap-1.5 md:gap-2">
               <Users className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
               <span className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">
-                <span className="font-semibold text-foreground tabular-nums">{donationCount.toLocaleString()}</span>
+                <span className="font-semibold text-foreground tabular-nums">{stats ? stats.donations_count.toLocaleString() : shimmer}</span>
                 <span className="hidden sm:inline"> donations</span>
               </span>
             </div>
@@ -74,7 +74,7 @@ export const LiveActivityBar = () => {
             <div className="flex items-center gap-1.5 md:gap-2">
               <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 text-green-500" />
               <span className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">
-                <span className="font-semibold text-foreground tabular-nums">${amountRaised.toLocaleString()}</span>
+                <span className="font-semibold text-foreground tabular-nums">{stats ? formatUSD(stats.total_raised) : shimmer}</span>
                 <span className="hidden sm:inline"> raised to date</span>
               </span>
             </div>
