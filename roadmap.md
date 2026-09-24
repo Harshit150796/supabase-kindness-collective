@@ -39,3 +39,6 @@
 - [ ] Replace mobile/tablet sticky How It Works with replayable in-view step blocks.
 - [ ] Verify the actual reduced-motion and mobile branch selection behavior.
 - [ ] Capture all requested mobile proof frames and responsive overflow checks.
+- [ ] Require visible 390px screenshot evidence and a measured illustration width before marking any item verified.
+- [ ] Prove one active step changes between two mid-animation captures; report honestly if it does not.
+- [ ] Remove every mobile sticky, tall-stage, `svh` stage, and band-math implementation from `WhatWeDo`.
