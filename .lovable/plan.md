@@ -1,22 +1,35 @@
-# Replace mobile sticky playback with in-view steps
+# One source of truth for every number on the home page
 
-## Diagnosis
-- Confirm which branch mounts below 1024px and whether `useReducedMotion()` selects the static fallback on the tested browser profile.
-- Remove the possibility of an incorrect reduced-motion default; only an explicit `prefers-reduced-motion: reduce` match may select static content.
-- Preserve the existing desktop four-column clock, copy, receipt, transparency band, dignity line, doorways, and closing line.
+## What the database actually says today
+- 19 completed donations, $1,214 raised
+- 116 coupons created, 0 claimed/redeemed yet
+- 10 active fundraisers
+- Brand totals: DoorDash $640, Walmart $226, Amazon $78 (no others)
 
-## Mobile and tablet implementation
-- Delete the sticky stage, `240svh` container, shared mobile scroll progress, band math, continuous morph component, and stage navigation calculations.
-- Render four ordinary flow blocks below `lg`, each approximately `min-h-[80svh]`, with one existing illustration and its original internal choreography.
-- Give every illustration a responsive 60vw container constrained to 200–260px, with a subtle token-colored aura.
-- Trigger each scene with an intersection observer at about 45% visibility; replay from the beginning whenever it re-enters view and hold its completed state while visible.
-- Animate step number, title, and body with staggered spring entrance after the illustration begins.
-- Add a quiet four-step marker with non-blocking 44px touch targets that scroll to each normal-flow step.
-- Keep reduced-motion steps stacked and complete, with no playback.
+The page currently shows three contradicting sets (24 / $1,250, $3,300 with made-up brand bars and fake "2 min ago" donors, and $10,000 / 20 families / 50+). All of these are typed-in, not real.
+
+## Do we need numbers in three places? No.
+Show headline totals **once**, and give the other two sections a different job:
+
+| Section | Keeps | Changes to |
+| --- | --- | --- |
+| Live bar (under hero) | Latest real donation + total donations + total raised | Numbers now live from the database |
+| Brand Leaderboard | Bar chart + top 3 | Real per-brand totals, **all-time** instead of "this month" (monthly is too thin to look good). Fake recent-donations list replaced with real recent donations. The "$3,300 total" badge is removed (already shown in the live bar). Brands with $0 are hidden. |
+| See the Real Impact (bottom) | Four cards, same design | No repeated dollar total. Cards become: **Coupons Created** (116), **Active Fundraisers** (10), **Retailers Available** (count of brands you support), **US** Communities Served. "Families Helped" is dropped until coupons are actually claimed, then it can come back automatically. |
+
+Result: dollars appear once, every figure agrees, and nothing is invented. Numbers only go up as real activity happens.
+
+## Loading and empty states
+- While loading, show a small placeholder shimmer instead of a number (never a fake fallback value).
+- If a brand or figure has no data, hide it rather than showing 0.
 
 ## Verification
-- At 390px, capture every step and two distinct frames of one active animation; measure the illustration container and require at least 200px.
-- Confirm the section has no sticky positioning, tall stage, mobile scroll-range math, or `svh` stage sizing.
-- Verify replay when scrolling down and back up, explicit normal/reduced-motion branch behavior, no `preventDefault`, and no console errors.
-- Check horizontal overflow at 320, 360, 390, 430, 768, 1024, and 1440px; compare the 1440px desktop grid with the baseline.
-- Finish with a clean project build and provide the requested screenshots and measured findings.
+- Compare each on-screen number against a direct database query.
+- Screenshot desktop and 390px; confirm no remaining hard-coded amounts (`$3,300`, `$10,000`, `1250`, `24`, fake donor names) in these files.
+
+## Technical details
+- New security-definer function `get_landing_stats()` returning: completed donations count, total raised, coupons created, coupons claimed, active fundraisers, and per-brand totals (from `donation_brands` joined to completed donations). Granted to anon.
+- Shared hook `useLandingStats` used by `LiveActivityBar.tsx`, `BrandLeaderboard.tsx`, `ImpactDashboard.tsx`, cached once per page load so all three show identical numbers.
+- Leaderboard recent list uses existing `get_recent_public_donations(5)`.
+- Also remove the unused `ImpactSection.tsx` hard-coded stats (98% satisfaction etc.) if it isn't rendered anywhere, so they can't resurface.
+- No layout, color, or font changes.
