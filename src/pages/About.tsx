@@ -121,8 +121,8 @@ function DonationTrail() {
               <step.icon className="h-4 w-4" />
             </div>
             <div className="md:mt-5 md:text-center">
-              <p className="font-about-sans text-sm font-semibold text-editorial-ink">{step.label}</p>
-              <p className="mt-1 font-about-sans text-sm leading-relaxed text-editorial-muted">{step.text}</p>
+              <p className="font-about-sans text-sm font-semibold text-editorial-paper">{step.label}</p>
+              <p className="mt-1 font-about-sans text-sm leading-relaxed text-editorial-soft">{step.text}</p>
             </div>
           </motion.li>
         ))}
@@ -152,7 +152,7 @@ const aboutJsonLd = [
 
 export default function About() {
   return (
-    <div className="min-h-dvh bg-editorial-paper text-editorial-ink">
+    <div className="min-h-dvh overflow-x-hidden bg-editorial-paper text-editorial-ink">
       <SEO
         title="About CouponDonation — Transparent, Trackable Giving"
         description="Meet CouponDonation, the online donation platform making charitable giving transparent and trackable through brand-specific grocery coupons for US communities."
