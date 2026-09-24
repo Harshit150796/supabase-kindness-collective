@@ -262,7 +262,7 @@ function MobileJourneyStep({ step, index, progress }: { step: Step; index: numbe
   const y = useTransform(progress, (value) => {
     const local = (value - bandStart) / (bandEnd - bandStart);
     if (local < 0) return Math.min(18, -local * 144);
-    if (local > 0.86) return Math.max(-18, -(local - 0.86) * 129);
+    if (index < steps.length - 1 && local > 0.86) return Math.max(-18, -(local - 0.86) * 129);
     return 0;
   });
 
