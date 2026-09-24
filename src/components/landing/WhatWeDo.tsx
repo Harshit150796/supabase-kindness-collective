@@ -287,7 +287,7 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
       ref={itemRef}
       data-mobile-step={index + 1}
       data-in-view={inView ? 'true' : 'false'}
-      className={`relative flex flex-col items-center justify-center py-12 text-center ${reduced ? 'min-h-0' : 'min-h-[clamp(620px,80dvh,760px)]'}`}
+      className={`relative flex flex-col items-center justify-center py-12 text-center ${reduced ? 'min-h-0' : 'min-h-[640px] sm:min-h-[680px] md:min-h-[720px]'}`}
     >
       <motion.div
         aria-hidden="true"
@@ -299,7 +299,7 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
       />
       <motion.div
         data-mobile-step-art
-        className="relative h-[clamp(200px,60vw,260px)] w-[clamp(200px,60vw,260px)] overflow-hidden"
+        className="relative h-[clamp(200px,60vw,260px)] w-[clamp(200px,60vw,260px)] shrink-0 overflow-hidden"
         initial={false}
         animate={{ opacity: reduced || inView ? 1 : 0.45, scale: reduced || inView ? 1 : 0.94, y: reduced || inView ? 0 : 12 }}
         transition={{ type: 'spring', stiffness: 190, damping: 24 }}
