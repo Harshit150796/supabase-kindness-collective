@@ -246,6 +246,47 @@ function ApplyDoorIcon() {
   return <svg viewBox="0 0 40 40" className="h-10 w-10 text-gold" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="hsl(var(--gold) / 0.12)" stroke="currentColor" strokeWidth="2" /><path d="M12 19h16l-2 11H14zm3 0v-3a5 5 0 0 1 10 0v3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 
+type Step = (typeof steps)[number];
+
+function MobileJourneyStep({ step, index, progress }: { step: Step; index: number; progress: MotionValue<number> }) {
+  const Art = step.Art;
+  const bandStart = index / steps.length;
+  const bandEnd = (index + 1) / steps.length;
+  const localProgress = useTransform(progress, [bandStart, bandEnd], [0, 0.99], { clamp: true });
+  const opacity = useTransform(
+    progress,
+    [bandStart - 0.035, bandStart, bandEnd - 0.035, bandEnd],
+    index === 0 ? [1, 1, 1, 0] : index === steps.length - 1 ? [0, 1, 1, 1] : [0, 1, 1, 0],
+    { clamp: true },
+  );
+  const y = useTransform(progress, [bandStart - 0.035, bandStart, bandEnd - 0.035, bandEnd], [18, 0, 0, -18], { clamp: true });
+
+  return (
+    <motion.li className="absolute inset-0 flex flex-col items-center justify-center text-center" style={{ opacity, y }} aria-hidden={undefined}>
+      <div className="h-[min(55vw,260px)] w-[min(55vw,260px)] overflow-hidden">
+        <Art progress={localProgress} still={false} offset={0} />
+      </div>
+      <div className="mt-5 flex items-center justify-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold" style={{ color: step.accent, borderColor: step.accent }}>{index + 1}</span>
+        <h3 className="text-xl font-semibold text-foreground sm:text-2xl">{step.title}</h3>
+      </div>
+      <p className="mt-3 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">{step.body}</p>
+    </motion.li>
+  );
+}
+
+function ProgressSegment({ progress, index }: { progress: MotionValue<number>; index: number }) {
+  const start = index / steps.length;
+  const end = (index + 1) / steps.length;
+  const scaleX = useTransform(progress, [start, end], [0, 1], { clamp: true });
+
+  return (
+    <span className="relative block h-1.5 w-full overflow-hidden rounded-full bg-border">
+      <motion.span className="absolute inset-0 origin-left rounded-full bg-primary" style={{ scaleX }} />
+    </span>
+  );
+}
+
 export function WhatWeDo() {
   const reduced = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
@@ -296,7 +337,6 @@ export function WhatWeDo() {
   const connectorPhase = useTransform(progress, (value) => ((value % 1) + 1) % 1);
   const connectorPosition = mapValue(connectorPhase, [0, 0.12, 0.24, 0.36, 0.62, 1], [0, 0, 33, 66, 100, 100]);
   const connectorLeft = useTransform(connectorPosition, (value) => `${value}%`);
-  const connectorTop = useTransform(connectorPosition, (value) => `${value}%`);
   const chevronY = mapValue(progress, [0, 0.5, 1], [0, 5, 0]);
 
   const restartSharedClock = () => {
