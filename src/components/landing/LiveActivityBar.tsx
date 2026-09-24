@@ -11,17 +11,14 @@ export const LiveActivityBar = () => {
       <div aria-hidden="true" className="absolute -left-16 -top-20 h-40 w-40 rounded-full bg-primary/5 blur-3xl" />
       <div aria-hidden="true" className="absolute -bottom-20 -right-16 h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
 
-      <div className="container relative mx-auto px-4 py-4 md:py-5">
+      <div className="container relative mx-auto px-4 py-2.5 md:py-3">
         <div className="flex flex-col items-center gap-4 md:flex-row md:gap-8 lg:gap-12">
-          <div className="shrink-0 text-center md:w-[230px] md:text-left">
-            <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/70">
-              Shop with choice
-            </p>
-            <h2 id="redeemable-at-heading" className="text-lg font-bold text-foreground md:text-xl">
-              Redeemable at
+          <div className="shrink-0 text-center md:w-[200px] md:text-left">
+            <h2 id="redeemable-at-heading" className="text-sm font-semibold text-foreground md:text-base">
+              Every dollar, redeemable at
             </h2>
-            <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">
-              Choose familiar brands for every coupon.
+            <p className="mt-0.5 text-[11px] text-muted-foreground md:text-xs">
+              Pick the familiar brands where your coupons are spent.
             </p>
           </div>
 
