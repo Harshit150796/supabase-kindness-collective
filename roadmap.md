@@ -20,22 +20,16 @@
 - [x] Add semantic verification blue tokens and reserve them for the proof moment.
 - [x] Verify build and layouts at 320, 360, 390, 430, 768, 1024, and 1440 pixels.
 
-## Done
-- [x] Complete tier-gated mobile tree rendering quality without changing camera framing or protected colors.
-- [x] Rebuild WhatWeDo motion as reversible scroll-driven mobile/tablet and desktop experiences.
-- [x] Measure mobile rendering and verify all requested widths, reduced motion, scrolling, and errors.
-- [x] Verify mobile alpha-to-coverage activation explicitly under MSAA.
-- [x] Confirm WhatWeDo uses only native sticky/scroll progress, reverses continuously at 390px, and uses 100svh.
-- [x] Confirm desktop idle-resume and pixel-identical four-column layout.
+## Superseded — previous mobile claims were not validated on the live phone experience
+- Mobile sticky pinning and continuous transformation were previously marked verified without reliable visual evidence. Those claims are withdrawn.
 
 ## Done
 - [x] Restore the tree's bright ambient sheen with a procedural no-download environment and matched exposure.
-- [x] Replace the mobile How It Works cross-fades with one reversible continuous transformation.
-- [x] Prove sticky pinning, reverse motion, viewport stability, responsive overflow safety, and clean runtime behavior.
-- [x] Record the actual 390px branch, sticky top, container height, and scroll-progress values before changing the mobile story.
-- [x] Inspect every morph handoff for a continuously visible object with no empty or ghosted frame.
 
-## In progress
-- [ ] Replace mobile/tablet sticky How It Works with replayable in-view step blocks.
-- [ ] Verify the actual reduced-motion and mobile branch selection behavior.
-- [ ] Capture all requested mobile proof frames and responsive overflow checks.
+## Done — validated with rendered screenshots
+- [x] Replace mobile/tablet sticky How It Works with replayable in-view step blocks.
+- [x] Verify the actual reduced-motion and mobile branch selection behavior.
+- [x] Capture all requested mobile proof frames and responsive overflow checks.
+- [x] Require visible 390px screenshot evidence and a measured illustration width before marking any item verified.
+- [x] Prove one active step changes between two mid-animation captures.
+- [x] Remove every mobile sticky, tall-stage, `svh` stage, and band-math implementation from `WhatWeDo`.
