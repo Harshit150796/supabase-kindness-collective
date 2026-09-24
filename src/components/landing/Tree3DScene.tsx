@@ -20,7 +20,7 @@ import { AmbientBirds } from './tree3d/AmbientBirds';
 import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
 import { TransparencyPopover } from './tree3d/TransparencyPopover';
 import { PlantsLayer } from './tree3d/PlantsLayer';
-import { useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
+import { settingsForTier, useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
 
 const GROUND_Y = -0.01;
 const DEFAULT_CAM = new THREE.Vector3(0, 4.0, 13);
@@ -495,7 +495,7 @@ export function Tree3DScene() {
   const enablePost = false;
   // Antialias must be fixed at context creation time — derived from the first tier.
   const antialias = useMemo(
-    () => (isMobile ? mobileSettings(settingsForInitialTier(initialTier)).antialias : initialTier !== 'low'),
+    () => (isMobile ? mobileSettings(settingsForTier(initialTier)).antialias : initialTier !== 'low'),
     [initialTier, isMobile],
   );
 
