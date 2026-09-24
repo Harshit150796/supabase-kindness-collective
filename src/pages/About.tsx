@@ -1,512 +1,336 @@
-import { SEO, breadcrumbJsonLd } from '@/components/SEO';
-import { Navbar } from '@/components/layout/Navbar';
-import harshitPhoto from '@/assets/harshit-agrawal.png';
-import paulPhoto from '@/assets/paul-savluc.png';
-import { Footer } from '@/components/layout/Footer';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { useRef, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import { motion, useInView } from 'motion/react';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { 
-  Heart, 
-  Target, 
-  Eye, 
-  Users, 
-  Building2, 
-  Utensils, 
-  ShoppingBag, 
-  HandHeart,
-  Shield,
-  TrendingUp,
-  Sparkles,
-  GraduationCap,
-  Users2,
-  Globe,
+  ArrowRight,
+  Check,
+  ExternalLink,
+  Gift,
+  HeartHandshake,
   Linkedin,
   MapPin,
-  Calendar,
-  ExternalLink,
-  ChevronRight,
-  Baby,
-  Home,
-  Truck,
+  ReceiptText,
+  ScanLine,
+  ShieldCheck,
+  Store,
+  UserRoundCheck,
+  WalletCards,
+  X,
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { SEO, breadcrumbJsonLd } from '@/components/SEO';
+import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
+import { Button } from '@/components/ui/button';
+import { useMotionPreference } from '@/hooks/useMotionPreference';
+import harshitPhoto from '@/assets/harshit-agrawal.png';
+import paulPhoto from '@/assets/paul-savluc.png';
 
-const whoWeHelp = [
-  { 
-    icon: Baby, 
-    title: 'Children & Teens', 
-    description: 'Supporting young people at risk of malnutrition and food insecurity with nutritious meals and essential supplies.' 
+const journey = [
+  { icon: HeartHandshake, label: 'Donation', text: 'Support a public fundraiser.' },
+  { icon: Store, label: 'Retailer choice', text: 'Choose where the value can be spent.' },
+  { icon: Gift, label: 'Coupon created', text: 'Funds become a brand-specific coupon.' },
+  { icon: WalletCards, label: 'Recipient wallet', text: 'The recipient receives usable support.' },
+  { icon: ReceiptText, label: 'Trackable record', text: 'The giving trail remains visible.' },
+];
+
+const principles = [
+  {
+    number: '01',
+    title: 'Choice stays with the donor',
+    text: 'Donors choose the fundraiser and familiar retailer connected to their contribution.',
   },
-  { 
-    icon: Home, 
-    title: 'Families in Need', 
-    description: 'Helping families facing instability due to job loss, inflation, displacement, or rising cost of living.' 
+  {
+    number: '02',
+    title: 'Value moves as a coupon',
+    text: 'Donated money is converted into brand-specific coupon value rather than disappearing into an unclear pool.',
   },
-  { 
-    icon: HandHeart, 
-    title: 'Service Providers', 
-    description: 'Empowering local organizations working to deliver necessities and emergency aid to their communities.' 
+  {
+    number: '03',
+    title: 'Support preserves dignity',
+    text: 'Recipients use coupons with familiar brands, giving them agency in how they meet everyday needs.',
   },
-  { 
-    icon: Building2, 
-    title: 'Partner Networks', 
-    description: 'Connecting hospitality, food industry, retail, and logistics partners to extend impact through coordinated support.' 
+  {
+    number: '04',
+    title: 'The record outlives the moment',
+    text: 'Donation and coupon activity creates an accountable trail designed for long-term donor transparency.',
   },
 ];
 
-const whatWeSupport = [
-  { 
-    icon: Utensils, 
-    title: 'Food Security', 
-    description: 'Hunger reduction through food assistance and meal support programs.',
-    color: 'text-primary'
+const founders = [
+  {
+    name: 'Harshit Agrawal',
+    role: 'Founder & CEO',
+    image: harshitPhoto,
+    linkedin: 'https://www.linkedin.com/in/harshit-agrawal-techie',
+    statement: 'CouponDonation began with one question: why should giving require blind trust?',
+    bio: 'Harshit founded CouponDonation to create a clearer connection between a donor’s decision and the support a recipient can actually use. His focus is building a trusted giving system where choice, visibility, and accountability are part of the product—not an afterthought.',
   },
-  { 
-    icon: ShoppingBag, 
-    title: 'Basic Supplies', 
-    description: 'Hygiene kits, diapers, school essentials, and seasonal necessities.',
-    color: 'text-gold'
-  },
-  { 
-    icon: Shield, 
-    title: 'Emergency Relief', 
-    description: 'Family support for communities under economic strain or crisis conditions.',
-    color: 'text-primary'
-  },
-  { 
-    icon: Globe, 
-    title: 'US Retail Partnerships', 
-    description: 'Nationwide retail networks aligned to measurable outcomes and transparent reporting.',
-    color: 'text-gold'
+  {
+    name: 'Paul Savluc',
+    role: 'Co-Founder, COO & CMO',
+    image: paulPhoto,
+    linkedin: 'https://www.linkedin.com/in/paul-savluc/',
+    statement: 'Trust grows when people can follow the value, not just hear the promise.',
+    bio: 'Paul leads the operating and market strategy behind CouponDonation’s mission to make charitable giving more measurable. His work centers on turning a bold idea into a dependable platform for donors, recipients, and US communities.',
   },
 ];
 
-const whySupport = [
-  { icon: Heart, title: 'Human Dignity', description: 'Improving access to essential necessities for all' },
-  { icon: Users2, title: 'Community Resilience', description: 'Reducing crisis-level shortages' },
-  { icon: TrendingUp, title: 'Health & Wellbeing', description: 'Through nutrition and hygiene support' },
-  { icon: GraduationCap, title: 'Opportunity', description: 'Helping children stay ready for school and life' },
-  { icon: Sparkles, title: 'Collective Impact', description: 'Making micro-giving easy to repeat and grow' },
-];
+function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { amount: 0.2, once: true });
+  const gentle = useMotionPreference() === 'gentle';
 
-const partnerships = [
-  { icon: Building2, title: 'Hospitality & Lodging', description: 'Hotels, travel platforms, and operators' },
-  { icon: Utensils, title: 'Food Industry', description: 'Restaurants, grocers, suppliers, and delivery networks' },
-  { icon: ShoppingBag, title: 'Consumer Brands', description: 'Retailers and loyalty/coupon ecosystems' },
-  { icon: Shield, title: 'Compliance & Risk', description: 'Partners supporting verification and fraud controls' },
-  { icon: HandHeart, title: 'Nonprofits', description: 'Community organizations enabling recipient referrals' },
-  { icon: Truck, title: 'Logistics Networks', description: 'Partners helping with last-mile delivery' },
+  return (
+    <motion.div
+      ref={ref}
+      className={className}
+      initial={{ opacity: 0, y: gentle ? 6 : 24 }}
+      animate={inView ? { opacity: 1, y: 0 } : undefined}
+      transition={{ duration: gentle ? 0.35 : 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function DonationTrail() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { amount: 0.35, once: false });
+  const gentle = useMotionPreference() === 'gentle';
+
+  return (
+    <div ref={ref} className="relative mt-14">
+      <div aria-hidden="true" className="absolute left-5 top-5 h-[calc(100%-2.5rem)] w-px bg-editorial-line md:left-[10%] md:right-[10%] md:top-5 md:h-px md:w-auto">
+        <motion.span
+          className="absolute inset-0 origin-top bg-editorial-accent md:origin-left"
+          initial={{ scaleY: 0 }}
+          animate={inView ? { scaleY: 1 } : { scaleY: 0 }}
+          transition={{ duration: gentle ? 1.4 : 2.4, ease: 'easeInOut' }}
+        />
+      </div>
+      <ol className="relative grid gap-9 md:grid-cols-5 md:gap-5">
+        {journey.map((step, index) => (
+          <motion.li
+            key={step.label}
+            className="grid grid-cols-[2.5rem_1fr] gap-4 md:block"
+            initial={{ opacity: 0, y: gentle ? 4 : 18 }}
+            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: gentle ? 4 : 18 }}
+            transition={{ duration: 0.45, delay: inView ? index * (gentle ? 0.16 : 0.32) : 0 }}
+          >
+            <div className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full border border-editorial-accent bg-editorial-paper text-editorial-accent md:mx-auto">
+              <step.icon className="h-4 w-4" />
+            </div>
+            <div className="md:mt-5 md:text-center">
+              <p className="font-about-sans text-sm font-semibold text-editorial-ink">{step.label}</p>
+              <p className="mt-1 font-about-sans text-sm leading-relaxed text-editorial-muted">{step.text}</p>
+            </div>
+          </motion.li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+const aboutJsonLd = [
+  breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'About', path: '/about' }]),
+  {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: 'About CouponDonation',
+    url: 'https://coupondonation.com/about',
+    description: 'How CouponDonation makes charitable giving transparent and trackable by converting donations into brand-specific coupons.',
+    mainEntity: {
+      '@type': 'Organization',
+      name: 'CouponDonation',
+      url: 'https://coupondonation.com',
+      email: 'connect@coupondonation.com',
+      areaServed: 'US',
+      founder: founders.map(({ name }) => ({ '@type': 'Person', name })),
+    },
+  },
 ];
 
 export default function About() {
-  const navigate = useNavigate();
-
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh bg-editorial-paper text-editorial-ink">
       <SEO
-        title="About CouponDonation — Our Mission to Feed Families"
-        description="Meet the team behind CouponDonation and learn how we convert donations into grocery coupons for verified families across America, with 95% efficiency."
+        title="About CouponDonation — Transparent, Trackable Giving"
+        description="Meet CouponDonation, the online donation platform making charitable giving transparent and trackable through brand-specific grocery coupons for US communities."
         path="/about"
-        jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'About', path: '/about' }])}
+        jsonLd={aboutJsonLd}
       />
       <Navbar />
-      <main className="overflow-hidden">
-        {/* Hero Section */}
-        <section className="relative py-24 md:py-32 bg-gradient-to-br from-primary/10 via-background to-gold/10 overflow-hidden">
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
-            <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gold/5 rounded-full blur-3xl" />
-          </div>
-          
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="flex flex-wrap items-center justify-center gap-3 mb-8 animate-fade-in">
-              <span className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                <Calendar className="w-4 h-4" />
-                Founded December 19, 2025
-              </span>
-              <span className="inline-flex items-center gap-2 px-4 py-2 bg-gold/10 text-gold rounded-full text-sm font-medium">
-                <MapPin className="w-4 h-4" />
-                New York & Los Angeles
-              </span>
-            </div>
-            
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground text-center mb-6 animate-fade-in">
-              Transforming Everyday Savings Into{' '}
-              <span className="text-gradient-gold">US Hunger Relief</span>
-            </h1>
-            
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto text-center mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              A mission-first digital donation marketplace designed to expand access to food assistance, 
-              basic necessities, and essential care for children, teens, and adults across the United States.
-            </p>
 
-            <div className="flex flex-wrap justify-center gap-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              <Button 
-                size="lg" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                onClick={() => navigate('/donate')}
-              >
-                Start Donating
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline"
-                onClick={() => navigate('/how-it-works')}
-              >
-                See How It Works
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* Founders Section */}
-        <section className="py-20 bg-background">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Meet Our Founders</h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Two visionaries committed to making verified giving transparent, efficient, and scalable.
-              </p>
-            </div>
-            
-            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-              {/* Harshit Agrawal */}
-              <Card className="p-8 bg-card border-border hover:border-gold/50 hover:shadow-[0_0_20px_hsl(var(--gold)/0.2)] transition-all duration-300 group">
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-40 h-40 rounded-full overflow-hidden mb-6 group-hover:scale-105 transition-transform ring-4 ring-primary/10">
-                    <img 
-                      src={harshitPhoto} 
-                      alt="Harshit Agrawal" 
-                      className="w-full h-full object-cover object-top"
-                    />
-                  </div>
-                  <h3 className="text-2xl font-bold text-foreground mb-1">Harshit Agrawal</h3>
-                  <p className="text-gold font-medium mb-4">Founder & CEO</p>
-                  <p className="text-muted-foreground mb-6">
-                    Developed CouponDonation.com after witnessing how consistent support can change lives 
-                    locally in New York, choosing to scale that same life-saving model nationwide.
-                  </p>
-                  <blockquote className="italic text-muted-foreground border-l-2 border-gold pl-4 text-left mb-6">
-                    "Every donation counts, and it adds up faster than people realize. No child, teen, 
-                    or adult should suffer from hunger or go without the basics needed to live."
-                  </blockquote>
-                  <a 
-                    href="https://www.linkedin.com/in/harshit-agrawal-techie" 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
-                  >
-                    <Linkedin className="w-5 h-5" />
-                    Connect on LinkedIn
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
-              </Card>
-
-              {/* Paul Savluc */}
-              <Card className="p-8 bg-card border-border hover:border-gold/50 hover:shadow-[0_0_20px_hsl(var(--gold)/0.2)] transition-all duration-300 group">
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-40 h-40 rounded-full overflow-hidden mb-6 group-hover:scale-105 transition-transform ring-4 ring-primary/10">
-                    <img 
-                      src={paulPhoto} 
-                      alt="Paul Savluc" 
-                      className="w-full h-full object-cover object-top"
-                    />
-                  </div>
-                  <h3 className="text-2xl font-bold text-foreground mb-1">Paul Savluc</h3>
-                  <p className="text-gold font-medium mb-4">Co-Founder, COO & CMO</p>
-                  <p className="text-muted-foreground mb-6">
-                    A technology executive shaped by firsthand experiences witnessing extreme hardship 
-                    in major US cities, driving scalable platforms for measurable humanitarian impact.
-                  </p>
-                  <blockquote className="italic text-muted-foreground border-l-2 border-gold pl-4 text-left mb-6">
-                    "Reducing hunger and lack of basic care is a real-world logistics and accountability 
-                    challenge. We built CouponDonation.com to make giving more accessible and measurable."
-                  </blockquote>
-                  <a 
-                    href="https://www.linkedin.com/in/paul-savluc/" 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
-                  >
-                    <Linkedin className="w-5 h-5" />
-                    Connect on LinkedIn
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* Mission Statement */}
-        <section className="py-20 bg-gradient-to-r from-primary/5 via-background to-gold/5">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-8">
-                <Target className="w-5 h-5 text-primary" />
-                <span className="text-primary font-medium">Our Mission</span>
+      <main className="overflow-x-hidden font-about-sans">
+        <section className="border-b border-editorial-line px-5 pb-20 pt-16 md:px-8 md:pb-28 md:pt-24 lg:pt-32">
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
+              <div className="lg:col-span-1">
+                <p className="font-about-sans text-xs font-semibold uppercase text-editorial-accent lg:[writing-mode:vertical-rl]">
+                  About / 2025
+                </p>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8">
-                A Transparent, Scalable Model for{' '}
-                <span className="text-gradient-emerald">Hunger Relief</span> and{' '}
-                <span className="text-gradient-gold">Basic Care</span>
-              </h2>
-              <p className="text-xl text-muted-foreground leading-relaxed">
-                CouponDonation.com operates as a donation and philanthropy platform that prioritizes 
-                clear giving, operational efficiency, and partner-driven distribution. By reducing 
-                friction and limiting unnecessary intermediaries, the platform is built to help 
-                contributions translate into timely support for people facing urgent need.
-              </p>
+              <Reveal className="lg:col-span-7">
+                <p className="mb-6 flex items-center gap-2 text-sm font-semibold text-editorial-teal">
+                  <ScanLine className="h-4 w-4" /> A new standard for giving
+                </p>
+                <h1 className="font-about-serif text-5xl font-bold leading-[1.02] text-editorial-ink md:text-7xl lg:text-[6.4rem]">
+                  Giving should never be a <span className="italic text-editorial-blue">black box.</span>
+                </h1>
+                <p className="mt-8 max-w-3xl text-lg leading-relaxed text-editorial-muted md:text-2xl">
+                  CouponDonation is the world’s first platform of its kind built to make donations transparent and trackable—from a donor’s choice to a coupon a recipient can use.
+                </p>
+              </Reveal>
+              <Reveal className="flex flex-col justify-end border-t border-editorial-line pt-7 lg:col-span-4 lg:border-l lg:border-t-0 lg:pl-9 lg:pt-0" delay={0.12}>
+                <p className="text-xs font-semibold uppercase text-editorial-accent">The premise</p>
+                <p className="mt-4 text-base leading-relaxed text-editorial-muted">
+                  Donors deserve to know where their money goes. Recipients deserve useful support with dignity. We designed one system to serve both.
+                </p>
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
+                  <Button asChild size="lg" className="bg-editorial-ink text-editorial-paper hover:bg-editorial-blue">
+                    <Link to="/donate">Start donating <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                  </Button>
+                  <Button asChild size="lg" variant="outline" className="border-editorial-line bg-transparent text-editorial-ink hover:bg-editorial-wash">
+                    <Link to="/how-it-works">See how it works</Link>
+                  </Button>
+                </div>
+              </Reveal>
             </div>
           </div>
         </section>
 
-        {/* Who We Help */}
-        <section className="py-20 bg-background">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Who We Help</h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Our mission supports children, families, service providers, and partners across industries.
-              </p>
-            </div>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {whoWeHelp.map((item, index) => (
-                <Card 
-                  key={item.title} 
-                  className="p-6 bg-card border-border hover:border-gold/50 hover:shadow-[0_0_20px_hsl(var(--gold)/0.2)] transition-all duration-300 animate-fade-in"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <div className="w-14 h-14 bg-gradient-to-br from-primary/20 to-gold/20 rounded-2xl flex items-center justify-center mb-4">
-                    <item.icon className="w-7 h-7 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-foreground mb-2">{item.title}</h3>
-                  <p className="text-muted-foreground">{item.description}</p>
-                </Card>
+        <section className="bg-editorial-ink px-5 py-20 text-editorial-paper md:px-8 md:py-28">
+          <div className="mx-auto max-w-7xl">
+            <Reveal className="grid gap-7 md:grid-cols-12">
+              <div className="md:col-span-4">
+                <p className="text-xs font-semibold uppercase text-editorial-glow">The transparent trail</p>
+              </div>
+              <div className="md:col-span-8">
+                <h2 className="font-about-serif text-4xl leading-tight md:text-6xl">From generosity to usable value—with a record at every step.</h2>
+                <p className="mt-6 max-w-2xl text-lg leading-relaxed text-editorial-soft">
+                  Traditional giving can make the journey difficult to see. CouponDonation connects the donation, retailer selection, coupon creation, and recipient wallet in one trackable giving experience.
+                </p>
+              </div>
+            </Reveal>
+            <DonationTrail />
+          </div>
+        </section>
+
+        <section className="px-5 py-20 md:px-8 md:py-28">
+          <div className="mx-auto max-w-7xl">
+            <Reveal className="grid gap-8 border-b border-editorial-line pb-12 md:grid-cols-12">
+              <p className="text-xs font-semibold uppercase text-editorial-accent md:col-span-3">Our operating standard</p>
+              <h2 className="font-about-serif text-4xl leading-tight md:col-span-9 md:text-6xl">
+                Technology built around <span className="italic text-editorial-blue">accountability.</span>
+              </h2>
+            </Reveal>
+            <div className="divide-y divide-editorial-line">
+              {principles.map((principle, index) => (
+                <Reveal key={principle.number} className="grid gap-4 py-9 md:grid-cols-12 md:items-start md:py-12" delay={index * 0.04}>
+                  <p className="font-about-sans text-xs text-editorial-accent md:col-span-1">/{principle.number}</p>
+                  <h3 className="font-about-serif text-2xl md:col-span-5 md:text-3xl">{principle.title}</h3>
+                  <p className="max-w-xl text-base leading-relaxed text-editorial-muted md:col-span-6 md:text-lg">{principle.text}</p>
+                </Reveal>
               ))}
             </div>
           </div>
         </section>
 
-        {/* What We Support */}
-        <section className="py-20 bg-muted/30">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">What We Support</h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Our platform is structured to support programs and initiatives focused on real-world impact.
+        <section className="border-y border-editorial-line bg-editorial-wash px-5 py-20 md:px-8 md:py-24">
+          <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-2 md:gap-16">
+            <Reveal>
+              <Check className="h-7 w-7 text-editorial-teal" />
+              <h2 className="mt-6 font-about-serif text-3xl md:text-4xl">What we do</h2>
+              <p className="mt-5 text-lg leading-relaxed text-editorial-muted">
+                We provide an online donation platform where people support fundraisers, choose participating brands, and fund coupons that recipients can use for everyday needs.
               </p>
-            </div>
-            
-            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              {whatWeSupport.map((item, index) => (
-                <Card 
-                  key={item.title} 
-                  className="p-6 bg-card border-border hover:border-gold/50 hover:shadow-[0_0_20px_hsl(var(--gold)/0.2)] transition-all duration-300 flex gap-4 animate-fade-in"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <div className={`w-12 h-12 bg-${item.color === 'text-gold' ? 'gold' : 'primary'}/10 rounded-xl flex items-center justify-center flex-shrink-0`}>
-                    <item.icon className={`w-6 h-6 ${item.color}`} />
+            </Reveal>
+            <Reveal className="border-t border-editorial-line pt-10 md:border-l md:border-t-0 md:pl-16 md:pt-0" delay={0.1}>
+              <X className="h-7 w-7 text-editorial-blue" />
+              <h2 className="mt-6 font-about-serif text-3xl md:text-4xl">What we do not do</h2>
+              <p className="mt-5 text-lg leading-relaxed text-editorial-muted">
+                We do not turn “everyday savings” into donations, run meal programs, or move contributions through vague claims. Our purpose is to make the path of donated value clearer.
+              </p>
+            </Reveal>
+          </div>
+        </section>
+
+        <section className="px-5 py-20 md:px-8 md:py-28">
+          <div className="mx-auto max-w-7xl">
+            <Reveal className="grid gap-8 md:grid-cols-12 md:items-end">
+              <div className="md:col-span-4">
+                <p className="text-xs font-semibold uppercase text-editorial-accent">The founding thesis</p>
+              </div>
+              <div className="md:col-span-8">
+                <h2 className="font-about-serif text-4xl leading-tight md:text-6xl">Make trust visible.</h2>
+                <p className="mt-6 max-w-2xl text-lg leading-relaxed text-editorial-muted">
+                  CouponDonation was founded on December 19, 2025 to challenge a familiar limitation in charitable giving: once money is donated, its journey can become difficult to follow.
+                </p>
+              </div>
+            </Reveal>
+
+            <div className="mt-16 space-y-20 md:mt-24 md:space-y-28">
+              {founders.map((founder, index) => (
+                <Reveal key={founder.name} className="grid gap-9 md:grid-cols-12 md:items-center md:gap-14">
+                  <div className={`relative md:col-span-5 ${index % 2 ? 'md:col-start-8' : ''}`}>
+                    <div aria-hidden="true" className="absolute -left-3 -top-3 h-20 w-20 border-l border-t border-editorial-accent" />
+                    <img src={founder.image} alt={`${founder.name}, ${founder.role} at CouponDonation`} className="aspect-[4/5] w-full object-cover object-top grayscale-[20%]" />
+                    <div className="absolute bottom-5 right-0 bg-editorial-paper px-5 py-4 shadow-card-hover md:-right-6">
+                      <p className="font-about-serif text-lg italic">{founder.name}</p>
+                      <p className="mt-1 text-xs font-semibold uppercase text-editorial-accent">{founder.role}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-1">{item.title}</h3>
-                    <p className="text-muted-foreground">{item.description}</p>
+                  <div className={`md:col-span-6 ${index % 2 ? 'md:col-start-1 md:row-start-1' : 'md:col-start-7'}`}>
+                    <blockquote className="font-about-serif text-2xl italic leading-snug text-editorial-ink md:text-4xl">“{founder.statement}”</blockquote>
+                    <div className="my-7 h-px w-12 bg-editorial-accent" />
+                    <p className="text-base leading-relaxed text-editorial-muted md:text-lg">{founder.bio}</p>
+                    <a href={founder.linkedin} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex items-center gap-2 border-b border-editorial-ink pb-1 text-sm font-semibold text-editorial-ink transition-colors hover:text-editorial-accent">
+                      <Linkedin className="h-4 w-4" /> Connect on LinkedIn <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
                   </div>
-                </Card>
+                </Reveal>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Join Our Mission - Merged Accordion Section */}
-        <section className="py-16 md:py-20 bg-gradient-to-br from-primary/5 via-background to-gold/5">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-8 md:mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Join Our Mission
-              </h2>
-              <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-                Whether you're looking to make an impact or partner with us, there's a place for you
-              </p>
-            </div>
-            
-            <div className="max-w-4xl mx-auto">
-              <Accordion type="single" collapsible className="space-y-4" defaultValue="donors">
-                {/* For Donors Panel */}
-                <AccordionItem 
-                  value="donors" 
-                  className="border-2 border-gold/30 rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-[0_0_20px_hsl(var(--gold)/0.15)] transition-all duration-300"
-                >
-                  <AccordionTrigger className="px-4 md:px-8 py-4 md:py-6 hover:no-underline hover:bg-gold/5 transition-colors [&[data-state=open]]:bg-gold/5">
-                    <div className="flex items-center gap-3 md:gap-4">
-                      <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-gold/20 to-gold/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <Heart className="w-5 h-5 md:w-6 md:h-6 text-gold" />
-                      </div>
-                      <div className="text-left">
-                        <h3 className="text-lg md:text-xl font-bold text-foreground">For Donors</h3>
-                        <p className="text-xs md:text-sm text-muted-foreground">Why support CouponDonation?</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 md:px-8 pb-6 md:pb-8">
-                    <div className="pt-4 md:pt-6 border-t border-gold/20">
-                      <p className="text-muted-foreground mb-6 text-sm md:text-base">
-                        Your contributions create scalable outcomes that strengthen communities across the US.
-                      </p>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
-                        {whySupport.map((item, index) => (
-                          <div 
-                            key={item.title} 
-                            className="p-4 md:p-5 bg-gold/5 rounded-xl border border-gold/10 hover:border-gold/30 transition-all duration-300 animate-fade-in"
-                            style={{ animationDelay: `${index * 0.05}s` }}
-                          >
-                            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-gold/20 to-primary/10 rounded-xl flex items-center justify-center mb-3">
-                              <item.icon className="w-5 h-5 md:w-6 md:h-6 text-gold" />
-                            </div>
-                            <h4 className="text-sm md:text-base font-semibold text-foreground mb-1">{item.title}</h4>
-                            <p className="text-xs md:text-sm text-muted-foreground">{item.description}</p>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      <Button 
-                        size="lg" 
-                        className="w-full sm:w-auto bg-gold hover:bg-gold/90 text-charcoal font-semibold"
-                        onClick={() => navigate('/auth?mode=signup&role=donor')}
-                      >
-                        Start Making an Impact
-                        <Heart className="w-4 h-4 ml-2" />
-                      </Button>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                {/* For Partners Panel */}
-                <AccordionItem 
-                  value="partners" 
-                  className="border-2 border-primary/30 rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)] transition-all duration-300"
-                >
-                  <AccordionTrigger className="px-4 md:px-8 py-4 md:py-6 hover:no-underline hover:bg-primary/5 transition-colors [&[data-state=open]]:bg-primary/5">
-                    <div className="flex items-center gap-3 md:gap-4">
-                      <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <Building2 className="w-5 h-5 md:w-6 md:h-6 text-primary" />
-                      </div>
-                      <div className="text-left">
-                        <h3 className="text-lg md:text-xl font-bold text-foreground">For Partners</h3>
-                        <p className="text-xs md:text-sm text-muted-foreground">Partnership opportunities</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 md:px-8 pb-6 md:pb-8">
-                    <div className="pt-4 md:pt-6 border-t border-primary/20">
-                      <p className="text-muted-foreground mb-6 text-sm md:text-base">
-                        We welcome collaboration with organizations across industries to expand reach and build trust.
-                      </p>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
-                        {partnerships.map((item, index) => (
-                          <div 
-                            key={item.title} 
-                            className="p-4 md:p-5 bg-primary/5 rounded-xl border border-primary/10 hover:border-primary/30 transition-all duration-300 animate-fade-in"
-                            style={{ animationDelay: `${index * 0.05}s` }}
-                          >
-                            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/20 to-gold/10 rounded-xl flex items-center justify-center mb-3">
-                              <item.icon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
-                            </div>
-                            <h4 className="text-sm md:text-base font-semibold text-foreground mb-1">{item.title}</h4>
-                            <p className="text-xs md:text-sm text-muted-foreground">{item.description}</p>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      <Button 
-                        size="lg" 
-                        className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-                        onClick={() => navigate('/auth')}
-                      >
-                        Become a Partner
-                        <ChevronRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
+        <section className="bg-editorial-blue px-5 py-20 text-editorial-paper md:px-8 md:py-28">
+          <div className="mx-auto max-w-7xl">
+            <Reveal className="grid gap-10 md:grid-cols-12">
+              <div className="md:col-span-4">
+                <p className="text-xs font-semibold uppercase text-editorial-glow">Our mission</p>
+              </div>
+              <div className="md:col-span-8">
+                <h2 className="font-about-serif text-4xl leading-tight md:text-6xl">Build the most transparent way to give.</h2>
+                <p className="mt-7 max-w-3xl text-lg leading-relaxed text-editorial-soft md:text-xl">
+                  We are building a future where donor transparency is expected, charitable giving is trackable, and people receiving support retain choice and dignity. One donation. One coupon trail. One clearer standard of accountability for US communities.
+                </p>
+              </div>
+            </Reveal>
           </div>
         </section>
 
-
-
-
-
-        {/* Updated Stats */}
-        <section className="py-20 bg-muted/30">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-              <Card className="p-6 text-center bg-card border-border hover:border-gold/50 hover:shadow-[0_0_20px_hsl(var(--gold)/0.2)] transition-all duration-300">
-                <div className="text-4xl font-bold text-primary mb-2">2025</div>
-                <div className="text-sm text-muted-foreground">Founded</div>
-              </Card>
-              <Card className="p-6 text-center bg-card border-border hover:border-gold/50 hover:shadow-[0_0_20px_hsl(var(--gold)/0.2)] transition-all duration-300">
-                <div className="text-4xl font-bold text-primary mb-2">2</div>
-                <div className="text-sm text-muted-foreground">US Locations</div>
-              </Card>
-              <Card className="p-6 text-center bg-card border-border hover:border-gold/50 hover:shadow-[0_0_20px_hsl(var(--gold)/0.2)] transition-all duration-300">
-                <div className="text-4xl font-bold text-gold mb-2">6</div>
-                <div className="text-sm text-muted-foreground">Partner Sectors</div>
-              </Card>
-              <Card className="p-6 text-center bg-card border-border hover:border-gold/50 hover:shadow-[0_0_20px_hsl(var(--gold)/0.2)] transition-all duration-300">
-                <div className="text-4xl font-bold text-gold mb-2">∞</div>
-                <div className="text-sm text-muted-foreground">Lives to Impact</div>
-              </Card>
+        <section className="px-5 py-20 md:px-8 md:py-28">
+          <div className="mx-auto max-w-7xl">
+            <Reveal className="text-center">
+              <p className="text-xs font-semibold uppercase text-editorial-accent">Choose your next step</p>
+              <h2 className="mx-auto mt-5 max-w-3xl font-about-serif text-4xl leading-tight md:text-6xl">Be part of a more accountable way to give.</h2>
+            </Reveal>
+            <div className="mt-12 grid border border-editorial-line md:grid-cols-2">
+              <Link to="/donate" className="group p-8 transition-colors hover:bg-editorial-wash md:p-12">
+                <ShieldCheck className="h-7 w-7 text-editorial-accent" />
+                <h3 className="mt-8 font-about-serif text-3xl">I want to donate</h3>
+                <p className="mt-4 max-w-md leading-relaxed text-editorial-muted">Choose a fundraiser and follow how your donation becomes coupon support.</p>
+                <span className="mt-8 inline-flex items-center text-sm font-semibold text-editorial-ink">Explore fundraisers <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
+              </Link>
+              <Link to="/apply" className="group border-t border-editorial-line p-8 transition-colors hover:bg-editorial-wash md:border-l md:border-t-0 md:p-12">
+                <UserRoundCheck className="h-7 w-7 text-editorial-teal" />
+                <h3 className="mt-8 font-about-serif text-3xl">I need support</h3>
+                <p className="mt-4 max-w-md leading-relaxed text-editorial-muted">Create a fundraiser and tell your story to people ready to help.</p>
+                <span className="mt-8 inline-flex items-center text-sm font-semibold text-editorial-ink">Start your application <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
+              </Link>
             </div>
-          </div>
-        </section>
-
-        {/* Final CTA */}
-        <section className="py-20 bg-gradient-to-br from-primary/10 via-background to-gold/10">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Join the Movement
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              This platform is about more than donations. It's about human dignity, community stability, 
-              and building systems that make it easier for people and companies to do good at scale.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button 
-                size="lg" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                onClick={() => navigate('/auth?mode=signup&role=donor')}
-              >
-                Donate Now
-                <Heart className="w-4 h-4 ml-2" />
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline"
-                onClick={() => navigate('/how-it-works')}
-              >
-                Learn How It Works
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline"
-                onClick={() => navigate('/faq')}
-              >
-                Read FAQ
-              </Button>
-            </div>
+            <p className="mt-8 flex items-center justify-center gap-2 text-sm text-editorial-muted"><MapPin className="h-4 w-4" /> Serving communities across the US</p>
           </div>
         </section>
       </main>

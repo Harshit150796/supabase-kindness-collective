@@ -64,6 +64,18 @@
     --emerald-light: 160 60% 40%;
     --emerald-dark: 160 84% 15%;
     --charcoal: 160 10% 15%;
+
+    /* About editorial — Modern Trust */
+    --editorial-ink: 212 69% 15%;
+    --editorial-blue: 205 62% 27%;
+    --editorial-teal: 188 52% 40%;
+    --editorial-paper: 210 20% 98%;
+    --editorial-wash: 202 30% 94%;
+    --editorial-line: 205 22% 82%;
+    --editorial-muted: 208 22% 38%;
+    --editorial-soft: 205 24% 78%;
+    --editorial-accent: 188 52% 40%;
+    --editorial-glow: 186 52% 67%;
     
     /* Selection/Success state - Mint green */
     --success: 158 64% 92%;
@@ -127,6 +139,18 @@
     --emerald-light: 160 60% 50%;
     --emerald-dark: 160 70% 35%;
     --charcoal: 60 15% 95%;
+
+    /* About editorial — dark mode */
+    --editorial-ink: 210 25% 96%;
+    --editorial-blue: 202 52% 48%;
+    --editorial-teal: 188 55% 54%;
+    --editorial-paper: 212 52% 9%;
+    --editorial-wash: 211 44% 13%;
+    --editorial-line: 207 28% 25%;
+    --editorial-muted: 205 18% 68%;
+    --editorial-soft: 205 18% 76%;
+    --editorial-accent: 188 55% 54%;
+    --editorial-glow: 186 55% 70%;
     
     /* Selection/Success state - Mint green dark */
     --success: 160 40% 15%;
