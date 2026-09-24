@@ -24,3 +24,6 @@
 - [ ] Complete tier-gated mobile tree rendering quality without changing camera framing or protected colors.
 - [ ] Rebuild WhatWeDo motion as reversible scroll-driven mobile/tablet and desktop experiences.
 - [ ] Measure mobile rendering and verify all requested widths, reduced motion, scrolling, and errors.
+- [ ] Verify mobile alpha-to-coverage activation explicitly under MSAA.
+- [ ] Confirm WhatWeDo uses only native sticky/scroll progress, reverses continuously at 390px, and uses 100svh.
+- [ ] Confirm desktop idle-resume and pixel-identical four-column layout.
