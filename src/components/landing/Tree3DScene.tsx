@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Environment, OrbitControls } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 // Postprocessing intentionally not imported — bloom/vignette disabled, keeps mobile bundle smaller.
 import * as THREE from 'three';
@@ -20,17 +20,14 @@ import { AmbientBirds } from './tree3d/AmbientBirds';
 import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
 import { TransparencyPopover } from './tree3d/TransparencyPopover';
 import { PlantsLayer } from './tree3d/PlantsLayer';
-import { useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
+import { settingsForTier, useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
 
 const GROUND_Y = -0.01;
 const DEFAULT_CAM = new THREE.Vector3(0, 4.0, 13);
 const TARGET = new THREE.Vector3(0, 3.4, 0);
-// Mobile framing: pulled in from 16 → 13.5 with a wider fov so the canopy fills
-// the phone frame while staying clear of the headline / donors panel.
-const MOBILE_CAM = new THREE.Vector3(0, 4.2, 13.5);
-const MOBILE_TARGET = new THREE.Vector3(0, 3.5, 0);
-const MOBILE_BASE_DIST = 13.5;
-const MOBILE_FOV = 36;
+const MOBILE_CAM = new THREE.Vector3(0, 4.4, 16);
+const MOBILE_TARGET = new THREE.Vector3(0, 3.6, 0);
+const MOBILE_BASE_DIST = 16;
 
 /**
  * Mobile rebalance: spend the budget on tone mapping, MSAA, shadows and canopy
@@ -42,9 +39,9 @@ function mobileSettings(s: TierSettings): TierSettings {
     ...s,
     dprCap: 2,
     shadows: true,
-    shadowMapSize: s.tier === 'high' ? 1024 : 512,
+    shadowMapSize: 1024,
     antialias: true,
-    leafCount: s.tier === 'high' ? 6000 : 4500,
+    leafCount: 4200,
   };
 }
 
@@ -400,7 +397,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
 
   return (
     <>
-      <DayNightLights shadowSize={settings.shadowMapSize} shadowBlur={settings.shadows && settings.tier === 'high' ? 25 : 6} />
+      <DayNightLights shadowSize={settings.shadowMapSize} shadowBlur={isMobile ? 5 : settings.shadows && settings.tier === 'high' ? 25 : 6} tightShadow={isMobile} />
       {!isMobile && <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />}
       {isMobile && <hemisphereLight args={['#cfe8d8', '#3a4a3a', 0.45]} />}
       <fog attach="fog" args={isMobile ? ['#DCE6D5', 25, 70] : ['#DCE6D5', 18, 45]} />
@@ -461,26 +458,6 @@ function WindTracker() {
   return null;
 }
 
-function DeferredEnvironment() {
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    let frame = 0;
-    const timeout = window.setTimeout(() => {
-      frame = window.requestAnimationFrame(() => setReady(true));
-    }, 900);
-
-    return () => {
-      window.clearTimeout(timeout);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, []);
-
-  if (!ready) return null;
-
-  return <Environment preset="forest" background={false} />;
-}
-
 function readForcedTier(): DeviceTier | undefined {
   if (typeof window === 'undefined') return undefined;
   try {
@@ -504,16 +481,23 @@ export function Tree3DScene() {
   // Canvas never re-initialises. `?tier3d=low|medium|high` forces a tier for QA.
   const forced = useMemo(() => readForcedTier(), []);
   const { settings, initialTier, requestDowngrade } = useDeviceTier(forced);
+  const effectiveSettings = useMemo(
+    () => (isMobile ? mobileSettings(settings) : settings),
+    [isMobile, settings],
+  );
 
   // DPR follows the tier cap; changing it later only calls setPixelRatio in place.
   const dpr = useMemo<[number, number]>(() => {
-    const max = settings.dprCap;
+    const max = effectiveSettings.dprCap;
     const d = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, max) : max;
     return [d, d];
-  }, [settings.dprCap]);
+  }, [effectiveSettings.dprCap]);
   const enablePost = false;
   // Antialias must be fixed at context creation time — derived from the first tier.
-  const antialias = useMemo(() => initialTier !== 'low', [initialTier]);
+  const antialias = useMemo(
+    () => (isMobile ? mobileSettings(settingsForTier(initialTier)).antialias : initialTier !== 'low'),
+    [initialTier, isMobile],
+  );
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -582,7 +566,7 @@ export function Tree3DScene() {
             dpr={dpr}
             inView={effectiveInView}
             enablePost={enablePost}
-            settings={settings}
+            settings={effectiveSettings}
             antialias={antialias}
             isMobile={isMobile}
             onSlow={requestDowngrade}
@@ -626,9 +610,9 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
         gl={{
           antialias,
           alpha: true,
-          powerPreference: isMobile ? 'low-power' : 'high-performance',
-          toneMapping: isMobile ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping,
-          toneMappingExposure: isMobile ? 1 : 1.05,
+          powerPreference: isMobile && settings.tier === 'low' ? 'low-power' : 'high-performance',
+          toneMapping: isMobile && settings.tier === 'low' ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping,
+          toneMappingExposure: isMobile && settings.tier === 'low' ? 1 : 1.05,
         }}
 
         style={{ background: 'transparent' }}
@@ -668,9 +652,6 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
           <Scene settings={settings} isMobile={isMobile} />
         </Suspense>
 
-        <Suspense fallback={null}>
-          <DeferredEnvironment />
-        </Suspense>
       </Canvas>
     </>
   );

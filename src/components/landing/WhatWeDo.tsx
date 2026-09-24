@@ -2,19 +2,20 @@ import { Link } from 'react-router-dom';
 import {
   animate,
   motion,
-  useInView,
   useMotionValue,
+  useMotionValueEvent,
   useReducedMotion,
+  useScroll,
   useTransform,
   type MotionValue,
 } from 'motion/react';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 const GOLD = 'hsl(var(--gold))';
 const EMERALD = 'hsl(var(--primary))';
 const VERIFY = 'hsl(var(--verify))';
-const MASTER_SECONDS = 6;
 
 type ArtProps = { progress: MotionValue<number>; still: boolean; offset: number };
 
@@ -245,31 +246,121 @@ function ApplyDoorIcon() {
   return <svg viewBox="0 0 40 40" className="h-10 w-10 text-gold" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="hsl(var(--gold) / 0.12)" stroke="currentColor" strokeWidth="2" /><path d="M12 19h16l-2 11H14zm3 0v-3a5 5 0 0 1 10 0v3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 
+type Step = (typeof steps)[number];
+
+function MobileJourneyStep({ step, index, progress }: { step: Step; index: number; progress: MotionValue<number> }) {
+  const Art = step.Art;
+  const bandStart = index / steps.length;
+  const bandEnd = (index + 1) / steps.length;
+  const localProgress = useTransform(progress, [bandStart, bandEnd], [0, 0.99], { clamp: true });
+  const opacity = useTransform(progress, (value) => {
+    const local = (value - bandStart) / (bandEnd - bandStart);
+    if (index > 0 && local < 0) return Math.max(0, 1 + local * 8);
+    if (index < steps.length - 1 && local > 0.86) return Math.max(0, (1 - local) / 0.14);
+    return local >= 0 || index === 0 ? 1 : 0;
+  });
+  const y = useTransform(progress, (value) => {
+    const local = (value - bandStart) / (bandEnd - bandStart);
+    if (local < 0) return Math.min(18, -local * 144);
+    if (index < steps.length - 1 && local > 0.86) return Math.max(-18, -(local - 0.86) * 129);
+    return 0;
+  });
+
+  return (
+    <motion.li className="absolute inset-0 flex flex-col items-center justify-center text-center" style={{ opacity, y }} aria-hidden={undefined}>
+      <div className="h-[min(55vw,260px)] w-[min(55vw,260px)] overflow-hidden">
+        <Art progress={localProgress} still={false} offset={0} />
+      </div>
+      <div className="mt-5 flex items-center justify-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold" style={{ color: step.accent, borderColor: step.accent }}>{index + 1}</span>
+        <h3 className="text-xl font-semibold text-foreground sm:text-2xl">{step.title}</h3>
+      </div>
+      <p className="mt-3 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">{step.body}</p>
+    </motion.li>
+  );
+}
+
+function ProgressSegment({ progress, index }: { progress: MotionValue<number>; index: number }) {
+  const start = index / steps.length;
+  const end = (index + 1) / steps.length;
+  const scaleX = useTransform(progress, [start, end], [0, 1], { clamp: true });
+
+  return (
+    <span className="relative block h-1.5 w-full overflow-hidden rounded-full bg-border">
+      <motion.span className="absolute inset-0 origin-left rounded-full bg-primary" style={{ scaleX }} />
+    </span>
+  );
+}
+
 export function WhatWeDo() {
   const reduced = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
-  const inView = useInView(sectionRef, { margin: '120px' });
+  const mobileJourneyRef = useRef<HTMLDivElement>(null);
   const progress = useMotionValue(0);
   const still = !!reduced;
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
+  const { scrollYProgress: desktopScroll } = useScroll({ target: sectionRef, offset: ['start end', 'end start'] });
+  const { scrollYProgress: mobileScroll } = useScroll({ target: mobileJourneyRef, offset: ['start start', 'end end'] });
+  const idleTimerRef = useRef<number | null>(null);
+  const idleAnimationRef = useRef<ReturnType<typeof animate> | null>(null);
 
   useEffect(() => {
-    if (still || !inView) return;
-    const controls = animate(progress, 1, { duration: MASTER_SECONDS, ease: 'linear', repeat: Infinity });
-    return () => controls.stop();
-  }, [inView, progress, still]);
+    const query = window.matchMedia('(min-width: 1024px)');
+    const update = () => setIsDesktop(query.matches);
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
 
-  const connectorPhase = useTransform(progress, (value) => value);
+  const startIdleMotion = useCallback(() => {
+    if (still || !isDesktop) return;
+    idleAnimationRef.current?.stop();
+    const current = progress.get();
+    idleAnimationRef.current = animate(progress, current + 1, {
+      duration: 12,
+      ease: 'linear',
+      repeat: Infinity,
+    });
+  }, [isDesktop, progress, still]);
+
+  useMotionValueEvent(desktopScroll, 'change', (value) => {
+    if (still || !isDesktop) return;
+    idleAnimationRef.current?.stop();
+    progress.set(Math.max(0, Math.min(1, (value - 0.12) / 0.66)));
+    if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = window.setTimeout(startIdleMotion, 1500);
+  });
+
+  useMotionValueEvent(mobileScroll, 'change', (value) => {
+    if (!still && !isDesktop) progress.set(value);
+  });
+
+  useEffect(() => () => {
+    idleAnimationRef.current?.stop();
+    if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
+  }, []);
+
+  const connectorPhase = useTransform(progress, (value) => ((value % 1) + 1) % 1);
   const connectorPosition = mapValue(connectorPhase, [0, 0.12, 0.24, 0.36, 0.62, 1], [0, 0, 33, 66, 100, 100]);
   const connectorLeft = useTransform(connectorPosition, (value) => `${value}%`);
-  const connectorTop = useTransform(connectorPosition, (value) => `${value}%`);
   const chevronY = mapValue(progress, [0, 0.5, 1], [0, 5, 0]);
 
   const restartSharedClock = () => {
-    if (!still && typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches) progress.set(0);
+    if (!still && isDesktop && typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches) {
+      idleAnimationRef.current?.stop();
+      progress.set(0);
+      startIdleMotion();
+    }
+  };
+
+  const jumpToStep = (index: number) => {
+    const container = mobileJourneyRef.current;
+    if (!container) return;
+    const scrollable = container.offsetHeight - window.innerHeight;
+    window.scrollTo({ top: container.offsetTop + scrollable * (index / 4), behavior: 'smooth' });
   };
 
   return (
-    <section ref={sectionRef} className="relative overflow-hidden bg-background py-20 md:py-28">
+    <section ref={sectionRef} className="relative overflow-x-clip bg-background py-20 md:py-28">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(60% 40% at 12% 18%, hsl(var(--gold) / 0.05), transparent 70%), radial-gradient(60% 40% at 88% 82%, hsl(var(--primary) / 0.05), transparent 70%)' }} />
       <div className="container relative mx-auto px-4">
         <div className="max-w-3xl">
@@ -278,16 +369,51 @@ export function WhatWeDo() {
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">CouponDonation turns your donation into coupons, gift cards and credits — so it arrives as food, medicine or transport, never as cash. And you can always see exactly where it went.</p>
         </div>
 
-        <div className="relative mt-14 md:mt-16">
+        {still ? (
+          <div className="relative mt-14 md:mt-16">
+            <ol className="relative grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-4">
+              {steps.map((step, index) => {
+                const Art = step.Art;
+                return (
+                  <li key={step.title} className="relative pl-8 lg:pl-0">
+                    <div className="mx-auto h-[130px] w-[130px] overflow-hidden sm:h-[150px] sm:w-[150px] lg:mx-0">
+                      <Art progress={progress} still offset={step.offset} />
+                    </div>
+                    <div className="mt-4 flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full border text-xs font-semibold" style={{ color: step.accent, borderColor: step.accent }}>{index + 1}</span>
+                      <h3 className="text-lg font-semibold text-foreground md:text-xl">{step.title}</h3>
+                    </div>
+                    <p className="mt-2 text-base leading-relaxed text-muted-foreground">{step.body}</p>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        ) : (
+          <>
+            <div ref={mobileJourneyRef} className="relative mt-8 h-[240svh] lg:hidden">
+              <div className="sticky top-0 flex h-[100svh] flex-col items-center justify-center overflow-hidden py-6">
+                <ol className="relative h-[min(68svh,620px)] w-full">
+                  {steps.map((step, index) => (
+                    <MobileJourneyStep key={step.title} step={step} index={index} progress={mobileScroll} />
+                  ))}
+                </ol>
+                <div className="mt-3 grid w-full max-w-sm grid-cols-4 gap-2" role="navigation" aria-label="How it works steps">
+                  {steps.map((step, index) => (
+                    <Button key={step.title} type="button" variant="ghost" size="sm" className="group h-11 min-w-11 px-1" onClick={() => jumpToStep(index)} aria-label={`Go to step ${index + 1}: ${step.title}`}>
+                      <ProgressSegment progress={mobileScroll} index={index} />
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="relative mt-14 hidden md:mt-16 lg:block">
           <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[86px] hidden lg:block">
             <div className="relative mx-[12%] h-px bg-border">
               {!still && <motion.span className="absolute -top-[3px] h-[7px] w-[7px] rounded-full bg-primary/70" style={{ left: connectorLeft }} />}
             </div>
           </div>
-          <div aria-hidden="true" className="pointer-events-none absolute bottom-6 left-[7px] top-6 w-px bg-border lg:hidden">
-            {!still && <motion.span className="absolute -left-[3px] h-[7px] w-[7px] rounded-full bg-primary/70" style={{ top: connectorTop }} />}
-          </div>
-
           <ol className="relative grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-4">
             {steps.map((step, index) => {
               const Art = step.Art;
@@ -305,7 +431,9 @@ export function WhatWeDo() {
               );
             })}
           </ol>
-        </div>
+            </div>
+          </>
+        )}
 
         <div className="mt-12 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.06] to-gold/[0.05] px-6 py-8 shadow-[0_18px_48px_-30px_hsl(var(--primary)/0.45)] md:mt-16 md:px-10 md:py-10">
           <div className="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_280px] md:gap-12">

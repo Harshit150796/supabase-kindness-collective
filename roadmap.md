@@ -20,7 +20,10 @@
 - [x] Add semantic verification blue tokens and reserve them for the proof moment.
 - [x] Verify build and layouts at 320, 360, 390, 430, 768, 1024, and 1440 pixels.
 
-## In progress
-- [ ] Complete tier-gated mobile tree rendering quality without changing camera framing or protected colors.
-- [ ] Rebuild WhatWeDo motion as reversible scroll-driven mobile/tablet and desktop experiences.
-- [ ] Measure mobile rendering and verify all requested widths, reduced motion, scrolling, and errors.
+## Done
+- [x] Complete tier-gated mobile tree rendering quality without changing camera framing or protected colors.
+- [x] Rebuild WhatWeDo motion as reversible scroll-driven mobile/tablet and desktop experiences.
+- [x] Measure mobile rendering and verify all requested widths, reduced motion, scrolling, and errors.
+- [x] Verify mobile alpha-to-coverage activation explicitly under MSAA.
+- [x] Confirm WhatWeDo uses only native sticky/scroll progress, reverses continuously at 390px, and uses 100svh.
+- [x] Confirm desktop idle-resume and pixel-identical four-column layout.
