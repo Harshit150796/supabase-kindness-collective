@@ -1,35 +1,35 @@
-# Mobile tree quality and scroll-driven How It Works
+# Restore tree glow and rebuild mobile How It Works motion
 
-## Goal
-Improve phone rendering by reallocating GPU work from excess resolution to smoothing, tone mapping, and shadows, then make the existing How It Works story reversible and controlled by native page scrolling.
+## Confirmed diagnosis
+- The tree has direct lights and ACES tone mapping, but no `scene.environment`; removing the downloaded forest HDR also removed image-based reflections from every standard material.
+- Mobile and desktop exposure is currently 1.05, while low-tier mobile alone uses no tone mapping at exposure 1.
+- The How It Works section does not currently use `overflow-hidden`, but it does use `overflow-x-clip` on the section itself. No higher homepage wrapper shown in the current source adds overflow, transforms, filters, containment, or a fixed height. Remove section-level clipping entirely and isolate decorative washes in their own clipped layer.
+- The current mobile experience is four absolutely overlaid scenes cross-fading. It is scroll-driven, but it is not one continuous transforming object.
 
-## Part 1 — Mobile tree quality
-- Preserve all colors, materials, lighting, fog, scene geometry, scale, silhouette, and the approved camera framing at mobile position `z=16` with `fov=32`.
-- Remove the unfinished closer-camera changes currently present in the file.
-- Resolve mobile settings from the existing device tier system:
-  - Low: DPR 1.5, antialias off, shadows off, `NoToneMapping`, low-power GPU preference, 2,500 leaves.
-  - Medium/high: DPR capped at 2, antialias on, shadows on, `ACESFilmicToneMapping` at exposure 1.05, high-performance preference, 1,024 shadow map, modest 4–6 sample blur, and about 4,200 leaves.
-- Keep desktop settings unchanged and keep the existing one-step FPS downgrade active without recreating the canvas.
-- Ensure leaf alpha-to-coverage continues to detect the antialiased WebGL context on supported phones.
-- Capture a reproducible 390px baseline from the current mobile rendering before editing, then capture the updated result under the same emulation and record sampled FPS for both.
+## Part 1 — Restore no-download environment lighting
+- Add a small scene helper using Three.js `RoomEnvironment` and the existing renderer.
+- Generate one PMREM texture on mount, assign only `scene.environment`, and restore the prior environment reference while disposing both PMREM generator and texture on unmount.
+- Add conservative `envMapIntensity` values to the existing tree materials without changing leaf, bark, light, fog, Sky, or CSS colors.
+- Raise exposure within the requested 1.15–1.35 range, selecting the lowest value that visibly restores the earlier bright, alive foliage consistently on mobile and desktop.
+- Capture 390px and 1440px before/after images and compare loaded network URLs to prove no new environment asset is fetched.
 
-## Part 2 — Scroll-driven How It Works
-- Keep every existing word, the four desktop columns, transparency band, proof receipt, dignity line, doors, closing line, and all design-token colors unchanged.
-- Replace the six-second timer with motion-library scroll progress.
-- Below `lg`, use a roughly 240svh container with a `sticky top-0 h-[100svh]` stage:
-  - Divide progress into four equal bands.
-  - Show one large, legible illustration and its existing number, title, and body at a time.
-  - Cross-fade and gently slide between steps in both scroll directions.
-  - Scrub each illustration from its band-local progress.
-  - Replace the long vertical connector with four 44px-minimum tappable progress segments that scroll natively to their bands.
-  - Release naturally into the unchanged transparency content after step four.
-- At `lg` and above, preserve the exact approved grid and use section scroll progress to drive the shared master phase, phase offsets, connector dot, and receipt.
-- After about 1.5 seconds of desktop scroll inactivity, gently advance from the current phase; any renewed scrolling takes control immediately. Preserve fine-pointer hover replay.
-- For reduced motion, disable sticky pinning and scrubbing and show the existing four-step stacked/grid layout with all illustrations settled and readable.
+## Part 2 — Continuous mobile transformation
+- Remove `overflow-x-clip` from the section and place the existing decorative radial washes inside an absolute `inset-0 overflow-hidden` layer behind all content.
+- Preserve the `240svh` journey and `sticky top-0 h-[100svh]` stage, with native page scrolling and no wheel/touch cancellation.
+- Replace the four mobile illustration swaps with one large centered transformation scene driven continuously by the existing mobile `useScroll` value:
+  1. coins converge into the coupon;
+  2. the coupon is scanned and reshapes into a grocery bag;
+  3. groceries fill the bag;
+  4. the bag resolves into the verified receipt/notification.
+- Keep a permanent visual anchor through every handoff so the object never disappears. Add a subtle token-colored radial aura and small parallax between art and copy.
+- Animate each step's existing number, title, and body with reversible spring motion while preserving every word.
+- Keep four 44px-minimum tappable progress segments with band-local fill and native scrolling to each band.
+- Keep the approved desktop four-column layout and its scroll/idle behavior unchanged.
+- Keep reduced motion unpinned, unscrubbed, stacked, static, and fully readable.
 
 ## Verification
-- Confirm slow forward and reverse touch scrolling at 390px, native momentum behavior, large artwork, tappable indicators, and natural release.
-- Confirm the desktop four-column layout is visually unchanged except for scroll-driven motion.
-- Check no horizontal overflow at 320, 360, 390, 430, 768, 1024, and 1440px.
-- Verify reduced motion, receipt resting on 2036, no console/runtime errors, and a clean build.
-- Report the measured baseline/updated FPS and any remaining quality limitation honestly.
+- Record baseline screenshots before edits, then post-change screenshots at several 390px scroll depths plus 390px and 1440px tree views.
+- At 390px, verify the sticky top remains fixed while document scroll changes, all morph phases are visible, reverse scrolling retraces continuously, and computed stage height follows `100svh` after viewport-height changes.
+- Audit computed styles for every sticky ancestor and confirm no overflow, transform, filter, backdrop-filter, perspective, containment, or fixed-height blocker remains.
+- Confirm no `preventDefault` exists in What We Do, no horizontal overflow at 320, 360, 390, 430, 768, 1024, and 1440px, reduced-motion behavior, the 2036 resting receipt, and the unchanged desktop grid.
+- Confirm the environment adds no network request, and finish with clean typecheck/build, console, and runtime results.
