@@ -301,7 +301,7 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
         data-mobile-step-art
         className="relative h-[clamp(200px,60vw,260px)] w-[clamp(200px,60vw,260px)] shrink-0 overflow-hidden"
         initial={false}
-        animate={{ opacity: reduced || inView ? 1 : 0.45, scale: reduced || inView ? 1 : 0.94, y: reduced || inView ? 0 : 12 }}
+        animate={{ opacity: reduced || inView ? 1 : 0.45, scale: 1, y: reduced || inView ? 0 : 12 }}
         transition={{ type: 'spring', stiffness: 190, damping: 24 }}
       >
         <Art progress={progress} still={reduced} offset={step.offset} />
