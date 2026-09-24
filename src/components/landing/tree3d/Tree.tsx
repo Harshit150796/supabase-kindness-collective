@@ -143,6 +143,7 @@ export function Tree(_props: { leafCount?: number; lowPower?: boolean }) {
           m.transparent = false;
           m.roughness = 0.78;
           m.metalness = 0;
+          m.envMapIntensity = 0.82;
           m.color.setRGB(0.92, 1.02, 0.85);
           tuneTexture(m.map, caps.aniso);
           leafMap = m.map ?? null;
@@ -151,6 +152,7 @@ export function Tree(_props: { leafCount?: number; lowPower?: boolean }) {
         } else {
           m.roughness = 0.92;
           m.metalness = 0.02;
+          m.envMapIntensity = 0.62;
           tuneTexture(m.map, caps.aniso);
         }
         m.needsUpdate = true;
