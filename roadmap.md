@@ -28,9 +28,9 @@
 - [x] Confirm WhatWeDo uses only native sticky/scroll progress, reverses continuously at 390px, and uses 100svh.
 - [x] Confirm desktop idle-resume and pixel-identical four-column layout.
 
-## In progress
-- [ ] Restore the tree's bright ambient sheen with a procedural no-download environment and matched exposure.
-- [ ] Replace the mobile How It Works cross-fades with one reversible continuous transformation.
-- [ ] Prove sticky pinning, reverse motion, viewport stability, responsive overflow safety, and clean runtime behavior.
-- [ ] Record the actual 390px branch, sticky top, container height, and scroll-progress values before changing the mobile story.
-- [ ] Inspect every morph handoff for a continuously visible object with no empty or ghosted frame.
+## Done
+- [x] Restore the tree's bright ambient sheen with a procedural no-download environment and matched exposure.
+- [x] Replace the mobile How It Works cross-fades with one reversible continuous transformation.
+- [x] Prove sticky pinning, reverse motion, viewport stability, responsive overflow safety, and clean runtime behavior.
+- [x] Record the actual 390px branch, sticky top, container height, and scroll-progress values before changing the mobile story.
+- [x] Inspect every morph handoff for a continuously visible object with no empty or ghosted frame.
