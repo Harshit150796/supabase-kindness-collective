@@ -203,7 +203,26 @@ export function Tree(_props: { leafCount?: number; lowPower?: boolean }) {
   });
 
   useEffect(() => {
+    let leafMaterialCount = 0;
+    let coverageMaterialCount = 0;
+    prepared.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      materials.forEach((material) => {
+        const standard = material as THREE.MeshStandardMaterial;
+        const isLeaf = standard.transparent || standard.alphaTest > 0 || /leaf|leaves|foliage/i.test(mesh.name) || /leaf|leaves/i.test(standard.name || '');
+        if (!isLeaf) return;
+        leafMaterialCount += 1;
+        if (standard.alphaToCoverage) coverageMaterialCount += 1;
+      });
+    });
+    gl.domElement.dataset.leafAlphaToCoverage = String(leafMaterialCount > 0 && coverageMaterialCount === leafMaterialCount);
+    gl.domElement.dataset.leafMaterialCount = String(leafMaterialCount);
+
     return () => {
+      delete gl.domElement.dataset.leafAlphaToCoverage;
+      delete gl.domElement.dataset.leafMaterialCount;
       prepared.traverse((obj) => {
         const mesh = obj as THREE.Mesh;
         if (mesh.isMesh) {
@@ -213,7 +232,7 @@ export function Tree(_props: { leafCount?: number; lowPower?: boolean }) {
         }
       });
     };
-  }, [prepared]);
+  }, [gl, prepared]);
 
   return <primitive ref={rootRef} object={prepared} />;
 }
