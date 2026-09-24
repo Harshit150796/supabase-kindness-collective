@@ -1,6 +1,8 @@
 import { brandList } from '@/data/brandLogos';
+import { MotionDebug, useMotionPreference } from '@/hooks/useMotionPreference';
 
 export const LiveActivityBar = () => {
+  const gentle = useMotionPreference() === 'gentle';
   return (
     <section
       aria-labelledby="redeemable-at-heading"
@@ -30,7 +32,11 @@ export const LiveActivityBar = () => {
               WebkitMaskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)',
             }}
           >
-            <div className="flex w-max motion-safe:animate-marquee motion-reduce:translate-x-0">
+            <MotionDebug />
+            <div
+              className="flex w-max animate-marquee hover:[animation-play-state:paused] active:[animation-play-state:paused]"
+              style={gentle ? { animationDuration: '60s' } : undefined}
+            >
               {[0, 1].map((group) => (
                 <div
                   key={group}

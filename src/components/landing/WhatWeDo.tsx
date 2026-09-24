@@ -5,7 +5,6 @@ import {
   useMotionValue,
   useMotionValueEvent,
   useInView,
-  useReducedMotion,
   useScroll,
   useTransform,
   type MotionValue,
@@ -13,6 +12,7 @@ import {
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useMotionPreference } from '@/hooks/useMotionPreference';
 
 const GOLD = 'hsl(var(--gold))';
 const EMERALD = 'hsl(var(--primary))';
@@ -338,11 +338,13 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
 }
 
 export function WhatWeDo() {
-  const reduced = useReducedMotion();
+  // Animations always play, even when the phone reports reduced motion
+  // (Battery Saver etc. switch that on silently).
+  useMotionPreference();
   const sectionRef = useRef<HTMLElement>(null);
   const mobileStepRefs = useRef<Array<HTMLLIElement | null>>([]);
   const progress = useMotionValue(0);
-  const still = reduced === true;
+  const still = false;
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
   const { scrollYProgress: desktopScroll } = useScroll({ target: sectionRef, offset: ['start end', 'end start'] });
   const idleTimerRef = useRef<number | null>(null);

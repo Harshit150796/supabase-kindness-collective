@@ -41,11 +41,6 @@ function getGpuString(): string {
  */
 export function detectDeviceTier(): DeviceTier {
   if (typeof window === 'undefined') return 'medium';
-  try {
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return 'low';
-  } catch {
-    /* ignore */
-  }
 
   const nav = (typeof navigator !== 'undefined' ? navigator : undefined) as
     | (Navigator & { deviceMemory?: number; hardwareConcurrency?: number })
