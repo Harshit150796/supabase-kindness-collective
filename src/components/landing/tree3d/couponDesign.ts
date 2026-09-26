@@ -1,44 +1,102 @@
 import * as THREE from 'three';
 
-export const TRAITS = ['TRANSPARENT', 'TRACEABLE', 'SECURE', 'RELIABLE'] as const;
-export type Trait = typeof TRAITS[number];
-
 export interface CouponData {
   brand: string;
+  /** File slug under /public/brand-logos/{logo}.svg (local, monochrome white). */
+  logo: string;
   color: string;
-  trait: Trait;
   amount: 5 | 10;
+  /** Optional dark plate behind the logo when white on the brand field is weak. */
+  plate?: string;
 }
 
-export function couponTextColor(hex: string): '#000000' | '#FFFFFF' {
-  const normalized = hex.replace('#', '');
-  if (normalized.length !== 6) return '#FFFFFF';
-  const r = Number.parseInt(normalized.slice(0, 2), 16);
-  const g = Number.parseInt(normalized.slice(2, 4), 16);
-  const b = Number.parseInt(normalized.slice(4, 6), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.62 ? '#000000' : '#FFFFFF';
+// Logos are white glyphs, so the card foreground is always white.
+export function couponTextColor(_hex: string): '#FFFFFF' {
+  return '#FFFFFF';
 }
 
-// Hash a string to deterministic int
-function hash(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
+// ---------------------------------------------------------------------------
+// Logo cache — each SVG is decoded ONCE, rasterised at 1024px, cropped to its
+// real glyph bounds (so aspect ratio is exact and the logo can fill the card),
+// then shared by every texture and HTML face.
+// ---------------------------------------------------------------------------
+const LOGO_RES = 1024;
+type LogoEntry = {
+  status: 'loading' | 'ready' | 'error';
+  canvas?: HTMLCanvasElement;
+  dataUrl?: string;
+  listeners: Set<() => void>;
+};
+const logos = new Map<string, LogoEntry>();
+
+function finish(entry: LogoEntry, status: 'ready' | 'error') {
+  entry.status = status;
+  entry.listeners.forEach((fn) => fn());
+  entry.listeners.clear();
 }
 
-export function pickTrait(brand: string): Trait {
-  return TRAITS[hash(brand) % TRAITS.length];
+function loadLogo(slug: string): LogoEntry {
+  const existing = logos.get(slug);
+  if (existing) return existing;
+  const entry: LogoEntry = { status: 'loading', listeners: new Set() };
+  logos.set(slug, entry);
+  const img = new Image();
+  img.decoding = 'async';
+  img.src = `/brand-logos/${slug}.svg`;
+  img
+    .decode()
+    .then(() => {
+      const full = document.createElement('canvas');
+      full.width = LOGO_RES;
+      full.height = LOGO_RES;
+      const fctx = full.getContext('2d')!;
+      fctx.drawImage(img, 0, 0, LOGO_RES, LOGO_RES);
+      const { data } = fctx.getImageData(0, 0, LOGO_RES, LOGO_RES);
+      let minX = LOGO_RES, minY = LOGO_RES, maxX = -1, maxY = -1;
+      for (let y = 0; y < LOGO_RES; y++) {
+        for (let x = 0; x < LOGO_RES; x++) {
+          if (data[(y * LOGO_RES + x) * 4 + 3] > 8) {
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+      if (maxX < 0) throw new Error('empty logo');
+      const w = maxX - minX + 1;
+      const h = maxY - minY + 1;
+      // Re-rasterise the cropped region so the long edge is >= 1024px.
+      const k = LOGO_RES / Math.max(w, h);
+      const crop = document.createElement('canvas');
+      crop.width = Math.round(w * k);
+      crop.height = Math.round(h * k);
+      const cctx = crop.getContext('2d')!;
+      cctx.imageSmoothingQuality = 'high';
+      cctx.drawImage(img, -minX * k, -minY * k, LOGO_RES * k, LOGO_RES * k);
+      entry.canvas = crop;
+      entry.dataUrl = crop.toDataURL('image/png');
+      finish(entry, 'ready');
+    })
+    .catch(() => finish(entry, 'error'));
+  return entry;
 }
 
-function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
-) {
+export function getLogo(slug: string) {
+  return loadLogo(slug);
+}
+
+export function onLogoSettled(slug: string, fn: () => void): () => void {
+  const entry = loadLogo(slug);
+  if (entry.status !== 'loading') {
+    fn();
+    return () => undefined;
+  }
+  entry.listeners.add(fn);
+  return () => entry.listeners.delete(fn);
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.arcTo(x + w, y, x + w, y + h, r);
@@ -48,8 +106,62 @@ function roundRect(
   ctx.closePath();
 }
 
+/** Logo box as a fraction of the card, shared with the HTML face so both paths match. */
+export const LOGO_BOX = { w: 0.74, h: 0.66, cy: 0.47 };
+
+function paintCoupon(ctx: CanvasRenderingContext2D, W: number, H: number, S: number, data: CouponData) {
+  const entry = loadLogo(data.logo);
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = data.color;
+  roundRect(ctx, 8 * S, 8 * S, W - 16 * S, H - 16 * S, 28 * S);
+  ctx.fill();
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.globalAlpha = 0.9;
+  ctx.lineWidth = 8 * S;
+  roundRect(ctx, 8 * S, 8 * S, W - 16 * S, H - 16 * S, 28 * S);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  const inset = data.plate ? 0.78 : 1;
+  const boxW = W * LOGO_BOX.w * inset;
+  const boxH = H * LOGO_BOX.h * inset;
+  const cx = W / 2;
+  const cy = H * LOGO_BOX.cy;
+
+  if (data.plate) {
+    ctx.fillStyle = data.plate;
+    roundRect(ctx, cx - boxW / 2 - 18 * S, cy - boxH / 2 - 14 * S, boxW + 36 * S, boxH + 28 * S, 22 * S);
+    ctx.fill();
+  }
+
+  if (entry.status === 'ready' && entry.canvas) {
+    const lw = entry.canvas.width;
+    const lh = entry.canvas.height;
+    const k = Math.min(boxW / lw, boxH / lh); // preserve aspect ratio exactly
+    const dw = lw * k;
+    const dh = lh * k;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(entry.canvas, cx - dw / 2, cy - dh / 2, dw, dh);
+  } else {
+    // Wordmark fallback (while decoding, or permanently if the logo failed).
+    ctx.fillStyle = '#FFFFFF';
+    const size = data.brand.length >= 9 ? 66 : data.brand.length >= 7 ? 76 : 90;
+    ctx.font = `900 ${size * S}px system-ui, -apple-system, Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(data.brand.toUpperCase(), cx, cy, boxW);
+  }
+
+  // Secondary amount, small in the bottom-right corner (dark on light fields).
+  ctx.fillStyle = data.plate ?? '#FFFFFF';
+  ctx.font = `800 ${34 * S}px system-ui, -apple-system, Arial`;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(`$${data.amount}`, W - 34 * S, H - 30 * S);
+}
+
 export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
-  // 4× resolution upgrade for crisp coupons (was 512×320)
   const S = 4;
   const W = 512 * S;
   const H = 320 * S;
@@ -57,37 +169,7 @@ export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-
-  const foreground = couponTextColor(data.color);
-
-  // At its final on-screen size this is an icon, not a document: one dominant
-  // brand field and one amount are the only two pieces of information.
-  ctx.fillStyle = data.color;
-  roundRect(ctx, 8 * S, 8 * S, W - 16 * S, H - 16 * S, 28 * S);
-  ctx.fill();
-
-  // A strong light/dark edge survives downsampling without adding another hue.
-  ctx.strokeStyle = foreground;
-  ctx.globalAlpha = 0.92;
-  ctx.lineWidth = 10 * S;
-  roundRect(ctx, 8 * S, 8 * S, W - 16 * S, H - 16 * S, 28 * S);
-  ctx.stroke();
-  ctx.globalAlpha = 1;
-
-  // Brand wordmark — deliberately oversized and allowed nearly the full width.
-  ctx.fillStyle = foreground;
-  const brandSize = data.brand.length >= 9 ? 54 : data.brand.length >= 7 ? 62 : 72;
-  ctx.font = `900 ${brandSize * S}px system-ui, -apple-system, Arial`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(data.brand.toUpperCase(), W / 2, 112 * S, 448 * S);
-
-  // Amount
-  ctx.fillStyle = foreground;
-  ctx.font = `900 ${116 * S}px system-ui, -apple-system, Arial`;
-  ctx.fillText(`$${data.amount}`, W / 2, 238 * S);
+  paintCoupon(ctx, W, H, S, data);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.anisotropy = 16;
@@ -96,21 +178,32 @@ export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
   tex.generateMipmaps = true;
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.needsUpdate = true;
+
+  if (loadLogo(data.logo).status === 'loading') {
+    onLogoSettled(data.logo, () => {
+      paintCoupon(ctx, W, H, S, data);
+      tex.needsUpdate = true;
+    });
+  }
   return tex;
 }
 
 // Curated set of coupon fruits
 export const COUPON_FRUITS: CouponData[] = [
-  { brand: 'Walmart', color: '#0071CE', trait: pickTrait('Walmart'), amount: 10 },
-  { brand: 'Uber', color: '#000000', trait: pickTrait('Uber'), amount: 5 },
-  { brand: 'DoorDash', color: '#FF3008', trait: pickTrait('DoorDash'), amount: 10 },
-  { brand: 'Target', color: '#CC0000', trait: pickTrait('Target'), amount: 5 },
-  { brand: 'Kroger', color: '#0066B2', trait: pickTrait('Kroger'), amount: 10 },
-  { brand: 'Chipotle', color: '#A81612', trait: pickTrait('Chipotle'), amount: 5 },
-  { brand: 'Starbucks', color: '#00704A', trait: pickTrait('Starbucks'), amount: 5 },
-  { brand: 'Amazon', color: '#FF9900', trait: pickTrait('Amazon'), amount: 10 },
-  { brand: 'CVS', color: '#CC0000', trait: pickTrait('CVS'), amount: 5 },
-  { brand: 'Costco', color: '#E31837', trait: pickTrait('Costco'), amount: 10 },
-  { brand: 'Subway', color: '#008C15', trait: pickTrait('Subway'), amount: 5 },
-  { brand: 'Aldi', color: '#00529B', trait: pickTrait('Aldi'), amount: 10 },
+  { brand: 'Walmart', logo: 'walmart', color: '#0071CE', amount: 10 },
+  { brand: 'Uber', logo: 'uber', color: '#000000', amount: 5 },
+  { brand: 'DoorDash', logo: 'doordash', color: '#FF3008', amount: 10 },
+  { brand: 'Target', logo: 'target', color: '#CC0000', amount: 5 },
+  { brand: 'Instacart', logo: 'instacart', color: '#43B02A', amount: 10 },
+  { brand: 'Lyft', logo: 'lyft', color: '#FF00BF', amount: 5 },
+  { brand: 'Starbucks', logo: 'starbucks', color: '#00704A', amount: 5 },
+  // White on #FF9900 is ~2:1 contrast — a dark plate (Amazon's own navy) carries the logo.
+  { brand: 'Amazon', logo: 'amazon', color: '#FF9900', amount: 10, plate: '#232F3E' },
+  { brand: 'Grubhub', logo: 'grubhub', color: '#F63440', amount: 5 },
+  { brand: "McDonald's", logo: 'mcdonalds', color: '#DA291C', amount: 10 },
+  { brand: 'eBay', logo: 'ebay', color: '#E53238', amount: 5 },
+  { brand: 'Aldi', logo: 'aldi', color: '#00529B', amount: 10 },
 ];
+
+// Preload + decode all twelve once at module initialisation.
+if (typeof window !== 'undefined') COUPON_FRUITS.forEach((f) => loadLogo(f.logo));

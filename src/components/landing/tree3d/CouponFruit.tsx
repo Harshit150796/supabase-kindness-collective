@@ -2,7 +2,7 @@ import { useMemo, useRef, useEffect, useState } from 'react';
 import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Html } from '@react-three/drei';
-import { couponTextColor, drawCouponTexture, type CouponData } from './couponDesign';
+import { drawCouponTexture, getLogo, onLogoSettled, LOGO_BOX, type CouponData } from './couponDesign';
 import type { FallingDonation } from '@/hooks/useFallingDonations';
 import { useInteraction } from './InteractionContext';
 import { SparkleBurst } from './SparkleBurst';
@@ -77,46 +77,61 @@ function getCouponGeom() {
   return couponGeomCache;
 }
 
-// Crisp vector coupon face rendered as DOM via Drei <Html transform>.
-// Designed at ~920×600 px so it stays sharp when scaled down into 3D.
+// Crisp coupon face rendered as DOM via Drei <Html transform>. Uses the same
+// cached, cropped logo raster and LOGO_BOX layout as the canvas texture.
 function CouponFace({ data }: { data: CouponData }) {
-  const foreground = couponTextColor(data.color);
-  const brandSize = data.brand.length >= 9 ? 102 : data.brand.length >= 7 ? 116 : 132;
+  const [, force] = useState(0);
+  useEffect(() => onLogoSettled(data.logo, () => force((n) => n + 1)), [data.logo]);
+  const entry = getLogo(data.logo);
+  const inset = data.plate ? 0.78 : 1;
+  const boxW = 920 * LOGO_BOX.w * inset;
+  const boxH = 600 * LOGO_BOX.h * inset;
   return (
     <div
       data-coupon-face={data.brand}
+      data-logo-status={entry.status}
       style={{
+        position: 'relative',
         width: 920,
         height: 600,
         borderRadius: 56,
         background: data.color,
-        border: `18px solid ${foreground}`,
+        border: '14px solid #FFFFFF',
         boxSizing: 'border-box',
         overflow: 'hidden',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
         boxShadow: '0 18px 60px rgba(0,0,0,0.18)',
-        color: foreground,
+        color: '#FFFFFF',
       }}
     >
       <div
         style={{
-          width: '90%',
-          fontSize: brandSize,
-          fontWeight: 900,
-          lineHeight: 1,
-          textAlign: 'center',
-          textTransform: 'uppercase',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
+          position: 'absolute',
+          left: '50%',
+          top: `${LOGO_BOX.cy * 100}%`,
+          transform: 'translate(-50%, -50%)',
+          width: boxW + (data.plate ? 64 : 0),
+          height: boxH + (data.plate ? 50 : 0),
+          borderRadius: 40,
+          background: data.plate ?? 'transparent',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
-        {data.brand}
+        {entry.status === 'ready' && entry.dataUrl ? (
+          <img
+            src={entry.dataUrl}
+            alt={data.brand}
+            style={{ maxWidth: boxW, maxHeight: boxH, objectFit: 'contain', display: 'block' }}
+          />
+        ) : (
+          <div style={{ fontSize: data.brand.length >= 9 ? 118 : 140, fontWeight: 900, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+            {data.brand}
+          </div>
+        )}
       </div>
-      <div style={{ fontSize: 224, fontWeight: 900, lineHeight: 1, marginTop: 46 }}>
+      <div style={{ position: 'absolute', right: 50, bottom: 34, fontSize: 62, fontWeight: 800, lineHeight: 1, color: data.plate ?? '#FFFFFF' }}>
         ${data.amount}
       </div>
     </div>
