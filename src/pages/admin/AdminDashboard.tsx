@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { PaymentProcessorsCard } from '@/components/admin/PaymentProcessorsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -102,6 +103,9 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
           <p className="text-muted-foreground">Manage the CouponDonation platform</p>
         </div>
+
+        <PaymentProcessorsCard />
+
 
         {stats.pendingVerifications > 0 && (
           <Card className="border-gold bg-gold/5">
