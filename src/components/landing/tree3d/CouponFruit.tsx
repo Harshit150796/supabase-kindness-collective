@@ -131,7 +131,7 @@ function CouponFace({ data }: { data: CouponData }) {
           </div>
         )}
       </div>
-      <div style={{ position: 'absolute', right: 50, bottom: 34, fontSize: 62, fontWeight: 800, lineHeight: 1 }}>
+      <div style={{ position: 'absolute', right: 50, bottom: 34, fontSize: 62, fontWeight: 800, lineHeight: 1, color: data.plate ?? '#FFFFFF' }}>
         ${data.amount}
       </div>
     </div>

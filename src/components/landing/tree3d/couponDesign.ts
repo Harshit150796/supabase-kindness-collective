@@ -153,8 +153,8 @@ function paintCoupon(ctx: CanvasRenderingContext2D, W: number, H: number, S: num
     ctx.fillText(data.brand.toUpperCase(), cx, cy, boxW);
   }
 
-  // Secondary amount, small in the bottom-right corner.
-  ctx.fillStyle = '#FFFFFF';
+  // Secondary amount, small in the bottom-right corner (dark on light fields).
+  ctx.fillStyle = data.plate ?? '#FFFFFF';
   ctx.font = `800 ${34 * S}px system-ui, -apple-system, Arial`;
   ctx.textAlign = 'right';
   ctx.textBaseline = 'alphabetic';
