@@ -860,35 +860,56 @@ export function DonationFlow() {
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="flex-1"
-                  onClick={() => setStep(2)}
-                  disabled={isProcessing}
-                >
-                  Back
-                </Button>
-                <Button 
-                  size="lg" 
-                  className="flex-1 relative"
-                  onClick={() => handleContinue()}
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      Complete Donation
-                      <Heart className="w-5 h-5 ml-2" />
-                    </>
-                  )}
-                </Button>
-              </div>
+              {(() => {
+                const options = ([
+                  providers.square && { id: 'square' as const, label: 'Pay with Square', hint: 'Card, Apple Pay, Google Pay' },
+                  providers.stripe && { id: 'stripe' as const, label: 'Pay with Stripe', hint: 'Card, Link, wallets' },
+                ].filter(Boolean)) as { id: 'square' | 'stripe'; label: string; hint: string }[];
+                const single = options.length === 1;
+                return (
+                  <div className="space-y-3">
+                    {options.length === 0 && (
+                      <p className="text-center text-sm text-muted-foreground">Online payments are temporarily unavailable. Please check back soon.</p>
+                    )}
+                    {options.length > 1 && (
+                      <p className="text-center text-sm font-medium text-foreground">Choose how you'd like to pay</p>
+                    )}
+                    <div className={`grid gap-3 ${options.length > 1 ? 'sm:grid-cols-2' : ''}`}>
+                      {options.map((o, i) => (
+                        <Button
+                          key={o.id}
+                          size="lg"
+                          variant={i === 0 ? 'default' : 'outline'}
+                          className="h-auto min-h-12 flex-col gap-0.5 py-3"
+                          onClick={() => handleContinue(0, o.id)}
+                          disabled={isProcessing}
+                        >
+                          {isProcessing && activeProvider === o.id ? (
+                            <span className="flex items-center"><Loader2 className="w-5 h-5 mr-2 animate-spin" />Processing...</span>
+                          ) : (
+                            <>
+                              <span className="flex items-center">
+                                {single ? 'Complete Donation' : o.label}
+                                <Heart className="w-4 h-4 ml-2" />
+                              </span>
+                              <span className="text-xs font-normal opacity-80">{single ? `Secure checkout · ${o.hint}` : o.hint}</span>
+                            </>
+                          )}
+                        </Button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="lg"
+                      className="w-full"
+                      onClick={() => setStep(2)}
+                      disabled={isProcessing}
+                    >
+                      Back
+                    </Button>
+                  </div>
+                );
+              })()}
 
               {/* Manual redirect fallback */}
               {checkoutUrl && !isProcessing && (
