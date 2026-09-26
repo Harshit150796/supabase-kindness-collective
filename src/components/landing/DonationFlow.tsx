@@ -217,7 +217,7 @@ export function DonationFlow() {
       return;
     }
     
-    // Process payment with Stripe
+    // Process payment with Square
     setIsProcessing(true);
     setCheckoutUrl(null);
     
