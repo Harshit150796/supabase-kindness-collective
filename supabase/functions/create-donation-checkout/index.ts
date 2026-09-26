@@ -126,8 +126,10 @@ serve(async (req) => {
     const data = await res.json();
 
     if (!res.ok) {
-      const detail = data?.errors?.map((e: { detail?: string }) => e.detail).join("; ") || JSON.stringify(data);
-      console.error("Square API error:", res.status, detail);
+      const detail = data?.errors?.map((e: { detail?: string; code?: string; field?: string }) =>
+        `${e.detail} (code=${e.code}, field=${e.field})`
+      ).join("; ") || JSON.stringify(data);
+      console.error("Square API error:", res.status, detail, JSON.stringify(data));
       throw new Error(`Square checkout failed: ${detail}`);
     }
 
