@@ -261,7 +261,7 @@ export function DonationFlow() {
           // Popup was blocked, try direct redirect
           toast({
             title: 'Redirecting to payment...',
-            description: 'Opening Stripe checkout...',
+            description: 'Opening secure checkout...',
           });
           window.location.href = data.url;
         } else {
