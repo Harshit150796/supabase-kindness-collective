@@ -33,3 +33,10 @@
 - [x] Require visible 390px screenshot evidence and a measured illustration width before marking any item verified.
 - [x] Prove one active step changes between two mid-animation captures.
 - [x] Remove every mobile sticky, tall-stage, `svh` stage, and band-math implementation from `WhatWeDo`.
+
+## Hero tree coupons and ambient restoration
+- [ ] Measure and capture the current coupon fruit rendering at 1440px.
+- [ ] Replace dense coupon documents with two-element brand chips.
+- [ ] Redistribute and attach coupons with wind-following stems and varied tilt.
+- [ ] Restore medium/high ambient effects while preserving the low tier.
+- [ ] Capture visual proof, night fireflies, FPS measurements, diagnostics, and build status.
