@@ -18,6 +18,9 @@ verify_jwt = false
 [functions.stripe-webhook]
 verify_jwt = false
 
+[functions.square-webhook]
+verify_jwt = false
+
 [functions.backfill-stripe-donations]
 verify_jwt = false
 
