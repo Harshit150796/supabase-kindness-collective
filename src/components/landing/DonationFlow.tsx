@@ -12,6 +12,7 @@ import { BrandAllocationSliders, BrandAllocation } from './BrandAllocationSlider
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { OnPagePayment, type DonationPayload } from './OnPagePayment';
 
 // Payment method icons as SVG components for brand accuracy
 const PaymentMethodIcons = () => (
@@ -90,6 +91,7 @@ export function DonationFlow() {
   const [customAmountText, setCustomAmountText] = useState('');
   const [providers, setProviders] = useState<{ square: boolean; stripe: boolean }>({ square: true, stripe: true });
   const [activeProvider, setActiveProvider] = useState<'square' | 'stripe'>('square');
+  const [inlinePay, setInlinePay] = useState<'square' | 'stripe' | null>(null);
   useEffect(() => {
     supabase
       .from('payment_settings' as never)
@@ -307,6 +309,24 @@ export function DonationFlow() {
       });
       setIsProcessing(false);
     }
+  };
+
+  const buildPayload = (): DonationPayload => {
+    const brandAllocations = currentAllocations.map(a => ({
+      brand: a.brandName,
+      brandId: a.brandId,
+      percent: a.percentage,
+      amount: Number(((amount * a.percentage) / 100).toFixed(2)),
+    }));
+    return {
+      amount,
+      brandName: brandAllocations[0]?.brand || '',
+      brandId: brandAllocations[0]?.brandId || '',
+      brandAllocations,
+      userId: user?.id || null,
+      userEmail: user?.email || null,
+      fundraiserId: new URLSearchParams(window.location.search).get('fundraiser'),
+    };
   };
 
   const handleManualRedirect = () => {
@@ -835,7 +855,9 @@ export function DonationFlow() {
                 </div>
               </div>
 
-              {(() => {
+              {inlinePay ? (
+                <OnPagePayment provider={inlinePay} payload={buildPayload()} onCancel={() => setInlinePay(null)} />
+              ) : (() => {
                 const options = ([
                   providers.square && { id: 'square' as const, label: 'Pay with Square', hint: 'Card, Apple Pay, Google Pay' },
                   providers.stripe && { id: 'stripe' as const, label: 'Pay with Stripe', hint: 'Card, Link, wallets' },
@@ -856,7 +878,7 @@ export function DonationFlow() {
                           size="lg"
                           variant={i === 0 ? 'default' : 'outline'}
                           className="h-auto min-h-12 flex-col gap-0.5 py-3"
-                          onClick={() => handleContinue(0, o.id)}
+                          onClick={() => setInlinePay(o.id)}
                           disabled={isProcessing}
                         >
                           {isProcessing && activeProvider === o.id ? (

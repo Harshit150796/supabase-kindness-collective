@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
       return json({ error: "Stripe payments are currently turned off." }, 403);
     }
 
-    const { amount, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = await req.json();
+    const { amount, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId, embedded } = await req.json();
     const amt = Number(amount);
     if (!amt || amt < 5 || amt > 10000) return json({ error: "Invalid donation amount. Must be between $5 and $10,000." }, 400);
 
@@ -64,11 +64,12 @@ Deno.serve(async (req) => {
         donor_email: userEmail || "",
         fundraiser_id: fundraiserId || "",
       },
-      success_url: `${origin}/donation-success?amount=${amt}&meals=${mealsProvided}`,
-      cancel_url: `${origin}/donation-cancelled`,
+      ...(embedded
+        ? { ui_mode: "embedded" as const, return_url: `${origin}/donation-success?amount=${amt}&meals=${mealsProvided}` }
+        : { success_url: `${origin}/donation-success?amount=${amt}&meals=${mealsProvided}`, cancel_url: `${origin}/donation-cancelled` }),
     });
 
-    return json({ url: session.url, sessionId: session.id });
+    return json({ url: session.url, sessionId: session.id, clientSecret: session.client_secret });
   } catch (e) {
     console.error("Stripe checkout error:", e);
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
