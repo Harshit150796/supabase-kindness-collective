@@ -268,34 +268,9 @@ export function DonationFlow() {
 
       if (data?.url) {
         setCheckoutUrl(data.url);
-        
-        // Try to open in new tab first (more reliable for async handlers)
-        const newWindow = window.open(data.url, '_blank');
-        
-        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-          // Popup was blocked, try direct redirect
-          toast({
-            title: 'Redirecting to payment...',
-            description: 'Opening secure checkout...',
-          });
-          window.location.href = data.url;
-        } else {
-          // New tab opened successfully
-          toast({
-            title: 'Payment page opened',
-            description: 'Complete your donation in the new tab. If you don\'t see it, check for blocked popups.',
-          });
-          setIsProcessing(false);
-          
-          // Show helper after a delay in case payment fails
-          setTimeout(() => {
-            toast({
-              title: 'Payment didn\'t go through?',
-              description: 'If your card was declined, try a different card or contact your bank to approve the transaction.',
-              duration: 15000,
-            });
-          }, 30000);
-        }
+        toast({ title: 'Opening secure checkout...', description: 'You will return here when payment is complete.' });
+        // Same tab only — never open a new tab for payments
+        window.location.assign(data.url);
       } else {
         throw new Error('No checkout URL received from server');
       }
@@ -336,7 +311,7 @@ export function DonationFlow() {
 
   const handleManualRedirect = () => {
     if (checkoutUrl) {
-      window.open(checkoutUrl, '_blank');
+      window.location.assign(checkoutUrl);
     }
   };
 
