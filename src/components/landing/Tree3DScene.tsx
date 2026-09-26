@@ -306,6 +306,8 @@ function PerfWatchdog({ onSlow }: { onSlow: () => void }) {
     const elapsed = now - windowStartRef.current;
     if (elapsed < 2000) return;
     const fps = (framesRef.current * 1000) / elapsed;
+    const canvas = document.querySelector('canvas');
+    if (canvas) canvas.dataset.treeFps = fps.toFixed(1);
     windowStartRef.current = now;
     framesRef.current = 0;
     if (fps < 45) {
@@ -320,7 +322,14 @@ function PerfWatchdog({ onSlow }: { onSlow: () => void }) {
 function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boolean }) {
   const { leafCount, plantCap } = settings;
 
-  const branchTips = useMemo(() => getBranchTips().map((b) => b.tip), []);
+  const branchTips = useMemo(() => {
+    const available = getBranchTips().map((b) => b.tip);
+    const wanted = Math.min(COUPON_FRUITS.length, available.length);
+    return Array.from({ length: wanted }, (_, index) => {
+      const sourceIndex = wanted === 1 ? 0 : Math.round((index * (available.length - 1)) / (wanted - 1));
+      return available[sourceIndex];
+    });
+  }, []);
   const fruits = useMemo(() => COUPON_FRUITS.slice(0, branchTips.length), [branchTips.length]);
 
   const donations = useFallingDonations();
@@ -436,7 +445,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
       <Tree leafCount={leafCount} lowPower={settings.tier === 'low'} />
       <Ground y={GROUND_Y} isMobile={isMobile} />
       <HitZones />
-      {settings.fireflies && <Fireflies />}
+      {settings.fireflies && <Fireflies count={settings.fireflyCount} />}
       {settings.trunkRipple && <TrunkRipple />}
       <Bird />
       <AmbientBirds count={settings.ambientBirds} />
@@ -587,6 +596,11 @@ export function Tree3DScene() {
           contain: 'strict',
           willChange: 'transform',
         }}
+        data-tree-tier={effectiveSettings.tier}
+        data-tree-fireflies={effectiveSettings.fireflyCount}
+        data-tree-birds={effectiveSettings.ambientBirds}
+        data-tree-plant-cap={effectiveSettings.plantCap}
+        data-tree-trunk-ripple={effectiveSettings.trunkRipple}
       >
         {mounted ? (
           <Tree3DInner
@@ -598,7 +612,7 @@ export function Tree3DScene() {
             settings={effectiveSettings}
             antialias={antialias}
             isMobile={isMobile}
-            onSlow={requestDowngrade}
+            onSlow={forced ? () => undefined : requestDowngrade}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#FFF2D8] to-[#D8E0CC]" />

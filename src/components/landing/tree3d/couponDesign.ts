@@ -10,6 +10,16 @@ export interface CouponData {
   amount: 5 | 10;
 }
 
+export function couponTextColor(hex: string): '#000000' | '#FFFFFF' {
+  const normalized = hex.replace('#', '');
+  if (normalized.length !== 6) return '#FFFFFF';
+  const r = Number.parseInt(normalized.slice(0, 2), 16);
+  const g = Number.parseInt(normalized.slice(2, 4), 16);
+  const b = Number.parseInt(normalized.slice(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.62 ? '#000000' : '#FFFFFF';
+}
+
 // Hash a string to deterministic int
 function hash(s: string): number {
   let h = 0;
@@ -50,56 +60,34 @@ export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
-  // Background card
-  ctx.fillStyle = '#FFFFFF';
+  const foreground = couponTextColor(data.color);
+
+  // At its final on-screen size this is an icon, not a document: one dominant
+  // brand field and one amount are the only two pieces of information.
+  ctx.fillStyle = data.color;
   roundRect(ctx, 8 * S, 8 * S, W - 16 * S, H - 16 * S, 28 * S);
   ctx.fill();
 
-  // Gold border
-  ctx.strokeStyle = '#D4A017';
-  ctx.lineWidth = 6 * S;
+  // A strong light/dark edge survives downsampling without adding another hue.
+  ctx.strokeStyle = foreground;
+  ctx.globalAlpha = 0.92;
+  ctx.lineWidth = 10 * S;
   roundRect(ctx, 8 * S, 8 * S, W - 16 * S, H - 16 * S, 28 * S);
   ctx.stroke();
+  ctx.globalAlpha = 1;
 
-  // Top brand stripe
-  ctx.fillStyle = data.color;
-  roundRect(ctx, 8 * S, 8 * S, W - 16 * S, 90 * S, 28 * S);
-  ctx.fill();
-  // square off bottom of stripe
-  ctx.fillRect(8 * S, 70 * S, W - 16 * S, 28 * S);
-
-  // Brand name
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = `bold ${44 * S}px system-ui, -apple-system, Arial`;
+  // Brand wordmark — deliberately oversized and allowed nearly the full width.
+  ctx.fillStyle = foreground;
+  const brandSize = data.brand.length >= 9 ? 54 : data.brand.length >= 7 ? 62 : 72;
+  ctx.font = `900 ${brandSize * S}px system-ui, -apple-system, Arial`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(data.brand.toUpperCase(), W / 2, 53 * S);
-
-  // Trait pill
-  const pillW = 280 * S;
-  const pillH = 56 * S;
-  const pillX = (W - pillW) / 2;
-  const pillY = 130 * S;
-  ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
-  roundRect(ctx, pillX, pillY, pillW, pillH, 28 * S);
-  ctx.fill();
-  ctx.strokeStyle = '#10B981';
-  ctx.lineWidth = 2 * S;
-  roundRect(ctx, pillX, pillY, pillW, pillH, 28 * S);
-  ctx.stroke();
-  ctx.fillStyle = '#059669';
-  ctx.font = `bold ${26 * S}px system-ui, -apple-system, Arial`;
-  ctx.fillText(data.trait, W / 2, pillY + pillH / 2 + 1 * S);
+  ctx.fillText(data.brand.toUpperCase(), W / 2, 112 * S, 448 * S);
 
   // Amount
-  ctx.fillStyle = '#D4A017';
-  ctx.font = `bold ${78 * S}px system-ui, -apple-system, Arial`;
-  ctx.fillText(`$${data.amount}`, W / 2, 240 * S);
-
-  // "COUPON" sub-label
-  ctx.fillStyle = '#6B7280';
-  ctx.font = `600 ${18 * S}px system-ui, -apple-system, Arial`;
-  ctx.fillText('GROCERY COUPON', W / 2, 290 * S);
+  ctx.fillStyle = foreground;
+  ctx.font = `900 ${116 * S}px system-ui, -apple-system, Arial`;
+  ctx.fillText(`$${data.amount}`, W / 2, 238 * S);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.anisotropy = 16;

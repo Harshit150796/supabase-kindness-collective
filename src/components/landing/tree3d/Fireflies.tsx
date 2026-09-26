@@ -3,9 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useInteraction } from './InteractionContext';
 
-const N = 40;
-
-export function Fireflies() {
+export function Fireflies({ count = 40 }: { count?: number }) {
   const { timeOfDay } = useInteraction();
   const ref = useRef<THREE.InstancedMesh>(null);
   const matRef = useRef<THREE.MeshBasicMaterial>(null);
@@ -13,7 +11,7 @@ export function Fireflies() {
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
   const data = useMemo(() => {
-    return Array.from({ length: N }, (_, i) => ({
+    return Array.from({ length: count }, (_, i) => ({
       cx: (Math.random() - 0.5) * 5,
       cy: 3.5 + Math.random() * 2.5,
       cz: (Math.random() - 0.5) * 4,
@@ -27,7 +25,7 @@ export function Fireflies() {
       flicker: 0.6 + Math.random() * 0.6,
       seed: i,
     }));
-  }, []);
+  }, [count]);
 
   useFrame((_, dt) => {
     if (!ref.current || !matRef.current) return;
@@ -42,7 +40,7 @@ export function Fireflies() {
     ref.current.visible = true;
 
     const t = performance.now() / 1000;
-    for (let i = 0; i < N; i++) {
+    for (let i = 0; i < count; i++) {
       const d = data[i];
       const x = d.cx + Math.sin(t * d.sx + d.phase) * d.rx;
       const y = d.cy + Math.sin(t * d.sy + d.phase * 1.7) * d.ry;
@@ -57,7 +55,7 @@ export function Fireflies() {
   });
 
   return (
-    <instancedMesh ref={ref} args={[undefined, undefined, N]} frustumCulled={false}>
+    <instancedMesh ref={ref} args={[undefined, undefined, count]} frustumCulled={false}>
       <sphereGeometry args={[1, 8, 8]} />
       <meshBasicMaterial
         ref={matRef}
