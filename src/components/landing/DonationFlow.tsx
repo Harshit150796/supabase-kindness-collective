@@ -88,6 +88,19 @@ export function DonationFlow() {
   const [useCustomAllocation, setUseCustomAllocation] = useState(false);
   const [amount, setAmount] = useState(50);
   const [customAmountText, setCustomAmountText] = useState('');
+  const [providers, setProviders] = useState<{ square: boolean; stripe: boolean }>({ square: true, stripe: true });
+  const [activeProvider, setActiveProvider] = useState<'square' | 'stripe'>('square');
+  useEffect(() => {
+    supabase
+      .from('payment_settings' as never)
+      .select('square_enabled, stripe_enabled')
+      .eq('id', 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        const d = data as { square_enabled: boolean; stripe_enabled: boolean } | null;
+        if (d) setProviders({ square: d.square_enabled, stripe: d.stripe_enabled });
+      });
+  }, []);
   const [isCustomMode, setIsCustomMode] = useState(false);
   const customInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState(1);
@@ -205,7 +218,7 @@ export function DonationFlow() {
 
   const MAX_RETRIES = 2;
 
-  const handleContinue = async (retryCount: number = 0): Promise<void> => {
+  const handleContinue = async (retryCount: number = 0, provider: 'square' | 'stripe' = 'square'): Promise<void> => {
     if (step === 1) {
       if (!validateAllocations()) return;
       setStep(2);
@@ -217,8 +230,9 @@ export function DonationFlow() {
       return;
     }
     
-    // Process payment with Square
+    // Process payment with the donor's chosen processor
     setIsProcessing(true);
+    setActiveProvider(provider);
     setCheckoutUrl(null);
     
     try {
@@ -235,7 +249,8 @@ export function DonationFlow() {
         ? new URLSearchParams(window.location.search).get('fundraiser')
         : null;
 
-      const { data, error } = await supabase.functions.invoke('create-donation-checkout', {
+      const fnName = provider === 'stripe' ? 'create-stripe-checkout' : 'create-donation-checkout';
+      const { data, error } = await supabase.functions.invoke(fnName, {
         body: {
           amount,
           // For backward compatibility, send primary brand
@@ -301,7 +316,7 @@ export function DonationFlow() {
         });
         // Wait 1 second before retry
         await new Promise(resolve => setTimeout(resolve, 1000));
-        return handleContinue(retryCount + 1);
+        return handleContinue(retryCount + 1, provider);
       }
       
       const rawMsg = error instanceof Error ? error.message : '';
@@ -845,35 +860,56 @@ export function DonationFlow() {
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="flex-1"
-                  onClick={() => setStep(2)}
-                  disabled={isProcessing}
-                >
-                  Back
-                </Button>
-                <Button 
-                  size="lg" 
-                  className="flex-1 relative"
-                  onClick={() => handleContinue()}
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      Complete Donation
-                      <Heart className="w-5 h-5 ml-2" />
-                    </>
-                  )}
-                </Button>
-              </div>
+              {(() => {
+                const options = ([
+                  providers.square && { id: 'square' as const, label: 'Pay with Square', hint: 'Card, Apple Pay, Google Pay' },
+                  providers.stripe && { id: 'stripe' as const, label: 'Pay with Stripe', hint: 'Card, Link, wallets' },
+                ].filter(Boolean)) as { id: 'square' | 'stripe'; label: string; hint: string }[];
+                const single = options.length === 1;
+                return (
+                  <div className="space-y-3">
+                    {options.length === 0 && (
+                      <p className="text-center text-sm text-muted-foreground">Online payments are temporarily unavailable. Please check back soon.</p>
+                    )}
+                    {options.length > 1 && (
+                      <p className="text-center text-sm font-medium text-foreground">Choose how you'd like to pay</p>
+                    )}
+                    <div className={`grid gap-3 ${options.length > 1 ? 'sm:grid-cols-2' : ''}`}>
+                      {options.map((o, i) => (
+                        <Button
+                          key={o.id}
+                          size="lg"
+                          variant={i === 0 ? 'default' : 'outline'}
+                          className="h-auto min-h-12 flex-col gap-0.5 py-3"
+                          onClick={() => handleContinue(0, o.id)}
+                          disabled={isProcessing}
+                        >
+                          {isProcessing && activeProvider === o.id ? (
+                            <span className="flex items-center"><Loader2 className="w-5 h-5 mr-2 animate-spin" />Processing...</span>
+                          ) : (
+                            <>
+                              <span className="flex items-center">
+                                {single ? 'Complete Donation' : o.label}
+                                <Heart className="w-4 h-4 ml-2" />
+                              </span>
+                              <span className="text-xs font-normal opacity-80">{single ? `Secure checkout · ${o.hint}` : o.hint}</span>
+                            </>
+                          )}
+                        </Button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="lg"
+                      className="w-full"
+                      onClick={() => setStep(2)}
+                      disabled={isProcessing}
+                    >
+                      Back
+                    </Button>
+                  </div>
+                );
+              })()}
 
               {/* Manual redirect fallback */}
               {checkoutUrl && !isProcessing && (

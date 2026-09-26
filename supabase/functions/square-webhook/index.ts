@@ -225,6 +225,7 @@ async function handleCompletedPayment(supabase: any, accessToken: string, paymen
 
   const donationData: Record<string, unknown> = {
     amount,
+    payment_provider: "square",
     stripe_session_id: orderId,          // reused column: holds the Square order id
     stripe_payment_intent_id: payment.id, // reused column: holds the Square payment id
     payment_method: paymentMethod,

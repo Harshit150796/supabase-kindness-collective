@@ -42,3 +42,6 @@ verify_jwt = false
 [functions.stripe-account-diagnose]
 verify_jwt = false
 
+[functions.create-stripe-checkout]
+verify_jwt = false
+

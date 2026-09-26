@@ -29,6 +29,7 @@ interface DonationRow {
   brand_partner: string | null;
   fundraiser_id: string | null;
   payment_method: string | null;
+  payment_provider?: string | null;
   receipt_url: string | null;
   message: string | null;
   is_anonymous: boolean | null;
@@ -375,7 +376,12 @@ export default function AdminDonations() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground flex items-center gap-1"><CreditCard className="w-3 h-3" /> Payment method</p>
-                  <p className="font-medium">{selectedDonation.payment_method || '—'}</p>
+                  <p className="font-medium">
+                    {selectedDonation.payment_method || '—'}
+                    {selectedDonation.payment_provider && (
+                      <span className="ml-2 text-xs text-muted-foreground capitalize">via {selectedDonation.payment_provider}</span>
+                    )}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">Status</p>

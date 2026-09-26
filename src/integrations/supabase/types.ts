@@ -529,6 +529,7 @@ export type Database = {
           message: string | null
           net_amount: number | null
           payment_method: string | null
+          payment_provider: string | null
           receipt_url: string | null
           region: string | null
           status: string | null
@@ -552,6 +553,7 @@ export type Database = {
           message?: string | null
           net_amount?: number | null
           payment_method?: string | null
+          payment_provider?: string | null
           receipt_url?: string | null
           region?: string | null
           status?: string | null
@@ -575,6 +577,7 @@ export type Database = {
           message?: string | null
           net_amount?: number | null
           payment_method?: string | null
+          payment_provider?: string | null
           receipt_url?: string | null
           region?: string | null
           status?: string | null
@@ -1190,6 +1193,27 @@ export type Database = {
           id?: string
           token?: string
           used_at?: string | null
+        }
+        Relationships: []
+      }
+      payment_settings: {
+        Row: {
+          id: number
+          square_enabled: boolean
+          stripe_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          square_enabled?: boolean
+          stripe_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          square_enabled?: boolean
+          stripe_enabled?: boolean
+          updated_at?: string
         }
         Relationships: []
       }

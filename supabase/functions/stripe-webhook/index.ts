@@ -256,6 +256,7 @@ async function handleSuccessfulPayment(
   // Insert donation record
   const donationData: Record<string, unknown> = {
     amount,
+    payment_provider: "stripe",
     stripe_session_id: session.id,
     stripe_payment_intent_id: session.payment_intent as string,
     payment_method: paymentMethod,
