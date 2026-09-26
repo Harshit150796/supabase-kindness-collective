@@ -316,7 +316,7 @@ export function DonationFlow() {
         });
         // Wait 1 second before retry
         await new Promise(resolve => setTimeout(resolve, 1000));
-        return handleContinue(retryCount + 1);
+        return handleContinue(retryCount + 1, provider);
       }
       
       const rawMsg = error instanceof Error ? error.message : '';
