@@ -57,7 +57,8 @@ Deno.serve(async (req) => {
     };
     if (allocations[0]?.brand) metadata.brand_name = allocations[0].brand;
     if (allocations[0]?.brandId) metadata.brand_id = allocations[0].brandId;
-    if (allocations.length > 0) metadata.brand_allocations = JSON.stringify(allocations).slice(0, 255);
+    const allocJson = JSON.stringify(allocations);
+    if (allocations.length > 0 && allocJson.length <= 255) metadata.brand_allocations = allocJson;
     if (userId) metadata.donor_id = String(userId);
     if (userEmail) metadata.donor_email = String(userEmail);
     if (fundraiserId) metadata.fundraiser_id = String(fundraiserId);
