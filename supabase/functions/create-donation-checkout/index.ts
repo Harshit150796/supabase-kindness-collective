@@ -67,18 +67,20 @@ serve(async (req) => {
 
     // Metadata carried on the Square order — the square-webhook function reads
     // it back to record the donation and create coupons.
+    // NOTE: Square rejects empty-string metadata values, so only include
+    // keys that actually have a value.
     const metadata: Record<string, string> = {
       type: "donation",
       amount: amount.toString(),
       meals_provided: mealsProvided.toString(),
-      brand_name: allocations[0]?.brand || "",
-      brand_id: allocations[0]?.brandId || "",
-      brand_allocations: JSON.stringify(allocations),
       is_multi_brand: isMultiBrand.toString(),
-      donor_id: userId || "",
-      donor_email: userEmail || "",
-      fundraiser_id: fundraiserId || "",
     };
+    if (allocations[0]?.brand) metadata.brand_name = allocations[0].brand;
+    if (allocations[0]?.brandId) metadata.brand_id = allocations[0].brandId;
+    if (allocations.length > 0) metadata.brand_allocations = JSON.stringify(allocations);
+    if (userId) metadata.donor_id = userId;
+    if (userEmail) metadata.donor_email = userEmail;
+    if (fundraiserId) metadata.fundraiser_id = fundraiserId;
 
     const idempotencyKey = crypto.randomUUID();
 
