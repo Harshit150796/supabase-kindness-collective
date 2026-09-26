@@ -52,6 +52,19 @@ serve(async (req) => {
       throw new Error("Invalid donation amount. Must be between $5 and $10,000.");
     }
 
+    // Respect the admin on/off switch
+    const settingsRes = await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/rest/v1/payment_settings?id=eq.1&select=square_enabled`,
+      { headers: { apikey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` } },
+    );
+    const settings = settingsRes.ok ? (await settingsRes.json())?.[0] : null;
+    if (settings && settings.square_enabled === false) {
+      return new Response(JSON.stringify({ error: "Square payments are currently turned off." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403,
+      });
+    }
+
     const accessToken = (Deno.env.get("SQUARE_ACCESS_TOKEN") ?? "").trim();
     const locationId = (Deno.env.get("SQUARE_LOCATION_ID") ?? "").trim();
 
