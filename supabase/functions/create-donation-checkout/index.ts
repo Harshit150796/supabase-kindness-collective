@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +12,14 @@ interface BrandAllocation {
   amount: number;
 }
 
+// Square API base URL — sandbox tokens only work against the sandbox host.
+function squareBaseUrl(): string {
+  const env = (Deno.env.get("SQUARE_ENVIRONMENT") || "production").toLowerCase();
+  return env === "sandbox"
+    ? "https://connect.squareupsandbox.com"
+    : "https://connect.squareup.com";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -24,19 +31,19 @@ serve(async (req) => {
     // Process brand allocations (multi-brand support)
     const allocations: BrandAllocation[] = brandAllocations && Array.isArray(brandAllocations) && brandAllocations.length > 0
       ? brandAllocations
-      : brandName 
+      : brandName
         ? [{ brand: brandName, brandId: brandId || '', percent: 100, amount }]
         : [];
 
     const brandNames = allocations.map(a => a.brand).join(', ');
     const isMultiBrand = allocations.length > 1;
 
-    console.log("Creating donation checkout session:", { 
-      amount, 
+    console.log("Creating Square donation checkout:", {
+      amount,
       brandCount: allocations.length,
       brandNames,
       isMultiBrand,
-      userId: userId || 'anonymous', 
+      userId: userId || 'anonymous',
       userEmail: userEmail || 'guest',
     });
 
@@ -45,138 +52,101 @@ serve(async (req) => {
       throw new Error("Invalid donation amount. Must be between $5 and $10,000.");
     }
 
-    // Initialize Stripe
-    const rawStripeKey = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
-    const stripeKey = rawStripeKey.trim().replace(/^['"]|['"]$/g, "");
+    const accessToken = (Deno.env.get("SQUARE_ACCESS_TOKEN") ?? "").trim();
+    const locationId = (Deno.env.get("SQUARE_LOCATION_ID") ?? "").trim();
 
-    if (!stripeKey) {
-      throw new Error("Missing STRIPE_SECRET_KEY. Add it in Supabase → Project Settings → Functions → Secrets.");
+    if (!accessToken) {
+      throw new Error("Missing SQUARE_ACCESS_TOKEN. Add it in Supabase → Project Settings → Functions → Secrets.");
     }
-    if (stripeKey.includes("*")) {
-      throw new Error("STRIPE_SECRET_KEY looks masked (contains '*'). Paste the full secret key from Stripe.");
-    }
-    if (!stripeKey.startsWith("sk_")) {
-      throw new Error("Invalid STRIPE_SECRET_KEY: must start with 'sk_'.");
+    if (!locationId) {
+      throw new Error("Missing SQUARE_LOCATION_ID. Add it in Supabase → Project Settings → Functions → Secrets.");
     }
 
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: "2025-08-27.basil",
-    });
-
+    const origin = req.headers.get("origin") || "https://coupondonation.com";
     const mealsProvided = amount * 2;
 
-    // Build product description
-    const productDescription = isMultiBrand
-      ? `Your $${amount} USD donation is split across ${allocations.length} brands: ${brandNames}. Each brand will provide coupons for families in need.`
-      : `Your $${amount} USD donation provides ${mealsProvided} meals for families in need${brandName ? ` via ${brandName}` : ""}. International cards accepted.`;
+    // Metadata carried on the Square order — the square-webhook function reads
+    // it back to record the donation and create coupons.
+    const metadata: Record<string, string> = {
+      type: "donation",
+      amount: amount.toString(),
+      meals_provided: mealsProvided.toString(),
+      brand_name: allocations[0]?.brand || "",
+      brand_id: allocations[0]?.brandId || "",
+      brand_allocations: JSON.stringify(allocations),
+      is_multi_brand: isMultiBrand.toString(),
+      donor_id: userId || "",
+      donor_email: userEmail || "",
+      fundraiser_id: fundraiserId || "",
+    };
 
-    // Generate idempotency key to prevent duplicate charges
-    const idempotencyKey = `checkout_${userId || 'anon'}_${amount}_${Date.now()}`;
+    const idempotencyKey = crypto.randomUUID();
 
-    // Create Checkout session with optimized settings for higher approval rates
-    const session = await stripe.checkout.sessions.create({
-      locale: "en",
-
-      // Donations are accepted globally. Billing address is collected worldwide for
-      // AVS + fraud scoring. US-only enforcement is applied only at the app-route
-      // layer (GeoGuard) for write actions like campaign creation and admin — never
-      // for the donor checkout flow.
-      payment_method_types: ['card'],
-      billing_address_collection: 'required',
-
-      // Phone collection improves bank trust score
-      phone_number_collection: {
-        enabled: true,
-      },
-      
-      // 3D Secure: 'automatic' lets Stripe decide when it's needed
-      payment_method_options: {
-        card: {
-          request_three_d_secure: 'automatic',
-        },
-      },
-      
-      // Prefill email for logged-in users
-      ...(userEmail && { customer_email: userEmail }),
-      
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: isMultiBrand 
-                ? `Multi-Brand Donation (${allocations.length} brands)`
-                : `Donation to Help Families`,
-              description: productDescription,
+    const paymentLinkBody = {
+      idempotency_key: idempotencyKey,
+      order: {
+        location_id: locationId,
+        reference_id: `donation_${Date.now()}`,
+        line_items: [
+          {
+            name: isMultiBrand
+              ? `Multi-Brand Donation (${allocations.length} brands)`
+              : `Donation to Help Families`,
+            quantity: "1",
+            base_price_money: {
+              amount: Math.round(amount * 100), // cents
+              currency: "USD",
             },
-            unit_amount: amount * 100,
+            note: isMultiBrand
+              ? `Split across ${allocations.length} brands: ${brandNames}`
+              : `Provides ${mealsProvided} meals for families in need${brandName ? ` via ${brandName}` : ""}`,
           },
-          quantity: 1,
-        },
-      ],
-      mode: "payment",
-      success_url: `${req.headers.get("origin")}/donation-success?session_id={CHECKOUT_SESSION_ID}&amount=${amount}&meals=${mealsProvided}`,
-      cancel_url: `${req.headers.get("origin")}/donation-cancelled`,
-      
-      // Session metadata
-      metadata: {
-        type: "donation",
-        amount: amount.toString(),
-        meals_provided: mealsProvided.toString(),
-        brand_name: allocations[0]?.brand || "",
-        brand_id: allocations[0]?.brandId || "",
-        brand_allocations: JSON.stringify(allocations),
-        is_multi_brand: isMultiBrand.toString(),
-        brand_count: allocations.length.toString(),
-        donor_id: userId || "",
-        donor_email: userEmail || "",
-        fundraiser_id: fundraiserId || "",
+        ],
+        metadata,
       },
-      
-      // Simplified payment_intent metadata — removed redundant fields
-      // Stripe automatically captures IP, user-agent, and device info via Checkout
-      payment_intent_data: {
-        statement_descriptor: 'COUPONDONATION',
-        metadata: {
-          type: "donation",
-          amount: amount.toString(),
-          meals_provided: mealsProvided.toString(),
-          brand_name: allocations[0]?.brand || "",
-          brand_allocations: JSON.stringify(allocations),
-          is_multi_brand: isMultiBrand.toString(),
-          donor_account_id: userId || "guest",
-        },
+      checkout_options: {
+        redirect_url: `${origin}/donation-success?amount=${amount}&meals=${mealsProvided}`,
+        ask_for_shipping_address: false,
       },
-    }, {
-      idempotencyKey,
+      ...(userEmail && {
+        pre_populated_data: { buyer_email: userEmail },
+      }),
+    };
+
+    const res = await fetch(`${squareBaseUrl()}/v2/online-checkout/payment-links`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "Square-Version": "2025-01-23",
+      },
+      body: JSON.stringify(paymentLinkBody),
     });
 
-    console.log("Checkout session created:", session.id, "URL:", session.url, "Brands:", allocations.length);
+    const data = await res.json();
 
-    return new Response(JSON.stringify({ url: session.url, sessionId: session.id }), {
+    if (!res.ok) {
+      const detail = data?.errors?.map((e: { detail?: string }) => e.detail).join("; ") || JSON.stringify(data);
+      console.error("Square API error:", res.status, detail);
+      throw new Error(`Square checkout failed: ${detail}`);
+    }
+
+    const url = data.payment_link?.url;
+    const orderId = data.payment_link?.order_id;
+
+    if (!url) {
+      throw new Error("Square did not return a checkout URL.");
+    }
+
+    console.log("Square payment link created:", data.payment_link?.id, "order:", orderId);
+
+    return new Response(JSON.stringify({ url, sessionId: orderId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    console.error("Error creating checkout session:", error);
-
-    // Detect Stripe account restriction and return a friendly, non-alarming message.
-    const isAccountRestricted =
-      /cannot currently make live charges|account.*(restricted|disabled|inactive)/i.test(errorMessage);
-
-    if (isAccountRestricted) {
-      return new Response(
-        JSON.stringify({
-          error: "Payments are temporarily unavailable. Our team has been notified — please try again shortly.",
-          code: "payments_unavailable",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 503,
-        },
-      );
-    }
+    console.error("Error creating Square checkout:", error);
 
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -184,4 +154,3 @@ serve(async (req) => {
     });
   }
 });
-
