@@ -83,8 +83,9 @@ function CouponFace({ data }: { data: CouponData }) {
   const [, force] = useState(0);
   useEffect(() => onLogoSettled(data.logo, () => force((n) => n + 1)), [data.logo]);
   const entry = getLogo(data.logo);
-  const boxW = 920 * LOGO_BOX.w;
-  const boxH = 600 * LOGO_BOX.h;
+  const inset = data.plate ? 0.78 : 1;
+  const boxW = 920 * LOGO_BOX.w * inset;
+  const boxH = 600 * LOGO_BOX.h * inset;
   return (
     <div
       data-coupon-face={data.brand}

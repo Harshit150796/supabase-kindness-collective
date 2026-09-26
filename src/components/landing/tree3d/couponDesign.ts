@@ -122,8 +122,9 @@ function paintCoupon(ctx: CanvasRenderingContext2D, W: number, H: number, S: num
   ctx.stroke();
   ctx.globalAlpha = 1;
 
-  const boxW = W * LOGO_BOX.w;
-  const boxH = H * LOGO_BOX.h;
+  const inset = data.plate ? 0.78 : 1;
+  const boxW = W * LOGO_BOX.w * inset;
+  const boxH = H * LOGO_BOX.h * inset;
   const cx = W / 2;
   const cy = H * LOGO_BOX.cy;
 
