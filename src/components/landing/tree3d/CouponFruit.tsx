@@ -1,9 +1,8 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
 import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
-import { Line, Html } from '@react-three/drei';
-import { drawCouponTexture, type CouponData } from './couponDesign';
-import { brandLogos } from '@/data/brandLogos';
+import { Html } from '@react-three/drei';
+import { couponTextColor, drawCouponTexture, type CouponData } from './couponDesign';
 import type { FallingDonation } from '@/hooks/useFallingDonations';
 import { useInteraction } from './InteractionContext';
 import { SparkleBurst } from './SparkleBurst';
@@ -29,7 +28,9 @@ interface Props {
   labelSuppressed?: boolean;
 }
 
-const HANG_DROP = 1.0;
+const HANG_DROP = 0.72;
+const CANOPY_FACE_OFFSET = 0.9;
+const CANOPY_OUTER_SPREAD = 1.08;
 const COUPON_W = 1.15;
 const COUPON_H = 0.74;
 const COUPON_D = 0.05;
@@ -79,117 +80,44 @@ function getCouponGeom() {
 // Crisp vector coupon face rendered as DOM via Drei <Html transform>.
 // Designed at ~920×600 px so it stays sharp when scaled down into 3D.
 function CouponFace({ data }: { data: CouponData }) {
-  const logo = brandLogos[data.brand]?.logo;
+  const foreground = couponTextColor(data.color);
+  const brandSize = data.brand.length >= 9 ? 102 : data.brand.length >= 7 ? 116 : 132;
   return (
     <div
+      data-coupon-face={data.brand}
       style={{
         width: 920,
         height: 600,
         borderRadius: 56,
-        background: '#FFFFFF',
-        border: '12px solid #D4A017',
+        background: data.color,
+        border: `18px solid ${foreground}`,
         boxSizing: 'border-box',
         overflow: 'hidden',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
         display: 'flex',
         flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
         boxShadow: '0 18px 60px rgba(0,0,0,0.18)',
+        color: foreground,
       }}
     >
-      {/* Brand stripe */}
       <div
         style={{
-          background: data.color,
-          color: '#FFFFFF',
-          height: 170,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 22,
-          padding: '0 28px',
+          width: '90%',
+          fontSize: brandSize,
+          fontWeight: 900,
+          lineHeight: 1,
+          textAlign: 'center',
+          textTransform: 'uppercase',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
         }}
       >
-        {logo && (
-          <img
-            src={logo}
-            alt=""
-            crossOrigin="anonymous"
-            style={{
-              width: 96,
-              height: 96,
-              borderRadius: 18,
-              background: '#fff',
-              padding: 8,
-              objectFit: 'contain',
-              flexShrink: 0,
-            }}
-          />
-        )}
-        <span
-          style={{
-            fontSize: 92,
-            fontWeight: 900,
-            letterSpacing: 2,
-            lineHeight: 1,
-            textTransform: 'uppercase',
-            textShadow: '0 2px 0 rgba(0,0,0,0.12)',
-          }}
-        >
-          {data.brand}
-        </span>
+        {data.brand}
       </div>
-
-      {/* Trait pill */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 36 }}>
-        <div
-          style={{
-            background: 'rgba(16,185,129,0.12)',
-            border: '4px solid #10B981',
-            color: '#047857',
-            borderRadius: 999,
-            padding: '14px 40px',
-            fontSize: 44,
-            fontWeight: 800,
-            letterSpacing: 2,
-          }}
-        >
-          {data.trait}
-        </div>
-      </div>
-
-      {/* Amount */}
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginTop: 8,
-        }}
-      >
-        <div
-          style={{
-            color: '#D4A017',
-            fontSize: 200,
-            fontWeight: 900,
-            lineHeight: 1,
-            textShadow: '0 4px 0 rgba(212,160,23,0.18)',
-          }}
-        >
-          ${data.amount}
-        </div>
-        <div
-          style={{
-            color: '#6B7280',
-            fontSize: 36,
-            fontWeight: 700,
-            letterSpacing: 6,
-            marginTop: 12,
-          }}
-        >
-          GROCERY COUPON
-        </div>
+      <div style={{ fontSize: 224, fontWeight: 900, lineHeight: 1, marginTop: 46 }}>
+        ${data.amount}
       </div>
     </div>
   );
@@ -197,6 +125,7 @@ function CouponFace({ data }: { data: CouponData }) {
 
 export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false, labelSuppressed = false }: Props) {
   const groupRef = useRef<THREE.Group>(null);
+  const stemRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const velocityRef = useRef({ y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 });
   const posRef = useRef(new THREE.Vector3());
@@ -205,6 +134,18 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   const [sparkle, setSparkle] = useState<{ pos: THREE.Vector3; time: number } | null>(null);
   const { openStory, spawnPlant } = useInteraction();
   const plantSpawnedRef = useRef(false);
+  const stemMid = useMemo(() => new THREE.Vector3(), []);
+  const stemDirection = useMemo(() => new THREE.Vector3(), []);
+  const cardTop = useMemo(() => new THREE.Vector3(), []);
+  const stemUp = useMemo(() => new THREE.Vector3(0, 1, 0), []);
+  const hangingTilt = useMemo(
+    () => ({
+      x: ((index * 37) % 11 - 5) * 0.025,
+      y: ((index * 23) % 13 - 6) * 0.055,
+      z: ((index * 19) % 9 - 4) * 0.045,
+    }),
+    [index],
+  );
 
   // Stable scatter target across the grass, deterministic per coupon slot.
   // Phones frame the tree much tighter, so coupons land in a small ring around
@@ -285,13 +226,30 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       // Pendulum sway with mixed sines (perlin-ish)
       const sway = Math.sin(t * 0.7 + index * 1.3) * 0.14 + Math.sin(t * 1.7 + index) * 0.04;
       const swayZ = Math.cos(t * 0.5 + index * 0.7) * 0.07;
-      groupRef.current.position.set(branchTip.x, branchTip.y - HANG_DROP, branchTip.z);
-      groupRef.current.rotation.set(swayZ, sway * 0.5, sway);
+      groupRef.current.position.set(
+        branchTip.x * CANOPY_OUTER_SPREAD,
+        branchTip.y - HANG_DROP,
+        branchTip.z + CANOPY_FACE_OFFSET,
+      );
+      groupRef.current.rotation.set(
+        hangingTilt.x + swayZ,
+        hangingTilt.y + sway * 0.5,
+        hangingTilt.z + sway,
+      );
       const breathe = 1 + Math.sin(t * 1.2 + index) * 0.02;
       groupRef.current.scale.setScalar(breathe);
       if (glowRef.current) {
         const m = glowRef.current.material as THREE.MeshBasicMaterial;
         m.opacity = 0.12 + Math.sin(t * 1.5 + index) * 0.04;
+      }
+      if (stemRef.current) {
+        cardTop.set(0, COUPON_H / 2, 0).applyQuaternion(groupRef.current.quaternion).add(groupRef.current.position);
+        stemDirection.copy(cardTop).sub(branchTip);
+        const length = stemDirection.length();
+        stemMid.copy(branchTip).add(cardTop).multiplyScalar(0.5);
+        stemRef.current.position.copy(stemMid);
+        stemRef.current.quaternion.setFromUnitVectors(stemUp, stemDirection.normalize());
+        stemRef.current.scale.set(1, length, 1);
       }
     } else if (state.phase === 'falling') {
       velocityRef.current.y -= 9.8 * dt;
@@ -331,7 +289,11 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       const k = Math.min(1, elapsed / dur);
       // Elastic ease
       const eased = k === 1 ? 1 : 1 - Math.pow(2, -10 * k) * Math.cos((k * 10 - 0.75) * (2 * Math.PI) / 3);
-      groupRef.current.position.set(branchTip.x, branchTip.y - HANG_DROP, branchTip.z);
+      groupRef.current.position.set(
+        branchTip.x * CANOPY_OUTER_SPREAD,
+        branchTip.y - HANG_DROP,
+        branchTip.z + CANOPY_FACE_OFFSET,
+      );
       groupRef.current.rotation.set(0, 0, 0);
       groupRef.current.scale.setScalar(Math.max(0, eased));
       if (k >= 1) onRegrown(index);
@@ -350,16 +312,10 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   return (
     <>
       {state.phase === 'hanging' && (
-        <Line
-          points={[
-            [branchTip.x, branchTip.y, branchTip.z],
-            [branchTip.x, branchTip.y - HANG_DROP + COUPON_H / 2, branchTip.z],
-          ]}
-          color="#3D2106"
-          lineWidth={1.2}
-          transparent
-          opacity={0.7}
-        />
+        <mesh ref={stemRef} raycast={() => {}}>
+          <cylinderGeometry args={[0.012, 0.012, 1, 6]} />
+          <meshStandardMaterial color="#3D2106" roughness={0.92} />
+        </mesh>
       )}
 
       <group
@@ -402,7 +358,6 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         {!isMobile && state.phase !== 'regrowing' && (
           <Html
             transform
-            sprite
             occlude={false}
             position={[0, 0, COUPON_D / 2 + 0.012]}
             scale={COUPON_W / 920}

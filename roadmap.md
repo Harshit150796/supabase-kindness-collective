@@ -35,8 +35,12 @@
 - [x] Remove every mobile sticky, tall-stage, `svh` stage, and band-math implementation from `WhatWeDo`.
 
 ## Hero tree coupons and ambient restoration
-- [ ] Measure and capture the current coupon fruit rendering at 1440px.
-- [ ] Replace dense coupon documents with two-element brand chips.
-- [ ] Redistribute and attach coupons with wind-following stems and varied tilt.
-- [ ] Restore medium/high ambient effects while preserving the low tier.
-- [ ] Capture visual proof, night fireflies, FPS measurements, diagnostics, and build status.
+- [x] Measure and capture the current coupon fruit rendering at 1440px.
+- [x] Replace dense coupon documents with two-element brand chips.
+- [x] Redistribute and attach coupons with wind-following stems and varied tilt.
+- [x] Restore medium/high ambient effects while preserving the low tier.
+- [ ] Capture a valid pre-change 1440px coupon crop and width; the available pre-change capture was bot-gated and blank.
+- [x] Capture two sway phases proving stems remain attached.
+- [x] Capture visible medium-tier night fireflies.
+- [ ] Measure hardware FPS at 1440px and throttled mobile; software WebGL measured 0.2/0.4 FPS and is not representative. Build is clean.
+- [x] Report PartnerBrands unsupported contribution figures separately without changing them.

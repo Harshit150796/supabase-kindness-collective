@@ -69,6 +69,10 @@ export interface InteractionState {
 const Ctx = createContext<InteractionState | null>(null);
 
 function getTimeOfDayFromClock(): TimeOfDay {
+  if (typeof window !== 'undefined') {
+    const forced = new URLSearchParams(window.location.search).get('time3d');
+    if (forced === 'day' || forced === 'sunset' || forced === 'night') return forced;
+  }
   const h = new Date().getHours();
   if (h >= 6 && h < 17) return 'day';
   if (h >= 17 && h < 20) return 'sunset';

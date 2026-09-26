@@ -11,7 +11,8 @@ const BOT_UA_RE = /(bot|crawler|spider|crawling|Googlebot|bingbot|facebookextern
 function canRender3D(): boolean {
   if (typeof window === 'undefined' || typeof document === 'undefined') return false;
   try {
-    if (BOT_UA_RE.test(navigator.userAgent || '')) return false;
+    const qaOverride = new URLSearchParams(window.location.search).get('treeqa') === '1';
+    if (!qaOverride && BOT_UA_RE.test(navigator.userAgent || '')) return false;
     const canvas = document.createElement('canvas');
     const gl =
       canvas.getContext('webgl2') ||

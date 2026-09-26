@@ -11,6 +11,7 @@ export interface TierSettings {
   leafCount: number;
   plantCap: number;
   fireflies: boolean;
+  fireflyCount: number;
   trunkRipple: boolean;
   ambientBirds: number;
 }
@@ -76,6 +77,7 @@ const LOW: TierSettings = {
   leafCount: 2500,
   plantCap: 6,
   fireflies: false,
+  fireflyCount: 0,
   trunkRipple: false,
   ambientBirds: 1,
 };
@@ -87,10 +89,11 @@ const MEDIUM: TierSettings = {
   shadowMapSize: 1024,
   antialias: true,
   leafCount: 4000,
-  plantCap: 20,
-  fireflies: false,
-  trunkRipple: false,
-  ambientBirds: 3,
+  plantCap: 32,
+  fireflies: true,
+  fireflyCount: 24,
+  trunkRipple: true,
+  ambientBirds: 4,
 };
 
 const HIGH: TierSettings = {
@@ -102,8 +105,9 @@ const HIGH: TierSettings = {
   leafCount: 7000,
   plantCap: 40,
   fireflies: true,
+  fireflyCount: 40,
   trunkRipple: true,
-  ambientBirds: 6,
+  ambientBirds: 8,
 };
 
 export const TIER_SETTINGS: Record<DeviceTier, TierSettings> = {
