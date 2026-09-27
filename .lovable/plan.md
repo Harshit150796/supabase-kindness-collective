@@ -1,28 +1,33 @@
-# Sharpen and Restore the Hero Tree
+# Health check for every outside service after the workspace move
 
-## Goal
-Make coupon fruits instantly readable, visibly attached across the canopy, and restore ambient life on normal devices without changing lighting, exposure, tone mapping, environment, colors, geometry, or camera.
+## What a first look already shows
+- **Supabase:** the site is still connected to the same Supabase project, so all accounts, donations and fundraisers stay where they were.
+- **Saved keys still present:** Resend (email), Stripe (secret key and webhook), Square (access token, app ID, location ID, webhook key) and the AI assistant key.
+- **Missing keys:** the settings for Tremendous (the service that buys the gift cards) are gone, so creating real coupons would fail. The Square "production or sandbox" setting is also missing. The code falls back to a default for that one, so I'll check which default it uses.
+- **Google sign-in:** this is set up inside your Supabase account, not in Lovable, so the move shouldn't affect it. I'll still test it.
 
-## Investigation findings
-- Coupon textures are already 2048×1280; the blur comes from too many tiny details at the final display size.
-- `/public/brands` contains 27 favicon-style square assets: 16×16, 32×32, 48×48, 64×64, 96×96, or 128×128. They are not full wordmark assets.
-- `PartnerBrands.tsx` currently uses emojis, names, categories, and unsupported contribution figures. Its wording is: “Donations convert into digital vouchers redeemable across 50+ available retail networks.”
-- The approved current phrase is: “Every dollar, redeemable at” in the live retailer bar.
-- Using small favicons as dominant coupon marks would produce inconsistent quality; branded coupon artwork may also suggest endorsement. Use bold text wordmarks instead, preserving the existing brand colors.
-- Existing tier gates: low has no fireflies/ripple, 1 ambient bird, 6 plants; medium has no fireflies/ripple, 3 birds, 20 plants; high has 40 fireflies, ripple, 6 birds, 40 plants.
+A key being saved doesn't prove it still works, so each service gets a live test.
 
-## Changes
-1. Rebuild each coupon face as a two-element icon: dominant brand-colored field with a large wordmark, plus a large high-contrast dollar amount. Remove the trait pill and “GROCERY COUPON” label from both the canvas texture and desktop face.
-2. Keep card size, silhouette, proportions, count, and every `COUPON_FRUITS` brand color unchanged.
-3. Spread the existing 12 coupons deterministically across lower, outer, and upper branch attachment points. Add varied resting tilt and rotation.
-4. Attach each card with a subtle stem/string whose endpoint moves with the card’s existing sway, so stem and card remain connected in wind.
-5. Make firefly count tier-aware: low remains off, medium uses about 24, high uses 40. Restore trunk ripple on medium, set ambient birds to 1/4/8, and raise medium plant capacity toward high while keeping low conservative.
-6. Add nonvisual measurement hooks only where needed for reproducible coupon-width, tier, and FPS evidence.
+## Checks (in order)
+1. **Supabase:** load the homepage data, sign in with a test account, and confirm the server functions respond.
+2. **Resend:** send one test code email to connect@coupondonation.com and confirm it arrives from support@coupondonation.com.
+3. **Stripe:** open the on-page Stripe payment form and confirm it loads without errors.
+4. **Square:** open the on-page Square form and confirm it loads with the live location.
+5. **Google sign-in:** confirm the Google button reaches Google's sign-in screen and returns to the site.
+6. **AI assistant (Coupon chat):** send a single question and confirm it answers.
+7. **Tremendous:** confirm the coupon-purchasing step fails only because its keys are missing.
 
-## Verification
-- Preserve a baseline 1440px crop and capture an after crop at the same viewport and camera state.
-- Measure actual rendered coupon width before and after; report the distribution and representative value.
-- Capture night mode with visible fireflies.
-- Measure FPS at 1440px and under mobile CPU throttling; scale back only the specific restored effect if it causes a measured regression.
-- Publish before/after tier tables, confirm no console errors, and read the automatic build result.
-- Explicitly compare protected lighting, exposure, tone mapping, environment, geometry, camera, colors, lazy loading, canvas fade, blend, wheel safeguards, leaf depth material, and alpha-to-coverage to ensure they remain untouched.
+## Fixes
+- For any missing or broken key, I'll open a secure form so you can paste the value. You won't paste keys in chat.
+  - Tremendous API key, campaign ID, funding source ID and environment (from your Tremendous dashboard).
+  - Square environment, set to `production`, if the check shows it's needed.
+- If the AI assistant key fails after the move, I'll replace it with a new one.
+- If Stripe or Square webhooks point at an old address, I'll give you the exact address to paste back into their dashboards.
+
+## What you'll get
+A short table showing each service as working, fixed or needs your action, plus anything I couldn't test (for example, a real card payment).
+
+## Technical details
+- Keys the server code uses but that aren't saved: TREMENDOUS_API_KEY, TREMENDOUS_CAMPAIGN_ID, TREMENDOUS_FUNDING_SOURCE_ID, TREMENDOUS_ENV, SQUARE_ENVIRONMENT.
+- SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY are provided automatically by Supabase.
+- Tests will call the payment-config, send-otp and coupon-chat functions and check their logs.
