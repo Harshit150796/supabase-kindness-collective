@@ -12,7 +12,6 @@ import { BrandAllocationSliders, BrandAllocation } from './BrandAllocationSlider
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { OnPagePayment, type DonationPayload } from './OnPagePayment';
 
 // Payment method icons as SVG components for brand accuracy
 const PaymentMethodIcons = () => (
