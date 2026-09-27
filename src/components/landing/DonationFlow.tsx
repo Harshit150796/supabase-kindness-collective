@@ -311,23 +311,6 @@ export function DonationFlow() {
     }
   };
 
-  const buildPayload = (): DonationPayload => {
-    const brandAllocations = currentAllocations.map(a => ({
-      brand: a.brandName,
-      brandId: a.brandId,
-      percent: a.percentage,
-      amount: Number(((amount * a.percentage) / 100).toFixed(2)),
-    }));
-    return {
-      amount,
-      brandName: brandAllocations[0]?.brand || '',
-      brandId: brandAllocations[0]?.brandId || '',
-      brandAllocations,
-      userId: user?.id || null,
-      userEmail: user?.email || null,
-      fundraiserId: new URLSearchParams(window.location.search).get('fundraiser'),
-    };
-  };
 
   const handleManualRedirect = () => {
     if (checkoutUrl) {
