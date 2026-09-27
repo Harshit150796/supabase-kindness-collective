@@ -91,7 +91,6 @@ export function DonationFlow() {
   const [customAmountText, setCustomAmountText] = useState('');
   const [providers, setProviders] = useState<{ square: boolean; stripe: boolean }>({ square: true, stripe: true });
   const [activeProvider, setActiveProvider] = useState<'square' | 'stripe'>('square');
-  const [inlinePay, setInlinePay] = useState<'square' | 'stripe' | null>(null);
   useEffect(() => {
     supabase
       .from('payment_settings' as never)
