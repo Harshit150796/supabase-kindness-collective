@@ -876,7 +876,7 @@ export function DonationFlow() {
                           size="lg"
                           variant={i === 0 ? 'default' : 'outline'}
                           className="h-auto min-h-12 flex-col gap-0.5 py-3"
-                          onClick={() => setInlinePay(o.id)}
+                          onClick={() => handleContinue(0, o.id)}
                           disabled={isProcessing}
                         >
                           {isProcessing && activeProvider === o.id ? (
