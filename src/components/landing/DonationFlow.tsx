@@ -855,9 +855,7 @@ export function DonationFlow() {
                 </div>
               </div>
 
-              {inlinePay ? (
-                <OnPagePayment provider={inlinePay} payload={buildPayload()} onCancel={() => setInlinePay(null)} />
-              ) : (() => {
+              {(() => {
                 const options = ([
                   providers.square && { id: 'square' as const, label: 'Pay with Square', hint: 'Card, Apple Pay, Google Pay' },
                   providers.stripe && { id: 'stripe' as const, label: 'Pay with Stripe', hint: 'Card, Link, wallets' },
