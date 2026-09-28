@@ -14,9 +14,9 @@ export interface BranchTip {
 const CANOPY_CENTER = new THREE.Vector3(0, 4.4, 0);
 
 const CANOPY_BANDS = [
-  { y: 3.25, radiusX: 1.72, radiusZ: 1.42, count: 6, phase: 0.08 },
-  { y: 4.3, radiusX: 2.08, radiusZ: 1.78, count: 8, phase: 0.0 },
-  { y: 5.35, radiusX: 1.55, radiusZ: 1.3, count: 6, phase: -0.1 },
+  { y: 2.8, radiusX: 1.55, radiusZ: 1.9, count: 6, frontCount: 4, phase: 0.2 },
+  { y: 4.0, radiusX: 2.08, radiusZ: 2.05, count: 8, frontCount: 4, phase: -0.14 },
+  { y: 5.15, radiusX: 1.65, radiusZ: 1.7, count: 6, frontCount: 4, phase: 0.32 },
 ] as const;
 
 /**
@@ -42,7 +42,7 @@ export function getBranchTips(count = 20): BranchTip[] {
     // Each band deliberately gives the opening camera four/five front-facing
     // fruits and two/three rear fruits. Side/rear coverage remains present for
     // a populated full orbit, while the initial view reads as a fruit tree.
-    const frontCount = Math.ceil(band.count * 0.64);
+    const frontCount = band.frontCount;
     const rearCount = band.count - frontCount;
     const angles: number[] = [];
     for (let i = 0; i < frontCount; i++) {

@@ -314,18 +314,20 @@ function PerfWatchdog({ onSlow }: { onSlow: () => void }) {
 function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boolean }) {
   const { leafCount, plantCap } = settings;
   const visibleFruitCount = Math.min(20, COUPON_FRUITS.length);
+  // Open with a varied, recognizable mix that includes both compact emblems
+  // and long wordmarks such as CVS. Every omitted brand enters through the
+  // same non-repeating replacement queue after a fruit falls.
+  const initialBrandIndices = useMemo(
+    () => [0, 23, 1, 16, 2, 24, 3, 9, 4, 25, 5, 12, 6, 20, 7, 21, 8, 22, 10, 11].slice(0, visibleFruitCount),
+    [visibleFruitCount],
+  );
 
   const branchTips = useMemo(() => {
     return getBranchTips(visibleFruitCount).map((branch) => branch.tip);
   }, [visibleFruitCount]);
-  const [brandIndices, setBrandIndices] = useState(() =>
-    Array.from({ length: visibleFruitCount }, (_, index) => index),
-  );
+  const [brandIndices, setBrandIndices] = useState(() => initialBrandIndices);
   const replacementQueueRef = useRef(
-    Array.from(
-      { length: Math.max(0, COUPON_FRUITS.length - visibleFruitCount) },
-      (_, index) => index + visibleFruitCount,
-    ),
+    COUPON_FRUITS.map((_, index) => index).filter((index) => !initialBrandIndices.includes(index)),
   );
   const shuffleRoundRef = useRef(1);
   const brandIndicesRef = useRef(brandIndices);

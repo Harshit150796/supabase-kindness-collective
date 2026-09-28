@@ -35,7 +35,7 @@ function logoSize(aspect: number) {
   // A single long-edge limit makes wide wordmarks (CVS, Uber Eats, Walgreens)
   // optically tiny. Give those marks more width while circular emblems retain
   // the established fruit scale. The texture remains aspect-correct.
-  const longEdge = aspect >= 4.5 ? 1.32 : aspect >= 3.2 ? 1.18 : aspect >= 2.2 ? 1.04 : 0.9;
+  const longEdge = aspect >= 5.5 ? 1.5 : aspect >= 4 ? 1.34 : aspect >= 3 ? 1.16 : aspect >= 2.2 ? 1.04 : 0.9;
   return aspect >= 1
     ? { width: longEdge, height: longEdge / aspect }
     : { width: longEdge * aspect, height: longEdge };
