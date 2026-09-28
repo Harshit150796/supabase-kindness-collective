@@ -7,7 +7,7 @@ const categories = [
   { icon: BookOpen, name: 'Education', count: 89, color: 'bg-blue-500/10 text-blue-600' },
   { icon: Shirt, name: 'Clothing', count: 156, color: 'bg-purple-500/10 text-purple-600' },
   { icon: Car, name: 'Transportation', count: 67, color: 'bg-verify/10 text-verify' },
-  { icon: Zap, name: 'Utilities', count: 94, color: 'bg-yellow-500/10 text-verify' },
+  { icon: Zap, name: 'Utilities', count: 94, color: 'bg-verify/10 text-verify' },
 ];
 
 export function CategoriesSection() {

@@ -74,7 +74,7 @@ function GiveIllustration({ progress, still, offset }: ArtProps) {
         <text x="40" y="82.5" textAnchor="middle" fontSize="8" fontWeight="700" fill="hsl(var(--verify-foreground))">Give</text>
       </motion.g>
       {!still && [0, 1, 2].map((index) => <Coin key={index} phase={phase} index={index} />)}
-      <motion.path d="M98 46c0-4 6-6 8-2 2-4 8-2 8 2 0 5-8 11-8 11s-8-6-8-11z" fill="hsl(var(--verify) / 0.14)" stroke={BLUE} strokeWidth="2" style={{ scale: still ? 1 : heartScale, opacity: still ? 1 : heartOpacity, transformOrigin: '106px 52px' }} />
+          <motion.path d="M98 46c0-4 6-6 8-2 2-4 8-2 8 2 0 5-8 11-8 11s-8-6-8-11z" fill="hsl(var(--verify) / 0.14)" stroke={BLUE} strokeWidth="2" style={{ scale: still ? 1 : heartScale, opacity: still ? 1 : heartOpacity, transformOrigin: '106px 52px' }} />
     </svg>
   );
 }
@@ -244,7 +244,7 @@ function DonateDoorIcon() {
 }
 
 function ApplyDoorIcon() {
-  return <svg viewBox="0 0 40 40" className="h-10 w-10 text-verify" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="hsl(var(--gold) / 0.12)" stroke="currentColor" strokeWidth="2" /><path d="M12 19h16l-2 11H14zm3 0v-3a5 5 0 0 1 10 0v3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+  return <svg viewBox="0 0 40 40" className="h-10 w-10 text-verify" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="hsl(var(--verify) / 0.12)" stroke="currentColor" strokeWidth="2" /><path d="M12 19h16l-2 11H14zm3 0v-3a5 5 0 0 1 10 0v3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 
 type Step = (typeof steps)[number];
