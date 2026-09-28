@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 const STORAGE_KEY = "hero-top-donors-collapsed";
 
 const RANK_STYLES = [
-  "bg-verify text-amber-950",
+  "bg-verify text-verify-foreground",
   "bg-slate-300 text-slate-800",
-  "bg-muted text-orange-950",
+  "bg-muted text-foreground",
   "bg-muted text-muted-foreground",
   "bg-muted text-muted-foreground",
 ];
@@ -85,7 +85,7 @@ export function TopDonorsPanel() {
                   >
                     {i + 1}
                   </div>
-                  <div className="w-7 h-7 rounded-full bg-emerald-100 text-primary flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold flex-shrink-0">
                     {d.is_anonymous ? "?" : initial(d.display_name)}
                   </div>
                   <div className="flex-1 min-w-0">

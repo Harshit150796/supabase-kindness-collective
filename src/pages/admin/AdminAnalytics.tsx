@@ -19,7 +19,7 @@ interface CouponStatusData { name: string; value: number; }
 interface BrandData { name: string; amount: number; }
 interface RecentUser { email: string; full_name: string | null; created_at: string; roles: string[]; }
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--gold))', 'hsl(142, 76%, 36%)', 'hsl(0, 84%, 60%)'];
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--verify))', 'hsl(var(--muted-foreground))', 'hsl(var(--destructive))'];
 
 export default function AdminAnalytics() {
   const [dateRange, setDateRange] = useState<DateRange>('30');
@@ -297,7 +297,7 @@ export default function AdminAnalytics() {
                     <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                     <YAxis dataKey="name" type="category" width={80} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
                     <Tooltip formatter={(value: number) => [`$${value}`, 'Amount']} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
-                    <Bar dataKey="amount" fill="hsl(var(--gold))" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="amount" fill="hsl(var(--verify))" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (

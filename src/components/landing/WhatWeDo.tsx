@@ -14,7 +14,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 
-const GOLD = 'hsl(var(--gold))';
+const BLUE = 'hsl(var(--verify))';
 const EMERALD = 'hsl(var(--primary))';
 const VERIFY = 'hsl(var(--verify))';
 
@@ -49,8 +49,8 @@ function Coin({ phase, index }: { phase: MotionValue<number>; index: number }) {
 
   return (
     <motion.g style={{ x, y, scaleX, opacity, transformOrigin: '40px 74px' }}>
-      <circle cx="40" cy="74" r="9" fill="hsl(var(--gold) / 0.22)" stroke={GOLD} strokeWidth="2" />
-      <text x="40" y="79" textAnchor="middle" fontSize="10" fontWeight="700" fill={GOLD}>$</text>
+      <circle cx="40" cy="74" r="9" fill="hsl(var(--verify) / 0.14)" stroke={BLUE} strokeWidth="2" />
+      <text x="40" y="79" textAnchor="middle" fontSize="10" fontWeight="700" fill={BLUE}>$</text>
     </motion.g>
   );
 }
@@ -68,13 +68,13 @@ function GiveIllustration({ progress, still, offset }: ArtProps) {
       <rect x="14" y="30" width="52" height="68" rx="10" fill="hsl(var(--card))" stroke="hsl(var(--border))" strokeWidth="2" />
       <rect x="24" y="40" width="24" height="4" rx="2" fill="hsl(var(--muted-foreground) / 0.35)" />
       <rect x="24" y="50" width="32" height="4" rx="2" fill="hsl(var(--muted-foreground) / 0.22)" />
-      {!still && <motion.circle cx="40" cy="79" r="17" fill="none" stroke={GOLD} strokeWidth="2" style={{ scale: rippleScale, opacity: rippleOpacity, transformOrigin: '40px 79px' }} />}
+      {!still && <motion.circle cx="40" cy="79" r="17" fill="none" stroke={BLUE} strokeWidth="2" style={{ scale: rippleScale, opacity: rippleOpacity, transformOrigin: '40px 79px' }} />}
       <motion.g style={{ scale: still ? 1 : press, transformOrigin: '40px 79px' }}>
-        <rect x="22" y="70" width="36" height="18" rx="9" fill={GOLD} />
+        <rect x="22" y="70" width="36" height="18" rx="9" fill={BLUE} />
         <text x="40" y="82.5" textAnchor="middle" fontSize="8" fontWeight="700" fill="hsl(var(--verify-foreground))">Give</text>
       </motion.g>
       {!still && [0, 1, 2].map((index) => <Coin key={index} phase={phase} index={index} />)}
-      <motion.path d="M98 46c0-4 6-6 8-2 2-4 8-2 8 2 0 5-8 11-8 11s-8-6-8-11z" fill="hsl(var(--gold) / 0.22)" stroke={GOLD} strokeWidth="2" style={{ scale: still ? 1 : heartScale, opacity: still ? 1 : heartOpacity, transformOrigin: '106px 52px' }} />
+      <motion.path d="M98 46c0-4 6-6 8-2 2-4 8-2 8 2 0 5-8 11-8 11s-8-6-8-11z" fill="hsl(var(--verify) / 0.14)" stroke={BLUE} strokeWidth="2" style={{ scale: still ? 1 : heartScale, opacity: still ? 1 : heartOpacity, transformOrigin: '106px 52px' }} />
     </svg>
   );
 }
@@ -104,11 +104,11 @@ function CouponIllustration({ progress, still, offset }: ArtProps) {
           const opacity = mapValue(phase, [0, 0.57 + index * 0.018, 0.61 + index * 0.018, 1], [0.32, 0.32, 1, 1]);
           return <motion.rect key={x} x={x} y="55" width={index % 3 === 0 ? 3 : 2} height="20" rx="1" fill={EMERALD} style={{ opacity: still ? 1 : opacity }} />;
         })}
-        {!still && <motion.rect x="14" y="34" width="18" height="52" rx="9" fill="hsl(var(--gold) / 0.28)" style={{ x: shimmerX, opacity: shimmerOpacity }} />}
+        {!still && <motion.rect x="14" y="34" width="18" height="52" rx="9" fill="hsl(var(--verify) / 0.16)" style={{ x: shimmerX, opacity: shimmerOpacity }} />}
       </motion.g>
       {!still && (
         <motion.g style={{ x: incomingX, opacity: incomingOpacity }}>
-          {[0, 1, 2].map((index) => <ellipse key={index} cx={36 + index * 15} cy={25 + index * 5} rx="8" ry="5" fill="hsl(var(--gold) / 0.25)" stroke={GOLD} strokeWidth="2" />)}
+          {[0, 1, 2].map((index) => <ellipse key={index} cx={36 + index * 15} cy={25 + index * 5} rx="8" ry="5" fill="hsl(var(--verify) / 0.14)" stroke={BLUE} strokeWidth="2" />)}
         </motion.g>
       )}
       {!still && <motion.circle cx="90" cy="59" r="12" fill="none" stroke={EMERALD} strokeWidth="2" style={{ scale: ringScale, opacity: ringOpacity, transformOrigin: '90px 59px' }} />}
@@ -136,8 +136,8 @@ function DeliveryIllustration({ progress, still, offset }: ArtProps) {
   return (
     <svg {...svgProps}>
       <GroceryItem phase={phase} index={0}>
-        <path d="M30 50c0-7 5-12 12-12h8c6 0 11 5 11 11v9H30z" fill="hsl(var(--gold) / 0.28)" stroke={GOLD} strokeWidth="2" />
-        <path d="M35 43c5 2 9 2 14 0" fill="none" stroke={GOLD} strokeWidth="2" />
+        <path d="M30 50c0-7 5-12 12-12h8c6 0 11 5 11 11v9H30z" fill="hsl(var(--verify) / 0.14)" stroke={BLUE} strokeWidth="2" />
+        <path d="M35 43c5 2 9 2 14 0" fill="none" stroke={BLUE} strokeWidth="2" />
       </GroceryItem>
       <GroceryItem phase={phase} index={1}>
         <path d="M53 58V39l7-7h10l5 7v19z" fill="hsl(var(--card))" stroke={EMERALD} strokeWidth="2" />
@@ -147,7 +147,7 @@ function DeliveryIllustration({ progress, still, offset }: ArtProps) {
         <circle cx="84" cy="48" r="10" fill="hsl(var(--primary) / 0.16)" stroke={EMERALD} strokeWidth="2" />
         <path d="M84 38v-5m0 2c4-4 7-2 8 0" fill="none" stroke={EMERALD} strokeWidth="2" />
       </GroceryItem>
-      <path d="M27 57h66l-6 42a6 6 0 0 1-6 5H43a6 6 0 0 1-6-5z" fill="hsl(var(--gold) / 0.12)" stroke={EMERALD} strokeWidth="2" />
+      <path d="M27 57h66l-6 42a6 6 0 0 1-6 5H43a6 6 0 0 1-6-5z" fill="hsl(var(--verify) / 0.08)" stroke={EMERALD} strokeWidth="2" />
       <path d="M27 57h66M45 57v-8a15 15 0 0 1 30 0v8" fill="none" stroke={EMERALD} strokeWidth="2" />
       <motion.g style={{ scale: still ? 1 : checkScale, opacity: still ? 1 : checkOpacity, transformOrigin: '101px 32px' }}>
         <circle cx="101" cy="32" r="11" fill="hsl(var(--primary) / 0.12)" stroke={EMERALD} strokeWidth="2" />
@@ -405,12 +405,11 @@ export function WhatWeDo() {
   return (
     <section ref={sectionRef} className="relative bg-background py-20 md:py-28">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(60% 40% at 12% 18%, hsl(var(--gold) / 0.05), transparent 70%), radial-gradient(60% 40% at 88% 82%, hsl(var(--primary) / 0.05), transparent 70%)' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(60% 40% at 12% 18%, hsl(var(--verify) / 0.04), transparent 70%), radial-gradient(60% 40% at 88% 82%, hsl(var(--primary) / 0.05), transparent 70%)' }} />
       </div>
       <div className="container relative mx-auto px-4">
         <div className="max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">How it works</p>
-          <h2 className="mt-3 text-4xl font-bold leading-tight text-foreground md:text-5xl">Give what people need.</h2>
+          <h2 className="font-display text-5xl font-normal leading-[1.02] text-foreground md:text-6xl">Give what people need.</h2>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">CouponDonation turns your donation into coupons, gift cards and credits — so it arrives as food, medicine or transport, never as cash. And you can always see exactly where it went.</p>
         </div>
 
@@ -468,7 +467,7 @@ export function WhatWeDo() {
             <DonateDoorIcon />
             <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-lg font-semibold text-foreground md:text-xl">I want to help someone <ArrowRight className="h-4 w-4 shrink-0 text-primary transition-transform group-hover:translate-x-1" /></span><span className="mt-1 block text-base text-muted-foreground">Pick a real need and cover it.</span></span>
           </Link>
-          <Link to="/apply" className="group flex min-h-32 items-center gap-4 rounded-2xl border border-verify/25 bg-verify/[0.05] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-verify/45 hover:shadow-[0_12px_32px_-16px_hsl(var(--gold)/0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+          <Link to="/apply" className="group flex min-h-32 items-center gap-4 rounded-md border border-verify/25 bg-verify/[0.05] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-verify/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
             <ApplyDoorIcon />
             <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-lg font-semibold text-foreground md:text-xl">I need help <ArrowRight className="h-4 w-4 shrink-0 text-verify transition-transform group-hover:translate-x-1" /></span><span className="mt-1 block text-base text-muted-foreground">Tell us what you need. U.S. residents, free to apply.</span></span>
           </Link>

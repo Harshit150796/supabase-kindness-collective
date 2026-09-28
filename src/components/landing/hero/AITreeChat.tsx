@@ -96,9 +96,9 @@ export function AITreeChat({ open, onClose }: Props) {
     <div className="absolute bottom-4 right-4 z-40 pointer-events-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
       <div className="flex flex-col w-[360px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-8rem)] rounded-2xl border border-border bg-background/95 backdrop-blur-xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-gradient-to-br from-primary/10 to-emerald-700/10">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-primary/5">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-emerald-700 flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
               <Leaf className="w-4 h-4" />
             </div>
             <div>
@@ -196,7 +196,7 @@ export function AITreeChat({ open, onClose }: Props) {
               <button
                 key={s}
                 onClick={() => handleSuggestion(s)}
-                className="text-[11px] px-2.5 py-1 rounded-full bg-emerald-50 text-primary border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                className="text-[11px] px-2.5 py-1 rounded-full bg-primary/5 text-primary border border-primary/20 hover:bg-primary/10 transition-colors"
               >
                 {s}
               </button>
@@ -255,7 +255,7 @@ function ToolResults({ toolParts }: { toolParts: any[] }) {
               {output.results.map((r: any, j: number) => (
                 <div
                   key={j}
-                  className="rounded-lg border border-border bg-card p-2.5 hover:border-emerald-300 transition-colors"
+                  className="rounded-md border border-border bg-card p-2.5 hover:border-primary/40 transition-colors"
                 >
                   <div className="text-xs font-semibold text-foreground line-clamp-1">
                     {r.title}

@@ -822,11 +822,11 @@ export function DonationFlow() {
                   </div>
                 </div>
 
-                {/* Gold coins bonus */}
-                <div className="bg-gradient-to-r from-amber-500/10 to-verify/10 rounded-lg p-4 border border-verify/20">
+                {/* Rewards bonus */}
+                <div className="bg-verify/5 rounded-md p-4 border border-verify/20">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-verify to-verify flex items-center justify-center">
-                      <Gift className="w-5 h-5 text-white" />
+                      <Gift className="w-5 h-5 text-verify-foreground" />
                     </div>
                     <div>
                       <p className="font-medium text-foreground">Plus, earn {amount * 10} Gold Coins</p>

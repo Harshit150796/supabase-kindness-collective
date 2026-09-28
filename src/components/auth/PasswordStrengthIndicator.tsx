@@ -24,7 +24,7 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicato
 
   const getStrengthColor = () => {
     if (metCount <= 2) return "bg-destructive";
-    if (metCount <= 3) return "bg-yellow-500";
+    if (metCount <= 3) return "bg-verify";
     return "bg-green-500";
   };
 

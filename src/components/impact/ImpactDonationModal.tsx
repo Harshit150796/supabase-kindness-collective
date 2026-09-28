@@ -72,7 +72,7 @@ const getStatusConfig = (status: string) => {
         icon: Check,
         bgColor: 'bg-primary/10',
         textColor: 'text-primary',
-        borderColor: 'border-l-emerald-500',
+        borderColor: 'border-l-primary',
       };
     case 'reserved':
       return {
@@ -104,7 +104,7 @@ const getStatusConfig = (status: string) => {
         icon: Clock,
         bgColor: 'bg-verify/10',
         textColor: 'text-verify',
-        borderColor: 'border-l-amber-500',
+        borderColor: 'border-l-verify',
       };
   }
 };
