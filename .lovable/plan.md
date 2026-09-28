@@ -8,14 +8,16 @@ Every fruit will use a complete, authentic brand mark with its original colors a
 - Aldi opens in an upper rear slot; Instacart, Walgreens, Lyft, Kroger, and Domino’s also open behind the canopy. They can remain buried until the tree rotates.
 - Several opening-view slot pairs nearly occupy the same screen position, including Publix/Instacart, Walgreens/Kroger, Subway/Aldi, and Amazon/Subway.
 - The logo material still uses normal depth testing, so leaves correctly hide artwork that sits behind them; a render-order change alone cannot solve the placement problem.
-- The current CVS SVG contains only one path from the wordmark and is not a complete CVS mark. The other 26 files contain usable vector artwork, but each still needs an individual rendered inspection.
+- The current CVS SVG contains only one path from the wordmark and is not a complete CVS mark.
+- The current Aldi SVG is also incorrect: it is an unrelated portrait-format gradient illustration rather than Aldi’s authentic blue/orange emblem. Its wrong artwork and its upper-rear slot compound the visibility failure.
+- The remaining 25 files contain plausible vector artwork, but each still needs an individual rendered inspection before being accepted as complete.
 
 ## Changes
 
 ### 1. Validate and repair all 27 logo assets individually
 - Render each local SVG alone on transparent light, dark, and leaf-green backgrounds.
 - Check full bounds, path completeness, viewBox behavior, transforms, strokes, gradients, original colors, and whether any edge is clipped after rasterization.
-- Replace the incomplete CVS vector with a complete authentic CVS mark from a reputable vector source.
+- Replace the incomplete CVS vector and incorrect Aldi artwork with complete authentic marks from reputable vector sources, stored locally with no runtime request.
 - Keep authentic compact emblems where they are recognizable: Walmart spark, Instacart emblem, Target, Starbucks, McDonald’s, Aldi, Kroger, Postmates, Domino’s, Taco Bell, Chipotle, Walgreens, and Home Depot.
 - Keep complete wordmarks where the name is essential: Uber, DoorDash, Lyft, Amazon, Grubhub, eBay, Whole Foods, Publix, Trader Joe’s, Uber Eats, Seamless, Subway, CVS, and Costco.
 - Preserve every mark’s original vector colors and proportions. Do not recolor black Uber or black/orange Amazon, flatten multicolor marks, stretch artwork, or substitute text.
