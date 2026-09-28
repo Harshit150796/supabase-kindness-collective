@@ -92,6 +92,6 @@
 - [x] Restore the founder-approved pre-redesign hero headline exactly and verify it at 390px and 1440px.
 - [x] Upgrade shared surfaces and motion, including clearly visible gentle-mode reveals.
 - [x] Recompose homepage sections in order with live data, tonal/deep bands, imagery, product visuals, and richer motion.
-- [ ] Upgrade About, How It Works, Stories, FAQ, Blog, article, fundraiser, and story detail pages at page boundaries.
+- [x] Upgrade About, How It Works, Stories, FAQ, Blog, article, fundraiser, and story detail pages at page boundaries.
 - [x] Restore Gold Coins messaging without an amount because no donation-linked credit is currently stored.
 - [ ] Capture full/reduced-motion proof, responsive section screenshots, overflow, console, build, and LCP checks.
