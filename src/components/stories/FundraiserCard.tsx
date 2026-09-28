@@ -56,11 +56,11 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
   return (
     <Link
       to={`/f/${fundraiser.unique_slug}`}
-      className="block group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-2xl"
+      className="block group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
     >
       <article className="w-full">
         {/* Image with overlaid donation pill */}
-        <div className="relative overflow-hidden rounded-2xl bg-muted">
+        <div className="relative overflow-hidden rounded-sm bg-muted">
           <AspectRatio ratio={4 / 3}>
             {primaryImage ? (
               <img
@@ -76,14 +76,12 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
             )}
           </AspectRatio>
 
-          <div className="absolute bottom-3 left-3 bg-black/70 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">
-            {formatDonations(donorCount)} donations
-          </div>
+          {donorCount > 0 && <div className="absolute bottom-3 left-3 bg-foreground/80 px-2.5 py-1 text-xs font-semibold text-background backdrop-blur-sm">{formatDonations(donorCount)} donations</div>}
         </div>
 
         {/* Text below image */}
         <div className="pt-3 space-y-2">
-          <h3 className="font-bold text-[17px] leading-snug text-foreground line-clamp-2 group-hover:underline decoration-2 underline-offset-2">
+          <h3 className="font-display text-2xl font-normal leading-snug text-foreground line-clamp-2 group-hover:underline decoration-1 underline-offset-4">
             {fundraiser.title}
           </h3>
 

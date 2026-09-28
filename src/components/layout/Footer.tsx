@@ -6,7 +6,7 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-background text-foreground">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4">
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -46,9 +46,9 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4">Contact</h3>
             <ul className="space-y-3 text-sm text-muted-foreground">
-              <li className="flex items-center gap-2">
+              <li className="flex min-w-0 items-center gap-2">
                 <Mail className="w-4 h-4" />
-                <span>connect@coupondonation.com</span>
+                <span className="break-all">connect@coupondonation.com</span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />

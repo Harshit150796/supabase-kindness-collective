@@ -1,435 +1,112 @@
-import { SEO, breadcrumbJsonLd } from '@/components/SEO';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowRight, Heart, MapPin, PlusCircle } from 'lucide-react';
+import { SEO, breadcrumbJsonLd } from '@/components/SEO';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
-import { impactStories, ImpactStory } from '@/data/impactStories';
+import { LineReveal, Reveal, ImageReveal } from '@/components/ui/editorial-motion';
+import { impactStories, type ImpactStory } from '@/data/impactStories';
 import { useFundraisers } from '@/hooks/useFundraisers';
+import { useLandingStats, formatUSD } from '@/hooks/useLandingStats';
+import { useTopDonors } from '@/hooks/useTopDonors';
 import { FundraiserCard } from '@/components/stories/FundraiserCard';
 import { FundraiserFilterBar, type FundraiserFilters } from '@/components/stories/FundraiserFilterBar';
 import { useZipStates } from '@/lib/zipStates';
-import { useMemo } from 'react';
-import { 
-  Heart, 
-  Users, 
-  DollarSign, 
-  Trophy, 
-  Crown, 
-  Medal,
-  MapPin,
-  Calendar,
-  CheckCircle2,
-  TrendingUp,
-  Coins,
-  Sparkles,
-  PlusCircle
-} from 'lucide-react';
+import { brandLogos } from '@/data/brandLogos';
 
 const categoryLabels: Record<string, string> = {
-  family: 'Family Support',
-  child: 'Child Welfare',
-  emergency: 'Emergency Aid',
-  community: 'Community',
+  family: 'Family Support', child: 'Child Welfare', emergency: 'Emergency Aid', community: 'Community',
 };
-
-const categoryColors: Record<string, string> = {
-  family: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  child: 'bg-pink-500/10 text-pink-600 border-pink-500/20',
-  emergency: 'bg-verify/10 text-verify border-border/20',
-  community: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-};
-
 type CategoryFilter = 'all' | 'family' | 'child' | 'emergency' | 'community';
-
-// Mock top donors data
-const topDonors = [
-  { id: 1, name: 'Anonymous Philanthropist', amount: 15000, donations: 45, brand: 'Whole Foods' },
-  { id: 2, name: 'Sarah M.', amount: 8500, donations: 28, brand: 'Starbucks' },
-  { id: 3, name: 'The Johnson Family', amount: 6200, donations: 31, brand: 'Target' },
-  { id: 4, name: 'Michael R.', amount: 4800, donations: 19, brand: 'Costco' },
-  { id: 5, name: 'Grace L.', amount: 3500, donations: 14, brand: 'Trader Joe\'s' },
-];
-
-// Mock brand partners data
-const topBrands = [
-  { name: 'Whole Foods', logo: 'https://logo.clearbit.com/wholefoods.com', totalRaised: 125000, donors: 892 },
-  { name: 'Starbucks', logo: 'https://logo.clearbit.com/starbucks.com', totalRaised: 98000, donors: 1205 },
-  { name: 'Target', logo: 'https://logo.clearbit.com/target.com', totalRaised: 87000, donors: 756 },
-  { name: 'Costco', logo: 'https://logo.clearbit.com/costco.com', totalRaised: 72000, donors: 634 },
-  { name: 'Trader Joe\'s', logo: 'https://logo.clearbit.com/traderjoes.com', totalRaised: 56000, donors: 489 },
-];
-
-// Community stats
-const communityStats = {
-  totalRaised: 438000,
-  familiesHelped: 2847,
-  activeDonors: 12500,
-  avgDonation: 35,
-};
 
 export default function Stories() {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
   const [fundraiserFilters, setFundraiserFilters] = useState<FundraiserFilters>({ category: 'all', state: 'all' });
-
-  // Fetch real fundraisers from database
-  const { data: fundraisers, isLoading: fundraisersLoading } = useFundraisers();
+  const { data: fundraisers, isLoading } = useFundraisers();
+  const stats = useLandingStats();
+  const { donors, loading: donorsLoading } = useTopDonors();
   const stateMap = useZipStates(fundraisers || []);
-
-  const filteredFundraisers = useMemo(() => {
-    return (fundraisers || []).filter((f) => {
-      if (fundraiserFilters.category !== 'all' && f.category !== fundraiserFilters.category) return false;
-      if (fundraiserFilters.state !== 'all') {
-        const st = f.zip_code ? stateMap.get(f.zip_code) : null;
-        if (st !== fundraiserFilters.state) return false;
-      }
-      return true;
-    });
-  }, [fundraisers, fundraiserFilters, stateMap]);
-
-
-  const filteredStories = activeCategory === 'all' 
-    ? impactStories 
-    : impactStories.filter(story => story.category === activeCategory);
-
+  const filteredFundraisers = useMemo(() => (fundraisers || []).filter((item) => {
+    if (fundraiserFilters.category !== 'all' && item.category !== fundraiserFilters.category) return false;
+    if (fundraiserFilters.state !== 'all') return item.zip_code ? stateMap.get(item.zip_code) === fundraiserFilters.state : false;
+    return true;
+  }), [fundraisers, fundraiserFilters, stateMap]);
+  const filteredStories = activeCategory === 'all' ? impactStories : impactStories.filter((story) => story.category === activeCategory);
   const categories: CategoryFilter[] = ['all', 'family', 'child', 'emergency', 'community'];
+  const liveTotals = stats ? [
+    { label: 'Completed donations', value: stats.donations_count.toLocaleString() },
+    { label: 'Donated', value: formatUSD(stats.total_raised) },
+    { label: 'Coupons created', value: stats.coupons_created.toLocaleString() },
+    { label: 'Active fundraisers', value: stats.active_fundraisers.toLocaleString() },
+  ].filter((item) => item.value !== '0' && item.value !== '$0') : [];
 
   return (
     <div className="min-h-dvh bg-background">
-      <SEO
-        title="Impact Stories - Real Lives Changed by Donations"
-        description="Read real stories of families helped through CouponDonation. Browse active fundraisers and see the impact every donation makes in our community."
-        path="/stories"
-        jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Stories', path: '/stories' }])}
-      />
+      <SEO title="Stories and Fundraisers" description="Browse active CouponDonation fundraisers and read editorial stories about needs that restricted coupons can meet." path="/stories" jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Stories', path: '/stories' }])} />
       <Navbar />
-      
-      <main className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <Breadcrumb className="mb-8">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Impact Stories</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <Badge variant="outline" className="mb-4 border-primary/30 text-primary">
-            <Heart className="w-3 h-3 mr-1" />
-            Real Stories, Real Impact
-          </Badge>
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Discover Fundraisers & Success Stories
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Support active fundraisers in your community or get inspired by families whose lives have been transformed through generous donors like you.
-          </p>
-        </div>
-
-        {/* Community Stats Banner */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-          <div className="bg-primary/5 rounded-2xl p-6 text-center border border-primary/10">
-            <DollarSign className="w-8 h-8 text-primary mx-auto mb-2" />
-            <div className="text-2xl md:text-3xl font-bold text-foreground">
-              ${(communityStats.totalRaised / 1000).toFixed(0)}K+
+      <main>
+        <section className="border-b border-border py-24 md:py-36">
+          <div className="container mx-auto px-4">
+            <div className="max-w-5xl">
+              <LineReveal><h1 className="max-w-4xl font-display text-6xl font-normal leading-none text-foreground md:text-8xl">Find a need you can help meet.</h1></LineReveal>
+              <Reveal delay={0.1}><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">Active fundraisers use live campaign records. Editorial stories explain the kinds of needs restricted coupons can cover.</p></Reveal>
             </div>
-            <div className="text-sm text-muted-foreground">Total Raised</div>
-          </div>
-          <div className="bg-accent/5 rounded-2xl p-6 text-center border border-accent/10">
-            <Users className="w-8 h-8 text-accent mx-auto mb-2" />
-            <div className="text-2xl md:text-3xl font-bold text-foreground">
-              {communityStats.familiesHelped.toLocaleString()}
-            </div>
-            <div className="text-sm text-muted-foreground">Families Helped</div>
-          </div>
-          <div className="bg-primary/5 rounded-2xl p-6 text-center border border-primary/10">
-            <Heart className="w-8 h-8 text-primary mx-auto mb-2" />
-            <div className="text-2xl md:text-3xl font-bold text-foreground">
-              {communityStats.activeDonors.toLocaleString()}
-            </div>
-            <div className="text-sm text-muted-foreground">Active Donors</div>
-          </div>
-          <div className="bg-blue-500/5 rounded-2xl p-6 text-center border border-blue-500/10">
-            <TrendingUp className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-            <div className="text-2xl md:text-3xl font-bold text-foreground">
-              ${communityStats.avgDonation}
-            </div>
-            <div className="text-sm text-muted-foreground">Avg. Donation</div>
-          </div>
-        </div>
-
-        {/* Active Fundraisers Section */}
-        <section className="mb-16">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <h2 className="text-2xl font-bold text-foreground">Active Fundraisers</h2>
+            {liveTotals.length > 0 && (
+              <div className="mt-16 grid grid-cols-2 border-y border-border md:grid-cols-4 md:divide-x md:divide-border">
+                {liveTotals.map((item, index) => <Reveal key={item.label} delay={index * 0.06} className="border-b border-border px-4 py-7 last:border-b-0 md:border-b-0"><div className="font-display text-4xl text-foreground">{item.value}</div><div className="mt-1 text-sm text-muted-foreground">{item.label}</div></Reveal>)}
               </div>
-              <p className="text-muted-foreground">
-                Support real campaigns from families in need
-              </p>
-            </div>
-            <Link to="/apply">
-              <Button variant="outline" className="gap-2 w-full sm:w-auto">
-                <PlusCircle className="w-4 h-4" />
-                Start a Fundraiser
-              </Button>
-            </Link>
+            )}
           </div>
+        </section>
 
-          <div className="mb-6">
+        <section className="py-24 md:py-32">
+          <div className="container mx-auto px-4">
+            <div className="mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
+              <div><LineReveal><h2 className="font-display text-5xl font-normal text-foreground md:text-6xl">Fundraisers open now.</h2></LineReveal><Reveal delay={0.08}><p className="mt-4 text-lg text-muted-foreground">Every amount and progress figure below comes from its campaign record.</p></Reveal></div>
+              <Button variant="outline" asChild><Link to="/apply"><PlusCircle className="mr-2 h-4 w-4" />Start a fundraiser</Link></Button>
+            </div>
             <FundraiserFilterBar filters={fundraiserFilters} onChange={setFundraiserFilters} />
-          </div>
-
-          {fundraisersLoading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="space-y-3">
-                  <Skeleton className="w-full aspect-[4/3] rounded-2xl" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-1.5 w-full" />
-                  <Skeleton className="h-3 w-24" />
-                </div>
-              ))}
-            </div>
-          ) : filteredFundraisers.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
-              {filteredFundraisers.map((fundraiser) => (
-                <FundraiserCard key={fundraiser.id} fundraiser={fundraiser} />
-              ))}
-            </div>
-          ) : fundraisers && fundraisers.length > 0 ? (
-            <div className="text-center py-12 bg-muted/30 rounded-2xl border border-dashed border-border">
-              <p className="text-muted-foreground">No fundraisers match these filters yet. Try clearing them.</p>
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-muted/30 rounded-2xl border border-dashed border-border">
-              <Sparkles className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">Be the First to Start a Fundraiser</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                No active fundraisers yet. Start your own and receive support from generous donors in our community.
-              </p>
-              <Link to="/apply">
-                <Button className="gap-2">
-                  <PlusCircle className="w-4 h-4" />
-                  Start Your Fundraiser
-                </Button>
-              </Link>
-            </div>
-          )}
-        </section>
-
-
-        {/* Success Stories Section */}
-        <section className="mb-16">
-          <div className="flex items-center gap-2 mb-2">
-            <CheckCircle2 className="w-5 h-5 text-primary" />
-            <h2 className="text-2xl font-bold text-foreground">Success Stories</h2>
-          </div>
-          <p className="text-muted-foreground mb-8">
-            Inspiring stories from families who reached their goals
-          </p>
-
-          {/* Category Filter */}
-          <div className="flex flex-wrap gap-2 mb-8">
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={activeCategory === category ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setActiveCategory(category)}
-                className="capitalize"
-              >
-                {category === 'all' ? 'All Stories' : categoryLabels[category]}
-              </Button>
-            ))}
-          </div>
-
-          {/* Stories Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredStories.map((story) => (
-              <StoryCard key={story.id} story={story} />
-            ))}
+            {isLoading ? (
+              <div className="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3">{[1,2,3].map((item) => <div key={item}><Skeleton className="aspect-[4/3] w-full rounded-sm" /><Skeleton className="mt-4 h-5 w-3/4" /><Skeleton className="mt-3 h-2 w-full" /></div>)}</div>
+            ) : filteredFundraisers.length > 0 ? (
+              <div className="mt-8 grid gap-x-7 gap-y-12 md:grid-cols-2 lg:grid-cols-3">{filteredFundraisers.map((fundraiser, index) => <Reveal key={fundraiser.id} delay={index * 0.05}><FundraiserCard fundraiser={fundraiser} /></Reveal>)}</div>
+            ) : (
+              <div className="mt-8 border-y border-border py-14"><h3 className="font-display text-3xl text-foreground">No matching fundraisers yet.</h3><p className="mt-3 text-muted-foreground">Clear the filters or start a fundraiser of your own.</p></div>
+            )}
           </div>
         </section>
 
-        {/* Top Donors Section */}
-        <section className="mb-16">
-          <div className="text-center mb-8">
-            <Badge variant="outline" className="mb-4 border-accent/30 text-accent">
-              <Trophy className="w-3 h-3 mr-1" />
-              Donor Leaderboard
-            </Badge>
-            <h2 className="text-3xl font-bold text-foreground mb-2">
-              Our Top Donors
-            </h2>
-            <p className="text-muted-foreground">
-              Celebrating the generous hearts making the biggest impact
-            </p>
+        <section className="border-y border-border py-24 md:py-32">
+          <div className="container mx-auto px-4">
+            <div className="mb-10 max-w-3xl"><LineReveal><h2 className="font-display text-5xl font-normal text-foreground md:text-6xl">Stories behind everyday needs.</h2></LineReveal><Reveal delay={0.08}><p className="mt-4 text-lg text-muted-foreground">These are editorial stories, not live fundraisers. Their text and photographs remain separate from campaign totals.</p></Reveal></div>
+            <div className="mb-8 flex flex-wrap gap-2">{categories.map((category) => <Button key={category} variant={activeCategory === category ? 'default' : 'outline'} size="sm" onClick={() => setActiveCategory(category)}>{category === 'all' ? 'All stories' : categoryLabels[category]}</Button>)}</div>
+            <div className="grid gap-x-7 gap-y-12 md:grid-cols-2 lg:grid-cols-3">{filteredStories.map((story, index) => <EditorialStoryCard key={story.id} story={story} index={index} />)}</div>
           </div>
+        </section>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Individual Donors */}
-            <div className="bg-card rounded-2xl border border-border p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Heart className="w-5 h-5 text-primary" />
-                Individual Donors
-              </h3>
-              <div className="space-y-4">
-                {topDonors.map((donor, index) => (
-                  <div key={donor.id} className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                      {index === 0 && <Crown className="w-4 h-4 text-verify" />}
-                      {index === 1 && <Medal className="w-4 h-4 text-gray-400" />}
-                      {index === 2 && <Medal className="w-4 h-4 text-verify" />}
-                      {index > 2 && <span className="text-sm font-medium text-muted-foreground">{index + 1}</span>}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-foreground truncate">{donor.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {donor.donations} donations via {donor.brand}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold text-primary">${donor.amount.toLocaleString()}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Brand Partners */}
-            <div className="bg-card rounded-2xl border border-border p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-accent" />
-                Top Brand Partners
-              </h3>
-              <div className="space-y-4">
-                {topBrands.map((brand, index) => (
-                  <div key={brand.name} className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                      {index === 0 && <Crown className="w-4 h-4 text-verify" />}
-                      {index === 1 && <Medal className="w-4 h-4 text-gray-400" />}
-                      {index === 2 && <Medal className="w-4 h-4 text-verify" />}
-                      {index > 2 && <span className="text-sm font-medium text-muted-foreground">{index + 1}</span>}
-                    </div>
-                    <img 
-                      src={brand.logo} 
-                      alt={brand.name}
-                      className="w-8 h-8 rounded-lg object-contain bg-white p-1"
-                      onError={(e) => {
-                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(brand.name)}&background=random`;
-                      }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-foreground truncate">{brand.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {brand.donors.toLocaleString()} donors
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold text-accent">${(brand.totalRaised / 1000).toFixed(0)}K</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* CTA */}
-          <div className="text-center mt-8">
-            <Button size="lg" className="gap-2" onClick={() => window.location.href = '/auth?mode=signup&role=donor'}>
-              <Coins className="w-5 h-5" />
-              Join the Leaderboard
-            </Button>
+        <section className="py-24 md:py-32">
+          <div className="container mx-auto grid gap-16 px-4 lg:grid-cols-2">
+            <div><LineReveal><h2 className="font-display text-5xl font-normal text-foreground">Donors this week.</h2></LineReveal><div className="mt-8 divide-y divide-border border-y border-border">{donorsLoading ? <Skeleton className="my-6 h-20 w-full" /> : donors.length ? donors.map((donor, index) => <Reveal key={`${donor.display_name}-${index}`} className="grid grid-cols-[2rem_1fr_auto] gap-4 py-5"><span className="text-sm text-muted-foreground">0{index+1}</span><div><p className="font-medium text-foreground">{donor.display_name}</p><p className="text-sm text-muted-foreground">{donor.donations_count} completed {donor.donations_count === 1 ? 'donation' : 'donations'}</p></div><strong className="text-primary">{formatUSD(donor.total)}</strong></Reveal>) : <p className="py-8 text-muted-foreground">The weekly list will appear after completed donations are recorded.</p>}</div></div>
+            <div><LineReveal><h2 className="font-display text-5xl font-normal text-foreground">Retailers donors chose.</h2></LineReveal><div className="mt-8 divide-y divide-border border-y border-border">{stats?.brands.length ? stats.brands.slice(0,5).map((brand, index) => <Reveal key={brand.name} className="grid grid-cols-[2rem_2.5rem_1fr_auto] items-center gap-3 py-5"><span className="text-sm text-muted-foreground">0{index+1}</span><img src={brandLogos[brand.name]?.logo} alt="" className="h-8 w-8 object-contain" /><span className="font-medium text-foreground">{brand.name}</span><strong className="text-primary">{formatUSD(brand.total)}</strong></Reveal>) : <p className="py-8 text-muted-foreground">Retailer totals will appear after completed donations are allocated.</p>}</div></div>
           </div>
         </section>
       </main>
-
       <Footer />
     </div>
   );
 }
 
-function StoryCard({ story }: { story: ImpactStory }) {
-  const progressPercent = (story.amountRaised / story.goal) * 100;
-
+function EditorialStoryCard({ story, index }: { story: ImpactStory; index: number }) {
   return (
-    <Link to={`/story/${story.id}`} className="block">
-      <div className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-        {/* Image */}
-        <div className="relative h-48 overflow-hidden">
-          <img 
-            src={story.image} 
-            alt={story.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-          <div className="absolute top-3 left-3">
-            <Badge className={`${categoryColors[story.category]} border`}>
-              {categoryLabels[story.category]}
-            </Badge>
-          </div>
-          {story.verified && (
-            <div className="absolute top-3 right-3">
-              <div className="bg-primary/90 text-primary-foreground rounded-full p-1.5">
-                <CheckCircle2 className="w-4 h-4" />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="p-5">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-            <MapPin className="w-3.5 h-3.5" />
-            <span>{story.location}</span>
-            <span className="text-border">•</span>
-            <Calendar className="w-3.5 h-3.5" />
-            <span>{story.dateHelped}</span>
-          </div>
-          
-          <h3 className="font-semibold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">{story.name}</h3>
-          <p className="text-muted-foreground text-sm line-clamp-2 mb-4">{story.story}</p>
-
-          {/* Impact Badge */}
-          <div className="bg-primary/5 rounded-lg px-3 py-2 mb-4">
-            <p className="text-sm text-primary font-medium">{story.impact}</p>
-          </div>
-
-          {/* Progress */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">${story.amountRaised.toLocaleString()} raised</span>
-              <span className="font-medium text-foreground">${story.goal.toLocaleString()} goal</span>
-            </div>
-            <Progress value={progressPercent} className="h-2" />
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Users className="w-3 h-3" />
-              <span>{story.donorsCount} donors</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Link>
+    <Reveal delay={index * 0.05}>
+      <Link to={`/story/${story.id}`} className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+        <article>
+          <ImageReveal className="aspect-[4/3] bg-muted"><img src={story.image} alt={story.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]" loading="lazy" /></ImageReveal>
+          <div className="pt-5"><div className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />{story.location}</div><h3 className="mt-3 font-display text-3xl font-normal text-foreground">{story.name}</h3><p className="mt-3 line-clamp-3 leading-relaxed text-muted-foreground">{story.story}</p><span className="mt-5 inline-flex items-center text-sm font-medium text-primary">Read the story <ArrowRight className="ml-2 h-4 w-4" /></span></div>
+        </article>
+      </Link>
+    </Reveal>
   );
 }

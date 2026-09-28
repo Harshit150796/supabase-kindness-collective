@@ -76,5 +76,11 @@
 - [x] Homepage live-data audit: retain only database-backed public metrics and privacy-aware donor names; remove fictional recipient preview, testimonial fallback, and unsupported targets.
 - [ ] Phase 3 live-data audit: remove fabricated figures and names while redesigning Stories, featured-story pages, and Partner Brands.
 - [ ] Phase 3: redesign remaining public pages without changing factual, legal, payment, auth, application, or data logic.
+- [x] Phase 3 `/stories`: replace mock totals and both fabricated leaderboards with live sources; separate editorial stories from live fundraiser metrics.
+- [x] Phase 3 story details: remove fabricated campaigns/supporters from editorial routes and keep `/f/:slug` as the sole live transaction story.
+- [x] Phase 3 Partner Brands: remove unsupported contribution figures from the currently unrendered component.
+- [x] Phase 3 `/about` and `/how-it-works`: apply editorial structure, remove eyebrow labels, and unify gentle-live motion.
+- [x] Phase 3 `/donate`: presentation verified at both widths; payment logic unchanged.
+- [x] Phase 3 `/faq`, `/blog`, and `/blog/:slug`: apply editorial layouts with CMS loading and empty states preserved.
 - [ ] Phase 4: apply a lighter editorial treatment to authenticated and admin pages.
 - [ ] Report section screenshots, headline changes, performance measurements, and unverified items.

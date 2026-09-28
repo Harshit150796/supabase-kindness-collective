@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from 'react';
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useInView } from 'motion/react';
 import {
@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { SEO, breadcrumbJsonLd } from '@/components/SEO';
+import { Reveal } from '@/components/ui/editorial-motion';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -64,24 +65,6 @@ const founder = {
   bio: 'Harshit founded CouponDonation to create a clearer connection between a donor’s decision and the support a recipient can actually use. His focus is building a trusted giving system where choice, visibility, and accountability are part of the product—not an afterthought.',
 };
 
-function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { amount: 0.2, once: true });
-  const gentle = useMotionPreference() === 'gentle';
-
-  return (
-    <motion.div
-      ref={ref}
-      className={className}
-      initial={{ opacity: 0, y: gentle ? 6 : 24 }}
-      animate={inView ? { opacity: 1, y: 0 } : undefined}
-      transition={{ duration: gentle ? 0.35 : 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
 function DonationTrail() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { amount: 0.35, once: false });
@@ -92,8 +75,8 @@ function DonationTrail() {
       <div aria-hidden="true" className="absolute left-5 top-5 h-[calc(100%-2.5rem)] w-px bg-primary-foreground/30 md:left-[10%] md:right-[10%] md:top-5 md:h-px md:w-auto">
         <motion.span
           className="absolute inset-0 origin-top bg-accent md:origin-left"
-          initial={{ scaleY: 0 }}
-          animate={inView ? { scaleY: 1 } : { scaleY: 0 }}
+          initial={gentle ? { opacity: 0 } : { scaleY: 0 }}
+          animate={inView ? (gentle ? { opacity: 1 } : { scaleY: 1 }) : (gentle ? { opacity: 0 } : { scaleY: 0 })}
           transition={{ duration: gentle ? 1.4 : 2.4, ease: 'easeInOut' }}
         />
       </div>
@@ -102,8 +85,8 @@ function DonationTrail() {
           <motion.li
             key={step.label}
             className="grid grid-cols-[2.5rem_1fr] gap-4 md:block"
-            initial={{ opacity: 0, y: gentle ? 4 : 18 }}
-            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: gentle ? 4 : 18 }}
+            initial={gentle ? { opacity: 0 } : { opacity: 0, y: 18 }}
+            animate={inView ? { opacity: 1, y: 0 } : (gentle ? { opacity: 0 } : { opacity: 0, y: 18 })}
             transition={{ duration: 0.45, delay: inView ? index * (gentle ? 0.16 : 0.32) : 0 }}
           >
             <div className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full border border-accent bg-background text-primary md:mx-auto">
@@ -154,25 +137,16 @@ export default function About() {
         <section className="border-b border-border px-5 pb-20 pt-16 md:px-8 md:pb-28 md:pt-24 lg:pt-32">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
-              <div className="lg:col-span-1">
-                <p className="font-about-sans text-xs font-semibold uppercase text-primary lg:[writing-mode:vertical-rl]">
-                  About / 2025
-                </p>
-              </div>
-              <Reveal className="lg:col-span-7">
-                <p className="mb-6 flex items-center gap-2 text-sm font-semibold text-primary">
-                  <ScanLine className="h-4 w-4" /> A new standard for giving
-                </p>
+              <Reveal className="lg:col-span-8">
                 <h1 className="font-about-serif text-5xl font-bold leading-[1.02] text-foreground md:text-7xl lg:text-[6.4rem]">
                   Giving should never be a <span className="italic text-verify">black box.</span>
                 </h1>
                 <p className="mt-8 max-w-3xl text-lg leading-relaxed text-muted-foreground md:text-2xl">
-                  CouponDonation is the world’s first platform of its kind built to make donations transparent and trackable—from a donor’s choice to a coupon a recipient can use.
+                  CouponDonation is built to make donations transparent and trackable—from a donor’s choice to a coupon a recipient can use.
                 </p>
               </Reveal>
               <Reveal className="flex flex-col justify-end border-t border-border pt-7 lg:col-span-4 lg:border-l lg:border-t-0 lg:pl-9 lg:pt-0" delay={0.12}>
-                <p className="text-xs font-semibold uppercase text-primary">The premise</p>
-                <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+                <p className="text-base leading-relaxed text-muted-foreground">
                   Donors deserve to know where their money goes. Recipients deserve useful support with dignity. We designed one system to serve both.
                 </p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
@@ -191,10 +165,7 @@ export default function About() {
         <section className="bg-primary px-5 py-20 text-primary-foreground md:px-8 md:py-28">
           <div className="mx-auto max-w-7xl">
             <Reveal className="grid gap-7 md:grid-cols-12">
-              <div className="md:col-span-4">
-                <p className="text-xs font-semibold uppercase text-accent">The transparent trail</p>
-              </div>
-              <div className="md:col-span-8">
+              <div className="md:col-span-8 md:col-start-5">
                 <h2 className="font-about-serif text-4xl leading-tight md:text-6xl">From generosity to usable value—with a record at every step.</h2>
                 <p className="mt-6 max-w-2xl text-lg leading-relaxed text-primary-foreground/75">
                   Traditional giving can make the journey difficult to see. CouponDonation connects the donation, retailer selection, coupon creation, and recipient wallet in one trackable giving experience.
@@ -208,8 +179,7 @@ export default function About() {
         <section className="px-5 py-20 md:px-8 md:py-28">
           <div className="mx-auto max-w-7xl">
             <Reveal className="grid gap-8 border-b border-border pb-12 md:grid-cols-12">
-              <p className="text-xs font-semibold uppercase text-primary md:col-span-3">Our operating standard</p>
-              <h2 className="font-about-serif text-4xl leading-tight md:col-span-9 md:text-6xl">
+              <h2 className="font-about-serif text-4xl leading-tight md:col-span-9 md:col-start-4 md:text-6xl">
                 Technology built around <span className="italic text-verify">accountability.</span>
               </h2>
             </Reveal>
@@ -247,10 +217,7 @@ export default function About() {
         <section className="px-5 py-20 md:px-8 md:py-28">
           <div className="mx-auto max-w-7xl">
             <Reveal className="grid gap-8 md:grid-cols-12 md:items-end">
-              <div className="md:col-span-4">
-                <p className="text-xs font-semibold uppercase text-primary">The founding thesis</p>
-              </div>
-              <div className="md:col-span-8">
+              <div className="md:col-span-8 md:col-start-5">
                 <h2 className="font-about-serif text-4xl leading-tight md:text-6xl">Make trust visible.</h2>
                 <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
                   CouponDonation was founded on December 19, 2025 to challenge a familiar limitation in charitable giving: once money is donated, its journey can become difficult to follow.
@@ -264,7 +231,7 @@ export default function About() {
                 <img src={founder.image} alt={`${founder.name}, ${founder.role} at CouponDonation`} className="aspect-[4/5] w-full object-cover object-top grayscale-[20%]" />
                 <div className="absolute bottom-5 right-0 bg-background px-5 py-4 shadow-card-hover md:-right-6">
                   <p className="font-about-serif text-lg italic">{founder.name}</p>
-                  <p className="mt-1 text-xs font-semibold uppercase text-primary">{founder.role}</p>
+                  <p className="mt-1 text-sm text-primary">{founder.role}</p>
                 </div>
               </div>
               <div className="md:col-span-6 md:col-start-7">
@@ -282,10 +249,7 @@ export default function About() {
         <section className="bg-verify px-5 py-20 text-verify-foreground md:px-8 md:py-28">
           <div className="mx-auto max-w-7xl">
             <Reveal className="grid gap-10 md:grid-cols-12">
-              <div className="md:col-span-4">
-                <p className="text-xs font-semibold uppercase text-accent">Our mission</p>
-              </div>
-              <div className="md:col-span-8">
+              <div className="md:col-span-8 md:col-start-5">
                 <h2 className="font-about-serif text-4xl leading-tight md:text-6xl">Build the most transparent way to give.</h2>
                 <p className="mt-7 max-w-3xl text-lg leading-relaxed text-verify-foreground/80 md:text-xl">
                   We are building a future where donor transparency is expected, charitable giving is trackable, and people receiving support retain choice and dignity. One donation. One coupon trail. One clearer standard of accountability for US communities.
@@ -298,8 +262,7 @@ export default function About() {
         <section className="px-5 py-20 md:px-8 md:py-28">
           <div className="mx-auto max-w-7xl">
             <Reveal className="text-center">
-              <p className="text-xs font-semibold uppercase text-primary">Choose your next step</p>
-              <h2 className="mx-auto mt-5 max-w-3xl font-about-serif text-4xl leading-tight md:text-6xl">Be part of a more accountable way to give.</h2>
+              <h2 className="mx-auto max-w-3xl font-about-serif text-4xl leading-tight md:text-6xl">Be part of a more accountable way to give.</h2>
             </Reveal>
             <div className="mt-12 grid border border-border md:grid-cols-2">
               <Link to="/donate" className="group p-8 transition-colors hover:bg-secondary md:p-12">

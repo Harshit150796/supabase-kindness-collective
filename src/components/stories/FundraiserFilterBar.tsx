@@ -81,7 +81,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
 
   return (
     <div className={cn('w-full', className)}>
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 -mx-4 px-4 snap-x">
+      <div className="flex max-w-full items-center gap-2 overflow-x-auto scrollbar-none pb-1 snap-x">
         {/* Category dropdown */}
         <Popover>
           <PopoverTrigger asChild>

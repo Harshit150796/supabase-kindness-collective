@@ -1,65 +1,21 @@
-import { Card } from '@/components/ui/card';
-import { Building2, CheckCircle } from 'lucide-react';
+import { brandLogos } from '@/data/brandLogos';
+import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
 
-const partners = [
-  { name: 'DoorDash', emoji: '🚗', contribution: '$450K+', category: 'Food Delivery' },
-  { name: 'Uber', emoji: '🚕', contribution: '$320K+', category: 'Transportation' },
-  { name: 'Walmart', emoji: '🛒', contribution: '$380K+', category: 'Groceries' },
-  { name: 'Amazon', emoji: '📦', contribution: '$290K+', category: 'Shopping' },
-  { name: 'Target', emoji: '🎯', contribution: '$250K+', category: 'Retail' },
-  { name: 'Starbucks', emoji: '☕', contribution: '$210K+', category: 'Food & Drink' },
-  { name: 'Nike', emoji: '👟', contribution: '$180K+', category: 'Apparel' },
-  { name: 'CVS', emoji: '💊', contribution: '$160K+', category: 'Healthcare' },
-];
-
-const trustBadges = [
-  '100% Donation Transparency',
-  'Verified Recipients',
-  'Secure Transactions',
-  'Real-time Tracking',
-];
+const partnerNames = ['DoorDash', 'Uber', 'Walmart', 'Amazon', 'Target', 'Starbucks', 'Nike', 'CVS'];
 
 export function PartnerBrands() {
   return (
-    <section className="py-24">
+    <section className="border-y border-border py-24 md:py-32">
       <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-2 rounded-full mb-6">
-            <Building2 className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Trusted Partners</span>
-          </div>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            <span className="text-foreground">World-Leading </span>
-            <span className="text-verify">Brands</span>
-          </h2>
-          <p className="text-lg text-muted-foreground">
-            Donations convert into digital vouchers redeemable across 50+ available retail networks.
-          </p>
+        <div className="max-w-3xl">
+          <LineReveal><h2 className="font-display text-5xl font-normal text-foreground md:text-6xl">Familiar places. Restricted value.</h2></LineReveal>
+          <Reveal delay={0.08}><p className="mt-5 text-lg leading-relaxed text-muted-foreground">Donors can choose retailers available in the donation flow. No contribution totals are attributed to a brand without completed donation records.</p></Reveal>
         </div>
-
-        {/* Partners Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-5xl mx-auto mb-16">
-          {partners.map((partner) => (
-            <Card 
-              key={partner.name}
-              className="p-6 text-center hover:shadow-card-hover transition-all duration-300 group cursor-pointer"
-            >
-              <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">{partner.emoji}</div>
-              <div className="font-bold text-foreground mb-1">{partner.name}</div>
-              <div className="text-xs text-muted-foreground mb-2">{partner.category}</div>
-              <div className="text-sm font-semibold text-primary">{partner.contribution}</div>
-            </Card>
-          ))}
-        </div>
-
-        {/* Trust badges */}
-        <div className="flex flex-wrap justify-center gap-4 md:gap-8">
-          {trustBadges.map((badge) => (
-            <div key={badge} className="flex items-center gap-2 text-muted-foreground">
-              <CheckCircle className="w-5 h-5 text-primary" />
-              <span className="text-sm font-medium">{badge}</span>
-            </div>
+        <div className="mt-14 grid grid-cols-2 border-y border-border md:grid-cols-4">
+          {partnerNames.map((name, index) => (
+            <Reveal key={name} delay={index * 0.04} className="flex min-h-36 items-center justify-center border-b border-r border-border p-7 last:border-r-0 md:[&:nth-child(n+5)]:border-b-0">
+              {brandLogos[name]?.logo ? <img src={brandLogos[name].logo} alt={name} className="max-h-12 max-w-32 object-contain" loading="lazy" /> : <span className="font-display text-2xl text-foreground">{name}</span>}
+            </Reveal>
           ))}
         </div>
       </div>
