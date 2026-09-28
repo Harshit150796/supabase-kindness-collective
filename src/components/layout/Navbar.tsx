@@ -29,7 +29,7 @@ export function Navbar() {
 
 
   return (
-    <nav className="bg-background lg:bg-background/80 lg:backdrop-blur-lg lg:supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 shadow-[0_8px_30px_-14px_rgba(0,0,0,0.18)]">
+    <nav className="sticky top-0 z-50 border-b border-border/70 bg-background lg:bg-background/90 lg:backdrop-blur-lg">
       <div className="container mx-auto px-4">
         <div className="flex h-18 items-center justify-between py-3">
           {/* Logo */}
@@ -145,7 +145,7 @@ export function Navbar() {
                 <Button 
                   size="sm" 
                   onClick={() => navigate('/donate')}
-                  className="gap-2 shadow-emerald hover:shadow-gold transition-shadow"
+                  className="gap-2"
                 >
                   <Coins className="w-4 h-4" />
                   Start Donating

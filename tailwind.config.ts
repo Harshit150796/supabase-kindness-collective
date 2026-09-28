@@ -14,10 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Cal Sans', 'Inter', 'system-ui', 'sans-serif'],
-        'about-serif': ['Libre Baskerville', 'Georgia', 'serif'],
-        'about-sans': ['IBM Plex Sans', 'system-ui', 'sans-serif'],
+        sans: ['Instrument Sans', 'Instrument Sans Fallback', 'system-ui', 'sans-serif'],
+        display: ['Instrument Serif', 'Instrument Serif Fallback', 'Georgia', 'serif'],
+        'about-serif': ['Instrument Serif', 'Instrument Serif Fallback', 'Georgia', 'serif'],
+        'about-sans': ['Instrument Sans', 'Instrument Sans Fallback', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -63,15 +63,9 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // CouponDonation custom colors
-        gold: {
-          DEFAULT: "hsl(var(--gold))",
-          foreground: "hsl(var(--gold-foreground))",
-          light: "hsl(var(--gold-light))",
-        },
-        emerald: {
-          light: "hsl(var(--emerald-light))",
-          dark: "hsl(var(--emerald-dark))",
+        verify: {
+          DEFAULT: "hsl(var(--verify))",
+          foreground: "hsl(var(--verify-foreground))",
         },
         charcoal: "hsl(var(--charcoal))",
       },
@@ -83,9 +77,7 @@ export default {
         "2xl": "calc(var(--radius) + 8px)",
       },
       boxShadow: {
-        'gold': '0 4px 20px -2px hsl(var(--gold) / 0.25)',
-        'gold-lg': '0 10px 40px -4px hsl(var(--gold) / 0.35)',
-        'emerald': '0 4px 20px -2px hsl(var(--primary) / 0.25)',
+        'brand': '0 4px 20px -4px hsl(var(--primary) / 0.2)',
         'card-hover': '0 20px 40px -12px hsl(var(--foreground) / 0.15)',
       },
       keyframes: {
