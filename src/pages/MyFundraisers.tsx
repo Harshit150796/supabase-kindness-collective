@@ -88,13 +88,13 @@ const MyFundraisers = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
-        return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Active</Badge>;
+        return <Badge className="bg-primary/10 text-primary hover:bg-primary/10">Active</Badge>;
       case "pending":
         return <Badge className="bg-verify/10 text-verify hover:bg-verify/10">Under Review</Badge>;
       case "paused":
-        return <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">Paused</Badge>;
+        return <Badge variant="secondary">Paused</Badge>;
       case "completed":
-        return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Completed</Badge>;
+        return <Badge className="bg-verify/10 text-verify hover:bg-verify/10">Completed</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -122,7 +122,7 @@ const MyFundraisers = () => {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Your fundraisers</h1>
+              <h1 className="font-display text-5xl font-normal text-foreground">Your fundraisers.</h1>
               <p className="text-muted-foreground mt-1">
                 Manage your coupon requests and track their progress
               </p>
@@ -135,7 +135,7 @@ const MyFundraisers = () => {
 
           {/* Fundraisers List */}
           {fundraisers.length === 0 ? (
-            <Card className="text-center py-16">
+            <Card className="rounded-md py-16 text-center shadow-sm">
               <CardContent>
                 <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                   <Megaphone className="w-8 h-8 text-muted-foreground" />
@@ -160,7 +160,7 @@ const MyFundraisers = () => {
                 return (
                   <Card 
                     key={fundraiser.id} 
-                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    className="cursor-pointer rounded-md transition-shadow hover:shadow-md"
                     onClick={() => navigate(`/fundraiser/${fundraiser.id}`)}
                   >
                     <CardContent className="p-0">
@@ -173,10 +173,10 @@ const MyFundraisers = () => {
                               <img 
                                 src={imageUrl} 
                                 alt={fundraiser.title}
-                                className="w-full h-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-tr-none"
+                                className="w-full h-full object-cover"
                               />
                             ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
+                              <div className="flex h-full w-full items-center justify-center bg-primary/5">
                                 <Heart className="w-8 h-8 text-primary/30" />
                               </div>
                             );
