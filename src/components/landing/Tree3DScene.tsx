@@ -108,8 +108,6 @@ function CameraRig({
     };
     const onChange = () => {
       lastInteractionRef.current = performance.now() / 1000;
-      const canvas = c.domElement;
-      canvas.dataset.treeAzimuth = c.getAzimuthalAngle().toFixed(4);
     };
     c.addEventListener('start', onStart);
     c.addEventListener('change', onChange);
@@ -141,6 +139,16 @@ function CameraRig({
       camera.position.lerpVectors(resetAnim.current.from, defaultCam, eased);
       c.target.copy(target);
       if (k >= 1) resetAnim.current = null;
+    } else if (idle > 3 && c.getAzimuthalAngle() !== 0) {
+      // Auto-return to center azimuth
+      const az = c.getAzimuthalAngle();
+      const newAz = az * Math.pow(0.04, dt);
+      // Rotate camera around target on Y-axis to approach az=0
+      TMP_OFFSET.copy(camera.position).sub(c.target);
+      TMP_SPHERICAL.setFromVector3(TMP_OFFSET);
+      TMP_SPHERICAL.theta = newAz;
+      TMP_OFFSET.setFromSpherical(TMP_SPHERICAL);
+      camera.position.copy(c.target).add(TMP_OFFSET);
     }
 
     // Drive camera distance from external zoomProgress (scroll-controlled)
@@ -313,81 +321,23 @@ function PerfWatchdog({ onSlow }: { onSlow: () => void }) {
 
 function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boolean }) {
   const { leafCount, plantCap } = settings;
-  const visibleFruitCount = Math.min(16, COUPON_FRUITS.length);
 
   const branchTips = useMemo(() => {
-    return getBranchTips(visibleFruitCount).map((branch) => branch.tip);
-  }, [visibleFruitCount]);
-  const [brandIndices, setBrandIndices] = useState(() =>
-    Array.from({ length: visibleFruitCount }, (_, index) => index),
-  );
-  const replacementQueueRef = useRef(
-    Array.from(
-      { length: Math.max(0, COUPON_FRUITS.length - visibleFruitCount) },
-      (_, index) => index + visibleFruitCount,
-    ),
-  );
-  const shuffleRoundRef = useRef(1);
-  const brandIndicesRef = useRef(brandIndices);
-
-  useEffect(() => {
-    brandIndicesRef.current = brandIndices;
-  }, [brandIndices]);
-
-  const updateBrandDebugState = useCallback(() => {
-    const canvas = document.querySelector<HTMLCanvasElement>('canvas');
-    if (!canvas) return;
-    canvas.dataset.treeBrands = brandIndicesRef.current
-      .map((brandIndex) => COUPON_FRUITS[brandIndex]?.brand ?? '')
-      .filter(Boolean)
-      .join('|');
-    canvas.dataset.treeReplacementQueue = String(replacementQueueRef.current.length);
+    const available = getBranchTips(COUPON_FRUITS.length).map((b) => b.tip);
+    const wanted = Math.min(COUPON_FRUITS.length, available.length);
+    return Array.from({ length: wanted }, (_, index) => {
+      const sourceIndex = wanted === 1 ? 0 : Math.round((index * (available.length - 1)) / (wanted - 1));
+      return available[sourceIndex];
+    });
   }, []);
-
-  const takeNextBrand = useCallback((currentBrandIndex: number) => {
-    if (replacementQueueRef.current.length === 0) {
-      let seed = 0x9e3779b9 ^ shuffleRoundRef.current++;
-      const nextRandom = () => {
-        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-        return seed / 0x100000000;
-      };
-      const round = COUPON_FRUITS.map((_, index) => index);
-      for (let i = round.length - 1; i > 0; i--) {
-        const j = Math.floor(nextRandom() * (i + 1));
-        [round[i], round[j]] = [round[j], round[i]];
-      }
-      if (round[0] === currentBrandIndex && round.length > 1) {
-        [round[0], round[1]] = [round[1], round[0]];
-      }
-      replacementQueueRef.current = round;
-    }
-    return replacementQueueRef.current.shift() ?? currentBrandIndex;
-  }, []);
-
-  useEffect(() => {
-    updateBrandDebugState();
-    const replaceOne = (event: Event) => {
-      const detail = (event as CustomEvent<{ index?: number }>).detail;
-      const rawIndex = detail?.index ?? 0;
-      const idx = Math.max(0, Math.min(visibleFruitCount - 1, rawIndex));
-      setBrandIndices((current) => {
-        const next = [...current];
-        next[idx] = takeNextBrand(current[idx]);
-        brandIndicesRef.current = next;
-        return next;
-      });
-      requestAnimationFrame(updateBrandDebugState);
-    };
-    window.addEventListener('tree3d-replace-brand', replaceOne);
-    return () => window.removeEventListener('tree3d-replace-brand', replaceOne);
-  }, [takeNextBrand, updateBrandDebugState, visibleFruitCount]);
+  const fruits = useMemo(() => COUPON_FRUITS.slice(0, branchTips.length), [branchTips.length]);
 
   const donations = useFallingDonations();
   const donationIdxRef = useRef(0);
   const { shakeEvent, bumpWind } = useInteraction();
 
   const [states, setStates] = useState<CouponState[]>(() =>
-    Array.from({ length: visibleFruitCount }, () => ({ phase: 'hanging' as const }))
+    fruits.map(() => ({ phase: 'hanging' as const }))
   );
 
   const dropOne = useCallback(
@@ -474,20 +424,13 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
       const cur = prev[idx];
       const next = [...prev];
       if (cur.phase === 'landed') {
-        setBrandIndices((current) => {
-          const next = [...current];
-          next[idx] = takeNextBrand(current[idx]);
-          brandIndicesRef.current = next;
-          requestAnimationFrame(updateBrandDebugState);
-          return next;
-        });
         next[idx] = { phase: 'regrowing', startTime: performance.now() / 1000 };
       } else if (cur.phase === 'regrowing') {
         next[idx] = { phase: 'hanging' };
       }
       return next;
     });
-  }, [takeNextBrand, updateBrandDebugState]);
+  }, []);
 
   return (
     <>
@@ -509,12 +452,12 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
       <PlantsLayer cap={plantCap} />
 
 
-      {brandIndices.map((brandIndex, i) => (
+      {fruits.map((data, i) => (
         <CouponFruit
           key={i}
           index={i}
           branchTip={branchTips[i]}
-          data={COUPON_FRUITS[brandIndex]}
+          data={data}
           state={states[i]}
           groundY={GROUND_Y}
           onLanded={handleLanded}
@@ -739,6 +682,8 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
           maxDistance={isMobile ? 20 : 17}
           minPolarAngle={Math.PI / 3}
           maxPolarAngle={Math.PI / 2.1}
+          minAzimuthAngle={-Math.PI / 2}
+          maxAzimuthAngle={Math.PI / 2}
           target={isMobile ? [0, 3.6, 0] : [0, 3.4, 0]}
           makeDefault
         />
