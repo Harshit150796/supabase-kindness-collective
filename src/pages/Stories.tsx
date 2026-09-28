@@ -47,7 +47,7 @@ const categoryLabels: Record<string, string> = {
 const categoryColors: Record<string, string> = {
   family: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
   child: 'bg-pink-500/10 text-pink-600 border-pink-500/20',
-  emergency: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+  emergency: 'bg-verify/10 text-verify border-border/20',
   community: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
 };
 
@@ -161,8 +161,8 @@ export default function Stories() {
             </div>
             <div className="text-sm text-muted-foreground">Families Helped</div>
           </div>
-          <div className="bg-emerald-500/5 rounded-2xl p-6 text-center border border-emerald-500/10">
-            <Heart className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+          <div className="bg-primary/5 rounded-2xl p-6 text-center border border-primary/10">
+            <Heart className="w-8 h-8 text-primary mx-auto mb-2" />
             <div className="text-2xl md:text-3xl font-bold text-foreground">
               {communityStats.activeDonors.toLocaleString()}
             </div>
@@ -243,7 +243,7 @@ export default function Stories() {
         {/* Success Stories Section */}
         <section className="mb-16">
           <div className="flex items-center gap-2 mb-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+            <CheckCircle2 className="w-5 h-5 text-primary" />
             <h2 className="text-2xl font-bold text-foreground">Success Stories</h2>
           </div>
           <p className="text-muted-foreground mb-8">
@@ -299,9 +299,9 @@ export default function Stories() {
                 {topDonors.map((donor, index) => (
                   <div key={donor.id} className="flex items-center gap-4">
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                      {index === 0 && <Crown className="w-4 h-4 text-yellow-500" />}
+                      {index === 0 && <Crown className="w-4 h-4 text-verify" />}
                       {index === 1 && <Medal className="w-4 h-4 text-gray-400" />}
-                      {index === 2 && <Medal className="w-4 h-4 text-amber-600" />}
+                      {index === 2 && <Medal className="w-4 h-4 text-verify" />}
                       {index > 2 && <span className="text-sm font-medium text-muted-foreground">{index + 1}</span>}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -328,9 +328,9 @@ export default function Stories() {
                 {topBrands.map((brand, index) => (
                   <div key={brand.name} className="flex items-center gap-4">
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                      {index === 0 && <Crown className="w-4 h-4 text-yellow-500" />}
+                      {index === 0 && <Crown className="w-4 h-4 text-verify" />}
                       {index === 1 && <Medal className="w-4 h-4 text-gray-400" />}
-                      {index === 2 && <Medal className="w-4 h-4 text-amber-600" />}
+                      {index === 2 && <Medal className="w-4 h-4 text-verify" />}
                       {index > 2 && <span className="text-sm font-medium text-muted-foreground">{index + 1}</span>}
                     </div>
                     <img 

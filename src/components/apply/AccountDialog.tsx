@@ -62,7 +62,7 @@ export const AccountDialog = ({
   const passedChecks = Object.values(checks).filter(Boolean).length;
   const strengthPercent = (passedChecks / 4) * 100;
   const strengthColor =
-    passedChecks <= 1 ? "bg-destructive" : passedChecks <= 3 ? "bg-gold" : "bg-primary";
+    passedChecks <= 1 ? "bg-destructive" : passedChecks <= 3 ? "bg-verify" : "bg-primary";
   const strengthLabel =
     passedChecks <= 1 ? "Weak" : passedChecks <= 2 ? "Fair" : passedChecks <= 3 ? "Good" : "Strong";
 

@@ -71,7 +71,7 @@ export default function AdminVerifications() {
         {/* Pending Section */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-            <Clock className="w-5 h-5 text-gold" />
+            <Clock className="w-5 h-5 text-verify" />
             Pending ({pendingVerifications.length})
           </h2>
 

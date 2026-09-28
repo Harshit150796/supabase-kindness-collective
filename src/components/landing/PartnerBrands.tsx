@@ -31,7 +31,7 @@ export function PartnerBrands() {
           </div>
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             <span className="text-foreground">World-Leading </span>
-            <span className="text-gradient-gold">Brands</span>
+            <span className="text-verify">Brands</span>
           </h2>
           <p className="text-lg text-muted-foreground">
             Donations convert into digital vouchers redeemable across 50+ available retail networks.

@@ -163,8 +163,8 @@ export default function AdminStories() {
           </Card>
           <Card className="border-none shadow-sm bg-muted/30">
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                <Eye className="w-5 h-5 text-emerald-600" />
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Eye className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{publishedCount} <span className="text-sm font-normal text-muted-foreground">/ {draftCount} drafts</span></p>
@@ -174,8 +174,8 @@ export default function AdminStories() {
           </Card>
           <Card className="border-none shadow-sm bg-muted/30">
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center">
-                <Star className="w-5 h-5 text-gold" />
+              <div className="w-10 h-10 rounded-full bg-verify/10 flex items-center justify-center">
+                <Star className="w-5 h-5 text-verify" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground truncate max-w-[160px]">{featuredStory?.name || 'None set'}</p>
@@ -232,7 +232,7 @@ export default function AdminStories() {
               const isFeatured = story.is_published && story.display_order === 1;
               const pct = progressPercent(story.amount_raised, story.goal);
               return (
-                <Card key={story.id} className={`transition-all duration-200 ${isFeatured ? 'ring-2 ring-gold/50 shadow-md' : 'hover:shadow-md'}`}>
+                <Card key={story.id} className={`transition-all duration-200 ${isFeatured ? 'ring-2 ring-verify/50 shadow-md' : 'hover:shadow-md'}`}>
                   <CardContent className="p-5">
                     <div className="flex items-start gap-4">
                       <Checkbox checked={selected.has(story.id)} onCheckedChange={() => toggleSelect(story.id)} className="mt-1" />
@@ -253,11 +253,11 @@ export default function AdminStories() {
                             <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="font-semibold text-foreground">{story.name}</h3>
                               {isFeatured && (
-                                <Badge className="bg-gold/15 text-gold border-gold/30 gap-1 text-[10px]">
+                                <Badge className="bg-verify/15 text-verify border-verify/30 gap-1 text-[10px]">
                                   <Star className="w-3 h-3 fill-current" />Featured
                                 </Badge>
                               )}
-                              <Badge variant={story.is_published ? 'default' : 'secondary'} className={`text-[10px] ${story.is_published ? 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30' : ''}`}>
+                              <Badge variant={story.is_published ? 'default' : 'secondary'} className={`text-[10px] ${story.is_published ? 'bg-primary/15 text-primary border-primary/30' : ''}`}>
                                 {story.is_published ? 'Published' : 'Draft'}
                               </Badge>
                             </div>
@@ -280,7 +280,7 @@ export default function AdminStories() {
                           </span>
                           {story.impact && (
                             <span className="inline-flex items-center gap-1">
-                              <Sparkles className="w-3 h-3 text-gold" />{story.impact}
+                              <Sparkles className="w-3 h-3 text-verify" />{story.impact}
                             </span>
                           )}
                         </div>
@@ -301,7 +301,7 @@ export default function AdminStories() {
                         <Button
                           size="icon"
                           variant={isFeatured ? 'default' : 'ghost'}
-                          className={`h-8 w-8 ${isFeatured ? 'bg-gold hover:bg-gold/90 text-white' : 'text-muted-foreground hover:text-gold'}`}
+                          className={`h-8 w-8 ${isFeatured ? 'bg-verify hover:bg-verify/90 text-white' : 'text-muted-foreground hover:text-verify'}`}
                           onClick={() => setAsFeatured(story.id)}
                           title="Set as featured story"
                           aria-label="Set as featured story"

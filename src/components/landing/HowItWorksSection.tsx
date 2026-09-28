@@ -11,13 +11,13 @@ const steps = [
     icon: Shield,
     title: 'Get Verified',
     description: 'Recipients complete a simple verification process. Donors can start contributing immediately.',
-    color: 'bg-gold/10 text-gold'
+    color: 'bg-verify/10 text-verify'
   },
   {
     icon: Gift,
     title: 'Give or Receive',
     description: 'Donors contribute to specific categories. Recipients browse and redeem available coupons.',
-    color: 'bg-emerald-light/20 text-primary'
+    color: 'bg-primary/20 text-primary'
   },
   {
     icon: Sparkles,

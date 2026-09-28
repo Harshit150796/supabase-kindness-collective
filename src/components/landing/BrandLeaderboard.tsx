@@ -111,9 +111,9 @@ export function BrandLeaderboard() {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-8 md:mb-12">
-          <div className="inline-flex items-center gap-2 bg-gold/10 border border-gold/20 px-3 md:px-4 py-1.5 md:py-2 rounded-full mb-4 md:mb-6">
-            <Trophy className="w-3.5 h-3.5 md:w-4 md:h-4 text-gold" />
-            <span className="text-xs md:text-sm font-medium text-gold">Live Leaderboard</span>
+          <div className="inline-flex items-center gap-2 bg-verify/10 border border-verify/20 px-3 md:px-4 py-1.5 md:py-2 rounded-full mb-4 md:mb-6">
+            <Trophy className="w-3.5 h-3.5 md:w-4 md:h-4 text-verify" />
+            <span className="text-xs md:text-sm font-medium text-verify">Live Leaderboard</span>
             <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-primary rounded-full animate-pulse" />
           </div>
           <p className="text-base md:text-lg text-muted-foreground px-4">
@@ -125,7 +125,7 @@ export function BrandLeaderboard() {
           {/* Top Donors - Now First */}
           <div>
             <h3 className="text-base md:text-lg font-semibold text-foreground mb-3 md:mb-4 flex items-center gap-2 px-1">
-              <Crown className="w-4 h-4 md:w-5 md:h-5 text-gold" />
+              <Crown className="w-4 h-4 md:w-5 md:h-5 text-verify" />
               Top Retailers Supported
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
@@ -135,11 +135,11 @@ export function BrandLeaderboard() {
                   <Card 
                     key={brand.rank}
                     className={`p-4 md:p-5 flex items-center gap-3 md:gap-4 transition-all duration-300 hover:shadow-card-hover ${
-                      brand.rank === 1 ? 'border-gold/50 bg-gold/5' : ''
+                      brand.rank === 1 ? 'border-verify/50 bg-verify/5' : ''
                     }`}
                   >
                     <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center overflow-hidden ${
-                      brand.rank === 1 ? 'bg-gold/10 ring-2 ring-gold/30' : 'bg-muted'
+                      brand.rank === 1 ? 'bg-verify/10 ring-2 ring-verify/30' : 'bg-muted'
                     }`}>
                       <img 
                         src={brandInfo?.logo} 

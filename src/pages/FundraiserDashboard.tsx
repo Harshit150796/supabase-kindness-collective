@@ -231,7 +231,7 @@ const FundraiserDashboard = () => {
       case "active":
         return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Active</Badge>;
       case "pending":
-        return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">Under Review</Badge>;
+        return <Badge className="bg-verify/10 text-verify hover:bg-verify/10">Under Review</Badge>;
       case "paused":
         return <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">Paused</Badge>;
       default:

@@ -10,7 +10,7 @@ export function AITreeLauncher({ onClick, hidden }: Props) {
   return (
     <button
       onClick={onClick}
-      className="absolute bottom-3 right-3 md:bottom-4 md:right-4 z-30 pointer-events-auto group flex items-center gap-1.5 md:gap-2 pl-2 pr-3 py-1.5 md:pl-3 md:pr-4 md:py-2.5 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg md:shadow-2xl hover:shadow-emerald-500/40 hover:scale-105 transition-all duration-300"
+      className="absolute bottom-3 right-3 md:bottom-4 md:right-4 z-30 pointer-events-auto group flex items-center gap-1.5 md:gap-2 pl-2 pr-3 py-1.5 md:pl-3 md:pr-4 md:py-2.5 rounded-full bg-gradient-to-br from-primary to-emerald-700 text-white shadow-lg md:shadow-2xl hover:shadow-brand-500/40 hover:scale-105 transition-all duration-300"
       aria-label="Talk to Coupon, the AI tree"
     >
       <span className="relative flex items-center justify-center w-5 h-5 md:w-7 md:h-7 rounded-full bg-white/20">

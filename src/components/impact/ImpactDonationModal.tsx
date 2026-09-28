@@ -70,8 +70,8 @@ const getStatusConfig = (status: string) => {
       return {
         label: 'Available',
         icon: Check,
-        bgColor: 'bg-emerald-500/10',
-        textColor: 'text-emerald-600',
+        bgColor: 'bg-primary/10',
+        textColor: 'text-primary',
         borderColor: 'border-l-emerald-500',
       };
     case 'reserved':
@@ -102,8 +102,8 @@ const getStatusConfig = (status: string) => {
       return {
         label: 'Pending',
         icon: Clock,
-        bgColor: 'bg-amber-500/10',
-        textColor: 'text-amber-600',
+        bgColor: 'bg-verify/10',
+        textColor: 'text-verify',
         borderColor: 'border-l-amber-500',
       };
   }
@@ -247,7 +247,7 @@ export function ImpactDonationModal({
             })}</span>
           </div>
           {donation.net_amount && (
-            <div className="flex items-center gap-3 text-emerald-600">
+            <div className="flex items-center gap-3 text-primary">
               <CheckCircle className="w-5 h-5" />
               <span>${donation.net_amount.toFixed(2)} reached recipients</span>
             </div>
@@ -299,7 +299,7 @@ export function ImpactDonationModal({
             </div>
           ) : coupons.length === 0 ? (
             <div className="text-center py-8 bg-muted/30 rounded-lg">
-              <Clock className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+              <Clock className="w-8 h-8 text-verify mx-auto mb-2" />
               <p className="text-muted-foreground">
                 Coupons being created...
               </p>

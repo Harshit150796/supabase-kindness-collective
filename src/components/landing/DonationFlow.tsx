@@ -823,9 +823,9 @@ export function DonationFlow() {
                 </div>
 
                 {/* Gold coins bonus */}
-                <div className="bg-gradient-to-r from-amber-500/10 to-yellow-500/10 rounded-lg p-4 border border-amber-500/20">
+                <div className="bg-gradient-to-r from-amber-500/10 to-verify/10 rounded-lg p-4 border border-verify/20">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-verify to-verify flex items-center justify-center">
                       <Gift className="w-5 h-5 text-white" />
                     </div>
                     <div>

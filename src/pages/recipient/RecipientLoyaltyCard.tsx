@@ -82,7 +82,7 @@ export default function RecipientLoyaltyCard() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Points Balance</CardTitle>
-                  <Trophy className="w-4 h-4 text-gold" />
+                  <Trophy className="w-4 h-4 text-verify" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-foreground">{card.points_balance}</div>
@@ -93,7 +93,7 @@ export default function RecipientLoyaltyCard() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Total Savings</CardTitle>
-                  <DollarSign className="w-4 h-4 text-emerald-light" />
+                  <DollarSign className="w-4 h-4 text-primary" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-foreground">${card.total_savings}</div>

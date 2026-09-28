@@ -23,8 +23,8 @@ interface AdminStats {
 
 const platformActions = [
   { title: 'Manage Users', description: 'View and manage all users, promote to admin', path: '/admin/users', icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
-  { title: 'Verifications', description: 'Approve/reject recipient applications', path: '/admin/verifications', icon: Shield, color: 'text-gold', bg: 'bg-gold/10' },
-  { title: 'Coupons', description: 'View and manage coupon inventory', path: '/admin/coupons', icon: Gift, color: 'text-emerald-light', bg: 'bg-emerald-light/10' },
+  { title: 'Verifications', description: 'Approve/reject recipient applications', path: '/admin/verifications', icon: Shield, color: 'text-verify', bg: 'bg-verify/10' },
+  { title: 'Coupons', description: 'View and manage coupon inventory', path: '/admin/coupons', icon: Gift, color: 'text-primary', bg: 'bg-primary/10' },
   { title: 'Fundraisers', description: 'Moderate and manage all fundraiser campaigns', path: '/admin/fundraisers', icon: Megaphone, color: 'text-primary', bg: 'bg-primary/10' },
   { title: 'Analytics', description: 'Signup trends, donation charts, stats', path: '/admin/analytics', icon: BarChart, color: 'text-primary', bg: 'bg-primary/10' },
 ];
@@ -32,8 +32,8 @@ const platformActions = [
 const contentActions = [
   { title: 'Site Content', description: 'Edit hero text, CTA buttons, section titles', path: '/admin/content', icon: Layout, color: 'text-primary', bg: 'bg-primary/10' },
   { title: 'Impact Stories', description: 'Add/edit stories with photos, toggle featured', path: '/admin/stories', icon: Heart, color: 'text-destructive', bg: 'bg-destructive/10' },
-  { title: 'Testimonials', description: 'Manage donor and recipient quotes', path: '/admin/testimonials', icon: MessageSquareQuote, color: 'text-gold', bg: 'bg-gold/10' },
-  { title: 'Blog Posts', description: 'Write and publish articles with cover images', path: '/admin/blog', icon: FileText, color: 'text-emerald-light', bg: 'bg-emerald-light/10' },
+  { title: 'Testimonials', description: 'Manage donor and recipient quotes', path: '/admin/testimonials', icon: MessageSquareQuote, color: 'text-verify', bg: 'bg-verify/10' },
+  { title: 'Blog Posts', description: 'Write and publish articles with cover images', path: '/admin/blog', icon: FileText, color: 'text-primary', bg: 'bg-primary/10' },
   { title: 'FAQ', description: 'Add/edit questions and answers', path: '/admin/faq', icon: HelpCircle, color: 'text-primary', bg: 'bg-primary/10' },
   { title: 'Newsletters', description: 'Send email campaigns to subscribers', path: '/admin/newsletters', icon: Mail, color: 'text-primary', bg: 'bg-primary/10' },
 ];
@@ -108,10 +108,10 @@ export default function AdminDashboard() {
 
 
         {stats.pendingVerifications > 0 && (
-          <Card className="border-gold bg-gold/5">
+          <Card className="border-verify bg-verify/5">
             <CardContent className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-gold" />
+                <Clock className="w-5 h-5 text-verify" />
                 <div>
                   <p className="font-medium text-foreground">{stats.pendingVerifications} Pending Verifications</p>
                   <p className="text-sm text-muted-foreground">Users waiting for approval</p>
@@ -126,8 +126,8 @@ export default function AdminDashboard() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
             { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-primary', sub: 'Registered users', path: '/admin/users' },
-            { label: 'Pending Verifications', value: stats.pendingVerifications, icon: Shield, color: 'text-gold', sub: 'Awaiting review', path: '/admin/verifications' },
-            { label: 'Total Coupons', value: stats.totalCoupons, icon: Gift, color: 'text-emerald-light', sub: 'All time', path: '/admin/coupons' },
+            { label: 'Pending Verifications', value: stats.pendingVerifications, icon: Shield, color: 'text-verify', sub: 'Awaiting review', path: '/admin/verifications' },
+            { label: 'Total Coupons', value: stats.totalCoupons, icon: Gift, color: 'text-primary', sub: 'All time', path: '/admin/coupons' },
             { label: 'Available Coupons', value: stats.availableCoupons, icon: BarChart, color: 'text-primary', sub: 'Ready to claim', path: '/admin/coupons' },
           ].map(s => (
             <Card key={s.label} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate(s.path)}>
@@ -147,8 +147,8 @@ export default function AdminDashboard() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { label: 'Published Stories', value: stats.publishedStories, icon: Heart, color: 'text-destructive', path: '/admin/stories' },
-            { label: 'Blog Posts', value: stats.publishedPosts, icon: FileText, color: 'text-emerald-light', path: '/admin/blog' },
-            { label: 'Testimonials', value: stats.testimonials, icon: MessageSquareQuote, color: 'text-gold', path: '/admin/testimonials' },
+            { label: 'Blog Posts', value: stats.publishedPosts, icon: FileText, color: 'text-primary', path: '/admin/blog' },
+            { label: 'Testimonials', value: stats.testimonials, icon: MessageSquareQuote, color: 'text-verify', path: '/admin/testimonials' },
             { label: 'FAQ Items', value: stats.faqItems, icon: HelpCircle, color: 'text-primary', path: '/admin/faq' },
           ].map(s => (
             <Card key={s.label} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate(s.path)}>

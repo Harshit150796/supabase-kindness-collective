@@ -71,7 +71,7 @@ function GiveIllustration({ progress, still, offset }: ArtProps) {
       {!still && <motion.circle cx="40" cy="79" r="17" fill="none" stroke={GOLD} strokeWidth="2" style={{ scale: rippleScale, opacity: rippleOpacity, transformOrigin: '40px 79px' }} />}
       <motion.g style={{ scale: still ? 1 : press, transformOrigin: '40px 79px' }}>
         <rect x="22" y="70" width="36" height="18" rx="9" fill={GOLD} />
-        <text x="40" y="82.5" textAnchor="middle" fontSize="8" fontWeight="700" fill="hsl(var(--gold-foreground))">Give</text>
+        <text x="40" y="82.5" textAnchor="middle" fontSize="8" fontWeight="700" fill="hsl(var(--verify-foreground))">Give</text>
       </motion.g>
       {!still && [0, 1, 2].map((index) => <Coin key={index} phase={phase} index={index} />)}
       <motion.path d="M98 46c0-4 6-6 8-2 2-4 8-2 8 2 0 5-8 11-8 11s-8-6-8-11z" fill="hsl(var(--gold) / 0.22)" stroke={GOLD} strokeWidth="2" style={{ scale: still ? 1 : heartScale, opacity: still ? 1 : heartOpacity, transformOrigin: '106px 52px' }} />
@@ -244,7 +244,7 @@ function DonateDoorIcon() {
 }
 
 function ApplyDoorIcon() {
-  return <svg viewBox="0 0 40 40" className="h-10 w-10 text-gold" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="hsl(var(--gold) / 0.12)" stroke="currentColor" strokeWidth="2" /><path d="M12 19h16l-2 11H14zm3 0v-3a5 5 0 0 1 10 0v3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+  return <svg viewBox="0 0 40 40" className="h-10 w-10 text-verify" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="hsl(var(--gold) / 0.12)" stroke="currentColor" strokeWidth="2" /><path d="M12 19h16l-2 11H14zm3 0v-3a5 5 0 0 1 10 0v3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 
 type Step = (typeof steps)[number];
@@ -447,7 +447,7 @@ export function WhatWeDo() {
           </ol>
         </div>
 
-        <div className="mt-12 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.06] to-gold/[0.05] px-6 py-8 shadow-[0_18px_48px_-30px_hsl(var(--primary)/0.45)] md:mt-16 md:px-10 md:py-10">
+        <div className="mt-12 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.06] to-verify/[0.05] px-6 py-8 shadow-[0_18px_48px_-30px_hsl(var(--primary)/0.45)] md:mt-16 md:px-10 md:py-10">
           <div className="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_280px] md:gap-12">
             <div className="text-center md:text-left">
               <p className="text-2xl font-semibold leading-snug text-foreground md:text-4xl">Donate $10 today. Check where it went in 2036.</p>
@@ -468,9 +468,9 @@ export function WhatWeDo() {
             <DonateDoorIcon />
             <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-lg font-semibold text-foreground md:text-xl">I want to help someone <ArrowRight className="h-4 w-4 shrink-0 text-primary transition-transform group-hover:translate-x-1" /></span><span className="mt-1 block text-base text-muted-foreground">Pick a real need and cover it.</span></span>
           </Link>
-          <Link to="/apply" className="group flex min-h-32 items-center gap-4 rounded-2xl border border-gold/25 bg-gold/[0.05] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-gold/45 hover:shadow-[0_12px_32px_-16px_hsl(var(--gold)/0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+          <Link to="/apply" className="group flex min-h-32 items-center gap-4 rounded-2xl border border-verify/25 bg-verify/[0.05] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-verify/45 hover:shadow-[0_12px_32px_-16px_hsl(var(--gold)/0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
             <ApplyDoorIcon />
-            <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-lg font-semibold text-foreground md:text-xl">I need help <ArrowRight className="h-4 w-4 shrink-0 text-gold transition-transform group-hover:translate-x-1" /></span><span className="mt-1 block text-base text-muted-foreground">Tell us what you need. U.S. residents, free to apply.</span></span>
+            <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-lg font-semibold text-foreground md:text-xl">I need help <ArrowRight className="h-4 w-4 shrink-0 text-verify transition-transform group-hover:translate-x-1" /></span><span className="mt-1 block text-base text-muted-foreground">Tell us what you need. U.S. residents, free to apply.</span></span>
           </Link>
         </div>
 

@@ -143,7 +143,7 @@ export default function RecipientCoupons() {
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <CardTitle className="text-lg">{coupon.title}</CardTitle>
-          <Badge variant="outline" className="flex items-center gap-1 border-amber-500/50 text-amber-700 dark:text-amber-400">
+          <Badge variant="outline" className="flex items-center gap-1 border-verify/50 text-verify dark:text-verify">
             <Clock className="w-3 h-3" /> Coming soon
           </Badge>
         </div>
@@ -249,8 +249,8 @@ export default function RecipientCoupons() {
         </div>
 
         {pendingFiltered.length > 0 && (
-          <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 text-sm">
-            <Clock className="w-4 h-4 text-amber-600" />
+          <div className="flex items-center gap-2 p-3 rounded-lg border border-verify/30 bg-verify/5 text-sm">
+            <Clock className="w-4 h-4 text-verify" />
             <p className="text-foreground">
               <strong>{pendingFiltered.length}</strong> new coupon{pendingFiltered.length === 1 ? '' : 's'} being prepared — they'll appear below automatically.
             </p>

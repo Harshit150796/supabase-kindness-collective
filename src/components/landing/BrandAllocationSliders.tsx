@@ -75,7 +75,7 @@ export function BrandAllocationSliders({
     <div className="space-y-6 pt-4">
       <div className="flex items-center justify-between text-sm">
         <span className="font-medium text-foreground">Custom Allocation</span>
-        <span className={`font-medium ${totalPercentage === 100 ? 'text-emerald-600' : 'text-amber-500'}`}>
+        <span className={`font-medium ${totalPercentage === 100 ? 'text-primary' : 'text-verify'}`}>
           {totalPercentage}% / 100%
         </span>
       </div>
@@ -131,7 +131,7 @@ export function BrandAllocationSliders({
       </div>
 
       {totalPercentage !== 100 && (
-        <div className="text-xs text-amber-600 bg-amber-500/10 px-3 py-2 rounded-lg">
+        <div className="text-xs text-verify bg-verify/10 px-3 py-2 rounded-lg">
           Allocations should add up to 100%. Currently at {totalPercentage}%.
         </div>
       )}

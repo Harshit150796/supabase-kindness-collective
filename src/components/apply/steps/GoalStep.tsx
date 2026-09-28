@@ -187,7 +187,7 @@ export const GoalStep = ({
             <div>
               <div className="flex items-center gap-2.5 mb-1.5">
                 <h3 className="font-semibold text-foreground text-lg">Smart coupon matching</h3>
-                <span className="bg-accent/20 text-accent text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide pulse-glow">
+                <span className="bg-accent/20 text-accent text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide pulse-glow-primary">
                   Recommended
                 </span>
               </div>
@@ -213,7 +213,7 @@ export const GoalStep = ({
           </div>
           <div className="h-2 bg-border/50 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-primary to-emerald-light rounded-full transition-all duration-500 ease-out progress-glow"
+              className="h-full bg-gradient-to-r from-primary to-primary rounded-full transition-all duration-500 ease-out progress-glow"
               style={{ width: `${Math.min((numericGoal / progressCeiling) * 100, 100)}%` }}
             />
           </div>

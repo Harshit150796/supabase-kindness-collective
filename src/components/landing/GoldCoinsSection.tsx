@@ -31,14 +31,14 @@ export function GoldCoinsSection() {
         <div className="grid lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
           {/* Content */}
           <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 bg-gold/10 border border-gold/20 px-4 py-2 rounded-full">
-              <Coins className="w-4 h-4 text-gold" />
-              <span className="text-sm font-medium text-gold">Reward System</span>
+            <div className="inline-flex items-center gap-2 bg-verify/10 border border-verify/20 px-4 py-2 rounded-full">
+              <Coins className="w-4 h-4 text-verify" />
+              <span className="text-sm font-medium text-verify">Reward System</span>
             </div>
             
             <h2 className="text-4xl md:text-5xl font-bold">
               <span className="text-foreground">Earn </span>
-              <span className="text-gradient-gold">Gold Coins</span>
+              <span className="text-verify">Gold Coins</span>
               <br />
               <span className="text-foreground">With Every Donation</span>
             </h2>
@@ -49,15 +49,15 @@ export function GoldCoinsSection() {
             </p>
 
             {/* Conversion rate */}
-            <Card className="p-6 bg-gold/5 border-gold/20">
+            <Card className="p-6 bg-verify/5 border-verify/20">
               <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-2xl bg-gold/20 flex items-center justify-center">
-                  <Coins className="w-8 h-8 text-gold" />
+                <div className="w-16 h-16 rounded-2xl bg-verify/20 flex items-center justify-center">
+                  <Coins className="w-8 h-8 text-verify" />
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground mb-1">Conversion Rate</div>
                   <div className="text-2xl font-bold text-foreground">
-                    $1 = <span className="text-gold">10 Gold Coins</span>
+                    $1 = <span className="text-verify">10 Gold Coins</span>
                   </div>
                 </div>
               </div>
@@ -83,18 +83,18 @@ export function GoldCoinsSection() {
           <div className="relative flex justify-center">
             {/* Large coin */}
             <div className="relative">
-              <div className="w-64 h-64 md:w-80 md:h-80 rounded-full gold-shine flex items-center justify-center pulse-glow">
+              <div className="w-64 h-64 md:w-80 md:h-80 rounded-full  flex items-center justify-center pulse-glow-primary">
                 <div className="text-center">
                   <div className="text-6xl md:text-7xl mb-2">🪙</div>
-                  <div className="text-xl font-bold text-gold-foreground">GOLD</div>
-                  <div className="text-sm text-gold-foreground/80">COIN</div>
+                  <div className="text-xl font-bold text-verify-foreground">GOLD</div>
+                  <div className="text-sm text-verify-foreground/80">COIN</div>
                 </div>
               </div>
               
               {/* Orbiting elements */}
               <div className="absolute -top-4 -right-4 animate-bounce-subtle">
                 <div className="w-16 h-16 bg-card rounded-xl shadow-lg flex items-center justify-center">
-                  <Sparkles className="w-8 h-8 text-gold" />
+                  <Sparkles className="w-8 h-8 text-verify" />
                 </div>
               </div>
               

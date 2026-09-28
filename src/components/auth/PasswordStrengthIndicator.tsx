@@ -45,7 +45,7 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicato
           <span className={cn(
             "font-medium",
             metCount <= 2 && "text-destructive",
-            metCount === 3 && "text-yellow-600",
+            metCount === 3 && "text-verify",
             metCount >= 4 && "text-green-600"
           )}>
             {getStrengthLabel()}

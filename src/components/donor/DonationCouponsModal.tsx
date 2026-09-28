@@ -43,8 +43,8 @@ interface DonationCouponsModalProps {
 }
 
 const statusConfig = {
-  pending: { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10', label: 'Pending' },
-  available: { icon: Check, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'Available' },
+  pending: { icon: Clock, color: 'text-verify', bg: 'bg-verify/10', label: 'Pending' },
+  available: { icon: Check, color: 'text-primary', bg: 'bg-primary/10', label: 'Available' },
   reserved: { icon: User, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'Reserved' },
   redeemed: { icon: CheckCircle, color: 'text-muted-foreground', bg: 'bg-muted', label: 'Redeemed' },
   expired: { icon: Clock, color: 'text-destructive', bg: 'bg-destructive/10', label: 'Expired' },
@@ -179,7 +179,7 @@ export function DonationCouponsModal({ donation, open, onOpenChange }: DonationC
               <CheckCircle className="w-4 h-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">Net Impact</p>
-                <p className="font-semibold text-emerald-600">
+                <p className="font-semibold text-primary">
                   ${(donation.net_amount || donation.amount).toFixed(2)}
                 </p>
               </div>

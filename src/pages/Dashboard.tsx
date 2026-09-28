@@ -151,13 +151,13 @@ export default function Dashboard() {
           </Card>
 
           <Card
-            className="cursor-pointer transition-colors hover:border-gold/50"
+            className="cursor-pointer transition-colors hover:border-verify/50"
             onClick={() => navigate('/apply')}
           >
             <CardContent className="flex items-center justify-between p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gold/10 flex items-center justify-center">
-                  <Megaphone className="w-6 h-6 text-gold" />
+                <div className="w-12 h-12 rounded-xl bg-verify/10 flex items-center justify-center">
+                  <Megaphone className="w-6 h-6 text-verify" />
                 </div>
                 <div>
                   <p className="font-semibold text-foreground">Ask for support</p>
@@ -171,10 +171,10 @@ export default function Dashboard() {
 
         {/* Verification nudge */}
         {!verificationStatus && (
-          <Card className="border-gold bg-gold/5">
+          <Card className="border-verify bg-verify/5">
             <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
               <div className="flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 text-gold shrink-0" />
+                <AlertCircle className="w-5 h-5 text-verify shrink-0" />
                 <div>
                   <p className="font-medium text-foreground">Verify to receive vouchers</p>
                   <p className="text-sm text-muted-foreground">
@@ -270,7 +270,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Wallet className="w-5 h-5 text-gold" />
+                <Wallet className="w-5 h-5 text-verify" />
                 Your voucher wallet
               </CardTitle>
               <button
@@ -308,8 +308,8 @@ export default function Dashboard() {
                   {coupons.slice(0, 4).map((c) => (
                     <div key={c.id} className="flex items-center justify-between border-b border-border pb-2 last:border-0 last:pb-0">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center">
-                          <Ticket className="w-4 h-4 text-gold" />
+                        <div className="w-8 h-8 rounded-full bg-verify/10 flex items-center justify-center">
+                          <Ticket className="w-4 h-4 text-verify" />
                         </div>
                         <div>
                           <p className="font-medium text-foreground">

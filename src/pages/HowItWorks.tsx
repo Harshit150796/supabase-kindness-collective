@@ -31,7 +31,7 @@ export default function HowItWorks() {
       <Navbar />
       <main>
         {/* Hero */}
-        <section className="py-20 bg-gradient-to-br from-primary/5 via-background to-gold/5">
+        <section className="py-20 bg-gradient-to-br from-primary/5 via-background to-verify/5">
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">How It Works</h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -76,20 +76,20 @@ export default function HowItWorks() {
         <section className="py-20 bg-muted/30">
           <div className="container mx-auto px-4">
             <div className="flex items-center gap-3 mb-8">
-              <div className="w-12 h-12 bg-gold/10 rounded-xl flex items-center justify-center">
-                <Gift className="w-6 h-6 text-gold" />
+              <div className="w-12 h-12 bg-verify/10 rounded-xl flex items-center justify-center">
+                <Gift className="w-6 h-6 text-verify" />
               </div>
               <h2 className="text-3xl font-bold text-foreground">For Recipients</h2>
             </div>
             <div className="grid md:grid-cols-3 gap-8 mb-8">
               {recipientSteps.map((step, index) => (
                 <div key={step.title} className="relative">
-                  <div className="absolute -top-3 -left-3 w-8 h-8 bg-gold text-gold-foreground rounded-full flex items-center justify-center text-sm font-bold">
+                  <div className="absolute -top-3 -left-3 w-8 h-8 bg-verify text-verify-foreground rounded-full flex items-center justify-center text-sm font-bold">
                     {index + 1}
                   </div>
                   <div className="bg-card rounded-2xl p-6 border border-border h-full">
-                    <div className="w-14 h-14 bg-gold/10 rounded-xl flex items-center justify-center mb-4">
-                      <step.icon className="w-7 h-7 text-gold" />
+                    <div className="w-14 h-14 bg-verify/10 rounded-xl flex items-center justify-center mb-4">
+                      <step.icon className="w-7 h-7 text-verify" />
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-2">{step.title}</h3>
                     <p className="text-muted-foreground">{step.description}</p>
@@ -97,7 +97,7 @@ export default function HowItWorks() {
                 </div>
               ))}
             </div>
-            <Button size="lg" variant="outline" className="border-gold text-gold hover:bg-gold/10" onClick={() => navigate('/auth?mode=signup&role=recipient')}>
+            <Button size="lg" variant="outline" className="border-verify text-verify hover:bg-verify/10" onClick={() => navigate('/auth?mode=signup&role=recipient')}>
               Apply as Recipient
             </Button>
           </div>

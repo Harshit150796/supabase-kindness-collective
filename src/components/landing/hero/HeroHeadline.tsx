@@ -44,13 +44,13 @@ export function HeroHeadline() {
           CouponDonation is
         </span>
         {isMobile ? (
-          <span className="inline-block text-xs uppercase tracking-[0.2em] font-bold text-emerald-700">
+          <span className="inline-block text-xs uppercase tracking-[0.2em] font-bold text-primary">
             {ROTATING_WORDS[0]}
           </span>
         ) : (
           <span
             key={ROTATING_WORDS[idx]}
-            className="inline-block text-xs uppercase tracking-[0.2em] font-bold text-emerald-700 animate-in fade-in slide-in-from-bottom-1 duration-500"
+            className="inline-block text-xs uppercase tracking-[0.2em] font-bold text-primary animate-in fade-in slide-in-from-bottom-1 duration-500"
           >
             {ROTATING_WORDS[idx]}
           </span>

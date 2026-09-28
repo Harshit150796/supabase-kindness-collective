@@ -207,11 +207,11 @@ const MyImpact = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-gold/5 to-gold/10 border-gold/20">
+            <Card className="bg-gradient-to-br from-verify/5 to-verify/10 border-verify/20">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center">
-                    <Heart className="w-6 h-6 text-gold" />
+                  <div className="w-12 h-12 rounded-full bg-verify/10 flex items-center justify-center">
+                    <Heart className="w-6 h-6 text-verify" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Net impact</p>
