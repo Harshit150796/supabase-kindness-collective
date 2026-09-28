@@ -12,16 +12,17 @@ Reduce every logo fruit by 15–20% so the canopy feels balanced and fruit-like,
 
 ## Size update
 1. Add one explicit optical reduction factor per brand class without changing native proportions or the visible-alpha sizing model:
-   - **20% smaller:** dense compact emblems that currently carry the most visual mass—Walmart, DoorDash, Target, Instacart, Starbucks, McDonald’s, Aldi, Kroger, Whole Foods, Postmates, Domino’s, Taco Bell, Chipotle, Walgreens, and Home Depot.
-   - **17.5% smaller:** medium-width or visually dense marks—Lyft, eBay, Seamless, and Costco.
-   - **15% smaller:** wide/thin wordmarks that need more height retained for readability—Uber, Amazon, Grubhub, Publix, Trader Joe’s, Uber Eats, Subway, and CVS.
+   - **20% smaller:** dense emblems currently carrying the most visual mass—DoorDash, Instacart, Kroger, Whole Foods, Postmates, Domino’s, Taco Bell, CVS, and Walgreens.
+   - **17.5% smaller:** emblems that already have a small optical correction—Walmart, Target, Starbucks, McDonald’s, Aldi, Chipotle, and Home Depot.
+   - **15% smaller:** wordmarks that need more height retained for readability—Uber, Lyft, Amazon, Grubhub, eBay, Publix, Trader Joe’s, Uber Eats, Seamless, Subway, and Costco.
 2. Apply the factor through the shared fruit scale so it remains identical while hanging, falling, landed, and regrowing.
 3. Keep the existing 18 stable slots, brand rotation queue, logo assignments, motion, and all protected tree/camera/lighting settings unchanged.
 
 ## Visibility after reduction
-- Increase the alpha-derived keyline slightly in texture space so reduced dark marks such as Uber and Amazon remain distinct from foliage, while light marks receive the corresponding dark edge.
+- Increase the alpha-derived keyline slightly in texture space and improve its sampling so reduced dark marks such as Uber and Amazon remain distinct from foliage, while light marks receive the corresponding dark edge.
+- Choose the keyline from three measured brightness ranges so dark, mid-tone, and light artwork each receives appropriate contrast without changing original logo colors.
 - Keep the keyline restrained and attached only to the real transparent silhouette—no board, plate, glow, thread, recoloring, or fabricated shape.
-- Move the shared logo face only a few hundredths of a scene unit farther toward the outside of its local canopy, enough to reduce leaf intersections without making logos look detached from branches.
+- Keep the current branch-relative face offset unchanged so the smaller logos remain attached to the canopy rather than drifting outward.
 - Preserve camera-facing behavior while hanging and regrowing, and preserve free tumbling while falling.
 
 ## Verification
