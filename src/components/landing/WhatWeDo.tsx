@@ -233,7 +233,7 @@ function ProofReceipt({ progress, still }: { progress: MotionValue<number>; stil
 }
 
 const steps = [
-  { title: 'You donate', body: 'You pick a real need someone has posted and cover it. Any amount, toward one specific thing.', accent: GOLD, offset: 0, Art: GiveIllustration },
+  { title: 'You donate', body: 'You pick a real need someone has posted and cover it. Any amount, toward one specific thing.', accent: BLUE, offset: 0, Art: GiveIllustration },
   { title: 'It becomes a coupon', body: 'Your money converts into a gift card or credit that only works for that need. It can never be withdrawn as cash.', accent: EMERALD, offset: 0.12, Art: CouponIllustration },
   { title: 'They get what they needed', body: 'They redeem it at the store for groceries, medicine or a ride to work — the actual thing, not money.', accent: EMERALD, offset: 0.24, Art: DeliveryIllustration },
   { title: 'You get the receipt', body: 'A receipt comes back to you showing exactly what your money became, and when.', accent: VERIFY, offset: 0.36, Art: ReceiptIllustration },
