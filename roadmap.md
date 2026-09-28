@@ -58,3 +58,11 @@
 - [x] Apply the reduction through the shared hanging, falling, landed, and regrowing scale.
 - [x] Strengthen the silhouette-only contrast edge without changing authentic logo colors.
 - [ ] Recheck the rendered tree from opening, side, rear, and phone views when WebGL capture is available.
+
+## Hero tree complete-logo visibility
+- [x] Audit all 27 SVG sources and identify incomplete or incorrect artwork.
+- [x] Replace incomplete CVS, incorrect Aldi, and truncated Uber vectors with complete authentic local artwork.
+- [x] Add individual silhouette contrast profiles without recoloring original logo pixels.
+- [x] Replace the global canopy offset with 18 deterministic slot-specific leaf clearances and collision corrections.
+- [x] Move Aldi into a clear opening slot while preserving 18 stable slots and the non-repeating replacement queue.
+- [ ] Verify opening, side, rear, falling, and phone views with reliable WebGL captures.

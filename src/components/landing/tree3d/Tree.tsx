@@ -9,6 +9,8 @@ useGLTF.preload(MODEL_URL);
 
 export interface BranchTip {
   tip: THREE.Vector3;
+  /** Slot-specific clearance from the baked GLB canopy shell. */
+  faceOffset: number;
 }
 
 const CANOPY_CENTER = new THREE.Vector3(0, 4.4, 0);
@@ -17,6 +19,30 @@ const CANOPY_BANDS = [
   { y: 2.72, radiusX: 1.64, radiusZ: 1.96, count: 5, frontCount: 4, phase: 0.24, frontSpan: 1.3 },
   { y: 4.02, radiusX: 2.16, radiusZ: 2.12, count: 7, frontCount: 5, phase: -0.18, frontSpan: 1.4 },
   { y: 5.22, radiusX: 1.74, radiusZ: 1.78, count: 6, frontCount: 4, phase: 0.3, frontSpan: 1.24 },
+] as const;
+
+// The foliage is authored inside tree.glb, while fruit anchors are procedural.
+// These measured corrections keep each stable slot at its branch while clearing
+// the local leaf depth and separating silhouettes in the opening projection.
+const SLOT_VISIBILITY = [
+  { faceOffset: 0.38, y: -0.04 },
+  { faceOffset: 0.42, y: 0.08 },
+  { faceOffset: 0.36, y: 0.14 },
+  { faceOffset: 0.42, y: -0.08 },
+  { faceOffset: 0.50, y: 0.32 },
+  { faceOffset: 0.48, y: -0.12 },
+  { faceOffset: 0.38, y: 0.05 },
+  { faceOffset: 0.36, y: 0.16 },
+  { faceOffset: 0.36, y: -0.12 },
+  { faceOffset: 0.42, y: 0.08 },
+  { faceOffset: 0.50, y: 0.28 },
+  { faceOffset: 0.52, y: -0.18 },
+  { faceOffset: 0.38, y: -0.06 },
+  { faceOffset: 0.38, y: 0.16 },
+  { faceOffset: 0.38, y: 0.24 },
+  { faceOffset: 0.44, y: -0.12 },
+  { faceOffset: 0.52, y: 0.24 },
+  { faceOffset: 0.54, y: -0.08 },
 ] as const;
 
 
@@ -56,6 +82,8 @@ export function getBranchTips(count = 18): BranchTip[] {
     }
     angles.forEach((theta, index) => {
       if (tips.length >= wanted) return;
+      const slot = tips.length;
+      const visibility = SLOT_VISIBILITY[slot] ?? { faceOffset: 0.42, y: 0 };
       // Alternate heights and radii so neighboring silhouettes do not stack
       // into one dense line from the opening camera.
       const yJitter = ((index % 3) - 1) * 0.16;
@@ -63,9 +91,10 @@ export function getBranchTips(count = 18): BranchTip[] {
       tips.push({
         tip: new THREE.Vector3(
           Math.sin(theta) * band.radiusX * radialStagger,
-          band.y + yJitter,
+          band.y + yJitter + visibility.y,
           Math.cos(theta) * band.radiusZ * radialStagger,
         ),
+        faceOffset: visibility.faceOffset,
       });
     });
   }
@@ -80,6 +109,7 @@ export function getBranchTips(count = 18): BranchTip[] {
         CANOPY_CENTER.y + Math.sin(theta * 0.7) * 1.05,
         Math.sin(theta) * 1.4,
       ),
+      faceOffset: 0.42,
     });
   }
   return tips;
