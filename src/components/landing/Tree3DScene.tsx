@@ -348,7 +348,18 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
   }, []);
 
   const takeNextBrand = useCallback((currentBrandIndex: number) => {
-    if (replacementQueueRef.current.length === 0) {
+    // Never hand back a brand that is already hanging elsewhere on the tree.
+    const inUse = new Set(brandIndicesRef.current);
+    inUse.delete(currentBrandIndex);
+    const isFree = (index: number) => !inUse.has(index);
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const queue = replacementQueueRef.current;
+      const pick = queue.findIndex(isFree);
+      if (pick >= 0) {
+        const [chosen] = queue.splice(pick, 1);
+        return chosen;
+      }
       let seed = 0x9e3779b9 ^ shuffleRoundRef.current++;
       const nextRandom = () => {
         seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
@@ -366,6 +377,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
     }
     return replacementQueueRef.current.shift() ?? currentBrandIndex;
   }, []);
+
 
   useEffect(() => {
     updateBrandDebugState();

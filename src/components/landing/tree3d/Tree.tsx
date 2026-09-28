@@ -35,7 +35,7 @@ const WIND_VERTEX_SNIPPET = `
   transformed.z += sway * 0.5 * h;
 `;
 
-export function getBranchTips(count = 20): BranchTip[] {
+export function getBranchTips(count = 18): BranchTip[] {
   const tips: BranchTip[] = [];
   const wanted = Math.max(1, count);
 
@@ -70,7 +70,7 @@ export function getBranchTips(count = 20): BranchTip[] {
     });
   }
 
-  // Counts beyond the designed 20 slots remain deterministic if reused.
+  // Counts beyond the designed 18 slots remain deterministic if reused.
   while (tips.length < wanted) {
     const i = tips.length;
     const theta = i * Math.PI * (3 - Math.sqrt(5));
