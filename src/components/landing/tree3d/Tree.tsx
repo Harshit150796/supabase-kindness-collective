@@ -12,7 +12,12 @@ export interface BranchTip {
 }
 
 const CANOPY_CENTER = new THREE.Vector3(0, 4.4, 0);
-const CANOPY_RADIUS = 2.3;
+
+const CANOPY_BANDS = [
+  { y: 3.25, radiusX: 1.72, radiusZ: 1.42, count: 6, phase: 0.08 },
+  { y: 4.3, radiusX: 2.08, radiusZ: 1.78, count: 8, phase: 0.0 },
+  { y: 5.35, radiusX: 1.55, radiusZ: 1.3, count: 6, phase: -0.1 },
+] as const;
 
 /**
  * Single source of truth for the leaf wind displacement. The visible material and
@@ -29,22 +34,49 @@ const WIND_VERTEX_SNIPPET = `
   transformed.z += sway * 0.5 * h;
 `;
 
-export function getBranchTips(count = 16): BranchTip[] {
+export function getBranchTips(count = 20): BranchTip[] {
   const tips: BranchTip[] = [];
-  const N = Math.max(1, count);
-  for (let i = 0; i < N; i++) {
-    const golden = Math.PI * (3 - Math.sqrt(5));
-    const y = 1 - (i / Math.max(1, N - 1)) * 1.2;
-    const r = Math.sqrt(Math.max(0, 1 - y * y));
-    const theta = golden * i;
-    const p = new THREE.Vector3(
-      Math.cos(theta) * r,
-      y * 0.7 + 0.1,
-      Math.sin(theta) * r
-    )
-      .multiplyScalar(CANOPY_RADIUS * 0.95)
-      .add(CANOPY_CENTER);
-    tips.push({ tip: p });
+  const wanted = Math.max(1, count);
+
+  for (const band of CANOPY_BANDS) {
+    // Each band deliberately gives the opening camera four/five front-facing
+    // fruits and two/three rear fruits. Side/rear coverage remains present for
+    // a populated full orbit, while the initial view reads as a fruit tree.
+    const frontCount = Math.ceil(band.count * 0.64);
+    const rearCount = band.count - frontCount;
+    const angles: number[] = [];
+    for (let i = 0; i < frontCount; i++) {
+      const t = frontCount === 1 ? 0.5 : i / (frontCount - 1);
+      angles.push(THREE.MathUtils.lerp(-1.18, 1.18, t) + band.phase);
+    }
+    for (let i = 0; i < rearCount; i++) {
+      const t = rearCount === 1 ? 0.5 : i / (rearCount - 1);
+      angles.push(THREE.MathUtils.lerp(2.15, 4.13, t) - band.phase);
+    }
+    angles.forEach((theta, index) => {
+      if (tips.length >= wanted) return;
+      const yJitter = ((index % 3) - 1) * 0.1;
+      tips.push({
+        tip: new THREE.Vector3(
+          Math.sin(theta) * band.radiusX,
+          band.y + yJitter,
+          Math.cos(theta) * band.radiusZ,
+        ),
+      });
+    });
+  }
+
+  // Counts beyond the designed 20 slots remain deterministic if reused.
+  while (tips.length < wanted) {
+    const i = tips.length;
+    const theta = i * Math.PI * (3 - Math.sqrt(5));
+    tips.push({
+      tip: new THREE.Vector3(
+        Math.cos(theta) * 1.65,
+        CANOPY_CENTER.y + Math.sin(theta * 0.7) * 1.05,
+        Math.sin(theta) * 1.4,
+      ),
+    });
   }
   return tips;
 }

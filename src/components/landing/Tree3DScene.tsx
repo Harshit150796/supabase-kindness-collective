@@ -313,7 +313,7 @@ function PerfWatchdog({ onSlow }: { onSlow: () => void }) {
 
 function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boolean }) {
   const { leafCount, plantCap } = settings;
-  const visibleFruitCount = Math.min(16, COUPON_FRUITS.length);
+  const visibleFruitCount = Math.min(20, COUPON_FRUITS.length);
 
   const branchTips = useMemo(() => {
     return getBranchTips(visibleFruitCount).map((branch) => branch.tip);
