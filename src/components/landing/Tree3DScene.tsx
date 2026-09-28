@@ -323,7 +323,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
   const { leafCount, plantCap } = settings;
 
   const branchTips = useMemo(() => {
-    const available = getBranchTips().map((b) => b.tip);
+    const available = getBranchTips(COUPON_FRUITS.length).map((b) => b.tip);
     const wanted = Math.min(COUPON_FRUITS.length, available.length);
     return Array.from({ length: wanted }, (_, index) => {
       const sourceIndex = wanted === 1 ? 0 : Math.round((index * (available.length - 1)) / (wanted - 1));

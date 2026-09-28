@@ -41,7 +41,6 @@ function logoSize(aspect: number) {
 
 export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false, labelSuppressed = false }: Props) {
   const groupRef = useRef<THREE.Group>(null);
-  const stemRef = useRef<THREE.Mesh>(null);
   const velocityRef = useRef({ y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 });
   const posRef = useRef(new THREE.Vector3());
   const rotRef = useRef(new THREE.Euler());
@@ -50,10 +49,6 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   const [, setLogoRevision] = useState(0);
   const { openStory, spawnPlant } = useInteraction();
   const plantSpawnedRef = useRef(false);
-  const stemMid = useMemo(() => new THREE.Vector3(), []);
-  const stemDirection = useMemo(() => new THREE.Vector3(), []);
-  const cardTop = useMemo(() => new THREE.Vector3(), []);
-  const stemUp = useMemo(() => new THREE.Vector3(0, 1, 0), []);
   const hangingTilt = useMemo(
     () => ({
       x: ((index * 37) % 11 - 5) * 0.025,
@@ -65,6 +60,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   useEffect(() => onLogoSettled(data.logo, () => setLogoRevision((n) => n + 1)), [data.logo]);
   const logoEntry = getLogo(data.logo);
   const dimensions = logoSize(logoEntry.aspect);
+  const opticalScale = data.scale ?? 1;
 
   // Stable scatter target across the grass, deterministic per coupon slot.
   // Phones frame the tree much tighter, so coupons land in a small ring around
@@ -155,16 +151,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         hangingTilt.z + sway,
       );
       const breathe = 1 + Math.sin(t * 1.2 + index) * 0.02;
-      groupRef.current.scale.setScalar(breathe);
-      if (stemRef.current) {
-        cardTop.set(0, dimensions.height / 2, 0).applyQuaternion(groupRef.current.quaternion).add(groupRef.current.position);
-        stemDirection.copy(cardTop).sub(branchTip);
-        const length = stemDirection.length();
-        stemMid.copy(branchTip).add(cardTop).multiplyScalar(0.5);
-        stemRef.current.position.copy(stemMid);
-        stemRef.current.quaternion.setFromUnitVectors(stemUp, stemDirection.normalize());
-        stemRef.current.scale.set(1, length, 1);
-      }
+      groupRef.current.scale.setScalar(breathe * opticalScale);
     } else if (state.phase === 'falling') {
       velocityRef.current.y -= 9.8 * dt;
       velocityRef.current.x *= 0.99; // air drag
@@ -187,7 +174,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       }
       groupRef.current.position.copy(posRef.current);
       groupRef.current.rotation.copy(rotRef.current);
-      groupRef.current.scale.setScalar(1);
+      groupRef.current.scale.setScalar(opticalScale);
     } else if (state.phase === 'landed') {
       const elapsed = t - state.landTime;
       // Squash & settle
@@ -195,7 +182,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       const squash = 1 - Math.sin(settle * Math.PI) * 0.1;
       groupRef.current.position.copy(state.restPos);
       groupRef.current.rotation.set(-Math.PI / 2.1, rotRef.current.y * 0.4, rotRef.current.z * 0.5);
-      groupRef.current.scale.set(1, squash, 1);
+      groupRef.current.scale.set(opticalScale, squash * opticalScale, opticalScale);
       if (elapsed > 5) onRegrown(index);
     } else if (state.phase === 'regrowing') {
       const elapsed = t - state.startTime;
@@ -209,7 +196,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         branchTip.z + CANOPY_FACE_OFFSET,
       );
       groupRef.current.rotation.set(0, 0, 0);
-      groupRef.current.scale.setScalar(Math.max(0, eased));
+      groupRef.current.scale.setScalar(Math.max(0, eased) * opticalScale);
       if (k >= 1) onRegrown(index);
     }
   });
@@ -225,13 +212,6 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
 
   return (
     <>
-      {state.phase === 'hanging' && (
-        <mesh ref={stemRef} raycast={() => {}}>
-          <cylinderGeometry args={[0.012, 0.012, 1, 6]} />
-          <meshStandardMaterial color="#3D2106" roughness={0.92} />
-        </mesh>
-      )}
-
       <group
         ref={groupRef}
         visible={state.phase !== 'landed'}

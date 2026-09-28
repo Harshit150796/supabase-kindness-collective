@@ -29,12 +29,12 @@ const WIND_VERTEX_SNIPPET = `
   transformed.z += sway * 0.5 * h;
 `;
 
-export function getBranchTips(): BranchTip[] {
+export function getBranchTips(count = 16): BranchTip[] {
   const tips: BranchTip[] = [];
-  const N = 16;
+  const N = Math.max(1, count);
   for (let i = 0; i < N; i++) {
     const golden = Math.PI * (3 - Math.sqrt(5));
-    const y = 1 - (i / (N - 1)) * 1.2;
+    const y = 1 - (i / Math.max(1, N - 1)) * 1.2;
     const r = Math.sqrt(Math.max(0, 1 - y * y));
     const theta = golden * i;
     const p = new THREE.Vector3(

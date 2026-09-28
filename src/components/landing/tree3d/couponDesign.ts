@@ -2,10 +2,14 @@ import * as THREE from 'three';
 
 export interface CouponData {
   brand: string;
-  /** File slug under /public/brand-logos/{logo}.svg (local, monochrome white). */
+  /** File slug under /public/brand-logos/{logo}.svg (local, original-color artwork). */
   logo: string;
   color: string;
   amount: 5 | 10;
+  /** Optical correction so detailed or narrow logos remain legible in the canopy. */
+  scale?: number;
+  /** A logo-shaped light edge for dark artwork against the leaves. */
+  lightEdge?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -40,17 +44,20 @@ function loadLogo(slug: string): LogoEntry {
   img
     .decode()
     .then(() => {
+      const sourceAspect = Math.max(0.08, img.naturalWidth / Math.max(1, img.naturalHeight));
       const full = document.createElement('canvas');
-      full.width = LOGO_RES;
-      full.height = LOGO_RES;
+      full.width = sourceAspect >= 1 ? LOGO_RES : Math.max(1, Math.round(LOGO_RES * sourceAspect));
+      full.height = sourceAspect >= 1 ? Math.max(1, Math.round(LOGO_RES / sourceAspect)) : LOGO_RES;
       const fctx = full.getContext('2d');
       if (!fctx) throw new Error('2d canvas unavailable');
-      fctx.drawImage(img, 0, 0, LOGO_RES, LOGO_RES);
-      const { data } = fctx.getImageData(0, 0, LOGO_RES, LOGO_RES);
-      let minX = LOGO_RES, minY = LOGO_RES, maxX = -1, maxY = -1;
-      for (let y = 0; y < LOGO_RES; y++) {
-        for (let x = 0; x < LOGO_RES; x++) {
-          if (data[(y * LOGO_RES + x) * 4 + 3] > 8) {
+      fctx.imageSmoothingEnabled = true;
+      fctx.imageSmoothingQuality = 'high';
+      fctx.drawImage(img, 0, 0, full.width, full.height);
+      const { data } = fctx.getImageData(0, 0, full.width, full.height);
+      let minX = full.width, minY = full.height, maxX = -1, maxY = -1;
+      for (let y = 0; y < full.height; y++) {
+        for (let x = 0; x < full.width; x++) {
+          if (data[(y * full.width + x) * 4 + 3] > 8) {
             if (x < minX) minX = x;
             if (x > maxX) maxX = x;
             if (y < minY) minY = y;
@@ -61,7 +68,7 @@ function loadLogo(slug: string): LogoEntry {
       if (maxX < 0) throw new Error('empty logo');
       const w = maxX - minX + 1;
       const h = maxY - minY + 1;
-      // Re-rasterise the cropped region so the long edge is >= 1024px.
+      // Crop the visible pixels without changing the logo's native proportions.
       const k = LOGO_RES / Math.max(w, h);
       const crop = document.createElement('canvas');
       crop.width = Math.round(w * k);
@@ -69,7 +76,7 @@ function loadLogo(slug: string): LogoEntry {
       const cctx = crop.getContext('2d');
       if (!cctx) throw new Error('2d canvas unavailable');
       cctx.imageSmoothingQuality = 'high';
-      cctx.drawImage(img, -minX * k, -minY * k, LOGO_RES * k, LOGO_RES * k);
+      cctx.drawImage(full, minX, minY, w, h, 0, 0, crop.width, crop.height);
       entry.canvas = crop;
       entry.dataUrl = crop.toDataURL('image/png');
       entry.aspect = crop.width / crop.height;
@@ -101,18 +108,19 @@ function paintLogo(canvas: HTMLCanvasElement, data: CouponData) {
     const scale = TEXTURE_LONG_EDGE / Math.max(entry.canvas.width, entry.canvas.height);
     const logoW = Math.max(1, Math.round(entry.canvas.width * scale));
     const logoH = Math.max(1, Math.round(entry.canvas.height * scale));
-    canvas.width = logoW;
-    canvas.height = logoH;
+    const edge = data.lightEdge ? 18 : 0;
+    canvas.width = logoW + edge * 2;
+    canvas.height = logoH + edge * 2;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(entry.canvas, 0, 0, logoW, logoH);
-    ctx.globalCompositeOperation = 'source-in';
-    ctx.fillStyle = data.color;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.globalCompositeOperation = 'source-over';
+    if (data.lightEdge) {
+      ctx.shadowColor = 'rgba(255,255,255,0.92)';
+      ctx.shadowBlur = 13;
+    }
+    ctx.drawImage(entry.canvas, edge, edge, logoW, logoH);
   } else {
     // Never show a blank fruit while decoding or if a local SVG fails.
     canvas.width = TEXTURE_LONG_EDGE;
@@ -151,19 +159,34 @@ export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
 
 // Curated set of coupon fruits
 export const COUPON_FRUITS: CouponData[] = [
-  { brand: 'Walmart', logo: 'walmart', color: '#0071CE', amount: 10 },
-  { brand: 'Uber', logo: 'uber', color: '#000000', amount: 5 },
-  { brand: 'DoorDash', logo: 'doordash', color: '#FF3008', amount: 10 },
-  { brand: 'Target', logo: 'target', color: '#CC0000', amount: 5 },
-  { brand: 'Instacart', logo: 'instacart', color: '#43B02A', amount: 10 },
-  { brand: 'Lyft', logo: 'lyft', color: '#FF00BF', amount: 5 },
-  { brand: 'Starbucks', logo: 'starbucks', color: '#00704A', amount: 5 },
-  { brand: 'Amazon', logo: 'amazon', color: '#FF9900', amount: 10 },
-  { brand: 'Grubhub', logo: 'grubhub', color: '#F63440', amount: 5 },
-  { brand: "McDonald's", logo: 'mcdonalds', color: '#DA291C', amount: 10 },
-  { brand: 'eBay', logo: 'ebay', color: '#E53238', amount: 5 },
-  { brand: 'Aldi', logo: 'aldi', color: '#00529B', amount: 10 },
+  { brand: 'Walmart', logo: 'walmart', color: '#0053E2', amount: 10, scale: 1.08 },
+  { brand: 'Uber', logo: 'uber', color: '#000000', amount: 5, scale: 1.04, lightEdge: true },
+  { brand: 'DoorDash', logo: 'doordash', color: '#FF3008', amount: 10, scale: 1.08 },
+  { brand: 'Target', logo: 'target', color: '#E50024', amount: 5, scale: 0.94 },
+  { brand: 'Instacart', logo: 'instacart', color: '#0AAD0A', amount: 10, scale: 1.08 },
+  { brand: 'Lyft', logo: 'lyft', color: '#EA0B8C', amount: 5, scale: 0.98 },
+  { brand: 'Starbucks', logo: 'starbucks', color: '#006241', amount: 5, scale: 0.94 },
+  { brand: 'Amazon', logo: 'amazon', color: '#FF9900', amount: 10, scale: 1.08, lightEdge: true },
+  { brand: 'Grubhub', logo: 'grubhub', color: '#FF5500', amount: 5, scale: 1.06 },
+  { brand: "McDonald's", logo: 'mcdonalds', color: '#FFCC00', amount: 10, scale: 0.92, lightEdge: true },
+  { brand: 'eBay', logo: 'ebay', color: '#E53238', amount: 5, scale: 1.06 },
+  { brand: 'Aldi', logo: 'aldi', color: '#00529B', amount: 10, scale: 0.9 },
+  { brand: 'Kroger', logo: 'kroger', color: '#0468B3', amount: 10, scale: 0.94 },
+  { brand: 'Whole Foods', logo: 'whole-foods', color: '#006F46', amount: 5, scale: 0.92 },
+  { brand: 'Publix', logo: 'publix', color: '#649441', amount: 10, scale: 1.08 },
+  { brand: "Trader Joe's", logo: 'trader-joes', color: '#D21242', amount: 5, scale: 1.08 },
+  { brand: 'Uber Eats', logo: 'uber-eats', color: '#06C167', amount: 10, scale: 1.08, lightEdge: true },
+  { brand: 'Postmates', logo: 'postmates', color: '#FFDF18', amount: 5, scale: 0.9, lightEdge: true },
+  { brand: 'Seamless', logo: 'seamless', color: '#C90117', amount: 10, scale: 1.06 },
+  { brand: "Domino's", logo: 'dominos', color: '#006491', amount: 5, scale: 0.92 },
+  { brand: 'Taco Bell', logo: 'taco-bell', color: '#38096C', amount: 10, scale: 0.9 },
+  { brand: 'Subway', logo: 'subway', color: '#008938', amount: 5, scale: 1.08 },
+  { brand: 'Chipotle', logo: 'chipotle', color: '#A81612', amount: 10, scale: 0.92 },
+  { brand: 'CVS', logo: 'cvs', color: '#CC0000', amount: 5, scale: 1.08 },
+  { brand: 'Walgreens', logo: 'walgreens', color: '#E31836', amount: 10, scale: 1.08 },
+  { brand: 'Costco', logo: 'costco', color: '#E31837', amount: 5, scale: 1.06 },
+  { brand: 'Home Depot', logo: 'home-depot', color: '#F96302', amount: 10, scale: 0.9 },
 ];
 
-// Preload + decode all twelve once at module initialisation.
+// Preload + decode the complete local brand set once at module initialisation.
 if (typeof window !== 'undefined') COUPON_FRUITS.forEach((f) => loadLogo(f.logo));
