@@ -80,7 +80,8 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   useEffect(() => onLogoSettled(data.logo, () => setLogoRevision((n) => n + 1)), [data.logo]);
   const logoEntry = getLogo(data.logo);
   const dimensions = logoSize(logoEntry.aspect, logoEntry.alphaCoverage, data.mark);
-  const opticalScale = data.scale ?? 1;
+  // One shared scale drives hanging, falling, landed, and regrowing artwork.
+  const opticalScale = (data.scale ?? 1) * data.sizeFactor;
 
   // Stable scatter target across the grass, deterministic per coupon slot.
   // Phones frame the tree much tighter, so coupons land in a small ring around
