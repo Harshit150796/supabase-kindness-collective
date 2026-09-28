@@ -25,10 +25,10 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
-              <li><Link to="/about" className="hover:text-foreground transition-colors">About Us</Link></li>
-              <li><Link to="/how-it-works" className="hover:text-foreground transition-colors">How It Works</Link></li>
-              <li><Link to="/faq" className="hover:text-foreground transition-colors">FAQ</Link></li>
-              <li><Link to="/auth" className="hover:text-foreground transition-colors">Get Started</Link></li>
+              <li><Link to="/about" className="hover:text-primary-foreground transition-colors">About Us</Link></li>
+              <li><Link to="/how-it-works" className="hover:text-primary-foreground transition-colors">How It Works</Link></li>
+              <li><Link to="/faq" className="hover:text-primary-foreground transition-colors">FAQ</Link></li>
+              <li><Link to="/auth" className="hover:text-primary-foreground transition-colors">Get Started</Link></li>
             </ul>
           </div>
 
@@ -36,9 +36,9 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4">For Users</h3>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
-              <li><Link to="/auth?mode=signup&role=donor" className="hover:text-foreground transition-colors">Become a Donor</Link></li>
-              <li><Link to="/auth?mode=signup&role=recipient" className="hover:text-foreground transition-colors">Apply as Recipient</Link></li>
-              <li><Link to="/auth" className="hover:text-foreground transition-colors">Partner With Us</Link></li>
+              <li><Link to="/auth?mode=signup&role=donor" className="hover:text-primary-foreground transition-colors">Become a Donor</Link></li>
+              <li><Link to="/auth?mode=signup&role=recipient" className="hover:text-primary-foreground transition-colors">Apply as Recipient</Link></li>
+              <li><Link to="/auth" className="hover:text-primary-foreground transition-colors">Partner With Us</Link></li>
             </ul>
           </div>
 
@@ -67,9 +67,9 @@ export function Footer() {
             © {new Date().getFullYear()} CouponDonation. All rights reserved.
           </p>
           <div className="flex flex-wrap justify-center gap-6 text-sm text-primary-foreground/60">
-            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-            <Link to="/cookies" className="hover:text-foreground transition-colors">Cookie Policy</Link>
-            <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+            <Link to="/privacy" className="hover:text-primary-foreground transition-colors">Privacy Policy</Link>
+            <Link to="/cookies" className="hover:text-primary-foreground transition-colors">Cookie Policy</Link>
+            <Link to="/terms" className="hover:text-primary-foreground transition-colors">Terms of Service</Link>
           </div>
         </div>
       </div>
