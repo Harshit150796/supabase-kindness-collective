@@ -1,17 +1,1 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="21" height="24" viewBox="0 0 21 24" xml:space="preserve">
-<desc>Created with Fabric.js 3.6.3</desc>
-<defs>
-</defs>
-<g transform="matrix(1 0 0 1 10.16 11.73)"  >
-<g style=""   >
-		<g transform="matrix(1 0 0 1 0 -4.58)"  >
-<path style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(10,173,10); fill-rule: nonzero; opacity: 1;"  transform=" translate(-9.16, -7.15)" d="M 15.77 3.989 c -1.012 0 -1.734 0.441 -2.4 1.399 l -1.92 2.757 V 0.275 H 6.87 v 7.87 L 4.95 5.388 c -0.665 -0.958 -1.387 -1.399 -2.4 -1.399 C 1.022 3.989 0.005 5.117 0 6.507 c -0.004 1.19 0.557 1.966 1.74 2.728 l 7.42 4.78 l 7.42 -4.78 c 1.183 -0.762 1.744 -1.538 1.74 -2.728 c -0.004 -1.39 -1.022 -2.518 -2.55 -2.518 Z" stroke-linecap="round" />
-</g>
-		<g transform="matrix(1 0 0 1 0 7.44)"  >
-<path style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,112,9); fill-rule: nonzero; opacity: 1;"  transform=" translate(-9.16, -19.17)" d="M 9.16 15.16 c 4.41 0 8.025 3.292 8.015 8.016 H 1.145 C 1.136 18.454 4.75 15.16 9.16 15.16 Z" stroke-linecap="round" />
-</g>
-</g>
-</g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill-rule="evenodd"><path d="M41.655 25.653c3.788 3.806 6.884 10.038 5.112 13.74C42.026 49.296 6.655 66.66 3.65 63.655s14.373-38.39 24.275-43.13c3.703-1.773 9.936 1.325 13.742 5.113l-.012.015z" fill="#ff8200"/><path d="M60.394 21.473c-.616-2.278-2.185-4.58-4.53-4.85-4.298-.5-11.072 7.098-10.59 8.902s10.054 4.982 13.63 2.413c1.843-1.324 2.102-4.185 1.497-6.466l-.008.002zM47.093.42c3.193.864 6.418 3.065 6.8 6.35.7 6.025-9.952 15.524-12.48 14.846S34.426 7.52 38.03 2.508C39.886-.075 43.897-.44 47.094.4l-.001.012z" fill="#43b02a"/></svg>
