@@ -313,14 +313,14 @@ function PerfWatchdog({ onSlow }: { onSlow: () => void }) {
 
 function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boolean }) {
   const { leafCount, plantCap } = settings;
-  const visibleFruitCount = Math.min(16, COUPON_FRUITS.length);
-  // Open with 16 distinct, instantly recognizable brands — no two marks from the
+  const visibleFruitCount = Math.min(18, COUPON_FRUITS.length);
+  // Open with 18 distinct, instantly recognizable brands — no two marks from the
   // same family (Uber / Uber Eats) hang at the same time. Every omitted brand
   // enters through the same non-repeating replacement queue after a fruit falls.
   const initialBrandIndices = useMemo(
     // Compact marks occupy tighter inner/front slots; wide wordmarks use the
     // separated side/front slots. Aldi now opens in a clear front slot.
-    () => [0, 23, 2, 14, 4, 24, 3, 9, 11, 25, 1, 20, 7, 21, 6, 19].slice(0, visibleFruitCount),
+    () => [0, 23, 2, 14, 4, 24, 3, 9, 11, 25, 5, 12, 1, 20, 7, 21, 6, 19].slice(0, visibleFruitCount),
     [visibleFruitCount],
   );
 
