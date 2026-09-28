@@ -313,14 +313,15 @@ function PerfWatchdog({ onSlow }: { onSlow: () => void }) {
 
 function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boolean }) {
   const { leafCount, plantCap } = settings;
-  const visibleFruitCount = Math.min(20, COUPON_FRUITS.length);
-  // Open with a varied, recognizable mix that includes both compact emblems
-  // and long wordmarks such as CVS. Every omitted brand enters through the
-  // same non-repeating replacement queue after a fruit falls.
+  const visibleFruitCount = Math.min(18, COUPON_FRUITS.length);
+  // Open with 18 distinct, instantly recognizable brands — no two marks from the
+  // same family (Uber / Uber Eats) hang at the same time. Every omitted brand
+  // enters through the same non-repeating replacement queue after a fruit falls.
   const initialBrandIndices = useMemo(
-    () => [0, 23, 1, 16, 2, 24, 3, 9, 4, 25, 5, 12, 6, 20, 7, 21, 8, 22, 10, 11].slice(0, visibleFruitCount),
+    () => [0, 23, 2, 14, 4, 24, 3, 9, 6, 25, 5, 12, 1, 20, 7, 21, 11, 19].slice(0, visibleFruitCount),
     [visibleFruitCount],
   );
+
 
   const branchTips = useMemo(() => {
     return getBranchTips(visibleFruitCount).map((branch) => branch.tip);
@@ -347,7 +348,18 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
   }, []);
 
   const takeNextBrand = useCallback((currentBrandIndex: number) => {
-    if (replacementQueueRef.current.length === 0) {
+    // Never hand back a brand that is already hanging elsewhere on the tree.
+    const inUse = new Set(brandIndicesRef.current);
+    inUse.delete(currentBrandIndex);
+    const isFree = (index: number) => !inUse.has(index);
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const queue = replacementQueueRef.current;
+      const pick = queue.findIndex(isFree);
+      if (pick >= 0) {
+        const [chosen] = queue.splice(pick, 1);
+        return chosen;
+      }
       let seed = 0x9e3779b9 ^ shuffleRoundRef.current++;
       const nextRandom = () => {
         seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
@@ -365,6 +377,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
     }
     return replacementQueueRef.current.shift() ?? currentBrandIndex;
   }, []);
+
 
   useEffect(() => {
     updateBrandDebugState();

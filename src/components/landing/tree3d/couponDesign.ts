@@ -110,7 +110,9 @@ function paintLogo(canvas: HTMLCanvasElement, data: CouponData) {
     const logoH = Math.max(1, Math.round(entry.canvas.height * scale));
     // A crisp alpha-derived keyline separates each real logo shape from leaves
     // without introducing a rectangular board or altering its brand colors.
-    const edge = data.lightEdge ? 16 : 9;
+    // Light artwork (white/yellow) gets a dark keyline, dark or saturated
+    // artwork gets a bright one, so every logo reads against the foliage.
+    const edge = 20;
     canvas.width = logoW + edge * 2;
     canvas.height = logoH + edge * 2;
     const ctx = canvas.getContext('2d');
@@ -119,31 +121,34 @@ function paintLogo(canvas: HTMLCanvasElement, data: CouponData) {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
-    // Build an opaque silhouette from several precise offsets, tint it white,
-    // then restore the untouched original artwork above it.
+    // Build an opaque silhouette from several precise offsets, tint it, then
+    // restore the untouched original artwork above it.
     const outline = document.createElement('canvas');
     outline.width = canvas.width;
     outline.height = canvas.height;
     const outlineCtx = outline.getContext('2d');
     if (outlineCtx) {
-      const radius = data.lightEdge ? 10 : 6;
-      const steps = 24;
-      for (let i = 0; i < steps; i++) {
-        const angle = (i / steps) * Math.PI * 2;
-        outlineCtx.drawImage(
-          entry.canvas,
-          edge + Math.cos(angle) * radius,
-          edge + Math.sin(angle) * radius,
-          logoW,
-          logoH,
-        );
+      const radius = 13;
+      const steps = 32;
+      for (const r of [radius, radius * 0.55]) {
+        for (let i = 0; i < steps; i++) {
+          const angle = (i / steps) * Math.PI * 2;
+          outlineCtx.drawImage(
+            entry.canvas,
+            edge + Math.cos(angle) * r,
+            edge + Math.sin(angle) * r,
+            logoW,
+            logoH,
+          );
+        }
       }
       outlineCtx.globalCompositeOperation = 'source-in';
-      outlineCtx.fillStyle = data.lightEdge ? 'rgba(255,255,255,0.96)' : 'rgba(255,255,255,0.82)';
+      outlineCtx.fillStyle = data.lightEdge ? 'rgba(16,36,24,0.94)' : 'rgba(255,255,255,0.97)';
       outlineCtx.fillRect(0, 0, outline.width, outline.height);
       ctx.drawImage(outline, 0, 0);
     }
     ctx.drawImage(entry.canvas, edge, edge, logoW, logoH);
+
   } else {
     // Never show a blank fruit while decoding or if a local SVG fails.
     canvas.width = TEXTURE_LONG_EDGE;
@@ -183,7 +188,7 @@ export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
 // Curated set of coupon fruits
 export const COUPON_FRUITS: CouponData[] = [
   { brand: 'Walmart', logo: 'walmart', color: '#0053E2', amount: 10, scale: 1.14 },
-  { brand: 'Uber', logo: 'uber', color: '#000000', amount: 5, scale: 1.04, lightEdge: true },
+  { brand: 'Uber', logo: 'uber', color: '#111111', amount: 5, scale: 1.12, lightEdge: true },
   { brand: 'DoorDash', logo: 'doordash', color: '#FF3008', amount: 10, scale: 1.08 },
   { brand: 'Target', logo: 'target', color: '#E50024', amount: 5, scale: 0.94 },
   { brand: 'Instacart', logo: 'instacart', color: '#0AAD0A', amount: 10, scale: 1.14 },
@@ -193,17 +198,18 @@ export const COUPON_FRUITS: CouponData[] = [
   { brand: 'Grubhub', logo: 'grubhub', color: '#FF5500', amount: 5, scale: 1.06 },
   { brand: "McDonald's", logo: 'mcdonalds', color: '#FFCC00', amount: 10, scale: 0.92, lightEdge: true },
   { brand: 'eBay', logo: 'ebay', color: '#E53238', amount: 5, scale: 1.06 },
-  { brand: 'Aldi', logo: 'aldi', color: '#00529B', amount: 10, scale: 0.9 },
-  { brand: 'Kroger', logo: 'kroger', color: '#0468B3', amount: 10, scale: 0.94 },
-  { brand: 'Whole Foods', logo: 'whole-foods', color: '#006F46', amount: 5, scale: 0.92 },
-  { brand: 'Publix', logo: 'publix', color: '#649441', amount: 10, scale: 1.08 },
-  { brand: "Trader Joe's", logo: 'trader-joes', color: '#D21242', amount: 5, scale: 1.08 },
-  { brand: 'Uber Eats', logo: 'uber-eats', color: '#06C167', amount: 10, scale: 1.08, lightEdge: true },
-  { brand: 'Postmates', logo: 'postmates', color: '#FFDF18', amount: 5, scale: 0.9, lightEdge: true },
-  { brand: 'Seamless', logo: 'seamless', color: '#C90117', amount: 10, scale: 1.06 },
-  { brand: "Domino's", logo: 'dominos', color: '#006491', amount: 5, scale: 0.92 },
-  { brand: 'Taco Bell', logo: 'taco-bell', color: '#38096C', amount: 10, scale: 0.9 },
+  { brand: 'Aldi', logo: 'aldi', color: '#00529B', amount: 10, scale: 0.98, lightEdge: true },
+  { brand: 'Kroger', logo: 'kroger', color: '#0468B3', amount: 10, scale: 1.0 },
+  { brand: 'Whole Foods', logo: 'whole-foods', color: '#006F46', amount: 5, scale: 0.98 },
+  { brand: 'Publix', logo: 'publix', color: '#649441', amount: 10, scale: 1.12 },
+  { brand: "Trader Joe's", logo: 'trader-joes', color: '#D21242', amount: 5, scale: 1.12 },
+  { brand: 'Uber Eats', logo: 'uber-eats', color: '#06C167', amount: 10, scale: 1.12, lightEdge: true },
+  { brand: 'Postmates', logo: 'postmates', color: '#FFDF18', amount: 5, scale: 0.96, lightEdge: true },
+  { brand: 'Seamless', logo: 'seamless', color: '#C90117', amount: 10, scale: 1.1 },
+  { brand: "Domino's", logo: 'dominos', color: '#006491', amount: 5, scale: 0.98 },
+  { brand: 'Taco Bell', logo: 'taco-bell', color: '#38096C', amount: 10, scale: 0.98 },
   { brand: 'Subway', logo: 'subway', color: '#008938', amount: 5, scale: 1.08 },
+
   { brand: 'Chipotle', logo: 'chipotle', color: '#A81612', amount: 10, scale: 0.92 },
   { brand: 'CVS', logo: 'cvs', color: '#CC0000', amount: 5, scale: 1.08 },
   { brand: 'Walgreens', logo: 'walgreens', color: '#E31836', amount: 10, scale: 1.08 },

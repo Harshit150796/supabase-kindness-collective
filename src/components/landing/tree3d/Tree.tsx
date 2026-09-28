@@ -14,10 +14,11 @@ export interface BranchTip {
 const CANOPY_CENTER = new THREE.Vector3(0, 4.4, 0);
 
 const CANOPY_BANDS = [
-  { y: 2.72, radiusX: 1.62, radiusZ: 1.94, count: 6, frontCount: 4, phase: 0.24, frontSpan: 1.28 },
-  { y: 4.02, radiusX: 2.14, radiusZ: 2.1, count: 8, frontCount: 4, phase: -0.18, frontSpan: 1.36 },
-  { y: 5.22, radiusX: 1.72, radiusZ: 1.76, count: 6, frontCount: 4, phase: 0.3, frontSpan: 1.22 },
+  { y: 2.72, radiusX: 1.64, radiusZ: 1.96, count: 5, frontCount: 4, phase: 0.24, frontSpan: 1.3 },
+  { y: 4.02, radiusX: 2.16, radiusZ: 2.12, count: 7, frontCount: 5, phase: -0.18, frontSpan: 1.4 },
+  { y: 5.22, radiusX: 1.74, radiusZ: 1.78, count: 6, frontCount: 4, phase: 0.3, frontSpan: 1.24 },
 ] as const;
+
 
 /**
  * Single source of truth for the leaf wind displacement. The visible material and
@@ -34,7 +35,7 @@ const WIND_VERTEX_SNIPPET = `
   transformed.z += sway * 0.5 * h;
 `;
 
-export function getBranchTips(count = 20): BranchTip[] {
+export function getBranchTips(count = 18): BranchTip[] {
   const tips: BranchTip[] = [];
   const wanted = Math.max(1, count);
 
@@ -69,7 +70,7 @@ export function getBranchTips(count = 20): BranchTip[] {
     });
   }
 
-  // Counts beyond the designed 20 slots remain deterministic if reused.
+  // Counts beyond the designed 18 slots remain deterministic if reused.
   while (tips.length < wanted) {
     const i = tips.length;
     const theta = i * Math.PI * (3 - Math.sqrt(5));
