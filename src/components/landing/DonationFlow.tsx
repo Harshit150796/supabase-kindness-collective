@@ -318,7 +318,7 @@ export function DonationFlow() {
   };
 
   return (
-    <section id="donation-flow" className="relative overflow-hidden bg-background py-24 md:py-36">
+    <section id="donation-flow" className="relative overflow-hidden py-24 md:py-36" style={{ backgroundColor: 'hsl(var(--primary-93))' }}>
       <div className="container mx-auto px-4 relative">
         {/* Header */}
         <div className="mx-auto mb-12 max-w-3xl text-center md:mb-16">
@@ -356,7 +356,7 @@ export function DonationFlow() {
         </div>
 
         {/* Interactive Flow */}
-        <Card className="mx-auto max-w-3xl border-x-0 p-6 shadow-none md:p-10">
+        <Card className="mx-auto max-w-3xl rounded-[1.5rem] border-0 p-6 shadow-card-hover md:p-10">
           {/* Step 1: Choose Brands (Multi-Select) */}
           {step === 1 && (
             <div className="space-y-6 animate-fade-in">
