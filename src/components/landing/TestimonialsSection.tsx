@@ -1,7 +1,6 @@
 import { Quote, CheckCircle2 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { testimonials as hardcodedTestimonials } from '@/data/testimonials';
 import { useCMSTestimonials } from '@/hooks/useCMSContent';
+import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
 
 const roleColors: Record<string, string> = {
   donor: 'bg-primary/10 text-primary',
@@ -12,9 +11,7 @@ const roleColors: Record<string, string> = {
 export function TestimonialsSection() {
   const { data: cmsTestimonials } = useCMSTestimonials(true);
 
-  // Use CMS data if available, otherwise fall back to hardcoded
-  const displayTestimonials = (cmsTestimonials && cmsTestimonials.length > 0)
-    ? cmsTestimonials.map((t: any) => ({
+  const displayTestimonials = (cmsTestimonials || []).map((t: any) => ({
         id: t.id,
         quote: t.quote,
         name: t.name,
@@ -23,31 +20,25 @@ export function TestimonialsSection() {
         location: t.location || '',
         image: t.image_url || '',
         verified: t.verified,
-      }))
-    : hardcodedTestimonials;
+      }));
+
+  if (displayTestimonials.length === 0) return null;
 
   return (
-    <section className="py-20 bg-background">
+    <section className="bg-background py-24 md:py-36">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-            Community Voices
-          </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Hear From Our Community
-          </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Real stories from donors, recipients, and partners who are part of our mission.
-          </p>
+        <div className="mx-auto mb-12 max-w-3xl text-center md:mb-16">
+          <LineReveal><h2 className="font-display text-5xl font-normal leading-none text-foreground md:text-6xl">In their own words.</h2></LineReveal>
+          <Reveal delay={0.1} className="mt-5"><p className="text-lg text-muted-foreground">Published accounts from people who have used or supported CouponDonation.</p></Reveal>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-          {displayTestimonials.map((testimonial) => (
-            <Card 
+        <div className="mx-auto grid max-w-6xl border-y border-border md:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border">
+          {displayTestimonials.map((testimonial, index) => (
+            <Reveal
               key={testimonial.id} 
-              className="border-border/50 hover:shadow-lg transition-shadow duration-300"
+              delay={index * 0.07}
+              className="border-b border-border p-6 last:border-b-0 lg:border-b-0"
             >
-              <CardContent className="p-6">
                 <Quote className="w-8 h-8 text-primary/20 mb-4" />
                 <p className="text-foreground text-sm leading-relaxed mb-6">
                   "{testimonial.quote}"
@@ -63,7 +54,7 @@ export function TestimonialsSection() {
                       />
                     )}
                     {testimonial.verified && (
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                      <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center bg-primary">
                         <CheckCircle2 className="w-3 h-3 text-primary-foreground" />
                       </div>
                     )}
@@ -75,13 +66,12 @@ export function TestimonialsSection() {
                 </div>
                 
                 <div className="mt-3">
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${roleColors[testimonial.role] || roleColors.donor}`}>
+                  <span className={`inline-flex items-center gap-1 border-l-2 border-current pl-2 text-xs font-medium ${roleColors[testimonial.role] || roleColors.donor}`}>
                     <CheckCircle2 className="w-3 h-3" />
                     {testimonial.roleLabel}
                   </span>
                 </div>
-              </CardContent>
-            </Card>
+            </Reveal>
           ))}
         </div>
       </div>

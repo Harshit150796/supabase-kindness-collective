@@ -1,5 +1,5 @@
 import { Shield, ShieldCheck, Lock, CheckCircle2 } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
 
 type TrustBadge = {
   icon: React.ComponentType<{ className?: string }>;
@@ -23,33 +23,25 @@ const trustBadges: TrustBadge[] = [
 
 export function SecurityBadges() {
   return (
-    <section className="py-16 bg-background border-t border-border">
+    <section className="border-y border-border bg-background py-24 md:py-32">
       <div className="container mx-auto px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary/70 mb-2">
-              Platform Security
-            </p>
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-              Your Security Matters
-            </h2>
-            <p className="text-muted-foreground">
+          <div className="mx-auto mb-12 max-w-3xl text-center md:mb-16">
+            <LineReveal><h2 className="font-display text-5xl font-normal leading-none text-foreground md:text-6xl">Security without shortcuts.</h2></LineReveal>
+            <Reveal delay={0.1} className="mt-5"><p className="text-lg text-muted-foreground">
               Your donations are protected by industry-leading security standards
-            </p>
+            </p></Reveal>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-stretch">
+          <div className="grid grid-cols-1 border-y border-border sm:grid-cols-3 sm:divide-x sm:divide-border">
             {trustBadges.map((badge) => {
               const Icon = badge.icon;
               return (
-                <Card
+                <Reveal
                   key={badge.label}
-                  className={[
-                    'p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg',
-                    badge.featured ? 'flex flex-col items-center' : 'flex flex-col items-center justify-center',
-                  ].join(' ')}
+                  className="flex flex-col items-center justify-center border-b border-border p-8 text-center last:border-b-0 sm:border-b-0"
                 >
-                  <div className="w-14 h-14 rounded-full bg-primary/10 ring-1 ring-primary/15 flex items-center justify-center mx-auto mb-4">
+                  <div className="mb-5 flex h-12 w-12 items-center justify-center">
                     <Icon className="w-7 h-7 text-primary" />
                   </div>
                   <div className="font-semibold text-foreground text-lg mb-1">
@@ -63,7 +55,7 @@ export function SecurityBadges() {
                       {badge.description}
                     </p>
                   )}
-                </Card>
+                </Reveal>
               );
             })}
           </div>

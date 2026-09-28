@@ -1,10 +1,10 @@
-import { Card } from '@/components/ui/card';
-import { Trophy, Crown, Heart, Clock } from 'lucide-react';
+import { Heart, Clock } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip, LabelList } from 'recharts';
 import { useState, useEffect } from 'react';
 import { brandLogos } from '@/data/brandLogos';
 import { supabase } from '@/integrations/supabase/client';
 import { useLandingStats, formatUSD } from '@/hooks/useLandingStats';
+import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
 
 const timeAgo = (iso: string) => {
   const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
@@ -20,7 +20,7 @@ const CustomTooltip = ({ active, payload }: any) => {
     const data = payload[0].payload;
     const brand = brandLogos[data.name];
     return (
-      <div className="bg-card border border-border rounded-lg p-3 shadow-lg flex items-center gap-3">
+      <div className="flex items-center gap-3 border border-border bg-background p-3 shadow-sm">
         <img src={brand?.logo} alt={data.name} className="w-8 h-8 object-contain" />
         <div>
           <p className="font-semibold text-foreground">{data.name}</p>
@@ -107,40 +107,26 @@ export function BrandLeaderboard() {
   const latestDonation = recent[donationIndex];
 
   return (
-    <section className="py-16 md:py-24 bg-secondary/30">
+    <section className="bg-background py-24 md:py-36">
       <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-8 md:mb-12">
-          <div className="inline-flex items-center gap-2 bg-verify/10 border border-verify/20 px-3 md:px-4 py-1.5 md:py-2 rounded-full mb-4 md:mb-6">
-            <Trophy className="w-3.5 h-3.5 md:w-4 md:h-4 text-verify" />
-            <span className="text-xs md:text-sm font-medium text-verify">Live Leaderboard</span>
-            <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-primary rounded-full animate-pulse" />
-          </div>
-          <p className="text-base md:text-lg text-muted-foreground px-4">
-            Watch real-time donations driving real change.
-          </p>
+        <div className="mx-auto mb-12 grid max-w-5xl gap-6 md:mb-16 md:grid-cols-[1.1fr_0.9fr] md:items-end">
+          <LineReveal><h2 className="font-display text-5xl font-normal leading-none text-foreground md:text-6xl">See where donors choose to give.</h2></LineReveal>
+          <Reveal delay={0.1}><p className="text-lg leading-relaxed text-muted-foreground">Retailer totals and recent donations come directly from completed contributions.</p></Reveal>
         </div>
 
         <div className="max-w-5xl mx-auto space-y-6 md:space-y-8">
           {/* Top Donors - Now First */}
           <div>
-            <h3 className="text-base md:text-lg font-semibold text-foreground mb-3 md:mb-4 flex items-center gap-2 px-1">
-              <Crown className="w-4 h-4 md:w-5 md:h-5 text-verify" />
-              Top Retailers Supported
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+            <h3 className="font-display text-2xl font-normal text-foreground mb-4 md:text-3xl">Top retailers supported</h3>
+            <div className="grid border-y border-border sm:grid-cols-2 md:grid-cols-3 md:divide-x md:divide-border">
               {topBrands.map((brand) => {
                 const brandInfo = brandLogos[brand.name];
                 return (
-                  <Card 
+                  <div
                     key={brand.rank}
-                    className={`p-4 md:p-5 flex items-center gap-3 md:gap-4 transition-all duration-300 hover:shadow-card-hover ${
-                      brand.rank === 1 ? 'border-verify/50 bg-verify/5' : ''
-                    }`}
+                    className="flex items-center gap-4 border-b border-border p-5 last:border-b-0 md:border-b-0"
                   >
-                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center overflow-hidden ${
-                      brand.rank === 1 ? 'bg-verify/10 ring-2 ring-verify/30' : 'bg-muted'
-                    }`}>
+                    <div className="flex h-11 w-11 items-center justify-center overflow-hidden">
                       <img 
                         src={brandInfo?.logo} 
                         alt={brand.name}
@@ -151,20 +137,20 @@ export function BrandLeaderboard() {
                       <div className="flex items-center gap-2">
                         <span className="text-xs md:text-sm font-medium text-muted-foreground">#{brand.rank}</span>
                         <span className="font-bold text-sm md:text-base text-foreground truncate">{brand.name}</span>
-                        {brand.rank === 1 && <span className="text-sm">👑</span>}
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-lg md:text-xl font-bold text-foreground">{brand.amount}</span>
                       </div>
                     </div>
-                  </Card>
+                  </div>
                 );
               })}
             </div>
+            {topBrands.length === 0 && <p className="border-y border-border py-8 text-muted-foreground">Retailer totals will appear after the first completed donation.</p>}
           </div>
 
           {/* Live Donation Tracking - Now Second */}
-          <Card className="p-4 md:p-6">
+          <div className="border-y border-border py-6 md:py-8">
             <div className="flex items-center justify-between mb-4 md:mb-6">
               <h3 className="text-base md:text-lg font-semibold text-foreground">Live Donation Tracking</h3>
               <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
@@ -204,9 +190,6 @@ export function BrandLeaderboard() {
                             key={`cell-${index}`} 
                             fill={brand?.color || 'hsl(var(--primary))'}
                             className="transition-all duration-500 hover:opacity-80"
-                            style={{
-                              filter: index === 0 ? 'drop-shadow(0 4px 12px rgba(255, 48, 8, 0.3))' : 'none'
-                            }}
                           />
                         );
                       })}
@@ -220,7 +203,7 @@ export function BrandLeaderboard() {
             {latestDonation && <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-border">
               <div 
                 key={donationIndex}
-                className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg bg-primary/5 border border-primary/10 animate-fade-in"
+                className="flex items-center gap-2 border-l-2 border-primary bg-primary/5 p-3 md:gap-3 animate-fade-in"
               >
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-background flex items-center justify-center flex-shrink-0 border border-border">
                   <img 
@@ -246,7 +229,7 @@ export function BrandLeaderboard() {
               </div>
             </div>}
 
-          </Card>
+          </div>
         </div>
       </div>
     </section>

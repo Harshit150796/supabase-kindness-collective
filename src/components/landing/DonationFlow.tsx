@@ -5,13 +5,14 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { ArrowRight, Check, Heart, Gift, Users, Search, Loader2, ExternalLink, Globe, CreditCard, X } from 'lucide-react';
+import { ArrowRight, Check, Heart, Gift, Search, Loader2, ExternalLink, Globe, CreditCard, X } from 'lucide-react';
 import { brandList, popularBrands, brandLogos, BrandInfo } from '@/data/brandLogos';
 import { BrandSelectorModal } from './BrandSelectorModal';
 import { BrandAllocationSliders, BrandAllocation } from './BrandAllocationSliders';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
 
 // Payment method icons as SVG components for brand accuracy
 const PaymentMethodIcons = () => (
@@ -317,19 +318,12 @@ export function DonationFlow() {
   };
 
   return (
-    <section id="donation-flow" className="py-20 relative overflow-hidden bg-secondary/20">
+    <section id="donation-flow" className="relative overflow-hidden bg-background py-24 md:py-36">
       <div className="container mx-auto px-4 relative">
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-            Simple 3-Step Process
-          </span>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-            Make an Impact in Seconds
-          </h2>
-          <p className="text-lg text-muted-foreground">
-            Choose brands, select an amount, and see exactly how your donation helps families.
-          </p>
+        <div className="mx-auto mb-12 max-w-3xl text-center md:mb-16">
+          <LineReveal><h2 className="font-display text-5xl font-normal leading-none text-foreground md:text-6xl">Choose where your help can be used.</h2></LineReveal>
+          <Reveal delay={0.1} className="mt-5"><p className="text-lg leading-relaxed text-muted-foreground">Pick one or more retailers, set the amount, and review the coupons your donation creates.</p></Reveal>
         </div>
 
         {/* Steps indicator */}
@@ -339,20 +333,20 @@ export function DonationFlow() {
             { num: 2, label: 'Select Amount' },
             { num: 3, label: 'See Impact' }
           ].map((s) => (
-            <div 
+            <div
               key={s.num}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm ${
+              className={`flex items-center gap-2 border-b-2 px-3 py-2 text-sm transition-colors ${
                 s.num === step 
-                  ? 'bg-primary text-primary-foreground' 
+                  ? 'border-primary text-primary' 
                   : s.num < step 
-                    ? 'bg-primary/20 text-primary' 
-                    : 'bg-muted text-muted-foreground'
+                    ? 'border-primary/30 text-primary' 
+                    : 'border-transparent text-muted-foreground'
               }`}
             >
               {s.num < step ? (
                 <Check className="w-4 h-4" />
               ) : (
-                <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs font-bold">
+                <span className="flex h-5 w-5 items-center justify-center text-xs font-bold">
                   {s.num}
                 </span>
               )}
@@ -362,7 +356,7 @@ export function DonationFlow() {
         </div>
 
         {/* Interactive Flow */}
-        <Card className="max-w-3xl mx-auto p-6 md:p-10">
+        <Card className="mx-auto max-w-3xl border-x-0 p-6 shadow-none md:p-10">
           {/* Step 1: Choose Brands (Multi-Select) */}
           {step === 1 && (
             <div className="space-y-6 animate-fade-in">
@@ -801,24 +795,6 @@ export function DonationFlow() {
                   <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mt-2">
                     <Globe className="w-3 h-3" />
                     <span>International cards accepted · Your bank handles currency conversion</span>
-                  </div>
-                </div>
-
-                {/* Real recipient preview */}
-                <div className="bg-background rounded-lg p-4 flex items-center gap-4">
-                  <img 
-                    src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&h=80&fit=crop&crop=face"
-                    alt="Recipient"
-                    className="w-14 h-14 rounded-full object-cover"
-                  />
-                  <div className="flex-1">
-                    <p className="text-sm text-foreground">
-                      Your donation helps families like Maria's get groceries every week.
-                    </p>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                      <Users className="w-3 h-3" />
-                      <span>Family of 4, Los Angeles</span>
-                    </div>
                   </div>
                 </div>
 

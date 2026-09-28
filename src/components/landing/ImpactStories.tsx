@@ -177,7 +177,7 @@ function SectionHeading() {
       </LineReveal>
       <Reveal delay={0.1} className="mt-5">
         <p className="text-lg leading-relaxed text-muted-foreground">
-        Every donation creates a story of hope. Browse by cause or state to find a family to support.
+        Browse active fundraisers by need or location, then choose who you want to support.
         </p>
       </Reveal>
     </div>
