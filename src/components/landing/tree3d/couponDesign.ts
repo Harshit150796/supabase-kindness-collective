@@ -208,8 +208,8 @@ export const COUPON_FRUITS: CouponData[] = [
   { brand: 'Seamless', logo: 'seamless', color: '#C90117', amount: 10, scale: 1.1 },
   { brand: "Domino's", logo: 'dominos', color: '#006491', amount: 5, scale: 0.98 },
   { brand: 'Taco Bell', logo: 'taco-bell', color: '#38096C', amount: 10, scale: 0.98 },
-
   { brand: 'Subway', logo: 'subway', color: '#008938', amount: 5, scale: 1.08 },
+
   { brand: 'Chipotle', logo: 'chipotle', color: '#A81612', amount: 10, scale: 0.92 },
   { brand: 'CVS', logo: 'cvs', color: '#CC0000', amount: 5, scale: 1.08 },
   { brand: 'Walgreens', logo: 'walgreens', color: '#E31836', amount: 10, scale: 1.08 },
