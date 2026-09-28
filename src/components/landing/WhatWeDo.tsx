@@ -403,7 +403,7 @@ export function WhatWeDo() {
   }, [still]);
 
   return (
-    <section ref={sectionRef} className="relative bg-background py-20 md:py-28">
+    <section ref={sectionRef} className="relative bg-background py-24 md:py-36">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ background: 'radial-gradient(60% 40% at 12% 18%, hsl(var(--verify) / 0.04), transparent 70%), radial-gradient(60% 40% at 88% 82%, hsl(var(--primary) / 0.05), transparent 70%)' }} />
       </div>
@@ -436,8 +436,8 @@ export function WhatWeDo() {
                     <Art progress={progress} still={still} offset={step.offset} />
                   </motion.div>
                   <div className="mt-4 flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full border text-xs font-semibold" style={{ color: step.accent, borderColor: step.accent }}>{index + 1}</span>
-                    <h3 className="text-lg font-semibold text-foreground md:text-xl">{step.title}</h3>
+                     <span className="text-sm font-medium tabular-nums text-muted-foreground">0{index + 1}</span>
+                     <h3 className="font-display text-xl font-normal text-foreground md:text-2xl">{step.title}</h3>
                   </div>
                   <p className="mt-2 text-base leading-relaxed text-muted-foreground">{step.body}</p>
                 </li>
@@ -446,10 +446,10 @@ export function WhatWeDo() {
           </ol>
         </div>
 
-        <div className="mt-12 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.06] to-verify/[0.05] px-6 py-8 shadow-[0_18px_48px_-30px_hsl(var(--primary)/0.45)] md:mt-16 md:px-10 md:py-10">
+        <div className="mt-12 overflow-hidden border-y border-primary/20 bg-primary/[0.03] px-0 py-10 md:mt-20 md:px-10 md:py-12">
           <div className="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_280px] md:gap-12">
             <div className="text-center md:text-left">
-              <p className="text-2xl font-semibold leading-snug text-foreground md:text-4xl">Donate $10 today. Check where it went in 2036.</p>
+               <p className="font-display text-3xl font-normal leading-snug text-foreground md:text-5xl">Donate $10 today. Check where it went in 2036.</p>
               <p className="mt-4 max-w-2xl text-base text-muted-foreground md:text-lg">Every donation keeps its receipt. Permanently verifiable — not a promise, a record.</p>
             </div>
             <ProofReceipt progress={progress} still={still} />
@@ -462,12 +462,12 @@ export function WhatWeDo() {
           <span aria-hidden="true" className="h-px w-12 bg-primary/30" />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Link to="/donate" className="group flex min-h-32 items-center gap-4 rounded-2xl border border-primary/20 bg-primary/[0.04] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_12px_32px_-16px_hsl(var(--primary)/0.38)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+        <div className="grid border-y border-border sm:grid-cols-2 sm:divide-x sm:divide-border">
+          <Link to="/donate" className="group flex min-h-32 items-center gap-4 border-b border-border p-6 transition-colors hover:bg-primary/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:border-b-0">
             <DonateDoorIcon />
             <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-lg font-semibold text-foreground md:text-xl">I want to help someone <ArrowRight className="h-4 w-4 shrink-0 text-primary transition-transform group-hover:translate-x-1" /></span><span className="mt-1 block text-base text-muted-foreground">Pick a real need and cover it.</span></span>
           </Link>
-          <Link to="/apply" className="group flex min-h-32 items-center gap-4 rounded-md border border-verify/25 bg-verify/[0.05] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-verify/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+          <Link to="/apply" className="group flex min-h-32 items-center gap-4 p-6 transition-colors hover:bg-verify/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
             <ApplyDoorIcon />
             <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-lg font-semibold text-foreground md:text-xl">I need help <ArrowRight className="h-4 w-4 shrink-0 text-verify transition-transform group-hover:translate-x-1" /></span><span className="mt-1 block text-base text-muted-foreground">Tell us what you need. U.S. residents, free to apply.</span></span>
           </Link>
