@@ -6,13 +6,6 @@ export interface CouponData {
   logo: string;
   color: string;
   amount: 5 | 10;
-  /** Optional dark plate behind the logo when white on the brand field is weak. */
-  plate?: string;
-}
-
-// Logos are white glyphs, so the card foreground is always white.
-export function couponTextColor(_hex: string): '#FFFFFF' {
-  return '#FFFFFF';
 }
 
 // ---------------------------------------------------------------------------
@@ -25,6 +18,7 @@ type LogoEntry = {
   status: 'loading' | 'ready' | 'error';
   canvas?: HTMLCanvasElement;
   dataUrl?: string;
+  aspect: number;
   listeners: Set<() => void>;
 };
 const logos = new Map<string, LogoEntry>();
@@ -38,7 +32,7 @@ function finish(entry: LogoEntry, status: 'ready' | 'error') {
 function loadLogo(slug: string): LogoEntry {
   const existing = logos.get(slug);
   if (existing) return existing;
-  const entry: LogoEntry = { status: 'loading', listeners: new Set() };
+  const entry: LogoEntry = { status: 'loading', aspect: 1.6, listeners: new Set() };
   logos.set(slug, entry);
   const img = new Image();
   img.decoding = 'async';
@@ -49,7 +43,8 @@ function loadLogo(slug: string): LogoEntry {
       const full = document.createElement('canvas');
       full.width = LOGO_RES;
       full.height = LOGO_RES;
-      const fctx = full.getContext('2d')!;
+      const fctx = full.getContext('2d');
+      if (!fctx) throw new Error('2d canvas unavailable');
       fctx.drawImage(img, 0, 0, LOGO_RES, LOGO_RES);
       const { data } = fctx.getImageData(0, 0, LOGO_RES, LOGO_RES);
       let minX = LOGO_RES, minY = LOGO_RES, maxX = -1, maxY = -1;
@@ -71,11 +66,13 @@ function loadLogo(slug: string): LogoEntry {
       const crop = document.createElement('canvas');
       crop.width = Math.round(w * k);
       crop.height = Math.round(h * k);
-      const cctx = crop.getContext('2d')!;
+      const cctx = crop.getContext('2d');
+      if (!cctx) throw new Error('2d canvas unavailable');
       cctx.imageSmoothingQuality = 'high';
       cctx.drawImage(img, -minX * k, -minY * k, LOGO_RES * k, LOGO_RES * k);
       entry.canvas = crop;
       entry.dataUrl = crop.toDataURL('image/png');
+      entry.aspect = crop.width / crop.height;
       finish(entry, 'ready');
     })
     .catch(() => finish(entry, 'error'));
@@ -96,80 +93,44 @@ export function onLogoSettled(slug: string, fn: () => void): () => void {
   return () => entry.listeners.delete(fn);
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
+const TEXTURE_LONG_EDGE = 1024;
 
-/** Logo box as a fraction of the card, shared with the HTML face so both paths match. */
-export const LOGO_BOX = { w: 0.74, h: 0.66, cy: 0.47 };
-
-function paintCoupon(ctx: CanvasRenderingContext2D, W: number, H: number, S: number, data: CouponData) {
+function paintLogo(canvas: HTMLCanvasElement, data: CouponData) {
   const entry = loadLogo(data.logo);
-  ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = data.color;
-  roundRect(ctx, 8 * S, 8 * S, W - 16 * S, H - 16 * S, 28 * S);
-  ctx.fill();
-  ctx.strokeStyle = '#FFFFFF';
-  ctx.globalAlpha = 0.9;
-  ctx.lineWidth = 8 * S;
-  roundRect(ctx, 8 * S, 8 * S, W - 16 * S, H - 16 * S, 28 * S);
-  ctx.stroke();
-  ctx.globalAlpha = 1;
-
-  const inset = data.plate ? 0.78 : 1;
-  const boxW = W * LOGO_BOX.w * inset;
-  const boxH = H * LOGO_BOX.h * inset;
-  const cx = W / 2;
-  const cy = H * LOGO_BOX.cy;
-
-  if (data.plate) {
-    ctx.fillStyle = data.plate;
-    roundRect(ctx, cx - boxW / 2 - 18 * S, cy - boxH / 2 - 14 * S, boxW + 36 * S, boxH + 28 * S, 22 * S);
-    ctx.fill();
-  }
-
   if (entry.status === 'ready' && entry.canvas) {
-    const lw = entry.canvas.width;
-    const lh = entry.canvas.height;
-    const k = Math.min(boxW / lw, boxH / lh); // preserve aspect ratio exactly
-    const dw = lw * k;
-    const dh = lh * k;
+    const scale = TEXTURE_LONG_EDGE / Math.max(entry.canvas.width, entry.canvas.height);
+    const logoW = Math.max(1, Math.round(entry.canvas.width * scale));
+    const logoH = Math.max(1, Math.round(entry.canvas.height * scale));
+    canvas.width = logoW;
+    canvas.height = logoH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(entry.canvas, cx - dw / 2, cy - dh / 2, dw, dh);
+    ctx.drawImage(entry.canvas, 0, 0, logoW, logoH);
+    ctx.globalCompositeOperation = 'source-in';
+    ctx.fillStyle = data.color;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalCompositeOperation = 'source-over';
   } else {
-    // Wordmark fallback (while decoding, or permanently if the logo failed).
-    ctx.fillStyle = '#FFFFFF';
-    const size = data.brand.length >= 9 ? 66 : data.brand.length >= 7 ? 76 : 90;
-    ctx.font = `900 ${size * S}px system-ui, -apple-system, Arial`;
+    // Never show a blank fruit while decoding or if a local SVG fails.
+    canvas.width = TEXTURE_LONG_EDGE;
+    canvas.height = 420;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = data.color;
+    ctx.font = `900 ${data.brand.length >= 9 ? 126 : 156}px system-ui, -apple-system, Arial`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(data.brand.toUpperCase(), cx, cy, boxW);
+    ctx.fillText(data.brand.toUpperCase(), canvas.width / 2, canvas.height / 2, canvas.width - 80);
   }
-
-  // Secondary amount, small in the bottom-right corner (dark on light fields).
-  ctx.fillStyle = data.plate ?? '#FFFFFF';
-  ctx.font = `800 ${34 * S}px system-ui, -apple-system, Arial`;
-  ctx.textAlign = 'right';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText(`$${data.amount}`, W - 34 * S, H - 30 * S);
 }
 
 export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
-  const S = 4;
-  const W = 512 * S;
-  const H = 320 * S;
   const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext('2d')!;
-  paintCoupon(ctx, W, H, S, data);
+  paintLogo(canvas, data);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.anisotropy = 16;
@@ -181,7 +142,7 @@ export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
 
   if (loadLogo(data.logo).status === 'loading') {
     onLogoSettled(data.logo, () => {
-      paintCoupon(ctx, W, H, S, data);
+      paintLogo(canvas, data);
       tex.needsUpdate = true;
     });
   }
@@ -197,8 +158,7 @@ export const COUPON_FRUITS: CouponData[] = [
   { brand: 'Instacart', logo: 'instacart', color: '#43B02A', amount: 10 },
   { brand: 'Lyft', logo: 'lyft', color: '#FF00BF', amount: 5 },
   { brand: 'Starbucks', logo: 'starbucks', color: '#00704A', amount: 5 },
-  // White on #FF9900 is ~2:1 contrast — a dark plate (Amazon's own navy) carries the logo.
-  { brand: 'Amazon', logo: 'amazon', color: '#FF9900', amount: 10, plate: '#232F3E' },
+  { brand: 'Amazon', logo: 'amazon', color: '#FF9900', amount: 10 },
   { brand: 'Grubhub', logo: 'grubhub', color: '#F63440', amount: 5 },
   { brand: "McDonald's", logo: 'mcdonalds', color: '#DA291C', amount: 10 },
   { brand: 'eBay', logo: 'ebay', color: '#E53238', amount: 5 },

@@ -2,7 +2,7 @@ import { useMemo, useRef, useEffect, useState } from 'react';
 import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Html } from '@react-three/drei';
-import { drawCouponTexture, getLogo, onLogoSettled, LOGO_BOX, type CouponData } from './couponDesign';
+import { drawCouponTexture, getLogo, onLogoSettled, type CouponData } from './couponDesign';
 import type { FallingDonation } from '@/hooks/useFallingDonations';
 import { useInteraction } from './InteractionContext';
 import { SparkleBurst } from './SparkleBurst';
@@ -31,122 +31,23 @@ interface Props {
 const HANG_DROP = 0.72;
 const CANOPY_FACE_OFFSET = 0.9;
 const CANOPY_OUTER_SPREAD = 1.08;
-const COUPON_W = 1.15;
-const COUPON_H = 0.74;
-const COUPON_D = 0.05;
+const LOGO_LONG_EDGE = 0.84;
 
-// Build a rounded-rect extruded geometry for premium coupon shape
-function makeRoundedCouponGeom(): THREE.ExtrudeGeometry {
-  const w = COUPON_W;
-  const h = COUPON_H;
-  const r = 0.07;
-  const shape = new THREE.Shape();
-  shape.moveTo(-w / 2 + r, -h / 2);
-  shape.lineTo(w / 2 - r, -h / 2);
-  shape.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r);
-  shape.lineTo(w / 2, h / 2 - r);
-  shape.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2);
-  shape.lineTo(-w / 2 + r, h / 2);
-  shape.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r);
-  shape.lineTo(-w / 2, -h / 2 + r);
-  shape.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
-  const geo = new THREE.ExtrudeGeometry(shape, {
-    depth: COUPON_D,
-    bevelEnabled: true,
-    bevelThickness: 0.01,
-    bevelSize: 0.01,
-    bevelSegments: 2,
-    curveSegments: 8,
-  });
-  geo.center();
-  // Map UVs of front face to coupon texture (front face is the +Z extrude cap)
-  const pos = geo.attributes.position;
-  const uv = geo.attributes.uv;
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i);
-    const y = pos.getY(i);
-    uv.setXY(i, (x + w / 2) / w, (y + h / 2) / h);
-  }
-  uv.needsUpdate = true;
-  return geo;
-}
-
-let couponGeomCache: THREE.ExtrudeGeometry | null = null;
-function getCouponGeom() {
-  if (!couponGeomCache) couponGeomCache = makeRoundedCouponGeom();
-  return couponGeomCache;
-}
-
-// Crisp coupon face rendered as DOM via Drei <Html transform>. Uses the same
-// cached, cropped logo raster and LOGO_BOX layout as the canvas texture.
-function CouponFace({ data }: { data: CouponData }) {
-  const [, force] = useState(0);
-  useEffect(() => onLogoSettled(data.logo, () => force((n) => n + 1)), [data.logo]);
-  const entry = getLogo(data.logo);
-  const inset = data.plate ? 0.78 : 1;
-  const boxW = 920 * LOGO_BOX.w * inset;
-  const boxH = 600 * LOGO_BOX.h * inset;
-  return (
-    <div
-      data-coupon-face={data.brand}
-      data-logo-status={entry.status}
-      style={{
-        position: 'relative',
-        width: 920,
-        height: 600,
-        borderRadius: 56,
-        background: data.color,
-        border: '14px solid #FFFFFF',
-        boxSizing: 'border-box',
-        overflow: 'hidden',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-        boxShadow: '0 18px 60px rgba(0,0,0,0.18)',
-        color: '#FFFFFF',
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          left: '50%',
-          top: `${LOGO_BOX.cy * 100}%`,
-          transform: 'translate(-50%, -50%)',
-          width: boxW + (data.plate ? 64 : 0),
-          height: boxH + (data.plate ? 50 : 0),
-          borderRadius: 40,
-          background: data.plate ?? 'transparent',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {entry.status === 'ready' && entry.dataUrl ? (
-          <img
-            src={entry.dataUrl}
-            alt={data.brand}
-            style={{ maxWidth: boxW, maxHeight: boxH, objectFit: 'contain', display: 'block' }}
-          />
-        ) : (
-          <div style={{ fontSize: data.brand.length >= 9 ? 118 : 140, fontWeight: 900, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-            {data.brand}
-          </div>
-        )}
-      </div>
-      <div style={{ position: 'absolute', right: 50, bottom: 34, fontSize: 62, fontWeight: 800, lineHeight: 1, color: data.plate ?? '#FFFFFF' }}>
-        ${data.amount}
-      </div>
-    </div>
-  );
+function logoSize(aspect: number) {
+  return aspect >= 1
+    ? { width: LOGO_LONG_EDGE, height: LOGO_LONG_EDGE / aspect }
+    : { width: LOGO_LONG_EDGE * aspect, height: LOGO_LONG_EDGE };
 }
 
 export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false, labelSuppressed = false }: Props) {
   const groupRef = useRef<THREE.Group>(null);
   const stemRef = useRef<THREE.Mesh>(null);
-  const glowRef = useRef<THREE.Mesh>(null);
   const velocityRef = useRef({ y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 });
   const posRef = useRef(new THREE.Vector3());
   const rotRef = useRef(new THREE.Euler());
   const caughtRef = useRef(false);
   const [sparkle, setSparkle] = useState<{ pos: THREE.Vector3; time: number } | null>(null);
+  const [, setLogoRevision] = useState(0);
   const { openStory, spawnPlant } = useInteraction();
   const plantSpawnedRef = useRef(false);
   const stemMid = useMemo(() => new THREE.Vector3(), []);
@@ -161,6 +62,9 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
     }),
     [index],
   );
+  useEffect(() => onLogoSettled(data.logo, () => setLogoRevision((n) => n + 1)), [data.logo]);
+  const logoEntry = getLogo(data.logo);
+  const dimensions = logoSize(logoEntry.aspect);
 
   // Stable scatter target across the grass, deterministic per coupon slot.
   // Phones frame the tree much tighter, so coupons land in a small ring around
@@ -230,7 +134,6 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   };
 
   const texture = useMemo(() => drawCouponTexture(data), [data]);
-  const geom = useMemo(() => getCouponGeom(), []);
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
@@ -253,12 +156,8 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       );
       const breathe = 1 + Math.sin(t * 1.2 + index) * 0.02;
       groupRef.current.scale.setScalar(breathe);
-      if (glowRef.current) {
-        const m = glowRef.current.material as THREE.MeshBasicMaterial;
-        m.opacity = 0.12 + Math.sin(t * 1.5 + index) * 0.04;
-      }
       if (stemRef.current) {
-        cardTop.set(0, COUPON_H / 2, 0).applyQuaternion(groupRef.current.quaternion).add(groupRef.current.position);
+        cardTop.set(0, dimensions.height / 2, 0).applyQuaternion(groupRef.current.quaternion).add(groupRef.current.position);
         stemDirection.copy(cardTop).sub(branchTip);
         const length = stemDirection.length();
         stemMid.copy(branchTip).add(cardTop).multiplyScalar(0.5);
@@ -277,7 +176,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       rotRef.current.y += velocityRef.current.rotY * dt;
       rotRef.current.z += velocityRef.current.rotZ * dt;
 
-      if (posRef.current.y <= groundY + COUPON_H / 2) {
+      if (posRef.current.y <= groundY + dimensions.height / 2) {
         // Snap to scatter target so coupons land spread across the grass.
         posRef.current.x = scatterTarget.x + (Math.random() - 0.5) * 0.15;
         posRef.current.z = scatterTarget.z + (Math.random() - 0.5) * 0.15;
@@ -345,55 +244,16 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
           document.body.style.cursor = '';
         }}
       >
-        {/* Gold edge glow (additive) */}
-        <mesh ref={glowRef} scale={[1.08, 1.12, 0.9]} raycast={() => {}}>
-          <boxGeometry args={[COUPON_W, COUPON_H, COUPON_D]} />
+        {/* One transparent, aspect-correct vector silhouette for hanging and falling states. */}
+        <mesh castShadow>
+          <planeGeometry args={[dimensions.width, dimensions.height]} />
           <meshBasicMaterial
-            color="#FFD56A"
+            map={texture}
             transparent
-            opacity={0.14}
-            blending={THREE.AdditiveBlending}
-            depthWrite={false}
+            alphaTest={0.12}
+            side={THREE.DoubleSide}
             toneMapped={false}
           />
-        </mesh>
-
-        {/* Front face (textured base — card background only, text drawn via crisp HTML overlay) */}
-        <mesh geometry={geom} castShadow>
-          <meshStandardMaterial
-            map={texture}
-            roughness={0.55}
-            metalness={0.05}
-          />
-        </mesh>
-
-        {/* Crisp vector overlay anchored to the front face.
-            Skipped on mobile — CSS3D composited over WebGL causes soft/jittery
-            coupons on phones. The baked canvas texture on the mesh above is used instead. */}
-        {!isMobile && state.phase !== 'regrowing' && (
-          <Html
-            transform
-            occlude={false}
-            position={[0, 0, COUPON_D / 2 + 0.012]}
-            scale={COUPON_W / 920}
-            style={{
-              pointerEvents: 'none',
-              userSelect: 'none',
-              backfaceVisibility: 'hidden',
-              transformStyle: 'preserve-3d',
-              willChange: 'transform',
-              imageRendering: 'auto',
-            }}
-            zIndexRange={[10, 0]}
-          >
-            <CouponFace data={data} />
-          </Html>
-        )}
-
-        {/* Back face (white) */}
-        <mesh position={[0, 0, -COUPON_D / 2 - 0.001]} rotation={[0, Math.PI, 0]} raycast={() => {}}>
-          <planeGeometry args={[COUPON_W * 0.95, COUPON_H * 0.95]} />
-          <meshStandardMaterial color="#FFFFFF" roughness={0.7} />
         </mesh>
       </group>
 
