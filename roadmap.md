@@ -52,3 +52,9 @@
 - [x] Replace aspect buckets with alpha-area optical sizing and restrained silhouette-only contrast edges.
 - [x] Preserve one texture and geometry path across hanging, falling, landed, and regrowing states.
 - [ ] Validate the tree itself in desktop/mobile screenshots; current captures show the page shell but no rendered tree canvas.
+
+## Hero tree logo sizing refinement
+- [x] Reduce every brand fruit by 15–20% according to its visible shape and density.
+- [x] Apply the reduction through the shared hanging, falling, landed, and regrowing scale.
+- [x] Strengthen the silhouette-only contrast edge without changing authentic logo colors.
+- [ ] Recheck the rendered tree from opening, side, rear, and phone views when WebGL capture is available.
