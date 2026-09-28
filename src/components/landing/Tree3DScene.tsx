@@ -108,6 +108,8 @@ function CameraRig({
     };
     const onChange = () => {
       lastInteractionRef.current = performance.now() / 1000;
+      const canvas = c.domElement;
+      canvas.dataset.treeAzimuth = c.getAzimuthalAngle().toFixed(4);
     };
     c.addEventListener('start', onStart);
     c.addEventListener('change', onChange);
@@ -326,6 +328,39 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
     ),
   );
   const shuffleRoundRef = useRef(1);
+  const brandIndicesRef = useRef(brandIndices);
+
+  useEffect(() => {
+    brandIndicesRef.current = brandIndices;
+  }, [brandIndices]);
+
+  const updateBrandDebugState = useCallback(() => {
+    const canvas = document.querySelector<HTMLCanvasElement>('canvas');
+    if (!canvas) return;
+    canvas.dataset.treeBrands = brandIndicesRef.current
+      .map((brandIndex) => COUPON_FRUITS[brandIndex]?.brand ?? '')
+      .filter(Boolean)
+      .join('|');
+    canvas.dataset.treeReplacementQueue = String(replacementQueueRef.current.length);
+  }, []);
+
+  useEffect(() => {
+    updateBrandDebugState();
+    const replaceOne = (event: Event) => {
+      const detail = (event as CustomEvent<{ index?: number }>).detail;
+      const rawIndex = detail?.index ?? 0;
+      const idx = Math.max(0, Math.min(visibleFruitCount - 1, rawIndex));
+      setBrandIndices((current) => {
+        const next = [...current];
+        next[idx] = takeNextBrand(current[idx]);
+        brandIndicesRef.current = next;
+        return next;
+      });
+      requestAnimationFrame(updateBrandDebugState);
+    };
+    window.addEventListener('tree3d-replace-brand', replaceOne);
+    return () => window.removeEventListener('tree3d-replace-brand', replaceOne);
+  }, [takeNextBrand, updateBrandDebugState, visibleFruitCount]);
 
   const takeNextBrand = useCallback((currentBrandIndex: number) => {
     if (replacementQueueRef.current.length === 0) {
@@ -442,6 +477,8 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
         setBrandIndices((current) => {
           const next = [...current];
           next[idx] = takeNextBrand(current[idx]);
+          brandIndicesRef.current = next;
+          requestAnimationFrame(updateBrandDebugState);
           return next;
         });
         next[idx] = { phase: 'regrowing', startTime: performance.now() / 1000 };
@@ -450,7 +487,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
       }
       return next;
     });
-  }, [takeNextBrand]);
+  }, [takeNextBrand, updateBrandDebugState]);
 
   return (
     <>
