@@ -16,33 +16,31 @@ export interface BranchTip {
 const CANOPY_CENTER = new THREE.Vector3(0, 4.4, 0);
 
 const CANOPY_BANDS = [
-  { y: 2.72, radiusX: 1.64, radiusZ: 1.96, count: 5, frontCount: 4, phase: 0.24, frontSpan: 1.3 },
-  { y: 4.02, radiusX: 2.16, radiusZ: 2.12, count: 7, frontCount: 5, phase: -0.18, frontSpan: 1.4 },
-  { y: 5.22, radiusX: 1.74, radiusZ: 1.78, count: 6, frontCount: 4, phase: 0.3, frontSpan: 1.24 },
+  { y: 2.72, radiusX: 1.58, radiusZ: 1.84, count: 4, frontCount: 3, phase: 0.18, frontSpan: 1.18 },
+  { y: 4.02, radiusX: 1.94, radiusZ: 2.0, count: 6, frontCount: 4, phase: -0.12, frontSpan: 1.26 },
+  { y: 5.22, radiusX: 1.66, radiusZ: 1.72, count: 6, frontCount: 4, phase: 0.25, frontSpan: 1.18 },
 ] as const;
 
 // The foliage is authored inside tree.glb, while fruit anchors are procedural.
 // These measured corrections keep each stable slot at its branch while clearing
 // the local leaf depth and separating silhouettes in the opening projection.
 const SLOT_VISIBILITY = [
-  { faceOffset: 0.38, y: -0.04 },
-  { faceOffset: 0.42, y: 0.08 },
-  { faceOffset: 0.36, y: 0.14 },
-  { faceOffset: 0.42, y: -0.08 },
-  { faceOffset: 0.50, y: 0.32 },
-  { faceOffset: 0.48, y: 0.35 },
-  { faceOffset: 0.38, y: 0.05 },
-  { faceOffset: 0.36, y: 0.16 },
+  { faceOffset: 0.32, y: -0.05 },
+  { faceOffset: 0.34, y: 0.12 },
+  { faceOffset: 0.32, y: -0.02 },
+  { faceOffset: 0.38, y: 0.22 },
   { faceOffset: 0.36, y: -0.12 },
-  { faceOffset: 0.42, y: 0.08 },
-  { faceOffset: 0.50, y: 0.40 },
-  { faceOffset: 0.52, y: -0.18 },
-  { faceOffset: 0.38, y: -0.06 },
-  { faceOffset: 0.38, y: 0.16 },
-  { faceOffset: 0.38, y: 0.24 },
-  { faceOffset: 0.44, y: -0.12 },
-  { faceOffset: 0.52, y: 0.24 },
-  { faceOffset: 0.54, y: 0.14 },
+  { faceOffset: 0.32, y: 0.10 },
+  { faceOffset: 0.32, y: -0.04 },
+  { faceOffset: 0.34, y: 0.14 },
+  { faceOffset: 0.40, y: 0.24 },
+  { faceOffset: 0.40, y: -0.10 },
+  { faceOffset: 0.32, y: -0.08 },
+  { faceOffset: 0.32, y: 0.12 },
+  { faceOffset: 0.32, y: 0.24 },
+  { faceOffset: 0.34, y: -0.08 },
+  { faceOffset: 0.40, y: 0.18 },
+  { faceOffset: 0.40, y: 0.04 },
 ] as const;
 
 
@@ -61,7 +59,7 @@ const WIND_VERTEX_SNIPPET = `
   transformed.z += sway * 0.5 * h;
 `;
 
-export function getBranchTips(count = 18): BranchTip[] {
+export function getBranchTips(count = 16): BranchTip[] {
   const tips: BranchTip[] = [];
   const wanted = Math.max(1, count);
 
@@ -99,7 +97,7 @@ export function getBranchTips(count = 18): BranchTip[] {
     });
   }
 
-  // Counts beyond the designed 18 slots remain deterministic if reused.
+  // Counts beyond the designed 16 slots remain deterministic if reused.
   while (tips.length < wanted) {
     const i = tips.length;
     const theta = i * Math.PI * (3 - Math.sqrt(5));
