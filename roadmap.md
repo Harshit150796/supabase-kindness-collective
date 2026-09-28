@@ -87,3 +87,12 @@
 - [x] Phase 3 signed-in pages: refresh profile, settings, fundraiser lists, impact, and fundraiser management presentation without altering data logic.
 - [ ] Phase 4: apply a lighter editorial treatment to authenticated and admin pages.
 - [x] Report section screenshots, headline changes, performance measurements, and unverified items.
+
+## Premium visual rhythm and motion upgrade
+- [x] Restore the founder-approved pre-redesign hero headline exactly and verify it at 390px and 1440px.
+- [x] Upgrade shared surfaces and motion, including clearly visible gentle-mode reveals.
+- [x] Recompose homepage sections in order with live data, tonal/deep bands, imagery, product visuals, and richer motion.
+- [x] Upgrade About, How It Works, Stories, FAQ, Blog, article, fundraiser, and story detail pages at page boundaries.
+- [x] Restore Gold Coins messaging without an amount because no donation-linked credit is currently stored.
+- [x] Capture full/reduced-motion proof, responsive section screenshots, overflow, console, and build checks.
+- [ ] Measure LCP after the live tree canvas renders reliably in automated Chromium.

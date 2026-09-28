@@ -47,15 +47,15 @@ export default function Stories() {
       <SEO title="Stories and Fundraisers" description="Browse active CouponDonation fundraisers and read editorial stories about needs that restricted coupons can meet." path="/stories" jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Stories', path: '/stories' }])} />
       <Navbar />
       <main>
-        <section className="border-b border-border py-24 md:py-36">
+        <section className="py-24 md:py-36">
           <div className="container mx-auto px-4">
             <div className="max-w-5xl">
               <LineReveal><h1 className="max-w-4xl font-display text-6xl font-normal leading-none text-foreground md:text-8xl">Find a need you can help meet.</h1></LineReveal>
               <Reveal delay={0.1}><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">Active fundraisers use live campaign records. Editorial stories explain the kinds of needs restricted coupons can cover.</p></Reveal>
             </div>
             {liveTotals.length > 0 && (
-              <div className="mt-16 grid grid-cols-2 border-y border-border md:grid-cols-4 md:divide-x md:divide-border">
-                {liveTotals.map((item, index) => <Reveal key={item.label} delay={index * 0.06} className="border-b border-border px-4 py-7 last:border-b-0 md:border-b-0"><div className="font-display text-4xl text-foreground">{item.value}</div><div className="mt-1 text-sm text-muted-foreground">{item.label}</div></Reveal>)}
+              <div className="mt-16 grid grid-cols-2 gap-4 md:grid-cols-4">
+                {liveTotals.map((item, index) => <Reveal key={item.label} delay={index * 0.06} className="rounded-[1.5rem] bg-secondary p-6"><div className="font-display text-4xl text-foreground">{item.value}</div><div className="mt-1 text-sm text-muted-foreground">{item.label}</div></Reveal>)}
               </div>
             )}
           </div>
@@ -78,7 +78,7 @@ export default function Stories() {
           </div>
         </section>
 
-        <section className="border-y border-border py-24 md:py-32">
+        <section className="py-24 md:py-32" style={{backgroundColor:'hsl(var(--primary-97))'}}>
           <div className="container mx-auto px-4">
             <div className="mb-10 max-w-3xl"><LineReveal><h2 className="font-display text-5xl font-normal text-foreground md:text-6xl">Stories behind everyday needs.</h2></LineReveal><Reveal delay={0.08}><p className="mt-4 text-lg text-muted-foreground">These are editorial stories, not live fundraisers. Their text and photographs remain separate from campaign totals.</p></Reveal></div>
             <div className="mb-8 flex flex-wrap gap-2">{categories.map((category) => <Button key={category} variant={activeCategory === category ? 'default' : 'outline'} size="sm" onClick={() => setActiveCategory(category)}>{category === 'all' ? 'All stories' : categoryLabels[category]}</Button>)}</div>

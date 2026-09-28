@@ -69,6 +69,8 @@ export default function DonationSuccess() {
             </p>
           </div>
 
+          {user && <p className="text-sm text-muted-foreground">Gold Coins are credited to your account after the donation is confirmed.</p>}
+
           {/* Receipt Notice */}
           <p className="text-xs text-muted-foreground">
             A receipt has been sent to your email address.
