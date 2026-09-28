@@ -33,14 +33,20 @@ const HANG_DROP = 0.34;
 // just beyond the nearest leaf layer, reducing partial foliage occlusion.
 const CANOPY_FACE_OFFSET = 0.28;
 
-function logoSize(aspect: number) {
-  // A single long-edge limit makes wide wordmarks (CVS, Uber Eats, Walgreens)
-  // optically tiny. Give those marks more width while circular emblems retain
-  // the established fruit scale. The texture remains aspect-correct.
-  const longEdge = aspect >= 5.5 ? 1.62 : aspect >= 4 ? 1.44 : aspect >= 3 ? 1.26 : aspect >= 2.2 ? 1.12 : 0.98;
-  return aspect >= 1
-    ? { width: longEdge, height: longEdge / aspect }
-    : { width: longEdge * aspect, height: longEdge };
+function logoSize(aspect: number, alphaCoverage: number, mark: CouponData['mark']) {
+  // Normalize by the visible ink rather than broad aspect buckets. This keeps
+  // dense emblems and open wordmarks at comparable perceived weight while
+  // preserving every mark's exact native proportions.
+  const targetInkArea = mark === 'emblem' ? 0.48 : 0.31;
+  const planeArea = targetInkArea / THREE.MathUtils.clamp(alphaCoverage, 0.18, 0.92);
+  let width = Math.sqrt(planeArea * aspect);
+  let height = width / aspect;
+  const maxWidth = mark === 'emblem' ? 1.08 : 1.62;
+  const maxHeight = mark === 'emblem' ? 1.02 : 0.72;
+  const fit = Math.min(1, maxWidth / width, maxHeight / height);
+  width *= fit;
+  height *= fit;
+  return { width, height };
 }
 
 export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false, labelSuppressed = false }: Props) {
@@ -73,7 +79,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   );
   useEffect(() => onLogoSettled(data.logo, () => setLogoRevision((n) => n + 1)), [data.logo]);
   const logoEntry = getLogo(data.logo);
-  const dimensions = logoSize(logoEntry.aspect);
+  const dimensions = logoSize(logoEntry.aspect, logoEntry.alphaCoverage, data.mark);
   const opticalScale = data.scale ?? 1;
 
   // Stable scatter target across the grass, deterministic per coupon slot.
