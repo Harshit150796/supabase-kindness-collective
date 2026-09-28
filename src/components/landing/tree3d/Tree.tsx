@@ -14,10 +14,12 @@ export interface BranchTip {
 const CANOPY_CENTER = new THREE.Vector3(0, 4.4, 0);
 
 const CANOPY_BANDS = [
-  { y: 2.8, radiusX: 1.55, radiusZ: 1.9, count: 6, frontCount: 4, phase: 0.2 },
-  { y: 4.0, radiusX: 2.08, radiusZ: 2.05, count: 8, frontCount: 4, phase: -0.14 },
-  { y: 5.15, radiusX: 1.65, radiusZ: 1.7, count: 6, frontCount: 4, phase: 0.32 },
+  { y: 2.8, radiusX: 1.55, radiusZ: 1.9, count: 4, frontCount: 3, phase: 0.2 },
+  { y: 4.0, radiusX: 2.08, radiusZ: 2.05, count: 6, frontCount: 4, phase: -0.14 },
+  { y: 5.15, radiusX: 1.65, radiusZ: 1.7, count: 5, frontCount: 3, phase: 0.32 },
 ] as const;
+
+const MAX_LOGO_CLEARINGS = 15;
 
 /**
  * Single source of truth for the leaf wind displacement. The visible material and
@@ -34,7 +36,7 @@ const WIND_VERTEX_SNIPPET = `
   transformed.z += sway * 0.5 * h;
 `;
 
-export function getBranchTips(count = 20): BranchTip[] {
+export function getBranchTips(count = 15): BranchTip[] {
   const tips: BranchTip[] = [];
   const wanted = Math.max(1, count);
 
@@ -66,7 +68,7 @@ export function getBranchTips(count = 20): BranchTip[] {
     });
   }
 
-  // Counts beyond the designed 20 slots remain deterministic if reused.
+  // Counts beyond the designed 15 slots remain deterministic if reused.
   while (tips.length < wanted) {
     const i = tips.length;
     const theta = i * Math.PI * (3 - Math.sqrt(5));
@@ -81,14 +83,28 @@ export function getBranchTips(count = 20): BranchTip[] {
   return tips;
 }
 
-export function Tree(_props: { leafCount?: number; lowPower?: boolean }) {
+export function Tree(_props: { leafCount?: number; lowPower?: boolean; logoClearings?: THREE.Vector3[] }) {
   const { scene } = useGLTF(MODEL_URL) as unknown as { scene: THREE.Group };
   const gl = useThree((s) => s.gl);
   const rootRef = useRef<THREE.Group>(null);
   const uTime = useRef({ value: 0 });
   const uWind = useRef({ value: 0 });
+  const uLogoClearings = useRef({
+    value: Array.from({ length: MAX_LOGO_CLEARINGS }, () => new THREE.Vector3(999, 999, 999)),
+  });
+  const uLogoClearingCount = useRef({ value: 0 });
   const { shakeEvent, windRef } = useInteraction();
   const lowPower = !!_props.lowPower;
+
+  useEffect(() => {
+    const clearings = _props.logoClearings?.slice(0, MAX_LOGO_CLEARINGS) ?? [];
+    uLogoClearingCount.current.value = clearings.length;
+    uLogoClearings.current.value.forEach((target, index) => {
+      const source = clearings[index];
+      if (source) target.copy(source);
+      else target.set(999, 999, 999);
+    });
+  }, [_props.logoClearings]);
 
   // Renderer capabilities — read once, never assumed.
   const caps = useMemo(() => {
@@ -134,8 +150,25 @@ export function Tree(_props: { leafCount?: number; lowPower?: boolean }) {
     const applyWind = (shader: THREE.WebGLProgramParametersWithUniforms) => {
       shader.uniforms.uTime = uTime.current;
       shader.uniforms.uWind = uWind.current;
-      shader.vertexShader = `uniform float uTime;\nuniform float uWind;\n` + shader.vertexShader;
+      shader.uniforms.uLogoClearings = uLogoClearings.current;
+      shader.uniforms.uLogoClearingCount = uLogoClearingCount.current;
+      shader.vertexShader = `uniform float uTime;\nuniform float uWind;\nvarying vec3 vLogoWorldPosition;\n` + shader.vertexShader;
       shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', WIND_VERTEX_SNIPPET);
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <worldpos_vertex>',
+        '#include <worldpos_vertex>\n vLogoWorldPosition = (modelMatrix * vec4(transformed, 1.0)).xyz;',
+      );
+      shader.fragmentShader = `uniform vec3 uLogoClearings[${MAX_LOGO_CLEARINGS}];\nuniform int uLogoClearingCount;\nvarying vec3 vLogoWorldPosition;\n` + shader.fragmentShader;
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <alphatest_fragment>',
+        `#include <alphatest_fragment>
+         for (int i = 0; i < ${MAX_LOGO_CLEARINGS}; i++) {
+           if (i >= uLogoClearingCount) break;
+           vec3 delta = vLogoWorldPosition - uLogoClearings[i];
+           float pocket = dot(delta * vec3(1.0, 1.35, 1.0), delta * vec3(1.0, 1.35, 1.0));
+           if (pocket < 0.115) discard;
+         }`,
+      );
     };
 
     root.traverse((obj) => {
