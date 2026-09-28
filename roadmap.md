@@ -44,3 +44,11 @@
 - [x] Capture visible medium-tier night fireflies.
 - [ ] Measure hardware FPS at 1440px and throttled mobile; software WebGL measured 0.2/0.4 FPS and is not representative. Build is clean.
 - [x] Report PartnerBrands unsupported contribution figures separately without changing them.
+
+## Hero tree brand authenticity
+- [x] Audit all 27 tree-logo vectors for mark type, colors, aspect ratio, and small-size suitability.
+- [x] Replace unsuitable Walmart, Instacart, DoorDash, CVS, Walgreens, and Home Depot artwork with recognizable local vectors.
+- [x] Restore original black Uber, black/orange Amazon, and black/green Uber Eats artwork.
+- [x] Replace aspect buckets with alpha-area optical sizing and restrained silhouette-only contrast edges.
+- [x] Preserve one texture and geometry path across hanging, falling, landed, and regrowing states.
+- [ ] Validate the tree itself in desktop/mobile screenshots; current captures show the page shell but no rendered tree canvas.
