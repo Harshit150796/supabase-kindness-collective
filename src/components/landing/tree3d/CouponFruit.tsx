@@ -174,7 +174,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       }
       groupRef.current.position.copy(posRef.current);
       groupRef.current.rotation.copy(rotRef.current);
-      groupRef.current.scale.setScalar(1);
+      groupRef.current.scale.setScalar(opticalScale);
     } else if (state.phase === 'landed') {
       const elapsed = t - state.landTime;
       // Squash & settle
@@ -182,7 +182,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       const squash = 1 - Math.sin(settle * Math.PI) * 0.1;
       groupRef.current.position.copy(state.restPos);
       groupRef.current.rotation.set(-Math.PI / 2.1, rotRef.current.y * 0.4, rotRef.current.z * 0.5);
-      groupRef.current.scale.set(1, squash, 1);
+      groupRef.current.scale.set(opticalScale, squash * opticalScale, opticalScale);
       if (elapsed > 5) onRegrown(index);
     } else if (state.phase === 'regrowing') {
       const elapsed = t - state.startTime;
@@ -196,7 +196,7 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         branchTip.z + CANOPY_FACE_OFFSET,
       );
       groupRef.current.rotation.set(0, 0, 0);
-      groupRef.current.scale.setScalar(Math.max(0, eased));
+      groupRef.current.scale.setScalar(Math.max(0, eased) * opticalScale);
       if (k >= 1) onRegrown(index);
     }
   });

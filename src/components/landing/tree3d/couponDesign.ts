@@ -53,7 +53,7 @@ function loadLogo(slug: string): LogoEntry {
       fctx.imageSmoothingEnabled = true;
       fctx.imageSmoothingQuality = 'high';
       fctx.drawImage(img, 0, 0, full.width, full.height);
-      const { data } = fctx.getImageData(0, 0, LOGO_RES, LOGO_RES);
+      const { data } = fctx.getImageData(0, 0, full.width, full.height);
       let minX = full.width, minY = full.height, maxX = -1, maxY = -1;
       for (let y = 0; y < full.height; y++) {
         for (let x = 0; x < full.width; x++) {
