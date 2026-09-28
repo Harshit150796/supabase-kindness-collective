@@ -24,7 +24,7 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicato
 
   const getStrengthColor = () => {
     if (metCount <= 2) return "bg-destructive";
-    if (metCount <= 3) return "bg-yellow-500";
+    if (metCount <= 3) return "bg-verify";
     return "bg-green-500";
   };
 
@@ -45,7 +45,7 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicato
           <span className={cn(
             "font-medium",
             metCount <= 2 && "text-destructive",
-            metCount === 3 && "text-yellow-600",
+            metCount === 3 && "text-verify",
             metCount >= 4 && "text-green-600"
           )}>
             {getStrengthLabel()}

@@ -126,7 +126,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-primary/5 via-background to-gold/5 flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-gradient-to-br from-primary/5 via-background to-verify/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">

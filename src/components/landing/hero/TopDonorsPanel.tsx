@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 const STORAGE_KEY = "hero-top-donors-collapsed";
 
 const RANK_STYLES = [
-  "bg-amber-400 text-amber-950",
+  "bg-verify text-verify-foreground",
   "bg-slate-300 text-slate-800",
-  "bg-orange-400 text-orange-950",
+  "bg-muted text-foreground",
   "bg-muted text-muted-foreground",
   "bg-muted text-muted-foreground",
 ];
@@ -42,7 +42,7 @@ export function TopDonorsPanel() {
           className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-amber-500" />
+            <Trophy className="w-4 h-4 text-verify" />
             <div className="text-left">
               <div className="text-sm font-bold text-foreground leading-tight">Top Donors</div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">This week</div>
@@ -85,7 +85,7 @@ export function TopDonorsPanel() {
                   >
                     {i + 1}
                   </div>
-                  <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold flex-shrink-0">
                     {d.is_anonymous ? "?" : initial(d.display_name)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -96,7 +96,7 @@ export function TopDonorsPanel() {
                       {d.donations_count} gift{d.donations_count === 1 ? "" : "s"}
                     </div>
                   </div>
-                  <div className="text-xs font-bold text-emerald-700">
+                  <div className="text-xs font-bold text-primary">
                     {formatAmount(d.total)}
                   </div>
                 </div>

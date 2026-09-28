@@ -110,8 +110,8 @@ function AnimatedDonutChart({ isVisible }: { isVisible: boolean }) {
 }
 
 const breakdownItems = [
-  { label: 'Direct to Recipients', percent: 95, color: 'bg-emerald-500', iconColor: 'text-emerald-500', dotColor: 'bg-emerald-500', icon: Heart },
-  { label: 'Platform Operations', percent: 3, color: 'bg-amber-500', iconColor: 'text-amber-500', dotColor: 'bg-amber-500', icon: PieChart },
+  { label: 'Direct to Recipients', percent: 95, color: 'bg-primary', iconColor: 'text-primary', dotColor: 'bg-primary', icon: Heart },
+  { label: 'Platform Operations', percent: 3, color: 'bg-verify', iconColor: 'text-verify', dotColor: 'bg-verify', icon: PieChart },
   { label: 'Payment Processing', percent: 2, color: 'bg-blue-500', iconColor: 'text-blue-500', dotColor: 'bg-blue-500', icon: DollarSign },
 ];
 

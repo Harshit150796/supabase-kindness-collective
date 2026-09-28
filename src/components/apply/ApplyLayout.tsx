@@ -119,7 +119,7 @@ export const ApplyLayout = ({
           </div>
           <div className="h-2 bg-border/50 rounded-full overflow-hidden backdrop-blur-sm">
             <div 
-              className="h-full bg-gradient-to-r from-primary to-emerald-light rounded-full transition-all duration-700 ease-out relative"
+              className="h-full bg-gradient-to-r from-primary to-primary rounded-full transition-all duration-700 ease-out relative"
               style={{ width: `${progress}%` }}
             >
               {/* Glowing edge */}
@@ -207,7 +207,7 @@ export const ApplyLayout = ({
         <div className="lg:hidden px-6 pb-6">
           <div className="h-1.5 bg-border/50 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-gradient-to-r from-primary to-emerald-light rounded-full transition-all duration-700 ease-out"
+              className="h-full bg-gradient-to-r from-primary to-primary rounded-full transition-all duration-700 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>

@@ -130,8 +130,8 @@ export default function AdminProcurement() {
         </div>
 
         {totalPending > 0 && (
-          <div className="flex gap-2 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 text-sm">
-            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex gap-2 p-3 rounded-lg border border-verify/30 bg-verify/5 text-sm">
+            <AlertCircle className="w-4 h-4 text-verify shrink-0 mt-0.5" />
             <p className="text-foreground">
               Donors have funded these coupons but recipients can't claim them until you upload real
               gift card codes purchased from a vendor (Tango, Tremendous, or direct).

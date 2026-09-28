@@ -39,7 +39,7 @@ const categoryLabels: Record<string, string> = {
 const categoryColors: Record<string, string> = {
   family: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
   child: 'bg-pink-500/10 text-pink-600 border-pink-500/20',
-  emergency: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+  emergency: 'bg-verify/10 text-verify border-border/20',
   community: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
 };
 

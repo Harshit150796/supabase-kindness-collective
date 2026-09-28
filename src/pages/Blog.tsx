@@ -22,7 +22,7 @@ export default function Blog() {
       />
       <Navbar />
       <main>
-        <section className="py-20 bg-gradient-to-br from-primary/5 via-background to-gold/5">
+        <section className="py-20 bg-gradient-to-br from-primary/5 via-background to-verify/5">
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">Blog & Updates</h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">

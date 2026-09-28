@@ -5,7 +5,7 @@ import { useCMSTestimonials } from '@/hooks/useCMSContent';
 
 const roleColors: Record<string, string> = {
   donor: 'bg-primary/10 text-primary',
-  recipient: 'bg-amber-500/10 text-amber-600',
+  recipient: 'bg-verify/10 text-verify',
   partner: 'bg-blue-500/10 text-blue-600'
 };
 

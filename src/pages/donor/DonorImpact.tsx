@@ -126,17 +126,17 @@ export default function DonorImpact() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-gold/10 to-gold/5">
+          <Card className="bg-gradient-to-br from-verify/10 to-verify/5">
             <CardContent className="p-6 text-center">
-              <Gift className="w-8 h-8 text-gold mx-auto mb-2" />
+              <Gift className="w-8 h-8 text-verify mx-auto mb-2" />
               <p className="text-3xl font-bold text-foreground">{stats.totalDonations}</p>
               <p className="text-sm text-muted-foreground">Donations</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-emerald-light/10 to-emerald-light/5">
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
             <CardContent className="p-6 text-center">
-              <TrendingUp className="w-8 h-8 text-emerald-light mx-auto mb-2" />
+              <TrendingUp className="w-8 h-8 text-primary mx-auto mb-2" />
               <p className="text-3xl font-bold text-foreground">{stats.couponsRedeemed}</p>
               <p className="text-sm text-muted-foreground">Coupons Redeemed</p>
             </CardContent>

@@ -77,9 +77,9 @@ export default function RecipientVerification() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'approved': return <CheckCircle className="w-5 h-5 text-emerald-light" />;
+      case 'approved': return <CheckCircle className="w-5 h-5 text-primary" />;
       case 'rejected': return <XCircle className="w-5 h-5 text-destructive" />;
-      default: return <Clock className="w-5 h-5 text-gold" />;
+      default: return <Clock className="w-5 h-5 text-verify" />;
     }
   };
 
@@ -125,8 +125,8 @@ export default function RecipientVerification() {
               )}
 
               {verification.status === 'approved' && (
-                <div className="bg-emerald-light/10 rounded-lg p-4">
-                  <p className="text-sm text-emerald-light">
+                <div className="bg-primary/10 rounded-lg p-4">
+                  <p className="text-sm text-primary">
                     Congratulations! You're verified and can now claim coupons.
                   </p>
                 </div>

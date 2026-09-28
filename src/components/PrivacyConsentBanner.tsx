@@ -38,7 +38,7 @@ export function PrivacyConsentBanner() {
       role="dialog"
       aria-live="polite"
       aria-label="Privacy information"
-      className="fixed bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-1rem)] md:w-[calc(100%-2rem)] max-w-3xl rounded-xl md:rounded-2xl border border-border bg-background shadow-2xl animate-in slide-in-from-bottom duration-500"
+      className="fixed bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-1rem)] md:w-[calc(100%-2rem)] max-w-3xl rounded-md border border-border bg-background shadow-lg animate-in slide-in-from-bottom duration-500"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {/* Compact one-line bar on mobile so it doesn't cover the hero CTA. */}
@@ -57,7 +57,7 @@ export function PrivacyConsentBanner() {
         <Button
           onClick={accept}
           size="sm"
-          className="shrink-0 h-8 px-4 rounded-lg text-xs font-semibold"
+          className="shrink-0 h-8 px-4 text-xs font-semibold"
         >
           Okay
         </Button>
@@ -95,7 +95,7 @@ export function PrivacyConsentBanner() {
               onClick={accept}
               size="lg"
               variant="outline"
-              className="w-full md:w-auto rounded-xl px-10 font-semibold"
+              className="w-full md:w-auto px-10 font-semibold"
             >
               Okay
             </Button>

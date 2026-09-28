@@ -6,8 +6,8 @@ const categories = [
   { icon: Heart, name: 'Healthcare', count: 128, color: 'bg-red-500/10 text-red-600' },
   { icon: BookOpen, name: 'Education', count: 89, color: 'bg-blue-500/10 text-blue-600' },
   { icon: Shirt, name: 'Clothing', count: 156, color: 'bg-purple-500/10 text-purple-600' },
-  { icon: Car, name: 'Transportation', count: 67, color: 'bg-orange-500/10 text-orange-600' },
-  { icon: Zap, name: 'Utilities', count: 94, color: 'bg-yellow-500/10 text-yellow-600' },
+  { icon: Car, name: 'Transportation', count: 67, color: 'bg-verify/10 text-verify' },
+  { icon: Zap, name: 'Utilities', count: 94, color: 'bg-verify/10 text-verify' },
 ];
 
 export function CategoriesSection() {

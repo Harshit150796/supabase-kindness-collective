@@ -277,10 +277,10 @@ export const StoryStep = ({
       </div>
 
       {/* Strengthen your story card */}
-      <div className="p-4 rounded-xl bg-gradient-to-r from-gold/20 to-gold/10 border border-gold/30">
+      <div className="p-4 rounded-xl bg-gradient-to-r from-verify/20 to-verify/10 border border-verify/30">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-5 h-5 text-gold" />
+          <div className="w-10 h-10 rounded-full bg-verify/20 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-5 h-5 text-verify" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-foreground mb-2">Strengthen your story</h3>
@@ -295,7 +295,7 @@ export const StoryStep = ({
               <div className="h-2 bg-background rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ease-out ${
-                    progress >= 100 ? "bg-primary" : "bg-gold"
+                    progress >= 100 ? "bg-primary" : "bg-verify"
                   }`}
                   style={{ width: `${progress}%` }}
                 />

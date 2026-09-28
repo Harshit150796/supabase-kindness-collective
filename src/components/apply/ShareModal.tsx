@@ -175,7 +175,7 @@ export const ShareModal = ({
     {
       name: "Events & streaming",
       icon: Radio,
-      color: "bg-gradient-to-br from-red-500 to-orange-500",
+      color: "bg-gradient-to-br from-red-500 to-destructive",
       onClick: () => setShowLiveTools(true),
     },
   ];
@@ -348,12 +348,12 @@ export const ShareModal = ({
                       <p className="text-white text-sm font-medium truncate">{title}</p>
                       <div className="h-3 bg-white/10 rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all"
+                          className="h-full bg-gradient-to-r from-primary to-primary rounded-full transition-all"
                           style={{ width: `${progress}%` }}
                         />
                       </div>
                       <div className="flex justify-between text-xs">
-                        <span className="text-emerald-400 font-semibold">
+                        <span className="text-primary font-semibold">
                           ${amountRaised.toLocaleString()} raised
                         </span>
                         <span className="text-white/60">
@@ -393,7 +393,7 @@ export const ShareModal = ({
                 <div className="border border-border rounded-xl overflow-hidden">
                   <div className="bg-[#1a1a2e] p-4 flex items-center justify-center">
                     {/* Preview alert */}
-                    <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl px-5 py-3 flex items-center gap-3">
+                    <div className="bg-gradient-to-r from-primary to-primary rounded-xl px-5 py-3 flex items-center gap-3">
                       <div className="bg-white/20 rounded-full p-2">
                         <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>

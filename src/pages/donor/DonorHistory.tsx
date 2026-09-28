@@ -240,7 +240,7 @@ export default function DonorHistory() {
                               Fee: <span className="text-foreground">${donation.stripe_fee.toFixed(2)}</span>
                             </span>
                             <span className="text-muted-foreground">
-                              Net: <span className="text-emerald-600 font-medium">${donation.net_amount.toFixed(2)}</span>
+                              Net: <span className="text-primary font-medium">${donation.net_amount.toFixed(2)}</span>
                             </span>
                           </div>
                         )}

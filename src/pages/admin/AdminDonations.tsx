@@ -159,8 +159,8 @@ export default function AdminDonations() {
 
   const statusBadge = (status: string | null) => {
     const map: Record<string, string> = {
-      completed: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30',
-      pending: 'bg-amber-500/15 text-amber-700 border-amber-500/30',
+      completed: 'bg-primary/15 text-primary border-primary/30',
+      pending: 'bg-verify/15 text-verify border-verify/30',
       failed: 'bg-red-500/15 text-red-700 border-red-500/30',
       refunded: 'bg-blue-500/15 text-blue-700 border-blue-500/30',
       expired: 'bg-muted text-muted-foreground border-border',
@@ -174,7 +174,7 @@ export default function AdminDonations() {
 
   const fundraiserCell = (d: DonationRow) => {
     if (!d.fundraiser_id) {
-      return <span className="text-xs text-amber-600 font-medium">Unattributed</span>;
+      return <span className="text-xs text-verify font-medium">Unattributed</span>;
     }
     const f = fundraiserMap.get(d.fundraiser_id);
     if (!f) return <span className="text-xs text-muted-foreground">{d.fundraiser_id.slice(0, 8)}…</span>;
@@ -214,9 +214,9 @@ export default function AdminDonations() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { label: 'Total Donations', value: all.length, icon: DollarSign, color: 'text-primary', bg: 'bg-primary/10' },
-            { label: 'Total Raised', value: `$${totalRaised.toLocaleString()}`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
+            { label: 'Total Raised', value: `$${totalRaised.toLocaleString()}`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10' },
             { label: 'Unique Donors', value: uniqueDonors, icon: Users, color: 'text-blue-600', bg: 'bg-blue-500/10' },
-            { label: 'Unattributed', value: unattributed, icon: Megaphone, color: 'text-amber-600', bg: 'bg-amber-500/10' },
+            { label: 'Unattributed', value: unattributed, icon: Megaphone, color: 'text-verify', bg: 'bg-verify/10' },
           ].map(s => (
             <Card key={s.label} className="border-none shadow-sm bg-muted/30">
               <CardContent className="p-4 flex items-center gap-3">

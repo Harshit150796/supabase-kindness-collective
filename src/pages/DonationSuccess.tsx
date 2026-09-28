@@ -83,7 +83,7 @@ export default function DonationSuccess() {
 
             {/* Gold Coins Earned */}
             <div className="pt-4 border-t border-border/50">
-              <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400">
+              <div className="flex items-center justify-center gap-2 text-verify dark:text-verify">
                 <Gift className="w-5 h-5" />
                 <span className="font-semibold">+{goldCoins} Gold Coins Earned!</span>
               </div>

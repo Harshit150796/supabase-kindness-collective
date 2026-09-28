@@ -25,10 +25,10 @@ export function ImpactDashboard() {
     { icon: ShoppingBag, value: stats ? stats.coupons_created.toLocaleString() : null, label: 'Coupons Created', color: 'text-primary' },
     // Families Helped appears only once coupons are genuinely claimed.
     stats && stats.coupons_claimed > 0
-      ? { icon: Users, value: stats.coupons_claimed.toLocaleString(), label: 'Coupons Claimed', color: 'text-gold' }
-      : { icon: Heart, value: stats ? stats.active_fundraisers.toLocaleString() : null, label: 'Active Fundraisers', color: 'text-gold' },
+      ? { icon: Users, value: stats.coupons_claimed.toLocaleString(), label: 'Coupons Claimed', color: 'text-verify' }
+      : { icon: Heart, value: stats ? stats.active_fundraisers.toLocaleString() : null, label: 'Active Fundraisers', color: 'text-verify' },
     { icon: Store, value: String(popularBrands.length), label: 'Retailers Available', color: 'text-primary' },
-    { icon: Globe, value: 'US', label: 'Communities Served', color: 'text-gold' },
+    { icon: Globe, value: 'US', label: 'Communities Served', color: 'text-verify' },
   ];
   return (
     <section className="py-24 bg-secondary/30">
@@ -41,7 +41,7 @@ export function ImpactDashboard() {
           </div>
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             <span className="text-foreground">See the </span>
-            <span className="text-gradient-emerald">Real Impact</span>
+            <span className="text-primary">Real Impact</span>
           </h2>
           <p className="text-lg text-muted-foreground">
             Every donation creates a ripple effect. Watch how your generosity transforms lives in communities across the United States.

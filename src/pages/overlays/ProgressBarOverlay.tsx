@@ -82,7 +82,7 @@ const ProgressBarOverlay = () => {
           <div
             className={`
               absolute inset-y-0 left-0 rounded-full
-              bg-gradient-to-r from-emerald-500 to-emerald-400
+              bg-gradient-to-r from-primary to-primary
               transition-all duration-1000 ease-out
               ${animateProgress ? 'animate-pulse' : ''}
             `}
@@ -100,7 +100,7 @@ const ProgressBarOverlay = () => {
         {/* Amount Text */}
         <div className="flex justify-between items-center text-sm mb-4">
           <span className={`
-            text-emerald-400 font-bold text-lg
+            text-primary font-bold text-lg
             transition-transform duration-300
             ${animateProgress ? 'scale-110' : 'scale-100'}
           `}>

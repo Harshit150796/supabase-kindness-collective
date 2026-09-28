@@ -80,7 +80,7 @@ const QRCodeOverlay = () => {
 
         {/* Progress */}
         <div className="text-center mb-4">
-          <span className="text-emerald-400 font-bold text-2xl">
+          <span className="text-primary font-bold text-2xl">
             ${fundraiser.amount_raised.toLocaleString()}
           </span>
           <span className="text-white/60 text-sm ml-2">

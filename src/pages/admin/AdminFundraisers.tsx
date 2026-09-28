@@ -324,9 +324,9 @@ export default function AdminFundraisers() {
   const statusBadge = (status: string | null) => {
     const s = status || 'pending';
     const map: Record<string, { class: string; icon: typeof Eye }> = {
-      active: { class: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30', icon: Eye },
-      pending: { class: 'bg-amber-500/15 text-amber-700 border-amber-500/30', icon: Clock },
-      paused: { class: 'bg-orange-500/15 text-orange-700 border-orange-500/30', icon: Pause },
+      active: { class: 'bg-primary/15 text-primary border-primary/30', icon: Eye },
+      pending: { class: 'bg-verify/15 text-verify border-verify/30', icon: Clock },
+      paused: { class: 'bg-verify/15 text-muted-foreground border-border/30', icon: Pause },
       completed: { class: 'bg-primary/15 text-primary border-primary/30', icon: CheckCircle },
     };
     const cfg = map[s] || map.pending;
@@ -363,8 +363,8 @@ export default function AdminFundraisers() {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           {[
             { label: 'Total', value: all.length, icon: Megaphone, color: 'text-primary', bg: 'bg-primary/10' },
-            { label: 'Active', value: activeCount, icon: Eye, color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
-            { label: 'Pending', value: pendingCount, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-500/10' },
+            { label: 'Active', value: activeCount, icon: Eye, color: 'text-primary', bg: 'bg-primary/10' },
+            { label: 'Pending', value: pendingCount, icon: Clock, color: 'text-verify', bg: 'bg-verify/10' },
             { label: 'Total Raised', value: `$${totalRaised.toLocaleString()}`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10' },
           ].map(s => (
             <Card key={s.label} className="border-none shadow-sm bg-muted/30">

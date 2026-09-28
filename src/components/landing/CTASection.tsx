@@ -10,12 +10,12 @@ export function CTASection() {
     <section className="py-24 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gold/5 rounded-full blur-3xl" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-verify/5 rounded-full blur-3xl" />
 
       <div className="container mx-auto px-4 relative">
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* For Donors */}
-          <Card className="p-6 md:p-8 lg:p-10 bg-primary text-primary-foreground border-0 hover:shadow-emerald transition-shadow">
+          <Card className="p-6 md:p-8 lg:p-10 bg-primary text-primary-foreground border-0 hover:shadow-brand transition-shadow">
             <div className="w-14 h-14 rounded-2xl bg-primary-foreground/20 flex items-center justify-center mb-6">
               <Heart className="w-7 h-7" />
             </div>
@@ -45,9 +45,9 @@ export function CTASection() {
           </Card>
 
           {/* For Companies */}
-          <Card className="p-6 md:p-8 lg:p-10 border-2 border-gold/20 bg-card hover:shadow-gold transition-shadow">
-            <div className="w-14 h-14 rounded-2xl bg-gold/10 flex items-center justify-center mb-6">
-              <Building2 className="w-7 h-7 text-gold" />
+          <Card className="p-6 md:p-8 lg:p-10 border-2 border-verify/20 bg-card hover:shadow-brand transition-shadow">
+            <div className="w-14 h-14 rounded-2xl bg-verify/10 flex items-center justify-center mb-6">
+              <Building2 className="w-7 h-7 text-verify" />
             </div>
             <h3 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">For Companies</h3>
             <p className="text-muted-foreground mb-8 leading-relaxed">
@@ -70,7 +70,7 @@ export function CTASection() {
             <Button 
               size="lg"
               variant="outline"
-              className="w-full gap-2 border-gold text-gold hover:bg-gold hover:text-gold-foreground"
+              className="w-full gap-2 border-verify text-verify hover:bg-verify hover:text-verify-foreground"
               onClick={() => navigate('/about')}
             >
               Partner With Us
@@ -82,7 +82,7 @@ export function CTASection() {
         {/* Bottom tagline */}
         <div className="text-center mt-16">
           <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
-            Together, let's reach <span className="text-gradient-gold">15,000+ families</span>.
+            Together, let's reach <span className="text-verify">15,000+ families</span>.
           </p>
           <p className="text-muted-foreground mt-2">Join the movement today.</p>
         </div>

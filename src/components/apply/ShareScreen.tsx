@@ -39,7 +39,7 @@ export const ShareScreen = ({ onGoToDashboard, onSkip }: ShareScreenProps) => {
         >
           <button
             onClick={onGoToDashboard}
-            className="w-full py-4 px-6 bg-gold text-charcoal font-semibold rounded-full hover:bg-gold/90 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg press-effect"
+            className="w-full py-4 px-6 bg-verify text-charcoal font-semibold rounded-full hover:bg-verify/90 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg press-effect"
           >
             Share Fundraiser
           </button>

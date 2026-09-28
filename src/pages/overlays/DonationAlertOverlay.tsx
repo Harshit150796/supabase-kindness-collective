@@ -110,10 +110,10 @@ const DonationAlertOverlay = () => {
         {currentAlert && (
           <div className="relative">
             {/* Glow effect */}
-            <div className="absolute inset-0 bg-emerald-500/30 blur-xl rounded-full" />
+            <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full" />
             
             {/* Alert card */}
-            <div className="relative bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-2xl px-8 py-5 shadow-2xl">
+            <div className="relative bg-gradient-to-r from-primary to-primary rounded-2xl px-8 py-5 shadow-2xl">
               <div className="flex items-center gap-4">
                 {/* Heart icon with pulse */}
                 <div className="relative">

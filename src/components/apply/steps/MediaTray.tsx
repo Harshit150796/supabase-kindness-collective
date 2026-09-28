@@ -72,7 +72,7 @@ export const MediaTray = ({ items, onAdd, onRemove, onSetCover, onRetry }: Media
 
         <div className="absolute top-3 left-3 flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-background/90 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-foreground">
-            <Star className="w-3.5 h-3.5 text-gold" />
+            <Star className="w-3.5 h-3.5 text-verify" />
             Cover
           </span>
           {cover.kind === "video" && (

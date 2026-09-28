@@ -51,7 +51,7 @@ export default function Unsubscribe() {
             )}
             {status === 'success' && (
               <>
-                <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto" />
+                <CheckCircle className="w-12 h-12 text-primary mx-auto" />
                 <h1 className="text-xl font-bold text-foreground">Unsubscribed Successfully</h1>
                 <p className="text-muted-foreground">
                   {email ? `${email} has` : 'You have'} been removed from our mailing list. You won't receive any more newsletters from us.
