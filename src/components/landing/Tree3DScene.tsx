@@ -344,24 +344,6 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
     canvas.dataset.treeReplacementQueue = String(replacementQueueRef.current.length);
   }, []);
 
-  useEffect(() => {
-    updateBrandDebugState();
-    const replaceOne = (event: Event) => {
-      const detail = (event as CustomEvent<{ index?: number }>).detail;
-      const rawIndex = detail?.index ?? 0;
-      const idx = Math.max(0, Math.min(visibleFruitCount - 1, rawIndex));
-      setBrandIndices((current) => {
-        const next = [...current];
-        next[idx] = takeNextBrand(current[idx]);
-        brandIndicesRef.current = next;
-        return next;
-      });
-      requestAnimationFrame(updateBrandDebugState);
-    };
-    window.addEventListener('tree3d-replace-brand', replaceOne);
-    return () => window.removeEventListener('tree3d-replace-brand', replaceOne);
-  }, [takeNextBrand, updateBrandDebugState, visibleFruitCount]);
-
   const takeNextBrand = useCallback((currentBrandIndex: number) => {
     if (replacementQueueRef.current.length === 0) {
       let seed = 0x9e3779b9 ^ shuffleRoundRef.current++;
@@ -381,6 +363,24 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
     }
     return replacementQueueRef.current.shift() ?? currentBrandIndex;
   }, []);
+
+  useEffect(() => {
+    updateBrandDebugState();
+    const replaceOne = (event: Event) => {
+      const detail = (event as CustomEvent<{ index?: number }>).detail;
+      const rawIndex = detail?.index ?? 0;
+      const idx = Math.max(0, Math.min(visibleFruitCount - 1, rawIndex));
+      setBrandIndices((current) => {
+        const next = [...current];
+        next[idx] = takeNextBrand(current[idx]);
+        brandIndicesRef.current = next;
+        return next;
+      });
+      requestAnimationFrame(updateBrandDebugState);
+    };
+    window.addEventListener('tree3d-replace-brand', replaceOne);
+    return () => window.removeEventListener('tree3d-replace-brand', replaceOne);
+  }, [takeNextBrand, updateBrandDebugState, visibleFruitCount]);
 
   const donations = useFallingDonations();
   const donationIdxRef = useRef(0);
