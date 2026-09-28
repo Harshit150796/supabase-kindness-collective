@@ -10,6 +10,8 @@ import {
 } from '@/components/stories/FundraiserFilterBar';
 import { useZipStates } from '@/lib/zipStates';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
 
 const STORIES_PER_PAGE = 6;
 
@@ -49,13 +51,13 @@ export function ImpactStories() {
 
   if (isLoading) {
     return (
-      <section className="py-20 bg-secondary/30">
+      <section className="bg-background py-24 md:py-36">
         <div className="container mx-auto px-4">
           <SectionHeading />
           <div className="max-w-6xl mx-auto grid gap-x-6 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="space-y-3">
-                <Skeleton className="w-full aspect-[4/3] rounded-2xl" />
+                <Skeleton className="w-full aspect-[4/3] rounded-sm" />
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-1.5 w-full" />
                 <Skeleton className="h-3 w-24" />
@@ -70,7 +72,7 @@ export function ImpactStories() {
   if (allStories.length === 0) return null;
 
   return (
-    <section className="py-20 bg-secondary/30">
+    <section className="bg-background py-24 md:py-36">
       <div className="container mx-auto px-4">
         <SectionHeading />
 
@@ -79,15 +81,17 @@ export function ImpactStories() {
         </div>
 
         {currentStories.length === 0 ? (
-          <div className="max-w-6xl mx-auto text-center py-16 bg-muted/30 rounded-2xl border border-dashed border-border">
+          <div className="mx-auto max-w-6xl border-y border-border py-16 text-center">
             <p className="text-muted-foreground">
               No fundraisers match these filters yet. Try clearing them.
             </p>
           </div>
         ) : (
           <div className="max-w-6xl mx-auto grid gap-x-6 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
-            {currentStories.map((f) => (
-              <FundraiserCard key={f.id} fundraiser={f} />
+            {currentStories.map((f, index) => (
+              <Reveal key={f.id} delay={index * 0.06}>
+                <FundraiserCard fundraiser={f} />
+              </Reveal>
             ))}
           </div>
         )}
@@ -104,49 +108,58 @@ export function ImpactStories() {
 
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-4 mt-10">
-            <button
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
               onClick={goToPrevious}
               disabled={safePage === 0}
               className={cn(
-                'w-10 h-10 md:w-12 md:h-12 rounded-full border border-border bg-background shadow-sm flex items-center justify-center transition-all duration-200',
+                'h-10 w-10 md:h-12 md:w-12',
                 safePage === 0
                   ? 'opacity-40 cursor-not-allowed'
-                  : 'hover:bg-muted hover:border-border hover:shadow-md'
+                  : 'hover:bg-muted'
               )}
               aria-label="Previous stories"
             >
               <ChevronLeft className="w-5 h-5 text-foreground" />
-            </button>
+            </Button>
 
-            <div className="bg-muted/50 rounded-full px-5 py-3 flex items-center gap-2">
+            <div className="flex items-center gap-3 px-2 py-3">
               {Array.from({ length: totalPages }).map((_, index) => (
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
                   key={index}
                   onClick={() => setCurrentPage(index)}
                   className={cn(
-                    'rounded-full transition-all duration-300',
+                    'h-7 w-7 rounded-none p-0 transition-opacity',
                     safePage === index
-                      ? 'w-8 h-3 bg-primary'
-                      : 'w-3 h-3 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                      ? 'border-b-2 border-primary'
+                      : 'opacity-45 hover:opacity-100'
                   )}
                   aria-label={`Go to page ${index + 1}`}
-                />
+                >{index + 1}</Button>
               ))}
             </div>
 
-            <button
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
               onClick={goToNext}
               disabled={safePage === totalPages - 1}
               className={cn(
-                'w-10 h-10 md:w-12 md:h-12 rounded-full border border-border bg-background shadow-sm flex items-center justify-center transition-all duration-200',
+                'h-10 w-10 md:h-12 md:w-12',
                 safePage === totalPages - 1
                   ? 'opacity-40 cursor-not-allowed'
-                  : 'hover:bg-muted hover:border-border hover:shadow-md'
+                  : 'hover:bg-muted'
               )}
               aria-label="Next stories"
             >
               <ChevronRight className="w-5 h-5 text-foreground" />
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -156,16 +169,17 @@ export function ImpactStories() {
 
 function SectionHeading() {
   return (
-    <div className="text-center max-w-3xl mx-auto mb-8">
-      <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-        Real Stories, Real Impact
-      </span>
-      <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-        Meet the Families You're Helping
-      </h2>
-      <p className="text-muted-foreground text-lg">
+    <div className="mx-auto mb-12 max-w-3xl text-center md:mb-16">
+      <LineReveal>
+        <h2 className="font-display text-5xl font-normal leading-none text-foreground md:text-6xl">
+          Meet the families you're helping.
+        </h2>
+      </LineReveal>
+      <Reveal delay={0.1} className="mt-5">
+        <p className="text-lg leading-relaxed text-muted-foreground">
         Every donation creates a story of hope. Browse by cause or state to find a family to support.
-      </p>
+        </p>
+      </Reveal>
     </div>
   );
 }
