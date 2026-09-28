@@ -110,7 +110,9 @@ function paintLogo(canvas: HTMLCanvasElement, data: CouponData) {
     const logoH = Math.max(1, Math.round(entry.canvas.height * scale));
     // A crisp alpha-derived keyline separates each real logo shape from leaves
     // without introducing a rectangular board or altering its brand colors.
-    const edge = data.lightEdge ? 16 : 9;
+    // Light artwork (white/yellow) gets a dark keyline, dark or saturated
+    // artwork gets a bright one, so every logo reads against the foliage.
+    const edge = 20;
     canvas.width = logoW + edge * 2;
     canvas.height = logoH + edge * 2;
     const ctx = canvas.getContext('2d');
@@ -119,31 +121,34 @@ function paintLogo(canvas: HTMLCanvasElement, data: CouponData) {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
-    // Build an opaque silhouette from several precise offsets, tint it white,
-    // then restore the untouched original artwork above it.
+    // Build an opaque silhouette from several precise offsets, tint it, then
+    // restore the untouched original artwork above it.
     const outline = document.createElement('canvas');
     outline.width = canvas.width;
     outline.height = canvas.height;
     const outlineCtx = outline.getContext('2d');
     if (outlineCtx) {
-      const radius = data.lightEdge ? 10 : 6;
-      const steps = 24;
-      for (let i = 0; i < steps; i++) {
-        const angle = (i / steps) * Math.PI * 2;
-        outlineCtx.drawImage(
-          entry.canvas,
-          edge + Math.cos(angle) * radius,
-          edge + Math.sin(angle) * radius,
-          logoW,
-          logoH,
-        );
+      const radius = 13;
+      const steps = 32;
+      for (const r of [radius, radius * 0.55]) {
+        for (let i = 0; i < steps; i++) {
+          const angle = (i / steps) * Math.PI * 2;
+          outlineCtx.drawImage(
+            entry.canvas,
+            edge + Math.cos(angle) * r,
+            edge + Math.sin(angle) * r,
+            logoW,
+            logoH,
+          );
+        }
       }
       outlineCtx.globalCompositeOperation = 'source-in';
-      outlineCtx.fillStyle = data.lightEdge ? 'rgba(255,255,255,0.96)' : 'rgba(255,255,255,0.82)';
+      outlineCtx.fillStyle = data.lightEdge ? 'rgba(16,36,24,0.94)' : 'rgba(255,255,255,0.97)';
       outlineCtx.fillRect(0, 0, outline.width, outline.height);
       ctx.drawImage(outline, 0, 0);
     }
     ctx.drawImage(entry.canvas, edge, edge, logoW, logoH);
+
   } else {
     // Never show a blank fruit while decoding or if a local SVG fails.
     canvas.width = TEXTURE_LONG_EDGE;
