@@ -44,7 +44,7 @@ interface Fundraiser {
 interface Donation {
   id: string;
   amount: number;
-  donor_email: string | null;
+  donor_name: string | null;
   is_anonymous: boolean;
   message: string | null;
   created_at: string;
@@ -149,8 +149,9 @@ const PublicFundraiser = () => {
     try {
       const { data, error } = await supabase
         .from("donations")
-        .select("*")
+        .select("id, amount, donor_name, is_anonymous, message, created_at")
         .eq("fundraiser_id", fundraiserId)
+        .in("status", ["completed", "succeeded"])
         .order("created_at", { ascending: false })
         .limit(10);
 
@@ -291,26 +292,14 @@ const PublicFundraiser = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left column - Story content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Title card */}
-            <div className="bg-card rounded-2xl shadow-lg p-6 lg:p-8 border border-border/50">
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                <Badge variant="secondary" className="bg-primary/10 text-primary">
-                  {categoryLabels[fundraiser.category] || fundraiser.category}
-                </Badge>
-                {fundraiser.status === "active" && (
-                  <Badge className="bg-green-100 text-green-700 gap-1">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Verified
-                  </Badge>
-                )}
-              </div>
-              
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-4">
+            <div className="border-b border-border pb-8">
+              <p className="mb-4 text-sm text-muted-foreground">{categoryLabels[fundraiser.category] || fundraiser.category}</p>
+              <h1 className="font-display text-5xl font-normal leading-none text-foreground lg:text-7xl">
                 {fundraiser.title}
               </h1>
 
               {/* Organizer info */}
-              <div className="flex items-center gap-3">
+              <div className="mt-7 flex items-center gap-3">
                 <Avatar className="w-10 h-10">
                   <AvatarFallback className="bg-primary/10 text-primary">
                     {organizer?.full_name?.[0]?.toUpperCase() || "O"}
@@ -328,18 +317,17 @@ const PublicFundraiser = () => {
               </div>
             </div>
 
-            {/* Story content */}
-            <div className="bg-card rounded-2xl shadow-lg p-6 lg:p-8 border border-border/50">
-              <h2 className="text-lg font-semibold text-foreground mb-4">Story</h2>
-              <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
+            <div className="py-6 lg:py-10">
+              <h2 className="mb-5 font-display text-4xl font-normal text-foreground">Why this matters.</h2>
+              <div className="prose max-w-none whitespace-pre-wrap text-lg leading-relaxed text-muted-foreground">
                 {fundraiser.story}
               </div>
             </div>
 
             {/* Recent supporters */}
             {donations.length > 0 && (
-              <div className="bg-card rounded-2xl shadow-lg p-6 lg:p-8 border border-border/50">
-                <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <div className="border-t border-border py-8">
+                <h2 className="mb-6 flex items-center gap-2 font-display text-4xl font-normal text-foreground">
                   <Heart className="w-5 h-5 text-primary" />
                   Recent Supporters ({fundraiser.donors_count})
                 </h2>
@@ -348,13 +336,13 @@ const PublicFundraiser = () => {
                     <div key={donation.id} className="flex items-start gap-3">
                       <Avatar className="w-10 h-10">
                         <AvatarFallback className="bg-secondary text-muted-foreground text-sm">
-                          {donation.is_anonymous ? "A" : (donation.donor_email?.[0] || "D").toUpperCase()}
+                          {donation.is_anonymous ? "A" : (donation.donor_name?.[0] || "S").toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-foreground">
-                            {donation.is_anonymous ? "Anonymous" : (donation.donor_email?.split("@")[0] || "Supporter")}
+                            {donation.is_anonymous ? "Anonymous" : (donation.donor_name?.trim() || "Supporter")}
                           </span>
                           <span className="text-primary font-semibold">
                             ${donation.amount.toLocaleString()}
@@ -380,7 +368,7 @@ const PublicFundraiser = () => {
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-4">
               {/* Progress card */}
-              <div className="bg-card rounded-2xl shadow-lg p-6 border border-border/50">
+              <div className="rounded-md border border-border bg-card p-6 shadow-sm">
                 {/* Circular progress */}
                 <div className="flex justify-center mb-6">
                   <div className="relative w-36 h-36">
@@ -407,8 +395,8 @@ const PublicFundraiser = () => {
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-bold text-foreground">
-                        {Math.round(progressPercent)}%
+                      <span className="font-display text-3xl text-foreground">
+                        {progressPercent.toFixed(1).replace('.0','')}%
                       </span>
                       <span className="text-xs text-muted-foreground">funded</span>
                     </div>
@@ -417,7 +405,7 @@ const PublicFundraiser = () => {
 
                 {/* Amount raised */}
                 <div className="text-center mb-6">
-                  <p className="text-3xl font-bold text-foreground">
+                  <p className="font-display text-4xl text-foreground">
                     ${fundraiser.amount_raised.toLocaleString()}
                   </p>
                   <p className="text-muted-foreground">
@@ -453,7 +441,7 @@ const PublicFundraiser = () => {
                   ) : (
                     <Button 
                       size="lg" 
-                      className="w-full text-lg font-semibold h-14 rounded-full shadow-lg hover:shadow-xl transition-all"
+                      className="w-full h-14 text-lg font-semibold"
                       onClick={() => navigate(`/donate?fundraiser=${fundraiser.id}`)}
                     >
                       <Heart className="w-5 h-5 mr-2" />
@@ -463,7 +451,7 @@ const PublicFundraiser = () => {
                   <Button 
                     variant="outline" 
                     size="lg" 
-                    className="w-full rounded-full"
+                    className="w-full"
                     onClick={() => setShowShareModal(true)}
                   >
                     <Share2 className="w-4 h-4 mr-2" />
@@ -473,15 +461,10 @@ const PublicFundraiser = () => {
               </div>
 
               {/* Trust badges */}
-              <div className="bg-card rounded-xl p-4 border border-border/50">
+              <div className="border-t border-border p-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                   <span>Secure donation processing</span>
-                </div>
-                <Separator className="my-2" />
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span>100% of donations go to the cause</span>
                 </div>
               </div>
             </div>

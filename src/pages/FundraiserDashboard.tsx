@@ -346,7 +346,7 @@ const FundraiserDashboard = () => {
         <main className="flex-1 min-h-dvh">
           {/* Gallery section - full width */}
           <div className="pt-16 lg:pt-0">
-            <div className="relative rounded-b-2xl overflow-hidden">
+            <div className="relative overflow-hidden">
               <FundraiserGallery
                 images={images}
                 isOwner={true}
@@ -367,7 +367,7 @@ const FundraiserDashboard = () => {
                       <div className="flex items-center gap-3">
                         {getStatusBadge(fundraiser.status)}
                       </div>
-                      <h1 className="text-2xl lg:text-3xl font-bold text-foreground">{fundraiser.title}</h1>
+                      <h1 className="font-display text-4xl font-normal text-foreground lg:text-5xl">{fundraiser.title}</h1>
                       <p className="text-muted-foreground">
                         Created {formatDate(fundraiser.created_at)} • {fundraiser.category}
                       </p>
@@ -447,7 +447,7 @@ const FundraiserDashboard = () => {
                 {/* Quick actions */}
                 <Card className="border-0 shadow-sm">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Quick Actions</CardTitle>
+                    <CardTitle className="font-display text-2xl font-normal text-foreground">Quick actions</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1">
                     <Button variant="ghost" size="sm" className="w-full justify-start h-10" onClick={() => navigate(`/fundraiser/${id}/edit`)}>

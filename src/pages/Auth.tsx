@@ -269,7 +269,7 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-primary/5 via-background to-verify/5 flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -279,7 +279,7 @@ export default function Auth() {
           </div>
         </div>
 
-        <Card className="border-border">
+        <Card className="rounded-md border-border shadow-sm">
           {authView === 'forgot-password' ? (
             <CardContent className="pt-6">
               {forgotPasswordSent ? (
@@ -287,7 +287,7 @@ export default function Auth() {
                   <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                     <Gift className="w-8 h-8 text-primary" />
                   </div>
-                  <h2 className="text-xl font-semibold text-foreground">Check Your Email</h2>
+                  <h2 className="font-display text-3xl font-normal text-foreground">Check your email.</h2>
                   <p className="text-muted-foreground">
                     If an account exists for <strong>{email}</strong>, you'll receive a password reset link shortly.
                   </p>
@@ -298,7 +298,7 @@ export default function Auth() {
               ) : (
                 <div className="space-y-4">
                   <div className="text-center">
-                    <h2 className="text-xl font-semibold text-foreground">Forgot Password?</h2>
+                    <h2 className="font-display text-3xl font-normal text-foreground">Reset your password.</h2>
                     <p className="text-muted-foreground text-sm mt-1">
                       Enter your email and we'll send you a reset link
                     </p>
@@ -337,7 +337,7 @@ export default function Auth() {
           ) : (
             <>
               <CardHeader className="text-center">
-                <CardTitle className="text-2xl">
+                <CardTitle className="font-display text-4xl font-normal">
                   {mode === 'signin' ? 'Welcome Back' : 'Create Account'}
                 </CardTitle>
                 <CardDescription>
@@ -356,7 +356,7 @@ export default function Auth() {
 
                   <form onSubmit={handleSubmit}>
                     <TabsContent value="signup" className="space-y-4">
-                      <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/40 p-4">
+                      <div className="flex items-start gap-3 border-y border-border bg-muted/40 p-4">
                         <Heart className="w-5 h-5 mt-0.5 text-primary shrink-0" />
                         <p className="text-sm text-muted-foreground">
                           One account does both — give support, or ask for it. You can switch

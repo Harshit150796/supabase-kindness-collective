@@ -1,109 +1,38 @@
+import { useNavigate } from 'react-router-dom';
+import { ArrowRight, CreditCard, Gift, Heart, Shield, UserPlus } from 'lucide-react';
 import { SEO, breadcrumbJsonLd } from '@/components/SEO';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { UserPlus, Shield, CreditCard, Gift, BarChart, Heart } from 'lucide-react';
+import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
 
 const donorSteps = [
-  { icon: UserPlus, title: 'Create Account', description: 'Sign up as a donor with your email. No verification needed to start giving.' },
-  { icon: CreditCard, title: 'Choose Amount', description: 'Decide how much you want to contribute. Select categories or regions if you prefer.' },
-  { icon: BarChart, title: 'Track Impact', description: 'See real-time reports on how your donations are being used and who they help.' },
+  { icon: UserPlus, title: 'Choose a fundraiser', description: 'Browse active campaigns and decide where your support should go.' },
+  { icon: CreditCard, title: 'Choose the amount and retailer', description: 'Make a secure donation and select the familiar brand where its coupon value can be used.' },
+  { icon: Heart, title: 'Follow the record', description: 'Your account keeps the donation and resulting coupon activity connected.' },
 ];
-
 const recipientSteps = [
-  { icon: UserPlus, title: 'Apply', description: 'Create an account and submit your application with required documentation.' },
-  { icon: Shield, title: 'Get Verified', description: 'Our team reviews your application. This usually takes 2-3 business days.' },
-  { icon: Gift, title: 'Redeem Coupons', description: 'Browse available coupons and redeem them at partner stores. Earn loyalty points!' },
+  { icon: UserPlus, title: 'Tell us what you need', description: 'Create an account and submit an application with the requested information.' },
+  { icon: Shield, title: 'Complete review', description: 'The CouponDonation team reviews the application before recipient access is approved.' },
+  { icon: Gift, title: 'Use available coupons', description: 'Approved recipients can browse their coupon wallet and use available value at its named retailer.' },
 ];
 
 export default function HowItWorks() {
   const navigate = useNavigate();
-
   return (
     <div className="min-h-dvh bg-background">
-      <SEO
-        title="How CouponDonation Works — Donate, Verify, Redeem"
-        description="See how CouponDonation works in 3 steps: donors give, families get verified, recipients redeem real grocery coupons at Walmart, Target, and Amazon."
-        path="/how-it-works"
-        jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'How It Works', path: '/how-it-works' }])}
-      />
+      <SEO title="How CouponDonation Works — Donate, Verify, Redeem" description="See how donations become retailer-specific coupons through a transparent path for donors and approved recipients." path="/how-it-works" jsonLd={breadcrumbJsonLd([{ name:'Home', path:'/' },{ name:'How It Works', path:'/how-it-works' }])}/>
       <Navbar />
       <main>
-        {/* Hero */}
-        <section className="py-20 bg-gradient-to-br from-primary/5 via-background to-verify/5">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">How It Works</h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Whether you're here to give or receive, our process is designed to be simple, 
-              secure, and transparent.
-            </p>
-          </div>
-        </section>
-
-        {/* For Donors */}
-        <section className="py-20">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                <Heart className="w-6 h-6 text-primary" />
-              </div>
-              <h2 className="text-3xl font-bold text-foreground">For Donors</h2>
-            </div>
-            <div className="grid md:grid-cols-3 gap-8 mb-8">
-              {donorSteps.map((step, index) => (
-                <div key={step.title} className="relative">
-                  <div className="absolute -top-3 -left-3 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
-                    {index + 1}
-                  </div>
-                  <div className="bg-card rounded-2xl p-6 border border-border h-full">
-                    <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
-                      <step.icon className="w-7 h-7 text-primary" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-2">{step.title}</h3>
-                    <p className="text-muted-foreground">{step.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <Button size="lg" onClick={() => navigate('/donate')}>
-              Start Donating Today
-            </Button>
-          </div>
-        </section>
-
-        {/* For Recipients */}
-        <section className="py-20 bg-muted/30">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-12 h-12 bg-verify/10 rounded-xl flex items-center justify-center">
-                <Gift className="w-6 h-6 text-verify" />
-              </div>
-              <h2 className="text-3xl font-bold text-foreground">For Recipients</h2>
-            </div>
-            <div className="grid md:grid-cols-3 gap-8 mb-8">
-              {recipientSteps.map((step, index) => (
-                <div key={step.title} className="relative">
-                  <div className="absolute -top-3 -left-3 w-8 h-8 bg-verify text-verify-foreground rounded-full flex items-center justify-center text-sm font-bold">
-                    {index + 1}
-                  </div>
-                  <div className="bg-card rounded-2xl p-6 border border-border h-full">
-                    <div className="w-14 h-14 bg-verify/10 rounded-xl flex items-center justify-center mb-4">
-                      <step.icon className="w-7 h-7 text-verify" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-2">{step.title}</h3>
-                    <p className="text-muted-foreground">{step.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <Button size="lg" variant="outline" className="border-verify text-verify hover:bg-verify/10" onClick={() => navigate('/auth?mode=signup&role=recipient')}>
-              Apply as Recipient
-            </Button>
-          </div>
-        </section>
+        <section className="border-b border-border py-24 md:py-36"><div className="container mx-auto px-4"><LineReveal><h1 className="max-w-5xl font-display text-6xl font-normal leading-none text-foreground md:text-8xl">One donation. A visible path to use.</h1></LineReveal><Reveal delay={0.1}><p className="mt-8 max-w-2xl text-xl leading-relaxed text-muted-foreground">Donors choose the cause and retailer. Approved recipients receive restricted coupon value for everyday needs.</p></Reveal></div></section>
+        <ProcessSection title="For people ready to give." steps={donorSteps} action="Start donating" onAction={()=>navigate('/donate')} />
+        <ProcessSection title="For people seeking support." steps={recipientSteps} action="Apply for support" onAction={()=>navigate('/auth?mode=signup&role=recipient')} alternate />
       </main>
       <Footer />
     </div>
   );
+}
+
+function ProcessSection({ title, steps, action, onAction, alternate=false }:{title:string;steps:typeof donorSteps;action:string;onAction:()=>void;alternate?:boolean}){
+ return <section className={alternate?'border-y border-border bg-secondary/40 py-24 md:py-32':'py-24 md:py-32'}><div className="container mx-auto px-4"><LineReveal><h2 className="max-w-3xl font-display text-5xl font-normal text-foreground md:text-6xl">{title}</h2></LineReveal><div className="mt-14 border-y border-border">{steps.map((step,index)=><Reveal key={step.title} delay={index*.07} className="grid gap-5 border-b border-border py-8 last:border-b-0 md:grid-cols-[5rem_1fr_1fr] md:items-start md:py-11"><div className="flex items-center gap-3 text-primary"><span className="text-sm">0{index+1}</span><step.icon className="h-5 w-5"/></div><h3 className="font-display text-3xl font-normal text-foreground">{step.title}</h3><p className="max-w-xl leading-relaxed text-muted-foreground">{step.description}</p></Reveal>)}</div><Reveal className="mt-10"><Button size="lg" onClick={onAction}>{action}<ArrowRight className="ml-2 h-4 w-4"/></Button></Reveal></div></section>
 }

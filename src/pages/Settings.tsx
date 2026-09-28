@@ -41,14 +41,14 @@ const Settings = () => {
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+            <h1 className="font-display text-5xl font-normal text-foreground">Your settings.</h1>
             <p className="text-muted-foreground mt-1">
               Manage your account preferences
             </p>
           </div>
 
           {/* Notifications */}
-          <Card className="mb-6">
+          <Card className="mb-6 rounded-md shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="w-5 h-5 text-primary" />
@@ -90,7 +90,7 @@ const Settings = () => {
           </Card>
 
           {/* Privacy */}
-          <Card className="mb-6">
+          <Card className="mb-6 rounded-md shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-primary" />
@@ -126,7 +126,7 @@ const Settings = () => {
           </Card>
 
           {/* Danger Zone */}
-          <Card className="border-destructive/20">
+          <Card className="rounded-md border-destructive/20 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-destructive">
                 <Trash2 className="w-5 h-5" />

@@ -11,7 +11,7 @@ export default function DonationCancelled() {
       <Navbar />
       
       <main className="flex-1 flex items-center justify-center py-20 px-4">
-        <Card className="max-w-lg w-full p-8 text-center space-y-6">
+        <Card className="max-w-lg w-full rounded-md p-8 text-center space-y-6 shadow-sm">
           {/* Cancelled Icon */}
           <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto">
             <XCircle className="w-10 h-10 text-muted-foreground" />
@@ -19,8 +19,8 @@ export default function DonationCancelled() {
 
           {/* Message */}
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-              Payment Not Completed
+            <h1 className="font-display text-4xl font-normal text-foreground mb-2">
+              Payment was not completed.
             </h1>
             <p className="text-muted-foreground">
               Your payment was not processed and you haven't been charged. This can happen for several reasons.
@@ -28,7 +28,7 @@ export default function DonationCancelled() {
           </div>
 
           {/* Common reasons & tips */}
-          <div className="bg-secondary/50 rounded-xl p-5 text-left space-y-3">
+          <div className="border-y border-border bg-secondary/50 p-5 text-left space-y-3">
             <p className="text-sm font-semibold text-foreground">Common reasons & what to try:</p>
             <ul className="text-sm text-muted-foreground space-y-2">
               <li className="flex items-start gap-2">
@@ -47,7 +47,7 @@ export default function DonationCancelled() {
           </div>
 
           {/* Encouragement */}
-          <div className="bg-primary/5 rounded-xl p-4 flex items-center gap-3">
+          <div className="border-y border-border bg-primary/5 p-4 flex items-center gap-3">
             <Heart className="w-6 h-6 text-primary shrink-0" />
             <p className="text-sm text-foreground text-left">
               Every donation makes a difference. When you're ready, we'd love to have you join our community of donors helping families in need.

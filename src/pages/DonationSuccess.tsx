@@ -1,19 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Heart, Home, Gift, History } from 'lucide-react';
+import { CheckCircle, Heart, Home, History } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function DonationSuccess() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const amount = searchParams.get('amount') || '50';
-  const coupons = searchParams.get('coupons') || searchParams.get('meals') || '10';
-  const goldCoins = parseInt(amount) * 10;
   const [countdown, setCountdown] = useState(10);
 
   useEffect(() => {
@@ -44,11 +40,11 @@ export default function DonationSuccess() {
       <Navbar />
       
       <main className="flex-1 flex items-center justify-center py-20 px-4">
-        <Card className="max-w-lg w-full p-8 text-center space-y-6">
+        <Card className="max-w-lg w-full rounded-md p-8 text-center space-y-6 shadow-sm">
           {/* Success Icon */}
           <div className="relative">
-            <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
-              <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <CheckCircle className="w-10 h-10 text-primary" />
             </div>
             <div className="absolute -bottom-1 -right-1 left-1/2 transform -translate-x-1/2 translate-x-8">
               <Heart className="w-8 h-8 text-primary fill-primary animate-pulse" />
@@ -57,44 +53,16 @@ export default function DonationSuccess() {
 
           {/* Thank You Message */}
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-              Thank You for Your Generosity!
+            <h1 className="font-display text-4xl font-normal text-foreground mb-2">
+              Thank you for giving.
             </h1>
             <p className="text-muted-foreground">
               Your donation has been successfully processed.
             </p>
           </div>
 
-          {/* Impact Summary */}
-          <div className="bg-secondary/50 rounded-xl p-6 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-foreground">${amount}</div>
-                <div className="text-sm text-muted-foreground">Donated</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-primary flex items-center justify-center gap-1">
-                  <Gift className="w-6 h-6" />
-                  {coupons}
-                </div>
-                <div className="text-sm text-muted-foreground">Coupons Created</div>
-              </div>
-            </div>
-
-            {/* Gold Coins Earned */}
-            <div className="pt-4 border-t border-border/50">
-              <div className="flex items-center justify-center gap-2 text-verify dark:text-verify">
-                <Gift className="w-5 h-5" />
-                <span className="font-semibold">+{goldCoins} Gold Coins Earned!</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Use your coins for exclusive rewards and discounts
-              </p>
-            </div>
-          </div>
-
           {/* Impact Message */}
-          <div className="bg-primary/5 rounded-lg p-4">
+          <div className="border-y border-border bg-primary/5 p-4">
             <p className="text-sm text-foreground">
               Your donation creates coupons that are distributed to verified families, 
               redeemable at partner brands for groceries, essentials, and more.

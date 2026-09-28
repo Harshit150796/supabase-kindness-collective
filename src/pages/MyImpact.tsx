@@ -174,7 +174,7 @@ const MyImpact = () => {
           {/* Header */}
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Your impact</h1>
+              <h1 className="font-display text-5xl font-normal text-foreground">Your impact.</h1>
               <p className="text-muted-foreground mt-1">
                 See the difference your donations are making
               </p>
@@ -193,7 +193,7 @@ const MyImpact = () => {
 
           {/* Impact Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+            <Card className="rounded-md border-primary/20 bg-primary/5 shadow-sm">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -207,7 +207,7 @@ const MyImpact = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-verify/5 to-verify/10 border-verify/20">
+            <Card className="rounded-md border-verify/20 bg-verify/5 shadow-sm">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-verify/10 flex items-center justify-center">
@@ -221,7 +221,7 @@ const MyImpact = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-secondary/50 to-secondary/80 border-border">
+            <Card className="rounded-md border-border bg-secondary/50 shadow-sm">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-foreground/5 flex items-center justify-center">
@@ -237,7 +237,7 @@ const MyImpact = () => {
           </div>
 
           {/* Recent Donations */}
-          <Card>
+          <Card className="rounded-md shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-primary" />

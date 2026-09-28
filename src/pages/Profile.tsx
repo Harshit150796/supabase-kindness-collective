@@ -74,14 +74,14 @@ const Profile = () => {
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Profile</h1>
+            <h1 className="font-display text-5xl font-normal text-foreground">Your profile.</h1>
             <p className="text-muted-foreground mt-1">
               Manage your account information
             </p>
           </div>
 
           {/* Profile Card */}
-          <Card>
+          <Card className="rounded-md shadow-sm">
             <CardHeader>
               <div className="flex items-center gap-4">
                 <Avatar className="w-20 h-20">

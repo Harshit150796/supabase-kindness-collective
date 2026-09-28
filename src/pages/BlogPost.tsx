@@ -1,89 +1,15 @@
+import { Link, useParams } from 'react-router-dom';
+import { ArrowLeft, Calendar } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import { SEO, breadcrumbJsonLd } from '@/components/SEO';
-import { useParams, Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ImageReveal, LineReveal, Reveal } from '@/components/ui/editorial-motion';
 import { useCMSPost } from '@/hooks/useCMSContent';
-import { format, parseISO } from 'date-fns';
-import { Calendar, ArrowLeft } from 'lucide-react';
 
-export default function BlogPost() {
-  const { slug } = useParams<{ slug: string }>();
-  const { data: post, isLoading } = useCMSPost(slug || '');
-
-  return (
-    <div className="min-h-dvh bg-background">
-      {post && (
-        <SEO
-          title={post.title}
-          description={(post.excerpt || post.title).slice(0, 155)}
-          path={`/blog/${slug}`}
-          type="article"
-          image={post.cover_image_url || undefined}
-          jsonLd={breadcrumbJsonLd([
-            { name: 'Home', path: '/' },
-            { name: 'Blog', path: '/blog' },
-            { name: post.title, path: `/blog/${slug}` },
-          ])}
-        />
-      )}
-      <Navbar />
-      <main className="py-12">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <Link to="/blog">
-            <Button variant="ghost" className="gap-2 mb-6"><ArrowLeft className="w-4 h-4" />Back to Blog</Button>
-          </Link>
-
-          {isLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-10 w-3/4" />
-              <Skeleton className="h-6 w-1/3" />
-              <Skeleton className="h-64 w-full rounded-xl" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-2/3" />
-            </div>
-          ) : !post ? (
-            <div className="text-center py-20">
-              <h1 className="text-2xl font-bold text-foreground mb-4">Post not found</h1>
-              <Link to="/blog"><Button>Back to Blog</Button></Link>
-            </div>
-          ) : (
-            <article>
-              <div className="flex items-center gap-2 mb-4">
-                <Badge variant="outline">{post.category}</Badge>
-                <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <Calendar className="w-3 h-3" />
-                  {format(parseISO(post.published_at || post.created_at), 'MMMM dd, yyyy')}
-                </span>
-              </div>
-
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-6">{post.title}</h1>
-
-              {post.cover_image_url && (
-                <img src={post.cover_image_url} alt={post.title} className="w-full rounded-xl mb-8 max-h-96 object-cover" />
-              )}
-
-              <div className="prose prose-lg max-w-none text-foreground">
-                {post.content.split('\n').map((paragraph, i) => (
-                  paragraph.trim() ? <p key={i} className="text-foreground/90 leading-relaxed mb-4">{paragraph}</p> : null
-                ))}
-              </div>
-
-              {post.tags && post.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-8 pt-8 border-t border-border">
-                  {post.tags.map((tag: string) => (
-                    <Badge key={tag} variant="secondary">{tag}</Badge>
-                  ))}
-                </div>
-              )}
-            </article>
-          )}
-        </div>
-      </main>
-      <Footer />
-    </div>
-  );
+export default function BlogPost(){
+ const {slug}=useParams<{slug:string}>(); const {data:post,isLoading}=useCMSPost(slug||'');
+ return <div className="min-h-dvh bg-background">{post&&<SEO title={post.title} description={(post.excerpt||post.title).slice(0,155)} path={`/blog/${slug}`} type="article" image={post.cover_image_url||undefined} jsonLd={breadcrumbJsonLd([{name:'Home',path:'/'},{name:'Blog',path:'/blog'},{name:post.title,path:`/blog/${slug}`}])}/>}<Navbar/><main className="py-16 md:py-24"><div className="container mx-auto max-w-5xl px-4"><Button variant="ghost" asChild className="mb-10"><Link to="/blog"><ArrowLeft className="mr-2 h-4 w-4"/>Back to journal</Link></Button>{isLoading?<div className="space-y-5"><Skeleton className="h-16 w-4/5"/><Skeleton className="h-5 w-1/3"/><Skeleton className="aspect-[16/9] w-full"/></div>:!post?<div className="border-y border-border py-16"><h1 className="font-display text-5xl text-foreground">Article not found.</h1><Button asChild className="mt-7"><Link to="/blog">Browse articles</Link></Button></div>:<article><header className="max-w-4xl"><Reveal><div className="flex items-center gap-3 text-sm text-muted-foreground"><span>{post.category}</span><span className="flex items-center gap-1"><Calendar className="h-4 w-4"/>{format(parseISO(post.published_at||post.created_at),'MMMM d, yyyy')}</span></div></Reveal><LineReveal><h1 className="mt-5 font-display text-6xl font-normal leading-none text-foreground md:text-8xl">{post.title}</h1></LineReveal>{post.excerpt&&<Reveal delay={.08}><p className="mt-7 max-w-3xl text-xl leading-relaxed text-muted-foreground">{post.excerpt}</p></Reveal>}</header>{post.cover_image_url&&<ImageReveal className="mt-12 aspect-[16/9] bg-muted"><img src={post.cover_image_url} alt={post.title} className="h-full w-full object-cover"/></ImageReveal>}<Reveal><div className="mx-auto mt-14 max-w-3xl">{post.content.split('\n').map((paragraph:string,index:number)=>paragraph.trim()?<p key={index} className="mb-6 text-lg leading-8 text-foreground/90">{paragraph}</p>:null)}{post.tags?.length>0&&<div className="mt-12 flex flex-wrap gap-x-5 gap-y-2 border-t border-border pt-7 text-sm text-muted-foreground">{post.tags.map((tag:string)=><span key={tag}>{tag}</span>)}</div>}</div></Reveal></article>}</div></main><Footer/></div>
 }
