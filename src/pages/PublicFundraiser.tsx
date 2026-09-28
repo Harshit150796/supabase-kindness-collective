@@ -286,13 +286,13 @@ const PublicFundraiser = () => {
 
       {/* Main content - adjust margin based on whether images exist */}
       <div className={cn(
-        "max-w-6xl mx-auto px-4 lg:px-8 relative z-10 pb-24 lg:pb-8",
+        "max-w-6xl mx-auto px-4 lg:px-8 relative z-10 rounded-t-[2rem] pb-24 lg:pb-16",
         images.length === 0 ? "-mt-2" : "-mt-20"
       )}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left column - Story content */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="border-b border-border pb-8">
+            <div className="rounded-[1.5rem] bg-secondary p-7 md:p-9">
               <p className="mb-4 text-sm text-muted-foreground">{categoryLabels[fundraiser.category] || fundraiser.category}</p>
               <h1 className="font-display text-5xl font-normal leading-none text-foreground lg:text-7xl">
                 {fundraiser.title}
@@ -326,7 +326,7 @@ const PublicFundraiser = () => {
 
             {/* Recent supporters */}
             {donations.length > 0 && (
-              <div className="border-t border-border py-8">
+              <div className="rounded-[1.5rem] bg-secondary p-7">
                 <h2 className="mb-6 flex items-center gap-2 font-display text-4xl font-normal text-foreground">
                   <Heart className="w-5 h-5 text-primary" />
                   Recent Supporters ({fundraiser.donors_count})
@@ -368,7 +368,7 @@ const PublicFundraiser = () => {
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-4">
               {/* Progress card */}
-              <div className="rounded-md border border-border bg-card p-6 shadow-sm">
+              <div className="rounded-[1.5rem] border-0 bg-card p-7 shadow-card-hover">
                 {/* Circular progress */}
                 <div className="flex justify-center mb-6">
                   <div className="relative w-36 h-36">
