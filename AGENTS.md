@@ -14,3 +14,4 @@
 - Small uppercase eyebrow headings, decorative pills, colored icon circles, gradient text, glow shadows, and card-on-card compositions are not part of the visual language.
 - New entrance motion uses shared primitives and `useMotionPreference`: full mode may translate/scale/clip, while gentle mode always remains alive through opacity-only fades.
 - Preserve the two-color CouponDonation wordmark exactly as `#2e7d32` for Coupon and `#1565c0` for Donation.
+- The hero's rotating “CouponDonation is …” uppercase kicker is a founder-approved exception to the no-eyebrow rule and must not be removed.
