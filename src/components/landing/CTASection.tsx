@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Building2, Coins, Heart } from 'lucide-react';
 import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
+import { brandLogos } from '@/data/brandLogos';
 
 export function CTASection() {
   const navigate = useNavigate();
@@ -44,15 +45,15 @@ export function CTASection() {
             </p>
             <div className="flex items-center gap-4 mb-8 text-foreground flex-wrap">
               <div className="flex items-center gap-2">
-                <span className="text-xl">🚗</span>
+                <img src={brandLogos.DoorDash?.logo} alt="" className="h-5 w-5 object-contain" />
                 <span className="text-sm">DoorDash</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xl">🛒</span>
+                <img src={brandLogos.Walmart?.logo} alt="" className="h-5 w-5 object-contain" />
                 <span className="text-sm">Walmart</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xl">🚕</span>
+                <img src={brandLogos.Uber?.logo} alt="" className="h-5 w-5 object-contain" />
                 <span className="text-sm">Uber</span>
               </div>
             </div>
