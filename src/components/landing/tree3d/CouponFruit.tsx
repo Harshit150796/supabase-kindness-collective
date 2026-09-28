@@ -49,6 +49,16 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   const [, setLogoRevision] = useState(0);
   const { openStory, spawnPlant } = useInteraction();
   const plantSpawnedRef = useRef(false);
+  const hangingPosition = useMemo(() => {
+    const radial = new THREE.Vector2(branchTip.x, branchTip.z);
+    if (radial.lengthSq() < 0.0001) radial.set(Math.cos(index * 2.3998), Math.sin(index * 2.3998));
+    radial.normalize();
+    return new THREE.Vector3(
+      branchTip.x * CANOPY_OUTER_SPREAD + radial.x * CANOPY_FACE_OFFSET,
+      branchTip.y - HANG_DROP,
+      branchTip.z * CANOPY_OUTER_SPREAD + radial.y * CANOPY_FACE_OFFSET,
+    );
+  }, [branchTip, index]);
   const hangingTilt = useMemo(
     () => ({
       x: ((index * 37) % 11 - 5) * 0.025,
@@ -78,11 +88,11 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
     if (state.phase === 'falling') {
       caughtRef.current = false;
       plantSpawnedRef.current = false;
-      const startY = branchTip.y - HANG_DROP;
+      const startY = hangingPosition.y;
       const dropH = Math.max(0.1, startY - groundY);
       const tFall = Math.sqrt((2 * dropH) / 9.8);
-      const dx = scatterTarget.x - branchTip.x;
-      const dz = scatterTarget.z - branchTip.z;
+      const dx = scatterTarget.x - hangingPosition.x;
+      const dz = scatterTarget.z - hangingPosition.z;
       const jitter = isMobile ? 0.06 : 0.12;
       velocityRef.current = {
         y: 0.4,
@@ -92,10 +102,10 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         rotY: (Math.random() - 0.5) * 3,
         rotZ: (Math.random() - 0.5) * 5,
       };
-      posRef.current.set(branchTip.x, startY, branchTip.z);
+      posRef.current.copy(hangingPosition);
       rotRef.current.set(0, 0, 0);
     }
-  }, [state.phase, branchTip, groundY, scatterTarget]);
+  }, [state.phase, groundY, hangingPosition, scatterTarget, isMobile]);
 
   const tryPlant = (pos: THREE.Vector3) => {
     if (plantSpawnedRef.current) return;
@@ -130,8 +140,9 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   };
 
   const texture = useMemo(() => drawCouponTexture(data), [data]);
+  useEffect(() => () => texture.dispose(), [texture]);
 
-  useFrame((_, delta) => {
+  useFrame(({ camera }, delta) => {
     if (!groupRef.current) return;
     const dt = Math.min(delta, 0.05);
     const t = performance.now() / 1000;
@@ -140,16 +151,17 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       // Pendulum sway with mixed sines (perlin-ish)
       const sway = Math.sin(t * 0.7 + index * 1.3) * 0.14 + Math.sin(t * 1.7 + index) * 0.04;
       const swayZ = Math.cos(t * 0.5 + index * 0.7) * 0.07;
-      groupRef.current.position.set(
-        branchTip.x * CANOPY_OUTER_SPREAD,
-        branchTip.y - HANG_DROP,
-        branchTip.z + CANOPY_FACE_OFFSET,
+      groupRef.current.position.copy(hangingPosition);
+      const targetYaw = Math.atan2(
+        camera.position.x - hangingPosition.x,
+        camera.position.z - hangingPosition.z,
       );
-      groupRef.current.rotation.set(
-        hangingTilt.x + swayZ,
-        hangingTilt.y + sway * 0.5,
-        hangingTilt.z + sway,
+      const yawDelta = Math.atan2(
+        Math.sin(targetYaw - groupRef.current.rotation.y),
+        Math.cos(targetYaw - groupRef.current.rotation.y),
       );
+      const facingYaw = groupRef.current.rotation.y + yawDelta * (1 - Math.exp(-12 * dt));
+      groupRef.current.rotation.set(hangingTilt.x + swayZ, facingYaw + sway * 0.18, hangingTilt.z + sway);
       const breathe = 1 + Math.sin(t * 1.2 + index) * 0.02;
       groupRef.current.scale.setScalar(breathe * opticalScale);
     } else if (state.phase === 'falling') {
@@ -190,12 +202,20 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
       const k = Math.min(1, elapsed / dur);
       // Elastic ease
       const eased = k === 1 ? 1 : 1 - Math.pow(2, -10 * k) * Math.cos((k * 10 - 0.75) * (2 * Math.PI) / 3);
-      groupRef.current.position.set(
-        branchTip.x * CANOPY_OUTER_SPREAD,
-        branchTip.y - HANG_DROP,
-        branchTip.z + CANOPY_FACE_OFFSET,
+      groupRef.current.position.copy(hangingPosition);
+      const targetYaw = Math.atan2(
+        camera.position.x - hangingPosition.x,
+        camera.position.z - hangingPosition.z,
       );
-      groupRef.current.rotation.set(0, 0, 0);
+      const yawDelta = Math.atan2(
+        Math.sin(targetYaw - groupRef.current.rotation.y),
+        Math.cos(targetYaw - groupRef.current.rotation.y),
+      );
+      groupRef.current.rotation.set(
+        hangingTilt.x * k,
+        groupRef.current.rotation.y + yawDelta * (1 - Math.exp(-12 * dt)),
+        hangingTilt.z * k,
+      );
       groupRef.current.scale.setScalar(Math.max(0, eased) * opticalScale);
       if (k >= 1) onRegrown(index);
     }
