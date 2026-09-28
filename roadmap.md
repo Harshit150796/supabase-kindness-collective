@@ -66,3 +66,13 @@
 - [x] Replace the global canopy offset with 18 deterministic slot-specific leaf clearances and collision corrections.
 - [x] Move Aldi into a clear opening slot while preserving 18 stable slots and the non-repeating replacement queue.
 - [ ] Verify opening, side, rear, falling, and phone views with reliable WebGL captures.
+
+## Full-site editorial redesign
+- [ ] Phase 1: install self-hosted Instrument fonts; rebuild green/blue/neutral tokens and shared UI primitives.
+- [ ] Phase 1: purge warm UI colors outside protected tree, third-party artwork, photos, and OBS overlays.
+- [ ] Phase 1: restyle navigation/footer/privacy chrome and append permanent design rules to `AGENTS.md`.
+- [ ] Phase 1: verify 390px/1440px, font requests and sizes, CLS/LCP, hero seam, and warm-color audit.
+- [ ] Phase 2: redesign homepage sections in page order with gentle reduced-motion reveals.
+- [ ] Phase 3: redesign remaining public pages without changing factual, legal, payment, auth, application, or data logic.
+- [ ] Phase 4: apply a lighter editorial treatment to authenticated and admin pages.
+- [ ] Report section screenshots, headline changes, performance measurements, and unverified items.
