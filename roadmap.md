@@ -44,3 +44,10 @@
 - [x] Capture visible medium-tier night fireflies.
 - [ ] Measure hardware FPS at 1440px and throttled mobile; software WebGL measured 0.2/0.4 FPS and is not representative. Build is clean.
 - [x] Report PartnerBrands unsupported contribution figures separately without changing them.
+
+## Hero tree logo visibility
+- [x] Reduce the visible canopy from 20 to 15 balanced logo fruits.
+- [x] Keep all visible brands unique through repeated fall and regrowth replacements.
+- [x] Add localized leaf clearings without moving logos away from the tree or changing protected scene settings.
+- [x] Strengthen Uber, Amazon, CVS, Uber Eats, and Walgreens while preserving original-color transparent artwork.
+- [ ] Capture desktop/mobile rotation screenshots; software WebGL timed out during image capture, so visual confirmation remains unavailable here.
