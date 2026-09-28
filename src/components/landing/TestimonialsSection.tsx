@@ -25,19 +25,19 @@ export function TestimonialsSection() {
   if (displayTestimonials.length === 0) return null;
 
   return (
-    <section className="bg-background py-24 md:py-36">
+    <section className="bg-secondary/45 py-24 md:py-36">
       <div className="container mx-auto px-4">
         <div className="mx-auto mb-12 max-w-3xl text-center md:mb-16">
           <LineReveal><h2 className="font-display text-5xl font-normal leading-none text-foreground md:text-6xl">In their own words.</h2></LineReveal>
           <Reveal delay={0.1} className="mt-5"><p className="text-lg text-muted-foreground">Published accounts from people who have used or supported CouponDonation.</p></Reveal>
         </div>
 
-        <div className="mx-auto grid max-w-6xl border-y border-border md:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border">
+        <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2 lg:grid-cols-4">
           {displayTestimonials.map((testimonial, index) => (
             <Reveal
               key={testimonial.id} 
               delay={index * 0.07}
-              className="border-b border-border p-6 last:border-b-0 lg:border-b-0"
+              className="rounded-[1.5rem] bg-background p-7 transition-transform duration-500 hover:-translate-y-1"
             >
                 <Quote className="w-8 h-8 text-primary/20 mb-4" />
                 <p className="text-foreground text-sm leading-relaxed mb-6">
