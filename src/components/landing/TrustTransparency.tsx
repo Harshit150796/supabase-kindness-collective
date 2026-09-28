@@ -1,451 +1,132 @@
-import { PieChart, Heart, DollarSign, CheckCircle, ShoppingCart, Users, ArrowRight, Sparkles } from 'lucide-react';
-import { Card } from '@/components/ui/card';
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { CheckCircle, Heart, PieChart, ShoppingCart, Users } from 'lucide-react';
+import { motion } from 'motion/react';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
+import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { cn } from '@/lib/utils';
 
-function AnimatedProgress({ value, delay = 0, isVisible }: { value: number; delay?: number; isVisible: boolean }) {
-  const [current, setCurrent] = useState(0);
-  
-  useEffect(() => {
-    if (!isVisible) {
-      setCurrent(0);
-      return;
-    }
-    
-    const timer = setTimeout(() => {
-      const duration = 1500;
-      const startTime = Date.now();
-      
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        setCurrent(Math.round(value * eased));
-        
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        }
-      };
-      requestAnimationFrame(animate);
-    }, delay);
-    
-    return () => clearTimeout(timer);
-  }, [value, delay, isVisible]);
-  
-  return current;
-}
+const breakdownItems = [
+  { label: 'Direct to Recipients', percent: 95, color: 'bg-primary', icon: Heart },
+  { label: 'Platform Operations', percent: 3, color: 'bg-verify', icon: PieChart },
+  { label: 'Payment Processing', percent: 2, color: 'bg-verify/45', icon: CheckCircle },
+];
 
-function AnimatedDonutChart({ isVisible }: { isVisible: boolean }) {
-  const size = 180;
-  const strokeWidth = 20;
-  const radius = (size - strokeWidth) / 2;
+const journeySteps = [
+  { title: 'You Donate', description: 'Choose a brand and amount', icon: Heart },
+  { title: 'We Purchase', description: 'Buy coupons at wholesale', icon: ShoppingCart },
+  { title: 'Families Receive', description: 'Direct distribution', icon: Users },
+  { title: 'Impact Verified', description: 'Transparent tracking', icon: CheckCircle },
+];
+
+function AllocationRing() {
+  const preference = useMotionPreference();
+  const radius = 72;
   const circumference = 2 * Math.PI * radius;
-  
   const segments = [
-    { percent: 95, color: '#10b981', label: 'Recipients' },
-    { percent: 3, color: '#f59e0b', label: 'Operations' },
-    { percent: 2, color: '#3b82f6', label: 'Processing' },
+    { percent: 95, stroke: 'hsl(var(--primary))' },
+    { percent: 3, stroke: 'hsl(var(--verify))' },
+    { percent: 2, stroke: 'hsl(var(--verify) / 0.45)' },
   ];
-  
-  let cumulativePercent = 0;
-  
+  let cumulative = 0;
+
   return (
-    <div className="relative flex items-center justify-center">
-      <svg 
-        width={size} 
-        height={size} 
-        viewBox={`0 0 ${size} ${size}`}
-        className="transform -rotate-90"
-      >
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="hsl(var(--muted))"
-          strokeWidth={strokeWidth}
-        />
-        
-        {segments.map((segment, index) => {
-          const offset = circumference * (1 - segment.percent / 100);
-          const rotation = (cumulativePercent / 100) * 360;
-          cumulativePercent += segment.percent;
-          
+    <div className="relative mx-auto h-44 w-44">
+      <svg viewBox="0 0 168 168" className="h-full w-full -rotate-90" aria-hidden="true">
+        <circle cx="84" cy="84" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="14" />
+        {segments.map((segment) => {
+          const rotation = cumulative * 3.6;
+          cumulative += segment.percent;
           return (
-            <circle
-              key={segment.label}
-              cx={size / 2}
-              cy={size / 2}
+            <motion.circle
+              key={segment.percent}
+              cx="84"
+              cy="84"
               r={radius}
               fill="none"
-              stroke={segment.color}
-              strokeWidth={strokeWidth}
-              strokeLinecap="round"
+              stroke={segment.stroke}
+              strokeWidth="14"
+              strokeLinecap="butt"
               strokeDasharray={circumference}
-              strokeDashoffset={isVisible ? offset : circumference}
-              style={{
-                transformOrigin: 'center',
-                transform: `rotate(${rotation}deg)`,
-                transition: `stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1) ${index * 200 + 300}ms`,
-              }}
+              initial={preference === 'full' ? { strokeDashoffset: circumference, opacity: 0 } : { opacity: 0 }}
+              whileInView={{ strokeDashoffset: circumference * (1 - segment.percent / 100), opacity: 1 }}
+              viewport={{ once: true, amount: 0.5 }}
+              transition={{ duration: preference === 'full' ? 1 : 0.3, ease: 'easeOut' }}
+              style={{ transformOrigin: 'center', transform: `rotate(${rotation}deg)` }}
             />
           );
         })}
       </svg>
-      
-      <div 
-        className={cn(
-          "absolute inset-0 flex flex-col items-center justify-center transition-all duration-700",
-          isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-        )}
-        style={{ transitionDelay: '600ms' }}
-      >
-        <span className="text-3xl font-bold text-primary">
-          <AnimatedProgress value={95} delay={600} isVisible={isVisible} />¢
-        </span>
-        <span className="text-xs text-muted-foreground font-medium">of every $1</span>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="font-display text-5xl text-primary">95¢</span>
+        <span className="text-xs text-muted-foreground">of every $1</span>
       </div>
     </div>
   );
 }
-
-const breakdownItems = [
-  { label: 'Direct to Recipients', percent: 95, color: 'bg-primary', iconColor: 'text-primary', dotColor: 'bg-primary', icon: Heart },
-  { label: 'Platform Operations', percent: 3, color: 'bg-verify', iconColor: 'text-verify', dotColor: 'bg-verify', icon: PieChart },
-  { label: 'Payment Processing', percent: 2, color: 'bg-blue-500', iconColor: 'text-blue-500', dotColor: 'bg-blue-500', icon: DollarSign },
-];
-
-const howItWorksSteps = [
-  { step: '1', title: 'You Donate', desc: 'Choose a brand & amount', icon: Heart },
-  { step: '2', title: 'We Purchase', desc: 'Buy coupons at wholesale', icon: ShoppingCart },
-  { step: '3', title: 'Families Receive', desc: 'Direct distribution', icon: Users },
-  { step: '4', title: 'Impact Verified', desc: 'Transparent tracking', icon: CheckCircle },
-];
-
-function AnimatedConnector({ isVisible, delay }: { isVisible: boolean; delay: number }) {
-  return (
-    <div 
-      className={cn(
-        "hidden md:flex items-center justify-center transition-all duration-500",
-        isVisible ? 'opacity-100' : 'opacity-0'
-      )}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
-      <div className="relative">
-        <ArrowRight className="w-5 h-5 text-primary/60" />
-        <div 
-          className={cn(
-            "absolute inset-0 flex items-center justify-center",
-            isVisible && "animate-pulse"
-          )}
-        >
-          <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-type TabType = 'breakdown' | 'journey';
 
 export function TrustTransparency() {
-  const [isVisible, setIsVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>('breakdown');
-  const [tabAnimationKey, setTabAnimationKey] = useState(0);
-  const sectionRef = useRef<HTMLElement>(null);
-  
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.15 }
-    );
-    
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-    
-    return () => observer.disconnect();
-  }, []);
+  const [activeTab, setActiveTab] = useState<'breakdown' | 'journey'>('breakdown');
 
-  const handleTabChange = useCallback((tab: TabType) => {
-    if (tab !== activeTab) {
-      setActiveTab(tab);
-      setTabAnimationKey(prev => prev + 1);
-    }
-  }, [activeTab]);
-
-  const isBreakdownVisible = isVisible && activeTab === 'breakdown';
-  const isJourneyVisible = isVisible && activeTab === 'journey';
-  
   return (
-    <section ref={sectionRef} className="py-16 bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden">
-      {/* Decorative elements */}
-      <div className="absolute top-20 left-10 w-20 h-20 rounded-full bg-primary/5 blur-2xl" />
-      <div className="absolute bottom-20 right-10 w-32 h-32 rounded-full bg-accent/10 blur-3xl" />
-      
+    <section className="border-y border-border bg-background py-24 md:py-36">
       <div className="container mx-auto px-4">
-        <div className="max-w-5xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-10">
-            <span 
-              className={cn(
-                "inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4 transition-all duration-500",
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              )}
-            >
-              <CheckCircle className="w-4 h-4" />
-              100% Transparent
-            </span>
-            <h2 
-              className={cn(
-                "text-3xl md:text-4xl font-bold text-foreground mb-3 transition-all duration-500",
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              )}
-              style={{ transitionDelay: '100ms' }}
-            >
-              Where Your Money Goes
-            </h2>
-            <p 
-              className={cn(
-                "text-muted-foreground max-w-2xl mx-auto transition-all duration-500",
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              )}
-              style={{ transitionDelay: '200ms' }}
-            >
-              Complete transparency in how your donation helps families in need.
-            </p>
+        <div className="mx-auto max-w-6xl">
+          <div className="grid gap-8 border-b border-border pb-12 md:grid-cols-[1.1fr_0.9fr] md:items-end md:pb-16">
+            <LineReveal>
+              <h2 className="font-display text-5xl font-normal leading-none text-foreground md:text-6xl">See where every dollar goes.</h2>
+            </LineReveal>
+            <Reveal delay={0.1}>
+              <p className="text-lg leading-relaxed text-muted-foreground">The allocation and coupon trail stay visible, from donation to use.</p>
+            </Reveal>
           </div>
 
-          {/* Main Card */}
-          <Card 
-            className={cn(
-              "p-6 md:p-8 border-primary/10 shadow-lg transition-all duration-700",
-              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            )}
-            style={{ transitionDelay: '300ms' }}
-          >
-            {/* Tab Switcher */}
-            <div 
-              className={cn(
-                "flex justify-center mb-8 transition-all duration-500",
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              )}
-              style={{ transitionDelay: '350ms' }}
-            >
-              <div className="relative inline-flex bg-muted/50 rounded-full p-1">
-                {/* Sliding indicator */}
-                <div 
-                  className={cn(
-                    "absolute top-1 bottom-1 rounded-full bg-background shadow-md transition-all duration-300 ease-out",
-                    activeTab === 'breakdown' ? 'left-1 w-[calc(50%-4px)]' : 'left-[calc(50%+2px)] w-[calc(50%-4px)]'
-                  )}
-                />
-                
-                <button
-                  onClick={() => handleTabChange('breakdown')}
-                  className={cn(
-                    "relative z-10 flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-colors duration-300",
-                    activeTab === 'breakdown' 
-                      ? 'text-primary' 
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  <PieChart className="w-4 h-4" />
-                  <span>Breakdown</span>
-                </button>
-                
-                <button
-                  onClick={() => handleTabChange('journey')}
-                  className={cn(
-                    "relative z-10 flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-colors duration-300",
-                    activeTab === 'journey' 
-                      ? 'text-primary' 
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>The Journey</span>
-                </button>
-              </div>
-            </div>
+          <div className="flex gap-6 border-b border-border py-6" role="tablist" aria-label="Donation transparency views">
+            <Button type="button" variant="ghost" className={cn('rounded-none px-0', activeTab === 'breakdown' && 'border-b-2 border-primary text-primary')} onClick={() => setActiveTab('breakdown')} role="tab" aria-selected={activeTab === 'breakdown'}>
+              Breakdown
+            </Button>
+            <Button type="button" variant="ghost" className={cn('rounded-none px-0', activeTab === 'journey' && 'border-b-2 border-primary text-primary')} onClick={() => setActiveTab('journey')} role="tab" aria-selected={activeTab === 'journey'}>
+              The Journey
+            </Button>
+          </div>
 
-            {/* Tab Content */}
-            <div className="relative min-h-[280px] md:min-h-[320px]">
-              {/* Breakdown Tab */}
-              <div 
-                key={`breakdown-${tabAnimationKey}`}
-                className={cn(
-                  "transition-all duration-500",
-                  activeTab === 'breakdown' 
-                    ? 'opacity-100 translate-y-0' 
-                    : 'opacity-0 translate-y-4 absolute inset-0 pointer-events-none'
-                )}
-              >
-                <div className="grid md:grid-cols-2 gap-8 items-center">
-                  {/* Left: Donut Chart */}
-                  <div 
-                    className={cn(
-                      "flex flex-col items-center transition-all duration-700",
-                      isBreakdownVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
-                    )}
-                    style={{ transitionDelay: '100ms' }}
-                  >
-                    <AnimatedDonutChart isVisible={isBreakdownVisible} />
-                    <p className="mt-3 text-center text-sm text-muted-foreground">
-                      goes directly to families
-                    </p>
-                  </div>
-                  
-                  {/* Right: Breakdown List */}
-                  <div>
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                        <PieChart className="w-4 h-4 text-primary" />
+          {activeTab === 'breakdown' ? (
+            <div className="grid gap-12 py-12 md:grid-cols-[0.8fr_1.2fr] md:items-center md:py-16">
+              <Reveal><AllocationRing /></Reveal>
+              <div className="divide-y divide-border border-y border-border">
+                {breakdownItems.map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <Reveal key={item.label} delay={index * 0.08} className="grid grid-cols-[auto_1fr_auto] items-center gap-4 py-6">
+                      <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
+                      <div>
+                        <div className="font-medium text-foreground">{item.label}</div>
+                        <div className="mt-2 h-1.5 overflow-hidden bg-muted"><div className={cn('h-full', item.color)} style={{ width: `${item.percent}%` }} /></div>
                       </div>
-                      <h3 className="text-lg font-semibold text-foreground">Donation Breakdown</h3>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      {breakdownItems.map((item, i) => {
-                        const Icon = item.icon;
-                        return (
-                          <div 
-                            key={item.label}
-                            className={cn(
-                              "transition-all duration-500",
-                              isBreakdownVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
-                            )}
-                            style={{ transitionDelay: `${200 + i * 150}ms` }}
-                          >
-                            <div className="flex justify-between items-center text-sm mb-1.5">
-                              <span className="flex items-center gap-2 text-foreground font-medium">
-                                <span className={cn("w-2.5 h-2.5 rounded-full", item.dotColor)} />
-                                <Icon className={cn("w-3.5 h-3.5", item.iconColor)} />
-                                {item.label}
-                              </span>
-                              <span className="text-foreground font-bold tabular-nums">
-                                <AnimatedProgress value={item.percent} delay={200 + i * 150} isVisible={isBreakdownVisible} />%
-                              </span>
-                            </div>
-                            <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-                              <div 
-                                className={cn("h-full rounded-full transition-all duration-1000 ease-out", item.color)}
-                                style={{ 
-                                  width: isBreakdownVisible ? `${item.percent}%` : '0%',
-                                  transitionDelay: `${300 + i * 150}ms`
-                                }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
+                      <span className="font-display text-3xl text-foreground">{item.percent}%</span>
+                    </Reveal>
+                  );
+                })}
               </div>
+            </div>
+          ) : (
+            <div className="grid divide-y divide-border border-b border-border md:grid-cols-4 md:divide-x md:divide-y-0">
+              {journeySteps.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <Reveal key={item.title} delay={index * 0.08} className="px-5 py-10">
+                    <div className="mb-8 flex items-center justify-between"><span className="text-sm tabular-nums text-muted-foreground">0{index + 1}</span><Icon className="h-5 w-5 text-primary" /></div>
+                    <h3 className="font-display text-2xl font-normal text-foreground">{item.title}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>
+                  </Reveal>
+                );
+              })}
+            </div>
+          )}
 
-              {/* Journey Tab */}
-              <div 
-                key={`journey-${tabAnimationKey}`}
-                className={cn(
-                  "transition-all duration-500",
-                  activeTab === 'journey' 
-                    ? 'opacity-100 translate-y-0' 
-                    : 'opacity-0 translate-y-4 absolute inset-0 pointer-events-none'
-                )}
-              >
-                <div className="text-center mb-8">
-                  <h3 
-                    className={cn(
-                      "text-lg font-semibold text-foreground mb-2 transition-all duration-500",
-                      isJourneyVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                    )}
-                    style={{ transitionDelay: '100ms' }}
-                  >
-                    From Your Donation to Families in Need
-                  </h3>
-                  <p 
-                    className={cn(
-                      "text-sm text-muted-foreground max-w-lg mx-auto transition-all duration-500",
-                      isJourneyVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                    )}
-                    style={{ transitionDelay: '150ms' }}
-                  >
-                    Every step of your donation journey is tracked and verified
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-7 gap-4 md:gap-2 items-start">
-                  {howItWorksSteps.map((item, index) => {
-                    const Icon = item.icon;
-                    const stepDelay = 200 + index * 120;
-                    const connectorDelay = 240 + index * 120;
-                    
-                    return (
-                      <div key={item.step} className="contents">
-                        <div 
-                          className={cn(
-                            "text-center group transition-all duration-500",
-                            isJourneyVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-                          )}
-                          style={{ transitionDelay: `${stepDelay}ms` }}
-                        >
-                          <div className="relative mx-auto mb-3">
-                            {/* Glow effect */}
-                            <div 
-                              className={cn(
-                                "absolute inset-0 rounded-full bg-primary/20 blur-md transition-all duration-500",
-                                isJourneyVisible ? 'opacity-100 scale-125' : 'opacity-0 scale-100'
-                              )}
-                              style={{ transitionDelay: `${stepDelay + 100}ms` }}
-                            />
-                            {/* Main circle */}
-                            <div className="relative w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold text-base md:text-lg flex items-center justify-center mx-auto shadow-lg shadow-primary/25 group-hover:scale-110 group-hover:shadow-primary/40 transition-all duration-300">
-                              {item.step}
-                            </div>
-                            {/* Icon badge */}
-                            <div 
-                              className={cn(
-                                "absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-background border-2 border-primary/30 flex items-center justify-center shadow-sm transition-all duration-500",
-                                isJourneyVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-0'
-                              )}
-                              style={{ transitionDelay: `${stepDelay + 200}ms` }}
-                            >
-                              <Icon className="w-3.5 h-3.5 text-primary" />
-                            </div>
-                          </div>
-                          <h4 className="font-semibold text-foreground text-sm mb-1">{item.title}</h4>
-                          <p className="text-xs text-muted-foreground leading-tight">{item.desc}</p>
-                        </div>
-                        {index < howItWorksSteps.length - 1 && (
-                          <AnimatedConnector isVisible={isJourneyVisible} delay={connectorDelay} />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-            
-            {/* Bottom callout */}
-            <div 
-              className={cn(
-                "mt-8 p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl border border-primary/10 transition-all duration-500",
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              )}
-              style={{ transitionDelay: '500ms' }}
-            >
-              <p className="text-center text-foreground text-sm">
-                <strong className="text-primary">95¢ of every dollar</strong> goes directly 
-                to purchasing coupons for families in need.
-              </p>
-            </div>
-          </Card>
+          <Reveal className="border-b border-border py-8 text-center">
+            <p className="text-foreground"><strong className="text-primary">95¢ of every dollar</strong> goes directly to purchasing coupons for families in need.</p>
+          </Reveal>
         </div>
       </div>
     </section>
