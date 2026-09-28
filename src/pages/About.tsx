@@ -24,6 +24,7 @@ import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import harshitPhoto from '@/assets/harshit-agrawal.png';
+import communityPhoto from '@/assets/featured/children-playing-hope.webp';
 
 const journey = [
   { icon: HeartHandshake, label: 'Donation', text: 'Support a public fundraiser.' },
@@ -134,10 +135,10 @@ export default function About() {
       <Navbar />
 
       <main className="overflow-x-hidden font-about-sans">
-        <section className="border-b border-border px-5 pb-20 pt-16 md:px-8 md:pb-28 md:pt-24 lg:pt-32">
+        <section className="px-5 pb-20 pt-16 md:px-8 md:pb-28 md:pt-24 lg:pt-32">
           <div className="mx-auto max-w-7xl">
-            <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
-              <Reveal className="lg:col-span-8">
+            <div className="grid gap-12 lg:grid-cols-12 lg:items-center lg:gap-10">
+              <Reveal className="lg:col-span-7">
                 <h1 className="font-about-serif text-5xl font-bold leading-[1.02] text-foreground md:text-7xl lg:text-[6.4rem]">
                   Giving should never be a <span className="italic text-verify">black box.</span>
                 </h1>
@@ -145,7 +146,8 @@ export default function About() {
                   CouponDonation is built to make donations transparent and trackable—from a donor’s choice to a coupon a recipient can use.
                 </p>
               </Reveal>
-              <Reveal className="flex flex-col justify-end border-t border-border pt-7 lg:col-span-4 lg:border-l lg:border-t-0 lg:pl-9 lg:pt-0" delay={0.12}>
+              <Reveal className="flex flex-col justify-end rounded-[1.5rem] bg-secondary p-7 lg:col-span-5 lg:p-9" delay={0.12}>
+                <img src={communityPhoto} alt="A community gathering" className="mb-7 aspect-[4/3] w-full rounded-[1.25rem] object-cover" loading="eager" />
                 <p className="text-base leading-relaxed text-muted-foreground">
                   Donors deserve to know where their money goes. Recipients deserve useful support with dignity. We designed one system to serve both.
                 </p>
@@ -162,7 +164,7 @@ export default function About() {
           </div>
         </section>
 
-        <section className="bg-primary px-5 py-20 text-primary-foreground md:px-8 md:py-28">
+        <section className="bg-[hsl(var(--primary-20))] px-5 py-20 text-primary-foreground md:px-8 md:py-28">
           <div className="mx-auto max-w-7xl">
             <Reveal className="grid gap-7 md:grid-cols-12">
               <div className="md:col-span-8 md:col-start-5">
@@ -176,26 +178,26 @@ export default function About() {
           </div>
         </section>
 
-        <section className="px-5 py-20 md:px-8 md:py-28">
+        <section className="px-5 py-20 md:px-8 md:py-28" style={{backgroundColor:'hsl(var(--primary-97))'}}>
           <div className="mx-auto max-w-7xl">
             <Reveal className="grid gap-8 border-b border-border pb-12 md:grid-cols-12">
               <h2 className="font-about-serif text-4xl leading-tight md:col-span-9 md:col-start-4 md:text-6xl">
                 Technology built around <span className="italic text-verify">accountability.</span>
               </h2>
             </Reveal>
-            <div className="divide-y divide-border">
+            <div className="mt-10 grid gap-5 md:grid-cols-2">
               {principles.map((principle, index) => (
-                <Reveal key={principle.number} className="grid gap-4 py-9 md:grid-cols-12 md:items-start md:py-12" delay={index * 0.04}>
-                  <p className="font-about-sans text-xs text-primary md:col-span-1">/{principle.number}</p>
-                  <h3 className="font-about-serif text-2xl md:col-span-5 md:text-3xl">{principle.title}</h3>
-                  <p className="max-w-xl text-base leading-relaxed text-muted-foreground md:col-span-6 md:text-lg">{principle.text}</p>
+                <Reveal key={principle.number} className="rounded-[1.5rem] bg-background p-8" delay={index * 0.06}>
+                  <p className="font-about-sans text-xs text-primary">/{principle.number}</p>
+                  <h3 className="mt-8 font-about-serif text-3xl">{principle.title}</h3>
+                  <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">{principle.text}</p>
                 </Reveal>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="border-y border-border bg-secondary px-5 py-20 md:px-8 md:py-24">
+        <section className="bg-secondary px-5 py-20 md:px-8 md:py-24">
           <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-2 md:gap-16">
             <Reveal>
               <Check className="h-7 w-7 text-primary" />
@@ -246,7 +248,7 @@ export default function About() {
           </div>
         </section>
 
-        <section className="bg-verify px-5 py-20 text-verify-foreground md:px-8 md:py-28">
+        <section className="bg-[hsl(var(--primary-20))] px-5 py-20 text-primary-foreground md:px-8 md:py-28">
           <div className="mx-auto max-w-7xl">
             <Reveal className="grid gap-10 md:grid-cols-12">
               <div className="md:col-span-8 md:col-start-5">
