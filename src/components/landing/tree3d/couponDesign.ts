@@ -188,7 +188,7 @@ export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
 // Curated set of coupon fruits
 export const COUPON_FRUITS: CouponData[] = [
   { brand: 'Walmart', logo: 'walmart', color: '#0053E2', amount: 10, scale: 1.14 },
-  { brand: 'Uber', logo: 'uber', color: '#000000', amount: 5, scale: 1.04, lightEdge: true },
+  { brand: 'Uber', logo: 'uber', color: '#111111', amount: 5, scale: 1.12, lightEdge: true },
   { brand: 'DoorDash', logo: 'doordash', color: '#FF3008', amount: 10, scale: 1.08 },
   { brand: 'Target', logo: 'target', color: '#E50024', amount: 5, scale: 0.94 },
   { brand: 'Instacart', logo: 'instacart', color: '#0AAD0A', amount: 10, scale: 1.14 },
