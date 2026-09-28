@@ -4,6 +4,7 @@ import { HeroSection } from '@/components/landing/HeroSection';
 import { WhatWeDo } from '@/components/landing/WhatWeDo';
 import { SEO } from '@/components/SEO';
 import { LazyOnView } from '@/components/LazyOnView';
+import { WordReveal } from '@/components/ui/editorial-motion';
 
 // Below-the-fold sections — lazy chunks, only fetched as user scrolls.
 import { LiveActivityBar } from '@/components/landing/LiveActivityBar';
@@ -51,6 +52,12 @@ const Index = () => {
             <BrandLeaderboard />
           </Suspense>
         </LazyOnView>
+
+        <section className="bg-background py-24 md:py-36">
+          <div className="container mx-auto max-w-6xl px-4">
+            <WordReveal className="font-display text-5xl leading-tight text-foreground md:text-7xl">We don't track the person. We track the money.</WordReveal>
+          </div>
+        </section>
 
         <LazyOnView minHeight={700} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>

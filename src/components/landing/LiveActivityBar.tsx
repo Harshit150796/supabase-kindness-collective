@@ -6,9 +6,9 @@ export const LiveActivityBar = () => {
   return (
     <section
       aria-labelledby="redeemable-at-heading"
-      className="relative overflow-hidden border-y border-border/60 bg-background"
+      className="relative overflow-hidden bg-background"
     >
-      <div className="container relative mx-auto px-4 py-2.5 md:py-3">
+      <div className="container relative mx-auto px-4 py-5 md:py-6">
         <div className="flex flex-col items-center gap-4 md:flex-row md:gap-8 lg:gap-12">
           <div className="shrink-0 text-center md:w-[200px] md:text-left">
             <h2 id="redeemable-at-heading" className="text-sm font-semibold text-foreground md:text-base">
@@ -28,8 +28,8 @@ export const LiveActivityBar = () => {
           >
             <MotionDebug />
             <div
-              className="flex w-max animate-marquee lg:[animation-duration:40s] hover:[animation-play-state:paused] active:[animation-play-state:paused]"
-              style={gentle ? { animationDuration: '60s' } : undefined}
+              className="flex w-max animate-marquee lg:[animation-duration:48s] hover:[animation-play-state:paused] active:[animation-play-state:paused]"
+              style={gentle ? { animationDuration: '64s' } : undefined}
             >
               {[0, 1].map((group) => (
                 <div
@@ -40,13 +40,13 @@ export const LiveActivityBar = () => {
                   {brandList.map((brand) => (
                     <div
                       key={`${group}-${brand.name}`}
-                      className="flex h-12 w-12 shrink-0 items-center justify-center border-r border-border/60 bg-background transition-opacity duration-300 hover:opacity-70 md:h-14 md:w-14"
+                      className="flex h-14 w-16 shrink-0 items-center justify-center transition-transform duration-300 hover:scale-105 md:h-16 md:w-20"
                       title={brand.name}
                     >
                       <img
                         src={brand.logo}
                         alt={group === 0 ? brand.name : ''}
-                        className="h-7 w-7 object-contain md:h-8 md:w-8"
+                        className="h-9 w-10 object-contain md:h-11 md:w-12"
                         loading="eager"
                       />
                     </div>
