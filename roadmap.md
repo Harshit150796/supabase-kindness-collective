@@ -94,4 +94,5 @@
 - [x] Recompose homepage sections in order with live data, tonal/deep bands, imagery, product visuals, and richer motion.
 - [x] Upgrade About, How It Works, Stories, FAQ, Blog, article, fundraiser, and story detail pages at page boundaries.
 - [x] Restore Gold Coins messaging without an amount because no donation-linked credit is currently stored.
-- [ ] Capture full/reduced-motion proof, responsive section screenshots, overflow, console, build, and LCP checks.
+- [x] Capture full/reduced-motion proof, responsive section screenshots, overflow, console, and build checks.
+- [ ] Measure LCP after the live tree canvas renders reliably in automated Chromium.
