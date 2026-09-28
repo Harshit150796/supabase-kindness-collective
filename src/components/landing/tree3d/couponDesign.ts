@@ -108,9 +108,7 @@ function paintLogo(canvas: HTMLCanvasElement, data: CouponData) {
     const scale = TEXTURE_LONG_EDGE / Math.max(entry.canvas.width, entry.canvas.height);
     const logoW = Math.max(1, Math.round(entry.canvas.width * scale));
     const logoH = Math.max(1, Math.round(entry.canvas.height * scale));
-    // A crisp alpha-derived keyline separates each real logo shape from leaves
-    // without introducing a rectangular board or altering its brand colors.
-    const edge = data.lightEdge ? 16 : 9;
+    const edge = data.lightEdge ? 18 : 0;
     canvas.width = logoW + edge * 2;
     canvas.height = logoH + edge * 2;
     const ctx = canvas.getContext('2d');
@@ -118,30 +116,9 @@ function paintLogo(canvas: HTMLCanvasElement, data: CouponData) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-
-    // Build an opaque silhouette from several precise offsets, tint it white,
-    // then restore the untouched original artwork above it.
-    const outline = document.createElement('canvas');
-    outline.width = canvas.width;
-    outline.height = canvas.height;
-    const outlineCtx = outline.getContext('2d');
-    if (outlineCtx) {
-      const radius = data.lightEdge ? 10 : 6;
-      const steps = 24;
-      for (let i = 0; i < steps; i++) {
-        const angle = (i / steps) * Math.PI * 2;
-        outlineCtx.drawImage(
-          entry.canvas,
-          edge + Math.cos(angle) * radius,
-          edge + Math.sin(angle) * radius,
-          logoW,
-          logoH,
-        );
-      }
-      outlineCtx.globalCompositeOperation = 'source-in';
-      outlineCtx.fillStyle = data.lightEdge ? 'rgba(255,255,255,0.96)' : 'rgba(255,255,255,0.82)';
-      outlineCtx.fillRect(0, 0, outline.width, outline.height);
-      ctx.drawImage(outline, 0, 0);
+    if (data.lightEdge) {
+      ctx.shadowColor = 'rgba(255,255,255,0.92)';
+      ctx.shadowBlur = 13;
     }
     ctx.drawImage(entry.canvas, edge, edge, logoW, logoH);
   } else {
