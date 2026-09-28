@@ -134,7 +134,6 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   };
 
   const texture = useMemo(() => drawCouponTexture(data), [data]);
-  const geom = useMemo(() => getCouponGeom(), []);
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;

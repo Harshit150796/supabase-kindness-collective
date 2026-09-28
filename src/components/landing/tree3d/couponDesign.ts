@@ -99,7 +99,6 @@ export function onLogoSettled(slug: string, fn: () => void): () => void {
 }
 
 const TEXTURE_LONG_EDGE = 1024;
-const TEXTURE_PAD = 56;
 
 function paintLogo(canvas: HTMLCanvasElement, data: CouponData) {
   const entry = loadLogo(data.logo);
@@ -107,21 +106,17 @@ function paintLogo(canvas: HTMLCanvasElement, data: CouponData) {
     const scale = TEXTURE_LONG_EDGE / Math.max(entry.canvas.width, entry.canvas.height);
     const logoW = Math.max(1, Math.round(entry.canvas.width * scale));
     const logoH = Math.max(1, Math.round(entry.canvas.height * scale));
-    canvas.width = logoW + TEXTURE_PAD * 2;
-    canvas.height = logoH + TEXTURE_PAD * 2;
+    canvas.width = logoW;
+    canvas.height = logoH;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(entry.canvas, TEXTURE_PAD, TEXTURE_PAD, logoW, logoH);
+    ctx.drawImage(entry.canvas, 0, 0, logoW, logoH);
     ctx.globalCompositeOperation = 'source-in';
     ctx.fillStyle = data.color;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.globalCompositeOperation = 'destination-over';
-    ctx.shadowColor = 'rgba(255,255,255,0.92)';
-    ctx.shadowBlur = 18;
-    ctx.drawImage(entry.canvas, TEXTURE_PAD, TEXTURE_PAD, logoW, logoH);
     ctx.globalCompositeOperation = 'source-over';
   } else {
     // Never show a blank fruit while decoding or if a local SVG fails.
