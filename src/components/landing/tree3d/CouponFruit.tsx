@@ -28,15 +28,17 @@ interface Props {
   labelSuppressed?: boolean;
 }
 
-const HANG_DROP = 0.72;
-const CANOPY_FACE_OFFSET = 0.9;
-const CANOPY_OUTER_SPREAD = 1.08;
-const LOGO_LONG_EDGE = 0.84;
+const HANG_DROP = 0.34;
+const CANOPY_FACE_OFFSET = 0.16;
 
 function logoSize(aspect: number) {
+  // A single long-edge limit makes wide wordmarks (CVS, Uber Eats, Walgreens)
+  // optically tiny. Give those marks more width while circular emblems retain
+  // the established fruit scale. The texture remains aspect-correct.
+  const longEdge = aspect >= 5.5 ? 1.5 : aspect >= 4 ? 1.34 : aspect >= 3 ? 1.16 : aspect >= 2.2 ? 1.04 : 0.9;
   return aspect >= 1
-    ? { width: LOGO_LONG_EDGE, height: LOGO_LONG_EDGE / aspect }
-    : { width: LOGO_LONG_EDGE * aspect, height: LOGO_LONG_EDGE };
+    ? { width: longEdge, height: longEdge / aspect }
+    : { width: longEdge * aspect, height: longEdge };
 }
 
 export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false, labelSuppressed = false }: Props) {
@@ -54,9 +56,9 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
     if (radial.lengthSq() < 0.0001) radial.set(Math.cos(index * 2.3998), Math.sin(index * 2.3998));
     radial.normalize();
     return new THREE.Vector3(
-      branchTip.x * CANOPY_OUTER_SPREAD + radial.x * CANOPY_FACE_OFFSET,
+      branchTip.x + radial.x * CANOPY_FACE_OFFSET,
       branchTip.y - HANG_DROP,
-      branchTip.z * CANOPY_OUTER_SPREAD + radial.y * CANOPY_FACE_OFFSET,
+      branchTip.z + radial.y * CANOPY_FACE_OFFSET,
     );
   }, [branchTip, index]);
   const hangingTilt = useMemo(
