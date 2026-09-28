@@ -8,11 +8,6 @@ export interface CouponData {
   amount: 5 | 10;
 }
 
-// Logos are white glyphs, so the card foreground is always white.
-export function couponTextColor(_hex: string): '#FFFFFF' {
-  return '#FFFFFF';
-}
-
 // ---------------------------------------------------------------------------
 // Logo cache — each SVG is decoded ONCE, rasterised at 1024px, cropped to its
 // real glyph bounds (so aspect ratio is exact and the logo can fill the card),
