@@ -313,14 +313,15 @@ function PerfWatchdog({ onSlow }: { onSlow: () => void }) {
 
 function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boolean }) {
   const { leafCount, plantCap } = settings;
-  const visibleFruitCount = Math.min(20, COUPON_FRUITS.length);
-  // Open with a varied, recognizable mix that includes both compact emblems
-  // and long wordmarks such as CVS. Every omitted brand enters through the
-  // same non-repeating replacement queue after a fruit falls.
+  const visibleFruitCount = Math.min(18, COUPON_FRUITS.length);
+  // Open with 18 distinct, instantly recognizable brands — no two marks from the
+  // same family (Uber / Uber Eats) hang at the same time. Every omitted brand
+  // enters through the same non-repeating replacement queue after a fruit falls.
   const initialBrandIndices = useMemo(
-    () => [0, 23, 1, 16, 2, 24, 3, 9, 4, 25, 5, 12, 6, 20, 7, 21, 8, 22, 10, 11].slice(0, visibleFruitCount),
+    () => [0, 23, 2, 14, 4, 24, 3, 9, 6, 25, 5, 12, 1, 20, 7, 21, 11, 19].slice(0, visibleFruitCount),
     [visibleFruitCount],
   );
+
 
   const branchTips = useMemo(() => {
     return getBranchTips(visibleFruitCount).map((branch) => branch.tip);
