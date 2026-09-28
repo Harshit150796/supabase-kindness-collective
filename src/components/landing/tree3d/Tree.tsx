@@ -46,11 +46,11 @@ export function getBranchTips(count = 20): BranchTip[] {
     const rearCount = band.count - frontCount;
     const angles: number[] = [];
     for (let i = 0; i < frontCount; i++) {
-      const t = frontCount === 1 ? 0.5 : i / (frontCount - 1);
+      const t = i / (frontCount - 1);
       angles.push(THREE.MathUtils.lerp(-1.18, 1.18, t) + band.phase);
     }
     for (let i = 0; i < rearCount; i++) {
-      const t = rearCount === 1 ? 0.5 : i / (rearCount - 1);
+      const t = i / (rearCount - 1);
       angles.push(THREE.MathUtils.lerp(2.15, 4.13, t) - band.phase);
     }
     angles.forEach((theta, index) => {
