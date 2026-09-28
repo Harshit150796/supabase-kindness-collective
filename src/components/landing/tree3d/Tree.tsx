@@ -14,9 +14,9 @@ export interface BranchTip {
 const CANOPY_CENTER = new THREE.Vector3(0, 4.4, 0);
 
 const CANOPY_BANDS = [
-  { y: 2.8, radiusX: 1.55, radiusZ: 1.9, count: 6, frontCount: 4, phase: 0.2 },
-  { y: 4.0, radiusX: 2.08, radiusZ: 2.05, count: 8, frontCount: 4, phase: -0.14 },
-  { y: 5.15, radiusX: 1.65, radiusZ: 1.7, count: 6, frontCount: 4, phase: 0.32 },
+  { y: 2.72, radiusX: 1.62, radiusZ: 1.94, count: 6, frontCount: 4, phase: 0.24, frontSpan: 1.28 },
+  { y: 4.02, radiusX: 2.14, radiusZ: 2.1, count: 8, frontCount: 4, phase: -0.18, frontSpan: 1.36 },
+  { y: 5.22, radiusX: 1.72, radiusZ: 1.76, count: 6, frontCount: 4, phase: 0.3, frontSpan: 1.22 },
 ] as const;
 
 /**
@@ -47,7 +47,7 @@ export function getBranchTips(count = 20): BranchTip[] {
     const angles: number[] = [];
     for (let i = 0; i < frontCount; i++) {
       const t = i / (frontCount - 1);
-      angles.push(THREE.MathUtils.lerp(-1.18, 1.18, t) + band.phase);
+      angles.push(THREE.MathUtils.lerp(-band.frontSpan, band.frontSpan, t) + band.phase);
     }
     for (let i = 0; i < rearCount; i++) {
       const t = i / (rearCount - 1);
@@ -55,12 +55,15 @@ export function getBranchTips(count = 20): BranchTip[] {
     }
     angles.forEach((theta, index) => {
       if (tips.length >= wanted) return;
-      const yJitter = ((index % 3) - 1) * 0.1;
+      // Alternate heights and radii so neighboring silhouettes do not stack
+      // into one dense line from the opening camera.
+      const yJitter = ((index % 3) - 1) * 0.16;
+      const radialStagger = index % 2 === 0 ? 1.04 : 0.96;
       tips.push({
         tip: new THREE.Vector3(
-          Math.sin(theta) * band.radiusX,
+          Math.sin(theta) * band.radiusX * radialStagger,
           band.y + yJitter,
-          Math.cos(theta) * band.radiusZ,
+          Math.cos(theta) * band.radiusZ * radialStagger,
         ),
       });
     });

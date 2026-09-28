@@ -29,7 +29,9 @@ interface Props {
 }
 
 const HANG_DROP = 0.34;
-const CANOPY_FACE_OFFSET = 0.16;
+// Keep the fruit attached to its branch-relative slot while placing its face
+// just beyond the nearest leaf layer, reducing partial foliage occlusion.
+const CANOPY_FACE_OFFSET = 0.28;
 
 function logoSize(aspect: number) {
   // A single long-edge limit makes wide wordmarks (CVS, Uber Eats, Walgreens)
