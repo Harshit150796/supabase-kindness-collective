@@ -318,13 +318,15 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
   // same family (Uber / Uber Eats) hang at the same time. Every omitted brand
   // enters through the same non-repeating replacement queue after a fruit falls.
   const initialBrandIndices = useMemo(
-    () => [0, 23, 2, 14, 4, 24, 3, 9, 6, 25, 5, 12, 1, 20, 7, 21, 11, 19].slice(0, visibleFruitCount),
+    // Compact marks occupy tighter inner/front slots; wide wordmarks use the
+    // separated side/front slots. Aldi now opens in a clear front slot.
+    () => [0, 23, 2, 14, 4, 24, 3, 9, 11, 25, 5, 12, 1, 20, 7, 21, 6, 19].slice(0, visibleFruitCount),
     [visibleFruitCount],
   );
 
 
   const branchTips = useMemo(() => {
-    return getBranchTips(visibleFruitCount).map((branch) => branch.tip);
+    return getBranchTips(visibleFruitCount);
   }, [visibleFruitCount]);
   const [brandIndices, setBrandIndices] = useState(() => initialBrandIndices);
   const replacementQueueRef = useRef(
@@ -528,7 +530,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
         <CouponFruit
           key={i}
           index={i}
-          branchTip={branchTips[i]}
+          branch={branchTips[i]}
           data={COUPON_FRUITS[brandIndex]}
           state={states[i]}
           groundY={GROUND_Y}

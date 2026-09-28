@@ -7,6 +7,7 @@ import type { FallingDonation } from '@/hooks/useFallingDonations';
 import { useInteraction } from './InteractionContext';
 import { SparkleBurst } from './SparkleBurst';
 import { toast } from 'sonner';
+import type { BranchTip } from './Tree';
 
 export type CouponState =
   | { phase: 'hanging' }
@@ -15,7 +16,7 @@ export type CouponState =
   | { phase: 'regrowing'; startTime: number };
 
 interface Props {
-  branchTip: THREE.Vector3;
+  branch: BranchTip;
   data: CouponData;
   state: CouponState;
   groundY: number;
@@ -31,8 +32,6 @@ interface Props {
 const HANG_DROP = 0.34;
 // Keep the fruit attached to its branch-relative slot while placing its face
 // just beyond the nearest leaf layer, reducing partial foliage occlusion.
-const CANOPY_FACE_OFFSET = 0.28;
-
 function logoSize(aspect: number, alphaCoverage: number, mark: CouponData['mark']) {
   // Normalize by the visible ink rather than broad aspect buckets. This keeps
   // dense emblems and open wordmarks at comparable perceived weight while
@@ -49,7 +48,7 @@ function logoSize(aspect: number, alphaCoverage: number, mark: CouponData['mark'
   return { width, height };
 }
 
-export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false, labelSuppressed = false }: Props) {
+export function CouponFruit({ branch, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false, labelSuppressed = false }: Props) {
   const groupRef = useRef<THREE.Group>(null);
   const velocityRef = useRef({ y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 });
   const posRef = useRef(new THREE.Vector3());
@@ -60,15 +59,16 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   const { openStory, spawnPlant } = useInteraction();
   const plantSpawnedRef = useRef(false);
   const hangingPosition = useMemo(() => {
+    const branchTip = branch.tip;
     const radial = new THREE.Vector2(branchTip.x, branchTip.z);
     if (radial.lengthSq() < 0.0001) radial.set(Math.cos(index * 2.3998), Math.sin(index * 2.3998));
     radial.normalize();
     return new THREE.Vector3(
-      branchTip.x + radial.x * CANOPY_FACE_OFFSET,
+      branchTip.x + radial.x * branch.faceOffset,
       branchTip.y - HANG_DROP,
-      branchTip.z + radial.y * CANOPY_FACE_OFFSET,
+      branchTip.z + radial.y * branch.faceOffset,
     );
-  }, [branchTip, index]);
+  }, [branch, index]);
   const hangingTilt = useMemo(
     () => ({
       x: ((index * 37) % 11 - 5) * 0.025,

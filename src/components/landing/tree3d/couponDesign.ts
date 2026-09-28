@@ -12,6 +12,9 @@ export interface CouponData {
   scale?: number;
   /** Brand-shape reduction applied uniformly through every fruit phase. */
   sizeFactor: 0.8 | 0.825 | 0.85;
+  /** Hand-audited silhouette separator; the original logo pixels stay untouched. */
+  edgeTone: 'light' | 'dark';
+  edgeRadius: 5 | 6 | 7;
 }
 
 // ---------------------------------------------------------------------------
@@ -147,7 +150,7 @@ function paintLogo(canvas: HTMLCanvasElement, data: CouponData) {
     outline.height = canvas.height;
     const outlineCtx = outline.getContext('2d');
     if (outlineCtx) {
-      const radius = 6;
+      const radius = data.edgeRadius;
       const steps = 32;
       for (let i = 0; i < steps; i++) {
         const angle = (i / steps) * Math.PI * 2;
@@ -160,11 +163,9 @@ function paintLogo(canvas: HTMLCanvasElement, data: CouponData) {
         );
       }
       outlineCtx.globalCompositeOperation = 'source-in';
-      outlineCtx.fillStyle = entry.luminance > 0.72
+      outlineCtx.fillStyle = data.edgeTone === 'dark'
         ? 'rgba(16,36,24,0.9)'
-        : entry.luminance < 0.32
-          ? 'rgba(255,255,255,0.98)'
-          : 'rgba(255,255,255,0.94)';
+        : 'rgba(255,255,255,0.97)';
       outlineCtx.fillRect(0, 0, outline.width, outline.height);
       ctx.drawImage(outline, 0, 0);
     }
@@ -208,33 +209,33 @@ export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
 
 // Curated set of coupon fruits
 export const COUPON_FRUITS: CouponData[] = [
-  { brand: 'Walmart', logo: 'walmart', color: '#007DC3', amount: 10, mark: 'emblem', scale: 0.96, sizeFactor: 0.825 },
-  { brand: 'Uber', logo: 'uber', color: '#000000', amount: 5, mark: 'wordmark', sizeFactor: 0.85 },
-  { brand: 'DoorDash', logo: 'doordash', color: '#FF3008', amount: 10, mark: 'emblem', sizeFactor: 0.8 },
-  { brand: 'Target', logo: 'target', color: '#E50024', amount: 5, mark: 'emblem', scale: 0.94, sizeFactor: 0.825 },
-  { brand: 'Instacart', logo: 'instacart', color: '#43B02A', amount: 10, mark: 'emblem', sizeFactor: 0.8 },
-  { brand: 'Lyft', logo: 'lyft', color: '#EA0B8C', amount: 5, mark: 'wordmark', sizeFactor: 0.85 },
-  { brand: 'Starbucks', logo: 'starbucks', color: '#006241', amount: 5, mark: 'emblem', scale: 0.94, sizeFactor: 0.825 },
-  { brand: 'Amazon', logo: 'amazon', color: '#000000', amount: 10, mark: 'wordmark', sizeFactor: 0.85 },
-  { brand: 'Grubhub', logo: 'grubhub', color: '#FF5500', amount: 5, mark: 'wordmark', sizeFactor: 0.85 },
-  { brand: "McDonald's", logo: 'mcdonalds', color: '#FFCC00', amount: 10, mark: 'emblem', scale: 0.94, sizeFactor: 0.825 },
-  { brand: 'eBay', logo: 'ebay', color: '#E53238', amount: 5, mark: 'wordmark', sizeFactor: 0.85 },
-  { brand: 'Aldi', logo: 'aldi', color: '#00529B', amount: 10, mark: 'emblem', scale: 0.96, sizeFactor: 0.825 },
-  { brand: 'Kroger', logo: 'kroger', color: '#0468B3', amount: 10, mark: 'emblem', sizeFactor: 0.8 },
-  { brand: 'Whole Foods', logo: 'whole-foods', color: '#006F46', amount: 5, mark: 'emblem', sizeFactor: 0.8 },
-  { brand: 'Publix', logo: 'publix', color: '#649441', amount: 10, mark: 'wordmark', sizeFactor: 0.85 },
-  { brand: "Trader Joe's", logo: 'trader-joes', color: '#D21242', amount: 5, mark: 'wordmark', sizeFactor: 0.85 },
-  { brand: 'Uber Eats', logo: 'uber-eats', color: '#06C167', amount: 10, mark: 'wordmark', sizeFactor: 0.85 },
-  { brand: 'Postmates', logo: 'postmates', color: '#FFDF18', amount: 5, mark: 'emblem', scale: 0.96, sizeFactor: 0.8 },
-  { brand: 'Seamless', logo: 'seamless', color: '#C90117', amount: 10, mark: 'wordmark', sizeFactor: 0.85 },
-  { brand: "Domino's", logo: 'dominos', color: '#006491', amount: 5, mark: 'emblem', sizeFactor: 0.8 },
-  { brand: 'Taco Bell', logo: 'taco-bell', color: '#38096C', amount: 10, mark: 'emblem', sizeFactor: 0.8 },
-  { brand: 'Subway', logo: 'subway', color: '#008938', amount: 5, mark: 'wordmark', sizeFactor: 0.85 },
-  { brand: 'Chipotle', logo: 'chipotle', color: '#A81612', amount: 10, mark: 'emblem', scale: 0.94, sizeFactor: 0.825 },
-  { brand: 'CVS', logo: 'cvs', color: '#CC0000', amount: 5, mark: 'emblem', sizeFactor: 0.8 },
-  { brand: 'Walgreens', logo: 'walgreens', color: '#E62324', amount: 10, mark: 'emblem', sizeFactor: 0.8 },
-  { brand: 'Costco', logo: 'costco', color: '#E31837', amount: 5, mark: 'wordmark', sizeFactor: 0.85 },
-  { brand: 'Home Depot', logo: 'home-depot', color: '#F96302', amount: 10, mark: 'emblem', scale: 0.92, sizeFactor: 0.825 },
+  { brand: 'Walmart', logo: 'walmart', color: '#007DC3', amount: 10, mark: 'emblem', scale: 0.96, sizeFactor: 0.825, edgeTone: 'dark', edgeRadius: 6 },
+  { brand: 'Uber', logo: 'uber', color: '#000000', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 7 },
+  { brand: 'DoorDash', logo: 'doordash', color: '#FF3008', amount: 10, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Target', logo: 'target', color: '#E50024', amount: 5, mark: 'emblem', scale: 0.94, sizeFactor: 0.825, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Instacart', logo: 'instacart', color: '#43B02A', amount: 10, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 7 },
+  { brand: 'Lyft', logo: 'lyft', color: '#EA0B8C', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Starbucks', logo: 'starbucks', color: '#006241', amount: 5, mark: 'emblem', scale: 0.94, sizeFactor: 0.825, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Amazon', logo: 'amazon', color: '#000000', amount: 10, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 7 },
+  { brand: 'Grubhub', logo: 'grubhub', color: '#FF5500', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
+  { brand: "McDonald's", logo: 'mcdonalds', color: '#FFCC00', amount: 10, mark: 'emblem', scale: 0.94, sizeFactor: 0.825, edgeTone: 'dark', edgeRadius: 6 },
+  { brand: 'eBay', logo: 'ebay', color: '#E53238', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Aldi', logo: 'aldi', color: '#00529B', amount: 10, mark: 'emblem', scale: 0.96, sizeFactor: 0.825, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Kroger', logo: 'kroger', color: '#0468B3', amount: 10, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Whole Foods', logo: 'whole-foods', color: '#006F46', amount: 5, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Publix', logo: 'publix', color: '#649441', amount: 10, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
+  { brand: "Trader Joe's", logo: 'trader-joes', color: '#D21242', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Uber Eats', logo: 'uber-eats', color: '#06C167', amount: 10, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 7 },
+  { brand: 'Postmates', logo: 'postmates', color: '#FFDF18', amount: 5, mark: 'emblem', scale: 0.96, sizeFactor: 0.8, edgeTone: 'dark', edgeRadius: 6 },
+  { brand: 'Seamless', logo: 'seamless', color: '#C90117', amount: 10, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
+  { brand: "Domino's", logo: 'dominos', color: '#006491', amount: 5, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Taco Bell', logo: 'taco-bell', color: '#38096C', amount: 10, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Subway', logo: 'subway', color: '#008938', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Chipotle', logo: 'chipotle', color: '#A81612', amount: 10, mark: 'emblem', scale: 0.94, sizeFactor: 0.825, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'CVS', logo: 'cvs', color: '#CC0000', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Walgreens', logo: 'walgreens', color: '#E62324', amount: 10, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Costco', logo: 'costco', color: '#E31837', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Home Depot', logo: 'home-depot', color: '#F96302', amount: 10, mark: 'emblem', scale: 0.92, sizeFactor: 0.825, edgeTone: 'light', edgeRadius: 5 },
 ];
 
 // Preload + decode the complete local brand set once at module initialisation.
