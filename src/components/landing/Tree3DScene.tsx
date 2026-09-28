@@ -352,7 +352,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
   const { shakeEvent, bumpWind } = useInteraction();
 
   const [states, setStates] = useState<CouponState[]>(() =>
-    fruits.map(() => ({ phase: 'hanging' as const }))
+    Array.from({ length: visibleFruitCount }, () => ({ phase: 'hanging' as const }))
   );
 
   const dropOne = useCallback(
