@@ -89,8 +89,8 @@
 - [x] Report section screenshots, headline changes, performance measurements, and unverified items.
 
 ## Premium visual rhythm and motion upgrade
-- [ ] Restore the founder-approved pre-redesign hero headline exactly and verify it at 390px and 1440px.
-- [ ] Upgrade shared surfaces and motion, including clearly visible gentle-mode reveals.
+- [x] Restore the founder-approved pre-redesign hero headline exactly and verify it at 390px and 1440px.
+- [x] Upgrade shared surfaces and motion, including clearly visible gentle-mode reveals.
 - [ ] Recompose homepage sections in order with live data, tonal/deep bands, imagery, product visuals, and richer motion.
 - [ ] Upgrade About, How It Works, Stories, FAQ, Blog, article, fundraiser, and story detail pages at page boundaries.
 - [ ] Restore Gold Coins messaging from real stored credit when available, otherwise without an amount.

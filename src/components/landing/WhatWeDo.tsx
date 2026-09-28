@@ -403,7 +403,7 @@ export function WhatWeDo() {
   }, [still]);
 
   return (
-    <section ref={sectionRef} className="relative bg-background py-24 md:py-36">
+    <section ref={sectionRef} className="relative py-24 md:py-36" style={{ backgroundColor: 'hsl(var(--primary-97))' }}>
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ background: 'radial-gradient(60% 40% at 12% 18%, hsl(var(--verify) / 0.04), transparent 70%), radial-gradient(60% 40% at 88% 82%, hsl(var(--primary) / 0.05), transparent 70%)' }} />
       </div>
