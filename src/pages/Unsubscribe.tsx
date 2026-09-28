@@ -41,7 +41,7 @@ export default function Unsubscribe() {
     <div className="min-h-dvh flex flex-col bg-background">
       <Navbar />
       <main className="flex-1 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
+        <Card className="max-w-md w-full rounded-md shadow-sm">
           <CardContent className="p-8 text-center space-y-4">
             {status === 'loading' && (
               <>
@@ -52,7 +52,7 @@ export default function Unsubscribe() {
             {status === 'success' && (
               <>
                 <CheckCircle className="w-12 h-12 text-primary mx-auto" />
-                <h1 className="text-xl font-bold text-foreground">Unsubscribed Successfully</h1>
+                <h1 className="font-display text-4xl font-normal text-foreground">You’re unsubscribed.</h1>
                 <p className="text-muted-foreground">
                   {email ? `${email} has` : 'You have'} been removed from our mailing list. You won't receive any more newsletters from us.
                 </p>
@@ -61,7 +61,7 @@ export default function Unsubscribe() {
             {status === 'error' && (
               <>
                 <XCircle className="w-12 h-12 text-destructive mx-auto" />
-                <h1 className="text-xl font-bold text-foreground">Something Went Wrong</h1>
+                <h1 className="font-display text-4xl font-normal text-foreground">We couldn’t unsubscribe you.</h1>
                 <p className="text-muted-foreground">
                   We couldn't process your unsubscribe request. The link may be invalid or expired.
                 </p>

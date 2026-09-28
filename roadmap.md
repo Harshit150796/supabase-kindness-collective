@@ -82,5 +82,6 @@
 - [x] Phase 3 `/about` and `/how-it-works`: apply editorial structure, remove eyebrow labels, and unify gentle-live motion.
 - [x] Phase 3 `/donate`: presentation verified at both widths; payment logic unchanged.
 - [x] Phase 3 `/faq`, `/blog`, and `/blog/:slug`: apply editorial layouts with CMS loading and empty states preserved.
+- [x] Phase 3 account and status pages: restyle auth/reset/outcome/unsubscribe/404 while preserving forms, redirects, and payment state logic.
 - [ ] Phase 4: apply a lighter editorial treatment to authenticated and admin pages.
 - [ ] Report section screenshots, headline changes, performance measurements, and unverified items.

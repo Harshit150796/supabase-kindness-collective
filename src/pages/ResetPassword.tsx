@@ -126,7 +126,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-primary/5 via-background to-verify/5 flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -136,12 +136,12 @@ export default function ResetPassword() {
           </div>
         </div>
 
-        <Card className="border-border">
+        <Card className="rounded-md border-border shadow-sm">
           {success ? (
             <CardContent className="pt-6">
               <div className="text-center space-y-4">
-                <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
-                <h2 className="text-xl font-semibold text-foreground">Password Updated!</h2>
+                <CheckCircle className="w-16 h-16 text-primary mx-auto" />
+                <h2 className="font-display text-3xl font-normal text-foreground">Password updated.</h2>
                 <p className="text-muted-foreground">
                   Your password has been reset successfully. Signing you in...
                 </p>
@@ -152,7 +152,7 @@ export default function ResetPassword() {
             <CardContent className="pt-6">
               <div className="text-center space-y-4">
                 <AlertCircle className="w-16 h-16 text-destructive mx-auto" />
-                <h2 className="text-xl font-semibold text-foreground">Invalid or Expired Link</h2>
+                <h2 className="font-display text-3xl font-normal text-foreground">This link is no longer valid.</h2>
                 <p className="text-muted-foreground">
                   This password reset link is invalid or has expired. Please request a new one.
                 </p>
@@ -164,7 +164,7 @@ export default function ResetPassword() {
           ) : (
             <>
               <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Set New Password</CardTitle>
+                <CardTitle className="font-display text-4xl font-normal">Set a new password.</CardTitle>
                 <CardDescription>
                   Enter your new password below
                 </CardDescription>
