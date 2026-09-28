@@ -29,18 +29,9 @@ interface Props {
 }
 
 const HANG_DROP = 0.34;
-const CANOPY_FACE_OFFSET = 0.16;
-
-export function getLogoHangingPosition(branchTip: THREE.Vector3, index: number) {
-  const radial = new THREE.Vector2(branchTip.x, branchTip.z);
-  if (radial.lengthSq() < 0.0001) radial.set(Math.cos(index * 2.3998), Math.sin(index * 2.3998));
-  radial.normalize();
-  return new THREE.Vector3(
-    branchTip.x + radial.x * CANOPY_FACE_OFFSET,
-    branchTip.y - HANG_DROP,
-    branchTip.z + radial.y * CANOPY_FACE_OFFSET,
-  );
-}
+// Keep the fruit attached to its branch-relative slot while placing its face
+// just beyond the nearest leaf layer, reducing partial foliage occlusion.
+const CANOPY_FACE_OFFSET = 0.28;
 
 function logoSize(aspect: number) {
   // A single long-edge limit makes wide wordmarks (CVS, Uber Eats, Walgreens)
@@ -62,7 +53,16 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
   const [, setLogoRevision] = useState(0);
   const { openStory, spawnPlant } = useInteraction();
   const plantSpawnedRef = useRef(false);
-  const hangingPosition = useMemo(() => getLogoHangingPosition(branchTip, index), [branchTip, index]);
+  const hangingPosition = useMemo(() => {
+    const radial = new THREE.Vector2(branchTip.x, branchTip.z);
+    if (radial.lengthSq() < 0.0001) radial.set(Math.cos(index * 2.3998), Math.sin(index * 2.3998));
+    radial.normalize();
+    return new THREE.Vector3(
+      branchTip.x + radial.x * CANOPY_FACE_OFFSET,
+      branchTip.y - HANG_DROP,
+      branchTip.z + radial.y * CANOPY_FACE_OFFSET,
+    );
+  }, [branchTip, index]);
   const hangingTilt = useMemo(
     () => ({
       x: ((index * 37) % 11 - 5) * 0.025,
@@ -249,15 +249,12 @@ export function CouponFruit({ branchTip, data, state, groundY, index, onLanded, 
         }}
       >
         {/* One transparent, aspect-correct vector silhouette for hanging and falling states. */}
-        <mesh castShadow renderOrder={2}>
+        <mesh castShadow>
           <planeGeometry args={[dimensions.width, dimensions.height]} />
           <meshBasicMaterial
             map={texture}
             transparent
             alphaTest={0.12}
-             polygonOffset
-             polygonOffsetFactor={-1}
-             polygonOffsetUnits={-1}
             side={THREE.DoubleSide}
             toneMapped={false}
           />

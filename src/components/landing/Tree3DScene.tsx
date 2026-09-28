@@ -7,7 +7,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { Tree, getBranchTips } from './tree3d/Tree';
-import { CouponFruit, getLogoHangingPosition, type CouponState } from './tree3d/CouponFruit';
+import { CouponFruit, type CouponState } from './tree3d/CouponFruit';
 import { Ground } from './tree3d/Ground';
 import { Sky } from './tree3d/Sky';
 import { COUPON_FRUITS } from './tree3d/couponDesign';
@@ -313,22 +313,18 @@ function PerfWatchdog({ onSlow }: { onSlow: () => void }) {
 
 function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boolean }) {
   const { leafCount, plantCap } = settings;
-  const visibleFruitCount = Math.min(15, COUPON_FRUITS.length);
+  const visibleFruitCount = Math.min(20, COUPON_FRUITS.length);
   // Open with a varied, recognizable mix that includes both compact emblems
   // and long wordmarks such as CVS. Every omitted brand enters through the
   // same non-repeating replacement queue after a fruit falls.
   const initialBrandIndices = useMemo(
-    () => [0, 1, 7, 23, 3, 9, 4, 6, 10, 11, 16, 24, 19, 22, 26].slice(0, visibleFruitCount),
+    () => [0, 23, 1, 16, 2, 24, 3, 9, 4, 25, 5, 12, 6, 20, 7, 21, 8, 22, 10, 11].slice(0, visibleFruitCount),
     [visibleFruitCount],
   );
 
   const branchTips = useMemo(() => {
     return getBranchTips(visibleFruitCount).map((branch) => branch.tip);
   }, [visibleFruitCount]);
-  const logoClearings = useMemo(
-    () => branchTips.map((branchTip, index) => getLogoHangingPosition(branchTip, index)),
-    [branchTips],
-  );
   const [brandIndices, setBrandIndices] = useState(() => initialBrandIndices);
   const replacementQueueRef = useRef(
     COUPON_FRUITS.map((_, index) => index).filter((index) => !initialBrandIndices.includes(index)),
@@ -351,20 +347,23 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
   }, []);
 
   const takeNextBrand = useCallback((currentBrandIndex: number) => {
-    const visible = new Set(brandIndicesRef.current);
-    let nextBrandIndex: number | undefined;
-    for (let i = 0; i < replacementQueueRef.current.length; i++) {
-      const candidate = replacementQueueRef.current.shift();
-      if (candidate === undefined) break;
-      if (!visible.has(candidate)) {
-        nextBrandIndex = candidate;
-        break;
+    if (replacementQueueRef.current.length === 0) {
+      let seed = 0x9e3779b9 ^ shuffleRoundRef.current++;
+      const nextRandom = () => {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+        return seed / 0x100000000;
+      };
+      const round = COUPON_FRUITS.map((_, index) => index);
+      for (let i = round.length - 1; i > 0; i--) {
+        const j = Math.floor(nextRandom() * (i + 1));
+        [round[i], round[j]] = [round[j], round[i]];
       }
-      replacementQueueRef.current.push(candidate);
+      if (round[0] === currentBrandIndex && round.length > 1) {
+        [round[0], round[1]] = [round[1], round[0]];
+      }
+      replacementQueueRef.current = round;
     }
-    replacementQueueRef.current.push(currentBrandIndex);
-    shuffleRoundRef.current += 1;
-    return nextBrandIndex ?? currentBrandIndex;
+    return replacementQueueRef.current.shift() ?? currentBrandIndex;
   }, []);
 
   useEffect(() => {
@@ -502,7 +501,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
 
       <Sky isMobile={isMobile} />
 
-      <Tree leafCount={leafCount} lowPower={settings.tier === 'low'} logoClearings={logoClearings} />
+      <Tree leafCount={leafCount} lowPower={settings.tier === 'low'} />
       <Ground y={GROUND_Y} isMobile={isMobile} />
       <HitZones />
       {settings.fireflies && <Fireflies count={settings.fireflyCount} />}
