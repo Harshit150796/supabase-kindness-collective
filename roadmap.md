@@ -101,4 +101,4 @@
 - [x] Replace large unverified people photography in the homepage CTA, About hero, and How It Works hero with animated product visuals.
 - [x] Keep the homepage dignity statement only in the WordReveal section.
 - [x] Audit Gold Coins credits and remove the unsupported donation-success promise.
-- [ ] Verify replacement visuals at 390px and 1440px, plus overflow, console, and build status.
+- [x] Verify replacement visuals at 390px and 1440px, plus overflow, runtime errors, and build status.
