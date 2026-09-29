@@ -5,7 +5,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
-import processPhoto from '@/assets/featured/children-of-heroes.jpeg';
+import { ProductTraceVisual } from '@/components/marketing/ProductTraceVisual';
 
 const donorSteps = [
   { icon: UserPlus, title: 'Choose a fundraiser', description: 'Browse active campaigns and decide where your support should go.' },
@@ -25,7 +25,7 @@ export default function HowItWorks() {
       <SEO title="How CouponDonation Works — Donate, Verify, Redeem" description="See how donations become retailer-specific coupons through a transparent path for donors and approved recipients." path="/how-it-works" jsonLd={breadcrumbJsonLd([{ name:'Home', path:'/' },{ name:'How It Works', path:'/how-it-works' }])}/>
       <Navbar />
       <main>
-        <section className="py-24 md:py-36"><div className="container mx-auto grid gap-10 px-4 lg:grid-cols-[1fr_.8fr] lg:items-center"><div><LineReveal><h1 className="max-w-5xl font-display text-6xl font-normal leading-none text-foreground md:text-8xl">One donation. A visible path to use.</h1></LineReveal><Reveal delay={0.1}><p className="mt-8 max-w-2xl text-xl leading-relaxed text-muted-foreground">Donors choose the cause and retailer. Approved recipients receive restricted coupon value for everyday needs.</p></Reveal></div><Reveal delay={.15}><img src={processPhoto} alt="Community members spending time together" className="aspect-[4/3] w-full rounded-[1.5rem] object-cover"/></Reveal></div></section>
+        <section className="py-24 md:py-36"><div className="container mx-auto grid gap-10 px-4 lg:grid-cols-[1fr_.8fr] lg:items-center"><div><LineReveal><h1 className="max-w-5xl font-display text-6xl font-normal leading-none text-foreground md:text-8xl">One donation. A visible path to use.</h1></LineReveal><Reveal delay={0.1}><p className="mt-8 max-w-2xl text-xl leading-relaxed text-muted-foreground">Donors choose the cause and retailer. Approved recipients receive restricted coupon value for everyday needs.</p></Reveal></div><ProductTraceVisual mode="trace"/></div></section>
         <ProcessSection title="For people ready to give." steps={donorSteps} action="Start donating" onAction={()=>navigate('/donate')} />
         <ProcessSection title="For people seeking support." steps={recipientSteps} action="Apply for support" onAction={()=>navigate('/auth?mode=signup&role=recipient')} alternate />
       </main>

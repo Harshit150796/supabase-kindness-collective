@@ -22,9 +22,9 @@ import { Reveal } from '@/components/ui/editorial-motion';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
+import { ProductTraceVisual } from '@/components/marketing/ProductTraceVisual';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import harshitPhoto from '@/assets/harshit-agrawal.png';
-import communityPhoto from '@/assets/featured/children-playing-hope.webp';
 
 const journey = [
   { icon: HeartHandshake, label: 'Donation', text: 'Support a public fundraiser.' },
@@ -146,8 +146,8 @@ export default function About() {
                   CouponDonation is built to make donations transparent and trackable—from a donor’s choice to a coupon a recipient can use.
                 </p>
               </Reveal>
-              <Reveal className="flex flex-col justify-end rounded-[1.5rem] bg-secondary p-7 lg:col-span-5 lg:p-9" delay={0.12}>
-                <img src={communityPhoto} alt="A community gathering" className="mb-7 aspect-[4/3] w-full rounded-[1.25rem] object-cover" loading="eager" />
+              <Reveal className="flex flex-col justify-end lg:col-span-5" delay={0.12}>
+                <ProductTraceVisual mode="receipt" className="mb-7" />
                 <p className="text-base leading-relaxed text-muted-foreground">
                   Donors deserve to know where their money goes. Recipients deserve useful support with dignity. We designed one system to serve both.
                 </p>

@@ -13,6 +13,6 @@
 - Marketing pages alternate neutral, soft-green, and deep-forest bands; tonal panels have no borders or shadows, and hairlines are for tables.
 - Small uppercase eyebrow headings, decorative pills, colored icon circles, gradient text, glow shadows, and card-on-card compositions are not part of the visual language.
 - Shared motion uses bold translate/scale/clip/parallax in full mode; gentle mode stays visible with opacity and at most 16px rise.
-- Public photos must be local and cannot imply recipient identity without verified provenance.
+- Public photos stay local; when people-photo provenance or consent is unverified, use shared coupon, receipt, or trace visuals instead.
 - Preserve the two-color CouponDonation wordmark exactly as `#2e7d32` for Coupon and `#1565c0` for Donation.
 - The hero's rotating “CouponDonation is …” uppercase kicker is a founder-approved exception to the no-eyebrow rule and must not be removed.
