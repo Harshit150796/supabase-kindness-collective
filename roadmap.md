@@ -93,6 +93,12 @@
 - [x] Upgrade shared surfaces and motion, including clearly visible gentle-mode reveals.
 - [x] Recompose homepage sections in order with live data, tonal/deep bands, imagery, product visuals, and richer motion.
 - [x] Upgrade About, How It Works, Stories, FAQ, Blog, article, fundraiser, and story detail pages at page boundaries.
-- [x] Restore Gold Coins messaging without an amount because no donation-linked credit is currently stored.
+- [x] Remove the success-page Gold Coins promise after confirming no donation-linked credit mechanism exists.
 - [x] Capture full/reduced-motion proof, responsive section screenshots, overflow, console, and build checks.
 - [ ] Measure LCP after the live tree canvas renders reliably in automated Chromium.
+
+## Founder photography and rewards corrections
+- [x] Replace large unverified people photography in the homepage CTA, About hero, and How It Works hero with animated product visuals.
+- [x] Keep the homepage dignity statement only in the WordReveal section.
+- [x] Audit Gold Coins credits and remove the unsupported donation-success promise.
+- [ ] Verify replacement visuals at 390px and 1440px, plus overflow, console, and build status.

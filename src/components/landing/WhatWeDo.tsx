@@ -456,12 +456,6 @@ export function WhatWeDo() {
           </div>
         </div>
 
-        <div className="mx-auto my-10 flex max-w-2xl flex-col items-center gap-5 text-center md:my-12">
-          <span aria-hidden="true" className="h-px w-12 bg-primary/30" />
-          <p className="text-xl font-medium leading-relaxed text-foreground md:text-2xl">We don't track the person. We track the money.</p>
-          <span aria-hidden="true" className="h-px w-12 bg-primary/30" />
-        </div>
-
         <div className="grid border-y border-border sm:grid-cols-2 sm:divide-x sm:divide-border">
           <Link to="/donate" className="group flex min-h-32 items-center gap-4 border-b border-border p-6 transition-colors hover:bg-primary/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:border-b-0">
             <DonateDoorIcon />
