@@ -27,7 +27,6 @@ const LOGO_PROBE_RES = 256;
 type LogoEntry = {
   status: 'loading' | 'ready' | 'error';
   canvas?: HTMLCanvasElement;
-  dataUrl?: string;
   aspect: number;
   /** Fraction of the tightly cropped bounds occupied by visible artwork. */
   alphaCoverage: number;
@@ -133,7 +132,6 @@ function loadLogo(slug: string): LogoEntry {
         crop.height,
       );
       entry.canvas = crop;
-      entry.dataUrl = crop.toDataURL('image/png');
       entry.aspect = crop.width / crop.height;
        entry.alphaCoverage = alphaSum / Math.max(1, w * h);
        entry.luminance = luminanceSum / Math.max(1, alphaSum);
