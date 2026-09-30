@@ -23,6 +23,7 @@ export interface CouponData {
 // then shared by every texture and HTML face.
 // ---------------------------------------------------------------------------
 const LOGO_RES = 1024;
+const LOGO_PROBE_RES = 256;
 type LogoEntry = {
   status: 'loading' | 'ready' | 'error';
   canvas?: HTMLCanvasElement;
@@ -69,20 +70,23 @@ function loadLogo(slug: string): LogoEntry {
     .decode()
     .then(() => {
       const sourceAspect = Math.max(0.08, img.naturalWidth / Math.max(1, img.naturalHeight));
-      const full = document.createElement('canvas');
-      full.width = sourceAspect >= 1 ? LOGO_RES : Math.max(1, Math.round(LOGO_RES * sourceAspect));
-      full.height = sourceAspect >= 1 ? Math.max(1, Math.round(LOGO_RES / sourceAspect)) : LOGO_RES;
-      const fctx = full.getContext('2d');
-      if (!fctx) throw new Error('2d canvas unavailable');
-      fctx.imageSmoothingEnabled = true;
-      fctx.imageSmoothingQuality = 'high';
-      fctx.drawImage(img, 0, 0, full.width, full.height);
-      const { data } = fctx.getImageData(0, 0, full.width, full.height);
-       let minX = full.width, minY = full.height, maxX = -1, maxY = -1;
+      // Measure alpha on a small probe, then perform the final raster at 1024px.
+      // This removes millions of first-load pixel iterations without lowering
+      // the texture resolution or altering the original vector proportions.
+      const probe = document.createElement('canvas');
+      probe.width = sourceAspect >= 1 ? LOGO_PROBE_RES : Math.max(1, Math.round(LOGO_PROBE_RES * sourceAspect));
+      probe.height = sourceAspect >= 1 ? Math.max(1, Math.round(LOGO_PROBE_RES / sourceAspect)) : LOGO_PROBE_RES;
+      const probeCtx = probe.getContext('2d');
+      if (!probeCtx) throw new Error('2d canvas unavailable');
+      probeCtx.imageSmoothingEnabled = true;
+      probeCtx.imageSmoothingQuality = 'high';
+      probeCtx.drawImage(img, 0, 0, probe.width, probe.height);
+      const { data } = probeCtx.getImageData(0, 0, probe.width, probe.height);
+       let minX = probe.width, minY = probe.height, maxX = -1, maxY = -1;
        let alphaSum = 0, luminanceSum = 0;
-      for (let y = 0; y < full.height; y++) {
-        for (let x = 0; x < full.width; x++) {
-           const offset = (y * full.width + x) * 4;
+      for (let y = 0; y < probe.height; y++) {
+        for (let x = 0; x < probe.width; x++) {
+           const offset = (y * probe.width + x) * 4;
            const alpha = data[offset + 3] / 255;
            if (alpha > 8 / 255) {
             if (x < minX) minX = x;
@@ -106,8 +110,28 @@ function loadLogo(slug: string): LogoEntry {
       crop.height = Math.round(h * k);
       const cctx = crop.getContext('2d');
       if (!cctx) throw new Error('2d canvas unavailable');
+      const full = document.createElement('canvas');
+      full.width = sourceAspect >= 1 ? LOGO_RES : Math.max(1, Math.round(LOGO_RES * sourceAspect));
+      full.height = sourceAspect >= 1 ? Math.max(1, Math.round(LOGO_RES / sourceAspect)) : LOGO_RES;
+      const fctx = full.getContext('2d');
+      if (!fctx) throw new Error('2d canvas unavailable');
+      fctx.imageSmoothingEnabled = true;
+      fctx.imageSmoothingQuality = 'high';
+      fctx.drawImage(img, 0, 0, full.width, full.height);
+      const scaleX = full.width / probe.width;
+      const scaleY = full.height / probe.height;
       cctx.imageSmoothingQuality = 'high';
-      cctx.drawImage(full, minX, minY, w, h, 0, 0, crop.width, crop.height);
+      cctx.drawImage(
+        full,
+        minX * scaleX,
+        minY * scaleY,
+        w * scaleX,
+        h * scaleY,
+        0,
+        0,
+        crop.width,
+        crop.height,
+      );
       entry.canvas = crop;
       entry.dataUrl = crop.toDataURL('image/png');
       entry.aspect = crop.width / crop.height;

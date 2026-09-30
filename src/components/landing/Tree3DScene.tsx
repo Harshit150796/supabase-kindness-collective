@@ -320,7 +320,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
   const initialBrandIndices = useMemo(
     // Opening view by slot: Walmart/CVS low; Target/McDonald's/Instacart mid;
     // Amazon high. Wider marks remain separated while rear slots retain orbit coverage.
-    () => [0, 23, 2, 11, 14, 3, 6, 9, 26, 4, 24, 25, 1, 20, 7, 19, 12, 21].slice(0, visibleFruitCount),
+    () => [2, 11, 14, 26, 24, 0, 3, 9, 23, 4, 25, 5, 1, 20, 7, 6, 12, 21].slice(0, visibleFruitCount),
     [visibleFruitCount],
   );
 
@@ -449,7 +449,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
 
   // Auto drops on timer
   useEffect(() => {
-    if (donations.length === 0) return;
+    if (!logosReady || donations.length === 0) return;
     const interval = setInterval(() => {
       setStates((prev) => {
         const hangingIdx = prev.map((s, i) => (s.phase === 'hanging' ? i : -1)).filter((i) => i >= 0);
@@ -463,11 +463,11 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
       });
     }, 4000);
     return () => clearInterval(interval);
-  }, [donations]);
+  }, [donations, logosReady]);
 
   // Shake event → cascade drop 3-5 hanging coupons
   useEffect(() => {
-    if (!shakeEvent) return;
+    if (!logosReady || !shakeEvent) return;
     setStates((prev) => {
       const hangingIdx = prev.map((s, i) => (s.phase === 'hanging' ? i : -1)).filter((i) => i >= 0);
       if (hangingIdx.length === 0) return prev;
@@ -486,7 +486,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
       return next;
     });
     bumpWind(0.5);
-  }, [shakeEvent, donations, bumpWind]);
+  }, [shakeEvent, donations, bumpWind, logosReady]);
 
   // On phones only the most recently landed coupon shows its donor label,
   // so overlapping cards can never stack on a narrow screen.
