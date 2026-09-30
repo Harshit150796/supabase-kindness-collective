@@ -317,12 +317,19 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
   // Open with 18 distinct, instantly recognizable brands — no two marks from the
   // same family (Uber / Uber Eats) hang at the same time. Every omitted brand
   // enters through the same non-repeating replacement queue after a fruit falls.
-  const initialBrandIndices = useMemo(
-    // Opening view by slot: Walmart/CVS low; Target/McDonald's/Instacart mid;
-    // Amazon high. Wider marks remain separated while rear slots retain orbit coverage.
-    () => [2, 11, 14, 26, 24, 0, 3, 9, 23, 4, 25, 5, 1, 20, 7, 6, 12, 21].slice(0, visibleFruitCount),
-    [visibleFruitCount],
-  );
+  const initialBrandIndices = useMemo(() => {
+    // Opening-facing slots lead with distinct red, blue, green, and orange
+    // silhouettes. Wider marks stay separated while rear slots retain depth.
+    const openingLogos = [
+      'walmart', 'cvs', 'target', 'dominos', 'aldi',
+      'instacart', 'mcdonalds', 'starbucks', 'amazon', 'home-depot', 'uber', 'publix',
+      'doordash', 'walgreens', 'taco-bell', 'whole-foods', 'costco', 'lyft',
+    ];
+    return openingLogos
+      .map((logo) => COUPON_FRUITS.findIndex((fruit) => fruit.logo === logo))
+      .filter((index) => index >= 0)
+      .slice(0, visibleFruitCount);
+  }, [visibleFruitCount]);
 
 
   const branchTips = useMemo(() => {
