@@ -1,10 +1,10 @@
 # Project Architecture Rules
 
-- Tree brand fruits use one transparent WebGL logo-silhouette path for every animation phase, avoiding divergent desktop and mobile faces.
-- Tree logo slots stay spatially stable while brand identities rotate through a non-repeating queue, preserving interaction state and canopy balance.
-- Tree logo fruits use 18 deterministic lower/middle/upper canopy slots with an initial front bias, complete orbit coverage, and no duplicate brand hanging at once.
-- Hero-tree logos preserve original vector colors and proportions; compact official emblems are preferred when recognizable, while true wordmark-led brands remain wordmarks.
-- Hero-tree canopy anchors carry deterministic slot-specific leaf clearance and vertical correction, because the baked foliage shell has unequal depth.
+- Tree fruit animations share one transparent WebGL logo path.
+- Tree slots stay stable while brands rotate through a non-repeating queue.
+- Use 18 deterministic canopy slots with front bias, orbit coverage, and no duplicate hanging brand.
+- Preserve original logo colors/proportions; prefer recognizable emblems unless a brand is wordmark-led.
+- Tree anchors use slot-specific leaf clearance and vertical correction.
 
 ## Design System Rules
 
@@ -16,3 +16,4 @@
 - Public photos stay local; when people-photo provenance or consent is unverified, use shared coupon, receipt, or trace visuals instead.
 - Preserve the two-color CouponDonation wordmark exactly as `#2e7d32` for Coupon and `#1565c0` for Donation.
 - The hero's rotating “CouponDonation is …” uppercase kicker is a founder-approved exception to the no-eyebrow rule and must not be removed.
+- The homepage Live Donation Tracking chart uses vertical bars in each retailer's own brand colour — a founder-approved exception to the no-warm-colour rule.
