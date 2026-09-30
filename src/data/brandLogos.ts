@@ -28,14 +28,14 @@ export const brandLogos: Record<string, BrandInfo> = {
   Aldi: { name: 'Aldi', logo: logo('aldi.us.png'), color: '#00529B', category: 'grocery' },
   // Food Delivery
   Grubhub: { name: 'Grubhub', logo: logo('grubhub.com.png'), color: '#F63440', category: 'food-delivery' },
-  Instacart: { name: 'Instacart', logo: logo('instacart.com.png'), color: '#43B02A', category: 'food-delivery' },
+  Instacart: { name: 'Instacart', logo: '/brand-logos/instacart.svg', color: '#0AAD0A', category: 'food-delivery' },
   Postmates: { name: 'Postmates', logo: logo('postmates.com.png'), color: '#000000', category: 'food-delivery' },
   // Retail
   BestBuy: { name: 'Best Buy', logo: logo('bestbuy.com.png'), color: '#0046BE', category: 'retail' },
   HomeDepot: { name: 'Home Depot', logo: logo('homedepot.com.png'), color: '#F96302', category: 'retail' },
   Lowes: { name: "Lowe's", logo: logo('lowes.com.png'), color: '#004990', category: 'retail' },
   // Pharmacy
-  CVS: { name: 'CVS', logo: logo('cvs.com.png'), color: '#CC0000', category: 'pharmacy' },
+  CVS: { name: 'CVS', logo: '/brand-logos/cvs.svg', color: '#CC0000', category: 'pharmacy' },
   Walgreens: { name: 'Walgreens', logo: logo('walgreens.com.png'), color: '#E31837', category: 'pharmacy' },
   RiteAid: { name: 'Rite Aid', logo: logo('riteaid.com.png'), color: '#00539B', category: 'pharmacy' },
   // Coffee/Restaurant
