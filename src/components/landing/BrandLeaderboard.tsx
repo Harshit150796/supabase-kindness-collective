@@ -1,5 +1,4 @@
 import { Clock, Heart } from 'lucide-react';
-import { useInView } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { brandLogos, type BrandInfo } from '@/data/brandLogos';
@@ -75,12 +74,25 @@ function DonationAvatar({ donation }: { donation: RecentDonation }) {
 export function BrandLeaderboard() {
   const stats = useLandingStats();
   const chartRef = useRef<HTMLDivElement>(null);
-  const chartVisible = useInView(chartRef, { once: true, amount: 0.1 });
+  const [chartVisible, setChartVisible] = useState(false);
   const motionPreference = useMotionPreference();
   const leaderboardData = (stats?.brands ?? []).slice(0, 6).map((brand) => ({ name: brand.name, donations: Math.round(brand.total) }));
   const animatedData = leaderboardData.map((brand) => ({ ...brand, donations: chartVisible ? brand.donations : 0 }));
   const [recent, setRecent] = useState<RecentDonation[]>([]);
   const [donationIndex, setDonationIndex] = useState(0);
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setChartVisible(true);
+        observer.disconnect();
+      }
+    }, { threshold: 0.1 });
+    observer.observe(chart);
+    return () => observer.disconnect();
+  }, [leaderboardData.length]);
 
   useEffect(() => {
     let alive = true;
