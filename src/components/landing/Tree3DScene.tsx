@@ -322,7 +322,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
     // silhouettes. Wider marks stay separated while rear slots retain depth.
     const openingLogos = [
       'walmart', 'cvs', 'target', 'dominos', 'aldi',
-      'instacart', 'mcdonalds', 'starbucks', 'amazon', 'home-depot', 'uber', 'publix',
+      'starbucks', 'mcdonalds', 'instacart', 'amazon', 'home-depot', 'uber', 'publix',
       'doordash', 'walgreens', 'taco-bell', 'whole-foods', 'costco', 'lyft',
     ];
     return openingLogos

@@ -26,7 +26,7 @@ const CANOPY_BANDS = [
 // the local leaf depth and separating silhouettes in the opening projection.
 const SLOT_VISIBILITY = [
   { faceOffset: 0.38, y: -0.04 },
-  { faceOffset: 0.42, y: 0.08 },
+  { faceOffset: 0.50, y: 0.08 },
   { faceOffset: 0.36, y: 0.14 },
   { faceOffset: 0.42, y: -0.08 },
   { faceOffset: 0.50, y: 0.32 },

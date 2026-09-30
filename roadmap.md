@@ -120,3 +120,9 @@
 - [x] Remove Trader Joe's, eBay, and Postmates from every tree animation state.
 - [x] Rebalance 18 opening brands across the front canopy by color and mark width.
 - [ ] Verify the opening composition, orbit, and fruit lifecycle at 390px and 1440px in live WebGL.
+
+## Official Instacart and CVS tree artwork
+- [x] Replace the approximated Instacart carrot with Instacart's current official full-color SVG.
+- [x] Replace the approximated CVS mark with the official CVS heart and letterforms.
+- [x] Move Instacart to a central front slot and increase CVS leaf clearance and optical size.
+- [ ] Verify both marks through opening, movement, fall, and regrowth at 390px and 1440px in live WebGL.
