@@ -75,7 +75,7 @@ function DonationAvatar({ donation }: { donation: RecentDonation }) {
 export function BrandLeaderboard() {
   const stats = useLandingStats();
   const chartRef = useRef<HTMLDivElement>(null);
-  const chartVisible = useInView(chartRef, { once: true, amount: 0.35 });
+  const chartVisible = useInView(chartRef, { once: true, amount: 0.1 });
   const motionPreference = useMotionPreference();
   const leaderboardData = (stats?.brands ?? []).slice(0, 6).map((brand) => ({ name: brand.name, donations: Math.round(brand.total) }));
   const animatedData = leaderboardData.map((brand) => ({ ...brand, donations: chartVisible ? brand.donations : 0 }));
