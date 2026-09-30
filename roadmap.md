@@ -102,3 +102,8 @@
 - [x] Keep the homepage dignity statement only in the WordReveal section.
 - [x] Audit Gold Coins credits and remove the unsupported donation-success promise.
 - [x] Verify replacement visuals at 390px and 1440px, plus overflow, runtime errors, and build status.
+
+## Live Donation Tracking restoration
+- [x] Restore the vertical retailer chart and donation row without former card styling.
+- [x] Resolve multi-retailer avatar logos safely with an initial or heart fallback.
+- [ ] Verify chart growth, responsive fit, avatar fallback, console output, and build status.
