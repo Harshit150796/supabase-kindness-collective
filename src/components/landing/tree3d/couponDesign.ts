@@ -33,11 +33,14 @@ type LogoEntry = {
   /** Alpha-weighted perceived luminance, used only to choose the outside keyline. */
   luminance: number;
   listeners: Set<() => void>;
+  settled: Promise<void>;
+  resolveSettled: () => void;
 };
 const logos = new Map<string, LogoEntry>();
 
 function finish(entry: LogoEntry, status: 'ready' | 'error') {
   entry.status = status;
+  entry.resolveSettled();
   entry.listeners.forEach((fn) => fn());
   entry.listeners.clear();
 }
@@ -45,12 +48,18 @@ function finish(entry: LogoEntry, status: 'ready' | 'error') {
 function loadLogo(slug: string): LogoEntry {
   const existing = logos.get(slug);
   if (existing) return existing;
+  let resolveSettled = () => undefined;
+  const settled = new Promise<void>((resolve) => {
+    resolveSettled = resolve;
+  });
   const entry: LogoEntry = {
     status: 'loading',
     aspect: 2.44,
     alphaCoverage: 0.52,
     luminance: 0.38,
     listeners: new Set(),
+    settled,
+    resolveSettled,
   };
   logos.set(slug, entry);
   const img = new Image();
@@ -237,6 +246,42 @@ export const COUPON_FRUITS: CouponData[] = [
   { brand: 'Costco', logo: 'costco', color: '#E31837', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Home Depot', logo: 'home-depot', color: '#F96302', amount: 10, mark: 'emblem', scale: 0.92, sizeFactor: 0.825, edgeTone: 'light', edgeRadius: 5 },
 ];
+
+export interface CouponLogoDiagnostics {
+  ready: string[];
+  failed: string[];
+  invalid: string[];
+}
+
+/**
+ * Resolves only after every local mark has either decoded to final measured
+ * proportions or received its brand-specific fallback proportions. The tree
+ * can render immediately, while fruit meshes wait for this one shared gate.
+ */
+export async function preloadCouponLogos(): Promise<CouponLogoDiagnostics> {
+  const entries = COUPON_FRUITS.map((fruit) => ({ fruit, entry: loadLogo(fruit.logo) }));
+  await Promise.all(entries.map(({ entry }) => entry.settled));
+
+  const ready: string[] = [];
+  const failed: string[] = [];
+  const invalid: string[] = [];
+  entries.forEach(({ fruit, entry }) => {
+    if (entry.status === 'error') {
+      // A genuine asset failure still gets stable, brand-appropriate geometry.
+      entry.aspect = fruit.mark === 'emblem' ? 1 : 2.44;
+      entry.alphaCoverage = fruit.mark === 'emblem' ? 0.62 : 0.52;
+      failed.push(fruit.logo);
+      return;
+    }
+    ready.push(fruit.logo);
+    if (
+      !Number.isFinite(entry.aspect) || entry.aspect <= 0 ||
+      !Number.isFinite(entry.alphaCoverage) || entry.alphaCoverage <= 0 ||
+      !entry.canvas || entry.canvas.width <= 0 || entry.canvas.height <= 0
+    ) invalid.push(fruit.logo);
+  });
+  return { ready, failed, invalid };
+}
 
 // Preload + decode the complete local brand set once at module initialisation.
 if (typeof window !== 'undefined') COUPON_FRUITS.forEach((f) => loadLogo(f.logo));

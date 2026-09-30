@@ -77,7 +77,8 @@ export function getBranchTips(count = 18): BranchTip[] {
       angles.push(THREE.MathUtils.lerp(-band.frontSpan, band.frontSpan, t) + band.phase);
     }
     for (let i = 0; i < rearCount; i++) {
-      const t = i / (rearCount - 1);
+      // The lower band has one rear slot; centre it rather than producing 0 / 0.
+      const t = rearCount === 1 ? 0.5 : i / (rearCount - 1);
       angles.push(THREE.MathUtils.lerp(2.15, 4.13, t) - band.phase);
     }
     angles.forEach((theta, index) => {

@@ -10,7 +10,7 @@ import { Tree, getBranchTips } from './tree3d/Tree';
 import { CouponFruit, type CouponState } from './tree3d/CouponFruit';
 import { Ground } from './tree3d/Ground';
 import { Sky } from './tree3d/Sky';
-import { COUPON_FRUITS } from './tree3d/couponDesign';
+import { COUPON_FRUITS, preloadCouponLogos } from './tree3d/couponDesign';
 import { useFallingDonations } from '@/hooks/useFallingDonations';
 import { InteractionProvider, useInteraction, type TimeOfDay } from './tree3d/InteractionContext';
 import { HitZones } from './tree3d/HitZones';
@@ -318,9 +318,9 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
   // same family (Uber / Uber Eats) hang at the same time. Every omitted brand
   // enters through the same non-repeating replacement queue after a fruit falls.
   const initialBrandIndices = useMemo(
-    // Compact marks occupy tighter inner/front slots; wide wordmarks use the
-    // separated side/front slots. Aldi now opens in a clear front slot.
-    () => [0, 23, 2, 14, 4, 24, 3, 9, 11, 25, 5, 12, 1, 20, 7, 21, 6, 19].slice(0, visibleFruitCount),
+    // Opening view by slot: Walmart/CVS low; Target/McDonald's/Instacart mid;
+    // Amazon high. Wider marks remain separated while rear slots retain orbit coverage.
+    () => [0, 23, 2, 11, 14, 3, 6, 9, 26, 4, 24, 25, 1, 20, 7, 19, 12, 21].slice(0, visibleFruitCount),
     [visibleFruitCount],
   );
 
@@ -328,6 +328,28 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
   const branchTips = useMemo(() => {
     return getBranchTips(visibleFruitCount);
   }, [visibleFruitCount]);
+  const [logosReady, setLogosReady] = useState(false);
+  useEffect(() => {
+    let active = true;
+    preloadCouponLogos().then((diagnostics) => {
+      if (!active) return;
+      const canvas = document.querySelector<HTMLCanvasElement>('canvas');
+      if (canvas) {
+        canvas.dataset.treeLogosReady = 'true';
+        canvas.dataset.treeLogoFailures = diagnostics.failed.join('|');
+        canvas.dataset.treeLogoInvalid = diagnostics.invalid.join('|');
+        canvas.dataset.treeSlotsFinite = String(
+          branchTips.every(({ tip, faceOffset }) =>
+            [tip.x, tip.y, tip.z, faceOffset].every(Number.isFinite),
+          ),
+        );
+      }
+      setLogosReady(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, [branchTips]);
   const [brandIndices, setBrandIndices] = useState(() => initialBrandIndices);
   const replacementQueueRef = useRef(
     COUPON_FRUITS.map((_, index) => index).filter((index) => !initialBrandIndices.includes(index)),
@@ -526,7 +548,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
       <PlantsLayer cap={plantCap} />
 
 
-      {brandIndices.map((brandIndex, i) => (
+      {logosReady && brandIndices.map((brandIndex, i) => (
         <CouponFruit
           key={i}
           index={i}
