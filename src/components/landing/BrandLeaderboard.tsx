@@ -78,6 +78,7 @@ export function BrandLeaderboard() {
   const chartVisible = useInView(chartRef, { once: true, amount: 0.35 });
   const motionPreference = useMotionPreference();
   const leaderboardData = (stats?.brands ?? []).slice(0, 6).map((brand) => ({ name: brand.name, donations: Math.round(brand.total) }));
+  const animatedData = leaderboardData.map((brand) => ({ ...brand, donations: chartVisible ? brand.donations : 0 }));
   const [recent, setRecent] = useState<RecentDonation[]>([]);
   const [donationIndex, setDonationIndex] = useState(0);
 
@@ -103,13 +104,13 @@ export function BrandLeaderboard() {
         <div className="flex items-center gap-2 text-xs text-muted-foreground md:text-sm"><span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse md:h-2 md:w-2" />Real-time</div>
       </div>
       {leaderboardData.length ? <div ref={chartRef} className="h-[240px] w-full min-w-0 md:h-[320px]" data-chart-visible={chartVisible ? 'true' : 'false'}>
-        <ResponsiveContainer width="100%" height="100%"><BarChart data={leaderboardData} margin={{ top: 30, right: 4, bottom: 70, left: 4 }}>
+        <ResponsiveContainer width="100%" height="100%"><BarChart data={animatedData} margin={{ top: 30, right: 4, bottom: 70, left: 4 }}>
           <XAxis dataKey="name" axisLine={false} tickLine={false} tick={<CustomXAxisTick />} interval={0} height={70} /><YAxis hide />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
-          {chartVisible && <Bar dataKey="donations" radius={[8, 8, 0, 0]} maxBarSize={48} isAnimationActive animationBegin={0} animationDuration={motionPreference === 'full' ? 1500 : 900} animationEasing="ease-out">
+          <Bar dataKey="donations" radius={[8, 8, 0, 0]} maxBarSize={48} isAnimationActive animationBegin={0} animationDuration={motionPreference === 'full' ? 1500 : 900} animationEasing="ease-out">
             <LabelList dataKey="donations" content={<CustomLabel />} />
             {leaderboardData.map((entry, index) => { const brand = findBrand(entry.name); return <Cell key={entry.name} fill={brand?.color || 'hsl(var(--primary))'} className="transition-opacity duration-500 hover:opacity-80" style={{ filter: index === 0 ? brandGlow(brand?.color) : 'none' }} />; })}
-          </Bar>}
+          </Bar>
         </BarChart></ResponsiveContainer>
       </div> : <p className="py-16 text-center text-muted-foreground">Retailer totals will appear after the first completed donation.</p>}
       {latestDonation && <div className="mt-3 border-t border-border pt-4 md:mt-4"><div key={donationIndex} className="flex min-w-0 items-center gap-2 py-2.5 animate-fade-in md:gap-3 md:py-3">
