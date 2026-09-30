@@ -5,6 +5,7 @@
 - Use 18 deterministic canopy slots with front bias, orbit coverage, and no duplicate hanging brand.
 - Preserve original logo colors/proportions; prefer recognizable emblems unless a brand is wordmark-led.
 - Tree anchors use slot-specific leaf clearance and vertical correction.
+- Tree logo meshes mount only after the shared local-logo preload settles, preventing first-frame fallback distortion.
 
 ## Design System Rules
 

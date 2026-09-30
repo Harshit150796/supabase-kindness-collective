@@ -107,3 +107,9 @@
 - [x] Restore the vertical retailer chart and donation row without former card styling.
 - [x] Resolve multi-retailer avatar logos safely with an initial or heart fallback.
 - [x] Verify chart growth, responsive fit, avatar fallback, console output, and build status.
+
+## Hero tree opening-logo optimization
+- [x] Fix the invalid single rear slot and guarantee finite positions for all 18 fruits.
+- [x] Gate logo meshes on one shared preload so first paint uses final proportions and artwork.
+- [x] Restore a complete pointed Instacart carrot and curate the requested brands across the opening canopy.
+- [ ] Verify cold-load opening, full orbit, falling/regrowth, and 390px/1440px rendering in live WebGL.

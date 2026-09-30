@@ -30,11 +30,11 @@ const SLOT_VISIBILITY = [
   { faceOffset: 0.36, y: 0.14 },
   { faceOffset: 0.42, y: -0.08 },
   { faceOffset: 0.50, y: 0.32 },
-  { faceOffset: 0.48, y: 0.35 },
-  { faceOffset: 0.38, y: 0.05 },
-  { faceOffset: 0.36, y: 0.16 },
-  { faceOffset: 0.36, y: -0.12 },
-  { faceOffset: 0.42, y: 0.08 },
+  { faceOffset: 0.54, y: 0.35 },
+  { faceOffset: 0.48, y: 0.05 },
+  { faceOffset: 0.48, y: 0.16 },
+  { faceOffset: 0.48, y: -0.12 },
+  { faceOffset: 0.52, y: 0.08 },
   { faceOffset: 0.50, y: 0.40 },
   { faceOffset: 0.52, y: -0.18 },
   { faceOffset: 0.38, y: -0.06 },
@@ -77,7 +77,8 @@ export function getBranchTips(count = 18): BranchTip[] {
       angles.push(THREE.MathUtils.lerp(-band.frontSpan, band.frontSpan, t) + band.phase);
     }
     for (let i = 0; i < rearCount; i++) {
-      const t = i / (rearCount - 1);
+      // The lower band has one rear slot; centre it rather than producing 0 / 0.
+      const t = rearCount === 1 ? 0.5 : i / (rearCount - 1);
       angles.push(THREE.MathUtils.lerp(2.15, 4.13, t) - band.phase);
     }
     angles.forEach((theta, index) => {

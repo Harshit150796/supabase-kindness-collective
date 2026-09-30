@@ -23,21 +23,24 @@ export interface CouponData {
 // then shared by every texture and HTML face.
 // ---------------------------------------------------------------------------
 const LOGO_RES = 1024;
+const LOGO_PROBE_RES = 256;
 type LogoEntry = {
   status: 'loading' | 'ready' | 'error';
   canvas?: HTMLCanvasElement;
-  dataUrl?: string;
   aspect: number;
   /** Fraction of the tightly cropped bounds occupied by visible artwork. */
   alphaCoverage: number;
   /** Alpha-weighted perceived luminance, used only to choose the outside keyline. */
   luminance: number;
   listeners: Set<() => void>;
+  settled: Promise<void>;
+  resolveSettled: () => void;
 };
 const logos = new Map<string, LogoEntry>();
 
 function finish(entry: LogoEntry, status: 'ready' | 'error') {
   entry.status = status;
+  entry.resolveSettled();
   entry.listeners.forEach((fn) => fn());
   entry.listeners.clear();
 }
@@ -45,12 +48,18 @@ function finish(entry: LogoEntry, status: 'ready' | 'error') {
 function loadLogo(slug: string): LogoEntry {
   const existing = logos.get(slug);
   if (existing) return existing;
+  let resolveSettled = () => undefined;
+  const settled = new Promise<void>((resolve) => {
+    resolveSettled = resolve;
+  });
   const entry: LogoEntry = {
     status: 'loading',
     aspect: 2.44,
     alphaCoverage: 0.52,
     luminance: 0.38,
     listeners: new Set(),
+    settled,
+    resolveSettled,
   };
   logos.set(slug, entry);
   const img = new Image();
@@ -60,20 +69,23 @@ function loadLogo(slug: string): LogoEntry {
     .decode()
     .then(() => {
       const sourceAspect = Math.max(0.08, img.naturalWidth / Math.max(1, img.naturalHeight));
-      const full = document.createElement('canvas');
-      full.width = sourceAspect >= 1 ? LOGO_RES : Math.max(1, Math.round(LOGO_RES * sourceAspect));
-      full.height = sourceAspect >= 1 ? Math.max(1, Math.round(LOGO_RES / sourceAspect)) : LOGO_RES;
-      const fctx = full.getContext('2d');
-      if (!fctx) throw new Error('2d canvas unavailable');
-      fctx.imageSmoothingEnabled = true;
-      fctx.imageSmoothingQuality = 'high';
-      fctx.drawImage(img, 0, 0, full.width, full.height);
-      const { data } = fctx.getImageData(0, 0, full.width, full.height);
-       let minX = full.width, minY = full.height, maxX = -1, maxY = -1;
+      // Measure alpha on a small probe, then perform the final raster at 1024px.
+      // This removes millions of first-load pixel iterations without lowering
+      // the texture resolution or altering the original vector proportions.
+      const probe = document.createElement('canvas');
+      probe.width = sourceAspect >= 1 ? LOGO_PROBE_RES : Math.max(1, Math.round(LOGO_PROBE_RES * sourceAspect));
+      probe.height = sourceAspect >= 1 ? Math.max(1, Math.round(LOGO_PROBE_RES / sourceAspect)) : LOGO_PROBE_RES;
+      const probeCtx = probe.getContext('2d');
+      if (!probeCtx) throw new Error('2d canvas unavailable');
+      probeCtx.imageSmoothingEnabled = true;
+      probeCtx.imageSmoothingQuality = 'high';
+      probeCtx.drawImage(img, 0, 0, probe.width, probe.height);
+      const { data } = probeCtx.getImageData(0, 0, probe.width, probe.height);
+       let minX = probe.width, minY = probe.height, maxX = -1, maxY = -1;
        let alphaSum = 0, luminanceSum = 0;
-      for (let y = 0; y < full.height; y++) {
-        for (let x = 0; x < full.width; x++) {
-           const offset = (y * full.width + x) * 4;
+      for (let y = 0; y < probe.height; y++) {
+        for (let x = 0; x < probe.width; x++) {
+           const offset = (y * probe.width + x) * 4;
            const alpha = data[offset + 3] / 255;
            if (alpha > 8 / 255) {
             if (x < minX) minX = x;
@@ -97,10 +109,29 @@ function loadLogo(slug: string): LogoEntry {
       crop.height = Math.round(h * k);
       const cctx = crop.getContext('2d');
       if (!cctx) throw new Error('2d canvas unavailable');
+      const full = document.createElement('canvas');
+      full.width = sourceAspect >= 1 ? LOGO_RES : Math.max(1, Math.round(LOGO_RES * sourceAspect));
+      full.height = sourceAspect >= 1 ? Math.max(1, Math.round(LOGO_RES / sourceAspect)) : LOGO_RES;
+      const fctx = full.getContext('2d');
+      if (!fctx) throw new Error('2d canvas unavailable');
+      fctx.imageSmoothingEnabled = true;
+      fctx.imageSmoothingQuality = 'high';
+      fctx.drawImage(img, 0, 0, full.width, full.height);
+      const scaleX = full.width / probe.width;
+      const scaleY = full.height / probe.height;
       cctx.imageSmoothingQuality = 'high';
-      cctx.drawImage(full, minX, minY, w, h, 0, 0, crop.width, crop.height);
+      cctx.drawImage(
+        full,
+        minX * scaleX,
+        minY * scaleY,
+        w * scaleX,
+        h * scaleY,
+        0,
+        0,
+        crop.width,
+        crop.height,
+      );
       entry.canvas = crop;
-      entry.dataUrl = crop.toDataURL('image/png');
       entry.aspect = crop.width / crop.height;
        entry.alphaCoverage = alphaSum / Math.max(1, w * h);
        entry.luminance = luminanceSum / Math.max(1, alphaSum);
@@ -237,6 +268,42 @@ export const COUPON_FRUITS: CouponData[] = [
   { brand: 'Costco', logo: 'costco', color: '#E31837', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Home Depot', logo: 'home-depot', color: '#F96302', amount: 10, mark: 'emblem', scale: 0.92, sizeFactor: 0.825, edgeTone: 'light', edgeRadius: 5 },
 ];
+
+export interface CouponLogoDiagnostics {
+  ready: string[];
+  failed: string[];
+  invalid: string[];
+}
+
+/**
+ * Resolves only after every local mark has either decoded to final measured
+ * proportions or received its brand-specific fallback proportions. The tree
+ * can render immediately, while fruit meshes wait for this one shared gate.
+ */
+export async function preloadCouponLogos(): Promise<CouponLogoDiagnostics> {
+  const entries = COUPON_FRUITS.map((fruit) => ({ fruit, entry: loadLogo(fruit.logo) }));
+  await Promise.all(entries.map(({ entry }) => entry.settled));
+
+  const ready: string[] = [];
+  const failed: string[] = [];
+  const invalid: string[] = [];
+  entries.forEach(({ fruit, entry }) => {
+    if (entry.status === 'error') {
+      // A genuine asset failure still gets stable, brand-appropriate geometry.
+      entry.aspect = fruit.mark === 'emblem' ? 1 : 2.44;
+      entry.alphaCoverage = fruit.mark === 'emblem' ? 0.62 : 0.52;
+      failed.push(fruit.logo);
+      return;
+    }
+    ready.push(fruit.logo);
+    if (
+      !Number.isFinite(entry.aspect) || entry.aspect <= 0 ||
+      !Number.isFinite(entry.alphaCoverage) || entry.alphaCoverage <= 0 ||
+      !entry.canvas || entry.canvas.width <= 0 || entry.canvas.height <= 0
+    ) invalid.push(fruit.logo);
+  });
+  return { ready, failed, invalid };
+}
 
 // Preload + decode the complete local brand set once at module initialisation.
 if (typeof window !== 'undefined') COUPON_FRUITS.forEach((f) => loadLogo(f.logo));
