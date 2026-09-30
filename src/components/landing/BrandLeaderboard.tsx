@@ -106,10 +106,10 @@ export function BrandLeaderboard() {
         <ResponsiveContainer width="100%" height="100%"><BarChart data={leaderboardData} margin={{ top: 30, right: 4, bottom: 70, left: 4 }}>
           <XAxis dataKey="name" axisLine={false} tickLine={false} tick={<CustomXAxisTick />} interval={0} height={70} /><YAxis hide />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
-          <Bar dataKey="donations" radius={[8, 8, 0, 0]} maxBarSize={48} isAnimationActive={chartVisible} animationBegin={0} animationDuration={motionPreference === 'full' ? 1500 : 900} animationEasing="ease-out">
+          {chartVisible && <Bar dataKey="donations" radius={[8, 8, 0, 0]} maxBarSize={48} isAnimationActive animationBegin={0} animationDuration={motionPreference === 'full' ? 1500 : 900} animationEasing="ease-out">
             <LabelList dataKey="donations" content={<CustomLabel />} />
             {leaderboardData.map((entry, index) => { const brand = findBrand(entry.name); return <Cell key={entry.name} fill={brand?.color || 'hsl(var(--primary))'} className="transition-opacity duration-500 hover:opacity-80" style={{ filter: index === 0 ? brandGlow(brand?.color) : 'none' }} />; })}
-          </Bar>
+          </Bar>}
         </BarChart></ResponsiveContainer>
       </div> : <p className="py-16 text-center text-muted-foreground">Retailer totals will appear after the first completed donation.</p>}
       {latestDonation && <div className="mt-3 border-t border-border pt-4 md:mt-4"><div key={donationIndex} className="flex min-w-0 items-center gap-2 py-2.5 animate-fade-in md:gap-3 md:py-3">
