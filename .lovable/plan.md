@@ -1,61 +1,49 @@
-# Premium visual rhythm and motion upgrade
+# Optimize hero-tree logo loading and opening arrangement
 
 ## Goal
-Restore the founder-approved hero wording, then replace the repetitive near-white ruled layout with a richer green/blue editorial system built from full-width colour bands, tonal panels, truthful product visuals, existing photography, and unmistakable but accessible motion.
+Make every logo fruit appear complete and correctly proportioned on the first visible frame, then present a deliberate front-facing group led by CVS, McDonald’s, Instacart, Amazon, Walmart, and Target without changing the protected tree scene.
 
-## 1. Restore the hero first
-- Restore `HeroHeadline` exactly from commit `06b40aa18515df2471a73332ab8eec9922cd8948`: “COUPONDONATION IS” plus Transparent / Trackable / Real-time, desktop rotation, static mobile word, screen-reader H1, text shadow, and existing buttons.
-- Remove the replacement “Giving you can follow.” headline and supporting line.
-- Do not change `HeroSection`, tree code, 3D assets, camera, lighting, sky, logo artwork, or any hero behavior beyond this file.
-- Record the founder-approved hero-kicker exception in `AGENTS.md`.
+## Confirmed current issues
+- All 27 SVGs begin decoding at module initialization, but the tree renders immediately. While a logo is still decoding, its texture uses a generic wide wordmark fallback with a fixed 1024×420 shape. Emblems can therefore appear temporarily short, stretched, or visually wrong before the real SVG replaces them.
+- Instacart is initially assigned to slot 4. That slot is invalid because its one-item rear band calculates `0 / 0`, producing a `NaN` position; the Instacart fruit can therefore disappear or render unpredictably.
+- The current Instacart SVG is a small 21×24 two-part symbol rather than a complete, recognizable carrot treatment.
+- The opening brand order is deterministic, but Instacart is not in a valid front slot. Walmart, CVS, Target, McDonald’s, and Amazon already occupy front-facing slots across the lower, middle, and upper canopy.
 
-## 2. Upgrade the shared design system and motion
-- Add soft green tonal surfaces and a deep forest surface token while retaining the exact primary green, blue accent, neutral canvas, and no warm UI colours.
-- Replace the blanket “directly on canvas” rule with alternating light, tinted, and deep full-width bands; use borderless, shadowless tonal panels for grouped content.
-- Upgrade `Reveal`, `LineReveal`, `ImageReveal`, and `CountUp` to the requested timing and travel.
-- Add shared `Parallax`, `WordReveal`, and on-view progress primitives through `useMotionPreference`.
-- Gentle mode will use visible opacity plus no more than 16px rise; it will not freeze, scale, clip, parallax, or scrub transforms.
+## Implementation
 
-## 3. Recompose the homepage below the hero
-- **Brand ribbon:** larger original-colour logos, smooth continuous marquee, soft edge masks, existing label, and latest completed-donation behavior.
-- **What We Do:** preserve choreography and content; change only its containing surface to a tinted full-width band.
-- **Impact Stories:** live-data magazine composition with one large lead fundraiser, smaller supporting entries, mobile scroll snap, image zoom, and animated progress.
-- **Trust & Transparency:** deep green full-width band, animated 95¢ allocation ring, exact 95/3/2 wording and disclosure, and a drawn journey line.
-- **Statement moment:** add one opacity-led `WordReveal` using existing approved copy.
-- **Brand leaderboard:** live horizontal bars growing on view beside original retailer logos, exact figures, and honest empty state.
-- **Donation flow:** place the unchanged checkout experience inside a refined tonal product setting; no payment logic changes.
-- **Security:** deep/tonal strip with on-view lock and shield motion while preserving security copy.
-- **Testimonials:** keep hidden unless published CMS entries exist; upgrade only its populated presentation.
-- **Impact totals:** tinted full-width band with live non-zero count-ups and the current empty state.
-- **Closing paths:** existing project photograph with deep green overlay and both existing calls to action.
-- **Footer:** deep green structure with the exact two-colour wordmark on a light tile.
+### 1. Make logo readiness deterministic
+- Convert the existing logo cache into a shared preload contract that exposes when each local SVG has decoded, been alpha-cropped, and had its final aspect and coverage measured.
+- Start all 27 local loads once, as today, but do not mount logo-fruit meshes until the required opening set is ready. The tree, sky, and ambient scene may render while logos prepare.
+- Reveal the complete opening logo set together on the first ready frame, avoiding a sequence of temporary wordmarks or geometry changes.
+- Keep a per-brand fallback for genuine asset failure, but size that fallback from the brand profile rather than the current generic wide rectangle. A failed asset must remain recognizable and must never produce a blank mesh.
+- Preserve the existing shared texture path, 1024px long-edge rasterization, alpha crop, original colours, mipmaps, anisotropy, SRGB handling, and reuse across hanging, falling, landed, and regrowing states.
 
-## 4. Upgrade other public pages at page boundaries
-Apply varied colour bands, tonal panels, existing local photography, product/receipt motifs, and shared motion to:
-1. About
-2. How It Works
-3. Stories
-4. FAQ
-5. Blog and article detail
-6. Editorial story, featured story, CMS story, and live fundraiser details
+### 2. Repair and validate every local mark
+- Replace only the incomplete Instacart artwork with a complete, authentic, original-colour carrot emblem stored locally; preserve its aspect ratio and include the full orange carrot body and green leaves.
+- Validate all 27 SVGs for successful decode, non-empty alpha bounds, finite dimensions, and reasonable final aspect ratios.
+- Keep every company’s original logo colours and proportions. Do not recolour Uber or Amazon, flatten eBay, stretch wordmarks, or add plaques, boards, threads, or backgrounds.
+- Retain brand-specific optical sizing, refining only profiles that remain visibly too short or disproportionate after deterministic loading.
 
-No page will imply an existing photograph depicts a named recipient unless the source is genuinely tied to that record. Editorial stories remain clearly separate from live fundraiser transactions.
+### 3. Fix slot generation and curate the opening view
+- Fix the single-rear-slot division-by-zero in the deterministic canopy layout so every one of the 18 positions is finite and stable.
+- Keep the same 18-slot count, three height bands, full-orbit coverage, branch-relative attachment, face offsets, depth behavior, sway, and fall/regrowth lifecycle.
+- Reassign the initial brand order so these six are guaranteed valid front positions: Walmart and CVS on the lower band; Target, McDonald’s, and Instacart across the middle band; Amazon on the upper band.
+- Use the remaining front positions for a balanced mix of compact emblems and readable wordmarks, placing wider marks in more separated slots and moving lower-priority marks to valid side/rear slots.
+- Preserve the non-repeating replacement queue so omitted brands still enter after fruits fall and no duplicate brand hangs simultaneously.
 
-## 5. Restore Gold Coins safely
-- Inspect the real donation/account data path first.
-- Display a database-backed awarded amount only if the completed donation exposes one.
-- Otherwise show that Gold Coins are credited to the account, without a number.
-- Never derive an award, donation amount, or coupon count from URL parameters.
+### 4. Prevent regressions
+- Keep geometry dimensions tied to the final cached logo measurements, so texture and plane proportions cannot drift apart.
+- Ensure a replacement brand is ready before regrowth starts; if it is not, hold the slot at zero scale until its valid logo or fallback is ready.
+- Add development diagnostics for logo readiness, failed slugs, finite slot coordinates, and the opening brand order without adding runtime network requests.
 
-## Protected behavior and content
-- No new packages.
-- No changes to tree/3D code, protected hero scene settings, payment/checkout logic, processor choice, application logic, authentication, RLS, compliance/legal language, fee figures, or live-data privacy rules.
-- No fabricated people, beneficiary imagery, names, amounts, progress, claims, or partner contributions.
-- Use only existing local images; below-fold images remain lazy-loaded and responsively sized.
+## Protected scope
+- Do not change tree geometry or model, leaf materials, lighting, exposure, tone mapping, environment, fog, Sky, camera, FOV, orbit behavior, colours, hero copy, page layout, fruit count, fall physics, or donation behavior.
+- Do not add packages or external runtime requests.
 
-## Verification at each boundary
-- Capture every completed homepage section and public page at 390px and 1440px.
-- Prove visible motion with before/after captures for at least three sections: WordReveal, a ring/bar fill, and a parallax image.
-- Emulate reduced motion and capture a gentle fade-plus-rise in progress and completed states.
-- Check horizontal overflow, console/runtime errors, clean build, image loading, and LCP impact.
-- Report completed pages, headline changes, data provenance, screenshots, unverified states, and any performance limitation honestly.
+## Verification
+- Load from a cold cache and capture early and settled frames at 390px and 1440px; confirm there are no temporary short/stretched wordmarks, blanks, or late logo swaps.
+- Confirm all 27 local SVG requests succeed and each cached result has finite, non-zero dimensions and alpha bounds.
+- Capture the opening view and verify CVS, McDonald’s, full-carrot Instacart, Amazon, Walmart, and Target are complete, readable, front-facing, spread across canopy heights, and not severely overlapping.
+- Rotate through front, side, and rear views to confirm all 18 slots are valid and attached naturally to the canopy.
+- Trigger falling and regrowth; confirm the same complete artwork persists while falling and a different preloaded brand regrows without flashing a fallback.
+- Check desktop and mobile console/runtime errors, horizontal overflow, current build status, and representative frame rate. If automated WebGL capture remains unavailable, report that limitation rather than claiming visual proof.
