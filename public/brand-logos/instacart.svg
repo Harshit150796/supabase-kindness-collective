@@ -1,5 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="100" height="120" viewBox="0 0 100 120" role="img" aria-label="Instacart carrot">
-  <path fill="#0AAD0A" d="M47 37C34 30 23 19 17 6c15 1 28 7 36 18C57 12 66 4 78 0c1 14-3 27-13 38 10-7 21-10 34-8-5 15-17 25-34 31H35C18 54 7 43 2 28c15-1 30 2 45 9Z"/>
-  <path fill="#FF7009" d="M18 55c9-7 20-10 32-10s23 3 32 10c7 6 9 15 5 24-7 15-20 28-37 41-17-13-30-26-37-41-4-9-2-18 5-24Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 116" role="img" aria-label="Instacart carrot">
+  <g fill="#0AAD0A">
+    <path d="M44 38C27 34 15 23 10 7c17 1 31 9 39 24l-5 7Z"/>
+    <path d="M47 37C45 20 53 7 69 0c2 17-5 31-18 40l-4-3Z"/>
+    <path d="M51 39c9-13 23-19 40-17-4 17-16 28-34 32l-6-15Z"/>
+  </g>
+  <path fill="#FF7009" d="M17 46c11-6 25-8 39-4 14 3 24 11 25 21 1 12-12 31-39 53-20-28-29-49-25-70Z"/>
+  <path fill="none" stroke="#F15400" stroke-linecap="round" stroke-width="5" d="m31 62 13 3M27 78l13 3M38 93l9 2"/>
 </svg>

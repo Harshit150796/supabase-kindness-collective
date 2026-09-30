@@ -113,3 +113,10 @@
 - [x] Gate logo meshes on one shared preload so first paint uses final proportions and artwork.
 - [x] Restore a complete pointed Instacart carrot and curate the requested brands across the opening canopy.
 - [ ] Verify cold-load opening, full orbit, falling/regrowth, and 390px/1440px rendering in live WebGL.
+
+## Hero tree logo clarity and curation
+- [x] Replace CVS with a compact heart-and-name mark and optically enlarge it.
+- [x] Refine Instacart into a complete, recognizable carrot silhouette.
+- [x] Remove Trader Joe's, eBay, and Postmates from every tree animation state.
+- [x] Rebalance 18 opening brands across the front canopy by color and mark width.
+- [ ] Verify the opening composition, orbit, and fruit lifecycle at 390px and 1440px in live WebGL.

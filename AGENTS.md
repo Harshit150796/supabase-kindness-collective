@@ -1,8 +1,8 @@
 # Project Architecture Rules
 
 - Tree fruit animations share one transparent WebGL logo path.
-- Tree slots stay stable while brands rotate through a non-repeating queue.
-- Use 18 deterministic canopy slots with front bias, orbit coverage, and no duplicate hanging brand.
+- Tree slots stay stable while allowed brands rotate non-repeating; exclude Trader Joe's, eBay, and Postmates.
+- Use 18 deterministic, color-balanced canopy slots with front bias, orbit coverage, and no duplicate hanging brand.
 - Preserve original logo colors/proportions; prefer recognizable emblems unless a brand is wordmark-led.
 - Tree anchors use slot-specific leaf clearance and vertical correction.
 - Tree logo meshes mount only after the shared local-logo preload settles, preventing first-frame fallback distortion.
