@@ -211,9 +211,9 @@ export default function AdminStories() {
                 <div className="p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center justify-between text-xs mb-1.5">
                     <span className="text-muted-foreground">Progress preview</span>
-                    <span className="font-medium">${form.amount_raised.toLocaleString()} / ${form.goal.toLocaleString()} ({progressPercent(form.amount_raised, form.goal)}%)</span>
+                    <span className="font-medium">${form.amount_raised.toLocaleString()} / ${form.goal.toLocaleString()} ({pct(form.amount_raised, form.goal)}%)</span>
                   </div>
-                  <Progress value={progressPercent(form.amount_raised, form.goal)} className="h-2" />
+                  <Progress value={pct(form.amount_raised, form.goal)} className="h-2" />
                 </div>
               )}
             </div>
