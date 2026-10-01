@@ -2268,6 +2268,7 @@ export type Database = {
         Args: { _coupon_id: string }
         Returns: undefined
       }
+      dispatch_secret_ok: { Args: { _s: string }; Returns: boolean }
       generate_card_number: { Args: never; Returns: string }
       get_coupon_code: { Args: { _coupon_id: string }; Returns: string }
       get_fundraiser_coupon_trail: {
