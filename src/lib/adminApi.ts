@@ -43,3 +43,10 @@ export async function fetchAllChunks(build: (from: number, to: number) => any, m
 }
 
 export type TeamRole = 'admin' | 'staff' | 'viewer';
+
+/** Every portal mutation goes through this audited, role-checked server action. */
+export async function adminWrite<T = any>(table: string, op: 'insert' | 'update' | 'delete', ids: string[] | null, patch: Record<string, unknown> = {}): Promise<T> {
+  return rpc<T>('admin_write', { _table: table, _op: op, _ids: ids, _patch: patch });
+}
+
+export const cleanSearch = (s: string) => s.trim().replace(/[%,()]/g, '');
