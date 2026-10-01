@@ -27,25 +27,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     navigate('/');
   };
 
-  const getNavItems = () => {
-    if (hasRole('admin')) {
-      return [
-        { icon: Home, label: 'Overview', path: '/admin' },
-        { icon: Users, label: 'Users', path: '/admin/users' },
-        { icon: Shield, label: 'Verifications', path: '/admin/verifications' },
-        { icon: Gift, label: 'Coupons', path: '/admin/coupons' },
-        { icon: Package, label: 'Procurement', path: '/admin/procurement' },
-        { icon: Megaphone, label: 'Fundraisers', path: '/admin/fundraisers' },
-        { icon: DollarSign, label: 'Donations', path: '/admin/donations' },
-        { icon: BarChart, label: 'Analytics', path: '/admin/analytics' },
-        { icon: FileText, label: 'Content', path: '/admin/content' },
-        { icon: BookOpen, label: 'Stories', path: '/admin/stories' },
-        { icon: MessageSquare, label: 'Testimonials', path: '/admin/testimonials' },
-        { icon: Newspaper, label: 'Blog Posts', path: '/admin/blog' },
-        { icon: HelpCircle, label: 'FAQ', path: '/admin/faq' },
-        { icon: Mail, label: 'Newsletters', path: '/admin/newsletters' },
-      ];
-    }
+  const getPersonalNav = () => {
     // One generic account: giving and receiving are capabilities, not account types.
     return [
       { icon: Home, label: 'Home', path: '/dashboard' },
@@ -59,8 +41,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     ];
   };
 
-  const navItems = getNavItems();
-  const roleLabel = hasRole('admin') ? 'Admin' : 'My Account';
+  // Admin pages get the dedicated operations shell; donor/recipient pages keep this layout
+  // and always show the personal-account nav (previously admins saw admin links on their own donor pages).
+  if (location.pathname.startsWith('/admin')) return <AdminLayout>{children}</AdminLayout>;
+
+  const navItems = getPersonalNav();
+  const roleLabel = 'My Account';
 
 
   return (
