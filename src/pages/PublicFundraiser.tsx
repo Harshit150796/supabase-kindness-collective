@@ -325,7 +325,7 @@ const PublicFundraiser = () => {
               <div className="rounded-[1.5rem] bg-secondary p-7">
                 <h2 className="mb-6 flex items-center gap-2 font-display text-4xl font-normal text-foreground">
                   <Heart className="w-5 h-5 text-primary" />
-                  Recent Supporters ({fundraiser.donors_count})
+                  Recent Supporters
                 </h2>
                 <div className="space-y-4">
                   {donations.map((donation) => (
