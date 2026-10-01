@@ -54,3 +54,12 @@ verify_jwt = false
 
 [functions.send-message]
 verify_jwt = false
+
+[functions.fundraiser-actions]
+verify_jwt = false
+
+[functions.notify-dispatch]
+verify_jwt = false
+
+[functions.share-fundraiser]
+verify_jwt = false

@@ -6,6 +6,7 @@ import { moderate, maskedExcerpt, BLOCKED_EXPLANATION } from '../_shared/moderat
 const MAX_LEN = 2000;
 const MAX_NEW_CONVERSATIONS_PER_HOUR = 5;
 const MAX_MESSAGES_PER_HOUR = 30;
+const MAX_BLOCKED_PER_HOUR = 10;
 
 const Body = z.object({
   fundraiser_id: z.string().uuid().optional(),
@@ -59,7 +60,11 @@ Deno.serve(async (req) => {
   // Rate limits
   const hourAgo = new Date(Date.now() - 3600_000).toISOString();
   const { count: msgCount } = await admin.from('messages').select('id', { count: 'exact', head: true }).eq('sender_id', uid).gte('created_at', hourAgo);
-  if ((msgCount ?? 0) >= MAX_MESSAGES_PER_HOUR) return json({ error: 'You’re sending messages too quickly. Please try again later.' }, 429);
+  const { count: blockedCount } = await admin.from('blocked_attempts').select('id', { count: 'exact', head: true }).eq('sender_id', uid).gte('created_at', hourAgo);
+  // Combined cap: blocked attempts count toward the same hourly budget, plus a tighter cap on blocked attempts alone.
+  if ((msgCount ?? 0) + (blockedCount ?? 0) >= MAX_MESSAGES_PER_HOUR || (blockedCount ?? 0) >= MAX_BLOCKED_PER_HOUR) {
+    return json({ error: 'You’re sending messages too quickly. Please try again later.' }, 429);
+  }
 
   // Safety
   const result = moderate(body);
