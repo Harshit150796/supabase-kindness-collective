@@ -130,7 +130,10 @@
 ## Fundraiser page rebuild (GoFundMe parity)
 - [x] P0 live bug: public read functions for supporters + organizer name, wired into /f/:slug, verified anonymously.
 - [x] Phase 1: additive schema, RLS, moderation module; three-user RLS proof + safety-pattern tests.
-- [ ] Phase 2: public page rebuild (ink token, polling every 30s for totals/"just donated" — no triggers on payment tables).
-- [ ] Phase 3: organizer tools (inbox, badge, team, updates, comment moderation, settings incl. full-name opt-in), admin moderation.
-- [ ] Phase 4: sharing — investigate branded share URL (coupondonation.com/f/:slug or share.coupondonation.com); never ship raw supabase.co link.
-- [ ] Phase 5: end-to-end messaging check, each step pass/fail/unverified.
+- [x] Phase 2: public page rebuild (ink token, polling every 30s for totals/"just donated" — no triggers on payment tables).
+- [x] Phase 3: organizer tools (inbox, badge, team, updates, comment moderation, settings incl. full-name opt-in), admin moderation.
+- [x] Phase 4: sharing — investigate branded share URL (coupondonation.com/f/:slug or share.coupondonation.com); never ship raw supabase.co link.
+- [x] Phase 5: end-to-end messaging check run; signed-in browser steps unverified (no test sessions available for this backend).
+- [ ] Founder: point share.coupondonation.com (or a Cloudflare Worker on /f/*) at the link-preview function, then set VITE_SHARE_HOST.
+- [ ] Founder: investigate 4 fundraisers whose stored totals disagree with completed donations.
+- [ ] Founder: schedule notify-dispatch every 5 minutes so throttled message/update emails send.

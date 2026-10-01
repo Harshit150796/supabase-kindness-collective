@@ -20,3 +20,8 @@
 - The homepage Live Donation Tracking chart uses vertical bars in each retailer's own brand colour — a founder-approved exception to the no-warm-colour rule.- Messages are written only by the `send-message` edge function after server-side moderation (`_shared/moderation.ts`); clients have read-only access, so safety rules cannot be bypassed.
 - Public fundraiser pages read donors, organizers and coupon totals through security-definer read functions only; donations/profiles stay private under RLS.
 - Never add triggers, notify functions or realtime publications to donation, checkout or coupon tables; live fundraiser totals poll public read functions instead.
+
+- Campaign pages use the `ink` token (near-black, green undertone) for Share buttons, strong headings and the dark more-fundraisers band; Donate stays primary green; blue marks verification only.
+- Comments, updates, invites and blocks are written only by the `fundraiser-actions` edge function after server moderation, keeping safety rules server-side.
+- Public share links stay on coupondonation.com (or a branded host via `VITE_SHARE_HOST`); never expose the raw backend function URL to users.
+- Public fundraiser totals come from `get_fundraiser_totals` (completed donations), never stored counters, because stored counters drifted.
