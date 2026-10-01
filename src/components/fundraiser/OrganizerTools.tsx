@@ -95,7 +95,7 @@ export function OrganizerTools({ fundraiserId, isOwner }: { fundraiserId: string
           <ul className="divide-y divide-border">
             {team.map((t) => (
               <li key={t.id} className="flex items-center justify-between gap-3 py-3">
-                <div><p className="font-medium">{t.role === 'organizer' ? 'You (organizer)' : t.invite_email ?? 'Co-organizer'}</p><p className="text-sm text-muted-foreground">{t.role === 'organizer' ? 'Organizer' : `Co-organizer · ${t.status}`}</p></div>
+                <div><p className="font-medium">{t.role === 'organizer' ? (isOwner ? 'You' : 'Organizer') : t.invite_email ?? 'Co-organizer'}</p><p className="text-sm text-muted-foreground">{t.role === 'organizer' ? 'Organizer' : `Co-organizer · ${t.status}`}</p></div>
                 {isOwner && t.role !== 'organizer' && <Button size="sm" variant="ghost" onClick={() => remove(t.id)}>Remove</Button>}
               </li>
             ))}
