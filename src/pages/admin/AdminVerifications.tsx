@@ -1,158 +1,62 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
+import { DataTable, StatusBadge, Column } from '@/components/admin/DataTable';
+import { useAdminPaged } from '@/hooks/useAdminPaged';
+import { adminWrite, fmtDate } from '@/lib/adminApi';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { Shield, Check, X, Clock } from 'lucide-react';
-import { format } from 'date-fns';
-
-interface Verification {
-  id: string;
-  user_id: string;
-  verification_type: string | null;
-  status: string | null;
-  documents_url: string | null;
-  notes: string | null;
-  submitted_at: string | null;
-}
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
+import { Check, X } from 'lucide-react';
 
 export default function AdminVerifications() {
-  const { toast } = useToast();
-  const [verifications, setVerifications] = useState<Verification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
+  const qc = useQueryClient();
+  const { canWrite } = useTeamRole();
+  const [status, setStatus] = useState('pending');
+  const t = useAdminPaged({ table: 'recipient_verifications', defaultSort: { key: 'submitted_at', dir: 'desc' }, filter: (b) => (status === 'all' ? b : b.eq('status', status)), deps: [status] });
+  const [open, setOpen] = useState<any | null>(null);
+  const [notes, setNotes] = useState('');
 
-  useEffect(() => {
-    fetchVerifications();
-  }, []);
-
-  const fetchVerifications = async () => {
-    const { data } = await supabase
-      .from('recipient_verifications')
-      .select('*')
-      .order('submitted_at', { ascending: false });
-
-    setVerifications(data || []);
-    setLoading(false);
+  const review = async (s: 'approved' | 'rejected') => {
+    try {
+      await adminWrite('recipient_verifications', 'update', [open.id], { status: s, notes: notes || null, reviewed_at: new Date().toISOString() });
+      toast({ title: `Verification ${s}` });
+      setOpen(null); qc.invalidateQueries({ queryKey: ['adm-paged', 'recipient_verifications'] });
+    } catch (e) { toast({ title: 'Could not save', description: (e as Error).message, variant: 'destructive' }); }
   };
 
-  const handleReview = async (id: string, status: 'approved' | 'rejected') => {
-    const { error } = await supabase
-      .from('recipient_verifications')
-      .update({
-        status,
-        notes: reviewNotes[id] || null,
-        reviewed_at: new Date().toISOString()
-      })
-      .eq('id', id);
-
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Success', description: `Verification ${status}` });
-      fetchVerifications();
-    }
-  };
-
-  const pendingVerifications = verifications.filter(v => v.status === 'pending');
-  const processedVerifications = verifications.filter(v => v.status !== 'pending');
+  const cols: Column<any>[] = [
+    { key: 'submitted_at', header: 'Submitted', sortable: true, cell: (r) => fmtDate(r.submitted_at) },
+    { key: 'user_id', header: 'User', cell: (r) => <span className="font-mono text-xs">{r.user_id.slice(0, 8)}…</span> },
+    { key: 'verification_type', header: 'Type', sortable: true, cell: (r) => r.verification_type || 'Standard' },
+    { key: 'status', header: 'Status', sortable: true, cell: (r) => <StatusBadge value={r.status} /> },
+    { key: 'notes', header: 'Notes', cell: (r) => <span className="line-clamp-1 max-w-[260px] text-xs">{r.notes || '—'}</span> },
+  ];
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Verification Requests</h1>
-          <p className="text-muted-foreground">Review and approve recipient verifications</p>
-        </div>
-
-        {/* Pending Section */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-            <Clock className="w-5 h-5 text-verify" />
-            Pending ({pendingVerifications.length})
-          </h2>
-
-          {pendingVerifications.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-8">
-                <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No pending verifications</p>
-              </CardContent>
-            </Card>
-          ) : (
-            pendingVerifications.map((v) => (
-              <Card key={v.id}>
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-medium text-foreground">User ID: {v.user_id.slice(0, 8)}...</p>
-                      <p className="text-sm text-muted-foreground">
-                        Type: {v.verification_type || 'Standard'}
-                      </p>
-                      {v.submitted_at && (
-                        <p className="text-xs text-muted-foreground">
-                          Submitted: {format(new Date(v.submitted_at), 'MMM d, yyyy h:mm a')}
-                        </p>
-                      )}
-                    </div>
-                    <Badge variant="secondary">Pending</Badge>
-                  </div>
-
-                  <Textarea
-                    placeholder="Add review notes (optional)..."
-                    value={reviewNotes[v.id] || ''}
-                    onChange={(e) => setReviewNotes({ ...reviewNotes, [v.id]: e.target.value })}
-                    rows={2}
-                  />
-
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleReview(v.id, 'approved')}
-                      className="flex-1"
-                    >
-                      <Check className="w-4 h-4 mr-2" />
-                      Approve
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => handleReview(v.id, 'rejected')}
-                      className="flex-1"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Reject
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
-
-        {/* Processed Section */}
-        {processedVerifications.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Processed</h2>
-            {processedVerifications.map((v) => (
-              <Card key={v.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-foreground">User ID: {v.user_id.slice(0, 8)}...</p>
-                      {v.notes && <p className="text-sm text-muted-foreground">Notes: {v.notes}</p>}
-                    </div>
-                    <Badge variant={v.status === 'approved' ? 'default' : 'destructive'}>
-                      {v.status}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+      <PageHeader title="Verifications" description="Review recipient verification submissions." />
+      <div className="mb-3"><Select value={status} onValueChange={setStatus}><SelectTrigger className="h-9 w-44"><SelectValue /></SelectTrigger><SelectContent>{['pending', 'approved', 'rejected', 'all'].map((s) => <SelectItem key={s} value={s} className="capitalize">{s === 'all' ? 'All statuses' : s}</SelectItem>)}</SelectContent></Select></div>
+      <DataTable columns={cols} {...t.tableProps} rowKey={(r: any) => r.id} onRowClick={(r) => { setOpen(r); setNotes(r.notes ?? ''); }} empty="No verifications in this view." />
+      <Sheet open={!!open} onOpenChange={(o) => !o && setOpen(null)}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+          {open && <div className="space-y-4 text-sm">
+            <SheetHeader><SheetTitle className="text-left font-serif text-2xl font-normal">Verification</SheetTitle></SheetHeader>
+            <dl className="grid grid-cols-2 gap-3">
+              {[['Status', <StatusBadge key="s" value={open.status} />], ['Type', open.verification_type || 'Standard'], ['User ID', open.user_id], ['Submitted', fmtDate(open.submitted_at)],
+                ['Household size', open.household_size ?? '—'], ['Organization', open.organization_name ?? '—'], ['Reviewed', fmtDate(open.reviewed_at)]].map(([k, v]) => (
+                <div key={k as string}><dt className="text-xs text-muted-foreground">{k}</dt><dd className="break-all">{v}</dd></div>))}
+            </dl>
+            {canWrite && <>
+              <Textarea placeholder="Review notes (optional)" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+              <div className="flex gap-2"><Button className="flex-1" onClick={() => review('approved')}><Check className="mr-1.5 h-4 w-4" />Approve</Button><Button variant="destructive" className="flex-1" onClick={() => review('rejected')}><X className="mr-1.5 h-4 w-4" />Reject</Button></div>
+            </>}
+          </div>}
+        </SheetContent>
+      </Sheet>
     </DashboardLayout>
   );
 }

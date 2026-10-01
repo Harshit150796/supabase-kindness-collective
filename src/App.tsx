@@ -166,21 +166,21 @@ const AppRoutes = () => (
       <Route path="/admin/settings" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminSettings /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/team" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminTeam /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/audit" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminAudit /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/fundraisers/manage" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminFundraisersLegacy /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/fundraisers/manage" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminFundraisersLegacy /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/moderation" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminModeration /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/users" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/verifications" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminVerifications /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/coupons" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminCoupons /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/analytics" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminAnalytics /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/content" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminContent /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/stories" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminStories /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/testimonials" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminTestimonials /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/blog" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminBlog /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/faq" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminFAQ /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/verifications" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminVerifications /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/coupons" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminCoupons /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/analytics" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminAnalytics /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/content" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminContent /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/stories" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminStories /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/testimonials" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminTestimonials /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/blog" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminBlog /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/faq" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminFAQ /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/fundraisers" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin', 'staff', 'viewer']}><AdminFundraisers /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/newsletters" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminNewsletters /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/newsletters" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminNewsletters /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/donations" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin', 'staff', 'viewer']}><AdminDonations /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/procurement" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminProcurement /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/procurement" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminProcurement /></ProtectedRoute></GeoGuard>} />
 
       {/* Blog Routes */}
       <Route path="/blog" element={<Blog />} />
