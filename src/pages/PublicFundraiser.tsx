@@ -135,7 +135,7 @@ const PublicFundraiser = () => {
 
       setFundraiser(data);
       fetchDonations(data.id);
-      fetchOrganizer(data.user_id);
+      fetchOrganizer(data.id);
       fetchImages(data.id);
     } catch (err) {
       console.error("Error fetching fundraiser:", err);
@@ -145,34 +145,30 @@ const PublicFundraiser = () => {
     }
   };
 
+  // Public read functions: completed donations only, anonymity respected, no PII.
   const fetchDonations = async (fundraiserId: string) => {
     try {
-      const { data, error } = await supabase
-        .from("donations")
-        .select("id, amount, donor_name, is_anonymous, message, created_at")
-        .eq("fundraiser_id", fundraiserId)
-        .in("status", ["completed", "succeeded"])
-        .order("created_at", { ascending: false })
-        .limit(10);
-
+      const { data, error } = await supabase.rpc("get_fundraiser_donations" as never, {
+        _fundraiser_id: fundraiserId, _limit: 10, _order: "recent",
+      } as never);
       if (error) throw error;
-      setDonations(data || []);
+      const rows = (data as unknown as Array<{ id: string; display_name: string; is_anonymous: boolean; amount: number; message: string | null; created_at: string }>) || [];
+      setDonations(rows.map((r) => ({
+        id: r.id, amount: Number(r.amount), donor_name: r.display_name,
+        is_anonymous: r.is_anonymous, message: r.message, created_at: r.created_at,
+      })));
     } catch (err) {
       console.error("Error fetching donations:", err);
     }
   };
 
-  const fetchOrganizer = async (userId: string) => {
+  const fetchOrganizer = async (fundraiserId: string) => {
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("full_name, avatar_url")
-        .eq("user_id", userId)
-        .single();
-
-      if (!error && data) {
-        setOrganizer(data);
-      }
+      const { data, error } = await supabase.rpc("get_fundraiser_organizer" as never, {
+        _fundraiser_id: fundraiserId,
+      } as never);
+      const row = (data as unknown as Array<{ display_name: string | null }>)?.[0];
+      if (!error && row) setOrganizer({ full_name: row.display_name, avatar_url: null });
     } catch (err) {
       console.error("Error fetching organizer:", err);
     }
