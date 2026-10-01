@@ -1,529 +1,208 @@
 import { SEO, breadcrumbJsonLd } from "@/components/SEO";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { 
-  Heart, 
-  Users, 
-  Calendar,
-  Share2,
-  ChevronLeft,
-  CheckCircle2,
-  AlertCircle,
-  Loader2
-} from "lucide-react";
+import { Heart, Share2, ChevronLeft, AlertCircle, Loader2, Lock, Receipt, ShieldCheck, Flag, Calendar, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { ShareModal } from "@/components/apply/ShareModal";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { FundraiserGallery } from "@/components/fundraiser/FundraiserGallery";
 import { ImageUploadModal } from "@/components/fundraiser/ImageUploadModal";
 import { useAuth } from "@/hooks/useAuth";
-import { cn } from "@/lib/utils";
+import { useFundraiserLive, usd } from "@/hooks/useFundraiserLive";
+import { Reveal } from "@/components/ui/editorial-motion";
+import { StoryBody } from "@/components/fundraiser/campaign/StoryBody";
+import { DonationPanel } from "@/components/fundraiser/campaign/DonationPanel";
+import { CommentsSection } from "@/components/fundraiser/campaign/CommentsSection";
+import { TeamSection, useFundraiserTeam } from "@/components/fundraiser/campaign/TeamSection";
+import { UpdatesSection } from "@/components/fundraiser/campaign/UpdatesSection";
+import { ShareSheet, ShareCardPreview } from "@/components/fundraiser/campaign/ShareSheet";
+import { MoreFundraisers } from "@/components/fundraiser/campaign/MoreFundraisers";
+import { ReportDialog } from "@/components/fundraiser/campaign/ReportDialog";
 
 interface Fundraiser {
-  id: string;
-  title: string;
-  story: string;
-  category: string;
-  beneficiary_type: string;
-  monthly_goal: number;
-  cover_photo_url: string | null;
-  is_long_term: boolean;
-  status: string;
-  amount_raised: number;
-  donors_count: number;
-  unique_slug: string | null;
-  created_at: string;
-  user_id: string;
+  id: string; title: string; story: string; category: string; monthly_goal: number; cover_photo_url: string | null;
+  status: string | null; unique_slug: string | null; created_at: string | null; user_id: string; allow_messages: boolean;
+  beneficiary_display_name: string | null; show_beneficiary_name: boolean;
 }
-
-interface Donation {
-  id: string;
-  amount: number;
-  donor_name: string | null;
-  is_anonymous: boolean;
-  message: string | null;
-  created_at: string;
-}
-
-interface Profile {
-  full_name: string | null;
-  avatar_url: string | null;
-}
-
-interface FundraiserImage {
-  id: string;
-  image_url: string;
-  display_order: number;
-  is_primary: boolean;
-}
+interface FundraiserImage { id: string; image_url: string; display_order: number; is_primary: boolean }
 
 const categoryLabels: Record<string, string> = {
-  food: "Food & Groceries",
-  household: "Household Essentials",
-  health: "Health & Wellness",
-  childcare: "Childcare",
-  education: "Education",
-  utilities: "Utilities",
-  other: "Other",
+  food: "Food & Groceries", household: "Household Essentials", health: "Health & Wellness", childcare: "Childcare",
+  education: "Education", utilities: "Utilities", other: "Other",
 };
 
 const PublicFundraiser = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-
   const [fundraiser, setFundraiser] = useState<Fundraiser | null>(null);
-  const [donations, setDonations] = useState<Donation[]>([]);
-  const [organizer, setOrganizer] = useState<Profile | null>(null);
   const [images, setImages] = useState<FundraiserImage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [showImageModal, setShowImageModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [share, setShare] = useState(false);
+  const [imgModal, setImgModal] = useState(false);
+  const [report, setReport] = useState(false);
+  const [isTeam, setIsTeam] = useState(false);
 
-  const isOwner = user && fundraiser ? user.id === fundraiser.user_id : false;
+  const live = useFundraiserLive(fundraiser?.id);
+  const team = useFundraiserTeam(fundraiser?.id);
+  const isOwner = !!user && !!fundraiser && user.id === fundraiser.user_id;
+
+  const fetchImages = async (id: string) => {
+    const { data } = await supabase.from("fundraiser_images").select("id,image_url,display_order,is_primary").eq("fundraiser_id", id).order("display_order");
+    setImages((data ?? []).map((d) => ({ ...d, is_primary: !!d.is_primary })));
+  };
 
   useEffect(() => {
-    if (slug) {
-      fetchFundraiser();
-    }
+    if (!slug) return;
+    setLoading(true); setError(null);
+    (async () => {
+      const { data, error } = await supabase.from("fundraisers")
+        .select("id,title,story,category,monthly_goal,cover_photo_url,status,unique_slug,created_at,user_id,allow_messages,beneficiary_display_name,show_beneficiary_name")
+        .eq("unique_slug", slug).maybeSingle();
+      if (error || !data) setError("Fundraiser not found");
+      else if (data.status !== "active" && data.status !== "pending") setError("This fundraiser is no longer active");
+      else { setFundraiser(data as Fundraiser); fetchImages(data.id); }
+      setLoading(false);
+    })();
   }, [slug]);
 
-  const fetchImages = async (fundraiserId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("fundraiser_images")
-        .select("*")
-        .eq("fundraiser_id", fundraiserId)
-        .order("display_order", { ascending: true });
+  useEffect(() => {
+    if (!user || !fundraiser) { setIsTeam(false); return; }
+    supabase.rpc("is_fundraiser_team" as never, { _fid: fundraiser.id, _uid: user.id } as never).then(({ data }) => setIsTeam(!!data));
+  }, [user, fundraiser]);
 
-      if (!error && data) {
-        setImages(data);
-      }
-    } catch (err) {
-      console.error("Error fetching images:", err);
-    }
-  };
-
-  const fetchFundraiser = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("fundraisers")
-        .select("*")
-        .eq("unique_slug", slug)
-        .single();
-
-      if (error) {
-        if (error.code === "PGRST116") {
-          setError("Fundraiser not found");
-        } else {
-          throw error;
-        }
-        return;
-      }
-
-      // Only show active fundraisers publicly
-      if (data.status !== "active" && data.status !== "pending") {
-        setError("This fundraiser is no longer active");
-        return;
-      }
-
-      setFundraiser(data);
-      fetchDonations(data.id);
-      fetchOrganizer(data.id);
-      fetchImages(data.id);
-    } catch (err) {
-      console.error("Error fetching fundraiser:", err);
-      setError("Failed to load fundraiser");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Public read functions: completed donations only, anonymity respected, no PII.
-  const fetchDonations = async (fundraiserId: string) => {
-    try {
-      const { data, error } = await supabase.rpc("get_fundraiser_donations" as never, {
-        _fundraiser_id: fundraiserId, _limit: 10, _order: "recent",
-      } as never);
-      if (error) throw error;
-      const rows = (data as unknown as Array<{ id: string; display_name: string; is_anonymous: boolean; amount: number; message: string | null; created_at: string }>) || [];
-      setDonations(rows.map((r) => ({
-        id: r.id, amount: Number(r.amount), donor_name: r.display_name,
-        is_anonymous: r.is_anonymous, message: r.message, created_at: r.created_at,
-      })));
-    } catch (err) {
-      console.error("Error fetching donations:", err);
-    }
-  };
-
-  const fetchOrganizer = async (fundraiserId: string) => {
-    try {
-      const { data, error } = await supabase.rpc("get_fundraiser_organizer" as never, {
-        _fundraiser_id: fundraiserId,
-      } as never);
-      const row = (data as unknown as Array<{ display_name: string | null }>)?.[0];
-      if (!error && row) setOrganizer({ full_name: row.display_name, avatar_url: null });
-    } catch (err) {
-      console.error("Error fetching organizer:", err);
-    }
-  };
-
-  const getProgressPercentage = () => {
-    if (!fundraiser || !fundraiser.monthly_goal) return 0;
-    return Math.min((fundraiser.amount_raised / fundraiser.monthly_goal) * 100, 100);
-  };
-
-  const isFullyFunded = !!fundraiser && fundraiser.monthly_goal > 0
-    && fundraiser.amount_raised >= fundraiser.monthly_goal;
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) return "Just now";
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
-    return formatDate(dateString);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-dvh bg-background">
-        <Navbar />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-dvh bg-background"><Navbar /><div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></div>;
 
   if (error || !fundraiser) {
     return (
       <div className="min-h-dvh bg-background">
         <Navbar />
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
-          <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
-            <AlertCircle className="w-8 h-8 text-destructive" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {error || "Fundraiser not found"}
-          </h1>
-          <p className="text-muted-foreground text-center max-w-md">
-            This fundraiser may have been removed or the link might be incorrect.
-          </p>
-          <Button onClick={() => navigate("/stories")}>
-            Browse Fundraisers
-          </Button>
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
+          <AlertCircle className="h-10 w-10 text-destructive" />
+          <h1 className="font-display text-4xl text-foreground">{error || "Fundraiser not found"}</h1>
+          <p className="max-w-md text-muted-foreground">This fundraiser may have been removed or the link might be incorrect.</p>
+          <Button onClick={() => navigate("/stories")}>Browse fundraisers</Button>
         </div>
         <Footer />
       </div>
     );
   }
 
-  const shareUrl = `${window.location.origin}/f/${fundraiser.unique_slug}`;
-  const progressPercent = getProgressPercentage();
+  const organizer = team.find((t) => t.role === "organizer")?.display_name ?? "the organizer";
+  const beneficiary = fundraiser.show_beneficiary_name && fundraiser.beneficiary_display_name?.trim() ? fundraiser.beneficiary_display_name.trim() : null;
+  const donate = () => navigate(`/donate?fundraiser=${fundraiser.id}`);
+  const created = fundraiser.created_at ? new Date(fundraiser.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : null;
 
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh bg-background pb-24 lg:pb-0">
       <SEO
         title={`${fundraiser.title} — Fundraiser`}
-        description={(fundraiser.story || `Support ${fundraiser.title} on CouponDonation. Your donation becomes real grocery coupons for verified families.`).slice(0, 155)}
+        description={(fundraiser.story || `Support ${fundraiser.title} on CouponDonation.`).slice(0, 155)}
         path={`/f/${fundraiser.unique_slug}`}
         type="article"
         image={fundraiser.cover_photo_url || undefined}
-        jsonLd={breadcrumbJsonLd([
-          { name: 'Home', path: '/' },
-          { name: 'Stories', path: '/stories' },
-          { name: fundraiser.title, path: `/f/${fundraiser.unique_slug}` },
-        ])}
+        jsonLd={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Stories", path: "/stories" }, { name: fundraiser.title, path: `/f/${fundraiser.unique_slug}` }])}
       />
       <Navbar />
 
+      <main className="container mx-auto px-4 pt-24 md:pt-28">
+        <Link to="/stories" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ChevronLeft className="h-4 w-4" />All fundraisers</Link>
+        <Reveal><h1 className="mt-4 max-w-4xl font-display text-4xl font-normal leading-[1.05] text-ink md:text-6xl dark:text-foreground">{fundraiser.title}</h1></Reveal>
 
-      {/* Hero section with gallery */}
-      <div className="relative">
-        <FundraiserGallery
-          images={images}
-          isOwner={isOwner}
-          onAddPhotos={() => setShowImageModal(true)}
-          fundraiserTitle={fundraiser.title}
-          coverPhotoUrl={fundraiser.cover_photo_url}
-        />
-        
-        {/* Back button - positioned to work with both empty and filled states */}
-        <Link 
-          to="/stories"
-          className="absolute top-8 left-4 lg:left-8 w-10 h-10 rounded-full bg-background/90 backdrop-blur-sm 
-               flex items-center justify-center hover:bg-background transition-colors z-20 
-               border border-border shadow-sm"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </Link>
-
-        {/* Extra padding when gallery has thumbnails */}
-        {images.length > 1 && <div className="h-12" />}
-      </div>
-
-      {/* Main content - adjust margin based on whether images exist */}
-      <div className={cn(
-        "max-w-6xl mx-auto px-4 lg:px-8 relative z-10 rounded-t-[2rem] pb-24 lg:pb-16",
-        images.length === 0 ? "-mt-2" : "-mt-20"
-      )}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left column - Story content */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="rounded-[1.5rem] bg-secondary p-7 md:p-9">
-              <p className="mb-4 text-sm text-muted-foreground">{categoryLabels[fundraiser.category] || fundraiser.category}</p>
-              <h1 className="font-display text-5xl font-normal leading-none text-foreground lg:text-7xl">
-                {fundraiser.title}
-              </h1>
-
-              {/* Organizer info */}
-              <div className="mt-7 flex items-center gap-3">
-                <Avatar className="w-10 h-10">
-                  <AvatarFallback className="bg-primary/10 text-primary">
-                    {organizer?.full_name?.[0]?.toUpperCase() || "O"}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium text-foreground">
-                    {organizer?.full_name || "Organizer"}
-                  </p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    Created {formatDate(fundraiser.created_at)}
-                  </p>
-                </div>
-              </div>
+        <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-14">
+          <div className="min-w-0 space-y-12">
+            <div className="overflow-hidden rounded-[1.5rem]">
+              <FundraiserGallery images={images} isOwner={isOwner} onAddPhotos={() => setImgModal(true)} fundraiserTitle={fundraiser.title} coverPhotoUrl={fundraiser.cover_photo_url} />
             </div>
 
-            <div className="py-6 lg:py-10">
-              <h2 className="mb-5 font-display text-4xl font-normal text-foreground">Why this matters.</h2>
-              <div className="prose max-w-none whitespace-pre-wrap text-lg leading-relaxed text-muted-foreground">
-                {fundraiser.story}
-              </div>
+            <div className="space-y-4 border-b border-border pb-8">
+              <p className="flex items-center gap-3 text-foreground">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink text-ink-foreground">{organizer[0]?.toUpperCase()}</span>
+                <span><span className="font-medium">{organizer}</span>{beneficiary ? <> is organizing for <span className="font-medium">{beneficiary}</span></> : " is organizing this fundraiser"}</span>
+              </p>
+              <p className="flex items-start gap-2 text-sm text-muted-foreground">
+                <Lock className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                <span><span className="font-medium text-foreground">Coupon-locked · Traceable.</span> Donations become restricted retailer coupons for this need — never cash — with a receipt trail.</span>
+              </p>
             </div>
 
-            {/* Recent supporters */}
-            {donations.length > 0 && (
-              <div className="rounded-[1.5rem] bg-secondary p-7">
-                <h2 className="mb-6 flex items-center gap-2 font-display text-4xl font-normal text-foreground">
-                  <Heart className="w-5 h-5 text-primary" />
-                  Recent Supporters
-                </h2>
-                <div className="space-y-4">
-                  {donations.map((donation) => (
-                    <div key={donation.id} className="flex items-start gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarFallback className="bg-secondary text-muted-foreground text-sm">
-                          {donation.is_anonymous ? "A" : (donation.donor_name?.[0] || "S").toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-foreground">
-                            {donation.is_anonymous ? "Anonymous" : (donation.donor_name?.trim() || "Supporter")}
-                          </span>
-                          <span className="text-primary font-semibold">
-                            ${donation.amount.toLocaleString()}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            • {formatTimeAgo(donation.created_at)}
-                          </span>
-                        </div>
-                        {donation.message && (
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                            "{donation.message}"
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {/* Mobile panel */}
+            <div className="lg:hidden"><DonationPanel live={live} goal={Number(fundraiser.monthly_goal)} onDonate={donate} onShare={() => setShare(true)} fundraiserId={fundraiser.id} /></div>
+
+            <section><StoryBody story={fundraiser.story} /></section>
+
+            <div className="flex flex-wrap gap-3">
+              <Button size="lg" onClick={donate}><Heart className="mr-2 h-4 w-4" />Donate</Button>
+              <Button size="lg" className="bg-ink text-ink-foreground hover:bg-ink/90" onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
+            </div>
+
+            {(live.converted > 0 || live.retailers.length > 0) && (
+              <section className="rounded-[1.5rem] p-7" style={{ backgroundColor: "hsl(var(--primary-97))" }}>
+                <h2 className="font-display text-3xl font-normal text-foreground">Where the money goes</h2>
+                {live.converted > 0 && (
+                  <p className="mt-3 text-muted-foreground"><span className="font-medium text-foreground">{usd(live.converted)}</span> converted to {live.couponsCount} coupons · <span className="font-medium text-foreground">{usd(live.redeemed)}</span> redeemed</p>
+                )}
+                {live.retailers.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">{live.retailers.map((r) => <span key={r} className="rounded-full bg-background px-3 py-1 text-sm text-foreground">{r}</span>)}</div>
+                )}
+                <p className="mt-4 text-xs text-muted-foreground">Totals only. Individual purchases are never shown publicly.</p>
+              </section>
             )}
+
+            <UpdatesSection fundraiserId={fundraiser.id} />
+
+            <TeamSection team={team} fundraiserId={fundraiser.id} allowMessages={fundraiser.allow_messages} isTeam={isTeam} beneficiary={beneficiary} slug={fundraiser.unique_slug!} />
+
+            <section>
+              <h2 className="font-display text-4xl font-normal text-foreground">Help spread the word</h2>
+              <div className="mt-6 max-w-md"><ShareCardPreview title={fundraiser.title} cover={images[0]?.image_url ?? fundraiser.cover_photo_url} raised={live.totalRaised} goal={Number(fundraiser.monthly_goal)} organizer={organizer} /></div>
+              <Button className="mt-4 bg-ink text-ink-foreground hover:bg-ink/90" onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
+            </section>
+
+            <CommentsSection fundraiserId={fundraiser.id} isTeam={isTeam} slug={fundraiser.unique_slug!} />
+
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-6 text-sm text-muted-foreground">
+              {created && <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />Created {created}</span>}
+              <Link to={`/stories?category=${fundraiser.category}`} className="flex items-center gap-1.5 hover:text-foreground"><Tag className="h-4 w-4" />{categoryLabels[fundraiser.category] ?? fundraiser.category}</Link>
+              <button onClick={() => setReport(true)} className="flex items-center gap-1.5 hover:text-foreground"><Flag className="h-4 w-4" />Report fundraiser</button>
+            </div>
           </div>
 
-          {/* Right column - Donation panel (sticky) */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-4">
-              {/* Progress card */}
-              <div className="rounded-[1.5rem] border-0 bg-card p-7 shadow-card-hover">
-                {/* Circular progress */}
-                <div className="flex justify-center mb-6">
-                  <div className="relative w-36 h-36">
-                    <svg className="w-36 h-36 transform -rotate-90">
-                      <circle
-                        cx="72"
-                        cy="72"
-                        r="64"
-                        stroke="currentColor"
-                        strokeWidth="10"
-                        fill="none"
-                        className="text-secondary"
-                      />
-                      <circle
-                        cx="72"
-                        cy="72"
-                        r="64"
-                        stroke="currentColor"
-                        strokeWidth="10"
-                        fill="none"
-                        strokeDasharray={`${progressPercent * 4.02} 402`}
-                        strokeLinecap="round"
-                        className="text-primary transition-all duration-500"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="font-display text-3xl text-foreground">
-                        {progressPercent.toFixed(1).replace('.0','')}%
-                      </span>
-                      <span className="text-xs text-muted-foreground">funded</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Amount raised */}
-                <div className="text-center mb-6">
-                  <p className="font-display text-4xl text-foreground">
-                    ${fundraiser.amount_raised.toLocaleString()}
-                  </p>
-                  <p className="text-muted-foreground">
-                    raised of ${fundraiser.monthly_goal.toLocaleString()} goal
-                  </p>
-                </div>
-
-                {/* Stats */}
-                <div className="flex justify-center gap-6 mb-6 pb-6 border-b border-border">
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 text-lg font-semibold text-foreground">
-                      <Users className="w-4 h-4 text-primary" />
-                      {fundraiser.donors_count}
-                    </div>
-                    <p className="text-xs text-muted-foreground">donors</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 text-lg font-semibold text-foreground">
-                      <Calendar className="w-4 h-4 text-primary" />
-                      {Math.floor((Date.now() - new Date(fundraiser.created_at).getTime()) / (1000 * 60 * 60 * 24))}
-                    </div>
-                    <p className="text-xs text-muted-foreground">days active</p>
-                  </div>
-                </div>
-
-                {/* Action buttons */}
-                <div className="space-y-3">
-                  {isFullyFunded ? (
-                    <div className="w-full h-14 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center gap-2 text-primary font-semibold">
-                      <CheckCircle2 className="w-5 h-5" />
-                      Fully funded
-                    </div>
-                  ) : (
-                    <Button 
-                      size="lg" 
-                      className="w-full h-14 text-lg font-semibold"
-                      onClick={() => navigate(`/donate?fundraiser=${fundraiser.id}`)}
-                    >
-                      <Heart className="w-5 h-5 mr-2" />
-                      Donate Now
-                    </Button>
-                  )}
-                  <Button 
-                    variant="outline" 
-                    size="lg" 
-                    className="w-full"
-                    onClick={() => setShowShareModal(true)}
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Share
-                  </Button>
-                </div>
-              </div>
-
-              {/* Trust badges */}
-              <div className="border-t border-border p-4">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span>Secure donation processing</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <aside className="hidden lg:block">
+            <div className="sticky top-28"><DonationPanel live={live} goal={Number(fundraiser.monthly_goal)} onDonate={donate} onShare={() => setShare(true)} fundraiserId={fundraiser.id} /></div>
+          </aside>
         </div>
-      </div>
 
-      {/* Mobile fixed bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-card border-t border-border p-4 z-40">
-        <div className="flex gap-3 max-w-lg mx-auto">
-          <Button 
-            variant="outline" 
-            size="lg" 
-            className="flex-shrink-0"
-            onClick={() => setShowShareModal(true)}
-          >
-            <Share2 className="w-5 h-5" />
-          </Button>
-          <Button 
-            size="lg" 
-            className="flex-1 font-semibold"
-            disabled={isFullyFunded}
-            onClick={() => navigate(`/donate?fundraiser=${fundraiser.id}`)}
-          >
-            {isFullyFunded ? (
-              <>
-                <CheckCircle2 className="w-5 h-5 mr-2" />
-                Fully funded
-              </>
-            ) : (
-              <>
-                <Heart className="w-5 h-5 mr-2" />
-                Donate Now
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
+        <section className="my-20 grid gap-8 border-t border-border pt-12 md:grid-cols-3">
+          {[
+            { Icon: Lock, t: "Coupons, not cash", d: "Every donation becomes restricted retailer coupons for essentials." },
+            { Icon: Receipt, t: "A receipt for every dollar", d: "Totals on this page come from completed donations only." },
+            { Icon: ShieldCheck, t: "Messages stay on platform", d: "Contact details are removed and payment requests are blocked." },
+          ].map(({ Icon, t, d }, i) => (
+            <Reveal key={t} delay={i * 0.08}><Icon className="h-6 w-6 text-primary" /><h3 className="mt-4 text-lg font-medium text-foreground">{t}</h3><p className="mt-1 text-muted-foreground">{d}</p></Reveal>
+          ))}
+        </section>
+      </main>
 
-      {/* Add padding at bottom for mobile CTA */}
-      <div className="h-24 lg:h-0" />
-
+      <MoreFundraisers excludeId={fundraiser.id} />
       <Footer />
 
-      <ShareModal
-        open={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        shareUrl={shareUrl}
-        title={fundraiser.title}
-        slug={fundraiser.unique_slug || undefined}
-        amountRaised={fundraiser.amount_raised}
-        goalAmount={fundraiser.monthly_goal}
-      />
-
-      {isOwner && fundraiser && (
-        <ImageUploadModal
-          open={showImageModal}
-          onClose={() => setShowImageModal(false)}
-          fundraiserId={fundraiser.id}
-          existingImages={images}
-          onImagesUpdated={() => fetchImages(fundraiser.id)}
-        />
+      {live.justDonated && (
+        <div role="status" className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 animate-fade-in rounded-full bg-ink px-5 py-3 text-sm text-ink-foreground shadow-lg lg:bottom-8">
+          <Heart className="mr-2 inline h-4 w-4 text-primary" />{live.justDonated.display_name} just donated {usd(live.justDonated.amount)}
+        </div>
       )}
+
+      <div className="fixed inset-x-0 bottom-0 z-40 flex gap-3 border-t border-border bg-background/95 p-3 backdrop-blur lg:hidden">
+        <Button className="h-12 flex-1 text-base font-semibold" onClick={donate}><Heart className="mr-2 h-4 w-4" />Donate</Button>
+        <Button className="h-12 flex-1 bg-ink text-ink-foreground hover:bg-ink/90" onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
+      </div>
+
+      <ShareSheet open={share} onOpenChange={setShare} slug={fundraiser.unique_slug!} title={fundraiser.title} cover={images[0]?.image_url ?? fundraiser.cover_photo_url} raised={live.totalRaised} goal={Number(fundraiser.monthly_goal)} organizer={organizer} />
+      <ReportDialog open={report} onOpenChange={setReport} targetType="fundraiser" targetId={fundraiser.id} fundraiserId={fundraiser.id} />
+      {isOwner && <ImageUploadModal open={imgModal} onClose={() => setImgModal(false)} fundraiserId={fundraiser.id} existingImages={images} onImagesUpdated={() => fetchImages(fundraiser.id)} />}
     </div>
   );
 };
