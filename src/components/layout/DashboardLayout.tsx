@@ -2,12 +2,10 @@ import { ReactNode, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import {
-  Home, Gift, CreditCard, Clock, Shield,
-  BarChart, Users, LogOut, Menu, X,
-  DollarSign, TrendingUp, FileText, BookOpen,
-  MessageSquare, HelpCircle, Newspaper, Megaphone, Mail, Package,
-  Heart, Wallet
+  Home, CreditCard, Shield, LogOut, Menu, X,
+  DollarSign, TrendingUp, Megaphone, Heart, Wallet, LayoutDashboard,
 } from 'lucide-react';
 
 import logo from '@/assets/logo.png';
@@ -17,7 +15,7 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { user, hasRole, signOut } = useAuth();
+  const { user, roles, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -27,6 +25,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     navigate('/');
   };
 
+  const isTeam = roles.some((r) => ['admin', 'staff', 'viewer'].includes(r as string));
   const getPersonalNav = () => {
     // One generic account: giving and receiving are capabilities, not account types.
     return [
@@ -38,6 +37,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       { icon: CreditCard, label: 'Loyalty Card', path: '/dashboard/loyalty-card' },
       { icon: Megaphone, label: 'Your Requests', path: '/my-fundraisers' },
       { icon: Shield, label: 'Verification', path: '/dashboard/verification' },
+      ...(isTeam ? [{ icon: LayoutDashboard, label: 'Admin portal', path: '/admin' }] : []),
     ];
   };
 
