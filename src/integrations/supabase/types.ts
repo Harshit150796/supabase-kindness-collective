@@ -2157,7 +2157,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      admin_analytics: { Args: never; Returns: Json }
+      admin_analytics: { Args: { _days?: number }; Returns: Json }
       admin_auto_task: {
         Args: {
           _id: string
