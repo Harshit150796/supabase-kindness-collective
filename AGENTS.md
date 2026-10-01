@@ -27,3 +27,9 @@
 - Public fundraiser totals come from `get_fundraiser_totals` (completed donations), never stored counters, because stored counters drifted.
 
 - Social link previews come from a Vercel bot-only rewrite of /f/:slug to api/share/[slug].js; share URLs stay on the main domain because crawlers do not run the SPA.
+
+- Admin portal pages render inside AdminLayout (via DashboardLayout on /admin paths); lists use server-side pagination through DataTable, never whole-table loads.
+- Admin mutations go through security-definer admin_* RPCs that re-check role (admin/staff/viewer) and write admin_audit_log; never rely on hidden buttons.
+- Fundraisers are archived, not deleted; permanent delete only via admin_hard_delete_fundraiser with zero donations/coupons.
+- No UPDATE triggers on fundraisers: payment webhooks update it via apply_donation_to_fundraiser; fundraiser auto-tasks come from admin-dispatch polling.
+- One pg_cron job calls admin-dispatch every 5 minutes with a Vault-stored secret; it fans out to notify-dispatch and email-scheduler, which reject calls without that secret.
