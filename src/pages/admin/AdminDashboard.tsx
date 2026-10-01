@@ -26,6 +26,7 @@ const platformActions = [
   { title: 'Verifications', description: 'Approve/reject recipient applications', path: '/admin/verifications', icon: Shield, color: 'text-verify', bg: 'bg-verify/10' },
   { title: 'Coupons', description: 'View and manage coupon inventory', path: '/admin/coupons', icon: Gift, color: 'text-primary', bg: 'bg-primary/10' },
   { title: 'Fundraisers', description: 'Moderate and manage all fundraiser campaigns', path: '/admin/fundraisers', icon: Megaphone, color: 'text-primary', bg: 'bg-primary/10' },
+  { title: 'Moderation', description: 'Reports, blocked payment requests, flagged messages', path: '/admin/moderation', icon: Shield, color: 'text-primary', bg: 'bg-primary/10' },
   { title: 'Analytics', description: 'Signup trends, donation charts, stats', path: '/admin/analytics', icon: BarChart, color: 'text-primary', bg: 'bg-primary/10' },
 ];
 
