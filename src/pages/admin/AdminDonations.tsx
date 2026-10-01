@@ -17,8 +17,8 @@ const clean = (s: string) => s.trim().replace(/[%,()]/g, '');
 // Read-only financial records. Refunds and charges stay in the Stripe and Square dashboards.
 export default function AdminDonations() {
   const [params, setParams] = useSearchParams();
-  const [f, setF] = useState({ status: 'completed', provider: 'all', from: '', to: '', min: '', max: '', retailer: '', fundraiser: 'all', q: '' });
-  const [dq, setDq] = useState('');
+  const [f, setF] = useState({ status: 'completed', provider: 'all', from: '', to: '', min: '', max: '', retailer: '', fundraiser: 'all', q: params.get('q') ?? '' });
+  const [dq, setDq] = useState(params.get('q') ?? '');
   const [page, setPage] = useState(0);
   const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: 'created_at', dir: 'desc' });
   useEffect(() => { const t = setTimeout(() => { setDq(f.q); setPage(0); }, 300); return () => clearTimeout(t); }, [f.q]);

@@ -34,7 +34,7 @@ export default function AdminDonors() {
     { key: 'first', header: 'First gift', cell: (r) => fmtDate(r.first_at) },
     { key: 'recent', header: 'Last gift', sortable: true, cell: (r) => fmtDate(r.last_at) },
     { key: 'anon', header: 'Public display', cell: (r) => r.any_anonymous ? <span className="text-xs text-muted-foreground">Gives anonymously</span> : <span className="text-xs">Named</span> },
-    { key: 'open', header: '', cell: (r) => r.email ? <Link className="text-xs text-primary" to={`/admin/donations?status=all`} onClick={() => sessionStorage.setItem('adm-don-q', r.email)}>Donations</Link> : null },
+    { key: 'open', header: '', cell: (r) => r.email ? <Link className="text-xs text-primary" to={`/admin/donations?q=${encodeURIComponent(r.email)}`}>Donations</Link> : null },
   ];
 
   const exportCsv = async () => {
