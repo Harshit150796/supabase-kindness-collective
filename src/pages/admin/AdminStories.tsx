@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
+import { DataTable, StatusBadge, Column } from '@/components/admin/DataTable';
+import { useAdminPaged } from '@/hooks/useAdminPaged';
+import { sb, adminWrite, usd } from '@/lib/adminApi';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCMSStories, uploadCMSImage } from '@/hooks/useCMSContent';
+import { uploadCMSImage } from '@/hooks/useCMSContent';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { Plus, Pencil, Trash2, Upload, Search, ExternalLink, Star, MapPin, Users, DollarSign, Eye, EyeOff, BookOpen, FileText, Sparkles } from 'lucide-react';
@@ -33,35 +37,31 @@ const emptyForm: StoryForm = {
 const categories = ['all', 'family', 'child', 'emergency', 'community'] as const;
 
 export default function AdminStories() {
-  const queryClient = useQueryClient();
-  const { data: stories, isLoading } = useCMSStories(false);
+  const qc = useQueryClient();
+  const { canWrite, isAdmin } = useTeamRole();
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const t = useAdminPaged({ table: 'cms_stories', searchCols: ['name', 'location', 'category'], defaultSort: { key: 'display_order', dir: 'asc' }, filter: (b) => (categoryFilter === 'all' ? b : b.eq('category', categoryFilter)), deps: [categoryFilter] });
+  const stats = useQuery({
+    queryKey: ['adm-story-stats'],
+    queryFn: async () => {
+      const [all, pub, feat] = await Promise.all([
+        sb.from('cms_stories').select('id', { count: 'exact', head: true }),
+        sb.from('cms_stories').select('id', { count: 'exact', head: true }).eq('is_published', true),
+        sb.from('cms_stories').select('id,name').eq('is_published', true).eq('display_order', 1).limit(1),
+      ]);
+      return { total: all.count ?? 0, published: pub.count ?? 0, featured: feat.data?.[0] as any };
+    },
+  });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<StoryForm>(emptyForm);
   const [uploading, setUploading] = useState(false);
-  const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-
-  const filtered = (stories || []).filter((s: any) => {
-    const matchesSearch = !search || s.name?.toLowerCase().includes(search.toLowerCase()) ||
-      s.location?.toLowerCase().includes(search.toLowerCase()) ||
-      s.category?.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || s.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
-
-  const publishedCount = (stories || []).filter((s: any) => s.is_published).length;
-  const draftCount = (stories || []).filter((s: any) => !s.is_published).length;
-  const featuredStory = (stories || []).find((s: any) => s.is_published && s.display_order === 1);
-
-  const toggleSelect = (id: string) => {
-    setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  };
-  const toggleAll = () => {
-    if (selected.size === filtered.length) setSelected(new Set());
-    else setSelected(new Set(filtered.map((s: any) => s.id)));
+  const refresh = () => { qc.invalidateQueries({ queryKey: ['adm-paged', 'cms_stories'] }); qc.invalidateQueries({ queryKey: ['cms-stories'] }); stats.refetch(); };
+  const run = async (fn: () => Promise<unknown>, ok?: string) => {
+    try { await fn(); if (ok) toast({ title: ok }); refresh(); return true; }
+    catch (e) { toast({ title: 'Could not save', description: (e as Error).message, variant: 'destructive' }); return false; }
   };
 
   const openNew = () => { setForm(emptyForm); setEditId(null); setDialogOpen(true); };
@@ -69,264 +69,61 @@ export default function AdminStories() {
     setForm({ name: story.name, location: story.location || '', image_url: story.image_url || '', short_story: story.short_story, full_story: story.full_story || '', impact: story.impact || '', category: story.category, donors_count: story.donors_count, amount_raised: story.amount_raised, goal: story.goal, is_published: story.is_published, display_order: story.display_order });
     setEditId(story.id); setDialogOpen(true);
   };
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     setUploading(true);
-    try {
-      const url = await uploadCMSImage(file, `stories/${Date.now()}-${file.name}`);
-      setForm(prev => ({ ...prev, image_url: url }));
-    } catch (err: any) { toast({ title: 'Upload failed', description: err.message, variant: 'destructive' }); }
+    try { const url = await uploadCMSImage(file, `stories/${Date.now()}-${file.name}`); setForm((prev) => ({ ...prev, image_url: url })); }
+    catch (err: any) { toast({ title: 'Upload failed', description: err.message, variant: 'destructive' }); }
     setUploading(false);
   };
-
   const handleSave = async () => {
     if (!form.name || !form.short_story) { toast({ title: 'Name and short story are required', variant: 'destructive' }); return; }
-    const op = editId
-      ? supabase.from('cms_stories').update(form).eq('id', editId)
-      : supabase.from('cms_stories').insert(form);
-    const { error } = await op;
-    if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
-    toast({ title: editId ? 'Story updated!' : 'Story created!' });
-    setDialogOpen(false);
-    queryClient.invalidateQueries({ queryKey: ['cms-stories'] });
+    if (await run(() => editId ? adminWrite('cms_stories', 'update', [editId], form as any) : adminWrite('cms_stories', 'insert', null, form as any), editId ? 'Story updated' : 'Story created')) setDialogOpen(false);
   };
-
-  const confirmDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from('cms_stories').delete().eq('id', deleteId);
-    if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    else { toast({ title: 'Deleted' }); queryClient.invalidateQueries({ queryKey: ['cms-stories'] }); }
-    setDeleteId(null);
-  };
-
-  const togglePublish = async (id: string, current: boolean) => {
-    await supabase.from('cms_stories').update({ is_published: !current }).eq('id', id);
-    queryClient.invalidateQueries({ queryKey: ['cms-stories'] });
-  };
-
+  const confirmDelete = async () => { if (deleteId) await run(() => adminWrite('cms_stories', 'delete', [deleteId]), 'Deleted'); setDeleteId(null); };
   const setAsFeatured = async (id: string) => {
-    const sorted = [...(stories || [])].filter((s: any) => s.is_published).sort((a: any, b: any) => a.display_order - b.display_order);
-    const updates = sorted.map((s: any, idx: number) => {
-      const newOrder = s.id === id ? 1 : (idx + 2);
-      return supabase.from('cms_stories').update({ display_order: newOrder }).eq('id', s.id);
-    });
-    await Promise.all(updates);
-    toast({ title: 'Featured story updated!', description: 'This story will now appear in the hero section.' });
-    queryClient.invalidateQueries({ queryKey: ['cms-stories'] });
+    await run(async () => {
+      const { data, error } = await sb.from('cms_stories').select('id,display_order').eq('is_published', true).order('display_order').range(0, 999);
+      if (error) throw new Error(error.message);
+      const others = (data ?? []).filter((s: any) => s.id !== id);
+      await adminWrite('cms_stories', 'update', [id], { display_order: 1 });
+      for (let i = 0; i < others.length; i++) if (others[i].display_order !== i + 2) await adminWrite('cms_stories', 'update', [others[i].id], { display_order: i + 2 });
+    }, 'Featured story updated — it now appears in the hero section.');
   };
+  const bulk = async (p: boolean) => { await run(() => adminWrite('cms_stories', 'update', [...selected], { is_published: p }), `${selected.size} stories ${p ? 'published' : 'unpublished'}`); setSelected(new Set()); };
+  const pct = (raised: number, goal: number) => (goal > 0 ? Math.min(100, Math.round((raised / goal) * 100)) : 0);
 
-  const bulkPublish = async (publish: boolean) => {
-    if (selected.size === 0) return;
-    await Promise.all(Array.from(selected).map(id =>
-      supabase.from('cms_stories').update({ is_published: publish }).eq('id', id)
-    ));
-    toast({ title: `${selected.size} stories ${publish ? 'published' : 'unpublished'}` });
-    setSelected(new Set());
-    queryClient.invalidateQueries({ queryKey: ['cms-stories'] });
-  };
-
-  const progressPercent = (raised: number, goal: number) => goal > 0 ? Math.min(100, Math.round((raised / goal) * 100)) : 0;
+  const cols: Column<any>[] = [
+    ...(canWrite ? [{ key: 'sel', header: '', cell: (s: any) => <Checkbox checked={selected.has(s.id)} onClick={(e) => e.stopPropagation()} onCheckedChange={() => setSelected((p) => { const n = new Set(p); n.has(s.id) ? n.delete(s.id) : n.add(s.id); return n; })} aria-label="Select" /> }] : []),
+    { key: 'name', header: 'Story', sortable: true, cell: (s) => <div className="flex items-center gap-3">{s.image_url ? <img src={s.image_url} alt="" className="h-10 w-10 rounded object-cover" /> : <div className="h-10 w-10 rounded bg-muted" />}<div className="max-w-[320px]"><p className="truncate font-medium text-foreground">{s.name}{s.is_published && s.display_order === 1 && <span className="ml-2 rounded bg-ink px-1.5 py-0.5 text-[10px] text-ink-foreground">Featured</span>}</p><p className="truncate text-xs text-muted-foreground">{s.location || '—'}</p></div></div> },
+    { key: 'category', header: 'Category', sortable: true, cell: (s) => <span className="capitalize">{s.category}</span> },
+    { key: 'amount_raised', header: 'Raised / goal', align: 'right', sortable: true, cell: (s) => <div className="text-right"><p>{usd(s.amount_raised)} / {usd(s.goal)}</p><div className="ml-auto mt-1 h-1 w-24 rounded bg-muted"><div className="h-1 rounded bg-primary" style={{ width: `${pct(s.amount_raised, s.goal)}%` }} /></div></div> },
+    { key: 'display_order', header: 'Order', sortable: true, align: 'right', cell: (s) => s.display_order },
+    { key: 'is_published', header: 'Status', sortable: true, cell: (s) => <StatusBadge value={s.is_published ? 'active' : 'paused'} /> },
+    ...(canWrite ? [{ key: 'a', header: '', align: 'right' as const, cell: (s: any) => (
+      <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+        {s.is_published && s.display_order !== 1 && <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setAsFeatured(s.id)}><Star className="mr-1 h-3 w-3" />Feature</Button>}
+        <Switch checked={s.is_published} onCheckedChange={() => run(() => adminWrite('cms_stories', 'update', [s.id], { is_published: !s.is_published }))} aria-label="Published" />
+        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(s)} aria-label="Edit"><Pencil className="h-3.5 w-3.5" /></Button>
+        {isAdmin && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setDeleteId(s.id)} aria-label="Delete"><Trash2 className="h-3.5 w-3.5" /></Button>}
+      </div>) }] : []),
+  ];
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-              <BookOpen className="w-8 h-8 text-primary" />
-              Impact Stories
-            </h1>
-            <p className="text-muted-foreground mt-1">Manage stories shown on the website and hero section</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => window.open('/stories', '_blank')}>
-              <ExternalLink className="w-3.5 h-3.5" />Preview Site
-            </Button>
-            <Button onClick={openNew} className="gap-2"><Plus className="w-4 h-4" />Add Story</Button>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="border-none shadow-sm bg-muted/30">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{(stories || []).length}</p>
-                <p className="text-xs text-muted-foreground">Total Stories</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-sm bg-muted/30">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Eye className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{publishedCount} <span className="text-sm font-normal text-muted-foreground">/ {draftCount} drafts</span></p>
-                <p className="text-xs text-muted-foreground">Published Stories</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-sm bg-muted/30">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-verify/10 flex items-center justify-center">
-                <Star className="w-5 h-5 text-verify" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground truncate max-w-[160px]">{featuredStory?.name || 'None set'}</p>
-                <p className="text-xs text-muted-foreground">Featured Story</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Search + Category Tabs */}
-        <div className="space-y-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search by name, location, or category..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
-          </div>
-          <Tabs value={categoryFilter} onValueChange={setCategoryFilter}>
-            <TabsList className="w-full sm:w-auto">
-              {categories.map(cat => (
-                <TabsTrigger key={cat} value={cat} className="capitalize text-xs">
-                  {cat === 'all' ? `All (${(stories || []).length})` : cat}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
-
-        {/* Bulk actions */}
-        {selected.size > 0 && (
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
-            <span className="text-sm font-medium text-primary">{selected.size} selected</span>
-            <Button size="sm" variant="outline" onClick={() => bulkPublish(true)}>Publish All</Button>
-            <Button size="sm" variant="outline" onClick={() => bulkPublish(false)}>Unpublish All</Button>
-            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
-          </div>
-        )}
-
-        {/* Story List */}
-        {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">Loading stories...</div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-16">
-            <FileText className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-1">{search || categoryFilter !== 'all' ? 'No stories match your filters' : 'No stories yet'}</h3>
-            <p className="text-sm text-muted-foreground mb-4">{search ? 'Try a different search term' : 'Create your first impact story'}</p>
-            {!search && categoryFilter === 'all' && <Button onClick={openNew} className="gap-2"><Plus className="w-4 h-4" />Create First Story</Button>}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <Checkbox checked={selected.size === filtered.length && filtered.length > 0} onCheckedChange={toggleAll} />
-              <span className="text-xs text-muted-foreground">Select all ({filtered.length})</span>
-            </div>
-            {filtered.map((story: any) => {
-              const isFeatured = story.is_published && story.display_order === 1;
-              const pct = progressPercent(story.amount_raised, story.goal);
-              return (
-                <Card key={story.id} className={`transition-all duration-200 ${isFeatured ? 'ring-2 ring-verify/50 shadow-md' : 'hover:shadow-md'}`}>
-                  <CardContent className="p-5">
-                    <div className="flex items-start gap-4">
-                      <Checkbox checked={selected.has(story.id)} onCheckedChange={() => toggleSelect(story.id)} className="mt-1" />
-                      
-                      {/* Thumbnail */}
-                      {story.image_url ? (
-                        <img src={story.image_url} alt={story.name} className="w-20 h-20 rounded-xl object-cover flex-shrink-0 shadow-sm" />
-                      ) : (
-                        <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-                          <FileText className="w-8 h-8 text-muted-foreground/40" />
-                        </div>
-                      )}
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0 space-y-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="font-semibold text-foreground">{story.name}</h3>
-                              {isFeatured && (
-                                <Badge className="bg-verify/15 text-verify border-verify/30 gap-1 text-[10px]">
-                                  <Star className="w-3 h-3 fill-current" />Featured
-                                </Badge>
-                              )}
-                              <Badge variant={story.is_published ? 'default' : 'secondary'} className={`text-[10px] ${story.is_published ? 'bg-primary/15 text-primary border-primary/30' : ''}`}>
-                                {story.is_published ? 'Published' : 'Draft'}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{story.short_story}</p>
-                          </div>
-                        </div>
-
-                        {/* Meta row */}
-                        <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground">
-                          <span className="inline-flex items-center gap-1 capitalize">
-                            <Badge variant="outline" className="text-[10px] font-normal">{story.category}</Badge>
-                          </span>
-                          {story.location && (
-                            <span className="inline-flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />{story.location}
-                            </span>
-                          )}
-                          <span className="inline-flex items-center gap-1">
-                            <Users className="w-3 h-3" />{story.donors_count} donors
-                          </span>
-                          {story.impact && (
-                            <span className="inline-flex items-center gap-1">
-                              <Sparkles className="w-3 h-3 text-verify" />{story.impact}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Progress bar */}
-                        {story.goal > 0 && (
-                          <div className="flex items-center gap-3 max-w-md">
-                            <Progress value={pct} className="h-2 flex-1" />
-                            <span className="text-xs font-medium text-foreground whitespace-nowrap">
-                              ${story.amount_raised.toLocaleString()} / ${story.goal.toLocaleString()} <span className="text-muted-foreground">({pct}%)</span>
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <Button
-                          size="icon"
-                          variant={isFeatured ? 'default' : 'ghost'}
-                          className={`h-8 w-8 ${isFeatured ? 'bg-verify hover:bg-verify/90 text-white' : 'text-muted-foreground hover:text-verify'}`}
-                          onClick={() => setAsFeatured(story.id)}
-                          title="Set as featured story"
-                          aria-label="Set as featured story"
-                          disabled={!story.is_published}
-                        >
-                          <Star className={`w-4 h-4 ${isFeatured ? 'fill-current' : ''}`} />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => togglePublish(story.id, story.is_published)} title={story.is_published ? 'Unpublish' : 'Publish'} aria-label={story.is_published ? 'Unpublish story' : 'Publish story'}>
-                          {story.is_published ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(story)} aria-label="Edit story">
-                          <Pencil className="w-4 h-4 text-muted-foreground" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 hover:text-destructive" onClick={() => setDeleteId(story.id)} aria-label="Delete story">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+      <PageHeader title="Stories" description="Impact stories shown on the website and the hero section. These are editorial CMS stories, separate from live fundraisers."
+        actions={<><Button variant="outline" size="sm" onClick={() => window.open('/stories', '_blank')}><ExternalLink className="mr-1.5 h-3.5 w-3.5" />Preview</Button>{canWrite && <Button size="sm" onClick={openNew}><Plus className="mr-1.5 h-4 w-4" />Add story</Button>}</>} />
+      <div className="mb-4 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3 tabular-nums">
+        <div className="bg-background p-4"><p className="text-xs text-muted-foreground">Total stories</p><p className="text-2xl font-semibold">{stats.data?.total ?? '—'}</p></div>
+        <div className="bg-background p-4"><p className="text-xs text-muted-foreground">Published / drafts</p><p className="text-2xl font-semibold">{stats.data ? `${stats.data.published} / ${stats.data.total - stats.data.published}` : '—'}</p></div>
+        <div className="bg-background p-4"><p className="text-xs text-muted-foreground">Featured in hero</p><p className="truncate text-base font-medium">{stats.data?.featured?.name ?? 'None set'}</p></div>
       </div>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="relative w-full max-w-sm"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input className="h-9 pl-8" placeholder="Search name, location or category" value={t.search} onChange={(e) => t.setSearch(e.target.value)} /></div>
+        <Tabs value={categoryFilter} onValueChange={setCategoryFilter}><TabsList>{categories.map((c) => <TabsTrigger key={c} value={c} className="text-xs capitalize">{c}</TabsTrigger>)}</TabsList></Tabs>
+        {selected.size > 0 && <><span className="text-sm">{selected.size} selected</span><Button size="sm" variant="outline" onClick={() => bulk(true)}>Publish</Button><Button size="sm" variant="outline" onClick={() => bulk(false)}>Unpublish</Button><Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button></>}
+      </div>
+      <DataTable columns={cols} {...t.tableProps} rowKey={(r: any) => r.id} onRowClick={canWrite ? openEdit : undefined} empty="No stories match." />
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
