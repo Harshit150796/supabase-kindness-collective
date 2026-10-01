@@ -2169,6 +2169,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_email_stats: { Args: never; Returns: Json }
       admin_fundraiser_action: {
         Args: {
           _action: string
@@ -2182,6 +2183,7 @@ export type Database = {
         Args: { _confirm: string; _id: string }
         Returns: undefined
       }
+      admin_import_profile_subscribers: { Args: never; Returns: number }
       admin_list_donors: {
         Args: {
           _limit?: number
