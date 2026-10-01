@@ -1,439 +1,126 @@
-import { useState, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/admin/AdminLayout';
+import { DataTable, StatusBadge, Column } from '@/components/admin/DataTable';
+import { sb, usd, fmtDate, downloadCsv, fetchAllChunks } from '@/lib/adminApi';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from '@/hooks/use-toast';
-import {
-  Search, DollarSign, TrendingUp, Users, ExternalLink, Loader2,
-  CreditCard, Mail, User as UserIcon, Megaphone, Link as LinkIcon, Check,
-} from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Download, Search, ExternalLink } from 'lucide-react';
 
-interface DonationRow {
-  id: string;
-  amount: number;
-  net_amount: number | null;
-  stripe_fee: number | null;
-  currency: string | null;
-  status: string | null;
-  donor_id: string | null;
-  donor_email: string | null;
-  donor_name: string | null;
-  brand_partner: string | null;
-  fundraiser_id: string | null;
-  payment_method: string | null;
-  payment_provider?: string | null;
-  receipt_url: string | null;
-  message: string | null;
-  is_anonymous: boolean | null;
-  stripe_session_id: string | null;
-  stripe_payment_intent_id: string | null;
-  created_at: string;
-}
+const PAGE = 25;
+const clean = (s: string) => s.trim().replace(/[%,()]/g, '');
 
-interface FundraiserLite { id: string; title: string; unique_slug: string | null; }
-
-const STATUSES = ['all', 'completed', 'pending', 'failed', 'refunded', 'expired'] as const;
-
+// Read-only financial records. Refunds and charges stay in the Stripe and Square dashboards.
 export default function AdminDonations() {
-  const qc = useQueryClient();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [fundraiserFilter, setFundraiserFilter] = useState<string>('all');
-  const [selectedDonation, setSelectedDonation] = useState<DonationRow | null>(null);
-  const [reassignFundraiserId, setReassignFundraiserId] = useState<string>('');
-  const [backfilling, setBackfilling] = useState(false);
+  const [params, setParams] = useSearchParams();
+  const [f, setF] = useState({ status: 'completed', provider: 'all', from: '', to: '', min: '', max: '', retailer: '', fundraiser: 'all', q: '' });
+  const [dq, setDq] = useState('');
   const [page, setPage] = useState(0);
-  const PAGE_SIZE = 25;
+  const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: 'created_at', dir: 'desc' });
+  useEffect(() => { const t = setTimeout(() => { setDq(f.q); setPage(0); }, 300); return () => clearTimeout(t); }, [f.q]);
+  const set = (k: string, v: string) => { setF((p) => ({ ...p, [k]: v })); setPage(0); };
 
-  const { data: donations, isLoading } = useQuery({
-    queryKey: ['admin-donations'],
+  const { data: frs } = useQuery({ queryKey: ['adm-fr-lite'], queryFn: async () => (await sb.from('fundraisers').select('id,title').order('title').limit(500)).data ?? [] });
+
+  const apply = (b: any) => {
+    if (f.status !== 'all') b = f.status === 'completed' ? b.in('status', ['completed', 'succeeded']) : b.eq('status', f.status);
+    if (f.provider !== 'all') b = b.eq('payment_provider', f.provider);
+    if (f.from) b = b.gte('created_at', new Date(f.from).toISOString());
+    if (f.to) b = b.lt('created_at', new Date(new Date(f.to).getTime() + 86400000).toISOString());
+    if (f.min) b = b.gte('amount', Number(f.min));
+    if (f.max) b = b.lte('amount', Number(f.max));
+    if (f.retailer.trim()) b = b.ilike('brand_partner', `%${clean(f.retailer)}%`);
+    if (f.fundraiser === 'none') b = b.is('fundraiser_id', null); else if (f.fundraiser !== 'all') b = b.eq('fundraiser_id', f.fundraiser);
+    if (clean(dq)) b = b.or(`donor_name.ilike.%${clean(dq)}%,donor_email.ilike.%${clean(dq)}%`);
+    return b;
+  };
+  const COLS_SEL = 'id,amount,net_amount,status,donor_name,donor_email,is_anonymous,brand_partner,payment_provider,fundraiser_id,created_at,fundraisers(title)';
+
+  const q = useQuery({
+    queryKey: ['adm-don', f, dq, page, sort],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('donations')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data, error, count } = await apply(sb.from('donations').select(COLS_SEL, { count: 'exact' })).order(sort.key, { ascending: sort.dir === 'asc' }).range(page * PAGE, page * PAGE + PAGE - 1);
       if (error) throw error;
-      return (data || []) as DonationRow[];
+      return { rows: data ?? [], total: count ?? 0 };
     },
   });
 
-  const { data: fundraisers } = useQuery({
-    queryKey: ['admin-donations-fundraisers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('fundraisers')
-        .select('id, title, unique_slug')
-        .order('title');
-      if (error) throw error;
-      return (data || []) as FundraiserLite[];
-    },
-  });
+  const cols: Column<any>[] = [
+    { key: 'created_at', header: 'Date', sortable: true, cell: (r) => fmtDate(r.created_at) },
+    { key: 'donor', header: 'Donor', cell: (r) => <div><p className="text-foreground">{r.donor_name || 'Guest'}{r.is_anonymous && <span className="ml-1 text-xs text-muted-foreground">(anonymous publicly)</span>}</p><p className="text-xs text-muted-foreground">{r.donor_email}</p></div> },
+    { key: 'amount', header: 'Amount', align: 'right', sortable: true, cell: (r) => <span className="font-medium">{usd(r.amount)}</span> },
+    { key: 'status', header: 'Status', sortable: true, cell: (r) => <StatusBadge value={r.status} /> },
+    { key: 'brand_partner', header: 'Retailers', cell: (r) => <span className="line-clamp-1 max-w-[180px] text-xs">{r.brand_partner || '—'}</span> },
+    { key: 'fundraiser', header: 'Fundraiser', cell: (r) => <span className="line-clamp-1 max-w-[200px] text-xs">{r.fundraisers?.title ?? 'General fund'}</span> },
+    { key: 'payment_provider', header: 'Provider', sortable: true, cell: (r) => <span className="capitalize">{r.payment_provider ?? 'stripe'}</span> },
+  ];
 
-  const fundraiserMap = useMemo(() => {
-    const m = new Map<string, FundraiserLite>();
-    (fundraisers || []).forEach(f => m.set(f.id, f));
-    return m;
-  }, [fundraisers]);
-
-  const filtered = useMemo(() => {
-    const all = donations || [];
-    return all.filter(d => {
-      const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
-      const matchesFundraiser =
-        fundraiserFilter === 'all' ||
-        (fundraiserFilter === 'unattributed' && !d.fundraiser_id) ||
-        d.fundraiser_id === fundraiserFilter;
-      const q = search.trim().toLowerCase();
-      const matchesSearch = !q ||
-        d.donor_email?.toLowerCase().includes(q) ||
-        d.donor_name?.toLowerCase().includes(q) ||
-        d.brand_partner?.toLowerCase().includes(q) ||
-        d.stripe_session_id?.toLowerCase().includes(q) ||
-        d.stripe_payment_intent_id?.toLowerCase().includes(q) ||
-        d.id.toLowerCase().includes(q);
-      return matchesStatus && matchesFundraiser && matchesSearch;
-    });
-  }, [donations, search, statusFilter, fundraiserFilter]);
-
-  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-
-  // Stats
-  const all = donations || [];
-  const completed = all.filter(d => d.status === 'completed');
-  const totalRaised = completed.reduce((s, d) => s + (d.amount || 0), 0);
-  const unattributed = completed.filter(d => !d.fundraiser_id).length;
-  const uniqueDonors = new Set(completed.map(d => d.donor_id || d.donor_email).filter(Boolean)).size;
-
-  const handleReassign = async () => {
-    if (!selectedDonation) return;
-    const newId = reassignFundraiserId === '__none__' ? null : reassignFundraiserId;
-    const { error } = await supabase
-      .from('donations')
-      .update({ fundraiser_id: newId })
-      .eq('id', selectedDonation.id);
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-      return;
-    }
-    // Manually update fundraiser totals via RPC if reassigning to a new fundraiser
-    if (newId && selectedDonation.status === 'completed') {
-      await supabase.rpc('apply_donation_to_fundraiser', {
-        _fundraiser_id: newId,
-        _amount: selectedDonation.amount,
-        _donor_email: selectedDonation.donor_email,
-        _donor_id: selectedDonation.donor_id,
-      });
-    }
-    toast({ title: 'Donation re-attributed' });
-    qc.invalidateQueries({ queryKey: ['admin-donations'] });
-    setSelectedDonation(null);
-  };
-
-  const runBackfill = async () => {
-    setBackfilling(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('backfill-stripe-donations', {
-        body: { limit: 100 },
-      });
-      if (error) throw error;
-      toast({
-        title: 'Backfill complete',
-        description: `Processed ${data?.processed || 0}, skipped ${data?.skipped || 0}, failed ${data?.failed || 0}`,
-      });
-      qc.invalidateQueries({ queryKey: ['admin-donations'] });
-    } catch (e: any) {
-      toast({ title: 'Backfill failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setBackfilling(false);
-    }
-  };
-
-  const statusBadge = (status: string | null) => {
-    const map: Record<string, string> = {
-      completed: 'bg-primary/15 text-primary border-primary/30',
-      pending: 'bg-verify/15 text-verify border-verify/30',
-      failed: 'bg-red-500/15 text-red-700 border-red-500/30',
-      refunded: 'bg-blue-500/15 text-blue-700 border-blue-500/30',
-      expired: 'bg-muted text-muted-foreground border-border',
-    };
-    return (
-      <Badge variant="outline" className={`text-[10px] ${map[status || ''] || map.expired}`}>
-        {status || 'unknown'}
-      </Badge>
-    );
-  };
-
-  const fundraiserCell = (d: DonationRow) => {
-    if (!d.fundraiser_id) {
-      return <span className="text-xs text-verify font-medium">Unattributed</span>;
-    }
-    const f = fundraiserMap.get(d.fundraiser_id);
-    if (!f) return <span className="text-xs text-muted-foreground">{d.fundraiser_id.slice(0, 8)}…</span>;
-    return (
-      <a
-        href={f.unique_slug ? `/f/${f.unique_slug}` : `/fundraiser/${f.id}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-xs text-primary hover:underline flex items-center gap-1 max-w-[200px] truncate"
-        title={f.title}
-      >
-        <LinkIcon className="w-3 h-3 flex-shrink-0" />
-        <span className="truncate">{f.title}</span>
-      </a>
-    );
+  const exportCsv = async () => {
+    const rows = await fetchAllChunks((a, b) => apply(sb.from('donations').select('id,created_at,amount,net_amount,status,donor_name,is_anonymous,brand_partner,payment_provider,fundraiser_id')).order('created_at', { ascending: false }).range(a, b));
+    downloadCsv('donations', rows);
   };
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-              <DollarSign className="w-8 h-8 text-primary" />
-              Donations
-            </h1>
-            <p className="text-muted-foreground mt-1">All donor transactions and fundraiser attribution</p>
-          </div>
-          <Button onClick={runBackfill} disabled={backfilling} variant="outline">
-            {backfilling ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <TrendingUp className="w-4 h-4 mr-2" />}
-            Sync from Stripe
-          </Button>
-        </div>
+      <PageHeader title="Donations" description="Read-only financial records. Refunds and charges are handled in the Stripe and Square dashboards."
+        actions={<Button size="sm" variant="outline" onClick={exportCsv}><Download className="mr-1.5 h-4 w-4" />CSV</Button>} />
+      <div className="mb-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
+        <div className="relative sm:col-span-2"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input className="h-9 pl-8" placeholder="Donor name or email" value={f.q} onChange={(e) => set('q', e.target.value)} /></div>
+        <Select value={f.status} onValueChange={(v) => set('status', v)}><SelectTrigger className="h-9"><SelectValue /></SelectTrigger><SelectContent>{['all', 'completed', 'pending', 'failed', 'refunded', 'expired'].map((s) => <SelectItem key={s} value={s} className="capitalize">{s === 'all' ? 'All statuses' : s}</SelectItem>)}</SelectContent></Select>
+        <Select value={f.provider} onValueChange={(v) => set('provider', v)}><SelectTrigger className="h-9"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All providers</SelectItem><SelectItem value="stripe">Stripe</SelectItem><SelectItem value="square">Square</SelectItem></SelectContent></Select>
+        <Select value={f.fundraiser} onValueChange={(v) => set('fundraiser', v)}><SelectTrigger className="h-9"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All fundraisers</SelectItem><SelectItem value="none">General fund</SelectItem>{(frs ?? []).map((x: any) => <SelectItem key={x.id} value={x.id}>{x.title}</SelectItem>)}</SelectContent></Select>
+        <Input className="h-9" placeholder="Retailer" value={f.retailer} onChange={(e) => set('retailer', e.target.value)} />
+        <Input className="h-9" type="date" value={f.from} onChange={(e) => set('from', e.target.value)} aria-label="From date" />
+        <Input className="h-9" type="date" value={f.to} onChange={(e) => set('to', e.target.value)} aria-label="To date" />
+        <Input className="h-9" type="number" placeholder="Min $" value={f.min} onChange={(e) => set('min', e.target.value)} />
+        <Input className="h-9" type="number" placeholder="Max $" value={f.max} onChange={(e) => set('max', e.target.value)} />
+      </div>
+      <DataTable columns={cols} rows={q.data?.rows} total={q.data?.total} loading={q.isLoading} error={q.error ? (q.error as Error).message : null} onRetry={() => q.refetch()}
+        page={page} pageSize={PAGE} onPage={setPage} sort={sort} onSort={(k) => setSort((s) => ({ key: k, dir: s.key === k && s.dir === 'desc' ? 'asc' : 'desc' }))}
+        rowKey={(r) => r.id} onRowClick={(r) => setParams((p) => { p.set('id', r.id); return p; })} empty="No donations match these filters." />
+      <DonationDrawer id={params.get('id')} onClose={() => setParams((p) => { p.delete('id'); return p; })} />
+    </DashboardLayout>
+  );
+}
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {[
-            { label: 'Total Donations', value: all.length, icon: DollarSign, color: 'text-primary', bg: 'bg-primary/10' },
-            { label: 'Total Raised', value: `$${totalRaised.toLocaleString()}`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10' },
-            { label: 'Unique Donors', value: uniqueDonors, icon: Users, color: 'text-blue-600', bg: 'bg-blue-500/10' },
-            { label: 'Unattributed', value: unattributed, icon: Megaphone, color: 'text-verify', bg: 'bg-verify/10' },
-          ].map(s => (
-            <Card key={s.label} className="border-none shadow-sm bg-muted/30">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full ${s.bg} flex items-center justify-center`}>
-                  <s.icon className={`w-5 h-5 ${s.color}`} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{s.value}</p>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Filters */}
-        <div className="space-y-3">
-          <div className="flex gap-3 flex-wrap">
-            <div className="relative flex-1 min-w-[240px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, email, brand, session id…"
-                value={search}
-                onChange={e => { setSearch(e.target.value); setPage(0); }}
-                className="pl-10"
-              />
-            </div>
-            <Select value={fundraiserFilter} onValueChange={(v) => { setFundraiserFilter(v); setPage(0); }}>
-              <SelectTrigger className="w-[220px]"><SelectValue placeholder="Fundraiser" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All fundraisers</SelectItem>
-                <SelectItem value="unattributed">Unattributed only</SelectItem>
-                {(fundraisers || []).map(f => (
-                  <SelectItem key={f.id} value={f.id}>{f.title}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(0); }}>
-            <TabsList>
-              {STATUSES.map(s => (
-                <TabsTrigger key={s} value={s} className="capitalize text-xs">
-                  {s === 'all' ? `All (${all.length})` : `${s} (${all.filter(d => d.status === s).length})`}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
-
-        {/* Table */}
-        <Card>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="p-12 text-center text-muted-foreground">
-                <Loader2 className="w-6 h-6 animate-spin mx-auto" />
-              </div>
-            ) : paginated.length === 0 ? (
-              <div className="p-12 text-center text-muted-foreground">No donations match your filters.</div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Donor</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Fundraiser</TableHead>
-                    <TableHead>Brand(s)</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginated.map(d => (
-                    <TableRow key={d.id} className="cursor-pointer" onClick={() => { setSelectedDonation(d); setReassignFundraiserId(d.fundraiser_id || '__none__'); }}>
-                      <TableCell className="text-xs whitespace-nowrap">
-                        {new Date(d.created_at).toLocaleDateString()}
-                        <div className="text-[10px] text-muted-foreground">
-                          {new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        <div className="font-medium text-foreground">{d.donor_name || (d.is_anonymous ? 'Anonymous' : '—')}</div>
-                        <div className="text-muted-foreground truncate max-w-[180px]">{d.donor_email || '—'}</div>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold text-foreground">
-                        ${d.amount.toFixed(2)}
-                        {d.net_amount != null && (
-                          <div className="text-[10px] text-muted-foreground font-normal">net ${d.net_amount.toFixed(2)}</div>
-                        )}
-                      </TableCell>
-                      <TableCell>{statusBadge(d.status)}</TableCell>
-                      <TableCell>{fundraiserCell(d)}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[160px] truncate" title={d.brand_partner || ''}>
-                        {d.brand_partner || '—'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {d.receipt_url && (
-                          <a href={d.receipt_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
-                            <Button size="sm" variant="ghost"><ExternalLink className="w-3.5 h-3.5" /></Button>
-                          </a>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">
-              Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} of {filtered.length}
-            </span>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Previous</Button>
-              <Button size="sm" variant="outline" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next</Button>
-            </div>
+function DonationDrawer({ id, onClose }: { id: string | null; onClose: () => void }) {
+  const d = useQuery({
+    queryKey: ['adm-don-detail', id], enabled: !!id,
+    queryFn: async () => {
+      const [don, brands, coupons] = await Promise.all([
+        sb.from('donations').select('*, fundraisers(title, unique_slug)').eq('id', id).single(),
+        sb.from('donation_brands').select('id,brand_name,allocation_percent,allocated_amount').eq('donation_id', id),
+        sb.from('coupons').select('id,store_name,value,expected_value,status,created_at,redeemed_at').eq('donation_id', id).order('created_at'),
+      ]);
+      if (don.error) throw don.error;
+      return { don: don.data, brands: brands.data ?? [], coupons: coupons.data ?? [] };
+    },
+  });
+  const x = d.data?.don;
+  return (
+    <Sheet open={!!id} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
+        {!x ? <p className="p-6 text-sm text-muted-foreground">{d.error ? (d.error as Error).message : 'Loading…'}</p> : (
+          <div className="space-y-5 tabular-nums">
+            <SheetHeader><SheetTitle className="text-left font-serif text-2xl font-normal">{usd(x.amount)} donation</SheetTitle></SheetHeader>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              {[['Status', <StatusBadge key="s" value={x.status} />], ['Date', fmtDate(x.created_at)], ['Donor', x.donor_name || 'Guest'], ['Email', x.donor_email || '—'],
+                ['Shown publicly as', x.is_anonymous ? 'Anonymous' : 'Name'], ['Provider', x.payment_provider ?? 'stripe'], ['Net', usd(x.net_amount)], ['Fee', usd(x.stripe_fee)],
+                ['Fundraiser', x.fundraisers?.title ?? 'General fund'], ['Message', x.message || '—']].map(([k, v]) => (
+                <div key={k as string}><dt className="text-xs text-muted-foreground">{k}</dt><dd className="break-words">{v}</dd></div>))}
+            </dl>
+            {x.receipt_url && <a className="inline-flex items-center gap-1 text-sm text-primary" href={x.receipt_url} target="_blank" rel="noreferrer">Provider receipt <ExternalLink className="h-3 w-3" /></a>}
+            <div><p className="mb-1 text-sm font-medium">Retailer split</p>
+              {d.data!.brands.length ? <ul className="divide-y divide-border text-sm">{d.data!.brands.map((b: any) => <li key={b.id} className="flex justify-between py-1.5"><span>{b.brand_name} · {b.allocation_percent}%</span><span>{usd(b.allocated_amount)}</span></li>)}</ul> : <p className="text-sm text-muted-foreground">{x.brand_partner || 'No split recorded.'}</p>}</div>
+            <div><p className="mb-1 text-sm font-medium">Coupon trail</p>
+              {d.data!.coupons.length ? <ul className="divide-y divide-border text-sm">{d.data!.coupons.map((c: any) => <li key={c.id} className="flex justify-between py-1.5"><span>{c.store_name} · {usd(c.value ?? c.expected_value)}</span><StatusBadge value={c.status} /></li>)}</ul> : <p className="text-sm text-muted-foreground">No coupons linked to this donation.</p>}</div>
           </div>
         )}
-      </div>
-
-      {/* Detail dialog */}
-      <Dialog open={!!selectedDonation} onOpenChange={(open) => !open && setSelectedDonation(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-primary" />
-              Donation Details
-            </DialogTitle>
-          </DialogHeader>
-          {selectedDonation && (
-            <div className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground flex items-center gap-1"><UserIcon className="w-3 h-3" /> Donor name</p>
-                  <p className="font-medium">{selectedDonation.donor_name || '—'}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground flex items-center gap-1"><Mail className="w-3 h-3" /> Email</p>
-                  <p className="font-medium break-all">{selectedDonation.donor_email || '—'}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Amount</p>
-                  <p className="font-semibold text-lg">${selectedDonation.amount.toFixed(2)} {selectedDonation.currency?.toUpperCase()}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Net (after Stripe fee)</p>
-                  <p className="font-medium">
-                    ${selectedDonation.net_amount?.toFixed(2) ?? '—'}
-                    {selectedDonation.stripe_fee != null && (
-                      <span className="text-xs text-muted-foreground ml-1">(fee ${selectedDonation.stripe_fee.toFixed(2)})</span>
-                    )}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground flex items-center gap-1"><CreditCard className="w-3 h-3" /> Payment method</p>
-                  <p className="font-medium">
-                    {selectedDonation.payment_method || '—'}
-                    {selectedDonation.payment_provider && (
-                      <span className="ml-2 text-xs text-muted-foreground capitalize">via {selectedDonation.payment_provider}</span>
-                    )}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Status</p>
-                  <div>{statusBadge(selectedDonation.status)}</div>
-                </div>
-                <div className="space-y-1 col-span-2">
-                  <p className="text-xs text-muted-foreground">Brand allocation</p>
-                  <p className="font-medium">{selectedDonation.brand_partner || 'No brand selected'}</p>
-                </div>
-                <div className="space-y-1 col-span-2">
-                  <p className="text-xs text-muted-foreground">Stripe session</p>
-                  <p className="font-mono text-[11px] break-all">{selectedDonation.stripe_session_id || '—'}</p>
-                </div>
-              </div>
-
-              {/* Reassign fundraiser */}
-              <div className="border-t pt-4 space-y-2">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Fundraiser attribution</p>
-                <div className="flex gap-2">
-                  <Select value={reassignFundraiserId} onValueChange={setReassignFundraiserId}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Select fundraiser" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">— Unattributed —</SelectItem>
-                      {(fundraisers || []).map(f => (
-                        <SelectItem key={f.id} value={f.id}>{f.title}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button onClick={handleReassign} size="sm">
-                    <Check className="w-4 h-4 mr-1" /> Save
-                  </Button>
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Re-attributing a completed donation also adds its amount to the new fundraiser's totals.
-                </p>
-              </div>
-
-              {selectedDonation.receipt_url && (
-                <div className="border-t pt-4">
-                  <a href={selectedDonation.receipt_url} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm" className="w-full">
-                      <ExternalLink className="w-4 h-4 mr-2" /> View Stripe receipt
-                    </Button>
-                  </a>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </DashboardLayout>
+      </SheetContent>
+    </Sheet>
   );
 }
