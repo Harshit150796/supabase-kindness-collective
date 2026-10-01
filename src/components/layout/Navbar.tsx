@@ -206,6 +206,11 @@ export function Navbar() {
             >
               Blog
             </Link>
+            {user && (
+              <Link to="/messages" className="flex items-center gap-2 py-2 text-muted-foreground hover:text-foreground transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                Messages{unread > 0 && <span className="rounded-full bg-primary px-2 text-xs font-semibold text-primary-foreground">{unread}</span>}
+              </Link>
+            )}
             <Link 
               to="/faq" 
               className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
