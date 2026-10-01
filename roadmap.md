@@ -150,4 +150,8 @@
 - [ ] Signed-in admin browser walkthrough of every module (unverified — no admin session available here).
 - [ ] Founder: describe the exact Donors click path to confirm the fix.
 - [ ] Founder: decide whether to enable "Require approval"; ApplyRecipient has inconsistent active/pending insert paths (unchanged).
-- [ ] Next: rebuild legacy pages (Users, Coupons, Verifications, CMS) onto server-paginated DataTable; legacy fundraiser editor writes bypass audit.
+- [x] Schedule proof: cron runs + dispatcher HTTP 200 every 5 min; stale every-minute newsletter job (401 each minute) removed.
+- [x] Legacy pages rebuilt on server-paged DataTable + audited admin_write: Users, Coupons, Verifications, Site content, Procurement, Analytics, Stories, Testimonials, Blog, FAQ, Newsletters, Fundraiser photos.
+- [x] Linter: 60 -> 54 (internal trigger routines + coupon-code lookup closed to signed-out callers; explicit no-access rules on two server-only tables).
+- [ ] Founder approval: remaining linter items (see report) — pg_net schema, leaked-password toggle, coupon-trigger routine grant.
+- [ ] Signed-in browser walkthrough of rebuilt pages (unverified — no admin session here).
