@@ -47,6 +47,13 @@ Deno.serve(async (req) => {
     return JSON.parse(t).id as string;
   };
 
+  // Delivery check: read an email's last_event from Resend.
+  if (typeof body?.status_id === 'string' && /^[0-9a-f-]{36}$/.test(body.status_id)) {
+    const r = await fetch(`https://api.resend.com/emails/${body.status_id}`, { headers: { Authorization: `Bearer ${key}` } });
+    const j = await r.json().catch(() => ({}));
+    return json({ status: r.status, id: j.id, last_event: j.last_event, to: j.to, created_at: j.created_at });
+  }
+
   // Test mode: one real digest, not recorded as events.
   if (body?.test) {
     if (!key || !recipients.length) return json({ error: 'Missing Resend key or recipients' }, 400);
