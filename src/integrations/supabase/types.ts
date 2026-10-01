@@ -1479,6 +1479,33 @@ export type Database = {
       }
       generate_card_number: { Args: never; Returns: string }
       get_coupon_code: { Args: { _coupon_id: string }; Returns: string }
+      get_fundraiser_coupon_trail: {
+        Args: { _fundraiser_id: string }
+        Returns: {
+          converted: number
+          coupons_count: number
+          redeemed: number
+        }[]
+      }
+      get_fundraiser_donations: {
+        Args: { _fundraiser_id: string; _limit?: number; _order?: string }
+        Returns: {
+          amount: number
+          created_at: string
+          display_name: string
+          id: string
+          is_anonymous: boolean
+          message: string
+        }[]
+      }
+      get_fundraiser_organizer: {
+        Args: { _fundraiser_id: string }
+        Returns: {
+          city: string
+          country: string
+          display_name: string
+        }[]
+      }
       get_impact_stats: {
         Args: never
         Returns: {
@@ -1524,6 +1551,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      short_display_name: { Args: { _name: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "donor" | "recipient"
