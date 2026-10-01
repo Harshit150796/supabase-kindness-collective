@@ -17,24 +17,24 @@ import logo from '@/assets/logo.png';
 
 type Item = { label: string; path: string; icon: any; adminOnly?: boolean };
 const GROUPS: { title: string; items: Item[] }[] = [
-  { title: 'Overview', items: [{ label: 'Overview', path: '/admin', icon: LayoutDashboard }, { label: 'Analytics', path: '/admin/analytics', icon: BarChart3, adminOnly: true }] },
+  { title: 'Overview', items: [{ label: 'Overview', path: '/admin', icon: LayoutDashboard }, { label: 'Analytics', path: '/admin/analytics', icon: BarChart3 }] },
   { title: 'Operations', items: [
     { label: 'Fundraisers', path: '/admin/fundraisers', icon: Megaphone },
     { label: 'Donations', path: '/admin/donations', icon: DollarSign },
     { label: 'Donors', path: '/admin/donors', icon: Contact },
-    { label: 'Recipients', path: '/admin/verifications', icon: ShieldCheck, adminOnly: true },
-    { label: 'Coupons', path: '/admin/coupons', icon: Gift, adminOnly: true },
-    { label: 'Procurement', path: '/admin/procurement', icon: Package, adminOnly: true },
+    { label: 'Recipients', path: '/admin/verifications', icon: ShieldCheck },
+    { label: 'Coupons', path: '/admin/coupons', icon: Gift },
+    { label: 'Procurement', path: '/admin/procurement', icon: Package },
   ] },
   { title: 'Trust', items: [{ label: 'Moderation', path: '/admin/moderation', icon: Flag, adminOnly: true }] },
   { title: 'Work', items: [{ label: 'Tasks', path: '/admin/tasks', icon: ListTodo }, { label: 'Notifications', path: '/admin/notifications', icon: Bell }] },
   { title: 'Content', items: [
-    { label: 'Site content', path: '/admin/content', icon: FileText, adminOnly: true },
-    { label: 'Stories', path: '/admin/stories', icon: BookOpen, adminOnly: true },
-    { label: 'Testimonials', path: '/admin/testimonials', icon: MessageSquare, adminOnly: true },
-    { label: 'Blog', path: '/admin/blog', icon: Newspaper, adminOnly: true },
-    { label: 'FAQ', path: '/admin/faq', icon: HelpCircle, adminOnly: true },
-    { label: 'Newsletters', path: '/admin/newsletters', icon: Mail, adminOnly: true },
+    { label: 'Site content', path: '/admin/content', icon: FileText },
+    { label: 'Stories', path: '/admin/stories', icon: BookOpen },
+    { label: 'Testimonials', path: '/admin/testimonials', icon: MessageSquare },
+    { label: 'Blog', path: '/admin/blog', icon: Newspaper },
+    { label: 'FAQ', path: '/admin/faq', icon: HelpCircle },
+    { label: 'Newsletters', path: '/admin/newsletters', icon: Mail },
   ] },
   { title: 'Admin', items: [
     { label: 'Team & access', path: '/admin/team', icon: UserCog },
