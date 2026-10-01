@@ -1,7 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { useAuth } from '@/hooks/useAuth';
-import { Coins, Menu, X, User, LogOut, Megaphone, Heart, Settings, DollarSign, Gift } from 'lucide-react';
+import { Coins, Menu, X, User, LogOut, Megaphone, Heart, Settings, DollarSign, Gift, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 import {
   DropdownMenu,
@@ -14,6 +15,7 @@ import logo from '@/assets/logo.png';
 
 export function Navbar() {
   const { user, hasRole, signOut } = useAuth();
+  const unread = useUnreadMessages();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -80,6 +82,12 @@ export function Navbar() {
 
           {/* Auth Buttons */}
           <div className="hidden lg:flex items-center gap-3">
+            {user && (
+              <Link to="/messages" className="relative rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground" aria-label={unread ? `Messages, ${unread} unread` : 'Messages'}>
+                <MessageCircle className="h-5 w-5" />
+                {unread > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">{unread > 9 ? '9+' : unread}</span>}
+              </Link>
+            )}
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -111,6 +119,10 @@ export function Navbar() {
                   <DropdownMenuItem onClick={() => navigate('/my-fundraisers')}>
                     <Megaphone className="w-4 h-4 mr-3" />
                     Your fundraisers
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/messages')}>
+                    <MessageCircle className="w-4 h-4 mr-3" />
+                    Messages{unread > 0 ? ` (${unread})` : ''}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/my-impact')}>
                     <Heart className="w-4 h-4 mr-3" />
@@ -194,6 +206,11 @@ export function Navbar() {
             >
               Blog
             </Link>
+            {user && (
+              <Link to="/messages" className="flex items-center gap-2 py-2 text-muted-foreground hover:text-foreground transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                Messages{unread > 0 && <span className="rounded-full bg-primary px-2 text-xs font-semibold text-primary-foreground">{unread}</span>}
+              </Link>
+            )}
             <Link 
               to="/faq" 
               className="block py-2 text-muted-foreground hover:text-foreground transition-colors"

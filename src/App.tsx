@@ -68,6 +68,9 @@ const AdminFundraisers = lazy(() => import("./pages/admin/AdminFundraisers"));
 const AdminNewsletters = lazy(() => import("./pages/admin/AdminNewsletters"));
 const AdminDonations = lazy(() => import("./pages/admin/AdminDonations"));
 const AdminProcurement = lazy(() => import("./pages/admin/AdminProcurement"));
+const AdminModeration = lazy(() => import("./pages/admin/AdminModeration"));
+const Messages = lazy(() => import("./pages/Messages"));
+const TeamAccept = lazy(() => import("./pages/TeamAccept"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
@@ -101,6 +104,8 @@ const AppRoutes = () => (
       <Route path="/stories" element={<Stories />} />
       <Route path="/story/:id" element={<StoryDetail />} />
       <Route path="/f/:slug" element={<PublicFundraiser />} />
+      <Route path="/messages" element={<Messages />} />
+      <Route path="/team/accept" element={<TeamAccept />} />
       <Route path="/featured/:storyKey" element={<FeaturedStoryDetail />} />
       <Route path="/story-detail/:id" element={<CMSStoryDetail />} />
 
@@ -145,6 +150,7 @@ const AppRoutes = () => (
 
       {/* Admin Routes (US-only) */}
       <Route path="/admin" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/moderation" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminModeration /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/users" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/verifications" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminVerifications /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/coupons" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminCoupons /></ProtectedRoute></GeoGuard>} />

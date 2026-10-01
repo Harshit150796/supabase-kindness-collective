@@ -257,3 +257,21 @@ export const EMAIL_SENDER = {
   from: "CouponDonation Security <verify@coupondonation.com>",
   replyTo: SUPPORT_EMAIL,
 };
+
+/** Generic notification email (messages, invites, updates). Text is escaped. */
+export function renderNoticeEmail(opts: {
+  subject: string; heading: string; intro: string; ctaLabel: string; ctaUrl: string; footerNote?: string;
+}): RenderedEmail {
+  const bodyBlocks = `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-radius:6px;background-color:${EMERALD};"><a href="${escapeHtml(opts.ctaUrl)}" style="display:inline-block;padding:12px 22px;font-family:${FONT};font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;">${escapeHtml(opts.ctaLabel)}</a></td></tr></table>`;
+  const html = shell({
+    preheader: opts.intro.slice(0, 120), heading: escapeHtml(opts.heading), intro: escapeHtml(opts.intro), bodyBlocks,
+    securityLines: [
+      'CouponDonation will never ask you to pay outside the platform, or for gift card codes, bank or crypto details.',
+      ...(opts.footerNote ? [opts.footerNote] : []),
+    ],
+  });
+  const text = [opts.heading, '', opts.intro, '', `${opts.ctaLabel}: ${opts.ctaUrl}`, '', opts.footerNote ?? '', `Support: ${SUPPORT_EMAIL}`].join('\n');
+  return { subject: opts.subject, html, text };
+}
+
+export const NOTIFY_SENDER = { from: 'CouponDonation <notifications@coupondonation.com>', replyTo: SUPPORT_EMAIL };

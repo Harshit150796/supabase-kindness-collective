@@ -1923,6 +1923,14 @@ export type Database = {
           role: string
         }[]
       }
+      get_fundraiser_totals: {
+        Args: { _fundraiser_id: string }
+        Returns: {
+          donations_count: number
+          retailers: string[]
+          total_raised: number
+        }[]
+      }
       get_impact_stats: {
         Args: never
         Returns: {

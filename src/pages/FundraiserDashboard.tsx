@@ -40,6 +40,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Navbar } from "@/components/layout/Navbar";
+import { OrganizerTools } from "@/components/fundraiser/OrganizerTools";
 
 interface Fundraiser {
   id: string;
@@ -547,7 +548,7 @@ const FundraiserDashboard = () => {
                     <div>
                       <h3 className="font-semibold text-foreground mb-1">Boost your fundraiser</h3>
                       <p className="text-sm text-muted-foreground mb-3">
-                        Fundraisers shared on social media raise 3x more on average. Share yours now!
+                        Share your link with friends, family and community groups so more people can help.
                       </p>
                       <Button size="sm" variant="outline" onClick={() => setShowShareModal(true)}>
                         Share on social media
@@ -558,6 +559,7 @@ const FundraiserDashboard = () => {
               </Card>
             </div>
           </div>
+          {fundraiser && <OrganizerTools fundraiserId={fundraiser.id} isOwner={!!user && user.id === (fundraiser as unknown as { user_id: string }).user_id} />}
         </main>
       </div>
 

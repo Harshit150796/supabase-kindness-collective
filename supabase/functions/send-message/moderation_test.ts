@@ -14,12 +14,20 @@ const blocked = [
   'eth 0x52908400098527886E0F7030069857D2E4169EE7',
   'routing number 021000021',
   'IBAN GB82 WEST 1234 5698 7654 32',
+  'buy a $100 gift card and text me the code',
+  'send me a photo of the back of the card',
+  'scratch it off and read me the numbers',
+  'what is the gift card pin',
 ];
 const allowed = [
   'Thank you so much for your support!',
   'We raised $50 today, amazing',
   'Our kids loved the groceries from Walmart',
   'Sending prayers your way',
+  'Did you get the gift cards?',
+  'The gift cards helped us buy groceries',
+  "I'll share how we used the gift cards",
+  'We need gift cards for groceries this month',
 ];
 
 for (const t of blocked) Deno.test(`blocks: ${t}`, () => assert(moderate(t).blocked, t));

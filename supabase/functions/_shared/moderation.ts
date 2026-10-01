@@ -17,7 +17,10 @@ const BLOCK_RULES: Array<[string, RegExp]> = [
   ['western_union', /\bwestern\s*union\b/i],
   ['moneygram', /\bmoney\s*gram\b/i],
   ['wire_transfer', /\bwire\s*(transfer|me|the money|funds)\b|\bbank\s*transfer\b|\bswift\s*code\b/i],
-  ['gift_card_request', /\b(send|buy|give|share|need|get)\b[^.!?\n]{0,40}\bgift\s*cards?\b|\bgift\s*card\s*(code|number|pin)s?\b/i],
+  // Scam patterns only — CouponDonation's own product is gift cards, so ordinary mentions stay allowed.
+  ['gift_card_code_request', /\bgift\s*card\s*(code|number|pin|claim\s*code)s?\b|\b(code|number|pin)s?\s+(on|from|off)\s+(the\s+)?(back\s+of\s+)?(the\s+|your\s+)?(gift\s*)?card\b|\bback\s+of\s+(the|your)\s+(gift\s*)?card\b/i],
+  ['gift_card_buy_and_send', /\bbuy\b[^.!?\n]{0,50}\bgift\s*cards?\b[^.!?\n]{0,60}\b(send|text|email|e-mail|message|dm|photo|picture|pic|snap)\b[^.!?\n]{0,30}\b(code|codes|number|numbers|pin|card|it|them)\b/i],
+  ['gift_card_scratch_read', /\bscratch\b[^.!?\n]{0,20}\boff\b|\bread\s+(me\s+)?(out\s+)?(the\s+)?(numbers|digits|code|codes|pin)\b/i],
   ['crypto', /\b(bitcoin|btc|ethereum|eth|usdt|tether|crypto(currency)?|wallet\s*address|dogecoin|solana)\b/i],
   ['crypto_address', /\b(bc1[a-z0-9]{20,}|[13][a-km-zA-HJ-NP-Z1-9]{25,34}|0x[a-fA-F0-9]{40})\b/],
   ['iban', /\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,7}\b/],
