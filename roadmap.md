@@ -134,6 +134,7 @@
 - [x] Phase 3: organizer tools (inbox, badge, team, updates, comment moderation, settings incl. full-name opt-in), admin moderation.
 - [x] Phase 4: sharing — investigate branded share URL (coupondonation.com/f/:slug or share.coupondonation.com); never ship raw supabase.co link.
 - [x] Phase 5: end-to-end messaging check run; signed-in browser steps unverified (no test sessions available for this backend).
-- [ ] Founder: point share.coupondonation.com (or a Cloudflare Worker on /f/*) at the link-preview function, then set VITE_SHARE_HOST.
+- [x] Link previews served on coupondonation.com/f/:slug via Vercel bot-only rewrite (no DNS needed).
+- [ ] Confirm live previews after the next Vercel deploy (Facebook Sharing Debugger).
 - [ ] Founder: investigate 4 fundraisers whose stored totals disagree with completed donations.
 - [ ] Founder: schedule notify-dispatch every 5 minutes so throttled message/update emails send.

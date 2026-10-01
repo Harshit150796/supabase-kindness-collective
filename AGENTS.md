@@ -25,3 +25,5 @@
 - Comments, updates, invites and blocks are written only by the `fundraiser-actions` edge function after server moderation, keeping safety rules server-side.
 - Public share links stay on coupondonation.com (or a branded host via `VITE_SHARE_HOST`); never expose the raw backend function URL to users.
 - Public fundraiser totals come from `get_fundraiser_totals` (completed donations), never stored counters, because stored counters drifted.
+
+- Social link previews come from a Vercel bot-only rewrite of /f/:slug to api/share/[slug].js; share URLs stay on the main domain because crawlers do not run the SPA.
