@@ -559,7 +559,7 @@ const FundraiserDashboard = () => {
               </Card>
             </div>
           </div>
-          {fundraiser && <OrganizerTools fundraiserId={fundraiser.id} isOwner={!!user && user.id === fundraiser.user_id} />}
+          {fundraiser && <OrganizerTools fundraiserId={fundraiser.id} isOwner={!!user && user.id === (fundraiser as unknown as { user_id: string }).user_id} />}
         </main>
       </div>
 

@@ -11,7 +11,7 @@ import { signInPath } from '@/lib/serverActions';
 const REASONS = ['Asking for payment outside CouponDonation', 'Scam or fraud', 'Harassment or hate', 'Inappropriate content', 'Misleading information', 'Other'];
 
 export function ReportDialog({ open, onOpenChange, targetType, targetId, fundraiserId }: {
-  open: boolean; onOpenChange: (o: boolean) => void; targetType: 'fundraiser' | 'comment' | 'message' | 'update'; targetId: string; fundraiserId?: string;
+  open: boolean; onOpenChange: (o: boolean) => void; targetType: 'fundraiser' | 'comment' | 'message' | 'conversation'; targetId: string; fundraiserId?: string;
 }) {
   const { user } = useAuth(); const navigate = useNavigate(); const { toast } = useToast();
   const [reason, setReason] = useState(REASONS[0]); const [details, setDetails] = useState(''); const [busy, setBusy] = useState(false);
