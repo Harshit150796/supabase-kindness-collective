@@ -2157,6 +2157,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_analytics: { Args: never; Returns: Json }
       admin_auto_task: {
         Args: {
           _id: string
@@ -2211,7 +2212,34 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_list_users: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _role?: string
+          _search?: string
+        }
+        Returns: {
+          city: string
+          country: string
+          created_at: string
+          email: string
+          full_name: string
+          roles: string[]
+          total_count: number
+          user_id: string
+        }[]
+      }
       admin_overview_kpis: { Args: never; Returns: Json }
+      admin_procurement_groups: {
+        Args: never
+        Returns: {
+          n: number
+          oldest: string
+          store_name: string
+          value: number
+        }[]
+      }
       admin_search: {
         Args: { _q: string }
         Returns: {
@@ -2244,6 +2272,10 @@ export type Database = {
           sender_id: string
           status: string
         }[]
+      }
+      admin_write: {
+        Args: { _ids?: string[]; _op: string; _patch?: Json; _table: string }
+        Returns: Json
       }
       apply_donation_to_fundraiser: {
         Args: {
