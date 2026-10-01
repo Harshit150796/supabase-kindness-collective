@@ -63,3 +63,9 @@ verify_jwt = false
 
 [functions.share-fundraiser]
 verify_jwt = false
+
+[functions.admin-dispatch]
+verify_jwt = false
+
+[functions.email-scheduler]
+verify_jwt = false

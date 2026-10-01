@@ -68,6 +68,14 @@ const AdminFundraisers = lazy(() => import("./pages/admin/AdminFundraisers"));
 const AdminNewsletters = lazy(() => import("./pages/admin/AdminNewsletters"));
 const AdminDonations = lazy(() => import("./pages/admin/AdminDonations"));
 const AdminProcurement = lazy(() => import("./pages/admin/AdminProcurement"));
+const AdminDonors = lazy(() => import("./pages/admin/AdminDonors"));
+const AdminTasks = lazy(() => import("./pages/admin/AdminTasks"));
+const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminTeam = lazy(() => import("./pages/admin/AdminTeam"));
+const AdminAudit = lazy(() => import("./pages/admin/AdminAudit"));
+const AdminFundraisersLegacy = lazy(() => import("./pages/admin/AdminFundraisersLegacy"));
+const TEAM = ['admin', 'staff', 'viewer'];
 const AdminModeration = lazy(() => import("./pages/admin/AdminModeration"));
 const Messages = lazy(() => import("./pages/Messages"));
 const TeamAccept = lazy(() => import("./pages/TeamAccept"));
@@ -82,9 +90,11 @@ const RouteFallback = () => (
 );
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: string[] }) {
-  const { user, roles, loading } = useAuth();
+  const { user, roles, loading, rolesLoaded } = useAuth();
   
-  if (loading) return <div className="min-h-dvh flex items-center justify-center bg-background">Loading...</div>;
+  // Wait for roles too: previously `loading` cleared before roles arrived, so a refresh or
+  // deep link to a role-gated page saw roles=[] and bounced to "/" (the admin "acts weird" bug).
+  if (loading || (user && !rolesLoaded)) return <div className="min-h-dvh flex items-center justify-center bg-background">Loading...</div>;
   if (!user) return <Navigate to="/auth" replace />;
   if (!allowedRoles.some(role => roles.includes(role as any))) return <Navigate to="/" replace />;
   
@@ -149,7 +159,14 @@ const AppRoutes = () => (
 
 
       {/* Admin Routes (US-only) */}
-      <Route path="/admin" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin', 'staff', 'viewer']}><AdminDashboard /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/donors" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminDonors /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/tasks" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminTasks /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/notifications" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminNotifications /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/settings" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminSettings /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/team" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminTeam /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/audit" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminAudit /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/fundraisers/manage" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminFundraisersLegacy /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/moderation" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminModeration /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/users" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/verifications" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminVerifications /></ProtectedRoute></GeoGuard>} />
@@ -160,9 +177,9 @@ const AppRoutes = () => (
       <Route path="/admin/testimonials" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminTestimonials /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/blog" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminBlog /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/faq" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminFAQ /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/fundraisers" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminFundraisers /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/fundraisers" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin', 'staff', 'viewer']}><AdminFundraisers /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/newsletters" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminNewsletters /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/donations" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminDonations /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/donations" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin', 'staff', 'viewer']}><AdminDonations /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/procurement" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminProcurement /></ProtectedRoute></GeoGuard>} />
 
       {/* Blog Routes */}

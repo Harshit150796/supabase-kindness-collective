@@ -2,12 +2,10 @@ import { ReactNode, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import {
-  Home, Gift, CreditCard, Clock, Shield,
-  BarChart, Users, LogOut, Menu, X,
-  DollarSign, TrendingUp, FileText, BookOpen,
-  MessageSquare, HelpCircle, Newspaper, Megaphone, Mail, Package,
-  Heart, Wallet
+  Home, CreditCard, Shield, LogOut, Menu, X,
+  DollarSign, TrendingUp, Megaphone, Heart, Wallet, LayoutDashboard,
 } from 'lucide-react';
 
 import logo from '@/assets/logo.png';
@@ -17,7 +15,7 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { user, hasRole, signOut } = useAuth();
+  const { user, roles, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -27,25 +25,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     navigate('/');
   };
 
-  const getNavItems = () => {
-    if (hasRole('admin')) {
-      return [
-        { icon: Home, label: 'Overview', path: '/admin' },
-        { icon: Users, label: 'Users', path: '/admin/users' },
-        { icon: Shield, label: 'Verifications', path: '/admin/verifications' },
-        { icon: Gift, label: 'Coupons', path: '/admin/coupons' },
-        { icon: Package, label: 'Procurement', path: '/admin/procurement' },
-        { icon: Megaphone, label: 'Fundraisers', path: '/admin/fundraisers' },
-        { icon: DollarSign, label: 'Donations', path: '/admin/donations' },
-        { icon: BarChart, label: 'Analytics', path: '/admin/analytics' },
-        { icon: FileText, label: 'Content', path: '/admin/content' },
-        { icon: BookOpen, label: 'Stories', path: '/admin/stories' },
-        { icon: MessageSquare, label: 'Testimonials', path: '/admin/testimonials' },
-        { icon: Newspaper, label: 'Blog Posts', path: '/admin/blog' },
-        { icon: HelpCircle, label: 'FAQ', path: '/admin/faq' },
-        { icon: Mail, label: 'Newsletters', path: '/admin/newsletters' },
-      ];
-    }
+  const isTeam = roles.some((r) => ['admin', 'staff', 'viewer'].includes(r as string));
+  const getPersonalNav = () => {
     // One generic account: giving and receiving are capabilities, not account types.
     return [
       { icon: Home, label: 'Home', path: '/dashboard' },
@@ -56,11 +37,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       { icon: CreditCard, label: 'Loyalty Card', path: '/dashboard/loyalty-card' },
       { icon: Megaphone, label: 'Your Requests', path: '/my-fundraisers' },
       { icon: Shield, label: 'Verification', path: '/dashboard/verification' },
+      ...(isTeam ? [{ icon: LayoutDashboard, label: 'Admin portal', path: '/admin' }] : []),
     ];
   };
 
-  const navItems = getNavItems();
-  const roleLabel = hasRole('admin') ? 'Admin' : 'My Account';
+  // Admin pages get the dedicated operations shell; donor/recipient pages keep this layout
+  // and always show the personal-account nav (previously admins saw admin links on their own donor pages).
+  if (location.pathname.startsWith('/admin')) return <AdminLayout>{children}</AdminLayout>;
+
+  const navItems = getPersonalNav();
+  const roleLabel = 'My Account';
 
 
   return (

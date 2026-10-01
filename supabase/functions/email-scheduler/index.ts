@@ -13,6 +13,8 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
+  const { data: ok } = await supabase.rpc("dispatch_secret_ok", { _s: req.headers.get("x-dispatch-secret") });
+  if (!ok) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   const { data: due } = await supabase
     .from("email_campaigns")

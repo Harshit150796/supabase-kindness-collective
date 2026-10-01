@@ -16,6 +16,7 @@ const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('invite'), fundraiser_id: z.string().uuid(), email: z.string().email().max(255) }),
   z.object({ action: z.literal('accept'), token: z.string().min(20).max(200) }),
   z.object({ action: z.literal('block'), conversation_id: z.string().uuid(), blocked: z.boolean() }),
+  z.object({ action: z.literal('admin_notify_rejection'), fundraiser_id: z.string().uuid(), reason: z.string().min(1).max(1000) }),
 ]);
 
 async function sha256(s: string) {
@@ -55,6 +56,24 @@ Deno.serve(async (req) => {
     const { count: c2 } = await admin.from('blocked_attempts').select('id', { count: 'exact', head: true }).eq('sender_id', uid).gte('created_at', hourAgo);
     return (c1 ?? 0) + (c2 ?? 0) >= cap || (c2 ?? 0) >= 10;
   };
+
+  if (p.action === 'admin_notify_rejection') {
+    // Role re-checked server-side; status must already be rejected via the audited admin RPC.
+    const { data: staff } = await admin.rpc('is_admin_staff', { _uid: uid });
+    if (!staff) return json({ error: 'Staff access required' }, 403);
+    const { data: f } = await admin.from('fundraisers').select('title, status, user_id').eq('id', p.fundraiser_id).maybeSingle();
+    if (!f || f.status !== 'rejected') return json({ error: 'Fundraiser is not rejected' }, 409);
+    const { data: prof } = await admin.from('profiles').select('email').eq('user_id', f.user_id).maybeSingle();
+    if (!prof?.email) return json({ sent: false, reason: 'no organizer email' });
+    const sent = await sendEmail(prof.email, renderNoticeEmail({
+      subject: `Your fundraiser "${f.title}" needs changes`,
+      heading: 'Your fundraiser was not approved',
+      intro: `Our team reviewed "${f.title}" and could not publish it yet. Reason: ${p.reason}`,
+      ctaLabel: 'Review your fundraiser', ctaUrl: `${SITE}/my-fundraisers`,
+      footerNote: 'Reply to this email if you have questions.',
+    }));
+    return json({ sent });
+  }
 
   if (p.action === 'comment') {
     const { data: ok } = await admin.rpc('has_completed_donation', { _fid: p.fundraiser_id, _uid: uid });

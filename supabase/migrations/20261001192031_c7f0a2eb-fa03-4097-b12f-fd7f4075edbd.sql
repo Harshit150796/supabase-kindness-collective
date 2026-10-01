@@ -1,0 +1,3 @@
+REVOKE EXECUTE ON FUNCTION public.trg_report_auto_task(), public.trg_application_auto_task(), public.trg_verification_auto_task(), public.trg_fundraiser_approval_gate(), public.audit_admin_tasks() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.is_admin_staff(uuid), public.is_admin_any(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_admin_staff(uuid), public.is_admin_any(uuid) TO authenticated;

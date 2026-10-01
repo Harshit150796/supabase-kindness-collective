@@ -138,3 +138,16 @@
 - [ ] Confirm live previews after the next Vercel deploy (Facebook Sharing Debugger).
 - [ ] Founder: investigate 4 fundraisers whose stored totals disagree with completed donations.
 - [ ] Founder: schedule notify-dispatch every 5 minutes so throttled message/update emails send.
+
+## Admin CRM portal
+- [x] P1 Shell (AdminLayout, sidebar groups, ⌘K search, bell, breadcrumbs), server-paginated DataTable, roles admin/staff/viewer, audit log, settings; admin role-guard bounce fixed.
+- [x] P2 Fundraisers: approve/reject (+organizer email)/pause/resume/archive/restore/feature/edit, guarded permanent delete, detail tabs.
+- [x] P3 Donations (read-only, filters, coupon trail, CSV) and Donors CRM.
+- [x] P4 Tasks (list + board, my tasks, overdue, comments) and auto-tasks (reports/applications/verifications via triggers; pending fundraisers via dispatcher polling).
+- [x] P5 Notification centre + settings; single 5-min dispatcher (Vault secret) fanning out to notify-dispatch + email-scheduler; delivered test email verified.
+- [x] P6 Team & access, audit viewer, overview KPIs; existing CMS/moderation/verification pages now inside the shell.
+- [x] P7 SQL role/RLS tests passed (staff, viewer, ordinary user, anon; archive hides publicly, records preserved).
+- [ ] Signed-in admin browser walkthrough of every module (unverified — no admin session available here).
+- [ ] Founder: describe the exact Donors click path to confirm the fix.
+- [ ] Founder: decide whether to enable "Require approval"; ApplyRecipient has inconsistent active/pending insert paths (unchanged).
+- [ ] Next: rebuild legacy pages (Users, Coupons, Verifications, CMS) onto server-paginated DataTable; legacy fundraiser editor writes bypass audit.

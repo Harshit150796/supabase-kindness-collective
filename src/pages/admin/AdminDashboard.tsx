@@ -1,186 +1,80 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { PaymentProcessorsCard } from '@/components/admin/PaymentProcessorsCard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@/components/admin/AdminLayout';
+import { sb, rpc, usd, fmtDate } from '@/lib/adminApi';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { Users, Shield, Gift, BarChart, ArrowRight, Clock, Layout, Heart, MessageSquareQuote, FileText, HelpCircle, Megaphone, Mail } from 'lucide-react';
-
-interface AdminStats {
-  totalUsers: number;
-  pendingVerifications: number;
-  totalCoupons: number;
-  availableCoupons: number;
-  publishedStories: number;
-  publishedPosts: number;
-  testimonials: number;
-  faqItems: number;
-  totalFundraisers: number;
-  activeFundraisers: number;
-  pendingFundraisers: number;
-}
-
-const platformActions = [
-  { title: 'Manage Users', description: 'View and manage all users, promote to admin', path: '/admin/users', icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
-  { title: 'Verifications', description: 'Approve/reject recipient applications', path: '/admin/verifications', icon: Shield, color: 'text-verify', bg: 'bg-verify/10' },
-  { title: 'Coupons', description: 'View and manage coupon inventory', path: '/admin/coupons', icon: Gift, color: 'text-primary', bg: 'bg-primary/10' },
-  { title: 'Fundraisers', description: 'Moderate and manage all fundraiser campaigns', path: '/admin/fundraisers', icon: Megaphone, color: 'text-primary', bg: 'bg-primary/10' },
-  { title: 'Moderation', description: 'Reports, blocked payment requests, flagged messages', path: '/admin/moderation', icon: Shield, color: 'text-primary', bg: 'bg-primary/10' },
-  { title: 'Analytics', description: 'Signup trends, donation charts, stats', path: '/admin/analytics', icon: BarChart, color: 'text-primary', bg: 'bg-primary/10' },
-];
-
-const contentActions = [
-  { title: 'Site Content', description: 'Edit hero text, CTA buttons, section titles', path: '/admin/content', icon: Layout, color: 'text-primary', bg: 'bg-primary/10' },
-  { title: 'Impact Stories', description: 'Add/edit stories with photos, toggle featured', path: '/admin/stories', icon: Heart, color: 'text-destructive', bg: 'bg-destructive/10' },
-  { title: 'Testimonials', description: 'Manage donor and recipient quotes', path: '/admin/testimonials', icon: MessageSquareQuote, color: 'text-verify', bg: 'bg-verify/10' },
-  { title: 'Blog Posts', description: 'Write and publish articles with cover images', path: '/admin/blog', icon: FileText, color: 'text-primary', bg: 'bg-primary/10' },
-  { title: 'FAQ', description: 'Add/edit questions and answers', path: '/admin/faq', icon: HelpCircle, color: 'text-primary', bg: 'bg-primary/10' },
-  { title: 'Newsletters', description: 'Send email campaigns to subscribers', path: '/admin/newsletters', icon: Mail, color: 'text-primary', bg: 'bg-primary/10' },
-];
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { ArrowRight } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
-  const [stats, setStats] = useState<AdminStats>({
-    totalUsers: 0, pendingVerifications: 0, totalCoupons: 0, availableCoupons: 0,
-    publishedStories: 0, publishedPosts: 0, testimonials: 0, faqItems: 0,
-    totalFundraisers: 0, activeFundraisers: 0, pendingFundraisers: 0,
-  });
+  const k = useQuery({ queryKey: ['adm-kpis'], queryFn: () => rpc<any>('admin_overview_kpis'), refetchInterval: 60_000 });
+  const feed = useQuery({ queryKey: ['adm-feed'], queryFn: async () => (await sb.from('admin_notifications').select('id,title,link,created_at').order('created_at', { ascending: false }).limit(12)).data ?? [] });
+  const tasks = useQuery({ queryKey: ['adm-attn'], queryFn: async () => (await sb.from('admin_tasks').select('id,title,priority,due_date,linked_type').neq('status', 'done').in('priority', ['urgent', 'high']).order('created_at', { ascending: false }).limit(8)).data ?? [] });
+  const d = k.data;
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  const tiles = [
+    ['Raised today', usd(d?.raised_today), '/admin/donations'], ['Raised · 7 days', usd(d?.raised_week), '/admin/donations'],
+    ['Raised · 30 days', usd(d?.raised_month), '/admin/donations'], ['Donations · 30 days', d?.donations_month, '/admin/donations'],
+    ['Active fundraisers', d?.active_fundraisers, '/admin/fundraisers?status=active'], ['Pending approval', d?.pending_fundraisers, '/admin/fundraisers?status=pending'],
+    ['Open reports', d?.open_reports, '/admin/moderation'], ['Open tasks', d?.open_tasks, '/admin/tasks'],
+  ] as const;
 
-  const fetchStats = async () => {
-    const [usersResult, verificationsResult, couponsResult, storiesResult, postsResult, testimonialsResult, faqResult, fundraisersResult] = await Promise.all([
-      supabase.from('profiles').select('id', { count: 'exact' }),
-      supabase.from('recipient_verifications').select('id', { count: 'exact' }).eq('status', 'pending'),
-      supabase.from('coupons').select('id, status', { count: 'exact' }),
-      supabase.from('cms_stories').select('id', { count: 'exact' }).eq('is_published', true),
-      supabase.from('cms_posts').select('id', { count: 'exact' }).eq('is_published', true),
-      supabase.from('cms_testimonials').select('id', { count: 'exact' }).eq('is_published', true),
-      supabase.from('cms_faq').select('id', { count: 'exact' }).eq('is_published', true),
-      supabase.from('fundraisers').select('id, status', { count: 'exact' }),
-    ]);
-
-    const fundraiserData = fundraisersResult.data || [];
-
-    setStats({
-      totalUsers: usersResult.count || 0,
-      pendingVerifications: verificationsResult.count || 0,
-      totalCoupons: couponsResult.count || 0,
-      availableCoupons: couponsResult.data?.filter(c => c.status === 'available').length || 0,
-      publishedStories: storiesResult.count || 0,
-      publishedPosts: postsResult.count || 0,
-      testimonials: testimonialsResult.count || 0,
-      faqItems: faqResult.count || 0,
-      totalFundraisers: fundraisersResult.count || 0,
-      activeFundraisers: fundraiserData.filter(f => f.status === 'active').length,
-      pendingFundraisers: fundraiserData.filter(f => f.status === 'pending').length,
-    });
-  };
-
-  const ActionCard = ({ title, description, path, icon: Icon, color, bg }: typeof platformActions[0]) => (
-    <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate(path)}>
-      <CardContent className="flex items-center justify-between p-6">
-        <div className="flex items-center gap-4">
-          <div className={`w-12 h-12 ${bg} rounded-xl flex items-center justify-center`}>
-            <Icon className={`w-6 h-6 ${color}`} />
-          </div>
-          <div>
-            <p className="font-semibold text-foreground">{title}</p>
-            <p className="text-sm text-muted-foreground">{description}</p>
-          </div>
-        </div>
-        <ArrowRight className="w-5 h-5 text-muted-foreground" />
-      </CardContent>
-    </Card>
-  );
+  const attention = [
+    d?.pending_fundraisers ? { label: `${d.pending_fundraisers} fundraiser(s) awaiting approval`, to: '/admin/fundraisers?status=pending' } : null,
+    d?.open_reports ? { label: `${d.open_reports} open content report(s)`, to: '/admin/moderation' } : null,
+    d?.pending_verifications ? { label: `${d.pending_verifications} verification(s) to review`, to: '/admin/verifications' } : null,
+    d?.overdue_tasks ? { label: `${d.overdue_tasks} overdue task(s)`, to: '/admin/tasks' } : null,
+  ].filter(Boolean) as { label: string; to: string }[];
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage the CouponDonation platform</p>
-        </div>
-
-        <PaymentProcessorsCard />
-
-
-        {stats.pendingVerifications > 0 && (
-          <Card className="border-verify bg-verify/5">
-            <CardContent className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-verify" />
-                <div>
-                  <p className="font-medium text-foreground">{stats.pendingVerifications} Pending Verifications</p>
-                  <p className="text-sm text-muted-foreground">Users waiting for approval</p>
-                </div>
-              </div>
-              <Button onClick={() => navigate('/admin/verifications')}>Review Now</Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Platform Stats */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-            { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-primary', sub: 'Registered users', path: '/admin/users' },
-            { label: 'Pending Verifications', value: stats.pendingVerifications, icon: Shield, color: 'text-verify', sub: 'Awaiting review', path: '/admin/verifications' },
-            { label: 'Total Coupons', value: stats.totalCoupons, icon: Gift, color: 'text-primary', sub: 'All time', path: '/admin/coupons' },
-            { label: 'Available Coupons', value: stats.availableCoupons, icon: BarChart, color: 'text-primary', sub: 'Ready to claim', path: '/admin/coupons' },
-          ].map(s => (
-            <Card key={s.label} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate(s.path)}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{s.label}</CardTitle>
-                <s.icon className={`w-4 h-4 ${s.color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">{s.value}</div>
-                <p className="text-xs text-muted-foreground">{s.sub}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* CMS Content Stats */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: 'Published Stories', value: stats.publishedStories, icon: Heart, color: 'text-destructive', path: '/admin/stories' },
-            { label: 'Blog Posts', value: stats.publishedPosts, icon: FileText, color: 'text-primary', path: '/admin/blog' },
-            { label: 'Testimonials', value: stats.testimonials, icon: MessageSquareQuote, color: 'text-verify', path: '/admin/testimonials' },
-            { label: 'FAQ Items', value: stats.faqItems, icon: HelpCircle, color: 'text-primary', path: '/admin/faq' },
-          ].map(s => (
-            <Card key={s.label} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate(s.path)}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{s.label}</CardTitle>
-                <s.icon className={`w-4 h-4 ${s.color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">{s.value}</div>
-                <p className="text-xs text-muted-foreground">Published</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Platform Management */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground mb-3">Platform Management</h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {platformActions.map(a => <ActionCard key={a.path} {...a} />)}
-          </div>
-        </div>
-
-        {/* Content Management */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground mb-3">Content Management</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {contentActions.map(a => <ActionCard key={a.path} {...a} />)}
-          </div>
-        </div>
+      <PageHeader title="Overview" description="Live figures from completed donations. Refreshes every minute." />
+      {k.error && <p className="mb-4 rounded-md bg-destructive/5 p-3 text-sm text-destructive">Couldn't load figures: {(k.error as Error).message} <Button size="sm" variant="link" onClick={() => k.refetch()}>Retry</Button></p>}
+      <div className="grid grid-cols-2 gap-3 tabular-nums md:grid-cols-4">
+        {tiles.map(([l, v, to]) => (
+          <Link key={l} to={to} className="rounded-lg bg-background p-4 transition-colors hover:bg-muted/40">
+            <p className="text-xs text-muted-foreground">{l}</p>
+            {k.isLoading ? <Skeleton className="mt-2 h-7 w-20" /> : <p className="mt-1 text-2xl font-semibold text-foreground">{v ?? 0}</p>}
+          </Link>
+        ))}
       </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+        <section className="rounded-lg bg-background p-4 lg:col-span-2">
+          <p className="mb-3 text-sm font-medium">Raised per day · last 30 days</p>
+          <div className="h-56">
+            {k.isLoading ? <Skeleton className="h-full w-full" /> : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={d?.trend ?? []} margin={{ left: 0, right: 8, top: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="d" tickFormatter={(v) => v.slice(5)} fontSize={11} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis fontSize={11} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `$${v}`} width={48} />
+                  <Tooltip formatter={(v: number) => usd(v)} />
+                  <Area dataKey="raised" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.15)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </section>
+        <section className="rounded-lg bg-background p-4">
+          <p className="mb-3 text-sm font-medium">Needs attention</p>
+          {!attention.length && !tasks.data?.length ? <p className="text-sm text-muted-foreground">Nothing waiting. All clear.</p> : (
+            <ul className="divide-y divide-border text-sm">
+              {attention.map((a) => <li key={a.label}><Link to={a.to} className="flex items-center justify-between py-2 hover:text-primary">{a.label}<ArrowRight className="h-3.5 w-3.5" /></Link></li>)}
+              {(tasks.data ?? []).map((t: any) => <li key={t.id}><Link to={`/admin/tasks`} className="block py-2 hover:text-primary"><span className="mr-1.5 text-xs capitalize text-destructive">{t.priority}</span>{t.title}</Link></li>)}
+            </ul>
+          )}
+        </section>
+      </div>
+
+      <section className="mt-6 rounded-lg bg-background p-4">
+        <p className="mb-3 text-sm font-medium">Recent activity</p>
+        {!feed.data?.length ? <p className="text-sm text-muted-foreground">Activity appears here as fundraisers, donations, reports and applications come in.</p> : (
+          <ul className="divide-y divide-border text-sm">{feed.data.map((n: any) => <li key={n.id} className="flex justify-between gap-3 py-2"><Link to={n.link ?? '/admin'} className="hover:text-primary">{n.title}</Link><span className="shrink-0 text-xs text-muted-foreground">{fmtDate(n.created_at)}</span></li>)}</ul>
+        )}
+      </section>
     </DashboardLayout>
   );
 }
