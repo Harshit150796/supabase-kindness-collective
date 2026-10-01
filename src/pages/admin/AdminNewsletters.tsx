@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
+import { DataTable, StatusBadge, Column } from '@/components/admin/DataTable';
+import { useAdminPaged } from '@/hooks/useAdminPaged';
+import { sb, rpc, adminWrite, fmtDate } from '@/lib/adminApi';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,11 +40,13 @@ const DEFAULT_FORM = {
 
 export default function AdminNewsletters() {
   const { toast } = useToast();
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const { canWrite, isAdmin } = useTeamRole();
+  const camp = useAdminPaged<Campaign>({ table: 'email_campaigns', searchCols: ['subject'], defaultSort: { key: 'created_at', dir: 'desc' }, pageSize: 15 });
+  const subs = useAdminPaged<Subscriber>({ table: 'email_subscribers', searchCols: ['email', 'name'], defaultSort: { key: 'created_at', dir: 'desc' } });
+  const evs = useAdminPaged<EventRow>({ table: 'email_events', select: 'id,campaign_id,event_type,recipient_email,url,created_at', searchCols: ['recipient_email', 'event_type'], defaultSort: { key: 'created_at', dir: 'desc' } });
+  const stats = useQuery({ queryKey: ['adm-email-stats'], queryFn: () => rpc<any>('admin_email_stats') });
   const [templates, setTemplates] = useState<Template[]>([]);
   const [segments, setSegments] = useState<Segment[]>([]);
-  const [events, setEvents] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCompose, setShowCompose] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -62,22 +69,19 @@ export default function AdminNewsletters() {
 
   useEffect(() => { fetchAll(); }, []);
 
+  // Templates and segments are small reference lists (also used by the compose form); capped at 200 each.
   const fetchAll = async () => {
     setLoading(true);
-    const [campRes, subRes, tplRes, segRes, evRes] = await Promise.all([
-      supabase.from('email_campaigns').select('*').order('created_at', { ascending: false }),
-      supabase.from('email_subscribers').select('*').order('created_at', { ascending: false }),
-      supabase.from('email_templates').select('*').order('created_at', { ascending: false }),
-      supabase.from('email_segments').select('*').order('created_at', { ascending: false }),
-      supabase.from('email_events').select('*').order('created_at', { ascending: false }).limit(500),
+    const [tplRes, segRes] = await Promise.all([
+      sb.from('email_templates').select('*').order('created_at', { ascending: false }).range(0, 199),
+      sb.from('email_segments').select('*').order('created_at', { ascending: false }).range(0, 199),
     ]);
-    setCampaigns((campRes.data as any) || []);
-    setSubscribers((subRes.data as any) || []);
     setTemplates((tplRes.data as any) || []);
     setSegments((segRes.data as any) || []);
-    setEvents((evRes.data as any) || []);
     setLoading(false);
+    camp.q.refetch(); subs.q.refetch(); evs.q.refetch(); stats.refetch();
   };
+  const W = async (fn: () => Promise<unknown>) => { try { await fn(); return true; } catch (e) { toast({ title: 'Could not save', description: (e as Error).message, variant: 'destructive' }); return false; } };
 
   // ---------- Campaigns ----------
   const handleSaveCampaign = async (status: 'draft' | 'scheduled' = 'draft') => {
@@ -101,8 +105,7 @@ export default function AdminNewsletters() {
       tracking_enabled: form.tracking_enabled,
       status,
     };
-    if (editId) await supabase.from('email_campaigns').update(payload).eq('id', editId);
-    else await supabase.from('email_campaigns').insert(payload);
+    if (!(await W(() => editId ? adminWrite('email_campaigns', 'update', [editId], payload) : adminWrite('email_campaigns', 'insert', null, payload)))) return;
     setShowCompose(false); setEditId(null); setForm({ ...DEFAULT_FORM });
     fetchAll();
     toast({ title: status === 'scheduled' ? 'Scheduled' : 'Saved as draft' });
@@ -126,12 +129,12 @@ export default function AdminNewsletters() {
     if (!form.subject.trim() || (!form.html_content.trim() && !form.template_id)) {
       toast({ title: 'Subject and content required', variant: 'destructive' }); return;
     }
-    const { data: row } = await supabase.from('email_campaigns').insert({
+    const row = await adminWrite<any>('email_campaigns', 'insert', null, {
       subject: form.subject, html_content: form.html_content, preview_text: form.preview_text || null,
       sender_email: form.sender_email, reply_to: form.reply_to || null,
       template_id: form.template_id || null, audience_type: 'single',
       test_recipients: [testEmail.trim()], status: 'draft', tracking_enabled: false,
-    }).select().single();
+    }).catch((e) => { toast({ title: 'Test failed', description: (e as Error).message, variant: 'destructive' }); return null; });
     if (!row) return;
     setSending(true);
     try {
@@ -142,45 +145,35 @@ export default function AdminNewsletters() {
   };
 
   const handleDeleteCampaign = async (id: string) => {
-    await supabase.from('email_campaigns').delete().eq('id', id);
-    fetchAll(); toast({ title: 'Deleted' });
+    if (await W(() => adminWrite('email_campaigns', 'delete', [id]))) { fetchAll(); toast({ title: 'Deleted' }); }
   };
 
   // ---------- Subscribers ----------
   const handleAddSubscriber = async () => {
     if (!newSubEmail.trim()) return;
     const tags = newSubTags.split(',').map(t => t.trim()).filter(Boolean);
-    const { error } = await supabase.from('email_subscribers').insert({
+    const ok = await W(() => adminWrite('email_subscribers', 'insert', null, {
       email: newSubEmail.trim().toLowerCase(),
       name: newSubName.trim() || null,
       tags: tags.length ? tags : null,
       source: 'manual',
-    });
-    if (error) toast({ title: 'Failed to add', description: error.message, variant: 'destructive' });
-    else {
+    }));
+    if (ok) {
       setNewSubEmail(''); setNewSubName(''); setNewSubTags(''); setShowAddSub(false);
       fetchAll(); toast({ title: 'Subscriber added' });
     }
   };
 
   const handleRemoveSubscriber = async (id: string) => {
-    await supabase.from('email_subscribers').delete().eq('id', id);
-    fetchAll(); toast({ title: 'Removed' });
+    if (await W(() => adminWrite('email_subscribers', 'delete', [id]))) { fetchAll(); toast({ title: 'Removed' }); }
   };
 
   const handleImportUsers = async () => {
     setImporting(true);
     try {
-      const { data: profiles } = await supabase.from('profiles').select('email, full_name');
-      let imported = 0;
-      for (const p of profiles || []) {
-        const { error } = await supabase.from('email_subscribers').insert({
-          email: p.email.toLowerCase(), name: p.full_name, source: 'import',
-        });
-        if (!error) imported++;
-      }
+      const imported = await rpc<number>('admin_import_profile_subscribers');
       fetchAll(); toast({ title: `Imported ${imported} new subscribers` });
-    } catch { toast({ title: 'Import failed', variant: 'destructive' }); }
+    } catch (e) { toast({ title: 'Import failed', description: (e as Error).message, variant: 'destructive' }); }
     setImporting(false);
   };
 
@@ -190,13 +183,12 @@ export default function AdminNewsletters() {
       toast({ title: 'Name and subject required', variant: 'destructive' }); return;
     }
     const payload = { name: tplForm.name, subject: tplForm.subject, preview_text: tplForm.preview_text || null, html_content: tplForm.html_content };
-    if (tplForm.id) await supabase.from('email_templates').update(payload).eq('id', tplForm.id);
-    else await supabase.from('email_templates').insert(payload);
+    if (!(await W(() => tplForm.id ? adminWrite('email_templates', 'update', [tplForm.id], payload) : adminWrite('email_templates', 'insert', null, payload)))) return;
     setShowTemplateEdit(false); setTplForm({ id: '', name: '', subject: '', preview_text: '', html_content: '' });
     fetchAll(); toast({ title: 'Template saved' });
   };
   const deleteTemplate = async (id: string) => {
-    await supabase.from('email_templates').delete().eq('id', id);
+    if (!(await W(() => adminWrite('email_templates', 'delete', [id])))) return;
     fetchAll(); toast({ title: 'Template deleted' });
   };
 
@@ -205,27 +197,22 @@ export default function AdminNewsletters() {
     if (!segForm.name.trim()) { toast({ title: 'Name required', variant: 'destructive' }); return; }
     const tags = segForm.tags.split(',').map(t => t.trim()).filter(Boolean);
     const payload = { name: segForm.name, description: segForm.description || null, filter_spec: { tags } };
-    if (segForm.id) await supabase.from('email_segments').update(payload).eq('id', segForm.id);
-    else await supabase.from('email_segments').insert(payload);
+    if (!(await W(() => segForm.id ? adminWrite('email_segments', 'update', [segForm.id], payload) : adminWrite('email_segments', 'insert', null, payload)))) return;
     setShowSegmentEdit(false); setSegForm({ id: '', name: '', description: '', tags: '' });
     fetchAll(); toast({ title: 'Segment saved' });
   };
   const deleteSegment = async (id: string) => {
-    await supabase.from('email_segments').delete().eq('id', id);
+    if (!(await W(() => adminWrite('email_segments', 'delete', [id])))) return;
     fetchAll(); toast({ title: 'Segment deleted' });
   };
 
   // ---------- Derived ----------
-  const activeCount = subscribers.filter(s => s.subscribed).length;
-  const filteredSubs = subscribers.filter(s =>
-    s.email.toLowerCase().includes(subSearch.toLowerCase()) ||
-    (s.name?.toLowerCase().includes(subSearch.toLowerCase()))
-  );
-  const totalSent = events.filter(e => e.event_type === 'sent').length;
-  const totalOpens = events.filter(e => e.event_type === 'opened').length;
-  const totalClicks = events.filter(e => e.event_type === 'clicked').length;
+  const st = stats.data;
+  const activeCount = st?.active_subscribers ?? 0;
+  const totalSent = st?.sent ?? 0, totalOpens = st?.opened ?? 0, totalClicks = st?.clicked ?? 0;
   const openRate = totalSent ? Math.round((totalOpens / totalSent) * 100) : 0;
   const clickRate = totalSent ? Math.round((totalClicks / totalSent) * 100) : 0;
+  const campaigns = camp.rows ?? [];
 
   const statusBadge = (status: string) => {
     const map: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -234,26 +221,31 @@ export default function AdminNewsletters() {
     return <Badge variant={map[status] || 'outline'}>{status}</Badge>;
   };
 
-  const campaignStats = (cid: string) => {
-    const evs = events.filter(e => e.campaign_id === cid);
-    return {
-      sent: evs.filter(e => e.event_type === 'sent').length,
-      opens: evs.filter(e => e.event_type === 'opened').length,
-      clicks: evs.filter(e => e.event_type === 'clicked').length,
-    };
-  };
+  const campaignStats = (cid: string) => st?.per_campaign?.[cid] ?? { sent: 0, opens: 0, clicks: 0 };
+
+  const subCols: Column<Subscriber>[] = [
+    { key: 'email', header: 'Email', sortable: true, cell: (x) => <div><p className="font-medium text-foreground">{x.email}</p><p className="text-xs text-muted-foreground">{x.name || '—'}{x.tags?.length ? ` · ${x.tags.join(', ')}` : ''}</p></div> },
+    { key: 'source', header: 'Source', sortable: true, cell: (x) => x.source },
+    { key: 'created_at', header: 'Added', sortable: true, cell: (x) => fmtDate(x.subscribed_at) },
+    { key: 'last_open_at', header: 'Last open', sortable: true, cell: (x) => fmtDate(x.last_open_at) },
+    { key: 'subscribed', header: 'Status', sortable: true, cell: (x) => <StatusBadge value={x.subscribed ? 'active' : 'dismissed'} /> },
+    ...(isAdmin ? [{ key: 'a', header: '', align: 'right' as const, cell: (x: Subscriber) => <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleRemoveSubscriber(x.id)} aria-label="Remove"><Trash2 className="h-3.5 w-3.5" /></Button> }] : []),
+  ];
+  const evCols: Column<EventRow>[] = [
+    { key: 'created_at', header: 'Time', sortable: true, cell: (e) => fmtDate(e.created_at) },
+    { key: 'event_type', header: 'Event', sortable: true, cell: (e) => <span className="capitalize">{e.event_type}</span> },
+    { key: 'recipient_email', header: 'Recipient', cell: (e) => e.recipient_email || '—' },
+    { key: 'url', header: 'Link', cell: (e) => <span className="line-clamp-1 max-w-[280px] text-xs">{e.url || '—'}</span> },
+  ];
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Email Marketing</h1>
-          <p className="text-muted-foreground">Compose, schedule, and track promotional campaigns.</p>
-        </div>
+        <PageHeader title="Newsletters" description="Compose, schedule and track promotional campaigns. Only admins can send." />
 
         <div className="grid sm:grid-cols-4 gap-4">
           <Card><CardContent className="p-4 flex items-center gap-3"><Users className="w-7 h-7 text-primary" /><div><p className="text-xl font-bold">{activeCount}</p><p className="text-xs text-muted-foreground">Active subscribers</p></div></CardContent></Card>
-          <Card><CardContent className="p-4 flex items-center gap-3"><Mail className="w-7 h-7 text-primary" /><div><p className="text-xl font-bold">{campaigns.length}</p><p className="text-xs text-muted-foreground">Campaigns</p></div></CardContent></Card>
+          <Card><CardContent className="p-4 flex items-center gap-3"><Mail className="w-7 h-7 text-primary" /><div><p className="text-xl font-bold">{st?.campaigns ?? '—'}</p><p className="text-xs text-muted-foreground">Campaigns</p></div></CardContent></Card>
           <Card><CardContent className="p-4 flex items-center gap-3"><Eye className="w-7 h-7 text-primary" /><div><p className="text-xl font-bold">{openRate}%</p><p className="text-xs text-muted-foreground">Avg open rate</p></div></CardContent></Card>
           <Card><CardContent className="p-4 flex items-center gap-3"><BarChart3 className="w-7 h-7 text-primary" /><div><p className="text-xl font-bold">{clickRate}%</p><p className="text-xs text-muted-foreground">Avg click rate</p></div></CardContent></Card>
         </div>
@@ -262,7 +254,7 @@ export default function AdminNewsletters() {
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
             <TabsTrigger value="templates">Templates ({templates.length})</TabsTrigger>
-            <TabsTrigger value="subscribers">Subscribers ({subscribers.length})</TabsTrigger>
+            <TabsTrigger value="subscribers">Subscribers ({st?.subscribers ?? '—'})</TabsTrigger>
             <TabsTrigger value="segments">Segments ({segments.length})</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
@@ -272,7 +264,7 @@ export default function AdminNewsletters() {
             <Button onClick={() => { setEditId(null); setForm({ ...DEFAULT_FORM }); setShowCompose(true); }}>
               <Plus className="w-4 h-4 mr-2" /> New Campaign
             </Button>
-            {loading ? <p className="text-muted-foreground">Loading...</p> : campaigns.length === 0 ? (
+            {camp.q.error ? <Card><CardContent className="p-8 text-center text-sm">Couldn't load campaigns. <Button size="sm" variant="outline" onClick={() => camp.q.refetch()}>Try again</Button></CardContent></Card> : camp.q.isLoading ? <p className="text-muted-foreground">Loading…</p> : campaigns.length === 0 ? (
               <Card><CardContent className="p-8 text-center text-muted-foreground">No campaigns yet.</CardContent></Card>
             ) : (
               <div className="space-y-3">
@@ -316,10 +308,10 @@ export default function AdminNewsletters() {
                                 });
                                 setShowCompose(true);
                               }}>Edit</Button>
-                              <Button size="sm" onClick={() => handleSend(c.id)} disabled={sending || activeCount === 0}>
+                              {isAdmin && <Button size="sm" onClick={() => handleSend(c.id)} disabled={sending || activeCount === 0}>
                                 <Send className="w-4 h-4 mr-1" /> Send now
-                              </Button>
-                              <Button size="sm" variant="destructive" onClick={() => handleDeleteCampaign(c.id)}><Trash2 className="w-4 h-4" /></Button>
+                              </Button>}
+                              {isAdmin && <Button size="sm" variant="destructive" onClick={() => handleDeleteCampaign(c.id)}><Trash2 className="w-4 h-4" /></Button>}
                             </>
                           )}
                         </div>
@@ -327,6 +319,11 @@ export default function AdminNewsletters() {
                     </Card>
                   );
                 })}
+                <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
+                  <span>{camp.total} campaigns · page {camp.page + 1} of {Math.max(1, Math.ceil(camp.total / camp.pageSize))}</span>
+                  <Button size="sm" variant="outline" disabled={camp.page === 0} onClick={() => camp.setPage(camp.page - 1)}>Previous</Button>
+                  <Button size="sm" variant="outline" disabled={(camp.page + 1) * camp.pageSize >= camp.total} onClick={() => camp.setPage(camp.page + 1)}>Next</Button>
+                </div>
               </div>
             )}
           </TabsContent>
@@ -363,32 +360,9 @@ export default function AdminNewsletters() {
             <div className="flex gap-2 flex-wrap">
               <Button onClick={() => setShowAddSub(true)}><Plus className="w-4 h-4 mr-2" /> Add</Button>
               <Button variant="outline" onClick={handleImportUsers} disabled={importing}><Upload className="w-4 h-4 mr-2" /> {importing ? 'Importing…' : 'Import from Users'}</Button>
-              <Input placeholder="Search…" value={subSearch} onChange={e => setSubSearch(e.target.value)} className="max-w-xs" />
+              <Input placeholder="Search email or name…" value={subs.search} onChange={e => subs.setSearch(e.target.value)} className="max-w-xs" />
             </div>
-            {filteredSubs.length === 0 ? (
-              <Card><CardContent className="p-8 text-center text-muted-foreground">No subscribers.</CardContent></Card>
-            ) : (
-              <div className="space-y-2">
-                {filteredSubs.map(s => (
-                  <Card key={s.id}>
-                    <CardContent className="p-3 flex items-center justify-between gap-3 flex-wrap">
-                      <div>
-                        <p className="font-medium">{s.email}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {s.name && `${s.name} · `}{s.source} · {format(new Date(s.subscribed_at), 'MMM d, yyyy')}
-                          {s.tags?.length ? ` · ${s.tags.join(', ')}` : ''}
-                          {s.last_open_at && ` · last open ${format(new Date(s.last_open_at), 'MMM d')}`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={s.subscribed ? 'default' : 'destructive'}>{s.subscribed ? 'Active' : 'Unsub.'}</Badge>
-                        <Button size="sm" variant="ghost" onClick={() => handleRemoveSubscriber(s.id)}><Trash2 className="w-4 h-4" /></Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+            <DataTable columns={subCols} {...subs.tableProps} rowKey={(r: any) => r.id} empty="No subscribers." />
           </TabsContent>
 
           {/* Segments */}
@@ -429,18 +403,7 @@ export default function AdminNewsletters() {
             <Card>
               <CardContent className="p-4">
                 <p className="font-semibold mb-3">Recent activity</p>
-                {events.length === 0 ? <p className="text-sm text-muted-foreground">No events yet.</p> : (
-                  <div className="space-y-1 max-h-[400px] overflow-y-auto">
-                    {events.slice(0, 100).map(e => (
-                      <div key={e.id} className="text-xs flex items-center gap-3 py-1 border-b border-border/40">
-                        <Badge variant="outline" className="capitalize">{e.event_type}</Badge>
-                        <span className="text-muted-foreground">{e.recipient_email || '—'}</span>
-                        {e.url && <span className="text-muted-foreground truncate max-w-[300px]">{e.url}</span>}
-                        <span className="ml-auto text-muted-foreground">{format(new Date(e.created_at), 'MMM d HH:mm')}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <DataTable columns={evCols} {...evs.tableProps} rowKey={(r: any) => r.id} empty="No events yet." />
               </CardContent>
             </Card>
           </TabsContent>
