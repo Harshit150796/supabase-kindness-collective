@@ -14,6 +14,289 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          after: Json | null
+          before: Json | null
+          created_at: string
+          id: string
+          record_id: string | null
+          table_name: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          id?: string
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          id?: string
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Relationships: []
+      }
+      admin_dispatch_state: {
+        Row: {
+          donation_watermark: string
+          fundraiser_watermark: string
+          id: number
+          last_run_at: string | null
+        }
+        Insert: {
+          donation_watermark?: string
+          fundraiser_watermark?: string
+          id?: number
+          last_run_at?: string | null
+        }
+        Update: {
+          donation_watermark?: string
+          fundraiser_watermark?: string
+          id?: number
+          last_run_at?: string | null
+        }
+        Relationships: []
+      }
+      admin_email_events: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          last_error: string | null
+          payload: Json | null
+          resend_id: string | null
+          sent_at: string | null
+          source_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          last_error?: string | null
+          payload?: Json | null
+          resend_id?: string | null
+          sent_at?: string | null
+          source_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          last_error?: string | null
+          payload?: Json | null
+          resend_id?: string | null
+          sent_at?: string | null
+          source_id?: string
+        }
+        Relationships: []
+      }
+      admin_notification_reads: {
+        Row: {
+          notification_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          notification_id: string
+          read_at?: string
+          user_id?: string
+        }
+        Update: {
+          notification_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_notification_reads_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "admin_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          link: string | null
+          source_key: string | null
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          link?: string | null
+          source_key?: string | null
+          title: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string | null
+          source_key?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      admin_saved_views: {
+        Row: {
+          created_at: string
+          id: string
+          module: string
+          name: string
+          state: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          module: string
+          name: string
+          state: Json
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          module?: string
+          name?: string
+          state?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      admin_settings: {
+        Row: {
+          email_new_donation: boolean
+          email_new_fundraiser: boolean
+          id: number
+          notification_recipients: string[]
+          require_fundraiser_approval: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          email_new_donation?: boolean
+          email_new_fundraiser?: boolean
+          id?: number
+          notification_recipients?: string[]
+          require_fundraiser_approval?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          email_new_donation?: boolean
+          email_new_fundraiser?: boolean
+          id?: number
+          notification_recipients?: string[]
+          require_fundraiser_approval?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      admin_task_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          task_id: string
+        }
+        Insert: {
+          author_id?: string
+          body: string
+          created_at?: string
+          id?: string
+          task_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_task_comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "admin_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_tasks: {
+        Row: {
+          assignee_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          linked_id: string | null
+          linked_type: string | null
+          priority: string
+          source_key: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          linked_id?: string | null
+          linked_type?: string | null
+          priority?: string
+          source_key?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          linked_id?: string | null
+          linked_type?: string | null
+          priority?: string
+          source_key?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blocked_attempts: {
         Row: {
           context: string
@@ -1235,6 +1518,8 @@ export type Database = {
         Row: {
           allow_messages: boolean
           amount_raised: number | null
+          archived_at: string | null
+          archived_by: string | null
           beneficiary_display_name: string | null
           beneficiary_type: string
           category: string
@@ -1242,9 +1527,11 @@ export type Database = {
           cover_photo_url: string | null
           created_at: string | null
           donors_count: number | null
+          featured_order: number | null
           id: string
           is_long_term: boolean | null
           monthly_goal: number
+          rejection_reason: string | null
           show_beneficiary_name: boolean
           show_full_name: boolean
           status: string | null
@@ -1258,6 +1545,8 @@ export type Database = {
         Insert: {
           allow_messages?: boolean
           amount_raised?: number | null
+          archived_at?: string | null
+          archived_by?: string | null
           beneficiary_display_name?: string | null
           beneficiary_type: string
           category: string
@@ -1265,9 +1554,11 @@ export type Database = {
           cover_photo_url?: string | null
           created_at?: string | null
           donors_count?: number | null
+          featured_order?: number | null
           id?: string
           is_long_term?: boolean | null
           monthly_goal: number
+          rejection_reason?: string | null
           show_beneficiary_name?: boolean
           show_full_name?: boolean
           status?: string | null
@@ -1281,6 +1572,8 @@ export type Database = {
         Update: {
           allow_messages?: boolean
           amount_raised?: number | null
+          archived_at?: string | null
+          archived_by?: string | null
           beneficiary_display_name?: string | null
           beneficiary_type?: string
           category?: string
@@ -1288,9 +1581,11 @@ export type Database = {
           cover_photo_url?: string | null
           created_at?: string | null
           donors_count?: number | null
+          featured_order?: number | null
           id?: string
           is_long_term?: boolean | null
           monthly_goal?: number
+          rejection_reason?: string | null
           show_beneficiary_name?: boolean
           show_full_name?: boolean
           status?: string | null
@@ -1862,6 +2157,94 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_auto_task: {
+        Args: {
+          _id: string
+          _key: string
+          _link: string
+          _priority: string
+          _title: string
+          _type: string
+        }
+        Returns: undefined
+      }
+      admin_fundraiser_action: {
+        Args: {
+          _action: string
+          _id: string
+          _order?: number
+          _reason?: string
+        }
+        Returns: undefined
+      }
+      admin_hard_delete_fundraiser: {
+        Args: { _confirm: string; _id: string }
+        Returns: undefined
+      }
+      admin_list_donors: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _sort?: string
+        }
+        Returns: {
+          any_anonymous: boolean
+          display_name: string
+          donations_count: number
+          donor_id: string
+          donor_key: string
+          email: string
+          first_at: string
+          fundraisers_supported: number
+          last_at: string
+          total: number
+          total_count: number
+        }[]
+      }
+      admin_list_team: {
+        Args: never
+        Returns: {
+          email: string
+          full_name: string
+          roles: string[]
+          user_id: string
+        }[]
+      }
+      admin_overview_kpis: { Args: never; Returns: Json }
+      admin_search: {
+        Args: { _q: string }
+        Returns: {
+          id: string
+          kind: string
+          label: string
+          link: string
+          sub: string
+        }[]
+      }
+      admin_set_role: {
+        Args: {
+          _grant: boolean
+          _role: Database["public"]["Enums"]["user_role"]
+          _user: string
+        }
+        Returns: undefined
+      }
+      admin_update_fundraiser: {
+        Args: { _id: string; _patch: Json }
+        Returns: undefined
+      }
+      admin_update_settings: { Args: { _patch: Json }; Returns: undefined }
+      admin_view_conversation: {
+        Args: { _cid: string }
+        Returns: {
+          body: string
+          created_at: string
+          id: string
+          sender_id: string
+          status: string
+        }[]
+      }
       apply_donation_to_fundraiser: {
         Args: {
           _amount: number
@@ -1980,6 +2363,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin_any: { Args: { _uid: string }; Returns: boolean }
+      is_admin_staff: { Args: { _uid: string }; Returns: boolean }
       is_fundraiser_organizer: {
         Args: { _fid: string; _uid: string }
         Returns: boolean
@@ -1987,6 +2372,16 @@ export type Database = {
       is_fundraiser_team: {
         Args: { _fid: string; _uid: string }
         Returns: boolean
+      }
+      log_admin_action: {
+        Args: {
+          _action: string
+          _after: Json
+          _before: Json
+          _record: string
+          _table: string
+        }
+        Returns: undefined
       }
       set_comment_hidden: {
         Args: { _comment_id: string; _hidden: boolean }
