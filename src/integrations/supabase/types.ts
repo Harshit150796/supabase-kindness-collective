@@ -2004,7 +2004,7 @@ export type Database = {
         | "pending_procurement"
         | "claimed"
         | "procurement_failed"
-      user_role: "recipient" | "donor" | "admin"
+      user_role: "recipient" | "donor" | "admin" | "staff" | "viewer"
       verification_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
@@ -2143,7 +2143,7 @@ export const Constants = {
         "claimed",
         "procurement_failed",
       ],
-      user_role: ["recipient", "donor", "admin"],
+      user_role: ["recipient", "donor", "admin", "staff", "viewer"],
       verification_status: ["pending", "approved", "rejected"],
     },
   },
