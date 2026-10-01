@@ -126,3 +126,11 @@
 - [x] Replace the approximated CVS mark with the official CVS heart and letterforms.
 - [x] Move Instacart to a central front slot and increase CVS leaf clearance and optical size.
 - [ ] Verify both marks through opening, movement, fall, and regrowth at 390px and 1440px in live WebGL.
+
+## Fundraiser page rebuild (GoFundMe parity)
+- [x] P0 live bug: public read functions for supporters + organizer name, wired into /f/:slug, verified anonymously.
+- [x] Phase 1: additive schema, RLS, moderation module; three-user RLS proof + safety-pattern tests.
+- [ ] Phase 2: public page rebuild (ink token, polling every 30s for totals/"just donated" — no triggers on payment tables).
+- [ ] Phase 3: organizer tools (inbox, badge, team, updates, comment moderation, settings incl. full-name opt-in), admin moderation.
+- [ ] Phase 4: sharing — investigate branded share URL (coupondonation.com/f/:slug or share.coupondonation.com); never ship raw supabase.co link.
+- [ ] Phase 5: end-to-end messaging check, each step pass/fail/unverified.

@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_attempts: {
+        Row: {
+          context: string
+          conversation_id: string | null
+          created_at: string
+          fundraiser_id: string | null
+          id: string
+          masked_excerpt: string | null
+          matched_rules: string[]
+          sender_id: string
+          status: string
+        }
+        Insert: {
+          context?: string
+          conversation_id?: string | null
+          created_at?: string
+          fundraiser_id?: string | null
+          id?: string
+          masked_excerpt?: string | null
+          matched_rules?: string[]
+          sender_id: string
+          status?: string
+        }
+        Update: {
+          context?: string
+          conversation_id?: string | null
+          created_at?: string
+          fundraiser_id?: string | null
+          id?: string
+          masked_excerpt?: string | null
+          matched_rules?: string[]
+          sender_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       brand_procurement_map: {
         Row: {
           brand_name: string
@@ -283,6 +319,141 @@ export type Database = {
           verified?: boolean
         }
         Relationships: []
+      }
+      comment_likes: {
+        Row: {
+          comment_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "fundraiser_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_reports: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          details: string | null
+          fundraiser_id: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          status: string
+          target_id: string
+          target_type: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          details?: string | null
+          fundraiser_id?: string | null
+          id?: string
+          reason: string
+          reporter_id: string
+          status?: string
+          target_id: string
+          target_type: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          details?: string | null
+          fundraiser_id?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          status?: string
+          target_id?: string
+          target_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      conversation_reads: {
+        Row: {
+          conversation_id: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_reads_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          blocked_by: string | null
+          created_at: string
+          fundraiser_id: string
+          id: string
+          last_message_at: string
+          status: string
+          supporter_id: string
+          updated_at: string
+        }
+        Insert: {
+          blocked_by?: string | null
+          created_at?: string
+          fundraiser_id: string
+          id?: string
+          last_message_at?: string
+          status?: string
+          supporter_id: string
+          updated_at?: string
+        }
+        Update: {
+          blocked_by?: string | null
+          created_at?: string
+          fundraiser_id?: string
+          id?: string
+          last_message_at?: string
+          status?: string
+          supporter_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_fundraiser_id_fkey"
+            columns: ["fundraiser_id"]
+            isOneToOne: false
+            referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coupon_claims: {
         Row: {
@@ -893,6 +1064,47 @@ export type Database = {
         }
         Relationships: []
       }
+      fundraiser_comments: {
+        Row: {
+          body: string
+          created_at: string
+          display_name: string
+          fundraiser_id: string
+          hidden_by: string | null
+          id: string
+          is_hidden: boolean
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          display_name: string
+          fundraiser_id: string
+          hidden_by?: string | null
+          id?: string
+          is_hidden?: boolean
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          display_name?: string
+          fundraiser_id?: string
+          hidden_by?: string | null
+          id?: string
+          is_hidden?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fundraiser_comments_fundraiser_id_fkey"
+            columns: ["fundraiser_id"]
+            isOneToOne: false
+            referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fundraiser_images: {
         Row: {
           created_at: string | null
@@ -928,9 +1140,102 @@ export type Database = {
           },
         ]
       }
+      fundraiser_team: {
+        Row: {
+          created_at: string
+          fundraiser_id: string
+          id: string
+          invite_email: string | null
+          invite_token_hash: string | null
+          invited_by: string | null
+          role: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          fundraiser_id: string
+          id?: string
+          invite_email?: string | null
+          invite_token_hash?: string | null
+          invited_by?: string | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          fundraiser_id?: string
+          id?: string
+          invite_email?: string | null
+          invite_token_hash?: string | null
+          invited_by?: string | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fundraiser_team_fundraiser_id_fkey"
+            columns: ["fundraiser_id"]
+            isOneToOne: false
+            referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fundraiser_updates: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          fundraiser_id: string
+          id: string
+          image_url: string | null
+          notify_donors: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          fundraiser_id: string
+          id?: string
+          image_url?: string | null
+          notify_donors?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          fundraiser_id?: string
+          id?: string
+          image_url?: string | null
+          notify_donors?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fundraiser_updates_fundraiser_id_fkey"
+            columns: ["fundraiser_id"]
+            isOneToOne: false
+            referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fundraisers: {
         Row: {
+          allow_messages: boolean
           amount_raised: number | null
+          beneficiary_display_name: string | null
           beneficiary_type: string
           category: string
           country: string | null
@@ -940,6 +1245,8 @@ export type Database = {
           id: string
           is_long_term: boolean | null
           monthly_goal: number
+          show_beneficiary_name: boolean
+          show_full_name: boolean
           status: string | null
           story: string
           title: string
@@ -949,7 +1256,9 @@ export type Database = {
           zip_code: string | null
         }
         Insert: {
+          allow_messages?: boolean
           amount_raised?: number | null
+          beneficiary_display_name?: string | null
           beneficiary_type: string
           category: string
           country?: string | null
@@ -959,6 +1268,8 @@ export type Database = {
           id?: string
           is_long_term?: boolean | null
           monthly_goal: number
+          show_beneficiary_name?: boolean
+          show_full_name?: boolean
           status?: string | null
           story: string
           title: string
@@ -968,7 +1279,9 @@ export type Database = {
           zip_code?: string | null
         }
         Update: {
+          allow_messages?: boolean
           amount_raised?: number | null
+          beneficiary_display_name?: string | null
           beneficiary_type?: string
           category?: string
           country?: string | null
@@ -978,6 +1291,8 @@ export type Database = {
           id?: string
           is_long_term?: boolean | null
           monthly_goal?: number
+          show_beneficiary_name?: boolean
+          show_full_name?: boolean
           status?: string | null
           story?: string
           title?: string
@@ -1074,6 +1389,95 @@ export type Database = {
           total_savings?: number | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          flags: string[]
+          id: string
+          sender_id: string
+          status: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          flags?: string[]
+          id?: string
+          sender_id: string
+          status?: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          flags?: string[]
+          id?: string
+          sender_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messaging_preferences: {
+        Row: {
+          email_notifications: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          email_notifications?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          email_notifications?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_queue: {
+        Row: {
+          created_at: string
+          fundraiser_id: string | null
+          id: string
+          kind: string
+          recipient_user_id: string
+          ref_id: string | null
+          scheduled_for: string
+          sent_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          fundraiser_id?: string | null
+          id?: string
+          kind: string
+          recipient_user_id: string
+          ref_id?: string | null
+          scheduled_for?: string
+          sent_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          fundraiser_id?: string | null
+          id?: string
+          kind?: string
+          recipient_user_id?: string
+          ref_id?: string | null
+          scheduled_for?: string
+          sent_at?: string | null
         }
         Relationships: []
       }
@@ -1471,6 +1875,10 @@ export type Database = {
         Args: { _brand: string; _codes: string[]; _value: number }
         Returns: number
       }
+      can_access_conversation: {
+        Args: { _cid: string; _uid: string }
+        Returns: boolean
+      }
       cleanup_expired_otps: { Args: never; Returns: undefined }
       cleanup_expired_password_reset_tokens: { Args: never; Returns: undefined }
       confirm_coupon_redemption: {
@@ -1479,6 +1887,42 @@ export type Database = {
       }
       generate_card_number: { Args: never; Returns: string }
       get_coupon_code: { Args: { _coupon_id: string }; Returns: string }
+      get_fundraiser_coupon_trail: {
+        Args: { _fundraiser_id: string }
+        Returns: {
+          converted: number
+          coupons_count: number
+          redeemed: number
+        }[]
+      }
+      get_fundraiser_donations: {
+        Args: { _fundraiser_id: string; _limit?: number; _order?: string }
+        Returns: {
+          amount: number
+          created_at: string
+          display_name: string
+          id: string
+          is_anonymous: boolean
+          message: string
+        }[]
+      }
+      get_fundraiser_organizer: {
+        Args: { _fundraiser_id: string }
+        Returns: {
+          city: string
+          country: string
+          display_name: string
+        }[]
+      }
+      get_fundraiser_team_public: {
+        Args: { _fundraiser_id: string }
+        Returns: {
+          city: string
+          country: string
+          display_name: string
+          role: string
+        }[]
+      }
       get_impact_stats: {
         Args: never
         Returns: {
@@ -1517,6 +1961,10 @@ export type Database = {
           total: number
         }[]
       }
+      has_completed_donation: {
+        Args: { _fid: string; _uid: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
@@ -1524,6 +1972,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_fundraiser_organizer: {
+        Args: { _fid: string; _uid: string }
+        Returns: boolean
+      }
+      is_fundraiser_team: {
+        Args: { _fid: string; _uid: string }
+        Returns: boolean
+      }
+      set_comment_hidden: {
+        Args: { _comment_id: string; _hidden: boolean }
+        Returns: undefined
+      }
+      short_display_name: { Args: { _name: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "donor" | "recipient"
