@@ -10,6 +10,9 @@ const SUPA = Deno.env.get('SUPABASE_URL')!;
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   const admin = createClient(SUPA, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  // Only the scheduled dispatcher may trigger sends (secret lives in Supabase Vault).
+  const { data: ok } = await admin.rpc('dispatch_secret_ok', { _s: req.headers.get('x-dispatch-secret') });
+  if (!ok) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   const key = Deno.env.get('RESEND_API_KEY');
   const { data: due } = await admin.from('notification_queue').select('*').is('sent_at', null).lte('scheduled_for', new Date().toISOString()).limit(50);
   let sent = 0, skipped = 0;
