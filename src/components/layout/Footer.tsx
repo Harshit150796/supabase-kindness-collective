@@ -7,7 +7,7 @@ export function Footer() {
   return (
     <footer className="bg-[hsl(var(--primary-20))] text-primary-foreground">
       <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-5">
           {/* Brand */}
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 rounded-[1.5rem] bg-background px-4 py-3">
