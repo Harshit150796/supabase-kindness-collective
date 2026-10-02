@@ -1,3 +1,4 @@
+import { NEEDS } from '@/data/needs';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import logo from '@/assets/logo.png';
@@ -6,7 +7,7 @@ export function Footer() {
   return (
     <footer className="bg-[hsl(var(--primary-20))] text-primary-foreground">
       <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-5">
           {/* Brand */}
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 rounded-[1.5rem] bg-background px-4 py-3">
@@ -38,7 +39,14 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-primary-foreground/70">
               <li><Link to="/auth?mode=signup&role=donor" className="hover:text-primary-foreground transition-colors">Become a Donor</Link></li>
               <li><Link to="/auth?mode=signup&role=recipient" className="hover:text-primary-foreground transition-colors">Apply as Recipient</Link></li>
-              <li><Link to="/auth" className="hover:text-primary-foreground transition-colors">Partner With Us</Link></li>
+              <li><Link to="/partners" className="hover:text-primary-foreground transition-colors">Partner With Us</Link></li>
+              <li><Link to="/apply" className="hover:text-primary-foreground transition-colors">Start a fundraiser</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-4">Find help</h3>
+            <ul className="space-y-2 text-sm text-primary-foreground/70">
+              {NEEDS.map((n) => <li key={n.slug}><Link to={`/help/${n.slug}`} className="hover:text-primary-foreground transition-colors">{n.name}</Link></li>)}
             </ul>
           </div>
 

@@ -10,6 +10,8 @@ import {
   Users,
   Building2,
   ShieldCheck,
+  Siren,
+  Package,
 } from "lucide-react";
 
 interface BasicsStepProps {
@@ -26,6 +28,8 @@ const categories = [
   { id: "clothing", label: "Clothing", icon: Shirt },
   { id: "transportation", label: "Transportation", icon: Car },
   { id: "utilities", label: "Utilities", icon: Zap },
+  { id: "emergency", label: "Emergency", icon: Siren },
+  { id: "essentials", label: "Essentials", icon: Package },
 ];
 
 const beneficiaryOptions = [

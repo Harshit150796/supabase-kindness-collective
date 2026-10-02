@@ -1,3 +1,4 @@
+import { PhotoGuidance, usePhotoCropper } from "@/components/photo/PhotoCropDialog";
 import { useState, useRef } from "react";
 import { Sparkles, ImagePlus, Upload, Camera, Video, Folder } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -79,6 +80,7 @@ export const StoryStep = ({
   const libraryRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { cropFile, dialog: cropDialog } = usePhotoCropper();
 
   const storyText = story || "";
   const wordCount = storyText.trim() ? storyText.trim().split(/\s+/).length : 0;
@@ -128,7 +130,12 @@ export const StoryStep = ({
       });
     }
 
-    for (const file of selected) {
+    for (let file of selected) {
+      if (file.type.startsWith("image/")) {
+        const cropped = await cropFile(file);
+        if (!cropped) continue;
+        file = cropped;
+      }
       const isVideo = file.type.startsWith("video/") || ALLOWED_VIDEO_TYPES.includes(file.type);
       const isImage = file.type.startsWith("image/") || ALLOWED_IMAGE_TYPES.includes(file.type);
 
@@ -309,8 +316,11 @@ export const StoryStep = ({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-foreground">Add photos or videos</h3>
-          <span className="text-xs font-medium text-primary">Required</span>
+          <span className="text-xs font-medium text-primary">At least one photo required</span>
         </div>
+        <p className="text-sm text-muted-foreground">Donors give more confidently when they can see who they are helping, so every fundraiser needs at least one photo. Videos are welcome in addition.</p>
+        <PhotoGuidance />
+        {cropDialog}
 
         {media.length === 0 ? (
           <button

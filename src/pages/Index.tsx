@@ -4,6 +4,7 @@ import { HeroSection } from '@/components/landing/HeroSection';
 import { WhatWeDo } from '@/components/landing/WhatWeDo';
 import { SEO } from '@/components/SEO';
 import { LazyOnView } from '@/components/LazyOnView';
+import { CompletedCampaigns, ProofFigures } from '@/components/proof/ProofSections';
 import { WordReveal } from '@/components/ui/editorial-motion';
 
 // Below-the-fold sections — lazy chunks, only fetched as user scrolls.
@@ -38,6 +39,8 @@ const Index = () => {
         <LazyOnView minHeight={600} rootMargin="900px" contentVisibilityAuto>
           <Suspense fallback={null}>
             <ImpactStories />
+            <ProofFigures />
+            <CompletedCampaigns limit={3} compact />
           </Suspense>
         </LazyOnView>
 

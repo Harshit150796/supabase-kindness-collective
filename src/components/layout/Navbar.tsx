@@ -78,6 +78,8 @@ export function Navbar() {
             >
               Blog
             </Link>
+            <Link to="/partners" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Partners</Link>
+            <Button asChild size="sm"><Link to="/apply">Start a fundraiser</Link></Button>
           </div>
 
           {/* Auth Buttons */}
@@ -218,6 +220,8 @@ export function Navbar() {
             >
               FAQ
             </Link>
+            <Link to="/partners" className="block py-2 text-muted-foreground hover:text-foreground transition-colors" onClick={() => setMobileMenuOpen(false)}>Partners</Link>
+            <Button asChild className="w-full"><Link to="/apply" onClick={() => setMobileMenuOpen(false)}>Start a fundraiser</Link></Button>
             <div className="pt-4 border-t border-border space-y-3">
               {user ? (
                 <>

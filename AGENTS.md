@@ -26,7 +26,9 @@
 - Public share links stay on coupondonation.com (or a branded host via `VITE_SHARE_HOST`); never expose the raw backend function URL to users.
 - Public fundraiser totals come from `get_fundraiser_totals` (completed donations), never stored counters, because stored counters drifted.
 
-- Social link previews come from a Vercel bot-only rewrite of /f/:slug to api/share/[slug].js; share URLs stay on the main domain because crawlers do not run the SPA.
+- Production (coupondonation.com) is Lovable hosting; vercel.json and api/share/[slug].js are inert there, so per-campaign crawler previews are an open follow-up. Share URLs stay on the main domain.
+- Gold Coins are credited only by credit_gold_coins() from the scheduled dispatcher into the append-only gold_coin_ledger (unique per donation and entry type); payment tables stay read-only.
+- Anonymous public submissions (partner inquiries, testimonials) go through the public-submit edge function, never direct table inserts.
 - Resolve fundraiser imagery everywhere as primary gallery, then ordered gallery, then legacy cover, then branded category fallback; card delivery uses Supabase transforms and uploads create one bounded WebP.
 
 - Admin portal pages render inside AdminLayout (via DashboardLayout on /admin paths); lists use server-side pagination through DataTable, never whole-table loads.
