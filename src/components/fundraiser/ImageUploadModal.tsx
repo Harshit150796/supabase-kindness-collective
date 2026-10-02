@@ -1,3 +1,4 @@
+import { PhotoGuidance, usePhotoCropper } from "@/components/photo/PhotoCropDialog";
 import { useState, useRef, useCallback } from "react";
 import { Upload, X, ImageIcon, Loader2, Star, GripVertical } from "lucide-react";
 import {
@@ -70,7 +71,9 @@ export function ImageUploadModal({
         continue;
       }
 
-      await uploadImage(file);
+      const cropped = await cropFile(file);
+      if (!cropped) continue;
+      await uploadImage(cropped);
     }
   }, [remainingSlots, toast]);
 
@@ -168,6 +171,10 @@ export function ImageUploadModal({
   };
 
   const handleDeleteImage = async (imageId: string) => {
+    if (localImages.length <= 1) {
+      toast({ title: "At least one photo is required", description: "Donors need to see who they are helping. Add another photo before removing this one." });
+      return;
+    }
     try {
       // Delete from database
       const { error: deleteError } = await supabase.from("fundraiser_images").delete().eq("id", imageId);
@@ -220,12 +227,14 @@ export function ImageUploadModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
+      {cropDialog}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Manage Photos</DialogTitle>
           <DialogDescription>
             Add up to {MAX_IMAGES} photos to your fundraiser. The first photo will be your cover image.
           </DialogDescription>
+          <PhotoGuidance className="pt-2" />
         </DialogHeader>
 
         <div className="space-y-4">
