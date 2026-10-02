@@ -155,3 +155,9 @@
 - [x] Linter: 60 -> 55 (49 pre-existing + 6 new intended team-only admin actions) (internal trigger routines + coupon-code lookup closed to signed-out callers; explicit no-access rules on two server-only tables).
 - [ ] Founder approval: remaining linter items (see report) — pg_net schema, leaked-password toggle, coupon-trigger routine grant.
 - [ ] Signed-in browser walkthrough of rebuilt pages (unverified — no admin session here).
+
+## Fundraiser imagery reliability and homepage showcase
+- [ ] Part A: one shared fundraiser image resolver, reliable ImageReveal, object-cover cards, branded category fallback across all display paths.
+- [ ] Part B: backfill empty covers with audit records, remove confirmed duplicate rows, enforce one primary, optimize one-row uploads, assess transformed delivery.
+- [ ] Part C: shared live-data FundraiserCard and rebuilt homepage section showing all active campaigns with sorting/filtering and mobile position dots.
+- [ ] Part D: signed-out 390px/1440px public-site screenshot audit, including reduced-motion image proof; report findings only.
