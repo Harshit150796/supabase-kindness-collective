@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Camera, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { FundraiserImageFallback, orderedFundraiserImages, transformedFundraiserImage } from "@/lib/fundraiserImages";
 
 interface FundraiserImage {
   id: string;
@@ -16,6 +17,7 @@ interface FundraiserGalleryProps {
   onAddPhotos?: () => void;
   fundraiserTitle: string;
   coverPhotoUrl?: string | null;
+  category?: string | null;
 }
 
 export function FundraiserGallery({
@@ -24,15 +26,12 @@ export function FundraiserGallery({
   onAddPhotos,
   fundraiserTitle,
   coverPhotoUrl,
+  category,
 }: FundraiserGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   // Sort images: primary first, then by display_order
-  const sortedImages = [...images].sort((a, b) => {
-    if (a.is_primary && !b.is_primary) return -1;
-    if (!a.is_primary && b.is_primary) return 1;
-    return a.display_order - b.display_order;
-  });
+  const sortedImages = orderedFundraiserImages(images) as FundraiserImage[];
 
   const goToNext = () => {
     setActiveIndex((prev) => (prev + 1) % sortedImages.length);
@@ -49,9 +48,9 @@ export function FundraiserGallery({
       return (
       <div className="relative w-full h-64 lg:h-80 bg-muted/30">
         <img
-          src={coverPhotoUrl}
+          src={transformedFundraiserImage(coverPhotoUrl, 1400) ?? coverPhotoUrl}
           alt={fundraiserTitle}
-          className="w-full h-full object-contain"
+          className="w-full h-full object-cover"
         />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
           
@@ -123,14 +122,9 @@ export function FundraiserGallery({
       );
     }
 
-    // Visitor view - minimal placeholder
+    // Visitor view - branded category fallback
     return (
-      <div className="w-full h-28 lg:h-32 flex items-center justify-center bg-muted/30">
-        <div className="flex items-center gap-2.5 text-muted-foreground/70">
-          <Camera className="w-5 h-5" />
-          <span className="text-sm">Photos coming soon</span>
-        </div>
-      </div>
+      <div className="h-64 w-full lg:h-80"><FundraiserImageFallback category={category} /></div>
     );
   }
 
@@ -139,9 +133,9 @@ export function FundraiserGallery({
     return (
       <div className="relative w-full h-64 lg:h-80 bg-muted/30">
         <img
-          src={sortedImages[0].image_url}
+          src={transformedFundraiserImage(sortedImages[0].image_url, 1400) ?? sortedImages[0].image_url}
           alt={fundraiserTitle}
-          className="w-full h-full object-contain"
+          className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
         
@@ -166,9 +160,9 @@ export function FundraiserGallery({
       {/* Main image */}
       <div className="relative w-full h-64 lg:h-80 overflow-hidden bg-muted/30">
         <img
-          src={sortedImages[activeIndex].image_url}
+          src={transformedFundraiserImage(sortedImages[activeIndex].image_url, 1400) ?? sortedImages[activeIndex].image_url}
           alt={`${fundraiserTitle} - Photo ${activeIndex + 1}`}
-          className="w-full h-full object-contain transition-opacity duration-300"
+          className="w-full h-full object-cover transition-opacity duration-300"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
 
@@ -220,7 +214,7 @@ export function FundraiserGallery({
             )}
           >
             <img
-              src={image.image_url}
+              src={transformedFundraiserImage(image.image_url, 160) ?? image.image_url}
               alt={`Thumbnail ${index + 1}`}
               className="w-full h-full object-cover"
             />

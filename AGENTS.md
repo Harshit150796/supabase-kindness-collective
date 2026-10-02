@@ -27,6 +27,7 @@
 - Public fundraiser totals come from `get_fundraiser_totals` (completed donations), never stored counters, because stored counters drifted.
 
 - Social link previews come from a Vercel bot-only rewrite of /f/:slug to api/share/[slug].js; share URLs stay on the main domain because crawlers do not run the SPA.
+- Resolve fundraiser imagery everywhere as primary gallery, then ordered gallery, then legacy cover, then branded category fallback; card delivery uses Supabase transforms and uploads create one bounded WebP.
 
 - Admin portal pages render inside AdminLayout (via DashboardLayout on /admin paths); lists use server-side pagination through DataTable, never whole-table loads.
 - Admin mutations go through security-definer admin_* RPCs that re-check role (admin/staff/viewer) and write admin_audit_log; never rely on hidden buttons.
