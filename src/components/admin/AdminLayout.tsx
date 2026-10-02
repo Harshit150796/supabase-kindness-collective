@@ -25,6 +25,8 @@ const GROUPS: { title: string; items: Item[] }[] = [
     { label: 'Recipients', path: '/admin/verifications', icon: ShieldCheck },
     { label: 'Coupons', path: '/admin/coupons', icon: Gift },
     { label: 'Procurement', path: '/admin/procurement', icon: Package },
+    { label: 'Gold Coins', path: '/admin/gold-coins', icon: Gift },
+    { label: 'Partner inquiries', path: '/admin/partners', icon: Contact },
   ] },
   { title: 'Trust', items: [{ label: 'Moderation', path: '/admin/moderation', icon: Flag, adminOnly: true }] },
   { title: 'Work', items: [{ label: 'Tasks', path: '/admin/tasks', icon: ListTodo }, { label: 'Notifications', path: '/admin/notifications', icon: Bell }] },

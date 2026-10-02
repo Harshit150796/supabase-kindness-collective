@@ -19,7 +19,7 @@ export default function AdminPartners() {
     <DashboardLayout>
       <PageHeader title="Partner inquiries" description="Organizations asking to run campaigns. Each new inquiry creates a task and an email alert." />
       <Input placeholder="Search inquiries" value={t.search} onChange={(e) => t.setSearch(e.target.value)} className="mb-4 max-w-sm" />
-      <DataTable columns={cols} rows={t.rows} loading={t.loading} error={t.error} onRetry={t.refetch} total={t.total} page={t.page} pageSize={t.pageSize} onPage={t.setPage} sort={t.sort} onSort={t.toggleSort} rowKey={(r) => r.id} empty="No partner inquiries yet." />
+      <DataTable columns={cols} {...t.tableProps} rowKey={(r) => r.id} empty="No partner inquiries yet." />
     </DashboardLayout>
   );
 }

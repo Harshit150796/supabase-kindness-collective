@@ -235,9 +235,8 @@ const ApplyRecipient = () => {
         const enoughWords = storyText.trim().split(/\s+/).filter(Boolean).length >= 10;
         return (
           enoughWords &&
-          media.length > 0 &&
           !media.some((m) => m.status === "uploading") &&
-          media.some((m) => m.status === "done" || m.status === "ready")
+          media.some((m) => !m.file.type.startsWith("video/") && (m.status === "done" || m.status === "ready"))
         );
       }
       case 3:

@@ -70,6 +70,10 @@ const AdminDonations = lazy(() => import("./pages/admin/AdminDonations"));
 const AdminProcurement = lazy(() => import("./pages/admin/AdminProcurement"));
 const AdminDonors = lazy(() => import("./pages/admin/AdminDonors"));
 const AdminTasks = lazy(() => import("./pages/admin/AdminTasks"));
+const AdminPartners = lazy(() => import("./pages/admin/AdminPartners"));
+const AdminGoldCoins = lazy(() => import("./pages/admin/AdminGoldCoins"));
+const NeedPage = lazy(() => import("./pages/NeedPage"));
+const Partners = lazy(() => import("./pages/Partners"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const AdminTeam = lazy(() => import("./pages/admin/AdminTeam"));
@@ -111,6 +115,8 @@ const AppRoutes = () => (
       <Route path="/cookies" element={<Cookies />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/stories" element={<Stories />} />
+      <Route path="/help/:need" element={<NeedPage />} />
+      <Route path="/partners" element={<Partners />} />
       <Route path="/story/:id" element={<StoryDetail />} />
       <Route path="/f/:slug" element={<PublicFundraiser />} />
       <Route path="/messages" element={<Messages />} />
@@ -160,6 +166,8 @@ const AppRoutes = () => (
       {/* Admin Routes (US-only) */}
       <Route path="/admin" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin', 'staff', 'viewer']}><AdminDashboard /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/donors" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminDonors /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/partners" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminPartners /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/gold-coins" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminGoldCoins /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/tasks" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminTasks /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/notifications" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminNotifications /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/settings" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminSettings /></ProtectedRoute></GeoGuard>} />

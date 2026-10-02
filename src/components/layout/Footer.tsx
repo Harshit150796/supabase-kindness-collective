@@ -1,3 +1,4 @@
+import { NEEDS } from '@/data/needs';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import logo from '@/assets/logo.png';
@@ -38,7 +39,14 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-primary-foreground/70">
               <li><Link to="/auth?mode=signup&role=donor" className="hover:text-primary-foreground transition-colors">Become a Donor</Link></li>
               <li><Link to="/auth?mode=signup&role=recipient" className="hover:text-primary-foreground transition-colors">Apply as Recipient</Link></li>
-              <li><Link to="/auth" className="hover:text-primary-foreground transition-colors">Partner With Us</Link></li>
+              <li><Link to="/partners" className="hover:text-primary-foreground transition-colors">Partner With Us</Link></li>
+              <li><Link to="/apply" className="hover:text-primary-foreground transition-colors">Start a fundraiser</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-4">Find help</h3>
+            <ul className="space-y-2 text-sm text-primary-foreground/70">
+              {NEEDS.map((n) => <li key={n.slug}><Link to={`/help/${n.slug}`} className="hover:text-primary-foreground transition-colors">{n.name}</Link></li>)}
             </ul>
           </div>
 
