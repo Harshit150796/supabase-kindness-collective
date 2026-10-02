@@ -563,42 +563,57 @@ export type Database = {
       }
       cms_testimonials: {
         Row: {
+          consent_at: string | null
           created_at: string
           display_order: number
           id: string
           image_url: string | null
+          is_anonymous: boolean
           is_published: boolean
           location: string | null
           name: string
           quote: string
           role: string
           role_label: string
+          status: string
+          submitted_by: string | null
+          submitter_role: string | null
           verified: boolean
         }
         Insert: {
+          consent_at?: string | null
           created_at?: string
           display_order?: number
           id?: string
           image_url?: string | null
+          is_anonymous?: boolean
           is_published?: boolean
           location?: string | null
           name: string
           quote: string
           role?: string
           role_label?: string
+          status?: string
+          submitted_by?: string | null
+          submitter_role?: string | null
           verified?: boolean
         }
         Update: {
+          consent_at?: string | null
           created_at?: string
           display_order?: number
           id?: string
           image_url?: string | null
+          is_anonymous?: boolean
           is_published?: boolean
           location?: string | null
           name?: string
           quote?: string
           role?: string
           role_label?: string
+          status?: string
+          submitted_by?: string | null
+          submitter_role?: string | null
           verified?: boolean
         }
         Relationships: []
@@ -1654,6 +1669,48 @@ export type Database = {
           },
         ]
       }
+      gold_coin_ledger: {
+        Row: {
+          coins: number
+          created_at: string
+          credited_at: string | null
+          donation_id: string
+          donor_email: string | null
+          entry_type: string
+          id: string
+          needs_review: boolean
+          note: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          coins: number
+          created_at?: string
+          credited_at?: string | null
+          donation_id: string
+          donor_email?: string | null
+          entry_type?: string
+          id?: string
+          needs_review?: boolean
+          note?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          coins?: number
+          created_at?: string
+          credited_at?: string | null
+          donation_id?: string
+          donor_email?: string | null
+          entry_type?: string
+          id?: string
+          needs_review?: boolean
+          note?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       loyalty_cards: {
         Row: {
           card_number: string
@@ -1835,6 +1892,63 @@ export type Database = {
           expires_at?: string
           id?: string
           verified?: boolean | null
+        }
+        Relationships: []
+      }
+      partner_inquiries: {
+        Row: {
+          city_state: string | null
+          contact_name: string
+          created_at: string
+          email: string
+          families_count: number | null
+          id: string
+          message: string | null
+          org_name: string
+          org_type: string
+          status: string
+        }
+        Insert: {
+          city_state?: string | null
+          contact_name: string
+          created_at?: string
+          email: string
+          families_count?: number | null
+          id?: string
+          message?: string | null
+          org_name: string
+          org_type: string
+          status?: string
+        }
+        Update: {
+          city_state?: string | null
+          contact_name?: string
+          created_at?: string
+          email?: string
+          families_count?: number | null
+          id?: string
+          message?: string | null
+          org_name?: string
+          org_type?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      partner_rate_limits: {
+        Row: {
+          created_at: string
+          id: number
+          ip_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          ip_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          ip_hash?: string
         }
         Relationships: []
       }
@@ -2157,6 +2271,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _gc_apply: { Args: { _delta: number; _uid: string }; Returns: number }
       admin_analytics: { Args: { _days?: number }; Returns: Json }
       admin_auto_task: {
         Args: {
@@ -2296,14 +2411,30 @@ export type Database = {
         Args: { _cid: string; _uid: string }
         Returns: boolean
       }
+      claim_gold_coins: { Args: never; Returns: number }
       cleanup_expired_otps: { Args: never; Returns: undefined }
       cleanup_expired_password_reset_tokens: { Args: never; Returns: undefined }
       confirm_coupon_redemption: {
         Args: { _coupon_id: string }
         Returns: undefined
       }
+      credit_gold_coins: { Args: never; Returns: Json }
       dispatch_secret_ok: { Args: { _s: string }; Returns: boolean }
       generate_card_number: { Args: never; Returns: string }
+      get_completed_fundraisers: {
+        Args: never
+        Returns: {
+          category: string
+          coupons_issued: number
+          coupons_redeemed: number
+          cover_photo_url: string
+          goal: number
+          id: string
+          raised: number
+          title: string
+          unique_slug: string
+        }[]
+      }
       get_coupon_code: { Args: { _coupon_id: string }; Returns: string }
       get_fundraiser_coupon_trail: {
         Args: { _fundraiser_id: string }
@@ -2361,6 +2492,7 @@ export type Database = {
         }[]
       }
       get_landing_stats: { Args: never; Returns: Json }
+      get_proof_stats: { Args: never; Returns: Json }
       get_public_donation_stats: {
         Args: never
         Returns: {
