@@ -11,10 +11,10 @@ export default function AdminGoldCoins() {
     { key: 'created_at', header: 'When', sortable: true, cell: (r) => new Date(r.created_at).toLocaleString() },
     { key: 'entry_type', header: 'Type', cell: (r) => r.entry_type === 'reversal' ? 'Reversal' : 'Credit' },
     { key: 'coins', header: 'Coins', align: 'right', sortable: true, cell: (r) => <span className="tabular-nums">{r.coins}</span> },
-    { key: 'status', header: 'Status', cell: (r) => <StatusBadge status={r.status} /> },
+    { key: 'status', header: 'Status', cell: (r) => <StatusBadge value={r.status} /> },
     { key: 'donor_email', header: 'Donor', cell: (r) => r.user_id ? <span className="font-mono text-xs">{r.user_id.slice(0, 8)}</span> : <span className="text-xs">{r.donor_email ?? '—'} (guest)</span> },
     { key: 'donation_id', header: 'Donation', cell: (r) => <a className="font-mono text-xs text-primary" href={`/admin/donations?id=${r.donation_id}`}>{r.donation_id.slice(0, 8)}</a> },
-    { key: 'needs_review', header: 'Review', cell: (r) => r.needs_review ? <StatusBadge status="needs review" /> : '' },
+    { key: 'needs_review', header: 'Review', cell: (r) => r.needs_review ? <StatusBadge value="needs review" /> : '' },
   ];
   return (
     <DashboardLayout>

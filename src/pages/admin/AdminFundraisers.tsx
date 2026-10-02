@@ -202,7 +202,8 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
               <div className="mt-6 space-y-3 rounded-md border border-border p-4">
                 <p className="text-sm font-medium">Edit details</p>
                 {(['title', 'category', 'monthly_goal', 'country', 'zip_code'] as const).map((k) => (
-                  <div key={k}><Label className="text-xs capitalize">{k.replace('_', ' ')}</Label><Input value={edit[k]} type={k === 'monthly_goal' ? 'number' : 'text'} onChange={(e) => setEdit({ ...edit, [k]: e.target.value })} /></div>))}
+                  <div key={k}><Label className="text-xs capitalize">{k.replace('_', ' ')}</Label><Input value={edit[k]} list={k === 'category' ? 'fundraiser-categories' : undefined} type={k === 'monthly_goal' ? 'number' : 'text'} onChange={(e) => setEdit({ ...edit, [k]: e.target.value })} /></div>))}
+                <datalist id="fundraiser-categories">{['food', 'health', 'healthcare', 'utilities', 'transportation', 'emergency', 'essentials', 'education', 'clothing'].map((c) => <option key={c} value={c} />)}</datalist>
                 <div><Label className="text-xs">Story</Label><Textarea rows={8} value={edit.story} onChange={(e) => setEdit({ ...edit, story: e.target.value })} /></div>
                 <div className="flex gap-2"><Button size="sm" disabled={busy} onClick={saveEdit}>Save changes</Button><Button size="sm" variant="ghost" onClick={() => setEdit(null)}>Cancel</Button></div>
               </div>

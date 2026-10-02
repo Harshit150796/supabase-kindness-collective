@@ -12,7 +12,7 @@ export default function AdminPartners() {
     { key: 'city_state', header: 'Location', cell: (r) => r.city_state ?? '—' },
     { key: 'families_count', header: 'Families', align: 'right', sortable: true, cell: (r) => r.families_count ?? '—' },
     { key: 'message', header: 'Message', cell: (r) => <p className="line-clamp-2 max-w-sm text-sm">{r.message ?? '—'}</p> },
-    { key: 'status', header: 'Status', cell: (r) => <StatusBadge status={r.status} /> },
+    { key: 'status', header: 'Status', cell: (r) => <StatusBadge value={r.status} /> },
     { key: 'created_at', header: 'Received', sortable: true, cell: (r) => new Date(r.created_at).toLocaleString() },
   ];
   return (
