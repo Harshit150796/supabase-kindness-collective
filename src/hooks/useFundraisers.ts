@@ -5,6 +5,7 @@ interface FundraiserImage {
   id: string;
   image_url: string;
   is_primary: boolean;
+  display_order: number;
 }
 
 export interface Fundraiser {
@@ -22,6 +23,10 @@ export interface Fundraiser {
   status: string;
   created_at: string;
   fundraiser_images?: FundraiserImage[];
+  organizer_name?: string;
+  live_raised: number;
+  live_donations_count: number;
+  latest_donation_at?: string | null;
 }
 
 export function useFundraisers(options?: { limit?: number; category?: string }) {
@@ -33,7 +38,7 @@ export function useFundraisers(options?: { limit?: number; category?: string }) 
         .select(`
           id, title, story, category, monthly_goal, amount_raised, donors_count, 
           unique_slug, cover_photo_url, country, zip_code, status, created_at,
-          fundraiser_images (id, image_url, is_primary)
+          fundraiser_images (id, image_url, is_primary, display_order)
         `)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
@@ -53,7 +58,26 @@ export function useFundraisers(options?: { limit?: number; category?: string }) 
         throw error;
       }
 
-      return (data || []) as Fundraiser[];
+      const rows = (data || []) as Omit<Fundraiser, 'live_raised' | 'live_donations_count'>[];
+      return Promise.all(rows.map(async (row) => {
+        const [totals, organizer, recent] = await Promise.all([
+          supabase.rpc('get_fundraiser_totals' as never, { _fundraiser_id: row.id } as never),
+          supabase.rpc('get_fundraiser_organizer' as never, { _fundraiser_id: row.id } as never),
+          supabase.rpc('get_fundraiser_donations' as never, { _fundraiser_id: row.id, _limit: 1, _order: 'recent' } as never),
+        ]);
+        const totalRow = (totals.data as Array<{ total_raised: number; donations_count: number }> | null)?.[0];
+        const organizerRow = (organizer.data as Array<{ display_name: string }> | null)?.[0];
+        const recentRow = (recent.data as Array<{ created_at: string }> | null)?.[0];
+        return {
+          ...row,
+          live_raised: Number(totalRow?.total_raised ?? 0),
+          live_donations_count: Number(totalRow?.donations_count ?? 0),
+          organizer_name: organizerRow?.display_name,
+          latest_donation_at: recentRow?.created_at ?? null,
+        } as Fundraiser;
+      }));
     },
+    refetchInterval: () => document.hidden ? false : 30_000,
+    refetchIntervalInBackground: false,
   });
 }

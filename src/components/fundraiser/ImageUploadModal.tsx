@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { optimizeFundraiserImage } from "@/lib/imageOptimization";
 
 interface FundraiserImage {
   id: string;
@@ -76,12 +77,12 @@ export function ImageUploadModal({
   const uploadImage = async (file: File) => {
     setUploading(true);
     try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${fundraiserId}/${Date.now()}.${fileExt}`;
+      const optimized = await optimizeFundraiserImage(file);
+      const fileName = `${fundraiserId}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.webp`;
 
       const { error: uploadError } = await supabase.storage
         .from("fundraiser-covers")
-        .upload(fileName, file);
+        .upload(fileName, optimized, { contentType: 'image/webp' });
 
       if (uploadError) throw uploadError;
 
@@ -104,6 +105,10 @@ export function ImageUploadModal({
         .single();
 
       if (insertError) throw insertError;
+      if (isPrimary) {
+        const { error: coverError } = await supabase.from('fundraisers').update({ cover_photo_url: publicUrl }).eq('id', fundraiserId);
+        if (coverError) throw coverError;
+      }
 
       setLocalImages((prev) => [...prev, data]);
       onImagesUpdated();
@@ -127,16 +132,23 @@ export function ImageUploadModal({
   const handleSetPrimary = async (imageId: string) => {
     try {
       // First, unset all as primary
-      await supabase
+      const { error: unsetError } = await supabase
         .from("fundraiser_images")
         .update({ is_primary: false })
         .eq("fundraiser_id", fundraiserId);
+      if (unsetError) throw unsetError;
 
       // Then set the selected one as primary
-      await supabase
+      const { error: primaryError } = await supabase
         .from("fundraiser_images")
         .update({ is_primary: true })
         .eq("id", imageId);
+      if (primaryError) throw primaryError;
+      const selected = localImages.find((image) => image.id === imageId);
+      if (selected) {
+        const { error: coverError } = await supabase.from('fundraisers').update({ cover_photo_url: selected.image_url }).eq('id', fundraiserId);
+        if (coverError) throw coverError;
+      }
 
       setLocalImages((prev) =>
         prev.map((img) => ({
@@ -155,32 +167,24 @@ export function ImageUploadModal({
     }
   };
 
-  const handleDeleteImage = async (imageId: string, imageUrl: string) => {
+  const handleDeleteImage = async (imageId: string) => {
     try {
       // Delete from database
-      await supabase.from("fundraiser_images").delete().eq("id", imageId);
-
-      // Try to delete from storage (extract path from URL)
-      const urlParts = imageUrl.split("/fundraiser-covers/");
-      if (urlParts[1]) {
-        await supabase.storage.from("fundraiser-covers").remove([urlParts[1]]);
-      }
+      const { error: deleteError } = await supabase.from("fundraiser_images").delete().eq("id", imageId);
+      if (deleteError) throw deleteError;
 
       const deletedImage = localImages.find((img) => img.id === imageId);
       const wasDeleted = deletedImage?.is_primary;
-      
-      setLocalImages((prev) => {
-        const remaining = prev.filter((img) => img.id !== imageId);
-        // If we deleted the primary, make the first remaining one primary
-        if (wasDeleted && remaining.length > 0) {
-          remaining[0].is_primary = true;
-          supabase
-            .from("fundraiser_images")
-            .update({ is_primary: true })
-            .eq("id", remaining[0].id);
-        }
-        return remaining;
-      });
+      const remaining = localImages.filter((img) => img.id !== imageId);
+      if (wasDeleted && remaining.length > 0) {
+        const { error: primaryError } = await supabase.from("fundraiser_images").update({ is_primary: true }).eq("id", remaining[0].id);
+        if (primaryError) throw primaryError;
+      }
+      if (wasDeleted) {
+        const { error: coverError } = await supabase.from('fundraisers').update({ cover_photo_url: remaining[0]?.image_url ?? null }).eq('id', fundraiserId);
+        if (coverError) throw coverError;
+      }
+      setLocalImages(remaining.map((img, index) => ({ ...img, is_primary: wasDeleted ? index === 0 : img.is_primary })));
       
       onImagesUpdated();
 
@@ -267,7 +271,7 @@ export function ImageUploadModal({
                       size="sm"
                       variant="destructive"
                       className="h-8 w-8 p-0"
-                      onClick={() => handleDeleteImage(image.id, image.image_url)}
+                      onClick={() => handleDeleteImage(image.id)}
                     >
                       <X className="w-4 h-4" />
                     </Button>

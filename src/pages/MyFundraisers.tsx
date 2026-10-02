@@ -9,11 +9,13 @@ import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Megaphone, Users, DollarSign, Calendar, ExternalLink, Share2, Eye, Heart } from "lucide-react";
+import { resolveFundraiserImage } from "@/lib/fundraiserImages";
 
 interface FundraiserImage {
   id: string;
   image_url: string;
   is_primary: boolean;
+  display_order: number;
 }
 
 interface Fundraiser {
@@ -32,15 +34,7 @@ interface Fundraiser {
   fundraiser_images?: FundraiserImage[];
 }
 
-const getPrimaryImage = (fundraiser: Fundraiser): string | null => {
-  const primaryImg = fundraiser.fundraiser_images?.find(img => img.is_primary)?.image_url;
-  if (primaryImg) return primaryImg;
-  
-  const firstImg = fundraiser.fundraiser_images?.[0]?.image_url;
-  if (firstImg) return firstImg;
-  
-  return fundraiser.cover_photo_url;
-};
+const getPrimaryImage = (fundraiser: Fundraiser): string | null => resolveFundraiserImage(fundraiser);
 
 const MyFundraisers = () => {
   const navigate = useNavigate();
@@ -69,7 +63,7 @@ const MyFundraisers = () => {
         .from("fundraisers")
         .select(`
           *,
-          fundraiser_images (id, image_url, is_primary)
+          fundraiser_images (id, image_url, is_primary, display_order)
         `)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });

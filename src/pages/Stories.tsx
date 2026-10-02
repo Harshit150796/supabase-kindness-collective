@@ -71,7 +71,7 @@ export default function Stories() {
             {isLoading ? (
               <div className="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3">{[1,2,3].map((item) => <div key={item}><Skeleton className="aspect-[4/3] w-full rounded-sm" /><Skeleton className="mt-4 h-5 w-3/4" /><Skeleton className="mt-3 h-2 w-full" /></div>)}</div>
             ) : filteredFundraisers.length > 0 ? (
-              <div className="mt-8 grid gap-x-7 gap-y-12 md:grid-cols-2 lg:grid-cols-3">{filteredFundraisers.map((fundraiser, index) => <Reveal key={fundraiser.id} delay={index * 0.05}><FundraiserCard fundraiser={fundraiser} /></Reveal>)}</div>
+              <div className="mt-8 grid gap-x-7 gap-y-12 md:grid-cols-2 lg:grid-cols-3">{filteredFundraisers.map((fundraiser) => <FundraiserCard key={fundraiser.id} fundraiser={fundraiser} />)}</div>
             ) : (
               <div className="mt-8 border-y border-border py-14"><h3 className="font-display text-3xl text-foreground">No matching fundraisers yet.</h3><p className="mt-3 text-muted-foreground">Clear the filters or start a fundraiser of your own.</p></div>
             )}

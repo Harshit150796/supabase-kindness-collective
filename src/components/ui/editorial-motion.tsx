@@ -41,18 +41,24 @@ export function LineReveal({ children, className, delay = 0 }: RevealProps) {
 
 export function ImageReveal({ children, className, delay = 0 }: RevealProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const visible = useInView(ref, { once: true, amount: 0.2 });
+  const inView = useInView(ref, { once: true, amount: 0.08 });
+  const [fallbackVisible, setFallbackVisible] = useState(false);
   const preference = useMotionPreference();
   const full = preference === 'full';
+  useEffect(() => {
+    const timer = window.setTimeout(() => setFallbackVisible(true), 900);
+    return () => window.clearTimeout(timer);
+  }, []);
+  const visible = preference !== 'full' || inView || fallbackVisible;
   return (
     <motion.div
       ref={ref}
       className={cn('overflow-hidden', className)}
-      initial={{ opacity: 0, y: full ? 0 : 16, clipPath: full ? 'inset(0 0 100% 0)' : 'inset(0 0 0 0)' }}
+      initial={full ? { opacity: 0, clipPath: 'inset(0 0 100% 0)' } : { opacity: 1, y: 0, clipPath: 'inset(0 0 0 0)' }}
       animate={visible ? { opacity: 1, clipPath: 'inset(0 0 0 0)' } : undefined}
       transition={{ duration: full ? 1.2 : 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
     >
-      <motion.div initial={{ scale: full ? 1.12 : 1 }} animate={visible ? { scale: 1 } : undefined} transition={{ duration: 1.2, delay, ease: [0.16, 1, 0.3, 1] }}>
+      <motion.div className="h-full w-full" initial={{ scale: full ? 1.12 : 1 }} animate={visible ? { scale: 1 } : undefined} transition={{ duration: 1.2, delay, ease: [0.16, 1, 0.3, 1] }}>
         {children}
       </motion.div>
     </motion.div>

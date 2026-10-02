@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { optimizeFundraiserImage } from "@/lib/imageOptimization";
 
 export const MAX_MEDIA_ITEMS = 5;
 export const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -121,9 +122,10 @@ export const uploadMediaFile = async (
   userId: string,
   onProgress?: (percent: number) => void
 ): Promise<{ path: string; publicUrl: string }> => {
+  const uploadFile = file.type.startsWith('image/') ? await optimizeFundraiserImage(file) : file;
   const path = `${userId}/${Date.now()}-${Math.random()
     .toString(36)
-    .slice(2, 8)}.${extensionFor(file)}`;
+    .slice(2, 8)}.${extensionFor(uploadFile)}`;
 
   const { data: sessionData } = await supabase.auth.getSession();
   const token = sessionData.session?.access_token;
@@ -141,7 +143,7 @@ export const uploadMediaFile = async (
       xhr.open("POST", url, true);
       xhr.setRequestHeader("Authorization", `Bearer ${token}`);
       xhr.setRequestHeader("x-upsert", "true");
-      if (file.type) xhr.setRequestHeader("Content-Type", file.type);
+      if (uploadFile.type) xhr.setRequestHeader("Content-Type", uploadFile.type);
 
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable && onProgress) {
@@ -153,7 +155,7 @@ export const uploadMediaFile = async (
         else reject(new Error(`Upload failed (${xhr.status})`));
       };
       xhr.onerror = () => reject(new Error("Network error while uploading"));
-      xhr.send(file);
+      xhr.send(uploadFile);
     });
 
     onProgress?.(100);
@@ -164,7 +166,7 @@ export const uploadMediaFile = async (
   onProgress?.(15);
   const { error } = await supabase.storage
     .from(MEDIA_BUCKET)
-    .upload(path, file, { contentType: file.type, upsert: true });
+    .upload(path, uploadFile, { contentType: uploadFile.type, upsert: true });
   if (error) throw error;
   onProgress?.(100);
   return { path, publicUrl: publicUrlOf(path) };

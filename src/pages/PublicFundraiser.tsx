@@ -19,6 +19,7 @@ import { UpdatesSection } from "@/components/fundraiser/campaign/UpdatesSection"
 import { ShareSheet, ShareCardPreview } from "@/components/fundraiser/campaign/ShareSheet";
 import { MoreFundraisers } from "@/components/fundraiser/campaign/MoreFundraisers";
 import { ReportDialog } from "@/components/fundraiser/campaign/ReportDialog";
+import { resolveFundraiserImage } from "@/lib/fundraiserImages";
 
 interface Fundraiser {
   id: string; title: string; story: string; category: string; monthly_goal: number; cover_photo_url: string | null;
@@ -94,6 +95,7 @@ const PublicFundraiser = () => {
   const beneficiary = fundraiser.show_beneficiary_name && fundraiser.beneficiary_display_name?.trim() ? fundraiser.beneficiary_display_name.trim() : null;
   const donate = () => navigate(`/donate?fundraiser=${fundraiser.id}`);
   const created = fundraiser.created_at ? new Date(fundraiser.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : null;
+  const resolvedCover = resolveFundraiserImage({ cover_photo_url: fundraiser.cover_photo_url, fundraiser_images: images });
 
   return (
     <div className="min-h-dvh bg-background pb-24 lg:pb-0">
@@ -102,7 +104,7 @@ const PublicFundraiser = () => {
         description={(fundraiser.story || `Support ${fundraiser.title} on CouponDonation.`).slice(0, 155)}
         path={`/f/${fundraiser.unique_slug}`}
         type="article"
-        image={fundraiser.cover_photo_url || undefined}
+        image={resolvedCover || undefined}
         jsonLd={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Stories", path: "/stories" }, { name: fundraiser.title, path: `/f/${fundraiser.unique_slug}` }])}
       />
       <Navbar />
@@ -114,7 +116,7 @@ const PublicFundraiser = () => {
         <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-14">
           <div className="min-w-0 space-y-12">
             <div className="overflow-hidden rounded-[1.5rem]">
-              <FundraiserGallery images={images} isOwner={isOwner} onAddPhotos={() => setImgModal(true)} fundraiserTitle={fundraiser.title} coverPhotoUrl={fundraiser.cover_photo_url} />
+              <FundraiserGallery images={images} isOwner={isOwner} onAddPhotos={() => setImgModal(true)} fundraiserTitle={fundraiser.title} coverPhotoUrl={fundraiser.cover_photo_url} category={fundraiser.category} />
             </div>
 
             <div className="space-y-4 border-b border-border pb-8">
@@ -157,7 +159,7 @@ const PublicFundraiser = () => {
 
             <section>
               <h2 className="font-display text-4xl font-normal text-foreground">Help spread the word</h2>
-              <div className="mt-6 max-w-md"><ShareCardPreview title={fundraiser.title} cover={images[0]?.image_url ?? fundraiser.cover_photo_url} raised={live.totalRaised} goal={Number(fundraiser.monthly_goal)} organizer={organizer} /></div>
+              <div className="mt-6 max-w-md"><ShareCardPreview title={fundraiser.title} cover={resolvedCover} raised={live.totalRaised} goal={Number(fundraiser.monthly_goal)} organizer={organizer} /></div>
               <Button className="mt-4 bg-ink text-ink-foreground hover:bg-ink/90" onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
             </section>
 
@@ -200,7 +202,7 @@ const PublicFundraiser = () => {
         <Button className="h-12 flex-1 bg-ink text-ink-foreground hover:bg-ink/90" onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
       </div>
 
-      <ShareSheet open={share} onOpenChange={setShare} slug={fundraiser.unique_slug!} title={fundraiser.title} cover={images[0]?.image_url ?? fundraiser.cover_photo_url} raised={live.totalRaised} goal={Number(fundraiser.monthly_goal)} organizer={organizer} />
+      <ShareSheet open={share} onOpenChange={setShare} slug={fundraiser.unique_slug!} title={fundraiser.title} cover={resolvedCover} raised={live.totalRaised} goal={Number(fundraiser.monthly_goal)} organizer={organizer} />
       <ReportDialog open={report} onOpenChange={setReport} targetType="fundraiser" targetId={fundraiser.id} fundraiserId={fundraiser.id} />
       {isOwner && <ImageUploadModal open={imgModal} onClose={() => setImgModal(false)} fundraiserId={fundraiser.id} existingImages={images} onImagesUpdated={() => fetchImages(fundraiser.id)} />}
     </div>
