@@ -169,5 +169,5 @@
 - [x] 4: Completed campaigns + aggregate proof figures.
 - [x] 5: Testimonial collection, pending review, admin task.
 - [x] 6: Gold Coins ledger: exactly-once credit, loyalty card ensured, verified-email guest claims, refund reversals, backfill.
-- [ ] 7: Pre-publish smoke test (no publish).
+- [x] 7: Pre-publish smoke test (no publish).
 - [x] D: AGENTS.md corrected — production is Lovable hosting; Vercel files inert.
