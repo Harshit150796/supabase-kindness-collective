@@ -162,7 +162,7 @@
 - [x] Part C: shared live-data FundraiserCard and rebuilt homepage section showing all active campaigns with sorting/filtering and mobile position dots.
 - [x] Part D: signed-out 390px/1440px public-site screenshot audit, including reduced-motion image proof; report findings only.
 - [x] Fix desktop fundraiser card stretching, add two balanced lead cards, improve zero-donation/title/organizer display, and verify 390/1024/1280/1440 screenshots with measured columns.
-- [ ] Replace stacked desktop leads with a two-card featured row and an even compact-card row; verify signed-out at 390/1024/1280/1440 without publishing.
+- [x] Replace stacked desktop leads with a two-card featured row and an even compact-card row; verify signed-out at 390/1024/1280/1440 without publishing.
 
 ## Growth, proof and Gold Coins (founder-approved, amendments A–D)
 - [x] 1: Start-a-fundraiser CTAs + /partners page; inquiries via rate-limited edge function (honeypot), admin view, task, digest email.
