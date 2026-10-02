@@ -98,7 +98,7 @@ export function FundraiserImagesTab({ fundraiser, canWrite }: { fundraiser: any;
         <div>
           <p className="mb-1 text-xs text-muted-foreground">Current cover photo (not in gallery)</p>
           <div className="flex items-end gap-2">
-            <div className="aspect-[4/3] w-40 overflow-hidden rounded bg-muted/30"><img src={fundraiser.cover_photo_url} alt="" className="h-full w-full object-contain" /></div>
+            <div className="aspect-[4/3] w-40 overflow-hidden rounded bg-muted/30"><img src={fundraiser.cover_photo_url} alt="" className="h-full w-full object-cover" /></div>
             {canWrite && <Button size="sm" variant="ghost" disabled={busy} onClick={async () => { try { await setCover(imgs[0]?.image_url ?? null); toast({ title: 'Cover photo removed' }); } catch (e) { fail(e); } refresh(); }}><Trash2 className="mr-1 h-3.5 w-3.5" />Remove cover</Button>}
           </div>
         </div>
@@ -107,7 +107,7 @@ export function FundraiserImagesTab({ fundraiser, canWrite }: { fundraiser: any;
         {imgs.map((i, idx) => (
           <div key={i.id} className="space-y-1">
             <div className="relative aspect-[4/3] overflow-hidden rounded bg-muted/30">
-              <img src={i.image_url} alt="" className="h-full w-full object-contain" />
+              <img src={i.image_url} alt="" className="h-full w-full object-cover" />
               {i.is_primary && <span className="absolute left-1 top-1 rounded bg-ink px-1.5 py-0.5 text-[10px] text-ink-foreground">Cover</span>}
             </div>
             {canWrite && (

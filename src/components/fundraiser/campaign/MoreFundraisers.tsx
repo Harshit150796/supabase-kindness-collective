@@ -1,19 +1,12 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { Reveal } from '@/components/ui/editorial-motion';
-import { FundraiserImageFallback, resolveFundraiserImage, transformedFundraiserImage } from '@/lib/fundraiserImages';
-
-interface Card { id: string; title: string; unique_slug: string; cover_photo_url: string | null; country: string | null; category: string; monthly_goal: number; fundraiser_images?: { image_url: string; is_primary: boolean | null; display_order: number }[] }
+import { useState } from 'react';
+import { useFundraisers } from '@/hooks/useFundraisers';
+import { FundraiserCard } from '@/components/stories/FundraiserCard';
 
 /** Dark band of other active fundraisers. Shows no money figures: stored counters are not trusted (see roadmap discrepancy report). */
 export function MoreFundraisers({ excludeId }: { excludeId: string }) {
-  const [rows, setRows] = useState<Card[]>([]);
+  const { data = [] } = useFundraisers({ limit: 24 });
+  const rows = data.filter((row) => row.id !== excludeId);
   const [country, setCountry] = useState('all');
-  useEffect(() => {
-    supabase.from('fundraisers').select('id,title,unique_slug,cover_photo_url,country,category,monthly_goal,fundraiser_images(image_url,is_primary,display_order)').eq('status', 'active').neq('id', excludeId).not('unique_slug', 'is', null).order('created_at', { ascending: false }).limit(24)
-      .then(({ data }) => setRows((data ?? []) as Card[]));
-  }, [excludeId]);
   if (!rows.length) return null;
   const countries = Array.from(new Set(rows.map((r) => r.country).filter(Boolean))) as string[];
   const shown = rows.filter((r) => country === 'all' || r.country === country).slice(0, 12);
@@ -30,20 +23,7 @@ export function MoreFundraisers({ excludeId }: { excludeId: string }) {
           )}
         </div>
         <div className="mt-10 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4">
-          {shown.map((f, i) => {
-            const img = resolveFundraiserImage(f);
-            return (
-              <Reveal key={f.id} delay={i * 0.05} className="w-72 shrink-0 snap-start">
-                <Link to={`/f/${f.unique_slug}`} className="group block">
-                  <div className="aspect-[16/10] overflow-hidden rounded-[1rem] bg-ink-foreground/10">
-                    {img ? <img src={transformedFundraiserImage(img, 720) ?? img} alt={f.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" /> : <FundraiserImageFallback category={f.category} />}
-                  </div>
-                  <p className="mt-3 line-clamp-2 text-lg font-medium">{f.title}</p>
-                  <p className="mt-1 text-sm opacity-70">Goal ${Number(f.monthly_goal).toLocaleString()}{f.country ? ` · ${f.country}` : ''}</p>
-                </Link>
-              </Reveal>
-            );
-          })}
+          {shown.map((f) => <div key={f.id} className="w-80 shrink-0 snap-start"><FundraiserCard fundraiser={f} inverse /></div>)}
         </div>
       </div>
     </section>
