@@ -79,6 +79,7 @@ export default function Stories() {
             )}
           </div>
         </section>
+        <CompletedCampaigns />
 
         <section className="py-24 md:py-32" style={{backgroundColor:'hsl(var(--primary-97))'}}>
           <div className="container mx-auto px-4">

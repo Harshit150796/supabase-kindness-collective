@@ -1,3 +1,5 @@
+import { GoldCoinsBalance } from '@/components/engagement/GoldCoinsBalance';
+import { ShareExperienceForm } from '@/components/engagement/ShareExperienceForm';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -108,6 +110,11 @@ export default function DonationSuccess() {
               </Button>
             </div>
           )}
+          <div className="mt-8 space-y-6 border-t border-border pt-6 text-left">
+            <p className="text-sm text-muted-foreground">You earn 10 Gold Coins for every $1 donated. {user ? 'They will be credited to your account within a few minutes.' : 'Sign in with the verified email you used to donate, and they will be added to your account.'}</p>
+            {user && <GoldCoinsBalance />}
+            <ShareExperienceForm role="donor" />
+          </div>
         </Card>
       </main>
 
