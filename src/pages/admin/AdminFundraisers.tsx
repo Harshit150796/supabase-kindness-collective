@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from '@/hooks/use-toast';
 import { Download, ExternalLink, Search, Images } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { FundraiserImagesTab } from '@/components/admin/FundraiserImagesTab';
 
 const STATUSES = ['all', 'pending', 'active', 'paused', 'completed', 'rejected', 'archived'] as const;
 const PAGE = 25;
@@ -86,6 +87,8 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
   const [typed, setTyped] = useState('');
   const [edit, setEdit] = useState<any>(null);
   const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState('overview');
+  useEffect(() => { setTab('overview'); }, [id]);
 
   const d = useQuery({
     queryKey: ['adm-fr-detail', id], enabled: !!id,
@@ -157,14 +160,16 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
                 {['paused', 'rejected'].includes(f.status) && <Button size="sm" variant="outline" disabled={busy} onClick={() => act('resume')}>Make active</Button>}
                 {f.status !== 'archived' ? <Button size="sm" variant="outline" disabled={busy} onClick={() => setConfirm('archive')}>Archive</Button> : <Button size="sm" variant="outline" disabled={busy} onClick={() => act('restore')}>Restore (as paused)</Button>}
                 <Button size="sm" variant="outline" onClick={() => setEdit({ title: f.title, story: f.story, category: f.category, monthly_goal: f.monthly_goal, country: f.country ?? '', zip_code: f.zip_code ?? '' })}>Edit</Button>
+                <Button size="sm" variant="outline" onClick={() => setTab('images')}><Images className="mr-1.5 h-4 w-4" />Photos</Button>
                 {isAdmin && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => { setTyped(''); setConfirm('delete'); }}>Delete permanently…</Button>}
               </div>
             )}
 
-            <Tabs defaultValue="overview" className="mt-5">
+            <Tabs value={tab} onValueChange={setTab} className="mt-5">
               <TabsList className="flex h-auto flex-wrap justify-start">
-                {['overview', 'donations', 'updates', 'comments', 'team', 'conversations', 'reports', ...(isAdmin ? ['history'] : [])].map((t) => <TabsTrigger key={t} value={t} className="capitalize">{t}</TabsTrigger>)}
+                {['overview', 'images', 'donations', 'updates', 'comments', 'team', 'conversations', 'reports', ...(isAdmin ? ['history'] : [])].map((t) => <TabsTrigger key={t} value={t} className="capitalize">{t}</TabsTrigger>)}
               </TabsList>
+              <TabsContent value="images"><FundraiserImagesTab fundraiser={f} canWrite={canWrite} /></TabsContent>
               <TabsContent value="overview" className="space-y-4">
                 <div className="grid grid-cols-3 gap-3 tabular-nums">
                   {[['Raised (completed)', usd(d.data?.totals?.total_raised)], ['Donations', d.data?.totals?.donations_count ?? 0], ['Goal', usd(f.monthly_goal)]].map(([l, v]) => (
