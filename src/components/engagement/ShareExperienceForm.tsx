@@ -6,11 +6,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 
-export function ShareExperienceForm({ role }: { role: 'donor' | 'recipient' }) {
+export function ShareExperienceForm({ role: fixedRole }: { role?: 'donor' | 'recipient' }) {
+  const [role, setRole] = useState<'donor' | 'recipient'>(fixedRole ?? 'donor');
   const { user } = useAuth();
   const [quote, setQuote] = useState('');
   const [consent, setConsent] = useState(false);
-  const [anonymous, setAnonymous] = useState(role === 'recipient');
+  const [anonymous, setAnonymous] = useState(fixedRole === 'recipient');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   if (!user) return null;
@@ -29,6 +30,11 @@ export function ShareExperienceForm({ role }: { role: 'donor' | 'recipient' }) {
     <div className="space-y-3">
       <h3 className="font-display text-2xl">Share a sentence about your experience</h3>
       <p className="text-sm text-muted-foreground">Optional. Nothing is published until our team reviews it.</p>
+      {!fixedRole && (
+        <div className="flex gap-4 text-sm" role="radiogroup" aria-label="Sharing as">
+          {(['donor', 'recipient'] as const).map((r) => <label key={r} className="flex items-center gap-1.5"><input type="radio" name="share-role" checked={role === r} onChange={() => { setRole(r); setAnonymous(r === 'recipient'); }} />As a {r}</label>)}
+        </div>
+      )}
       <Textarea value={quote} maxLength={300} onChange={(e) => setQuote(e.target.value)} placeholder="What was it like?" aria-label="Your experience" />
       <p className="text-right text-xs text-muted-foreground">{quote.length}/300</p>
       <label className="flex items-start gap-2 text-sm"><Checkbox checked={consent} onCheckedChange={(v) => setConsent(!!v)} className="mt-0.5" />CouponDonation may publish this with my first name and last initial.</label>

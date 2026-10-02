@@ -209,7 +209,7 @@ export default function Dashboard() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           <GoldCoinsBalance />
-          <div className="space-y-8 bg-secondary/40 p-6"><ShareExperienceForm role="donor" /></div>
+          <div className="space-y-8 bg-secondary/40 p-6"><ShareExperienceForm /></div>
         </div>
 
         {/* Two surfaces */}
