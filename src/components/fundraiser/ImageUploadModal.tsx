@@ -132,18 +132,23 @@ export function ImageUploadModal({
   const handleSetPrimary = async (imageId: string) => {
     try {
       // First, unset all as primary
-      await supabase
+      const { error: unsetError } = await supabase
         .from("fundraiser_images")
         .update({ is_primary: false })
         .eq("fundraiser_id", fundraiserId);
+      if (unsetError) throw unsetError;
 
       // Then set the selected one as primary
-      await supabase
+      const { error: primaryError } = await supabase
         .from("fundraiser_images")
         .update({ is_primary: true })
         .eq("id", imageId);
+      if (primaryError) throw primaryError;
       const selected = localImages.find((image) => image.id === imageId);
-      if (selected) await supabase.from('fundraisers').update({ cover_photo_url: selected.image_url }).eq('id', fundraiserId);
+      if (selected) {
+        const { error: coverError } = await supabase.from('fundraisers').update({ cover_photo_url: selected.image_url }).eq('id', fundraiserId);
+        if (coverError) throw coverError;
+      }
 
       setLocalImages((prev) =>
         prev.map((img) => ({
@@ -165,23 +170,21 @@ export function ImageUploadModal({
   const handleDeleteImage = async (imageId: string) => {
     try {
       // Delete from database
-      await supabase.from("fundraiser_images").delete().eq("id", imageId);
+      const { error: deleteError } = await supabase.from("fundraiser_images").delete().eq("id", imageId);
+      if (deleteError) throw deleteError;
 
       const deletedImage = localImages.find((img) => img.id === imageId);
       const wasDeleted = deletedImage?.is_primary;
-      
-      setLocalImages((prev) => {
-        const remaining = prev.filter((img) => img.id !== imageId);
-        // If we deleted the primary, make the first remaining one primary
-        if (wasDeleted && remaining.length > 0) {
-          remaining[0].is_primary = true;
-          void supabase.from("fundraiser_images").update({ is_primary: true }).eq("id", remaining[0].id);
-          void supabase.from('fundraisers').update({ cover_photo_url: remaining[0].image_url }).eq('id', fundraiserId);
-        } else if (wasDeleted) {
-          void supabase.from('fundraisers').update({ cover_photo_url: null }).eq('id', fundraiserId);
-        }
-        return remaining;
-      });
+      const remaining = localImages.filter((img) => img.id !== imageId);
+      if (wasDeleted && remaining.length > 0) {
+        const { error: primaryError } = await supabase.from("fundraiser_images").update({ is_primary: true }).eq("id", remaining[0].id);
+        if (primaryError) throw primaryError;
+      }
+      if (wasDeleted) {
+        const { error: coverError } = await supabase.from('fundraisers').update({ cover_photo_url: remaining[0]?.image_url ?? null }).eq('id', fundraiserId);
+        if (coverError) throw coverError;
+      }
+      setLocalImages(remaining.map((img, index) => ({ ...img, is_primary: wasDeleted ? index === 0 : img.is_primary })));
       
       onImagesUpdated();
 

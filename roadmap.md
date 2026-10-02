@@ -160,4 +160,4 @@
 - [x] Part A: one shared fundraiser image resolver, reliable ImageReveal, object-cover cards, branded category fallback across all display paths.
 - [x] Part B: backfill empty covers with audit records, remove confirmed duplicate row, preserve distinct photo, enforce one primary, optimize one-row uploads, and use verified transformed delivery.
 - [x] Part C: shared live-data FundraiserCard and rebuilt homepage section showing all active campaigns with sorting/filtering and mobile position dots.
-- [ ] Part D: signed-out 390px/1440px public-site screenshot audit, including reduced-motion image proof; report findings only.
+- [x] Part D: signed-out 390px/1440px public-site screenshot audit, including reduced-motion image proof; report findings only.
