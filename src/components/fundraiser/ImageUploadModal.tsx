@@ -40,6 +40,7 @@ export function ImageUploadModal({
   onImagesUpdated,
 }: ImageUploadModalProps) {
   const { toast } = useToast();
+  const { cropFile, dialog: cropDialog } = usePhotoCropper();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [localImages, setLocalImages] = useState<FundraiserImage[]>(existingImages);
@@ -75,7 +76,7 @@ export function ImageUploadModal({
       if (!cropped) continue;
       await uploadImage(cropped);
     }
-  }, [remainingSlots, toast]);
+  }, [remainingSlots, toast, cropFile]);
 
   const uploadImage = async (file: File) => {
     setUploading(true);
