@@ -161,3 +161,13 @@
 - [x] Part B: backfill empty covers with audit records, remove confirmed duplicate row, preserve distinct photo, enforce one primary, optimize one-row uploads, and use verified transformed delivery.
 - [x] Part C: shared live-data FundraiserCard and rebuilt homepage section showing all active campaigns with sorting/filtering and mobile position dots.
 - [x] Part D: signed-out 390px/1440px public-site screenshot audit, including reduced-motion image proof; report findings only.
+
+## Growth, proof and Gold Coins (founder-approved, amendments A–D)
+- [ ] 1: Start-a-fundraiser CTAs + /partners page; inquiries via rate-limited edge function (honeypot), admin view, task, digest email.
+- [ ] 2: Guided required photo step (guidance, 16:10 crop, preview, 800px warning).
+- [ ] 3: Need pages /help/:need; new categories transportation/emergency/essentials; separate "Other campaigns open now".
+- [ ] 4: Completed campaigns + aggregate proof figures.
+- [ ] 5: Testimonial collection, pending review, admin task.
+- [ ] 6: Gold Coins ledger: exactly-once credit, loyalty card ensured, verified-email guest claims, refund reversals, backfill.
+- [ ] 7: Pre-publish smoke test (no publish).
+- [x] D: AGENTS.md corrected — production is Lovable hosting; Vercel files inert.
