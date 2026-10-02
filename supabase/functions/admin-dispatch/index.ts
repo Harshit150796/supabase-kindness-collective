@@ -72,6 +72,16 @@ Deno.serve(async (req) => {
   }
   report.pending_tasks_checked = pend?.length ?? 0;
 
+  // 1b) Gold Coins: exactly-once credits and refund reversals (reads donations only).
+  const gc = await admin.rpc('credit_gold_coins');
+  report.gold_coins = gc.error ? String(gc.error.message) : gc.data;
+
+  // 1c) Partner inquiries -> auto-task + admin email event.
+  const { data: inq } = await admin.from('partner_inquiries').select('id, org_name, org_type, families_count, created_at').eq('status', 'new').limit(100);
+  const inqClaims = (inq ?? []).map((i) => ({ kind: 'partner', source_id: i.id, payload: { title: `${i.org_name} (${i.org_type})`, status: `${i.families_count ?? '?'} families`, at: i.created_at } }));
+  for (const i of inq ?? []) await admin.rpc('admin_auto_task', { _key: `partner:${i.id}`, _title: `Partner inquiry: ${i.org_name}`, _priority: 'medium', _type: 'partner', _id: i.id, _link: `/admin/partners?id=${i.id}` });
+  if (inqClaims.length) await admin.from('admin_email_events').upsert(inqClaims, { onConflict: 'kind,source_id', ignoreDuplicates: true });
+
   // 2) Claim new events since watermark (2h look-back overlap; unique markers prevent duplicates).
   const { data: st } = await admin.from('admin_dispatch_state').select('*').eq('id', 1).single();
   const since = new Date(new Date(st.fundraiser_watermark).getTime() - 2 * 3600_000).toISOString();
@@ -95,16 +105,18 @@ Deno.serve(async (req) => {
   const { data: unsent } = await admin.from('admin_email_events').select('id, kind, source_id, payload').is('sent_at', null).order('created_at').limit(100);
   const evs = (unsent ?? []) as Ev[];
   if (evs.length && key && recipients.length) {
-    const items = evs.map((e) => e.kind === 'fundraiser'
+    const items = evs.map((e) => e.kind === 'partner'
+      ? { line: `Partner inquiry: ${e.payload.title} · ${e.payload.status} · ${new Date(e.payload.at).toUTCString()}`, link: `${SITE}/admin/partners?id=${e.source_id}` }
+      : e.kind === 'fundraiser'
       ? { line: `New fundraiser: "${e.payload.title}" (${e.payload.status}) · ${new Date(e.payload.at).toUTCString()}`, link: `${SITE}/admin/fundraisers?id=${e.source_id}` }
       : { line: `Donation ${usd(Number(e.payload.amount))} from ${e.payload.name} → ${e.payload.target} · ${new Date(e.payload.at).toUTCString()}`, link: `${SITE}/admin/donations?id=${e.source_id}` });
-    const nF = evs.filter((e) => e.kind === 'fundraiser').length, nD = evs.length - nF;
-    const subject = evs.length === 1 ? (nF ? 'New fundraiser created' : 'New donation completed')
-      : `CouponDonation digest: ${nD} donation${nD === 1 ? '' : 's'}, ${nF} new fundraiser${nF === 1 ? '' : 's'}`;
+    const nF = evs.filter((e) => e.kind === 'fundraiser').length, nP = evs.filter((e) => e.kind === 'partner').length, nD = evs.length - nF - nP;
+    const subject = evs.length === 1 ? (nP ? 'New partner inquiry' : nF ? 'New fundraiser created' : 'New donation completed')
+      : `CouponDonation digest: ${nD} donation${nD === 1 ? '' : 's'}, ${nF} new fundraiser${nF === 1 ? '' : 's'}${nP ? `, ${nP} partner inquir${nP === 1 ? 'y' : 'ies'}` : ''}`;
     try {
       const id = await send(subject, items);
       await admin.from('admin_email_events').update({ sent_at: new Date().toISOString(), resend_id: id, last_error: null }).in('id', evs.map((e) => e.id));
-      for (const e of evs) await admin.from('admin_notifications').upsert({ kind: e.kind, title: e.kind === 'fundraiser' ? `New fundraiser: ${e.payload.title}` : `Donation ${usd(Number(e.payload.amount))} from ${e.payload.name}`, link: e.kind === 'fundraiser' ? `/admin/fundraisers?id=${e.source_id}` : `/admin/donations?id=${e.source_id}`, source_key: `${e.kind}:${e.source_id}` }, { onConflict: 'source_key', ignoreDuplicates: true });
+      for (const e of evs) await admin.from('admin_notifications').upsert({ kind: e.kind, title: e.kind === 'partner' ? `Partner inquiry: ${e.payload.title}` : e.kind === 'fundraiser' ? `New fundraiser: ${e.payload.title}` : `Donation ${usd(Number(e.payload.amount))} from ${e.payload.name}`, link: e.kind === 'partner' ? `/admin/partners?id=${e.source_id}` : e.kind === 'fundraiser' ? `/admin/fundraisers?id=${e.source_id}` : `/admin/donations?id=${e.source_id}`, source_key: `${e.kind}:${e.source_id}` }, { onConflict: 'source_key', ignoreDuplicates: true });
       report.email = { resend_id: id, events: evs.length };
     } catch (e) {
       await admin.from('admin_email_events').update({ last_error: String(e).slice(0, 500) }).in('id', evs.map((x) => x.id));
