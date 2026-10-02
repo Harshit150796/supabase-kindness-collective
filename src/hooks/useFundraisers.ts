@@ -77,5 +77,7 @@ export function useFundraisers(options?: { limit?: number; category?: string }) 
         } as Fundraiser;
       }));
     },
+    refetchInterval: () => document.hidden ? false : 30_000,
+    refetchIntervalInBackground: false,
   });
 }

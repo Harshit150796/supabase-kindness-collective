@@ -74,7 +74,6 @@ const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications")
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const AdminTeam = lazy(() => import("./pages/admin/AdminTeam"));
 const AdminAudit = lazy(() => import("./pages/admin/AdminAudit"));
-const AdminFundraisersLegacy = lazy(() => import("./pages/admin/AdminFundraisersLegacy"));
 const TEAM = ['admin', 'staff', 'viewer'];
 const AdminModeration = lazy(() => import("./pages/admin/AdminModeration"));
 const Messages = lazy(() => import("./pages/Messages"));
@@ -166,7 +165,7 @@ const AppRoutes = () => (
       <Route path="/admin/settings" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminSettings /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/team" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminTeam /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/audit" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminAudit /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/fundraisers/manage" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminFundraisersLegacy /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/fundraisers/manage" element={<Navigate to="/admin/fundraisers" replace />} />
       <Route path="/admin/moderation" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminModeration /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/users" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/verifications" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminVerifications /></ProtectedRoute></GeoGuard>} />

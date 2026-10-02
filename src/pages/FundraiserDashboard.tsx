@@ -348,12 +348,13 @@ const FundraiserDashboard = () => {
           {/* Gallery section - full width */}
           <div className="pt-16 lg:pt-0">
             <div className="relative overflow-hidden">
-              <FundraiserGallery
+          <FundraiserGallery
                 images={images}
                 isOwner={true}
                 onAddPhotos={() => setShowImageModal(true)}
                 fundraiserTitle={fundraiser.title}
                 coverPhotoUrl={fundraiser.cover_photo_url}
+            category={fundraiser.category}
               />
             </div>
           </div>

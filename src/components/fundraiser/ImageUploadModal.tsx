@@ -162,7 +162,7 @@ export function ImageUploadModal({
     }
   };
 
-  const handleDeleteImage = async (imageId: string, imageUrl: string) => {
+  const handleDeleteImage = async (imageId: string) => {
     try {
       // Delete from database
       await supabase.from("fundraiser_images").delete().eq("id", imageId);
@@ -268,7 +268,7 @@ export function ImageUploadModal({
                       size="sm"
                       variant="destructive"
                       className="h-8 w-8 p-0"
-                      onClick={() => handleDeleteImage(image.id, image.image_url)}
+                      onClick={() => handleDeleteImage(image.id)}
                     >
                       <X className="w-4 h-4" />
                     </Button>
