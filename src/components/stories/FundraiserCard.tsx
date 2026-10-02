@@ -1,102 +1,21 @@
 import { Link } from 'react-router-dom';
-import { Heart } from 'lucide-react';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { Lock, MapPin } from 'lucide-react';
+import { ImageReveal } from '@/components/ui/editorial-motion';
+import { type Fundraiser } from '@/hooks/useFundraisers';
+import { FundraiserImageFallback, resolveFundraiserImage, transformedFundraiserImage } from '@/lib/fundraiserImages';
+import { useZipLocation } from '@/lib/zipLookup';
+import { timeAgo, usd } from '@/hooks/useFundraiserLive';
 
-interface FundraiserImage {
-  id: string;
-  image_url: string;
-  is_primary: boolean;
-}
-
-interface Fundraiser {
-  id: string;
-  title: string;
-  story: string;
-  category: string;
-  monthly_goal: number;
-  amount_raised: number;
-  donors_count: number;
-  unique_slug: string;
-  cover_photo_url?: string | null;
-  country?: string | null;
-  zip_code?: string | null;
-  status: string;
-  created_at?: string;
-  fundraiser_images?: FundraiserImage[];
-}
-
-interface FundraiserCardProps {
-  fundraiser: Fundraiser;
-}
-
-function formatDonations(n: number): string {
-  if (n < 1000) return `${n}`;
-  if (n < 1_000_000) {
-    const v = n / 1000;
-    return `${v >= 10 ? Math.round(v) : v.toFixed(1)}K`;
-  }
-  const v = n / 1_000_000;
-  return `${v >= 10 ? Math.round(v) : v.toFixed(1)}M`;
-}
-
-export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
-  const progressPercent = fundraiser.monthly_goal > 0
-    ? Math.min((fundraiser.amount_raised / fundraiser.monthly_goal) * 100, 100)
-    : 0;
-
-  const primaryImage =
-    fundraiser.fundraiser_images?.find((img) => img.is_primary)?.image_url ||
-    fundraiser.fundraiser_images?.[0]?.image_url ||
-    fundraiser.cover_photo_url ||
-    null;
-
-  const donorCount = fundraiser.donors_count || 0;
-  const raised = fundraiser.amount_raised || 0;
-
-  return (
-    <Link
-      to={`/f/${fundraiser.unique_slug}`}
-      className="block group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-    >
-      <article className="w-full">
-        {/* Image with overlaid donation pill */}
-        <div className="relative overflow-hidden rounded-sm bg-muted">
-          <AspectRatio ratio={4 / 3}>
-            {primaryImage ? (
-              <img
-                src={primaryImage}
-                alt={fundraiser.title}
-                className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Heart className="w-10 h-10 text-muted-foreground/30" />
-              </div>
-            )}
-          </AspectRatio>
-
-          {donorCount > 0 && <div className="absolute bottom-3 left-3 bg-foreground/80 px-2.5 py-1 text-xs font-semibold text-background backdrop-blur-sm">{formatDonations(donorCount)} donations</div>}
-        </div>
-
-        {/* Text below image */}
-        <div className="pt-3 space-y-2">
-          <h3 className="font-display text-2xl font-normal leading-snug text-foreground line-clamp-2 group-hover:underline decoration-1 underline-offset-4">
-            {fundraiser.title}
-          </h3>
-
-          <div className="relative h-1.5 w-full bg-muted rounded-full overflow-hidden">
-            <div
-              className="absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-700"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-
-          <p className="text-sm font-semibold text-foreground">
-            ${raised.toLocaleString(undefined, { maximumFractionDigits: 0 })} raised
-          </p>
-        </div>
-      </article>
-    </Link>
-  );
+export function FundraiserCard({ fundraiser, lead = false }: { fundraiser: Fundraiser; lead?: boolean }) {
+  const image = resolveFundraiserImage(fundraiser);
+  const location = useZipLocation(fundraiser.zip_code, fundraiser.country);
+  const raised = fundraiser.live_raised ?? 0;
+  const count = fundraiser.live_donations_count ?? 0;
+  const progress = fundraiser.monthly_goal > 0 ? Math.min(100, raised / fundraiser.monthly_goal * 100) : 0;
+  return <Link to={`/f/${fundraiser.unique_slug}`} className="group block h-full snap-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><article className="flex h-full flex-col overflow-hidden bg-background">
+    <ImageReveal className={lead ? 'aspect-[16/10]' : 'aspect-[4/3]'}>{image ? <img src={transformedFundraiserImage(image, lead ? 1400 : 900) ?? image} alt={fundraiser.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" loading="lazy" /> : <FundraiserImageFallback category={fundraiser.category} />}</ImageReveal>
+    <div className={lead ? 'flex flex-1 flex-col p-6 md:p-8' : 'flex flex-1 flex-col pt-5'}><div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">{location && <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4" />{location}</span>}{fundraiser.latest_donation_at && <span>Last gift {timeAgo(fundraiser.latest_donation_at)}</span>}</div>
+      <h3 className={`${lead ? 'text-4xl md:text-5xl' : 'text-3xl'} mt-3 line-clamp-2 font-display leading-[1.05] text-foreground group-hover:underline decoration-1 underline-offset-4`}>{fundraiser.title}</h3><p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">Organized by {fundraiser.organizer_name ?? 'a CouponDonation organizer'}</p>
+      <div className="mt-auto pt-6"><div className="h-1.5 overflow-hidden bg-primary/10"><div className="h-full bg-primary transition-[width] duration-700" style={{ width: `${progress}%` }} /></div><div className="mt-3 flex items-end justify-between gap-4"><div><strong className="text-foreground">{usd(raised)} raised</strong><p className="mt-0.5 text-sm text-muted-foreground">{count} completed {count === 1 ? 'donation' : 'donations'}</p></div><span className="text-sm text-muted-foreground">{usd(fundraiser.monthly_goal)} goal</span></div><div className="mt-5 flex items-center justify-between"><span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Lock className="h-3.5 w-3.5 text-accent" />Coupon-locked</span><span className="font-semibold text-primary">Donate</span></div></div>
+    </div></article></Link>;
 }
