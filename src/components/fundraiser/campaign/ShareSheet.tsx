@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useToast } from '@/hooks/use-toast';
 import { ProgressRing } from './DonationPanel';
 import { usd } from '@/hooks/useFundraiserLive';
+import { FundraiserImageFallback, transformedFundraiserImage } from '@/lib/fundraiserImages';
 
 /**
  * Public share URL. Stays on coupondonation.com — never the raw backend function URL (AGENTS.md).
@@ -19,7 +20,7 @@ export function ShareCardPreview({ title, cover, raised, goal, organizer }: { ti
   const pct = goal > 0 ? Math.min(100, (raised / goal) * 100) : 0;
   return (
     <div className="overflow-hidden rounded-[1.25rem] bg-ink text-ink-foreground">
-      {cover && <img src={cover} alt="" className="aspect-[16/9] w-full object-cover" loading="lazy" />}
+      <div className="aspect-[16/9] w-full">{cover ? <img src={transformedFundraiserImage(cover, 900) ?? cover} alt="" className="h-full w-full object-cover" loading="lazy" /> : <FundraiserImageFallback />}</div>
       <div className="flex items-center gap-4 p-5">
         <div className="rounded-full bg-background p-1"><ProgressRing percent={pct} size={72} /></div>
         <div className="min-w-0">

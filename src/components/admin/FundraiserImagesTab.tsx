@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
 import { Upload, Star, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { optimizeFundraiserImage } from '@/lib/imageOptimization';
 
 const MAX_IMAGES = 3;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -39,8 +40,9 @@ export function FundraiserImagesTab({ fundraiser, canWrite }: { fundraiser: any;
       if (!file.type.startsWith('image/')) { toast({ title: 'Only image files are allowed', variant: 'destructive' }); continue; }
       if (file.size > MAX_FILE_SIZE) { toast({ title: 'Image must be under 5MB', variant: 'destructive' }); continue; }
       try {
-        const name = `${id}/${Date.now()}.${file.name.split('.').pop()}`;
-        const { error } = await supabase.storage.from(BUCKET).upload(name, file);
+        const optimized = await optimizeFundraiserImage(file);
+        const name = `${id}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.webp`;
+        const { error } = await supabase.storage.from(BUCKET).upload(name, optimized, { contentType: 'image/webp' });
         if (error) throw error;
         const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(name);
         await adminWrite('fundraiser_images', 'insert', null, { fundraiser_id: id, image_url: publicUrl, display_order: count, is_primary: count === 0 });
@@ -79,8 +81,6 @@ export function FundraiserImagesTab({ fundraiser, canWrite }: { fundraiser: any;
     const img = del; setDel(null); setBusy(true);
     try {
       await adminWrite('fundraiser_images', 'delete', [img.id]);
-      const path = img.image_url.split(`/${BUCKET}/`)[1];
-      if (path) await supabase.storage.from(BUCKET).remove([path]);
       const rest = imgs.filter((i) => i.id !== img.id);
       if (img.is_primary && rest[0]) await adminWrite('fundraiser_images', 'update', [rest[0].id], { is_primary: true });
       if (fundraiser.cover_photo_url === img.image_url) await setCover(rest[0]?.image_url ?? null);
@@ -131,7 +131,7 @@ export function FundraiserImagesTab({ fundraiser, canWrite }: { fundraiser: any;
       {!canWrite && <p className="text-xs text-muted-foreground">You have view-only access.</p>}
       <AlertDialog open={!!del} onOpenChange={(o) => !o && setDel(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Remove this photo?</AlertDialogTitle><AlertDialogDescription>The photo is removed from the fundraiser and from storage. The change is recorded in the audit log.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Remove this photo?</AlertDialogTitle><AlertDialogDescription>The photo is removed from the fundraiser. Its original file is retained safely, and the change is recorded in the audit log.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={remove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Remove</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
