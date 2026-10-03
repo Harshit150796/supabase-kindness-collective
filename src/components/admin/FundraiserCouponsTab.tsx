@@ -18,6 +18,34 @@ const toLines = (rows: Row[]): Line[] => rows.map((r) => ({
   editing: !r.has_code && r.status !== 'redeemed',
 }));
 
+/** Use the oldest matching code from the stock library (Coupons page) for this coupon. */
+function StockPick({ couponId, brand, value, fundraiserId, onDone }: { couponId: string; brand: string; value: number; fundraiserId: string; onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const today = new Date().toISOString().slice(0, 10);
+  const q = useQuery({
+    queryKey: ['adm-stock-pick', brand, value],
+    queryFn: async () => {
+      const { data, error } = await sb.from('coupons').select('id').eq('status', 'in_stock').is('donation_id', null).eq('store_name', brand).eq('value', value)
+        .or(`expiry_date.is.null,expiry_date.gte.${today}`).order('created_at').limit(50);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as { id: string }[];
+    },
+  });
+  const n = q.data?.length ?? 0;
+  if (!n) return null;
+  const use = async () => {
+    setBusy(true);
+    try {
+      await rpc('admin_assign_stock_code', { _target: couponId, _stock: q.data![0].id });
+      const { data, error } = await sb.functions.invoke('fundraiser-actions', { body: { action: 'notify_coupon_ready', fundraiser_id: fundraiserId, coupon_ids: [couponId] } });
+      toast({ title: 'Stock code used', description: !error && (data as any)?.sent ? 'The organizer was emailed.' : 'Saved, but the email could not be sent.' });
+      q.refetch(); onDone();
+    } catch (e) { toast({ title: 'Could not use stock code', description: (e as Error).message, variant: 'destructive' }); }
+    setBusy(false);
+  };
+  return <Button size="sm" variant="outline" className="h-8" disabled={busy} onClick={use}>Use stock code ({n})</Button>;
+}
+
 function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, canWrite, onDone }: { fundraiserId: string; donationId: string; brand: string; donationAt: string; rows: Row[]; canWrite: boolean; onDone: () => void }) {
   const total = rows.reduce((s, r) => s + Number(r.value ?? 0), 0);
   const [lines, setLines] = useState<Line[]>(() => toLines(rows));
@@ -77,6 +105,7 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
               <>
                 <Input className="h-8 min-w-[9rem] flex-1" maxLength={200} value={l.code ?? ''} placeholder={l.hint ? `New code (blank removes ${l.hint})` : 'Coupon code (optional)'} onChange={(e) => set(l.key, { code: e.target.value })} />
                 <Input className="h-8 min-w-[9rem] flex-1" maxLength={1000} value={l.url ?? ''} placeholder="Redemption link (https://…)" onChange={(e) => set(l.key, { url: e.target.value })} />
+                {l.id && !l.hint && Number(l.value) === l.origValue && <StockPick couponId={l.id} brand={brand} value={l.origValue!} fundraiserId={fundraiserId} onDone={onDone} />}
               </>
             ) : (
               <span className="flex flex-1 flex-wrap items-center gap-2">

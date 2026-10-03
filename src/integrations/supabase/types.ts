@@ -798,6 +798,7 @@ export type Database = {
           coupon_value: number
           created_at: string
           id: string
+          name: string | null
           notes: string | null
           total_cost: number | null
           total_count: number
@@ -809,6 +810,7 @@ export type Database = {
           coupon_value: number
           created_at?: string
           id?: string
+          name?: string | null
           notes?: string | null
           total_cost?: number | null
           total_count: number
@@ -820,6 +822,7 @@ export type Database = {
           coupon_value?: number
           created_at?: string
           id?: string
+          name?: string | null
           notes?: string | null
           total_cost?: number | null
           total_count?: number
@@ -830,6 +833,7 @@ export type Database = {
       }
       coupons: {
         Row: {
+          batch_id: string | null
           category: string | null
           category_id: string | null
           claimed_at: string | null
@@ -861,6 +865,7 @@ export type Database = {
           value: number | null
         }
         Insert: {
+          batch_id?: string | null
           category?: string | null
           category_id?: string | null
           claimed_at?: string | null
@@ -892,6 +897,7 @@ export type Database = {
           value?: number | null
         }
         Update: {
+          batch_id?: string | null
           category?: string | null
           category_id?: string | null
           claimed_at?: string | null
@@ -923,6 +929,13 @@ export type Database = {
           value?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "coupons_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "coupon_procurement_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "coupons_category_id_fkey"
             columns: ["category_id"]
@@ -2271,8 +2284,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _check_code: { Args: { _code: string; _url: string }; Returns: undefined }
       _gc_apply: { Args: { _delta: number; _uid: string }; Returns: number }
+      _give_stock: {
+        Args: { _stock: string; _target: string }
+        Returns: string
+      }
+      _mask_code: { Args: { _c: string }; Returns: string }
+      admin_add_stock_codes: {
+        Args: {
+          _batch?: Json
+          _brand: string
+          _codes: string[]
+          _expiry?: string
+          _url?: string
+          _value: number
+        }
+        Returns: Json
+      }
       admin_analytics: { Args: { _days?: number }; Returns: Json }
+      admin_assign_stock_code: {
+        Args: { _stock: string; _target: string }
+        Returns: string
+      }
       admin_auto_task: {
         Args: {
           _id: string
@@ -2284,7 +2318,44 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_code_usage: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _state?: string
+        }
+        Returns: {
+          batch_name: string
+          code_hint: string
+          created_at: string
+          donation_id: string
+          expiry_date: string
+          fundraiser_id: string
+          fundraiser_title: string
+          given_at: string
+          id: string
+          redemption_url: string
+          state: string
+          store_name: string
+          total_count: number
+          used_at: string
+          value: number
+        }[]
+      }
+      admin_delete_stock_code: { Args: { _id: string }; Returns: undefined }
+      admin_edit_stock_code: {
+        Args: { _id: string; _patch: Json }
+        Returns: undefined
+      }
       admin_email_stats: { Args: never; Returns: Json }
+      admin_fill_from_stock: {
+        Args: { _brand: string; _limit?: number; _value: number }
+        Returns: {
+          coupon_ids: string[]
+          fundraiser_id: string
+        }[]
+      }
       admin_fundraiser_action: {
         Args: {
           _action: string
@@ -2314,6 +2385,18 @@ export type Database = {
         Returns: undefined
       }
       admin_import_profile_subscribers: { Args: never; Returns: number }
+      admin_inventory_summary: {
+        Args: never
+        Returns: {
+          expired: number
+          given: number
+          in_stock: number
+          store_name: string
+          used: number
+          value: number
+          waiting: number
+        }[]
+      }
       admin_list_donors: {
         Args: {
           _limit?: number
@@ -2362,6 +2445,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_mark_coupon_used: {
+        Args: { _id: string; _used: boolean }
+        Returns: undefined
+      }
       admin_overview_kpis: { Args: never; Returns: Json }
       admin_procurement_groups: {
         Args: never
@@ -2376,6 +2463,7 @@ export type Database = {
         Args: { _brand: string; _donation_id: string; _values: number[] }
         Returns: number
       }
+      admin_reveal_code: { Args: { _id: string }; Returns: string }
       admin_save_coupon_group: {
         Args: { _brand: string; _donation_id: string; _items: Json }
         Returns: string[]
@@ -2605,6 +2693,7 @@ export type Database = {
         | "pending_procurement"
         | "claimed"
         | "procurement_failed"
+        | "in_stock"
       user_role: "recipient" | "donor" | "admin" | "staff" | "viewer"
       verification_status: "pending" | "approved" | "rejected"
     }
@@ -2743,6 +2832,7 @@ export const Constants = {
         "pending_procurement",
         "claimed",
         "procurement_failed",
+        "in_stock",
       ],
       user_role: ["recipient", "donor", "admin", "staff", "viewer"],
       verification_status: ["pending", "approved", "rejected"],
