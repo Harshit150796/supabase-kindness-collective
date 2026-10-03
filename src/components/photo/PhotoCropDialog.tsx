@@ -76,12 +76,12 @@ function CropDialog({ file, onDone }: { file: File; onDone: (f: File | null) => 
 
   return (
     <Dialog open onOpenChange={(o) => !o && onDone(null)}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-2xl gap-3 overflow-y-auto p-4 sm:max-h-[calc(100dvh-2rem)] sm:gap-4 sm:p-6">
+        <DialogHeader className="space-y-1">
           <DialogTitle className="font-display text-3xl font-normal">Frame your photo</DialogTitle>
           <DialogDescription>Drag to position and use the slider to zoom. This is exactly how your card will look.</DialogDescription>
         </DialogHeader>
-        <div ref={frame} className="relative aspect-[16/10] w-full cursor-grab touch-none overflow-hidden bg-muted active:cursor-grabbing" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={() => (drag.current = null)}>
+        <div ref={frame} className="relative mx-auto aspect-[16/10] w-full max-w-[min(100%,calc((100dvh-19rem)*1.6))] cursor-grab touch-none overflow-hidden bg-muted active:cursor-grabbing sm:max-w-[min(100%,calc((100dvh-22rem)*1.6))]" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={() => (drag.current = null)}>
           {img && <img src={url} alt="" draggable={false} className="pointer-events-none absolute max-w-none select-none" style={style} />}
         </div>
         <Slider value={[zoom]} min={1} max={3} step={0.01} onValueChange={([z]) => setZoom(z)} aria-label="Zoom" />
