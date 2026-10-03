@@ -2309,6 +2309,10 @@ export type Database = {
         Returns: string
       }
       _mask_code: { Args: { _c: string }; Returns: string }
+      _preserve_code: {
+        Args: { _cid: string; _reason: string }
+        Returns: string
+      }
       admin_add_stock_codes: {
         Args: {
           _batch?: Json
@@ -2409,6 +2413,7 @@ export type Database = {
           expired: number
           given: number
           in_stock: number
+          returned: number
           store_name: string
           used: number
           value: number
@@ -2481,6 +2486,10 @@ export type Database = {
         Args: { _brand: string; _donation_id: string; _values: number[] }
         Returns: number
       }
+      admin_returned_code_action: {
+        Args: { _action: string; _id: string }
+        Returns: undefined
+      }
       admin_reveal_code: { Args: { _id: string }; Returns: string }
       admin_save_coupon_group: {
         Args: { _brand: string; _donation_id: string; _items: Json }
@@ -2544,6 +2553,10 @@ export type Database = {
         Args: { _cid: string; _uid: string }
         Returns: boolean
       }
+      claim_available_coupon: {
+        Args: { _coupon_id: string }
+        Returns: undefined
+      }
       claim_gold_coins: { Args: never; Returns: number }
       cleanup_expired_otps: { Args: never; Returns: undefined }
       cleanup_expired_password_reset_tokens: { Args: never; Returns: undefined }
@@ -2569,6 +2582,13 @@ export type Database = {
         }[]
       }
       get_coupon_code: { Args: { _coupon_id: string }; Returns: string }
+      get_coupon_secret: {
+        Args: { _coupon_id: string }
+        Returns: {
+          code: string
+          redemption_url: string
+        }[]
+      }
       get_fundraiser_coupon_trail: {
         Args: { _fundraiser_id: string }
         Returns: {
@@ -2684,6 +2704,19 @@ export type Database = {
       is_fundraiser_team: {
         Args: { _fid: string; _uid: string }
         Returns: boolean
+      }
+      list_available_coupons: {
+        Args: never
+        Returns: {
+          created_at: string
+          description: string
+          expiry_date: string
+          id: string
+          status: string
+          store_name: string
+          title: string
+          value: number
+        }[]
       }
       log_admin_action: {
         Args: {
