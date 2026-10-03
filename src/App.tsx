@@ -36,6 +36,7 @@ const MyImpact = lazy(() => import("./pages/MyImpact"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
 const FundraiserDashboard = lazy(() => import("./pages/FundraiserDashboard"));
+const FundraiserEdit = lazy(() => import("./pages/FundraiserEdit"));
 const Donate = lazy(() => import("./pages/Donate"));
 const FeaturedStoryDetail = lazy(() => import("./pages/FeaturedStoryDetail"));
 const CMSStoryDetail = lazy(() => import("./pages/CMSStoryDetail"));
@@ -137,6 +138,7 @@ const AppRoutes = () => (
       <Route path="/my-fundraisers" element={<GeoGuard><MyFundraisers /></GeoGuard>} />
       <Route path="/my-impact" element={<MyImpact />} />
       <Route path="/fundraiser/:id" element={<GeoGuard><FundraiserDashboard /></GeoGuard>} />
+      <Route path="/fundraiser/:id/edit" element={<GeoGuard><FundraiserEdit /></GeoGuard>} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/settings" element={<Settings />} />
 
