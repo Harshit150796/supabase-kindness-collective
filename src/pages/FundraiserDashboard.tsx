@@ -535,7 +535,7 @@ const FundraiserDashboard = () => {
                             <p className="text-xs text-muted-foreground mt-1">
                               {formatTimeAgo(donation.created_at)}
                             </p>
-                            <DonationCouponList coupons={coupons.filter((c) => c.donation_id === donation.id)} />
+                            <DonationCouponList coupons={coupons.filter((c) => c.donation_id === donation.id)} isOwner={!!user && !!fundraiser && user.id === (fundraiser as unknown as { user_id: string }).user_id} />
                           </div>
                         </div>
                       ))}
