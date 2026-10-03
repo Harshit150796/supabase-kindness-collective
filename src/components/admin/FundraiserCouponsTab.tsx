@@ -66,7 +66,7 @@ export function FundraiserCouponsTab({ fundraiserId, canWrite }: { fundraiserId:
         })}
       </ul>
       {canWrite && open.length > 0 && (
-        <Button size="sm" disabled={busy || !filled.length} onClick={save}>{busy ? 'Saving…' : `Save ${filled.length || ''} code${filled.length === 1 ? '' : 's'}`.replace('  ', ' ')}</Button>
+        <Button size="sm" disabled={busy || !filled.length} onClick={save}>{busy ? 'Saving…' : filled.length ? `Save ${filled.length} code${filled.length === 1 ? '' : 's'}` : 'Save codes'}</Button>
       )}
     </div>
   );
