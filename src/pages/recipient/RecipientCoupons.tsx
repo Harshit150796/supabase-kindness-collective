@@ -42,11 +42,7 @@ export default function RecipientCoupons() {
     setLoading(true);
 
     const [poolRes, pendingRes, ownRes] = await Promise.all([
-      supabase
-        .from('coupons')
-        .select('id, title, store_name, description, value, expiry_date, status, reserved_by, redeemed_by, created_at')
-        .eq('status', 'available')
-        .order('created_at', { ascending: false }),
+      (supabase.rpc as any)('list_available_coupons'),
       supabase
         .from('coupons')
         .select('id, title, store_name, description, value, expiry_date, status, reserved_by, redeemed_by, created_at')
@@ -55,15 +51,16 @@ export default function RecipientCoupons() {
         .limit(50),
       supabase
         .from('coupons')
-        .select('id, title, store_name, description, value, expiry_date, status, reserved_by, redeemed_by, redemption_url')
+        .select('id, title, store_name, description, value, expiry_date, status, reserved_by, redeemed_by')
         .or(`reserved_by.eq.${user.id},redeemed_by.eq.${user.id}`)
         .order('reserved_at', { ascending: false }),
     ]);
 
     const ownWithCodes: Coupon[] = await Promise.all(
       (ownRes.data || []).map(async (c) => {
-        const { data: code } = await supabase.rpc('get_coupon_code', { _coupon_id: c.id });
-        return { ...c, code: (code as string | null) ?? null };
+        const { data } = await (supabase.rpc as any)('get_coupon_secret', { _coupon_id: c.id });
+        const s = (data as { code: string | null; redemption_url: string | null }[] | null)?.[0];
+        return { ...c, code: s?.code ?? null, redemption_url: s?.redemption_url ?? null };
       })
     );
 
@@ -75,33 +72,12 @@ export default function RecipientCoupons() {
 
   useEffect(() => { fetchCoupons(); }, [fetchCoupons]);
 
-  // Realtime: refresh when any coupon changes status (coming soon → available)
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel('coupons-recipient')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'coupons' },
-        () => { fetchCoupons(); }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user, fetchCoupons]);
 
   const handleClaim = async (couponId: string) => {
     if (!user) return;
     setBusy(couponId);
     try {
-      const { error } = await supabase
-        .from('coupons')
-        .update({
-          status: 'reserved',
-          reserved_by: user.id,
-          reserved_at: new Date().toISOString(),
-        })
-        .eq('id', couponId)
-        .eq('status', 'available');
+      const { error } = await (supabase.rpc as any)('claim_available_coupon', { _coupon_id: couponId });
       if (error) throw error;
       toast({ title: 'Claimed!', description: 'Your coupon code is in My Coupons.' });
       await fetchCoupons();
