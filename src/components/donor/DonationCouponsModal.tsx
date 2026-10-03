@@ -91,7 +91,7 @@ export function DonationCouponsModal({ donation, open, onOpenChange }: DonationC
         .order('allocated_amount', { ascending: false }),
     ]);
 
-    setCoupons((couponsRes.data as Coupon[]) || []);
+    setCoupons(((couponsRes.data ?? []) as unknown as Coupon[]).map((c) => ({ ...c, code: '' })));
     setBrandAllocations((brandsRes.data as DonationBrand[]) || []);
     setLoading(false);
   };
