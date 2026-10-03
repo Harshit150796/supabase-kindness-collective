@@ -2294,6 +2294,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_fundraiser_coupons: {
+        Args: { _fundraiser_id: string }
+        Returns: {
+          code_hint: string
+          donation_at: string
+          donation_id: string
+          has_code: boolean
+          id: string
+          redemption_url: string
+          status: string
+          store_name: string
+          updated_at: string
+          value: number
+        }[]
+      }
       admin_hard_delete_fundraiser: {
         Args: { _confirm: string; _id: string }
         Returns: undefined
@@ -2366,6 +2381,10 @@ export type Database = {
           link: string
           sub: string
         }[]
+      }
+      admin_set_coupon_code: {
+        Args: { _code: string; _coupon_id: string; _redemption_url?: string }
+        Returns: Json
       }
       admin_set_role: {
         Args: {
@@ -2492,6 +2511,18 @@ export type Database = {
         }[]
       }
       get_landing_stats: { Args: never; Returns: Json }
+      get_my_fundraiser_coupons: {
+        Args: { _fundraiser_id: string }
+        Returns: {
+          code: string
+          donation_id: string
+          id: string
+          redemption_url: string
+          status: string
+          store_name: string
+          value: number
+        }[]
+      }
       get_proof_stats: { Args: never; Returns: Json }
       get_public_donation_stats: {
         Args: never
