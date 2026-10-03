@@ -65,6 +65,7 @@ export default function AdminCoupons() {
     try {
       const patch: Record<string, unknown> = { value: Number(editing.value), expiry_date: editing.expiry_date ?? '' };
       if (editing.newCode?.trim()) patch.code = editing.newCode.trim();
+      if (editing.redemption_url !== undefined && editing.redemption_url !== null) patch.redemption_url = editing.redemption_url;
       await rpc('admin_edit_stock_code', { _id: editing.id, _patch: patch });
       toast({ title: 'Code updated' }); setEditing(null); setRevealed({}); reload();
     } catch (e) { toast({ title: 'Save failed', description: (e as Error).message, variant: 'destructive' }); }
@@ -171,7 +172,7 @@ export default function AdminCoupons() {
               <div><Label>Amount ($)</Label><Input type="number" step="0.01" value={editing.value ?? ''} onChange={(e) => setEditing({ ...editing, value: e.target.value })} /></div>
               <div><Label>Expiry</Label><Input type="date" value={editing.expiry_date || ''} onChange={(e) => setEditing({ ...editing, expiry_date: e.target.value || null })} /></div>
             </div>
-            <div><Label>Redemption link</Label><Input value={editing.redemption_url ?? ''} placeholder="https://…" onChange={(e) => setEditing({ ...editing, redemption_url: e.target.value })} /></div>
+            <div><Label>Redemption link</Label><Input value={editing.redemption_url ?? ''} placeholder="Leave blank to keep the current link" onChange={(e) => setEditing({ ...editing, redemption_url: e.target.value })} /></div>
           </div>}
           <DialogFooter className="gap-2 sm:justify-between">
             <Button variant="ghost" className="text-destructive" onClick={remove} disabled={busy}>Void code</Button>
