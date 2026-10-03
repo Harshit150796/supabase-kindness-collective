@@ -1,0 +1,1 @@
+CREATE POLICY "Fundraiser team views their fundraiser" ON public.fundraisers FOR SELECT TO authenticated USING (public.is_fundraiser_team(id, auth.uid()));
