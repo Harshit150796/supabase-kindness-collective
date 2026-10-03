@@ -2372,6 +2372,10 @@ export type Database = {
           value: number
         }[]
       }
+      admin_resplit_coupons: {
+        Args: { _brand: string; _donation_id: string; _values: number[] }
+        Returns: number
+      }
       admin_search: {
         Args: { _q: string }
         Returns: {
