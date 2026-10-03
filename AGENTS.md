@@ -27,7 +27,7 @@
 - Public share links stay on coupondonation.com (or a branded host via `VITE_SHARE_HOST`); never expose the raw backend function URL to users.
 - Public fundraiser totals come from `get_fundraiser_totals` (completed donations), never stored counters, because stored counters drifted.
 
-- Production (coupondonation.com) is Lovable hosting; vercel.json and api/share/[slug].js are inert there, so per-campaign crawler previews are an open follow-up. Share URLs stay on the main domain.
+- Production is Lovable hosting; vercel.json and api/share are inert, so per-campaign crawler previews are open.
 - Gold Coins are credited only by credit_gold_coins() from the scheduled dispatcher into the append-only gold_coin_ledger (unique per donation and entry type); payment tables stay read-only.
 - Anonymous public submissions (partner inquiries, testimonials) go through the public-submit edge function, never direct table inserts.
 - Resolve fundraiser imagery everywhere as primary gallery, then ordered gallery, then legacy cover, then branded category fallback; card delivery uses Supabase transforms and uploads create one bounded WebP.
@@ -36,7 +36,7 @@
 - Admin mutations go through security-definer admin_* RPCs that re-check role (admin/staff/viewer) and write admin_audit_log; never rely on hidden buttons.
 - Fundraisers are archived, not deleted; permanent delete only via admin_hard_delete_fundraiser with zero donations/coupons.
 - No UPDATE triggers on fundraisers: payment webhooks update it via apply_donation_to_fundraiser; fundraiser auto-tasks come from admin-dispatch polling.
-- One pg_cron job calls admin-dispatch every 5 minutes with a Vault-stored secret; it fans out to notify-dispatch and email-scheduler, which reject calls without that secret.
+- One 5-minute pg_cron job calls admin-dispatch with a Vault secret; downstream dispatchers reject calls without it.
 
 ## Coupon System Rules
 
