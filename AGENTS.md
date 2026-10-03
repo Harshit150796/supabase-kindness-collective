@@ -17,7 +17,8 @@
 - Public photos stay local; when people-photo provenance or consent is unverified, use shared coupon, receipt, or trace visuals instead.
 - Preserve the two-color CouponDonation wordmark exactly as `#2e7d32` for Coupon and `#1565c0` for Donation.
 - The hero's rotating “CouponDonation is …” uppercase kicker is a founder-approved exception to the no-eyebrow rule and must not be removed.
-- The homepage Live Donation Tracking chart uses vertical bars in each retailer's own brand colour — a founder-approved exception to the no-warm-colour rule.- Messages are written only by the `send-message` edge function after server-side moderation (`_shared/moderation.ts`); clients have read-only access, so safety rules cannot be bypassed.
+- The homepage Live Donation Tracking chart uses vertical bars in each retailer's own brand colour — a founder-approved exception to the no-warm-colour rule.
+- Messages are written only by the `send-message` edge function after server-side moderation (`_shared/moderation.ts`); clients have read-only access, so safety rules cannot be bypassed.
 - Public fundraiser pages read donors, organizers and coupon totals through security-definer read functions only; donations/profiles stay private under RLS.
 - Never add triggers, notify functions or realtime publications to donation, checkout or coupon tables; live fundraiser totals poll public read functions instead.
 
@@ -36,3 +37,11 @@
 - Fundraisers are archived, not deleted; permanent delete only via admin_hard_delete_fundraiser with zero donations/coupons.
 - No UPDATE triggers on fundraisers: payment webhooks update it via apply_donation_to_fundraiser; fundraiser auto-tasks come from admin-dispatch polling.
 - One pg_cron job calls admin-dispatch every 5 minutes with a Vault-stored secret; it fans out to notify-dispatch and email-scheduler, which reject calls without that secret.
+
+## Coupon System Rules
+
+- Coupon codes are bearer value: readable only by the fundraiser owner (reserved_by, via get_my_fundraiser_coupons/get_coupon_secret) and by staff via the audited admin_reveal_code; co-organizers, donors and other users never see codes, enforced by column-level grants on coupons.code/redemption_url.
+- Codes are never hard-deleted: a code removed from a donation coupon is preserved as a separate 'returned' row (excluded from all automatic filling), and unused stock is voided, not deleted.
+- Donation-linked coupons are never deleted; re-splits and removals set rows to 'void', the server keeps the non-void total per donation and brand unchanged to the cent, and every coupon read, count and sum excludes 'void'.
+- Coupon writes go only through security-definer admin_* RPCs (plus claim_available_coupon/confirm_coupon_redemption for the reserved user); clients hold no INSERT/UPDATE/DELETE grant on coupons.
+
