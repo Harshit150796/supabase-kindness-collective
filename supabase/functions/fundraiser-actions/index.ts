@@ -14,6 +14,7 @@ const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('comment'), fundraiser_id: z.string().uuid(), body: z.string().min(1).max(1000) }),
   z.object({ action: z.literal('update'), fundraiser_id: z.string().uuid(), title: z.string().min(1).max(140), body: z.string().min(1).max(5000), image_url: z.string().url().max(1000).optional().nullable(), notify_donors: z.boolean().default(false) }),
   z.object({ action: z.literal('invite'), fundraiser_id: z.string().uuid(), email: z.string().email().max(255) }),
+  z.object({ action: z.literal('resend_invite'), team_id: z.string().uuid() }),
   z.object({ action: z.literal('accept'), token: z.string().min(20).max(200) }),
   z.object({ action: z.literal('block'), conversation_id: z.string().uuid(), blocked: z.boolean() }),
   z.object({ action: z.literal('admin_notify_rejection'), fundraiser_id: z.string().uuid(), reason: z.string().min(1).max(1000) }),
@@ -45,7 +46,11 @@ Deno.serve(async (req) => {
   if (!u?.user) return json({ error: 'Please sign in.' }, 401);
   const uid = u.user.id;
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
-  if (!parsed.success) return json({ error: parsed.error.flatten() }, 400);
+  if (!parsed.success) {
+    const f = parsed.error.flatten().fieldErrors as Record<string, string[] | undefined>;
+    const msg = f.email ? 'Please enter a valid email address.' : f.title ? 'Title must be 1–140 characters.' : f.body ? 'Text is empty or too long.' : 'Please check your input.';
+    return json({ error: msg }, 400);
+  }
   const p = parsed.data;
   const hourAgo = new Date(Date.now() - 3600_000).toISOString();
 
@@ -147,6 +152,23 @@ Deno.serve(async (req) => {
       ctaLabel: 'Accept invitation', ctaUrl: `${SITE}/team/accept?token=${raw}`,
     }));
     return json({ invited: true, email_sent: sent });
+  }
+
+  if (p.action === 'resend_invite') {
+    const { data: row } = await admin.from('fundraiser_team').select('id, fundraiser_id, invite_email, status, role').eq('id', p.team_id).maybeSingle();
+    if (!row || row.role !== 'co_organizer') return json({ error: 'Invitation not found.' }, 404);
+    const { data: org } = await admin.rpc('is_fundraiser_organizer', { _fid: row.fundraiser_id, _uid: uid });
+    if (!org) return json({ error: 'Only the organizer can resend invites.' }, 403);
+    if (row.status !== 'pending' || !row.invite_email) return json({ error: 'Only pending invitations can be resent.' }, 409);
+    const raw = crypto.randomUUID() + crypto.randomUUID();
+    await admin.from('fundraiser_team').update({ invite_token_hash: await sha256(raw) }).eq('id', row.id);
+    const { data: fr } = await admin.from('fundraisers').select('title').eq('id', row.fundraiser_id).single();
+    const sent = await sendEmail(row.invite_email, renderNoticeEmail({
+      subject: `Reminder: you're invited to help with "${fr?.title}"`, heading: 'Join a fundraiser team',
+      intro: `You've been invited to co-organize "${fr?.title}" on CouponDonation. Sign in with this email address to accept.`,
+      ctaLabel: 'Accept invitation', ctaUrl: `${SITE}/team/accept?token=${raw}`,
+    }));
+    return json({ resent: true, email_sent: sent });
   }
 
   if (p.action === 'accept') {
