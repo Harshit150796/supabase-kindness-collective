@@ -14,8 +14,8 @@ import { Search, Sparkles } from 'lucide-react';
 
 interface Summary { store_name: string; value: number; in_stock: number; waiting: number; given: number; used: number; expired: number }
 interface Usage { id: string; store_name: string; value: number; state: string; code_hint: string | null; expiry_date: string | null; batch_name: string | null; fundraiser_id: string | null; fundraiser_title: string | null; given_at: string | null; used_at: string | null; created_at: string; total_count: number }
-const STATES: [string, string][] = [['all', 'All'], ['waiting', 'Waiting for a code'], ['in_stock', 'In stock'], ['given', 'Given, not used'], ['used', 'Used'], ['expired', 'Expired']];
-const LABEL: Record<string, string> = { waiting: 'needs code', in_stock: 'in stock', given: 'given', used: 'used', expired: 'expired' };
+const STATES: [string, string][] = [['all', 'All'], ['waiting', 'Waiting for a code'], ['in_stock', 'In stock'], ['given', 'Given, not used'], ['used', 'Used'], ['expired', 'Expired'], ['returned', 'Returned'], ['void', 'Void']];
+const LABEL: Record<string, string> = { waiting: 'needs code', in_stock: 'in stock', given: 'given', used: 'used', expired: 'expired', returned: 'returned', void: 'void' };
 const PAGE = 25;
 
 /** What donations still need, what stock can cover, and whether each code has been used. */
