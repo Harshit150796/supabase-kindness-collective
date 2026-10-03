@@ -4,7 +4,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
 import { DataTable, Column } from '@/components/admin/DataTable';
 import { useAdminPaged } from '@/hooks/useAdminPaged';
-import { rpc, usd, fmtDate } from '@/lib/adminApi';
+import { sb, rpc, usd, fmtDate } from '@/lib/adminApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,7 +26,6 @@ export default function AdminCoupons() {
   const bundles = useQuery({
     queryKey: ['adm-bundles'],
     queryFn: async () => {
-      const { sb } = await import('@/lib/adminApi');
       const { data, error } = await sb.from('coupon_procurement_batches').select('id,name,brand_name,coupon_value,total_count,vendor,created_at').order('created_at', { ascending: false }).limit(200);
       if (error) throw new Error(error.message);
       return data as any[];
