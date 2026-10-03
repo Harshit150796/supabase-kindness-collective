@@ -20,7 +20,7 @@ interface Summary { store_name: string; value: number; in_stock: number; waiting
 /** Coupon code library: codes bought in advance, kept "in stock" until given to a fundraiser. */
 export default function AdminCoupons() {
   const { toast } = useToast();
-  const { isAdmin } = useTeamRole(); // admin/staff can write; viewers read-only
+  const { canWrite: isAdmin } = useTeamRole();
   const [batch, setBatch] = useState('all');
   const sum = useQuery({ queryKey: ['adm-inv'], queryFn: () => rpc<Summary[]>('admin_inventory_summary') });
   const bundles = useQuery({

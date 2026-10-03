@@ -21,7 +21,7 @@ const PAGE = 25;
 /** What donations still need, what stock can cover, and whether each code has been used. */
 export default function AdminProcurement() {
   const { toast } = useToast();
-  const { isAdmin } = useTeamRole();
+  const { canWrite: isAdmin } = useTeamRole();
   const sum = useQuery({ queryKey: ['adm-inv'], queryFn: () => rpc<Summary[]>('admin_inventory_summary') });
   const [state, setState] = useState('all');
   const [search, setSearch] = useState('');
