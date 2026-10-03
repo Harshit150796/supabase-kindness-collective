@@ -2376,6 +2376,10 @@ export type Database = {
         Args: { _brand: string; _donation_id: string; _values: number[] }
         Returns: number
       }
+      admin_save_coupon_group: {
+        Args: { _brand: string; _donation_id: string; _items: Json }
+        Returns: string[]
+      }
       admin_search: {
         Args: { _q: string }
         Returns: {
