@@ -40,8 +40,7 @@
 
 ## Coupon System Rules
 
-- Coupon codes are bearer value: readable only by the fundraiser owner (reserved_by, via get_my_fundraiser_coupons/get_coupon_secret) and by staff via the audited admin_reveal_code; co-organizers, donors and other users never see codes, enforced by column-level grants on coupons.code/redemption_url.
-- Codes are never hard-deleted: a code removed from a donation coupon is preserved as a separate 'returned' row (excluded from all automatic filling), and unused stock is voided, not deleted.
-- Donation-linked coupons are never deleted; re-splits and removals set rows to 'void', the server keeps the non-void total per donation and brand unchanged to the cent, and every coupon read, count and sum excludes 'void'.
-- Coupon writes go only through security-definer admin_* RPCs (plus claim_available_coupon/confirm_coupon_redemption for the reserved user); clients hold no INSERT/UPDATE/DELETE grant on coupons.
-
+- Coupon codes are bearer value: only the owner (reserved_by, via owner RPCs) and staff via audited admin_reveal_code read them; column grants hide code/redemption_url from all clients.
+- Codes are never hard-deleted: removed codes become 'returned' (never auto-filled); unused stock is voided.
+- Donation-linked coupons are never deleted; re-splits void rows, server keeps the non-void total per donation+brand to the cent, and all coupon reads/sums exclude 'void'.
+- Coupon writes go only through security-definer RPCs; clients have no write grant on coupons.
