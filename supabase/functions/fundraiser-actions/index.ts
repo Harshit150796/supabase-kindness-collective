@@ -17,6 +17,7 @@ const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('accept'), token: z.string().min(20).max(200) }),
   z.object({ action: z.literal('block'), conversation_id: z.string().uuid(), blocked: z.boolean() }),
   z.object({ action: z.literal('admin_notify_rejection'), fundraiser_id: z.string().uuid(), reason: z.string().min(1).max(1000) }),
+  z.object({ action: z.literal('notify_coupon_ready'), fundraiser_id: z.string().uuid(), coupon_ids: z.array(z.string().uuid()).min(1).max(50) }),
 ]);
 
 async function sha256(s: string) {
@@ -73,6 +74,29 @@ Deno.serve(async (req) => {
       footerNote: 'Reply to this email if you have questions.',
     }));
     return json({ sent });
+  }
+
+  if (p.action === 'notify_coupon_ready') {
+    const { data: staff } = await admin.rpc('is_admin_staff', { _uid: uid });
+    if (!staff) return json({ error: 'Staff access required' }, 403);
+    const { data: f } = await admin.from('fundraisers').select('id, title, user_id').eq('id', p.fundraiser_id).maybeSingle();
+    if (!f) return json({ error: 'Fundraiser not found' }, 404);
+    const { data: cs } = await admin.from('coupons').select('id, store_name, value, code, reserved_by, donation_id, donations!inner(fundraiser_id)')
+      .in('id', p.coupon_ids).eq('donations.fundraiser_id', f.id);
+    const ready = (cs ?? []).filter((c) => c.code && c.reserved_by === f.user_id);
+    if (!ready.length) return json({ sent: false, reason: 'no ready coupons' }, 409);
+    const { data: prof } = await admin.from('profiles').select('email').eq('user_id', f.user_id).maybeSingle();
+    if (!prof?.email) return json({ sent: false, reason: 'no organizer email' });
+    const total = ready.reduce((s, c) => s + Number(c.value ?? 0), 0);
+    const list = ready.map((c) => `$${Number(c.value ?? 0)} ${c.store_name}`).join(', ');
+    const sent = await sendEmail(prof.email, renderNoticeEmail({
+      subject: ready.length === 1 ? `You received a ${list} coupon` : `You received ${ready.length} coupons worth $${total}`,
+      heading: 'You received a coupon',
+      intro: `A donation to "${f.title}" has been turned into ${ready.length === 1 ? 'a coupon' : 'coupons'}: ${list}. Sign in to your fundraiser page to see the code${ready.length === 1 ? '' : 's'} and use ${ready.length === 1 ? 'it' : 'them'}.`,
+      ctaLabel: 'See your coupon', ctaUrl: `${SITE}/fundraiser/${f.id}#donations`,
+      footerNote: 'For your safety, coupon codes are only shown after you sign in.',
+    }));
+    return json({ sent, count: ready.length });
   }
 
   if (p.action === 'comment') {

@@ -19,6 +19,7 @@ import {
   Camera
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DonationCouponList, type OwnerCoupon } from "@/components/fundraiser/DonationCouponList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -78,6 +79,7 @@ const FundraiserDashboard = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const [coupons, setCoupons] = useState<OwnerCoupon[]>([]);
   const { toast } = useToast();
 
   const [fundraiser, setFundraiser] = useState<Fundraiser | null>(null);
@@ -142,6 +144,8 @@ const FundraiserDashboard = () => {
 
       if (error) throw error;
       setDonations(data || []);
+      const { data: cs } = await (supabase.rpc as any)("get_my_fundraiser_coupons", { _fundraiser_id: id });
+      setCoupons((cs as OwnerCoupon[]) || []);
     } catch (error) {
       console.error("Error fetching donations:", error);
     }
@@ -531,6 +535,7 @@ const FundraiserDashboard = () => {
                             <p className="text-xs text-muted-foreground mt-1">
                               {formatTimeAgo(donation.created_at)}
                             </p>
+                            <DonationCouponList coupons={coupons.filter((c) => c.donation_id === donation.id)} />
                           </div>
                         </div>
                       ))}

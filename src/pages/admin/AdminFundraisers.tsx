@@ -16,6 +16,7 @@ import { toast } from '@/hooks/use-toast';
 import { Download, ExternalLink, Search, Images } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FundraiserImagesTab } from '@/components/admin/FundraiserImagesTab';
+import { FundraiserCouponsTab } from '@/components/admin/FundraiserCouponsTab';
 
 const STATUSES = ['all', 'pending', 'active', 'paused', 'completed', 'rejected', 'archived'] as const;
 const PAGE = 25;
@@ -167,8 +168,9 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
 
             <Tabs value={tab} onValueChange={setTab} className="mt-5">
               <TabsList className="flex h-auto flex-wrap justify-start">
-                {['overview', 'images', 'donations', 'updates', 'comments', 'team', 'conversations', 'reports', ...(isAdmin ? ['history'] : [])].map((t) => <TabsTrigger key={t} value={t} className="capitalize">{t}</TabsTrigger>)}
+                {['overview', 'coupons', 'images', 'donations', 'updates', 'comments', 'team', 'conversations', 'reports', ...(isAdmin ? ['history'] : [])].map((t) => <TabsTrigger key={t} value={t} className="capitalize">{t}</TabsTrigger>)}
               </TabsList>
+              <TabsContent value="coupons"><FundraiserCouponsTab fundraiserId={f.id} canWrite={canWrite} /></TabsContent>
               <TabsContent value="images"><FundraiserImagesTab fundraiser={f} canWrite={canWrite} /></TabsContent>
               <TabsContent value="overview" className="space-y-4">
                 <div className="grid grid-cols-3 gap-3 tabular-nums">
