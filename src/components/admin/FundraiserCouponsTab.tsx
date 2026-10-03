@@ -22,7 +22,8 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
   const total = rows.reduce((s, r) => s + Number(r.value ?? 0), 0);
   const [lines, setLines] = useState<Line[]>(() => toLines(rows));
   const [busy, setBusy] = useState(false);
-  useEffect(() => { setLines(toLines(rows)); }, [rows]);
+  const sig = JSON.stringify(rows);
+  useEffect(() => { setLines(toLines(rows)); }, [sig]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (k: string, p: Partial<Line>) => setLines((ls) => ls.map((l) => (l.key === k ? { ...l, ...p } : l)));
   const nums = lines.map((l) => Number(l.value));
