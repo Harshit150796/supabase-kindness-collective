@@ -164,6 +164,7 @@
 - [x] Fix desktop fundraiser card stretching, add two balanced lead cards, improve zero-donation/title/organizer display, and verify 390/1024/1280/1440 screenshots with measured columns.
 - [x] Replace stacked desktop leads with a two-card featured row and an even compact-card row; verify signed-out at 390/1024/1280/1440 without publishing.
 - [x] Restore the founder-approved fundraiser showcase and add only the conditional sixth desktop lead card.
+- [ ] Restore the original two-column fundraiser showcase, require the second-campaign lead for five live campaigns, and balance it with a full-width growing Start tile.
 
 ## Growth, proof and Gold Coins (founder-approved, amendments A–D)
 - [x] 1: Start-a-fundraiser CTAs + /partners page; inquiries via rate-limited edge function (honeypot), admin view, task, digest email.
