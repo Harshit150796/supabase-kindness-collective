@@ -16,7 +16,7 @@ export function useCompletedFundraisers() {
 export function useProofStats() {
   return useQuery({ queryKey: ['proof-stats'], queryFn: async () => {
     const { data, error } = await sb.rpc('get_proof_stats'); if (error) throw error;
-    return data as { issued_month: number; redeemed_month: number; issued_total: number; redeemed_total: number };
+    return data as { issued_value_month: number; redeemed_month: number; issued_value_total: number; redeemed_total: number };
   }, staleTime: 60_000 });
 }
 
@@ -52,9 +52,9 @@ export function CompletedCampaigns({ limit, compact = false }: { limit?: number;
 export function ProofFigures() {
   const { data } = useProofStats();
   const items = [
-    { label: 'Coupons issued this month', v: data?.issued_month },
+    { label: 'Value of coupons issued this month', v: data?.issued_value_month, money: true },
     { label: 'Coupons redeemed this month', v: data?.redeemed_month },
-    { label: 'Coupons issued to date', v: data?.issued_total },
+    { label: 'Value of coupons issued to date', v: data?.issued_value_total, money: true },
     { label: 'Coupons redeemed to date', v: data?.redeemed_total },
   ].filter((i) => Number(i.v) > 0);
   if (!items.length) return null;
@@ -62,7 +62,7 @@ export function ProofFigures() {
     <section className="py-12" aria-label="Coupon totals">
       <div className="container mx-auto grid gap-6 px-4 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((i) => (
-          <div key={i.label} className="border-t border-border pt-4"><p className="font-display text-5xl tabular-nums">{Number(i.v).toLocaleString()}</p><p className="mt-1 text-sm text-muted-foreground">{i.label}</p></div>
+          <div key={i.label} className="border-t border-border pt-4"><p className="font-display text-5xl tabular-nums">{i.money ? usd(Number(i.v)) : Number(i.v).toLocaleString()}</p><p className="mt-1 text-sm text-muted-foreground">{i.label}</p></div>
         ))}
       </div>
     </section>

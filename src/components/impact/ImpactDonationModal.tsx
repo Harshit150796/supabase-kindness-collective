@@ -134,6 +134,7 @@ export function ImpactDonationModal({
         .from('coupons')
         .select('id, value, status, store_name, created_at')
         .eq('donation_id', donation.id)
+        .neq('status', 'void')
         .order('store_name', { ascending: true })
         .order('created_at', { ascending: true }),
       supabase

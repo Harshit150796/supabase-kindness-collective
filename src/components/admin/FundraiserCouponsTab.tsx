@@ -64,7 +64,7 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
   const removedCoded = rows.some((r) => r.has_code && !lines.some((l) => l.id === r.id));
 
   const save = async () => {
-    if ((loseCode || removedCoded) && !confirm('Changing the amount of, or removing, a coupon that has a code will delete that code. Continue?')) return;
+    if ((loseCode || removedCoded) && !confirm('Changing the amount of, or removing, a coupon that has a code takes that code away from the organizer. The code is kept in the Coupons library as "Returned" (not deleted) so you can check its balance and return it to stock or void it. Continue?')) return;
     setBusy(true);
     try {
       const items = lines.map((l) => {
@@ -103,7 +103,7 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
               <span className="flex items-center gap-2"><code className="text-xs">{l.hint}</code><StatusBadge value="redeemed" /></span>
             ) : l.editing && canWrite ? (
               <>
-                <Input className="h-8 min-w-[9rem] flex-1" maxLength={200} value={l.code ?? ''} placeholder={l.hint ? `New code (blank removes ${l.hint})` : 'Coupon code (optional)'} onChange={(e) => set(l.key, { code: e.target.value })} />
+                <Input className="h-8 min-w-[9rem] flex-1" maxLength={200} value={l.code ?? ''} placeholder={l.hint ? `New code (blank moves ${l.hint} to Returned)` : 'Coupon code (optional)'} onChange={(e) => set(l.key, { code: e.target.value })} />
                 <Input className="h-8 min-w-[9rem] flex-1" maxLength={1000} value={l.url ?? ''} placeholder="Redemption link (https://…)" onChange={(e) => set(l.key, { url: e.target.value })} />
                 {l.id && !l.hint && Number(l.value) === l.origValue && <StockPick couponId={l.id} brand={brand} value={l.origValue!} fundraiserId={fundraiserId} onDone={onDone} />}
               </>
@@ -114,7 +114,7 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
                 {l.savedUrl && <span className="max-w-[12rem] truncate text-xs text-muted-foreground">{l.savedUrl}</span>}
                 {canWrite && <button className="text-xs text-primary" onClick={() => set(l.key, { editing: true, code: '', url: l.savedUrl ?? '' })}>Edit code/link</button>}
                 {canWrite && l.hint && <button className="text-xs text-destructive" onClick={() => set(l.key, { code: '', url: '' })}>Remove code</button>}
-                {l.code === '' && <span className="text-xs text-destructive">Code will be removed on save</span>}
+                {l.code === '' && <span className="text-xs text-destructive">Code will be kept as Returned on save</span>}
               </span>
             )}
             {canWrite && !l.redeemed && (

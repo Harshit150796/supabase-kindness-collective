@@ -17,7 +17,8 @@
 - Public photos stay local; when people-photo provenance or consent is unverified, use shared coupon, receipt, or trace visuals instead.
 - Preserve the two-color CouponDonation wordmark exactly as `#2e7d32` for Coupon and `#1565c0` for Donation.
 - The hero's rotating “CouponDonation is …” uppercase kicker is a founder-approved exception to the no-eyebrow rule and must not be removed.
-- The homepage Live Donation Tracking chart uses vertical bars in each retailer's own brand colour — a founder-approved exception to the no-warm-colour rule.- Messages are written only by the `send-message` edge function after server-side moderation (`_shared/moderation.ts`); clients have read-only access, so safety rules cannot be bypassed.
+- The homepage Live Donation Tracking chart uses vertical bars in each retailer's own brand colour — a founder-approved exception to the no-warm-colour rule.
+- Messages are written only by the `send-message` edge function after server-side moderation (`_shared/moderation.ts`); clients have read-only access, so safety rules cannot be bypassed.
 - Public fundraiser pages read donors, organizers and coupon totals through security-definer read functions only; donations/profiles stay private under RLS.
 - Never add triggers, notify functions or realtime publications to donation, checkout or coupon tables; live fundraiser totals poll public read functions instead.
 
@@ -26,7 +27,7 @@
 - Public share links stay on coupondonation.com (or a branded host via `VITE_SHARE_HOST`); never expose the raw backend function URL to users.
 - Public fundraiser totals come from `get_fundraiser_totals` (completed donations), never stored counters, because stored counters drifted.
 
-- Production (coupondonation.com) is Lovable hosting; vercel.json and api/share/[slug].js are inert there, so per-campaign crawler previews are an open follow-up. Share URLs stay on the main domain.
+- Production is Lovable hosting; vercel.json and api/share are inert, so per-campaign crawler previews are open.
 - Gold Coins are credited only by credit_gold_coins() from the scheduled dispatcher into the append-only gold_coin_ledger (unique per donation and entry type); payment tables stay read-only.
 - Anonymous public submissions (partner inquiries, testimonials) go through the public-submit edge function, never direct table inserts.
 - Resolve fundraiser imagery everywhere as primary gallery, then ordered gallery, then legacy cover, then branded category fallback; card delivery uses Supabase transforms and uploads create one bounded WebP.
@@ -35,4 +36,11 @@
 - Admin mutations go through security-definer admin_* RPCs that re-check role (admin/staff/viewer) and write admin_audit_log; never rely on hidden buttons.
 - Fundraisers are archived, not deleted; permanent delete only via admin_hard_delete_fundraiser with zero donations/coupons.
 - No UPDATE triggers on fundraisers: payment webhooks update it via apply_donation_to_fundraiser; fundraiser auto-tasks come from admin-dispatch polling.
-- One pg_cron job calls admin-dispatch every 5 minutes with a Vault-stored secret; it fans out to notify-dispatch and email-scheduler, which reject calls without that secret.
+- One 5-minute pg_cron job calls admin-dispatch with a Vault secret; downstream dispatchers reject calls without it.
+
+## Coupon System Rules
+
+- Coupon codes are bearer value: only the owner (reserved_by, via owner RPCs) and staff via audited admin_reveal_code read them; column grants hide code/redemption_url from all clients.
+- Codes are never hard-deleted: removed codes become 'returned' (never auto-filled); unused stock is voided.
+- Donation-linked coupons are never deleted; re-splits void rows, server keeps the non-void total per donation+brand to the cent, and all coupon reads/sums exclude 'void'.
+- Coupon writes go only through security-definer RPCs; no client writes.

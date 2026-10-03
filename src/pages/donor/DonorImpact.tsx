@@ -31,7 +31,8 @@ export default function DonorImpact() {
     // Get coupon stats
     const { data: coupons } = await supabase
       .from('coupons')
-      .select('status');
+      .select('status')
+      .neq('status', 'void');
 
     const totalAmount = donations?.reduce((sum, d) => sum + Number(d.amount), 0) || 0;
 

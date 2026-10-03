@@ -79,8 +79,9 @@ export function DonationCouponsModal({ donation, open, onOpenChange }: DonationC
     const [couponsRes, brandsRes] = await Promise.all([
       supabase
         .from('coupons')
-        .select('*')
+        .select('id, title, description, store_name, category, value, expected_value, status, expiry_date, created_at, updated_at, reserved_at, redeemed_at, claimed_at, donation_id, donor_id, code_hint')
         .eq('donation_id', donation.id)
+        .neq('status', 'void')
         .order('store_name', { ascending: true })
         .order('created_at', { ascending: true }),
       supabase
@@ -90,7 +91,7 @@ export function DonationCouponsModal({ donation, open, onOpenChange }: DonationC
         .order('allocated_amount', { ascending: false }),
     ]);
 
-    setCoupons((couponsRes.data as Coupon[]) || []);
+    setCoupons(((couponsRes.data ?? []) as unknown as Coupon[]).map((c) => ({ ...c, code: '' })));
     setBrandAllocations((brandsRes.data as DonationBrand[]) || []);
     setLoading(false);
   };

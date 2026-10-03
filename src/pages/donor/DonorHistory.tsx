@@ -63,7 +63,8 @@ export default function DonorHistory() {
       const { data: couponsData } = await supabase
         .from('coupons')
         .select('donation_id')
-        .in('donation_id', donationIds);
+        .in('donation_id', donationIds)
+        .neq('status', 'void');
 
       // Count coupons per donation
       const couponCounts: Record<string, number> = {};
