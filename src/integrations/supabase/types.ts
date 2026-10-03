@@ -838,6 +838,7 @@ export type Database = {
           category_id: string | null
           claimed_at: string | null
           code: string | null
+          code_hint: string | null
           created_at: string
           description: string | null
           discount_percent: number | null
@@ -856,6 +857,9 @@ export type Database = {
           redemption_url: string | null
           reserved_at: string | null
           reserved_by: string | null
+          returned_at: string | null
+          returned_from_coupon_id: string | null
+          returned_from_fundraiser_id: string | null
           status: Database["public"]["Enums"]["coupon_status"]
           store_name: string
           title: string
@@ -863,6 +867,8 @@ export type Database = {
           tremendous_reward_id: string | null
           updated_at: string
           value: number | null
+          void_reason: string | null
+          voided_at: string | null
         }
         Insert: {
           batch_id?: string | null
@@ -870,6 +876,7 @@ export type Database = {
           category_id?: string | null
           claimed_at?: string | null
           code?: string | null
+          code_hint?: string | null
           created_at?: string
           description?: string | null
           discount_percent?: number | null
@@ -888,6 +895,9 @@ export type Database = {
           redemption_url?: string | null
           reserved_at?: string | null
           reserved_by?: string | null
+          returned_at?: string | null
+          returned_from_coupon_id?: string | null
+          returned_from_fundraiser_id?: string | null
           status?: Database["public"]["Enums"]["coupon_status"]
           store_name: string
           title: string
@@ -895,6 +905,8 @@ export type Database = {
           tremendous_reward_id?: string | null
           updated_at?: string
           value?: number | null
+          void_reason?: string | null
+          voided_at?: string | null
         }
         Update: {
           batch_id?: string | null
@@ -902,6 +914,7 @@ export type Database = {
           category_id?: string | null
           claimed_at?: string | null
           code?: string | null
+          code_hint?: string | null
           created_at?: string
           description?: string | null
           discount_percent?: number | null
@@ -920,6 +933,9 @@ export type Database = {
           redemption_url?: string | null
           reserved_at?: string | null
           reserved_by?: string | null
+          returned_at?: string | null
+          returned_from_coupon_id?: string | null
+          returned_from_fundraiser_id?: string | null
           status?: Database["public"]["Enums"]["coupon_status"]
           store_name?: string
           title?: string
@@ -927,6 +943,8 @@ export type Database = {
           tremendous_reward_id?: string | null
           updated_at?: string
           value?: number | null
+          void_reason?: string | null
+          voided_at?: string | null
         }
         Relationships: [
           {
@@ -2694,6 +2712,8 @@ export type Database = {
         | "claimed"
         | "procurement_failed"
         | "in_stock"
+        | "returned"
+        | "void"
       user_role: "recipient" | "donor" | "admin" | "staff" | "viewer"
       verification_status: "pending" | "approved" | "rejected"
     }
@@ -2833,6 +2853,8 @@ export const Constants = {
         "claimed",
         "procurement_failed",
         "in_stock",
+        "returned",
+        "void",
       ],
       user_role: ["recipient", "donor", "admin", "staff", "viewer"],
       verification_status: ["pending", "approved", "rejected"],
