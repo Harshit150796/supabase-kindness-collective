@@ -148,6 +148,27 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
     onDone();
   };
 
+  const isDirty = topupReason !== '' || JSON.stringify(lines.map(({ more, ...l }) => l)) !== JSON.stringify(toLines(rows).map(({ more, ...l }) => l));
+  useEffect(() => { if (open) onDirty(isDirty); }, [open, isDirty]); // eslint-disable-line react-hooks/exhaustive-deps
+  const cancel = () => { if (isDirty && !confirm('You have unsaved coupon changes. Discard them?')) return; onDirty(false); setLines(toLines(rows)); setTopupReason(''); onToggle(false); };
+
+  if (!open) {
+    const coded = rows.filter((r) => r.has_code).length;
+    const shownTo = Math.max(0, Math.round((base - Number(t.issued)) * 100) / 100);
+    const statuses = [...new Set(rows.map((r) => r.status))];
+    const logo = brandLogoFor(brand);
+    return (
+      <div className="flex flex-wrap items-center gap-3 rounded-md bg-muted/40 px-3 py-2 text-sm">
+        {logo ? <img src={logo} alt="" className="h-7 w-7 rounded bg-background object-contain p-0.5" /> : <span className="h-7 w-7" />}
+        <span className="font-medium">{brand} · {money(Number(t.issued))}</span>
+        <span className="text-xs text-muted-foreground">{rows.length} coupon{rows.length === 1 ? '' : 's'} · {coded} with code{coded === 1 ? '' : 's'} · {fmtDate(donationAt)}</span>
+        {shownTo > 0.004 && <span className="text-xs font-medium text-destructive">{money(shownTo)} to issue</span>}
+        <span className="flex flex-wrap gap-1">{statuses.map((x) => <StatusBadge key={x} value={x} />)}</span>
+        <Button size="sm" variant="outline" className="ml-auto h-8" onClick={() => onToggle(true)}><Pencil className="mr-1 h-3.5 w-3.5" />{canWrite ? 'Edit' : 'View'}</Button>
+      </div>
+    );
+  }
+
   const field = (l: Line, k: keyof Line, ph: string, cls = 'min-w-[8rem] flex-1', extra: Record<string, unknown> = {}) => (
     <Input className={`h-8 ${cls}`} value={String(l[k] ?? '')} placeholder={ph} onChange={(e) => set(l.key, { [k]: e.target.value } as Partial<Line>)} {...extra} />
   );
@@ -172,9 +193,9 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
                   <Input className="h-8 pl-5" type="number" min={0.01} step="0.01" value={l.value} disabled={!canWrite || l.redeemed} onChange={(e) => set(l.key, { value: e.target.value })} aria-label="Coupon amount" />
                 </div>
                 {logo && <img src={logo} alt="" className="h-6 w-6 rounded bg-background object-contain p-0.5" />}
-                <select className="h-8 rounded-md border border-input bg-background px-2 text-xs" value={l.issued} disabled={!canWrite || l.redeemed} onChange={(e) => set(l.key, { issued: e.target.value })} aria-label="Brand shown to recipient">
+                {(l.more || swapped || !canWrite) && <select className="h-8 rounded-md border border-input bg-background px-2 text-xs" value={l.issued} disabled={!canWrite || l.redeemed} onChange={(e) => set(l.key, { issued: e.target.value })} aria-label="Brand shown to recipient">
                   {[...new Set([brand, ...issuableBrandNames, l.issued])].map((n) => <option key={n} value={n}>{n === brand ? `${n} (donor's choice)` : n}</option>)}
-                </select>
+                </select>}
                 {l.redeemed ? <span className="flex items-center gap-2"><code className="text-xs">{l.saved?.code_hint}</code><StatusBadge value="redeemed" /></span>
                   : l.saved && !l.editing ? (
                     <span className="flex flex-1 flex-wrap items-center gap-2">
@@ -192,18 +213,23 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
                     </select>
                   ) : <StatusBadge value="needs code" />}
                 {canWrite && !l.redeemed && (
-                  <Button size="icon" variant="ghost" className="ml-auto h-8 w-8" aria-label="Remove coupon" onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}><Trash2 className="h-4 w-4" /></Button>
+                  <button className="ml-auto flex items-center text-xs text-primary" aria-expanded={l.more} onClick={() => set(l.key, { more: !l.more })}>
+                    {l.more ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}More details
+                  </button>
+                )}
+                {canWrite && !l.redeemed && (
+                  <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="Remove coupon" onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}><Trash2 className="h-4 w-4" /></Button>
                 )}
               </div>
               {canWrite && !l.redeemed && l.editing && (
                 <div className="flex flex-wrap gap-2">
                   {l.type === 'code' && <>{field(l, 'code', 'e-gift code', 'min-w-[10rem] flex-1', { maxLength: 200 })}{field(l, 'pin', 'PIN (optional)', 'w-32', { maxLength: 16 })}</>}
                   {l.type === 'gift_card' && <>{field(l, 'number', 'Card number', 'min-w-[10rem] flex-1', { maxLength: 30 })}{field(l, 'pin', 'PIN', 'w-32', { maxLength: 16 })}</>}
-                  {field(l, 'url', l.type === 'prepaid_link' ? 'Provider redemption link (https://…)' : 'Redemption link (optional, https://…)', 'min-w-[12rem] flex-1', { maxLength: 1000 })}
+                  {(l.more || l.type === 'prepaid_link') && field(l, 'url', l.type === 'prepaid_link' ? 'Provider redemption link (https://…)' : 'Redemption link (optional, https://…)', 'min-w-[12rem] flex-1', { maxLength: 1000 })}
                   {l.saved && <button className="text-xs text-primary" onClick={() => set(l.key, { editing: false, ...blank })}>Keep saved details</button>}
                 </div>
               )}
-              {canWrite && !l.redeemed && (
+              {canWrite && !l.redeemed && l.more && (
                 <div className="flex flex-wrap items-center gap-2">
                   <label className="text-xs text-muted-foreground">Value expires <Input type="date" className="ml-1 inline-block h-8 w-40" value={l.valueExp} onChange={(e) => set(l.key, { valueExp: e.target.value })} /></label>
                   {field(l, 'instructions', 'Instructions shown on reveal (optional), e.g. activate by calling…', 'min-w-[14rem] flex-1', { maxLength: 500 })}
@@ -230,9 +256,10 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Button size="sm" variant="outline" className="h-8" disabled={lines.length >= 50} onClick={() => setLines((ls) => [...ls, {
             key: crypto.randomUUID(), value: toIssue > 0 ? String(toIssue) : '', redeemed: false, saved: null, editing: true, clear: false, type: 'code', ...blank,
-            valueExp: '', instructions: '', issued: brand, reason: '',
+            valueExp: '', instructions: '', issued: brand, reason: '', more: false,
           }])}><Plus className="mr-1 h-3.5 w-3.5" />Add coupon</Button>
           <Button size="sm" variant="ghost" className="h-8" disabled={busy} onClick={() => { setLines(toLines(rows)); setTopupReason(''); }}>Reset</Button>
+          <Button size="sm" variant="ghost" className="h-8" disabled={busy} onClick={cancel}>Cancel</Button>
           <Button size="sm" className="h-8" disabled={busy || !valid} onClick={save}>{busy ? 'Saving…' : 'Save'}</Button>
           {over > 0 && !topupOk && <span className="text-xs text-destructive">Over-issuing needs a top-up reason</span>}
         </div>
