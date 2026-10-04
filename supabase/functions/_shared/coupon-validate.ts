@@ -53,6 +53,6 @@ export function validateSecret(type: CredType, s: PlainSecret, opts: { url?: str
 
 export const last4Of = (type: CredType, s: PlainSecret) => {
   const src = type === 'code' ? t(s.code) : t(s.number).replace(/[\s-]/g, '');
-  return src.slice(-4) || null;
+  return src.replace(/[^0-9A-Za-z]/g, '').slice(-4) || null;
 };
 function t(v?: string) { return (v ?? '').trim(); }
