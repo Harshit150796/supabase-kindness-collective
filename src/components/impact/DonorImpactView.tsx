@@ -11,12 +11,16 @@ export type ImpactCoupon = {
   id: string; store_name: string; value: number; status: string; created_at: string;
   revealed_at: string | null; used_at: string | null; used_category: string | null; used_note: string | null;
   receipt_count: number; receipt_requested: boolean;
+  issued_brand?: string | null; brand_change_reason?: string | null; credential_type?: string | null;
 };
 export type DonationImpact = {
   donation_id: string; amount: number; created_at: string; fundraiser_id: string | null;
   fundraiser_title: string | null; fundraiser_slug: string | null; organizer: string | null; coupons: ImpactCoupon[];
+  brands?: { brand: string; allocated: number; issued: number; topup: number; topup_reasons: { amount: number; reason: string }[] }[];
 };
 
+const kind = (t?: string | null) => t === 'gift_card' ? 'gift card' : t === 'prepaid_card' || t === 'prepaid_link' ? 'prepaid card' : 'coupon';
+const usd = (n: number) => `$${Number(n).toFixed(Number(n) % 1 ? 2 : 0)}`;
 const d = (iso: string) => format(new Date(iso), "MMM d, yyyy 'at' h:mm a");
 
 function Step({ label, at, done }: { label: string; at?: string | null; done: boolean }) {
@@ -68,13 +72,24 @@ export function DonorImpactView({ impact, mode, token, returnTo }: { impact: Don
         {impact.fundraiser_title && <p className="font-display text-xl text-foreground">{impact.fundraiser_title}{impact.organizer ? <span className="text-base text-muted-foreground"> · {impact.organizer}</span> : null}</p>}
       </div>
       {!impact.coupons.length && <p className="text-sm text-muted-foreground">Your coupons are being prepared.</p>}
+      {(impact.brands ?? []).map((b) => {
+        const left = Math.round((Number(b.allocated) + Number(b.topup) - Number(b.issued)) * 100) / 100;
+        return (b.topup > 0 || left > 0.004) ? (
+          <div key={b.brand} className="space-y-1 text-sm text-muted-foreground">
+            {left > 0.004 && <p>{usd(left)} of your {b.brand} gift is being prepared.</p>}
+            {(b.topup_reasons ?? []).map((t, i) => <p key={i}>CouponDonation added {usd(t.amount)} to your {b.brand} gift: {t.reason}</p>)}
+          </div>) : null;
+      })}
       <ul className="space-y-4">
         {impact.coupons.map((c) => (
           <li key={c.id} className="rounded-xl bg-muted/40 p-4">
             <div className="flex items-baseline justify-between gap-2">
               <span className="font-display text-2xl text-foreground">${Number(c.value)}</span>
-              <span className="text-sm font-medium text-foreground">{c.store_name} coupon</span>
+              <span className="text-sm font-medium text-foreground">{c.issued_brand || c.store_name} {kind(c.credential_type)}</span>
             </div>
+            {c.issued_brand && c.issued_brand.toLowerCase() !== c.store_name.toLowerCase() && (
+              <p className="mt-1 text-sm text-muted-foreground">You chose {c.store_name}; it was issued as a {c.issued_brand} {kind(c.credential_type)}{c.brand_change_reason ? ` because ${c.brand_change_reason.replace(/^because\s+/i, '').replace(/\.$/, '')}` : ''}.</p>
+            )}
             <ol className="mt-3 space-y-1.5 text-sm">
               <Step label="Donated" at={impact.created_at} done />
               <Step label="Coupon created" at={c.created_at} done />
