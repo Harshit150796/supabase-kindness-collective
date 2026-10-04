@@ -20,7 +20,8 @@ Deno.test('a value cannot be moved to another field (AAD)', async () => {
 });
 Deno.test('wrong key cannot decrypt', async () => {
   const other = new CouponCrypto((n) => (n === 'COUPON_SECRET_KEY_V1' ? btoa('x'.repeat(64)) : undefined));
-  await assertRejects(() => other.decrypt('code', await vault.encrypt('code', 'ABC-123')));
+  const c = await vault.encrypt('code', 'ABC-123');
+  await assertRejects(() => other.decrypt('code', c));
 });
 Deno.test('fails closed with no key', async () => {
   const none = new CouponCrypto(() => undefined);

@@ -7,6 +7,7 @@ export type SecretField = typeof SECRET_FIELDS[number];
 const b64u = (b: Uint8Array) => btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const unb64u = (s: string) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
 
+const B = (u: Uint8Array) => u as unknown as BufferSource;
 export class KeyMissingError extends Error { constructor() { super('Encryption key not configured'); } }
 
 /** Raw secret from env (base64 or plain), at least 32 bytes. `getEnv` is injectable for tests. */
@@ -14,8 +15,8 @@ async function deriveKey(raw: string): Promise<CryptoKey> {
   let bytes: Uint8Array;
   try { bytes = Uint8Array.from(atob(raw.trim()), (c) => c.charCodeAt(0)); } catch { bytes = new TextEncoder().encode(raw.trim()); }
   if (bytes.length < 32) throw new KeyMissingError();
-  const base = await crypto.subtle.importKey('raw', bytes, 'HKDF', false, ['deriveKey']);
-  return crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-256', salt: new TextEncoder().encode('coupondonation'), info: new TextEncoder().encode('coupon-secrets') },
+  const base = await crypto.subtle.importKey('raw', B(bytes), 'HKDF', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-256', salt: B(new TextEncoder().encode('coupondonation')), info: B(new TextEncoder().encode('coupon-secrets')) },
     base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
 }
 
@@ -39,13 +40,13 @@ export class CouponCrypto {
     const kid = this.currentKid();
     if (!kid) throw new KeyMissingError();
     const iv = crypto.getRandomValues(new Uint8Array(12));
-    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: new TextEncoder().encode(field) }, await this.key(kid), new TextEncoder().encode(plain)));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: B(iv), additionalData: B(new TextEncoder().encode(field)) }, await this.key(kid), B(new TextEncoder().encode(plain))));
     return `v1:${kid}:${b64u(iv)}:${b64u(ct)}`;
   }
   async decrypt(field: SecretField, blob: string): Promise<string> {
     const [v, kid, iv, ct] = blob.split(':');
     if (v !== 'v1' || !/^k\d+$/.test(kid) || !iv || !ct) throw new Error('Unreadable secret');
-    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64u(iv), additionalData: new TextEncoder().encode(field) }, await this.key(kid), unb64u(ct));
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: B(unb64u(iv)), additionalData: B(new TextEncoder().encode(field)) }, await this.key(kid), B(unb64u(ct)));
     return new TextDecoder().decode(pt);
   }
   async decryptAll(cipher: Record<string, string> | null): Promise<Partial<Record<SecretField, string>>> {
