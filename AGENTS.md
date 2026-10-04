@@ -12,9 +12,9 @@
 - CouponDonation UI uses logo green `hsl(123 46% 34%)` as primary and logo blue `hsl(212 80% 42%)` as its only secondary accent; warm UI colors are forbidden outside protected third-party and 3D artwork.
 - Instrument Serif is reserved for editorial headings at weight 400; Instrument Sans serves body copy and controls, with zero negative tracking.
 - Marketing pages alternate neutral, soft-green, and deep-forest bands; tonal panels have no borders or shadows, and hairlines are for tables.
-- Small uppercase eyebrow headings, decorative pills, colored icon circles, gradient text, glow shadows, and card-on-card compositions are not part of the visual language.
+- No eyebrow headings, decorative pills, icon circles, gradient text, glow shadows or card-on-card.
 - Shared motion uses bold translate/scale/clip/parallax in full mode; gentle mode stays visible with opacity and at most 16px rise.
-- Public photos stay local; when people-photo provenance or consent is unverified, use shared coupon, receipt, or trace visuals instead.
+- Public photos stay local; without verified people-photo consent, use coupon/receipt/trace visuals.
 - Preserve the two-color CouponDonation wordmark exactly as `#2e7d32` for Coupon and `#1565c0` for Donation.
 - The hero's rotating “CouponDonation is …” uppercase kicker is a founder-approved exception to the no-eyebrow rule and must not be removed.
 - The homepage Live Donation Tracking chart uses vertical bars in each retailer's own brand colour — a founder-approved exception to the no-warm-colour rule.
@@ -44,4 +44,4 @@
 - Codes are never hard-deleted: removed codes become 'returned' (never auto-filled); unused stock is voided.
 - Donation-linked coupons are never deleted; re-splits void rows, server keeps the non-void total per donation+brand to the cent, and all coupon reads/sums exclude 'void'.
 - Coupon writes go only through security-definer RPCs; no client writes.
-- Owners reveal codes via owner_reveal_coupon (first reveal once); donor impact emails queue in donor_impact_events and send from impact-dispatch; receipts live in a private bucket, signed URLs only.
+- Owners reveal codes via owner_reveal_coupon; impact emails queue in donor_impact_events, sent by impact-dispatch; receipts: private bucket, signed URLs.
