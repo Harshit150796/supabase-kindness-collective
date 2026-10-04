@@ -5,7 +5,7 @@
 - Use 18 deterministic, color-balanced canopy slots with front bias, orbit coverage, and no duplicate hanging brand.
 - Use official local SVG artwork when available and preserve its colors/proportions; prefer recognizable emblems unless a brand is wordmark-led.
 - Tree anchors use slot-specific leaf clearance and vertical correction.
-- Tree logo meshes mount only after the shared local-logo preload settles, preventing first-frame fallback distortion.
+- Tree logo meshes mount after the shared logo preload settles (no fallback flash).
 
 ## Design System Rules
 
@@ -44,3 +44,4 @@
 - Codes are never hard-deleted: removed codes become 'returned' (never auto-filled); unused stock is voided.
 - Donation-linked coupons are never deleted; re-splits void rows, server keeps the non-void total per donation+brand to the cent, and all coupon reads/sums exclude 'void'.
 - Coupon writes go only through security-definer RPCs; no client writes.
+- Owners reveal codes via owner_reveal_coupon (first reveal once); donor impact emails queue in donor_impact_events and send from impact-dispatch; receipts live in a private bucket, signed URLs only.
