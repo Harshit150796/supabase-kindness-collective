@@ -226,7 +226,7 @@ export default function AdminNewsletters() {
   const subCols: Column<Subscriber>[] = [
     { key: 'email', header: 'Email', sortable: true, cell: (x) => <div><p className="font-medium text-foreground">{x.email}</p><p className="text-xs text-muted-foreground">{x.name || '—'}{x.tags?.length ? ` · ${x.tags.join(', ')}` : ''}</p></div> },
     { key: 'source', header: 'Source', sortable: true, cell: (x) => x.source },
-    { key: 'created_at', header: 'Added', sortable: true, cell: (x) => fmtDate(x.subscribed_at) },
+    { key: 'subscribed_at', header: 'Added', sortable: true, cell: (x) => x.source === 'excel_import' ? `Imported · ${fmtDate(x.subscribed_at)}` : fmtDate(x.subscribed_at) },
     { key: 'last_open_at', header: 'Last open', sortable: true, cell: (x) => fmtDate(x.last_open_at) },
     { key: 'subscribed', header: 'Status', sortable: true, cell: (x) => <StatusBadge value={x.subscribed ? 'active' : 'dismissed'} /> },
     ...(isAdmin ? [{ key: 'a', header: '', align: 'right' as const, cell: (x: Subscriber) => <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleRemoveSubscriber(x.id)} aria-label="Remove"><Trash2 className="h-3.5 w-3.5" /></Button> }] : []),
