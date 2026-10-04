@@ -91,7 +91,6 @@ function lineError(l: Line, today: string): string | null {
   const n = Number(l.value);
   if (!Number.isFinite(n) || n <= 0 || Math.round(n * 100) !== n * 100) return 'Enter a positive amount (cents allowed)';
   if (l.valueExp && l.valueExp < today && (l.editing || !l.saved)) return 'Value expiry date is in the past';
-  if (l.issued.trim().toLowerCase() !== (l.saved?.store_name ?? '').toLowerCase() && l.reason.trim().length > 0 && l.reason.trim().length < 5) return 'Reason needs at least 5 characters';
   if (!l.editing) return null;
   const s = { code: l.code, pin: l.pin, number: l.number, cvv: l.cvv, name: l.name, zip: l.zip };
   const any = Object.values(s).some((x) => x.trim()) || (l.type === 'prepaid_link' && l.url.trim());
@@ -243,7 +242,7 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
           {keyOk === false && <span className="text-xs text-destructive">Encryption key not configured: new codes and cards can't be saved yet.</span>}
         </div>
       )}
-      {lines.filter((l) => l.saved && !l.editing && l.id && !l.saved.has_code).length === 0 && canWrite && lines.map((l) => l.id && !l.saved && Number(l.value) === l.origValue
+      {canWrite && lines.map((l) => l.id && !l.saved && !l.redeemed && Number(l.value) === l.origValue && !(l.code || l.number || l.url)
         ? <div key={`s-${l.key}`} className="mt-2"><StockPick couponId={l.id} brand={brand} value={l.origValue!} fundraiserId={fundraiserId} onDone={onDone} /></div> : null)}
     </div>
   );
