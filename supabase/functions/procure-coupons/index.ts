@@ -133,19 +133,40 @@ serve(async (req) => {
       // Use the reward id as the code the recipient sees (they open the link to redeem).
       const code = redemptionUrl ?? rewardId ?? externalId;
 
+      // Donation-linked coupons for a fundraiser land exactly like manual entry:
+      // claimed + reserved to the fundraiser owner, so only the owner can reveal them.
+      let ownerId: string | null = null;
+      if (coupon.donation_id) {
+        const { data: dn } = await supabase
+          .from("donations")
+          .select("status, fundraisers(user_id)")
+          .eq("id", coupon.donation_id)
+          .maybeSingle();
+        // deno-lint-ignore no-explicit-any
+        ownerId = dn?.status === "completed" ? ((dn as any)?.fundraisers?.user_id ?? null) : null;
+      }
+      const nowIso = new Date().toISOString();
       const { error: updErr } = await supabase
         .from("coupons")
         .update({
-          status: "available",
+          ...(ownerId
+            ? { status: "claimed", reserved_by: ownerId, reserved_at: nowIso, claimed_at: nowIso }
+            : { status: "available" }),
           code,
           redemption_url: redemptionUrl,
           tremendous_order_id: orderJson?.order?.id ?? null,
           tremendous_reward_id: rewardId,
           procurement_attempts: coupon.procurement_attempts + 1,
-          last_procurement_at: new Date().toISOString(),
+          last_procurement_at: nowIso,
           last_procurement_error: null,
         })
         .eq("id", coupon.id);
+      if (!updErr) {
+        await supabase.from("admin_audit_log").insert({
+          actor_id: null, action: "coupon_procured", table_name: "coupons", record_id: coupon.id,
+          after: { status: ownerId ? "claimed" : "available", owner: ownerId, provider: "tremendous" },
+        });
+      }
 
       if (updErr) {
         await markFailed(supabase, coupon, `DB update failed: ${updErr.message}`);
