@@ -20,8 +20,8 @@ const group4 = (n: string) => n.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').tri
 const when = (iso: string) => format(new Date(iso), "MMM d, yyyy 'at' h:mm a");
 
 type Revealed = {
-  code: string | null; redemption_url: string | null; revealed_at: string; first?: boolean; type: string; card_exp: string | null; value_expires_on: string | null;
-  instructions: string | null; issued_brand: string; cvv_purged?: boolean; secrets: { code?: string; pin?: string; number?: string; cvv?: string; name?: string; zip?: string };
+  code: string | null; redemption_url: string | null; revealed_at: string; first?: boolean; type: string; value_expires_on: string | null;
+  instructions: string | null; issued_brand: string; secrets: { code?: string; pin?: string; number?: string };
 };
 
 export function OwnerCouponsSection({ coupons, isOwner, onChanged }: { coupons: OwnerCoupon[]; isOwner: boolean; onChanged: () => void }) {
@@ -108,14 +108,9 @@ export function OwnerCouponsSection({ coupons, isOwner, onChanged }: { coupons: 
 function RevealedDetails({ r, copied, onCopy, idPrefix, onHide }: { r: Revealed; copied: string | null; onCopy: (k: string, v: string) => void; idPrefix: string; onHide: () => void }) {
   const s = r.secrets ?? {};
   const fields: { k: string; label: string; v: string; shown?: string }[] = [
-    ...(r.code ? [{ k: 'code', label: 'Code', v: r.code }] : []),
     ...(s.code ? [{ k: 'code', label: 'Code', v: s.code }] : []),
     ...(s.number ? [{ k: 'number', label: 'Card number', v: s.number.replace(/\D/g, '') || s.number, shown: /^\d+$/.test(s.number.replace(/[\s-]/g, '')) ? group4(s.number) : s.number }] : []),
-    ...(r.card_exp ? [{ k: 'exp', label: 'Expires', v: r.card_exp }] : []),
-    ...(s.cvv ? [{ k: 'cvv', label: 'CVV', v: s.cvv }] : []),
     ...(s.pin ? [{ k: 'pin', label: 'PIN', v: s.pin }] : []),
-    ...(s.name ? [{ k: 'name', label: 'Name on card', v: s.name }] : []),
-    ...(s.zip ? [{ k: 'zip', label: 'Billing ZIP', v: s.zip }] : []),
   ];
   return (
     <div className="mt-2 space-y-2">
@@ -128,7 +123,6 @@ function RevealedDetails({ r, copied, onCopy, idPrefix, onHide }: { r: Revealed;
           </Button>
         </div>
       ))}
-      {r.cvv_purged && <p className="text-xs text-muted-foreground">For safety, the CVV was deleted 30 days after you first revealed this card.</p>}
       {r.value_expires_on && <p className="text-xs text-muted-foreground">Use by {format(new Date(r.value_expires_on + 'T12:00:00'), 'MMM d, yyyy')}</p>}
       {r.instructions && <p className="text-sm text-foreground">{r.instructions}</p>}
       <div className="flex flex-wrap gap-2">
