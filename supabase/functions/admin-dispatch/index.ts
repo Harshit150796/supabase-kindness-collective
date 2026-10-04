@@ -4,6 +4,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { NOTIFY_SENDER } from '../_shared/email-layout.ts';
+import { processAccountEmail } from '../_shared/account-emails.ts';
 
 const SUPA = Deno.env.get('SUPABASE_URL')!;
 const SITE = 'https://coupondonation.com';
@@ -77,6 +78,15 @@ Deno.serve(async (req) => {
   const inqClaims = (inq ?? []).map((i) => ({ kind: 'partner', source_id: i.id, payload: { title: `${i.org_name} (${i.org_type})`, status: `${i.families_count ?? '?'} families`, at: i.created_at } }));
   for (const i of inq ?? []) await admin.rpc('admin_auto_task', { _key: `partner:${i.id}`, _title: `Partner inquiry: ${i.org_name}`, _priority: 'medium', _type: 'partner', _id: i.id, _link: `/admin/partners?id=${i.id}` });
   if (inqClaims.length) await admin.from('admin_email_events').upsert(inqClaims, { onConflict: 'kind,source_id', ignoreDuplicates: true });
+
+  // 1d) Donor confirmations + "fundraiser is live" emails (polling; exactly once via claim_account_email).
+  const { data: dueMail } = await admin.rpc('due_account_emails');
+  const acct: Record<string, number> = {};
+  for (const m of (dueMail ?? []) as { kind: 'donation_confirmation' | 'fundraiser_live'; source_id: string }[]) {
+    const r = await processAccountEmail(admin, key, m.kind, m.source_id, 'dispatcher');
+    acct[`${m.kind}:${r}`] = (acct[`${m.kind}:${r}`] ?? 0) + 1;
+  }
+  report.account_emails = acct;
 
   // 2) Claim new events since watermark (2h look-back overlap; unique markers prevent duplicates).
   const { data: st } = await admin.from('admin_dispatch_state').select('*').eq('id', 1).single();

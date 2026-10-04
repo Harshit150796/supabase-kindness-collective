@@ -18,7 +18,7 @@
 - Preserve the two-color CouponDonation wordmark exactly as `#2e7d32` for Coupon and `#1565c0` for Donation.
 - The hero's rotating “CouponDonation is …” uppercase kicker is a founder-approved exception to the no-eyebrow rule and must not be removed.
 - The homepage Live Donation Tracking chart uses vertical bars in each retailer's own brand colour — a founder-approved exception to the no-warm-colour rule.
-- Messages are written only by the `send-message` edge function after server-side moderation (`_shared/moderation.ts`); clients have read-only access, so safety rules cannot be bypassed.
+- Messages are written only by the `send-message` edge function after server moderation (`_shared/moderation.ts`); clients have read-only access, so safety rules hold.
 - Public fundraiser pages read donors, organizers and coupon totals through security-definer read functions only; donations/profiles stay private under RLS.
 - Never add triggers, notify functions or realtime publications to donation, checkout or coupon tables; live fundraiser totals poll public read functions instead.
 
@@ -27,7 +27,7 @@
 - Public share links stay on coupondonation.com (or a branded host via `VITE_SHARE_HOST`); never expose the raw backend function URL to users.
 - Public fundraiser totals come from `get_fundraiser_totals` (completed donations), never stored counters, because stored counters drifted.
 
-- Production is Lovable hosting; vercel.json and api/share are inert, so per-campaign crawler previews are open.
+- Production is Lovable hosting; vercel.json and api/share are inert.
 - Gold Coins are credited only by credit_gold_coins() from the scheduled dispatcher into the append-only gold_coin_ledger (unique per donation and entry type); payment tables stay read-only.
 - Anonymous public submissions (partner inquiries, testimonials) go through the public-submit edge function, never direct table inserts.
 - Resolve fundraiser imagery everywhere as primary gallery, then ordered gallery, then legacy cover, then branded category fallback; card delivery uses Supabase transforms and uploads create one bounded WebP.
@@ -45,3 +45,4 @@
 - Donation-linked coupons are never deleted; re-splits void rows, server keeps the non-void total per donation+brand to the cent, and all coupon reads/sums exclude 'void'.
 - Coupon writes go only through security-definer RPCs; no client writes.
 - Owners reveal codes via owner_reveal_coupon; impact emails queue in donor_impact_events, sent by impact-dispatch; receipts: private bucket, signed URLs.
+- Donor confirmations and live-fundraiser emails send once via claim_account_email, from confirm-donation or admin-dispatch polling.

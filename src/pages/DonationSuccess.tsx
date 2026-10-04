@@ -8,6 +8,7 @@ import { CheckCircle, Heart, Home, History } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function DonationSuccess() {
   const navigate = useNavigate();
@@ -17,6 +18,10 @@ export default function DonationSuccess() {
   useEffect(() => {
     // Scroll to top on mount
     window.scrollTo(0, 0);
+    // Fast path for the confirmation email: only the checkout reference is sent; the server checks everything else.
+    const p = new URLSearchParams(window.location.search);
+    const ref = p.get('session_id') || p.get('ref') || p.get('order_id');
+    if (ref) supabase.functions.invoke('confirm-donation', { body: { ref } }).catch(() => { /* dispatcher retries */ });
   }, []);
 
   // Auto-redirect for logged-in users

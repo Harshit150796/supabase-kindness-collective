@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_email_state: {
+        Row: {
+          donation_watermark: string
+          id: number
+          live_watermark: string
+        }
+        Insert: {
+          donation_watermark?: string
+          id?: number
+          live_watermark?: string
+        }
+        Update: {
+          donation_watermark?: string
+          id?: number
+          live_watermark?: string
+        }
+        Relationships: []
+      }
+      account_emails: {
+        Row: {
+          attempts: number
+          claimed_at: string
+          claimed_by: string | null
+          id: string
+          kind: string
+          last_error: string | null
+          resend_id: string | null
+          sent_at: string | null
+          source_id: string
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          claimed_at?: string
+          claimed_by?: string | null
+          id?: string
+          kind: string
+          last_error?: string | null
+          resend_id?: string | null
+          sent_at?: string | null
+          source_id: string
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          claimed_at?: string
+          claimed_by?: string | null
+          id?: string
+          kind?: string
+          last_error?: string | null
+          resend_id?: string | null
+          sent_at?: string | null
+          source_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       admin_audit_log: {
         Row: {
           action: string
@@ -2967,6 +3024,10 @@ export type Database = {
         Args: { _coupon_id: string; _uid: string }
         Returns: boolean
       }
+      claim_account_email: {
+        Args: { _by: string; _kind: string; _source: string }
+        Returns: boolean
+      }
       claim_available_coupon: {
         Args: { _coupon_id: string }
         Returns: undefined
@@ -2980,6 +3041,13 @@ export type Database = {
       }
       credit_gold_coins: { Args: never; Returns: Json }
       dispatch_secret_ok: { Args: { _s: string }; Returns: boolean }
+      due_account_emails: {
+        Args: never
+        Returns: {
+          kind: string
+          source_id: string
+        }[]
+      }
       generate_card_number: { Args: never; Returns: string }
       get_completed_fundraisers: {
         Args: never

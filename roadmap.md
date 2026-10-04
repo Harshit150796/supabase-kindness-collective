@@ -209,3 +209,11 @@
 - [x] Separate newsletter sender from notifications@coupondonation.com
 - [x] Deploy all affected edge functions
 - [x] Send four founder-only Gmail placement messages and verify Resend delivery
+
+## Donor confirmations, live email, newsletter sender (Oct 4)
+- [x] Donation confirmation (fast path + dispatcher, exactly once, watermark, no backfill)
+- [x] "Your fundraiser is live" email via dispatcher polling, no backfill
+- [x] Newsletter sender field removed; read-only From/Reply-To line
+- [x] Newsletter Reply-To connect@ on every send
+- [x] Self-undoing proofs + four founder-only samples delivered
+- [ ] Fast path inactive until checkout success URLs carry a reference (needs founder approval — checkout change)

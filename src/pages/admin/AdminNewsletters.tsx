@@ -32,8 +32,6 @@ interface EventRow { id: string; campaign_id: string | null; event_type: string;
 
 const DEFAULT_FORM = {
   subject: '', html_content: '', preview_text: '',
-  sender_email: 'updates@coupondonation.com',
-  reply_to: 'connect@coupondonation.com',
   template_id: '', audience_type: 'all', segment_id: '',
   scheduled_for: '', tracking_enabled: true,
 };
@@ -96,8 +94,6 @@ export default function AdminNewsletters() {
       subject: form.subject,
       html_content: form.html_content,
       preview_text: form.preview_text || null,
-      sender_email: form.sender_email,
-      reply_to: form.reply_to || null,
       template_id: form.template_id || null,
       audience_type: form.audience_type,
       segment_id: form.audience_type === 'segment' ? (form.segment_id || null) : null,
@@ -131,7 +127,6 @@ export default function AdminNewsletters() {
     }
     const row = await adminWrite<any>('email_campaigns', 'insert', null, {
       subject: form.subject, html_content: form.html_content, preview_text: form.preview_text || null,
-      sender_email: form.sender_email, reply_to: form.reply_to || null,
       template_id: form.template_id || null, audience_type: 'single',
       test_recipients: [testEmail.trim()], status: 'draft', tracking_enabled: false,
     }).catch((e) => { toast({ title: 'Test failed', description: (e as Error).message, variant: 'destructive' }); return null; });
@@ -291,7 +286,7 @@ export default function AdminNewsletters() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" onClick={() => { setForm({ ...DEFAULT_FORM, subject: c.subject, html_content: c.html_content, preview_text: c.preview_text || '', sender_email: c.sender_email }); setShowPreview(true); }}>
+                          <Button size="sm" variant="outline" onClick={() => { setForm({ ...DEFAULT_FORM, subject: c.subject, html_content: c.html_content, preview_text: c.preview_text || '' }); setShowPreview(true); }}>
                             <Eye className="w-4 h-4" />
                           </Button>
                           {(c.status === 'draft' || c.status === 'scheduled') && (
@@ -300,7 +295,6 @@ export default function AdminNewsletters() {
                                 setEditId(c.id);
                                 setForm({
                                   subject: c.subject, html_content: c.html_content, preview_text: c.preview_text || '',
-                                  sender_email: c.sender_email, reply_to: c.reply_to || '',
                                   template_id: c.template_id || '', audience_type: c.audience_type || 'all',
                                   segment_id: c.segment_id || '',
                                   scheduled_for: c.scheduled_for ? new Date(c.scheduled_for).toISOString().slice(0, 16) : '',
@@ -462,16 +456,7 @@ export default function AdminNewsletters() {
               <label className="text-sm font-medium">Preview text</label>
               <Input value={form.preview_text} onChange={e => setForm({ ...form, preview_text: e.target.value })} />
             </div>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm font-medium">From</label>
-                <Input value={form.sender_email} onChange={e => setForm({ ...form, sender_email: e.target.value })} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Reply-to</label>
-                <Input value={form.reply_to} onChange={e => setForm({ ...form, reply_to: e.target.value })} />
-              </div>
-            </div>
+            <p className="text-sm text-muted-foreground">Sent from CouponDonation News &lt;news@coupondonation.com&gt; · Replies go to connect@coupondonation.com</p>
             <div>
               <label className="text-sm font-medium">HTML content {form.template_id && <span className="text-muted-foreground">(overrides template if set)</span>}</label>
               <Textarea value={form.html_content} onChange={e => setForm({ ...form, html_content: e.target.value })} rows={12} className="font-mono text-xs" placeholder="<h1>Hello {{first_name}}!</h1>..." />
