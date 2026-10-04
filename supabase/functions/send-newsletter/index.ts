@@ -144,7 +144,7 @@ You're receiving this because you subscribed to CouponDonation updates.<br/>
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
           body: JSON.stringify({
-            from: `CouponDonation <${campaign.sender_email}>`,
+            from: "CouponDonation News <news@coupondonation.com>",
             to: [sub.email],
             subject,
             html: fullHtml,
