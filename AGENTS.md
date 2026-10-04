@@ -5,7 +5,7 @@
 - Use 18 deterministic, color-balanced canopy slots with front bias, orbit coverage, and no duplicate hanging brand.
 - Use official local SVG artwork when available and preserve its colors/proportions; prefer recognizable emblems unless a brand is wordmark-led.
 - Tree anchors use slot-specific leaf clearance and vertical correction.
-- Tree logo meshes mount after the shared logo preload settles (no fallback flash).
+- Tree logo meshes mount after the shared logo preload settles.
 
 ## Design System Rules
 
