@@ -264,6 +264,7 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
           {over > 0 && !topupOk && <span className="text-xs text-destructive">Over-issuing needs a top-up reason</span>}
         </div>
       )}
+      {!canWrite && <Button size="sm" variant="ghost" className="mt-2 h-8" onClick={cancel}>Close</Button>}
       {canWrite && lines.map((l) => l.id && !l.saved && !l.redeemed && Number(l.value) === l.origValue && !(l.code || l.number || l.url)
         ? <div key={`s-${l.key}`} className="mt-2"><StockPick couponId={l.id} brand={brand} value={l.origValue!} fundraiserId={fundraiserId} onDone={onDone} /></div> : null)}
     </div>
