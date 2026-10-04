@@ -1,3 +1,4 @@
+import { DonationImpactPanel } from '@/components/impact/DonationImpactPanel';
 import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -355,6 +356,7 @@ export function DonationCouponsModal({ donation, open, onOpenChange }: DonationC
             </>
           )}
         </div>
+        {donation && <DonationImpactPanel donationId={donation.id} />}
       </DialogContent>
     </Dialog>
   );
