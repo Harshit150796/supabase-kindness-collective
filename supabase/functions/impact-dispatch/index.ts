@@ -5,6 +5,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { renderImpactEmail, renderUseReminderEmail, type ImpactItem } from '../_shared/impact-email.ts';
 import { NOTIFY_SENDER } from '../_shared/email-layout.ts';
+import { flushOwnerAlerts, renderOwnerCouponEmail } from '../_shared/owner-alerts.ts';
 
 const SUPA = Deno.env.get('SUPABASE_URL')!;
 const SITE = 'https://coupondonation.com';
@@ -20,7 +21,8 @@ const newToken = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Ui
 
 import { planEmails, type Ev } from '../_shared/impact-plan.ts';
 type Impact = { donation_id: string; created_at: string; fundraiser_title: string; fundraiser_slug: string | null; organizer: string | null;
-  coupons: { id: string; store_name: string; value: number; created_at: string; revealed_at: string | null; used_at: string | null; used_category: string | null; used_note: string | null; receipt_count: number }[] };
+  brands?: { brand: string; allocated: number; issued: number; topup: number; topup_reasons: { amount: number; reason: string }[] }[];
+  coupons: { id: string; store_name: string; issued_brand?: string; brand_change_reason?: string | null; credential_type?: string | null; value: number; created_at: string; revealed_at: string | null; used_at: string | null; used_category: string | null; used_note: string | null; receipt_count: number }[] };
 
 async function sendResend(key: string, to: string, mail: { subject: string; html: string; text: string }) {
   const r = await fetch('https://api.resend.com/emails', {
@@ -53,6 +55,14 @@ Deno.serve(async (req) => {
     const now = Date.now(), h = 3600_000;
     const base = { fundraiserTitle: 'Help Our Family With Groceries This Month', organizer: 'Maria G.', donatedAt: new Date(now - 26 * h).toISOString(),
       impactUrl: `${SITE}/impact/sample`, thankUrl: `${SITE}/impact/sample#thanks`, stopUrl: `${SITE}/impact/sample`, sample: true };
+    if (body.sample === 'v2') {
+      const r1 = await sendResend(key, SAMPLE_TO, renderOwnerCouponEmail({ fundraiserTitle: base.fundraiserTitle, sample: true, dashboardUrl: `${SITE}/my-fundraisers`,
+        items: [{ brand: 'DoorDash', value: 20, type: 'code' }] }));
+      const r2 = await sendResend(key, SAMPLE_TO, renderImpactEmail({ ...base, kind: 'received', items: [
+        { brand: 'DoorDash', issuedBrand: 'Visa', type: 'prepaid_link', brandReason: 'DoorDash gift cards were out of stock this week, so we sent a Visa prepaid card that works there and anywhere else',
+          value: 20, createdAt: new Date(now - 25 * h).toISOString(), receivedAt: new Date(now - 5 * 60_000).toISOString() }] }));
+      return json({ sample: 'v2', to: SAMPLE_TO, owner_alert_id: r1, gift_arrived_id: r2 });
+    }
     const r1 = await sendResend(key, SAMPLE_TO, renderImpactEmail({ ...base, kind: 'received', items: [
       { brand: 'DoorDash', value: 20, createdAt: new Date(now - 25 * h).toISOString(), receivedAt: new Date(now - 5 * 60_000).toISOString() }] }));
     const r2 = await sendResend(key, SAMPLE_TO, renderImpactEmail({ ...base, kind: 'used', items: [
@@ -84,14 +94,14 @@ Deno.serve(async (req) => {
     if (!imp) { await mark({ emailed_at: new Date().toISOString(), skipped_reason: 'donation_not_completed' }); skipped++; continue; }
     const couponIds = new Set(p.events.map((e) => e.coupon_id));
     const items: ImpactItem[] = imp.coupons.filter((c) => couponIds.has(c.id)).map((c) => ({
-      brand: c.store_name, value: Number(c.value), createdAt: c.created_at, receivedAt: c.revealed_at, usedAt: c.used_at,
+      brand: c.store_name, issuedBrand: c.issued_brand, brandReason: c.brand_change_reason, type: c.credential_type, value: Number(c.value), createdAt: c.created_at, receivedAt: c.revealed_at, usedAt: c.used_at,
       category: c.used_category, note: c.used_note, hasReceipt: Number(c.receipt_count) > 0 }));
     if (!items.length) { await mark({ emailed_at: new Date().toISOString(), skipped_reason: 'no_live_coupons' }); skipped++; continue; }
     const token = newToken();
     await admin.from('donation_impact_tokens').insert({ donation_id: p.donation_id, token_hash: await sha256(token), expires_at: new Date(Date.now() + TOKEN_DAYS * 86400_000).toISOString() });
     const impactUrl = `${SITE}/impact/${token}`;
     const mail = renderImpactEmail({
-      kind: p.kind, fundraiserTitle: imp.fundraiser_title, organizer: imp.organizer || 'The organizer', donatedAt: imp.created_at, items,
+      kind: p.kind, fundraiserTitle: imp.fundraiser_title, topups: (imp.brands ?? []).flatMap((b) => b.topup_reasons ?? []), organizer: imp.organizer || 'The organizer', donatedAt: imp.created_at, items,
       impactUrl, thankUrl: `${impactUrl}#thanks`, stopUrl: `${SUPA}/functions/v1/impact-actions?stop=${token}`,
     });
     try {
@@ -120,5 +130,10 @@ Deno.serve(async (req) => {
     reminded++;
   }
   report.reminders = reminded;
+
+  // 3) Owner "you've received a coupon" alerts left in the queue (normally sent right after the admin save).
+  report.owner_alerts = await flushOwnerAlerts(admin);
+  // 4) CVV purge 30 days after first reveal (manual prepaid cards only), audited in SQL.
+  report.cvv_purged = (await admin.rpc('svc_purge_cvv')).data ?? 0;
   return json(report);
 });
