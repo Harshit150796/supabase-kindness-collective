@@ -197,3 +197,8 @@
 - [x] Proofs on self-undoing data
 - [ ] Two SAMPLE emails (not yet sent)
 - [ ] Blocked: founder sets COUPON_SECRET_KEY_V1 (141 coupons waiting for codes)
+
+## Remove coupon encryption + compact editor (Oct 4)
+- [x] Plain, column-locked codes/PINs; no key needed; manual prepaid entry removed
+- [x] Compact collapsed groups with Edit, More details, one open at a time
+- [x] Self-cancelling backend proofs
