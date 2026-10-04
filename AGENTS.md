@@ -45,3 +45,4 @@
 - Donation-linked coupons are never deleted; re-splits void rows, server keeps the non-void total per donation+brand to the cent, and all coupon reads/sums exclude 'void'.
 - Coupon writes go only through security-definer RPCs; no client writes.
 - Owners reveal codes via owner_reveal_coupon; impact emails queue in donor_impact_events, sent by impact-dispatch; receipts: private bucket, signed URLs.
+- Donor confirmations and fundraiser-live emails are sent exactly once via claim_account_email (account_emails), from the confirm-donation fast path or admin-dispatch polling; never triggers.
