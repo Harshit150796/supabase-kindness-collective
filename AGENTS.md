@@ -40,7 +40,7 @@
 
 ## Coupon System Rules
 
-- Coupon codes are bearer value: only the owner (reserved_by, via owner RPCs) and staff via audited admin_reveal_code read them; column grants hide code/redemption_url from all clients.
+- Codes/PINs stored plainly but column-locked; only owner reveal and audited staff reveal read them; prepaid = hosted link only.
 - Codes are never hard-deleted: removed codes become 'returned' (never auto-filled); unused stock is voided.
 - Donation-linked coupons are never deleted; re-splits void rows, server keeps the non-void total per donation+brand to the cent, and all coupon reads/sums exclude 'void'.
 - Coupon writes go only through security-definer RPCs; no client writes.
