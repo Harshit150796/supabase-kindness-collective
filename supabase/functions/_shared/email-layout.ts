@@ -16,7 +16,7 @@ export interface RenderedEmail {
   text: string;
 }
 
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -25,7 +25,7 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function shell(opts: { preheader: string; greeting?: string; paragraphs: string[]; link?: { label: string; url: string }; footer?: string }): string {
+export function shell(opts: { preheader: string; greeting?: string; paragraphs: string[]; link?: { label: string; url: string }; footer?: string }): string {
   const paragraphs = opts.paragraphs.map((p) => `<p style="margin:0 0 16px;font-family:${FONT};font-size:15px;line-height:23px;color:${BODY_TEXT};">${p}</p>`).join('');
   const link = opts.link ? `<p style="margin:0 0 18px;font-family:${FONT};font-size:15px;line-height:23px;"><a href="${escapeHtml(opts.link.url)}" style="color:${INK};text-decoration:underline;">${escapeHtml(opts.link.label)}</a></p>` : '';
   return `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CouponDonation</title></head><body style="margin:0;background:#ffffff"><div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(opts.preheader)}</div><main style="max-width:560px;margin:0 auto;padding:28px 22px;color:${INK}"><img src="${LOGO_URL}" width="32" height="32" alt="CouponDonation" style="display:block;width:32px;height:32px;margin:0 0 24px"><p style="margin:0 0 16px;font-family:${FONT};font-size:15px;line-height:23px;color:${INK};">${escapeHtml(opts.greeting ?? 'Hi there')},</p>${paragraphs}${link}<p style="margin:20px 0 0;font-family:${FONT};font-size:15px;line-height:23px;color:${INK};">— The CouponDonation team</p>${opts.footer ? `<p style="margin:24px 0 0;font-family:${FONT};font-size:12px;line-height:18px;color:${MUTED};">${opts.footer}</p>` : ''}</main></body></html>`;
