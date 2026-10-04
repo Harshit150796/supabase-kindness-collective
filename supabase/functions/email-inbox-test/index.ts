@@ -15,6 +15,7 @@ Deno.serve(async (req) => {
     const j = await r.json();
     return json({ id: j.id, to: j.to, from: j.from, reply_to: j.reply_to, subject: j.subject, last_event: j.last_event });
   }
+  if (body?.list) { const r = await fetch('https://api.resend.com/emails?limit=6', { headers: { Authorization: `Bearer ${key}` } }); const j = await r.json(); return json((j.data ?? []).map((e: any) => ({ id: e.id, to: e.to, from: e.from, subject: e.subject, last_event: e.last_event }))); }
   if (body?.go !== 'send-once-2026-10-04') return json({ error: 'no' });
   const at = new Date(Date.now() - 3 * 60_000).toISOString();
   const fr = await sendAccountMail(key, TO, { ...renderDonationConfirmation({ firstName: 'Alex', amount: 25, at, donationId: '7c41e2a9-5b3d-4f10-9e2a-1d6b8c0f3a77',
