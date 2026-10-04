@@ -9,7 +9,7 @@ import { flushOwnerAlerts, renderOwnerCouponEmail } from '../_shared/owner-alert
 
 const SUPA = Deno.env.get('SUPABASE_URL')!;
 const SITE = 'https://coupondonation.com';
-const SAMPLE_TO = 'connect.coupondonation@gmail.com';
+const SAMPLE_TO = 'haagrawa123@gmail.com';
 const TOKEN_DAYS = 30;
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
@@ -49,26 +49,21 @@ Deno.serve(async (req) => {
     return json({ id: j.id, to: j.to, subject: j.subject, last_event: j.last_event });
   }
 
-  // SAMPLE emails: clearly labelled sample data, only ever to the founder's inbox.
+  // Founder-only inbox-placement messages built entirely from sample data.
   if (body?.sample) {
     if (!key) return json({ error: 'Missing Resend key' }, 400);
     const now = Date.now(), h = 3600_000;
     const base = { fundraiserTitle: 'Help Our Family With Groceries This Month', organizer: 'Maria G.', donatedAt: new Date(now - 26 * h).toISOString(),
-      impactUrl: `${SITE}/impact/sample`, thankUrl: `${SITE}/impact/sample#thanks`, stopUrl: `${SITE}/impact/sample`, sample: true };
-    if (body.sample === 'v2') {
-      const r1 = await sendResend(key, SAMPLE_TO, renderOwnerCouponEmail({ fundraiserTitle: base.fundraiserTitle, sample: true, dashboardUrl: `${SITE}/my-fundraisers`,
-        items: [{ brand: 'DoorDash', value: 20, type: 'code' }] }));
-      const r2 = await sendResend(key, SAMPLE_TO, renderImpactEmail({ ...base, kind: 'received', items: [
-        { brand: 'DoorDash', issuedBrand: 'Visa', type: 'prepaid_link', brandReason: 'DoorDash gift cards were out of stock this week, so we sent a Visa prepaid card that works there and anywhere else',
-          value: 20, createdAt: new Date(now - 25 * h).toISOString(), receivedAt: new Date(now - 5 * 60_000).toISOString() }] }));
-      return json({ sample: 'v2', to: SAMPLE_TO, owner_alert_id: r1, gift_arrived_id: r2 });
-    }
-    const r1 = await sendResend(key, SAMPLE_TO, renderImpactEmail({ ...base, kind: 'received', items: [
+      donorFirstName: 'Alex', impactUrl: `${SITE}/impact/sample`, thankUrl: `${SITE}/impact/sample#thanks`, stopUrl: `${SITE}/impact/sample`, sample: true };
+    const owner = await sendResend(key, SAMPLE_TO, renderOwnerCouponEmail({ fundraiserTitle: base.fundraiserTitle, firstName: 'Maria', test: true, dashboardUrl: `${SITE}/my-fundraisers`,
+      items: [{ brand: 'DoorDash', value: 20, type: 'code' }] }));
+    const received = await sendResend(key, SAMPLE_TO, renderImpactEmail({ ...base, kind: 'received', items: [
       { brand: 'DoorDash', value: 20, createdAt: new Date(now - 25 * h).toISOString(), receivedAt: new Date(now - 5 * 60_000).toISOString() }] }));
-    const r2 = await sendResend(key, SAMPLE_TO, renderImpactEmail({ ...base, kind: 'used', items: [
+    const used = await sendResend(key, SAMPLE_TO, renderImpactEmail({ ...base, kind: 'used', items: [
       { brand: 'DoorDash', value: 20, createdAt: new Date(now - 25 * h).toISOString(), receivedAt: new Date(now - 4 * h).toISOString(), usedAt: new Date(now - 10 * 60_000).toISOString(),
         category: 'Meals', note: 'Dinner for the kids after a long week. Thank you so much.', hasReceipt: true }] }));
-    return json({ sample: true, to: SAMPLE_TO, received_id: r1, used_id: r2 });
+    const reminder = await sendResend(key, SAMPLE_TO, renderUseReminderEmail({ brand: 'DoorDash', fundraiserTitle: base.fundraiserTitle, firstName: 'Maria', dashboardUrl: `${SITE}/my-fundraisers`, sample: true }));
+    return json({ sample: true, to: SAMPLE_TO, owner_alert_id: owner, received_id: received, used_id: used, reminder_id: reminder });
   }
 
   const report: Record<string, unknown> = {};
@@ -82,9 +77,10 @@ Deno.serve(async (req) => {
   for (const p of plan) {
     const ids = p.events.map((e) => e.id);
     const mark = (patch: Record<string, unknown>) => admin.from('donor_impact_events').update(patch).in('id', ids);
-    const { data: d } = await admin.from('donations').select('donor_email, donor_id').eq('id', p.donation_id).maybeSingle();
+    const { data: d } = await admin.from('donations').select('donor_email, donor_id, donor_name').eq('id', p.donation_id).maybeSingle();
     let email = d?.donor_email ?? null;
-    if (!email && d?.donor_id) email = (await admin.from('profiles').select('email').eq('user_id', d.donor_id).maybeSingle()).data?.email ?? null;
+    const donorProfile = d?.donor_id ? (await admin.from('profiles').select('email, full_name').eq('user_id', d.donor_id).maybeSingle()).data : null;
+    if (!email) email = donorProfile?.email ?? null;
     if (!email) { await mark({ emailed_at: new Date().toISOString(), skipped_reason: 'no_email' }); skipped++; continue; }
     const { data: opt } = await admin.from('impact_email_optouts').select('email').eq('email', email.toLowerCase()).maybeSingle();
     if (opt) { await mark({ emailed_at: new Date().toISOString(), skipped_reason: 'impact_optout' }); skipped++; continue; }
@@ -101,7 +97,7 @@ Deno.serve(async (req) => {
     await admin.from('donation_impact_tokens').insert({ donation_id: p.donation_id, token_hash: await sha256(token), expires_at: new Date(Date.now() + TOKEN_DAYS * 86400_000).toISOString() });
     const impactUrl = `${SITE}/impact/${token}`;
     const mail = renderImpactEmail({
-      kind: p.kind, fundraiserTitle: imp.fundraiser_title, topups: (imp.brands ?? []).flatMap((b) => b.topup_reasons ?? []), organizer: imp.organizer || 'The organizer', donatedAt: imp.created_at, items,
+      kind: p.kind, fundraiserTitle: imp.fundraiser_title, topups: (imp.brands ?? []).flatMap((b) => b.topup_reasons ?? []), organizer: imp.organizer || 'The organizer', donorFirstName: (d?.donor_name || donorProfile?.full_name || '').trim().split(/\s+/)[0] || null, donatedAt: imp.created_at, items,
       impactUrl, thankUrl: `${impactUrl}#thanks`, stopUrl: `${SUPA}/functions/v1/impact-actions?stop=${token}`,
     });
     try {
@@ -121,11 +117,11 @@ Deno.serve(async (req) => {
     const { data: dn } = await admin.from('donations').select('fundraiser_id, fundraisers(title, user_id)').eq('id', c.donation_id).maybeSingle();
     // deno-lint-ignore no-explicit-any
     const fr = (dn as any)?.fundraisers; if (!fr) continue;
-    const { data: prof } = await admin.from('profiles').select('id, email').eq('user_id', fr.user_id).maybeSingle();
+    const { data: prof } = await admin.from('profiles').select('id, email, full_name').eq('user_id', fr.user_id).maybeSingle();
     if (prof) await admin.from('notifications').insert({ user_id: prof.id, title: `Did you use your ${c.store_name} coupon?`, message: `If you used your ${c.store_name} coupon, tap Used — your donor would love to know. It's optional.` });
     const { data: pref } = await admin.from('messaging_preferences').select('email_notifications').eq('user_id', fr.user_id).maybeSingle();
     if (prof?.email && key && pref?.email_notifications !== false) {
-      try { await sendResend(key, prof.email, renderUseReminderEmail({ brand: c.store_name, fundraiserTitle: fr.title, dashboardUrl: `${SITE}/fundraiser/${dn!.fundraiser_id}#coupons` })); } catch (e) { console.error('reminder failed', c.id, String(e)); }
+      try { await sendResend(key, prof.email, renderUseReminderEmail({ brand: c.store_name, fundraiserTitle: fr.title, firstName: prof.full_name?.trim().split(/\s+/)[0], dashboardUrl: `${SITE}/fundraiser/${dn!.fundraiser_id}#coupons` })); } catch (e) { console.error('reminder failed', c.id, String(e)); }
     }
     reminded++;
   }
