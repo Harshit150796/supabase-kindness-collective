@@ -24,6 +24,12 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
   const key = Deno.env.get('RESEND_API_KEY');
   if (!key) return json({ error: 'Missing Resend key' }, 500);
+  const body = await req.json().catch(() => ({}));
+  if (typeof body?.status_id === 'string' && /^[0-9a-f-]{36}$/.test(body.status_id)) {
+    const response = await fetch(`https://api.resend.com/emails/${body.status_id}`, { headers: { Authorization: `Bearer ${key}` } });
+    const result = await response.json();
+    return json({ id: result.id, subject: result.subject, last_event: result.last_event, to: result.to }, response.status);
+  }
   const now = Date.now(), hour = 3_600_000;
   const fundraiserTitle = 'Help Our Family With Groceries This Month';
   const common = { fundraiserTitle, organizer: 'Maria G.', donorFirstName: 'Alex', donatedAt: new Date(now - 26 * hour).toISOString(), impactUrl: `${SITE}/impact/sample`, thankUrl: `${SITE}/impact/sample#thanks`, stopUrl: `${SITE}/impact/sample`, sample: true };
