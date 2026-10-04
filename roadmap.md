@@ -175,3 +175,12 @@
 - [x] 6: Gold Coins ledger: exactly-once credit, loyalty card ensured, verified-email guest claims, refund reversals, backfill.
 - [x] 7: Pre-publish smoke test (no publish).
 - [x] D: AGENTS.md corrected — production is Lovable hosting; Vercel files inert.
+
+## Coupon reveal, proof-of-impact emails, receipts, donor impact (approved with amendments A–E)
+- [ ] Part 0: dashboard sidebar — remove Transfers + "Set up transfers", wire Updates, add Coupons.
+- [ ] Part 1: owner Coupons section with audited one-time reveal record.
+- [ ] Part 2: "Your gift arrived" email via dispatcher, one per donation per run; dedicated impact-email opt-out (A); combined received+used email (B).
+- [ ] Part 3: Mark used, category/note, private receipts (metadata stripped, redaction, HEIC message (C)), email #2, one 7-day reminder.
+- [ ] Part 4: donor impact view, one receipt request per coupon, guest token page.
+- [ ] D: procured codes for donation coupons land claimed/reserved to owner; report if procure-coupons is active.
+- [ ] Proofs + two SAMPLE emails to connect.coupondonation@gmail.com (Resend ID + last_event).
