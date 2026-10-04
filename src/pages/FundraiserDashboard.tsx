@@ -16,7 +16,7 @@ import {
   Menu,
   X,
   Trash2,
-  Camera
+  Camera,
   Gift,
 } from "lucide-react";
 import { OwnerCouponsSection } from "@/components/fundraiser/OwnerCouponsSection";
