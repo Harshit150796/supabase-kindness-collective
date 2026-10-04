@@ -1,4 +1,4 @@
-import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
+import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { planEmails } from '../_shared/impact-plan.ts';
 import { inspectImage } from '../_shared/image-meta.ts';
 import { renderImpactEmail } from '../_shared/impact-email.ts';
@@ -33,4 +33,14 @@ Deno.test('impact email never contains a coupon code', () => {
     items: [{ brand: 'DoorDash', value: 20, createdAt: old, receivedAt: old, usedAt: old, category: 'Meals', note: 'n' }] });
   assertEquals(m.html.includes('SECRETCODE') || m.text.includes('SECRETCODE'), false);
   assertEquals(m.html.includes('Stop impact emails'), true);
+});
+Deno.test('impact subjects contain no amount, retailer, product term, or punctuation hype', () => {
+  for (const kind of ['received', 'used', 'combined'] as const) {
+    const mail = renderImpactEmail({ kind, fundraiserTitle: 'Family Grocery Support', organizer: 'Maria G.', donatedAt: old, impactUrl: 'https://coupondonation.com/impact/example', thankUrl: 'https://coupondonation.com/impact/example#thanks', stopUrl: 'https://coupondonation.com/impact/example?stop=1',
+      items: [{ brand: 'DoorDash', value: 20, createdAt: old, receivedAt: old, usedAt: kind === 'received' ? null : old }] });
+    assertEquals(/\$|doordash|gift card|coupon|free|deal|offer|save|!|\p{Extended_Pictographic}/iu.test(mail.subject), false);
+    assert(mail.html.includes('Hi there,'));
+    assert(mail.html.includes('— The CouponDonation team'));
+    assertEquals(mail.html.includes('/brands/'), false);
+  }
 });

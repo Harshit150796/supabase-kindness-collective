@@ -202,3 +202,10 @@
 - [x] Plain, column-locked codes/PINs; no key needed; manual prepaid entry removed
 - [x] Compact collapsed groups with Edit, More details, one open at a time
 - [x] Self-cancelling backend proofs
+
+## Transactional email inbox placement (Oct 4)
+- [x] Inventory every account and marketing email sender/template
+- [x] Rewrite account emails as short personal notices with plain links
+- [x] Separate newsletter sender from notifications@coupondonation.com
+- [x] Deploy all affected edge functions
+- [x] Send four founder-only Gmail placement messages and verify Resend delivery

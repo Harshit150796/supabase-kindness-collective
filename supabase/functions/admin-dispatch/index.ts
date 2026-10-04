@@ -32,15 +32,11 @@ Deno.serve(async (req) => {
   const key = Deno.env.get('RESEND_API_KEY');
 
   const send = async (subject: string, items: { line: string; link: string }[]) => {
-    const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#13201a;max-width:560px">
-      <h2 style="font-weight:600;font-size:18px;margin:0 0 12px">${esc(subject)}</h2>
-      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse">
-      ${items.map((i) => `<tr><td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:14px">${esc(i.line)}<br><a href="${esc(i.link)}" style="color:#2e7d32">Open in admin</a></td></tr>`).join('')}
-      </table><p style="font-size:12px;color:#6b7280;margin-top:16px">Internal CouponDonation operations notice. Manage recipients in Admin → Settings.</p></div>`;
-    const text = [subject, '', ...items.map((i) => `- ${i.line}\n  ${i.link}`)].join('\n');
+    const html = `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(subject)}</title></head><body style="margin:0;background:#fff"><div style="display:none;max-height:0;overflow:hidden;opacity:0">There is new account activity to review.</div><main style="font-family:Arial,Helvetica,sans-serif;color:#13201a;max-width:560px;margin:0 auto;padding:28px 22px"><p style="font-size:15px;line-height:23px">Hi team,</p><p style="font-size:15px;line-height:23px">There ${items.length === 1 ? 'is one account item' : `are ${items.length} account items`} ready for review.</p>${items.map((i) => `<p style="font-size:14px;line-height:21px">${esc(i.line)}</p>`).join('')}<p style="font-size:15px;line-height:23px"><a href="${SITE}/admin" style="color:#13201a;text-decoration:underline">Open the admin portal</a></p><p style="font-size:15px;line-height:23px">— The CouponDonation team</p><p style="font-size:12px;color:#6b7280;margin-top:24px">Internal account notification. Manage recipients in Admin Settings.</p></main></body></html>`;
+    const text = ['Hi team,', '', `There ${items.length === 1 ? 'is one account item' : `are ${items.length} account items`} ready for review.`, '', ...items.map((i) => `- ${i.line}`), '', `Open the admin portal: ${SITE}/admin`, '', '— The CouponDonation team'].join('\n');
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: NOTIFY_SENDER.from, to: recipients, subject, html, text }),
+      body: JSON.stringify({ from: NOTIFY_SENDER.from, reply_to: NOTIFY_SENDER.replyTo, to: recipients, subject, html, text }),
     });
     const t = await r.text();
     if (!r.ok) throw new Error(`[${r.status}] ${t}`);
@@ -58,7 +54,7 @@ Deno.serve(async (req) => {
   if (body?.test) {
     if (!key || !recipients.length) return json({ error: 'Missing Resend key or recipients' }, 400);
     try {
-      const id = await send('Test digest — CouponDonation admin notifications', [
+      const id = await send('CouponDonation account activity', [
         { line: 'This is a delivery test of the admin notification dispatcher.', link: `${SITE}/admin` },
       ]);
       return json({ test: true, resend_id: id, to: recipients });
@@ -111,8 +107,8 @@ Deno.serve(async (req) => {
       ? { line: `New fundraiser: "${e.payload.title}" (${e.payload.status}) · ${new Date(e.payload.at).toUTCString()}`, link: `${SITE}/admin/fundraisers?id=${e.source_id}` }
       : { line: `Donation ${usd(Number(e.payload.amount))} from ${e.payload.name} → ${e.payload.target} · ${new Date(e.payload.at).toUTCString()}`, link: `${SITE}/admin/donations?id=${e.source_id}` });
     const nF = evs.filter((e) => e.kind === 'fundraiser').length, nP = evs.filter((e) => e.kind === 'partner').length, nD = evs.length - nF - nP;
-    const subject = evs.length === 1 ? (nP ? 'New partner inquiry' : nF ? 'New fundraiser created' : 'New donation completed')
-      : `CouponDonation digest: ${nD} donation${nD === 1 ? '' : 's'}, ${nF} new fundraiser${nF === 1 ? '' : 's'}${nP ? `, ${nP} partner inquir${nP === 1 ? 'y' : 'ies'}` : ''}`;
+    const subject = evs.length === 1 ? (nP ? 'A partner inquiry needs review' : nF ? 'A fundraiser needs review' : 'New account activity')
+      : 'CouponDonation account activity';
     try {
       const id = await send(subject, items);
       await admin.from('admin_email_events').update({ sent_at: new Date().toISOString(), resend_id: id, last_error: null }).in('id', evs.map((e) => e.id));

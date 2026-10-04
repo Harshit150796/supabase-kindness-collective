@@ -19,14 +19,10 @@ Deno.serve(async (req) => {
   for (const n of due ?? []) {
     const mark = () => admin.from('notification_queue').update({ sent_at: new Date().toISOString() }).eq('id', n.id);
     const { data: pref } = await admin.from('messaging_preferences').select('email_notifications').eq('user_id', n.recipient_user_id).maybeSingle();
-    const { data: prof } = await admin.from('profiles').select('email').eq('user_id', n.recipient_user_id).maybeSingle();
+    const { data: prof } = await admin.from('profiles').select('email, full_name').eq('user_id', n.recipient_user_id).maybeSingle();
     const email = prof?.email;
-    const { data: sub } = email ? await admin.from('email_subscribers').select('subscribed, unsubscribe_token').eq('email', email.toLowerCase()).maybeSingle() : { data: null };
-    if (!email || pref?.email_notifications === false || sub?.subscribed === false || !key) { await mark(); skipped++; continue; }
+    if (!email || pref?.email_notifications === false || !key) { await mark(); skipped++; continue; }
     const { data: fr } = await admin.from('fundraisers').select('title, unique_slug').eq('id', n.fundraiser_id).maybeSingle();
-    const unsub = sub?.unsubscribe_token
-      ? `${SUPA}/functions/v1/handle-newsletter-unsubscribe?token=${sub.unsubscribe_token}`
-      : `${SITE}/settings`;
     const isMsg = n.kind === 'message';
     const mail = renderNoticeEmail({
       subject: isMsg ? `New message about "${fr?.title ?? 'your fundraiser'}"` : `New update on "${fr?.title ?? 'a fundraiser you support'}"`,
@@ -34,7 +30,8 @@ Deno.serve(async (req) => {
       intro: isMsg ? 'Someone sent you a message on CouponDonation. For your safety, the message is only shown on the site.' : `The organizer of "${fr?.title}" shared a new update.`,
       ctaLabel: isMsg ? 'Open messages' : 'Read the update',
       ctaUrl: isMsg ? `${SITE}/messages?c=${n.ref_id}` : `${SITE}/f/${fr?.unique_slug ?? ''}`,
-      footerNote: `Don't want these emails? <a href="${unsub}">Unsubscribe</a> or turn them off in Settings.`,
+      footerNote: 'You can turn account notification emails off in Settings.',
+      firstName: prof.full_name?.trim().split(/\s+/)[0],
     });
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },

@@ -5,9 +5,8 @@ import { NOTIFY_SENDER } from './email-layout.ts';
 
 const SITE = 'https://coupondonation.com';
 const LOGO_URL = `${SITE}/favicon-192.png`;
-const GREEN = '#2e7d32', BLUE = '#1565c0', INK = '#13201a', BODY = '#4a5650', MUTED = '#86918b', SOFT = '#f1f6f1', LINE = '#e3e9e4';
+const INK = '#13201a', BODY = '#4a5650', MUTED = '#86918b';
 const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
-const SERIF = "Georgia, 'Times New Roman', serif";
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const usd = (n: number) => `$${Number(n).toFixed(Number(n) % 1 ? 2 : 0)}`;
 
@@ -27,39 +26,16 @@ export const typeLabel = (t?: string | null) => t === 'gift_card' ? 'gift card' 
 
 export type AlertItem = { brand: string; value: number; type?: string | null };
 
-export function renderOwnerCouponEmail(o: { fundraiserTitle: string; items: AlertItem[]; dashboardUrl: string; sample?: boolean }) {
+export function renderOwnerCouponEmail(o: { fundraiserTitle: string; items: AlertItem[]; dashboardUrl: string; firstName?: string; test?: boolean }) {
   const one = o.items.length === 1 ? o.items[0] : null;
   const total = o.items.reduce((s, i) => s + Number(i.value), 0);
   const what = one ? `a ${usd(one.value)} ${one.brand} ${typeLabel(one.type)}` : `${o.items.length} coupons worth ${usd(total)}`;
-  const tag = o.sample ? '[SAMPLE] ' : '';
-  const subject = `${tag}You’ve received ${what} from a donor`;
-  const intro = `A donation to “${o.fundraiserTitle}” has arrived as ${what}. Open your dashboard and tap Reveal to see ${one ? 'it' : 'them'}.`;
-  const rows = o.items.map((i) => {
-    const logo = brandLogoUrl(i.brand);
-    return `<tr><td style="padding:0 0 10px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${SOFT};border-radius:14px;"><tr>
-      <td width="56" style="padding:16px 0 16px 18px;">${logo ? `<img src="${logo}" width="36" height="36" alt="${esc(i.brand)}" style="display:block;width:36px;height:36px;border:0;border-radius:8px;background:#ffffff;"/>` : ''}</td>
-      <td style="padding:16px 8px;font-family:${FONT};font-size:15px;font-weight:600;color:${INK};">${esc(i.brand)} ${typeLabel(i.type)}</td>
-      <td align="right" style="padding:16px 18px 16px 0;font-family:${SERIF};font-size:26px;color:${INK};">${usd(i.value)}</td>
-    </tr></table></td></tr>`;
-  }).join('');
+  const subject = 'A donation arrived for your fundraiser';
+  const detail = one ? `It arrived as a ${usd(one.value)} ${one.brand} card.` : `It arrived as ${o.items.length} cards totaling ${usd(total)}.`;
+  const intro = `A donation to “${o.fundraiserTitle}” is ready. ${detail} Sign in to reveal ${one ? 'the details' : 'their details'} securely.`;
   const html = `<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light only"/><title>${esc(subject)}</title></head>
-<body style="margin:0;padding:0;background-color:#ffffff;"><div style="display:none;max-height:0;overflow:hidden;">${esc(intro)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center"><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
-${o.sample ? `<tr><td style="padding:12px 24px 0 24px;font-family:${FONT};font-size:12px;font-weight:700;color:${BLUE};">SAMPLE EMAIL · sample data, not a real coupon</td></tr>` : ''}
-<tr><td style="padding:28px 24px 8px 24px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-  <td style="padding-right:10px;"><img src="${LOGO_URL}" width="40" height="40" alt="CouponDonation" style="display:block;width:40px;height:40px;border:0;"/></td>
-  <td style="font-family:${FONT};font-size:19px;font-weight:700;"><span style="color:${GREEN};">Coupon</span><span style="color:${BLUE};">Donation</span></td></tr></table></td></tr>
-<tr><td style="padding:22px 24px 6px 24px;">
-  <h1 style="margin:0 0 12px 0;font-family:${SERIF};font-weight:400;font-size:34px;line-height:40px;color:${INK};">You’ve received ${one ? 'a coupon' : 'coupons'}</h1>
-  <p style="margin:0 0 20px 0;font-family:${FONT};font-size:16px;line-height:25px;color:${BODY};">${esc(intro)}</p></td></tr>
-<tr><td style="padding:0 24px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rows}</table></td></tr>
-<tr><td style="padding:12px 24px 0 24px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-radius:999px;background-color:${GREEN};">
-  <a href="${esc(o.dashboardUrl)}" style="display:inline-block;padding:12px 24px;font-family:${FONT};font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">Open my dashboard</a></td></tr></table></td></tr>
-<tr><td style="padding:22px 24px 34px 24px;"><div style="border-top:1px solid ${LINE};height:1px;font-size:0;">&nbsp;</div>
-  <p style="margin:16px 0 0 0;font-family:${FONT};font-size:12px;line-height:19px;color:${MUTED};">For your safety, codes and card details are never sent by email. They appear only after you sign in and tap Reveal. CouponDonation will never ask you to share them.</p></td></tr>
-</table></td></tr></table></body></html>`;
-  const text = [o.sample ? 'SAMPLE EMAIL - sample data\n' : '', subject, '', intro, '', ...o.items.map((i) => `- ${usd(i.value)} ${i.brand} ${typeLabel(i.type)}`), '',
-    `Open my dashboard: ${o.dashboardUrl}`, '', 'Codes and card details are never sent by email.'].join('\n');
+<body style="margin:0;background:#ffffff"><div style="display:none;max-height:0;overflow:hidden;opacity:0">A donation is ready in your fundraiser dashboard.</div><main style="max-width:560px;margin:0 auto;padding:28px 22px"><img src="${LOGO_URL}" width="32" height="32" alt="CouponDonation" style="display:block;width:32px;height:32px;margin-bottom:24px"><p style="font:15px/23px ${FONT};color:${INK}">Hi ${esc(o.firstName || 'there')},</p><p style="font:15px/23px ${FONT};color:${BODY}">${esc(intro)}</p><p style="font:15px/23px ${FONT}"><a href="${esc(o.dashboardUrl)}" style="color:${INK};text-decoration:underline">Open your fundraiser dashboard</a></p><p style="font:15px/23px ${FONT};color:${INK}">— The CouponDonation team</p><p style="font:12px/18px ${FONT};color:${MUTED}">Codes and card details are never included in email.${o.test ? ' This is a test message.' : ''}</p></main></body></html>`;
+  const text = [`Hi ${o.firstName || 'there'},`, '', intro, '', `Open your fundraiser dashboard: ${o.dashboardUrl}`, '', '— The CouponDonation team', '', `Codes and card details are never included in email.${o.test ? ' This is a test message.' : ''}`].join('\n');
   return { subject, html, text };
 }
 
@@ -81,8 +57,8 @@ export async function flushOwnerAlerts(admin: any, fundraiserId?: string) {
     const items = (cs ?? []).filter((c: any) => f && c.has_credential && c.reserved_by === f.user_id && !['void', 'returned'].includes(c.status))
       .map((c: any) => ({ brand: c.issued_brand || c.store_name, value: Number(c.value ?? 0), type: c.credential_type }));
     if (!f || !items.length) continue;
-    const { data: prof } = await admin.from('profiles').select('id, email').eq('user_id', f.user_id).maybeSingle();
-    const mail = renderOwnerCouponEmail({ fundraiserTitle: f.title, items, dashboardUrl: `${SITE}/fundraiser/${f.id}#coupons` });
+    const { data: prof } = await admin.from('profiles').select('id, email, full_name').eq('user_id', f.user_id).maybeSingle();
+    const mail = renderOwnerCouponEmail({ fundraiserTitle: f.title, items, dashboardUrl: `${SITE}/fundraiser/${f.id}#coupons`, firstName: prof?.full_name?.trim().split(/\s+/)[0] });
     if (prof?.id) { await admin.from('notifications').insert({ user_id: prof.id, title: mail.subject, message: `Open your fundraiser dashboard and tap Reveal in Coupons.` }); notified++; }
     if (prof?.email && key) {
       const r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
