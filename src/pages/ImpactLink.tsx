@@ -21,7 +21,7 @@ export default function ImpactLink() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <SEO title="Your impact | CouponDonation" description="Follow the coupons your donation created." noindex />
+      <SEO title="Your impact | CouponDonation" description="Follow the coupons your donation created." path="/impact" noindex />
       <Navbar />
       <main className="mx-auto max-w-xl px-5 pb-20 pt-28">
         <h1 className="font-display text-4xl font-normal text-foreground">Your impact</h1>
