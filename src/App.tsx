@@ -14,6 +14,7 @@ import { PrivacyConsentBanner } from "./components/PrivacyConsentBanner";
 // All non-homepage routes are lazy-loaded so mobile users don't download
 // the entire app on first paint.
 const About = lazy(() => import("./pages/About"));
+const ImpactLink = lazy(() => import("./pages/ImpactLink"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Privacy = lazy(() => import("./pages/Privacy"));
@@ -137,6 +138,7 @@ const AppRoutes = () => (
       <Route path="/donate" element={<Donate />} />
       <Route path="/my-fundraisers" element={<GeoGuard><MyFundraisers /></GeoGuard>} />
       <Route path="/my-impact" element={<MyImpact />} />
+      <Route path="/impact/:token" element={<ImpactLink />} />
       <Route path="/fundraiser/:id" element={<GeoGuard><FundraiserDashboard /></GeoGuard>} />
       <Route path="/fundraiser/:id/edit" element={<GeoGuard><FundraiserEdit /></GeoGuard>} />
       <Route path="/profile" element={<Profile />} />

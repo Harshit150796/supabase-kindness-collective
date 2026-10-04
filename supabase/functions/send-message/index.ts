@@ -12,6 +12,8 @@ const Body = z.object({
   fundraiser_id: z.string().uuid().optional(),
   conversation_id: z.string().uuid().optional(),
   body: z.string().min(1).max(MAX_LEN),
+  ref_donation_id: z.string().uuid().optional(),
+  ref_coupon_id: z.string().uuid().optional(),
 }).refine((b) => b.fundraiser_id || b.conversation_id, 'fundraiser_id or conversation_id required');
 
 const json = (data: unknown, status = 200) =>
@@ -91,10 +93,27 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Optional reference to the donation/coupon this message is about (donor must own that donation).
+  let ref: { ref_donation_id?: string; ref_coupon_id?: string | null; ref_label?: string } = {};
+  if (parsed.data.ref_donation_id) {
+    const { data: dn } = await admin.from('donations').select('id, fundraiser_id, created_at').eq('id', parsed.data.ref_donation_id).maybeSingle();
+    const { data: own } = await admin.rpc('_is_donation_donor', { _donation_id: parsed.data.ref_donation_id, _uid: uid });
+    if (dn && own && dn.fundraiser_id === fr.id) {
+      const day = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' }).format(new Date(dn.created_at));
+      let label = `Donation of ${day}`;
+      let couponId: string | null = null;
+      if (parsed.data.ref_coupon_id) {
+        const { data: cp } = await admin.from('coupons').select('id, donation_id, store_name, value, expected_value').eq('id', parsed.data.ref_coupon_id).maybeSingle();
+        if (cp && cp.donation_id === dn.id) { couponId = cp.id; label = `$${Number(cp.value ?? cp.expected_value ?? 0)} ${cp.store_name} coupon · donation of ${day}`; }
+      }
+      ref = { ref_donation_id: dn.id, ref_coupon_id: couponId, ref_label: label };
+    }
+  }
+
   const { data: msg, error: msgErr } = await admin.from('messages').insert({
     conversation_id: conversationId, sender_id: uid, body: result.text,
-    flags: result.redactRules, status: result.redactRules.length ? 'redacted' : 'delivered',
-  }).select('id, conversation_id, sender_id, body, flags, status, created_at').single();
+    flags: result.redactRules, status: result.redactRules.length ? 'redacted' : 'delivered', ...ref,
+  }).select('id, conversation_id, sender_id, body, flags, status, created_at, ref_label').single();
   if (msgErr) return json({ error: 'Could not send message' }, 500);
 
   await admin.from('conversations').update({ last_message_at: msg.created_at }).eq('id', conversationId);

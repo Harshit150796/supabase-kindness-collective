@@ -1,3 +1,4 @@
+import { FundraiserReceiptsAdmin } from '@/components/admin/FundraiserReceiptsAdmin';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
@@ -152,6 +153,7 @@ export function FundraiserCouponsTab({ fundraiserId, canWrite, donationId }: { f
 
   return (
     <div className="space-y-3">
+      {!donationId && <FundraiserReceiptsAdmin fundraiserId={fundraiserId} canWrite={canWrite} />}
       {!donationId && <p className="text-xs text-muted-foreground">Set any mix of coupon amounts, and enter a code and link for each. Saving a code shows it to the organizer and emails them (the code itself is not emailed).</p>}
       {[...groups.entries()].map(([k, g]) => (
         <CouponGroupEditor key={k} fundraiserId={fundraiserId} donationId={g[0].donation_id} brand={g[0].store_name} donationAt={g[0].donation_at} rows={g} canWrite={canWrite} onDone={() => q.refetch()} />

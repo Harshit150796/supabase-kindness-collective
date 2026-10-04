@@ -16,8 +16,10 @@ import {
   Menu,
   X,
   Trash2,
-  Camera
+  Camera,
+  Gift,
 } from "lucide-react";
+import { OwnerCouponsSection } from "@/components/fundraiser/OwnerCouponsSection";
 import { Button } from "@/components/ui/button";
 import { DonationCouponList, type OwnerCoupon } from "@/components/fundraiser/DonationCouponList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -285,11 +287,12 @@ const FundraiserDashboard = () => {
     : `${window.location.origin}/fundraiser/${id}`;
 
   const sidebarLinks = [
-    { icon: LayoutDashboard, label: "Dashboard", active: true },
+    { icon: LayoutDashboard, label: "Dashboard", href: "#top", active: true },
     { icon: Heart, label: "Donations", href: "#donations" },
-    { icon: CreditCard, label: "Transfers", href: "#transfers" },
+    { icon: Gift, label: "Coupons", href: "#coupons" },
     { icon: FileText, label: "Updates", href: "#updates" },
   ];
+  const isOwnerView = !!user && !!fundraiser && user.id === (fundraiser as unknown as { user_id: string }).user_id;
 
   return (
     <div className="min-h-dvh bg-background">
@@ -321,6 +324,7 @@ const FundraiserDashboard = () => {
                 <a
                   key={link.label}
                   href={link.href || "#"}
+                  onClick={() => setSidebarOpen(false)}
                   className={`
                     flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
                     ${link.active 
@@ -348,7 +352,7 @@ const FundraiserDashboard = () => {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 min-h-dvh">
+        <main id="top" className="flex-1 min-h-dvh">
           {/* Gallery section - full width */}
           <div className="pt-16 lg:pt-0">
             <div className="relative overflow-hidden">
@@ -441,10 +445,6 @@ const FundraiserDashboard = () => {
                         <p className="text-sm text-muted-foreground mb-4">
                           {fundraiser.donors_count} donor{fundraiser.donors_count !== 1 ? "s" : ""} have contributed
                         </p>
-                        <Button variant="outline" size="sm">
-                          <CreditCard className="w-4 h-4 mr-2" />
-                          Set up transfers
-                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -565,7 +565,16 @@ const FundraiserDashboard = () => {
               </Card>
             </div>
           </div>
-          {fundraiser && <OrganizerTools fundraiserId={fundraiser.id} isOwner={!!user && user.id === (fundraiser as unknown as { user_id: string }).user_id} />}
+          {fundraiser && (
+            <div className="mt-6">
+              <OwnerCouponsSection coupons={coupons} isOwner={isOwnerView} onChanged={fetchDonations} />
+            </div>
+          )}
+          {fundraiser && (
+            <div id="updates" className="scroll-mt-24">
+              <OrganizerTools fundraiserId={fundraiser.id} isOwner={isOwnerView} />
+            </div>
+          )}
         </main>
       </div>
 

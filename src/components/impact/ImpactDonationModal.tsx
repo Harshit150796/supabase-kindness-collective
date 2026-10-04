@@ -1,3 +1,4 @@
+import { DonationImpactPanel } from '@/components/impact/DonationImpactPanel';
 import { useEffect, useState, useMemo } from 'react';
 import {
   Dialog,
@@ -440,6 +441,7 @@ export function ImpactDonationModal({
             </>
           )}
         </div>
+        {donation && <DonationImpactPanel donationId={donation.id} />}
       </DialogContent>
     </Dialog>
   );
