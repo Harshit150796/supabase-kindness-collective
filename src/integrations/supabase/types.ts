@@ -831,6 +831,85 @@ export type Database = {
         }
         Relationships: []
       }
+      coupon_receipts: {
+        Row: {
+          bytes: number | null
+          coupon_id: string
+          created_at: string
+          height: number | null
+          hidden_at: string | null
+          hidden_by: string | null
+          id: string
+          storage_path: string
+          uploaded_by: string
+          width: number | null
+        }
+        Insert: {
+          bytes?: number | null
+          coupon_id: string
+          created_at?: string
+          height?: number | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          storage_path: string
+          uploaded_by: string
+          width?: number | null
+        }
+        Update: {
+          bytes?: number | null
+          coupon_id?: string
+          created_at?: string
+          height?: number | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          storage_path?: string
+          uploaded_by?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_receipts_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupon_reveal_log: {
+        Row: {
+          coupon_id: string
+          created_at: string
+          first_reveal: boolean
+          id: string
+          user_id: string
+        }
+        Insert: {
+          coupon_id: string
+          created_at?: string
+          first_reveal?: boolean
+          id?: string
+          user_id: string
+        }
+        Update: {
+          coupon_id?: string
+          created_at?: string
+          first_reveal?: boolean
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_reveal_log_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupons: {
         Row: {
           batch_id: string | null
@@ -860,12 +939,19 @@ export type Database = {
           returned_at: string | null
           returned_from_coupon_id: string | null
           returned_from_fundraiser_id: string | null
+          reveal_reminder_sent_at: string | null
+          revealed_at: string | null
+          revealed_by: string | null
           status: Database["public"]["Enums"]["coupon_status"]
           store_name: string
           title: string
           tremendous_order_id: string | null
           tremendous_reward_id: string | null
           updated_at: string
+          used_at: string | null
+          used_category: string | null
+          used_note: string | null
+          used_source: string | null
           value: number | null
           void_reason: string | null
           voided_at: string | null
@@ -898,12 +984,19 @@ export type Database = {
           returned_at?: string | null
           returned_from_coupon_id?: string | null
           returned_from_fundraiser_id?: string | null
+          reveal_reminder_sent_at?: string | null
+          revealed_at?: string | null
+          revealed_by?: string | null
           status?: Database["public"]["Enums"]["coupon_status"]
           store_name: string
           title: string
           tremendous_order_id?: string | null
           tremendous_reward_id?: string | null
           updated_at?: string
+          used_at?: string | null
+          used_category?: string | null
+          used_note?: string | null
+          used_source?: string | null
           value?: number | null
           void_reason?: string | null
           voided_at?: string | null
@@ -936,12 +1029,19 @@ export type Database = {
           returned_at?: string | null
           returned_from_coupon_id?: string | null
           returned_from_fundraiser_id?: string | null
+          reveal_reminder_sent_at?: string | null
+          revealed_at?: string | null
+          revealed_by?: string | null
           status?: Database["public"]["Enums"]["coupon_status"]
           store_name?: string
           title?: string
           tremendous_order_id?: string | null
           tremendous_reward_id?: string | null
           updated_at?: string
+          used_at?: string | null
+          used_category?: string | null
+          used_note?: string | null
+          used_source?: string | null
           value?: number | null
           void_reason?: string | null
           voided_at?: string | null
@@ -1005,6 +1105,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "donation_brands_donation_id_fkey"
+            columns: ["donation_id"]
+            isOneToOne: false
+            referencedRelation: "donations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donation_impact_tokens: {
+        Row: {
+          created_at: string
+          donation_id: string
+          expires_at: string
+          id: string
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          donation_id: string
+          expires_at: string
+          id?: string
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          donation_id?: string
+          expires_at?: string
+          id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donation_impact_tokens_donation_id_fkey"
             columns: ["donation_id"]
             isOneToOne: false
             referencedRelation: "donations"
@@ -1098,6 +1230,57 @@ export type Database = {
             columns: ["fundraiser_id"]
             isOneToOne: false
             referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donor_impact_events: {
+        Row: {
+          coupon_id: string
+          created_at: string
+          donation_id: string
+          emailed_at: string | null
+          id: string
+          kind: string
+          last_error: string | null
+          resend_id: string | null
+          skipped_reason: string | null
+        }
+        Insert: {
+          coupon_id: string
+          created_at?: string
+          donation_id: string
+          emailed_at?: string | null
+          id?: string
+          kind: string
+          last_error?: string | null
+          resend_id?: string | null
+          skipped_reason?: string | null
+        }
+        Update: {
+          coupon_id?: string
+          created_at?: string
+          donation_id?: string
+          emailed_at?: string | null
+          id?: string
+          kind?: string
+          last_error?: string | null
+          resend_id?: string | null
+          skipped_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donor_impact_events_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donor_impact_events_donation_id_fkey"
+            columns: ["donation_id"]
+            isOneToOne: false
+            referencedRelation: "donations"
             referencedColumns: ["id"]
           },
         ]
@@ -1742,6 +1925,21 @@ export type Database = {
         }
         Relationships: []
       }
+      impact_email_optouts: {
+        Row: {
+          created_at: string
+          email: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+        }
+        Relationships: []
+      }
       loyalty_cards: {
         Row: {
           card_number: string
@@ -1782,6 +1980,9 @@ export type Database = {
           created_at: string
           flags: string[]
           id: string
+          ref_coupon_id: string | null
+          ref_donation_id: string | null
+          ref_label: string | null
           sender_id: string
           status: string
         }
@@ -1791,6 +1992,9 @@ export type Database = {
           created_at?: string
           flags?: string[]
           id?: string
+          ref_coupon_id?: string | null
+          ref_donation_id?: string | null
+          ref_label?: string | null
           sender_id: string
           status?: string
         }
@@ -1800,6 +2004,9 @@ export type Database = {
           created_at?: string
           flags?: string[]
           id?: string
+          ref_coupon_id?: string | null
+          ref_donation_id?: string | null
+          ref_label?: string | null
           sender_id?: string
           status?: string
         }
@@ -2103,6 +2310,45 @@ export type Database = {
         }
         Relationships: []
       }
+      receipt_requests: {
+        Row: {
+          conversation_id: string | null
+          coupon_id: string
+          created_at: string
+          donation_id: string
+          requested_by: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          coupon_id: string
+          created_at?: string
+          donation_id: string
+          requested_by: string
+        }
+        Update: {
+          conversation_id?: string | null
+          coupon_id?: string
+          created_at?: string
+          donation_id?: string
+          requested_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipt_requests_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: true
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_requests_donation_id_fkey"
+            columns: ["donation_id"]
+            isOneToOne: false
+            referencedRelation: "donations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipient_applications: {
         Row: {
           admin_notes: string | null
@@ -2303,12 +2549,27 @@ export type Database = {
     }
     Functions: {
       _check_code: { Args: { _code: string; _url: string }; Returns: undefined }
+      _donation_impact: { Args: { _donation_id: string }; Returns: Json }
       _gc_apply: { Args: { _delta: number; _uid: string }; Returns: number }
       _give_stock: {
         Args: { _stock: string; _target: string }
         Returns: string
       }
+      _impact_token_donation: { Args: { _hash: string }; Returns: string }
+      _is_donation_donor: {
+        Args: { _donation_id: string; _uid: string }
+        Returns: boolean
+      }
       _mask_code: { Args: { _c: string }; Returns: string }
+      _owner_mark_coupon_used: {
+        Args: {
+          _category: string
+          _coupon_id: string
+          _note: string
+          _uid: string
+        }
+        Returns: Json
+      }
       _preserve_code: {
         Args: { _cid: string; _reason: string }
         Returns: string
@@ -2404,6 +2665,10 @@ export type Database = {
       }
       admin_hard_delete_fundraiser: {
         Args: { _confirm: string; _id: string }
+        Returns: undefined
+      }
+      admin_hide_receipt: {
+        Args: { _hidden?: boolean; _receipt_id: string }
         Returns: undefined
       }
       admin_import_profile_subscribers: { Args: never; Returns: number }
@@ -2553,6 +2818,10 @@ export type Database = {
         Args: { _cid: string; _uid: string }
         Returns: boolean
       }
+      can_view_coupon_receipts: {
+        Args: { _coupon_id: string; _uid: string }
+        Returns: boolean
+      }
       claim_available_coupon: {
         Args: { _coupon_id: string }
         Returns: undefined
@@ -2589,6 +2858,7 @@ export type Database = {
           redemption_url: string
         }[]
       }
+      get_donation_impact: { Args: { _donation_id: string }; Returns: Json }
       get_fundraiser_coupon_trail: {
         Args: { _fundraiser_id: string }
         Returns: {
@@ -2648,12 +2918,18 @@ export type Database = {
       get_my_fundraiser_coupons: {
         Args: { _fundraiser_id: string }
         Returns: {
+          can_reveal: boolean
           code: string
           donation_id: string
           id: string
+          receipt_count: number
           redemption_url: string
+          revealed_at: string
           status: string
           store_name: string
+          used_at: string
+          used_category: string
+          used_note: string
           value: number
         }[]
       }
@@ -2728,6 +3004,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      owner_reveal_coupon: { Args: { _coupon_id: string }; Returns: Json }
       set_comment_hidden: {
         Args: { _comment_id: string; _hidden: boolean }
         Returns: undefined
