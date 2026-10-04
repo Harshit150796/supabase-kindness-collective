@@ -17,14 +17,14 @@ const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica 
 const SERIF = "Georgia, 'Times New Roman', serif";
 
 export interface ImpactItem {
-  brand: string; value: number;
+  brand: string; value: number; issuedBrand?: string | null; brandReason?: string | null; type?: string | null;
   createdAt: string; receivedAt?: string | null; usedAt?: string | null;
   category?: string | null; note?: string | null; hasReceipt?: boolean;
 }
 export interface ImpactEmailInput {
   kind: 'received' | 'used' | 'combined';
   fundraiserTitle: string; organizer: string; donatedAt: string;
-  items: ImpactItem[]; impactUrl: string; thankUrl: string; stopUrl: string; sample?: boolean;
+  items: ImpactItem[]; topups?: { amount: number; reason: string }[]; impactUrl: string; thankUrl: string; stopUrl: string; sample?: boolean;
 }
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
@@ -45,6 +45,11 @@ function step(label: string, when: string | null | undefined, done: boolean, las
     </td></tr>`;
 }
 
+const kindOf = (t?: string | null) => t === 'gift_card' ? 'gift card' : t === 'prepaid_card' || t === 'prepaid_link' ? 'prepaid card' : 'coupon';
+const shown = (i: ImpactItem) => `${i.issuedBrand || i.brand} ${kindOf(i.type)}`;
+const swapped = (i: ImpactItem) => !!i.issuedBrand && i.issuedBrand.toLowerCase() !== i.brand.toLowerCase();
+const disclosure = (i: ImpactItem) => `You chose ${i.brand}; it was issued as a ${shown(i)}${i.brandReason ? ` because ${i.brandReason.replace(/^because\s+/i, '').replace(/\.$/, '')}` : ''}.`;
+
 function card(i: ImpactItem, title: string, donatedAt: string) {
   const usedLine = i.usedAt ? etDay(i.usedAt) : 'pending';
   const proof = i.usedAt && (i.category || i.note)
@@ -57,9 +62,10 @@ function card(i: ImpactItem, title: string, donatedAt: string) {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td style="font-family:${SERIF};font-size:30px;line-height:34px;color:${INK};">${usd(i.value)}</td>
-          <td align="right" style="font-family:${FONT};font-size:15px;font-weight:600;color:${INK};">${esc(i.brand)} coupon</td>
+          <td align="right" style="font-family:${FONT};font-size:15px;font-weight:600;color:${INK};">${esc(shown(i))}</td>
         </tr>
         <tr><td colspan="2" style="padding:4px 0 16px 0;font-family:${FONT};font-size:13px;color:${MUTED};">For &ldquo;${esc(title)}&rdquo;</td></tr>
+        ${swapped(i) ? `<tr><td colspan="2" style="padding:0 0 14px 0;font-family:${FONT};font-size:14px;line-height:21px;color:${BODY};">${esc(disclosure(i))}</td></tr>` : ''}
         <tr><td colspan="2"><table role="presentation" cellpadding="0" cellspacing="0" border="0">
           ${step('Donated', etDay(donatedAt), true)}
           ${step('Coupon created', etDay(i.createdAt), true)}
@@ -82,7 +88,8 @@ export function renderImpactEmail(o: ImpactEmailInput) {
   const anyUsed = o.items.some((i) => i.usedAt);
   const anyReceipt = o.items.some((i) => i.hasReceipt);
   const first = o.items[0];
-  const what = o.items.length === 1 ? `${usd(first.value)} ${first.brand} coupon` : `${o.items.length} coupons`;
+  const what = o.items.length === 1 ? `${usd(first.value)} ${shown(first)}` : `${o.items.length} coupons`;
+  const topupLine = (o.topups ?? []).length ? `CouponDonation added ${(o.topups ?? []).map((t) => `${usd(t.amount)} (${t.reason})`).join(' and ')} on top of your gift.` : '';
   const moment = anyUsed ? o.items.find((i) => i.usedAt)!.usedAt! : (o.items.find((i) => i.receivedAt)?.receivedAt ?? new Date().toISOString());
   const tag = o.sample ? '[SAMPLE] ' : '';
   const heading = o.kind === 'received' ? 'Your gift arrived' : o.kind === 'used' ? 'Your coupon was used' : 'Your gift arrived, and it’s been used';
@@ -114,12 +121,13 @@ export function renderImpactEmail(o: ImpactEmailInput) {
     <p style="margin:0 0 22px 0;font-family:${FONT};font-size:16px;line-height:25px;color:${BODY};">${esc(intro)}</p>
   </td></tr>
   <tr><td style="padding:0 24px;">${o.items.map((i) => card(i, o.fundraiserTitle, o.donatedAt)).join('')}</td></tr>
+  ${topupLine ? `<tr><td style="padding:0 24px 8px 24px;font-family:${FONT};font-size:14px;line-height:21px;color:${BODY};">${esc(topupLine)}</td></tr>` : ''}
   <tr><td style="padding:10px 24px 0 24px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
     ${button(anyReceipt ? 'View receipt' : 'See your impact', o.impactUrl, true)}
     ${button('Send a thank-you', o.thankUrl, false)}
   </tr></table></td></tr>
   <tr><td style="padding:18px 24px 0 24px;font-family:${FONT};font-size:13px;line-height:20px;color:${MUTED};">
-    Retailers don’t share what a coupon buys, so anything beyond “received” comes from the recipient, only if they choose to share it. We never email coupon codes.
+    Retailers don’t share what a coupon buys, so anything beyond “received” comes from the recipient, only if they choose to share it. We never email coupon codes or card details.
   </td></tr>
   <tr><td style="padding:26px 24px 34px 24px;">
     <div style="border-top:1px solid ${LINE};height:1px;line-height:1px;font-size:0;">&nbsp;</div>
@@ -136,12 +144,12 @@ export function renderImpactEmail(o: ImpactEmailInput) {
     o.sample ? 'SAMPLE EMAIL - sample data, not a real donation\n' : '',
     heading, `${momentLabel}: ${etTime(moment)}`, '', intro, '',
     ...o.items.map((i) => [
-      `${usd(i.value)} ${i.brand} coupon - "${o.fundraiserTitle}"`,
+      `${usd(i.value)} ${shown(i)} - "${o.fundraiserTitle}"`, swapped(i) ? `  ${disclosure(i)}` : '',
       `  Donated ${etDay(o.donatedAt)} > Coupon created ${etDay(i.createdAt)} > Received ${i.receivedAt ? etDay(i.receivedAt) : 'pending'} > Used ${i.usedAt ? etDay(i.usedAt) : 'pending'}`,
       i.category ? `  Used for ${i.category.toLowerCase()}` : '', i.note ? `  "${i.note}"` : '',
     ].filter(Boolean).join('\n')),
-    '', `${anyReceipt ? 'View receipt' : 'See your impact'}: ${o.impactUrl}`, `Send a thank-you: ${o.thankUrl}`, '',
-    'We never email coupon codes.', `Stop impact emails: ${o.stopUrl}`,
+    topupLine, '', `${anyReceipt ? 'View receipt' : 'See your impact'}: ${o.impactUrl}`, `Send a thank-you: ${o.thankUrl}`, '',
+    'We never email coupon codes or card details.', `Stop impact emails: ${o.stopUrl}`,
   ].join('\n');
   return { subject, html, text };
 }

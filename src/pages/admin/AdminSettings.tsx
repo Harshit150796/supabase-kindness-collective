@@ -39,6 +39,12 @@ export default function AdminSettings() {
           </div>
         </section>
         <section className="rounded-lg bg-background p-5">
+          <h2 className="text-base font-medium">Coupon credentials</h2>
+          <div className="divide-y divide-border">
+            <Row k="allow_manual_prepaid" title="Allow manual prepaid card entry (PCI scope)" desc="Off: staff can only add prepaid cards as a provider's hosted link, and the server refuses any card number or CVV. On: staff may type full prepaid card numbers and CVVs; they are encrypted and the CVV is deleted 30 days after the organizer reveals it." />
+          </div>
+        </section>
+        <section className="rounded-lg bg-background p-5">
           <h2 className="text-base font-medium">Email notifications</h2>
           <div className="divide-y divide-border">
             <Row k="email_new_fundraiser" title="New fundraiser created" desc="Checked every 5 minutes; several events are combined into one digest." />

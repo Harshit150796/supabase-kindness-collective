@@ -1,27 +1,28 @@
 import { useMemo, useState } from 'react';
-import { Check, Copy, ExternalLink, Eye, ImagePlus, Loader2, X } from 'lucide-react';
+import { Check, Copy, ExternalLink, Eye, EyeOff, ImagePlus, Loader2, X } from 'lucide-react';
 import { format } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { brandLogos } from '@/data/brandLogos';
+import { brandLogoFor } from '@/data/brandLogos';
 import { callFn } from '@/lib/serverActions';
 import { exportRedacted, loadReceipt, type Box } from '@/lib/receiptImage';
 import { ReceiptRedactor } from '@/components/fundraiser/ReceiptRedactor';
 import type { OwnerCoupon } from '@/components/fundraiser/DonationCouponList';
 
 const CATEGORIES = ['Groceries', 'Meals', 'Baby supplies', 'Household', 'Transportation', 'Health', 'Other'];
-const logoFor = (brand: string) => {
-  const k = Object.keys(brandLogos).find((n) => n.toLowerCase().replace(/\s+/g, '') === brand.toLowerCase().replace(/\s+/g, ''));
-  return k ? brandLogos[k].logo : null;
-};
+const logoFor = (brand: string) => brandLogoFor(brand);
+const kind = (t?: string | null) => t === 'gift_card' ? 'gift card' : t === 'prepaid_card' || t === 'prepaid_link' ? 'prepaid card' : 'coupon';
+const group4 = (n: string) => n.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim();
 const when = (iso: string) => format(new Date(iso), "MMM d, yyyy 'at' h:mm a");
 
-type Revealed = { code: string; redemption_url: string | null; revealed_at: string };
+type Revealed = {
+  code: string | null; redemption_url: string | null; revealed_at: string; first?: boolean; type: string; card_exp: string | null; value_expires_on: string | null;
+  instructions: string | null; issued_brand: string; cvv_purged?: boolean; secrets: { code?: string; pin?: string; number?: string; cvv?: string; name?: string; zip?: string };
+};
 
 export function OwnerCouponsSection({ coupons, isOwner, onChanged }: { coupons: OwnerCoupon[]; isOwner: boolean; onChanged: () => void }) {
   const [revealed, setRevealed] = useState<Record<string, Revealed>>({});
@@ -31,17 +32,17 @@ export function OwnerCouponsSection({ coupons, isOwner, onChanged }: { coupons: 
 
   const groups = useMemo(() => {
     const m = new Map<string, OwnerCoupon[]>();
-    for (const c of coupons) m.set(c.store_name, [...(m.get(c.store_name) ?? []), c]);
+    for (const c of coupons) { const b = c.issued_brand || c.store_name; m.set(b, [...(m.get(b) ?? []), c]); }
     return [...m.entries()];
   }, [coupons]);
 
   const reveal = async (c: OwnerCoupon) => {
     setBusy(c.id);
-    const { data, error } = await (supabase.rpc as any)('owner_reveal_coupon', { _coupon_id: c.id });
+    const { data, error } = await callFn<Revealed>('coupon-secrets', { action: 'owner_reveal', coupon_id: c.id });
     setBusy(null);
-    if (error) { toast({ title: 'Could not reveal this code', description: error.message === 'Coupon being prepared' ? 'This coupon is still being prepared.' : 'Please try again.', variant: 'destructive' }); return; }
-    setRevealed((r) => ({ ...r, [c.id]: data as Revealed }));
-    if ((data as { first?: boolean }).first) onChanged();
+    if (error || !data) { toast({ title: 'Could not reveal this code', description: error === 'Coupon being prepared' ? 'This coupon is still being prepared.' : 'Please try again.', variant: 'destructive' }); return; }
+    setRevealed((r) => ({ ...r, [c.id]: data }));
+    if (data.first) onChanged();
   };
   const copy = async (id: string, code: string) => {
     try { await navigator.clipboard.writeText(code); setCopied(id); setTimeout(() => setCopied(null), 1500); } catch { /* blocked */ }
@@ -71,7 +72,7 @@ export function OwnerCouponsSection({ coupons, isOwner, onChanged }: { coupons: 
                   return (
                     <li key={c.id} className="py-3 text-sm">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="font-medium text-foreground">${Number(c.value ?? 0)} coupon</span>
+                        <span className="font-medium text-foreground">${Number(c.value ?? 0)} {kind(c.credential_type)}{c.card_last4 && !r ? <span className="ml-2 text-xs font-normal text-muted-foreground">•••• {c.card_last4}</span> : null}</span>
                         <span className="text-xs text-muted-foreground">
                           {c.used_at ? `Used · ${when(c.used_at)}` : receivedAt ? `Received · ${when(receivedAt)}` : c.can_reveal || (!isOwner && ['claimed', 'reserved', 'redeemed'].includes(c.status)) ? 'Ready' : 'Coupon being prepared'}
                         </span>
@@ -82,15 +83,7 @@ export function OwnerCouponsSection({ coupons, isOwner, onChanged }: { coupons: 
                         </Button>
                       )}
                       {!isOwner && ['claimed', 'reserved', 'redeemed'].includes(c.status) && <p className="mt-1 text-xs text-muted-foreground">Code visible to the fundraiser owner</p>}
-                      {r && (
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <code className="break-all rounded bg-muted px-2 py-1 font-mono text-sm tracking-wide text-foreground">{r.code}</code>
-                          <Button size="sm" variant="outline" onClick={() => copy(c.id, r.code)}>
-                            {copied === c.id ? <><Check className="mr-1 h-3.5 w-3.5" />Copied</> : <><Copy className="mr-1 h-3.5 w-3.5" />Copy</>}
-                          </Button>
-                          {r.redemption_url && <Button size="sm" variant="ghost" asChild><a href={r.redemption_url} target="_blank" rel="noopener noreferrer">Redeem <ExternalLink className="ml-1 h-3.5 w-3.5" /></a></Button>}
-                        </div>
-                      )}
+                      {r && <RevealedDetails r={r} copied={copied} onCopy={(k, v) => copy(`${c.id}-${k}`, v)} idPrefix={c.id} onHide={() => setRevealed((x) => { const n = { ...x }; delete n[c.id]; return n; })} />}
                       {c.used_at && (c.used_category || c.used_note) && (
                         <p className="mt-1 text-xs text-muted-foreground">{c.used_category}{c.used_category && c.used_note ? ' · ' : ''}{c.used_note ? `“${c.used_note}”` : ''}{c.receipt_count ? ` · ${c.receipt_count} receipt${c.receipt_count > 1 ? 's' : ''}` : ''}</p>
                       )}
@@ -109,6 +102,40 @@ export function OwnerCouponsSection({ coupons, isOwner, onChanged }: { coupons: 
       )}
       {usedFor && <MarkUsedDialog coupon={usedFor} onClose={() => setUsedFor(null)} onDone={() => { setUsedFor(null); onChanged(); }} />}
     </section>
+  );
+}
+
+function RevealedDetails({ r, copied, onCopy, idPrefix, onHide }: { r: Revealed; copied: string | null; onCopy: (k: string, v: string) => void; idPrefix: string; onHide: () => void }) {
+  const s = r.secrets ?? {};
+  const fields: { k: string; label: string; v: string; shown?: string }[] = [
+    ...(r.code ? [{ k: 'code', label: 'Code', v: r.code }] : []),
+    ...(s.code ? [{ k: 'code', label: 'Code', v: s.code }] : []),
+    ...(s.number ? [{ k: 'number', label: 'Card number', v: s.number.replace(/\D/g, '') || s.number, shown: /^\d+$/.test(s.number.replace(/[\s-]/g, '')) ? group4(s.number) : s.number }] : []),
+    ...(r.card_exp ? [{ k: 'exp', label: 'Expires', v: r.card_exp }] : []),
+    ...(s.cvv ? [{ k: 'cvv', label: 'CVV', v: s.cvv }] : []),
+    ...(s.pin ? [{ k: 'pin', label: 'PIN', v: s.pin }] : []),
+    ...(s.name ? [{ k: 'name', label: 'Name on card', v: s.name }] : []),
+    ...(s.zip ? [{ k: 'zip', label: 'Billing ZIP', v: s.zip }] : []),
+  ];
+  return (
+    <div className="mt-2 space-y-2">
+      {fields.map((f) => (
+        <div key={f.k} className="flex flex-wrap items-center gap-2">
+          <span className="w-24 text-xs text-muted-foreground">{f.label}</span>
+          <code className="break-all rounded bg-muted px-2 py-1 font-mono text-sm tracking-wide text-foreground">{f.shown ?? f.v}</code>
+          <Button size="sm" variant="outline" onClick={() => onCopy(f.k, f.v)}>
+            {copied === `${idPrefix}-${f.k}` ? <><Check className="mr-1 h-3.5 w-3.5" />Copied</> : <><Copy className="mr-1 h-3.5 w-3.5" />Copy</>}
+          </Button>
+        </div>
+      ))}
+      {r.cvv_purged && <p className="text-xs text-muted-foreground">For safety, the CVV was deleted 30 days after you first revealed this card.</p>}
+      {r.value_expires_on && <p className="text-xs text-muted-foreground">Use by {format(new Date(r.value_expires_on + 'T12:00:00'), 'MMM d, yyyy')}</p>}
+      {r.instructions && <p className="text-sm text-foreground">{r.instructions}</p>}
+      <div className="flex flex-wrap gap-2">
+        {r.redemption_url && <Button size="sm" variant="ghost" asChild><a href={r.redemption_url} target="_blank" rel="noopener noreferrer">{r.type === 'prepaid_link' ? 'Open your card' : 'Redeem'} <ExternalLink className="ml-1 h-3.5 w-3.5" /></a></Button>}
+        <Button size="sm" variant="ghost" onClick={onHide}><EyeOff className="mr-1 h-3.5 w-3.5" />Hide</Button>
+      </div>
+    </div>
   );
 }
 

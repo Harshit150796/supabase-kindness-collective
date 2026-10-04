@@ -3,6 +3,7 @@ export type OwnerCoupon = {
   status: string; code: string | null; redemption_url: string | null;
   revealed_at?: string | null; used_at?: string | null; used_category?: string | null; used_note?: string | null;
   receipt_count?: number; can_reveal?: boolean;
+  issued_brand?: string | null; credential_type?: string | null; card_last4?: string | null; value_expires_on?: string | null;
 };
 
 const label = (c: OwnerCoupon, isOwner: boolean) =>
@@ -16,7 +17,7 @@ export function DonationCouponList({ coupons, isOwner = true }: { coupons: Owner
     <ul className="mt-3 space-y-2">
       {coupons.map((c) => (
         <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-background p-3 text-sm">
-          <span className="font-medium text-foreground">${Number(c.value ?? 0)} {c.store_name} coupon</span>
+          <span className="font-medium text-foreground">${Number(c.value ?? 0)} {c.issued_brand || c.store_name} {c.credential_type === 'gift_card' ? 'gift card' : c.credential_type?.startsWith('prepaid') ? 'prepaid card' : 'coupon'}</span>
           {c.can_reveal && !c.revealed_at
             ? <a href="#coupons" className="text-xs text-primary">Ready to reveal in Coupons</a>
             : <span className="text-xs text-muted-foreground">{label(c, isOwner)}</span>}
