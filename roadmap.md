@@ -188,11 +188,12 @@
 - [ ] Founder: Tremendous redemption signal not available (key not configured; API reports delivery, not redemption).
 
 ## Coupon credentials upgrade (Oct 4)
-- [ ] Schema + encryption-aware save/reveal RPCs, PCI setting (manual prepaid off by default)
-- [ ] coupon-secrets edge function (AES-GCM, fail closed without COUPON_SECRET_KEY_V1)
-- [ ] Owner-alert queue unified with notify_coupon_ready; CVV 30-day purge in dispatcher
-- [ ] Admin editor: types, issued brand + reason, partial issuance, top-ups, no $500 cap
-- [ ] Owner per-type reveal UI; donor disclosure in impact view and emails
-- [ ] Visa / Mastercard / Amex logos
-- [ ] Proofs on self-undoing data + two SAMPLE emails
+- [x] Schema + encryption-aware save/reveal RPCs, PCI setting (manual prepaid off by default)
+- [x] coupon-secrets edge function (AES-GCM, fail closed without COUPON_SECRET_KEY_V1)
+- [x] Owner-alert queue unified with notify_coupon_ready; CVV 30-day purge in dispatcher
+- [x] Admin editor: types, issued brand + reason, partial issuance, top-ups, no $500 cap
+- [x] Owner per-type reveal UI; donor disclosure in impact view and emails
+- [x] Visa / Mastercard / Amex logos
+- [x] Proofs on self-undoing data
+- [ ] Two SAMPLE emails (not yet sent)
 - [ ] Blocked: founder sets COUPON_SECRET_KEY_V1 (141 coupons waiting for codes)
