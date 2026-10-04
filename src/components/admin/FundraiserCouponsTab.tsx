@@ -1,7 +1,7 @@
 import { FundraiserReceiptsAdmin } from '@/components/admin/FundraiserReceiptsAdmin';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Eye, EyeOff, Pencil, Plus, Trash2 } from 'lucide-react';
 import { sb, rpc, fmtDate } from '@/lib/adminApi';
 import { callFn } from '@/lib/serverActions';
 import { StatusBadge } from '@/components/admin/DataTable';
@@ -14,28 +14,28 @@ import { validateSecret, type CredType } from '@/lib/couponCredentials';
 type Target = { allocated: number; topup: number; issued: number; topup_reasons: { amount: number; reason: string }[] };
 type Row = {
   id: string; donation_id: string; donation_at: string; store_name: string; value: number | null; status: string; has_code: boolean; code_hint: string | null;
-  redemption_url: string | null; credential_type: string | null; card_exp: string | null; value_expires_on: string | null; instructions: string | null;
-  issued_brand: string | null; brand_change_reason: string | null; encrypted: boolean; group_target: Target;
+  redemption_url: string | null; credential_type: string | null; value_expires_on: string | null; instructions: string | null;
+  issued_brand: string | null; brand_change_reason: string | null; group_target: Target;
 };
 
 const TYPES: { v: CredType; label: string }[] = [
   { v: 'code', label: 'Code' }, { v: 'gift_card', label: 'Gift card' },
-  { v: 'prepaid_link', label: 'Prepaid card — hosted link' }, { v: 'prepaid_card', label: 'Prepaid card — manual (PCI)' },
+  { v: 'prepaid_link', label: 'Prepaid card — hosted link' },
 ];
 const money = (n: number) => `$${(Math.round(n * 100) / 100).toFixed(n % 1 ? 2 : 0)}`;
 
 /** One editable coupon line. `editing` = entering new credentials; `clear` = remove saved credentials (kept as Returned). */
 type Line = {
   key: string; id?: string; value: string; origValue?: number; redeemed: boolean; saved: Row | null; editing: boolean; clear: boolean;
-  type: CredType; code: string; pin: string; number: string; cvv: string; name: string; zip: string; url: string; cardExp: string;
-  valueExp: string; instructions: string; issued: string; reason: string;
+  type: CredType; code: string; pin: string; number: string; url: string;
+  valueExp: string; instructions: string; issued: string; reason: string; more: boolean;
 };
-const blank = { code: '', pin: '', number: '', cvv: '', name: '', zip: '', url: '', cardExp: '' };
+const blank = { code: '', pin: '', number: '', url: '' };
 const toLines = (rows: Row[]): Line[] => rows.map((r) => ({
   key: r.id, id: r.id, value: String(Number(r.value ?? 0)), origValue: Number(r.value ?? 0), redeemed: r.status === 'redeemed',
   saved: r.has_code ? r : null, editing: !r.has_code && r.status !== 'redeemed', clear: false,
   type: (r.credential_type as CredType) || 'code', ...blank,
-  valueExp: r.value_expires_on ?? '', instructions: r.instructions ?? '', issued: r.issued_brand ?? r.store_name, reason: r.brand_change_reason ?? '',
+  valueExp: r.value_expires_on ?? '', instructions: r.instructions ?? '', issued: r.issued_brand ?? r.store_name, reason: r.brand_change_reason ?? '', more: false,
 }));
 
 /** Use the oldest matching code from the stock library (Coupons page) for this coupon. */
@@ -78,11 +78,11 @@ function AdminReveal({ id }: { id: string }) {
   return (
     <button className="text-xs text-primary" disabled={busy} onClick={async () => {
       setBusy(true);
-      const r = await callFn<{ code: string | null; redemption_url: string | null; card_exp: string | null; secrets: Record<string, string> }>('coupon-secrets', { action: 'admin_reveal', coupon_id: id });
+      const r = await callFn<{ code: string | null; redemption_url: string | null; secrets: Record<string, string> }>('coupon-secrets', { action: 'admin_reveal', coupon_id: id });
       setBusy(false);
       if (r.error) { toast({ title: 'Could not show details', description: r.error, variant: 'destructive' }); return; }
       const d = r.data!;
-      setV(Object.fromEntries(Object.entries({ code: d.code, ...d.secrets, expiry: d.card_exp, link: d.redemption_url }).filter(([, x]) => x)) as Record<string, string>);
+      setV(Object.fromEntries(Object.entries({ ...d.secrets, link: d.redemption_url }).filter(([, x]) => x)) as Record<string, string>);
     }}><Eye className="inline h-3 w-3" /> Show (audited)</button>
   );
 }
@@ -92,14 +92,15 @@ function lineError(l: Line, today: string): string | null {
   if (!Number.isFinite(n) || n <= 0 || Math.round(n * 100) !== n * 100) return 'Enter a positive amount (cents allowed)';
   if (l.valueExp && l.valueExp < today && (l.editing || !l.saved)) return 'Value expiry date is in the past';
   if (!l.editing) return null;
-  const s = { code: l.code, pin: l.pin, number: l.number, cvv: l.cvv, name: l.name, zip: l.zip };
+  const s = { code: l.code, pin: l.pin, number: l.number };
   const any = Object.values(s).some((x) => x.trim()) || (l.type === 'prepaid_link' && l.url.trim());
   if (!any) return null; // left empty = stays "being prepared"
-  return validateSecret(l.type, s, { url: l.url.trim() || null, card_exp: l.cardExp });
+  return validateSecret(l.type, s, { url: l.url.trim() || null });
 }
 
-function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, canWrite, manualPrepaid, keyOk, onDone }: {
-  fundraiserId: string; donationId: string; brand: string; donationAt: string; rows: Row[]; canWrite: boolean; manualPrepaid: boolean; keyOk: boolean | undefined; onDone: () => void;
+function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, canWrite, open, onToggle, onDirty, onDone }: {
+  fundraiserId: string; donationId: string; brand: string; donationAt: string; rows: Row[]; canWrite: boolean;
+  open: boolean; onToggle: (open: boolean) => void; onDirty: (dirty: boolean) => void; onDone: () => void;
 }) {
   const t = rows[0].group_target;
   const base = Number(t.allocated) + Number(t.topup);
@@ -121,7 +122,7 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
   const losing = lines.some((l) => l.saved && (l.clear || l.editing || Number(l.value) !== l.origValue)) || rows.some((r) => r.has_code && !lines.some((l) => l.id === r.id));
 
   const save = async () => {
-    if (losing && !confirm('Changing the amount of, replacing, or removing a coupon that already has a code or card takes it away from the organizer. The old details are kept in the Coupons library as "Returned" (still encrypted, never deleted). Continue?')) return;
+    if (losing && !confirm('Changing the amount of, replacing, or removing a coupon that already has a code or card takes it away from the organizer. The old details are kept in the Coupons library as "Returned" (never deleted). Continue?')) return;
     const big = lines.filter((l) => Number(l.value) > 1000);
     if (big.length && !confirm(`${big.length === 1 ? 'One coupon is' : `${big.length} coupons are`} over $1,000 (${big.map((l) => money(Number(l.value))).join(', ')}). Save anyway?`)) return;
     setBusy(true);
@@ -129,8 +130,8 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
       const keep = !!l.saved && !l.editing && !l.clear;
       return {
         id: l.id, value: Number(l.value), type: l.editing ? l.type : (l.saved?.credential_type ?? l.type), keep_secret: keep,
-        secret: l.editing ? { code: l.code, pin: l.pin, number: l.number, cvv: l.cvv, name: l.name, zip: l.zip } : {},
-        redemption_url: l.editing ? l.url.trim() || null : null, card_exp: l.editing && l.type === 'prepaid_card' ? l.cardExp : null,
+        secret: l.editing ? (l.type === 'code' ? { code: l.code, pin: l.pin } : l.type === 'gift_card' ? { number: l.number, pin: l.pin } : {}) : {},
+        redemption_url: l.editing ? l.url.trim() || null : null,
         value_expires_on: l.valueExp || null, instructions: l.instructions.trim() || null,
         issued_brand: l.issued.trim() || brand, brand_reason: l.issued.trim().toLowerCase() !== brand.toLowerCase() ? l.reason.trim() : null,
       };
@@ -143,6 +144,7 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
     const n = r.data?.changed?.length ?? 0;
     toast({ title: `${brand} coupons saved`, description: n ? (r.data?.emailed ? 'The organizer was emailed (no codes in the email).' : 'Saved. The organizer alert is queued.') : 'Coupons updated.' });
     setTopupReason('');
+    onDirty(false); onToggle(false);
     onDone();
   };
 
@@ -186,7 +188,7 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
                     </span>
                   ) : canWrite ? (
                     <select className="h-8 rounded-md border border-input bg-background px-2 text-xs" value={l.type} onChange={(e) => set(l.key, { type: e.target.value as CredType, ...blank })} aria-label="Coupon type">
-                      {TYPES.map((x) => <option key={x.v} value={x.v} disabled={x.v === 'prepaid_card' && !manualPrepaid}>{x.label}{x.v === 'prepaid_card' && !manualPrepaid ? ' — off in Settings' : ''}</option>)}
+                      {TYPES.map((x) => <option key={x.v} value={x.v}>{x.label}</option>)}
                     </select>
                   ) : <StatusBadge value="needs code" />}
                 {canWrite && !l.redeemed && (
@@ -197,12 +199,6 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
                 <div className="flex flex-wrap gap-2">
                   {l.type === 'code' && <>{field(l, 'code', 'e-gift code', 'min-w-[10rem] flex-1', { maxLength: 200 })}{field(l, 'pin', 'PIN (optional)', 'w-32', { maxLength: 16 })}</>}
                   {l.type === 'gift_card' && <>{field(l, 'number', 'Card number', 'min-w-[10rem] flex-1', { maxLength: 30 })}{field(l, 'pin', 'PIN', 'w-32', { maxLength: 16 })}</>}
-                  {l.type === 'prepaid_card' && <>
-                    {field(l, 'number', 'Card number', 'min-w-[12rem] flex-1', { maxLength: 23, inputMode: 'numeric', autoComplete: 'off' })}
-                    {field(l, 'cardExp', 'MM/YY', 'w-20', { maxLength: 5 })}{field(l, 'cvv', 'CVV', 'w-20', { maxLength: 4, inputMode: 'numeric', autoComplete: 'off' })}
-                    {field(l, 'name', 'Cardholder (optional)', 'w-44', { maxLength: 60 })}{field(l, 'zip', 'Billing ZIP (optional)', 'w-36', { maxLength: 10 })}
-                    <p className="w-full text-xs text-destructive">PCI scope: full card numbers and CVVs are encrypted and the CVV is deleted 30 days after the organizer reveals it. Prefer a hosted link.</p>
-                  </>}
                   {field(l, 'url', l.type === 'prepaid_link' ? 'Provider redemption link (https://…)' : 'Redemption link (optional, https://…)', 'min-w-[12rem] flex-1', { maxLength: 1000 })}
                   {l.saved && <button className="text-xs text-primary" onClick={() => set(l.key, { editing: false, ...blank })}>Keep saved details</button>}
                 </div>
@@ -239,7 +235,6 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
           <Button size="sm" variant="ghost" className="h-8" disabled={busy} onClick={() => { setLines(toLines(rows)); setTopupReason(''); }}>Reset</Button>
           <Button size="sm" className="h-8" disabled={busy || !valid} onClick={save}>{busy ? 'Saving…' : 'Save'}</Button>
           {over > 0 && !topupOk && <span className="text-xs text-destructive">Over-issuing needs a top-up reason</span>}
-          {keyOk === false && <span className="text-xs text-destructive">Encryption key not configured: new codes and cards can't be saved yet.</span>}
         </div>
       )}
       {canWrite && lines.map((l) => l.id && !l.saved && !l.redeemed && Number(l.value) === l.origValue && !(l.code || l.number || l.url)
@@ -250,8 +245,13 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
 
 export function FundraiserCouponsTab({ fundraiserId, canWrite, donationId }: { fundraiserId: string; canWrite: boolean; donationId?: string }) {
   const q = useQuery({ queryKey: ['adm-fr-coupons', fundraiserId], queryFn: () => rpc<Row[]>('admin_fundraiser_coupons', { _fundraiser_id: fundraiserId }) });
-  const settings = useQuery({ queryKey: ['adm-settings-prepaid'], queryFn: async () => { const { data } = await sb.from('admin_settings').select('allow_manual_prepaid').eq('id', 1).maybeSingle(); return !!(data as any)?.allow_manual_prepaid; } });
-  const key = useQuery({ queryKey: ['coupon-key-status'], enabled: canWrite, staleTime: 60_000, queryFn: async () => (await callFn<{ configured: boolean }>('coupon-secrets', { action: 'key_status' })).data?.configured });
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const dirty = useRef(false);
+  const toggle = (k: string, open: boolean) => {
+    if (dirty.current && !confirm('You have unsaved coupon changes. Discard them?')) return;
+    dirty.current = false;
+    setOpenKey(open ? k : null);
+  };
   const rows = (q.data ?? []).filter((r) => !donationId || r.donation_id === donationId);
 
   if (q.isLoading) return <p className="py-6 text-center text-sm text-muted-foreground">Loading coupons…</p>;
@@ -267,14 +267,13 @@ export function FundraiserCouponsTab({ fundraiserId, canWrite, donationId }: { f
       {!donationId && <FundraiserReceiptsAdmin fundraiserId={fundraiserId} canWrite={canWrite} />}
       {!donationId && (
         <p className="text-xs text-muted-foreground">
-          Issue any mix of amounts up to what the donor gave. Codes and card numbers are encrypted; the organizer is emailed once per new coupon (never with the details).
+          Issue any mix of amounts up to what the donor gave. Codes are locked so only the organizer (and audited staff) can see them; the organizer is emailed once per new coupon (never with the details).
           {toIssue > 0.004 && <strong className="ml-1 font-medium text-foreground">{money(toIssue)} still to issue.</strong>}
         </p>
       )}
-      {canWrite && key.data === false && !donationId && <p className="rounded-md bg-destructive/10 p-2 text-xs text-destructive">Encryption key not configured (COUPON_SECRET_KEY_V1). New codes and cards can't be saved until an admin adds it.</p>}
       {[...groups.entries()].map(([k, g]) => (
         <CouponGroupEditor key={k} fundraiserId={fundraiserId} donationId={g[0].donation_id} brand={g[0].store_name} donationAt={g[0].donation_at} rows={g}
-          canWrite={canWrite} manualPrepaid={!!settings.data} keyOk={key.data} onDone={() => q.refetch()} />
+          canWrite={canWrite} open={openKey === k} onToggle={(o) => toggle(k, o)} onDirty={(d) => { dirty.current = d; }} onDone={() => q.refetch()} />
       ))}
     </div>
   );
