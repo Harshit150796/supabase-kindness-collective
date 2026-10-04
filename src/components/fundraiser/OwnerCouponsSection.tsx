@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Check, Copy, ExternalLink, Eye, EyeOff, ImagePlus, Loader2, X } from 'lucide-react';
 import { format } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
