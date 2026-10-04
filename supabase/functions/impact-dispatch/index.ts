@@ -133,7 +133,5 @@ Deno.serve(async (req) => {
 
   // 3) Owner "you've received a coupon" alerts left in the queue (normally sent right after the admin save).
   report.owner_alerts = await flushOwnerAlerts(admin);
-  // 4) CVV purge 30 days after first reveal (manual prepaid cards only), audited in SQL.
-  report.cvv_purged = (await admin.rpc('svc_purge_cvv')).data ?? 0;
   return json(report);
 });
