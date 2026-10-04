@@ -186,6 +186,7 @@ export type Database = {
       }
       admin_settings: {
         Row: {
+          allow_manual_prepaid: boolean
           email_new_donation: boolean
           email_new_fundraiser: boolean
           id: number
@@ -195,6 +196,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          allow_manual_prepaid?: boolean
           email_new_donation?: boolean
           email_new_fundraiser?: boolean
           id?: number
@@ -204,6 +206,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          allow_manual_prepaid?: boolean
           email_new_donation?: boolean
           email_new_fundraiser?: boolean
           id?: number
@@ -792,6 +795,47 @@ export type Database = {
           },
         ]
       }
+      coupon_owner_alerts: {
+        Row: {
+          coupon_id: string
+          created_at: string
+          credential_version: number
+          fundraiser_id: string
+          id: string
+          last_error: string | null
+          resend_id: string | null
+          sent_at: string | null
+        }
+        Insert: {
+          coupon_id: string
+          created_at?: string
+          credential_version: number
+          fundraiser_id: string
+          id?: string
+          last_error?: string | null
+          resend_id?: string | null
+          sent_at?: string | null
+        }
+        Update: {
+          coupon_id?: string
+          created_at?: string
+          credential_version?: number
+          fundraiser_id?: string
+          id?: string
+          last_error?: string | null
+          resend_id?: string | null
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_owner_alerts_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupon_procurement_batches: {
         Row: {
           brand_name: string
@@ -913,24 +957,33 @@ export type Database = {
       coupons: {
         Row: {
           batch_id: string | null
+          brand_change_reason: string | null
+          card_exp: string | null
+          card_last4: string | null
           category: string | null
           category_id: string | null
           claimed_at: string | null
           code: string | null
           code_hint: string | null
           created_at: string
+          credential_type: string | null
+          credential_version: number
+          cvv_purged_at: string | null
           description: string | null
           discount_percent: number | null
           donation_id: string | null
           donor_id: string | null
           expected_value: number | null
           expiry_date: string | null
+          has_credential: boolean | null
           id: string
+          issued_brand: string | null
           last_procurement_at: string | null
           last_procurement_error: string | null
           min_purchase: number | null
           partner_id: string | null
           procurement_attempts: number
+          recipient_instructions: string | null
           redeemed_at: string | null
           redeemed_by: string | null
           redemption_url: string | null
@@ -942,6 +995,7 @@ export type Database = {
           reveal_reminder_sent_at: string | null
           revealed_at: string | null
           revealed_by: string | null
+          secret_cipher: Json | null
           status: Database["public"]["Enums"]["coupon_status"]
           store_name: string
           title: string
@@ -953,29 +1007,39 @@ export type Database = {
           used_note: string | null
           used_source: string | null
           value: number | null
+          value_expires_on: string | null
           void_reason: string | null
           voided_at: string | null
         }
         Insert: {
           batch_id?: string | null
+          brand_change_reason?: string | null
+          card_exp?: string | null
+          card_last4?: string | null
           category?: string | null
           category_id?: string | null
           claimed_at?: string | null
           code?: string | null
           code_hint?: string | null
           created_at?: string
+          credential_type?: string | null
+          credential_version?: number
+          cvv_purged_at?: string | null
           description?: string | null
           discount_percent?: number | null
           donation_id?: string | null
           donor_id?: string | null
           expected_value?: number | null
           expiry_date?: string | null
+          has_credential?: boolean | null
           id?: string
+          issued_brand?: string | null
           last_procurement_at?: string | null
           last_procurement_error?: string | null
           min_purchase?: number | null
           partner_id?: string | null
           procurement_attempts?: number
+          recipient_instructions?: string | null
           redeemed_at?: string | null
           redeemed_by?: string | null
           redemption_url?: string | null
@@ -987,6 +1051,7 @@ export type Database = {
           reveal_reminder_sent_at?: string | null
           revealed_at?: string | null
           revealed_by?: string | null
+          secret_cipher?: Json | null
           status?: Database["public"]["Enums"]["coupon_status"]
           store_name: string
           title: string
@@ -998,29 +1063,39 @@ export type Database = {
           used_note?: string | null
           used_source?: string | null
           value?: number | null
+          value_expires_on?: string | null
           void_reason?: string | null
           voided_at?: string | null
         }
         Update: {
           batch_id?: string | null
+          brand_change_reason?: string | null
+          card_exp?: string | null
+          card_last4?: string | null
           category?: string | null
           category_id?: string | null
           claimed_at?: string | null
           code?: string | null
           code_hint?: string | null
           created_at?: string
+          credential_type?: string | null
+          credential_version?: number
+          cvv_purged_at?: string | null
           description?: string | null
           discount_percent?: number | null
           donation_id?: string | null
           donor_id?: string | null
           expected_value?: number | null
           expiry_date?: string | null
+          has_credential?: boolean | null
           id?: string
+          issued_brand?: string | null
           last_procurement_at?: string | null
           last_procurement_error?: string | null
           min_purchase?: number | null
           partner_id?: string | null
           procurement_attempts?: number
+          recipient_instructions?: string | null
           redeemed_at?: string | null
           redeemed_by?: string | null
           redemption_url?: string | null
@@ -1032,6 +1107,7 @@ export type Database = {
           reveal_reminder_sent_at?: string | null
           revealed_at?: string | null
           revealed_by?: string | null
+          secret_cipher?: Json | null
           status?: Database["public"]["Enums"]["coupon_status"]
           store_name?: string
           title?: string
@@ -1043,6 +1119,7 @@ export type Database = {
           used_note?: string | null
           used_source?: string | null
           value?: number | null
+          value_expires_on?: string | null
           void_reason?: string | null
           voided_at?: string | null
         }
@@ -1073,6 +1150,44 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donation_brand_topups: {
+        Row: {
+          amount: number
+          brand: string
+          created_at: string
+          created_by: string | null
+          donation_id: string
+          id: string
+          reason: string
+        }
+        Insert: {
+          amount: number
+          brand: string
+          created_at?: string
+          created_by?: string | null
+          donation_id: string
+          id?: string
+          reason: string
+        }
+        Update: {
+          amount?: number
+          brand?: string
+          created_at?: string
+          created_by?: string | null
+          donation_id?: string
+          id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donation_brand_topups_donation_id_fkey"
+            columns: ["donation_id"]
+            isOneToOne: false
+            referencedRelation: "donations"
             referencedColumns: ["id"]
           },
         ]
@@ -2548,7 +2663,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _brand_target: {
+        Args: { _brand: string; _donation_id: string }
+        Returns: Json
+      }
       _check_code: { Args: { _code: string; _url: string }; Returns: undefined }
+      _cred_mask: {
+        Args: { c: Database["public"]["Tables"]["coupons"]["Row"] }
+        Returns: string
+      }
       _donation_impact: { Args: { _donation_id: string }; Returns: Json }
       _gc_apply: { Args: { _delta: number; _uid: string }; Returns: number }
       _give_stock: {
@@ -2574,6 +2697,7 @@ export type Database = {
         Args: { _cid: string; _reason: string }
         Returns: string
       }
+      _svc_as: { Args: { _actor: string }; Returns: undefined }
       admin_add_stock_codes: {
         Args: {
           _batch?: Json
@@ -2651,16 +2775,24 @@ export type Database = {
       admin_fundraiser_coupons: {
         Args: { _fundraiser_id: string }
         Returns: {
+          brand_change_reason: string
+          card_exp: string
           code_hint: string
+          credential_type: string
           donation_at: string
           donation_id: string
+          encrypted: boolean
+          group_target: Json
           has_code: boolean
           id: string
+          instructions: string
+          issued_brand: string
           redemption_url: string
           status: string
           store_name: string
           updated_at: string
           value: number
+          value_expires_on: string
         }[]
       }
       admin_hard_delete_fundraiser: {
@@ -2759,6 +2891,16 @@ export type Database = {
       admin_save_coupon_group: {
         Args: { _brand: string; _donation_id: string; _items: Json }
         Returns: string[]
+      }
+      admin_save_coupon_group_v2: {
+        Args: {
+          _actor: string
+          _brand: string
+          _donation_id: string
+          _items: Json
+          _topup?: Json
+        }
+        Returns: Json
       }
       admin_search: {
         Args: { _q: string }
@@ -2919,9 +3061,12 @@ export type Database = {
         Args: { _fundraiser_id: string }
         Returns: {
           can_reveal: boolean
+          card_last4: string
           code: string
+          credential_type: string
           donation_id: string
           id: string
+          issued_brand: string
           receipt_count: number
           redemption_url: string
           revealed_at: string
@@ -2931,6 +3076,7 @@ export type Database = {
           used_category: string
           used_note: string
           value: number
+          value_expires_on: string
         }[]
       }
       get_proof_stats: { Args: never; Returns: Json }
@@ -3010,6 +3156,21 @@ export type Database = {
         Returns: undefined
       }
       short_display_name: { Args: { _name: string }; Returns: string }
+      svc_admin_log: {
+        Args: {
+          _action: string
+          _actor: string
+          _after: Json
+          _record: string
+          _table: string
+        }
+        Returns: undefined
+      }
+      svc_enqueue_owner_alerts: {
+        Args: { _fundraiser_id: string; _ids: string[] }
+        Returns: number
+      }
+      svc_purge_cvv: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "donor" | "recipient"
