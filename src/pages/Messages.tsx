@@ -13,7 +13,7 @@ import { ReportDialog } from '@/components/fundraiser/campaign/ReportDialog';
 import { SEO } from '@/components/SEO';
 
 interface Conv { id: string; fundraiser_id: string; supporter_id: string; status: string; last_message_at: string; fundraisers: { title: string; unique_slug: string | null } | null }
-interface Msg { id: string; sender_id: string; body: string; flags: string[]; status: string; created_at: string }
+interface Msg { id: string; sender_id: string; body: string; flags: string[]; status: string; created_at: string; ref_label?: string | null }
 
 export default function Messages() {
   const { user, loading } = useAuth(); const { toast } = useToast();
@@ -43,7 +43,7 @@ export default function Messages() {
   }, [user]);
 
   const loadMsgs = useCallback(async (cid: string) => {
-    const { data } = await supabase.from('messages').select('id,sender_id,body,flags,status,created_at').eq('conversation_id', cid).order('created_at').limit(500);
+    const { data } = await supabase.from('messages').select('id,sender_id,body,flags,status,created_at,ref_label').eq('conversation_id', cid).order('created_at').limit(500);
     setMsgs((data ?? []) as Msg[]);
     markRead(cid);
   }, [markRead]);
@@ -127,6 +127,7 @@ export default function Messages() {
                   return (
                     <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[80%] rounded-[1.25rem] px-4 py-2.5 ${mine ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'}`}>
+                        {m.ref_label && <p className="mb-1 text-xs font-medium opacity-80">Re: {m.ref_label}</p>}
                         <p className="whitespace-pre-line break-words">{m.body}</p>
                         <p className="mt-1 text-xs opacity-70">{timeAgo(m.created_at)}{m.status === 'redacted' ? ' · contact details removed' : ''}</p>
                       </div>
