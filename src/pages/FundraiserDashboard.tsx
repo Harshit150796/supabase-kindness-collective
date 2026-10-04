@@ -17,7 +17,9 @@ import {
   X,
   Trash2,
   Camera
+  Gift,
 } from "lucide-react";
+import { OwnerCouponsSection } from "@/components/fundraiser/OwnerCouponsSection";
 import { Button } from "@/components/ui/button";
 import { DonationCouponList, type OwnerCoupon } from "@/components/fundraiser/DonationCouponList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -350,7 +352,7 @@ const FundraiserDashboard = () => {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 min-h-dvh">
+        <main id="top" className="flex-1 min-h-dvh">
           {/* Gallery section - full width */}
           <div className="pt-16 lg:pt-0">
             <div className="relative overflow-hidden">
