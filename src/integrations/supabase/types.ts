@@ -965,6 +965,7 @@ export type Database = {
           claimed_at: string | null
           code: string | null
           code_hint: string | null
+          code_pin: string | null
           created_at: string
           credential_type: string | null
           credential_version: number
@@ -1021,6 +1022,7 @@ export type Database = {
           claimed_at?: string | null
           code?: string | null
           code_hint?: string | null
+          code_pin?: string | null
           created_at?: string
           credential_type?: string | null
           credential_version?: number
@@ -1077,6 +1079,7 @@ export type Database = {
           claimed_at?: string | null
           code?: string | null
           code_hint?: string | null
+          code_pin?: string | null
           created_at?: string
           credential_type?: string | null
           credential_version?: number
