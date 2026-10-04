@@ -75,3 +75,6 @@ verify_jwt = false
 
 [functions.impact-dispatch]
 verify_jwt = false
+
+[functions.confirm-donation]
+verify_jwt = false
