@@ -51,3 +51,23 @@ export const brandList = Object.values(brandLogos);
 export const popularBrands = brandList.filter(b => b.popular);
 export const categories = ['all', 'grocery', 'food-delivery', 'retail', 'coffee', 'pharmacy', 'restaurant'] as const;
 export type BrandCategory = typeof categories[number];
+
+/** Card networks an admin may issue as (prepaid cards). Never offered to donors as a brand choice. */
+export const issuerBrands: Record<string, BrandInfo> = {
+  Visa: { name: 'Visa', logo: '/brand-logos/visa.svg', color: '#1A1F71', category: 'retail' },
+  Mastercard: { name: 'Mastercard', logo: '/brand-logos/mastercard.svg', color: '#EB001B', category: 'retail' },
+  AmericanExpress: { name: 'American Express', logo: '/brand-logos/amex.svg', color: '#2E77BC', category: 'retail' },
+};
+
+/** Names an admin can pick for "Brand shown to recipient". */
+export const issuableBrandNames = [...brandList, ...Object.values(issuerBrands)].map((b) => b.name);
+
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, '');
+/** Logo for any brand name in either catalog (matches "Uber Eats", "WholeFoods", etc). */
+export const brandLogoFor = (name?: string | null): string | null => {
+  if (!name) return null;
+  const n = norm(name);
+  const all = { ...brandLogos, ...issuerBrands };
+  const hit = Object.entries(all).find(([k, b]) => norm(k) === n || norm(b.name) === n);
+  return hit ? hit[1].logo : null;
+};
