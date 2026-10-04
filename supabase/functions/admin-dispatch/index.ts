@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
   }
 
   // 4) Fan out to the other dispatchers with the same secret.
-  for (const fn of ['notify-dispatch', 'email-scheduler']) {
+  for (const fn of ['notify-dispatch', 'email-scheduler', 'impact-dispatch']) {
     try {
       const r = await fetch(`${SUPA}/functions/v1/${fn}`, { method: 'POST', headers: { 'x-dispatch-secret': secret!, 'Content-Type': 'application/json' }, body: '{}' });
       report[fn] = r.status;
