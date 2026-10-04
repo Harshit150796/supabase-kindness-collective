@@ -204,8 +204,8 @@
 - [x] Self-cancelling backend proofs
 
 ## Transactional email inbox placement (Oct 4)
-- [ ] Inventory every account and marketing email sender/template
-- [ ] Rewrite account emails as short personal notices with plain links
-- [ ] Separate newsletter sender from notifications@coupondonation.com
-- [ ] Deploy all affected edge functions
-- [ ] Send four founder-only Gmail placement messages and verify Resend delivery
+- [x] Inventory every account and marketing email sender/template
+- [x] Rewrite account emails as short personal notices with plain links
+- [x] Separate newsletter sender from notifications@coupondonation.com
+- [x] Deploy all affected edge functions
+- [x] Send four founder-only Gmail placement messages and verify Resend delivery
