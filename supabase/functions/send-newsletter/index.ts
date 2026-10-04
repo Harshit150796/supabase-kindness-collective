@@ -149,7 +149,7 @@ You're receiving this because you subscribed to CouponDonation updates.<br/>
             subject,
             html: fullHtml,
             text,
-            reply_to: campaign.reply_to || undefined,
+            reply_to: "connect@coupondonation.com",
             headers: sub.unsubscribe_token ? {
               "List-Unsubscribe": `<${unsubUrl}>`,
               "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
