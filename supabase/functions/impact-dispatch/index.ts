@@ -9,7 +9,6 @@ import { NOTIFY_SENDER } from '../_shared/email-layout.ts';
 const SUPA = Deno.env.get('SUPABASE_URL')!;
 const SITE = 'https://coupondonation.com';
 const SAMPLE_TO = 'connect.coupondonation@gmail.com';
-const USED_SETTLE_MS = 10 * 60_000; // let receipts finish uploading before the "used" email
 const TOKEN_DAYS = 30;
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
@@ -19,23 +18,9 @@ async function sha256(s: string) {
 }
 const newToken = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-type Ev = { id: string; donation_id: string; coupon_id: string; kind: string; created_at: string };
+import { planEmails, type Ev } from '../_shared/impact-plan.ts';
 type Impact = { donation_id: string; created_at: string; fundraiser_title: string; fundraiser_slug: string | null; organizer: string | null;
   coupons: { id: string; store_name: string; value: number; created_at: string; revealed_at: string | null; used_at: string | null; used_category: string | null; used_note: string | null; receipt_count: number }[] };
-
-/** Pure grouping rule (exported for tests): which donations get an email this run, and of which kind. */
-export function planEmails(events: Ev[], now: number) {
-  const by = new Map<string, Ev[]>();
-  for (const e of events) by.set(e.donation_id, [...(by.get(e.donation_id) ?? []), e]);
-  const out: { donation_id: string; kind: 'received' | 'used' | 'combined'; events: Ev[] }[] = [];
-  for (const [donation_id, evs] of by) {
-    // Hold the whole donation while a recent "used" settles, so received+used never go out minutes apart.
-    if (evs.some((e) => e.kind === 'used' && now - new Date(e.created_at).getTime() < USED_SETTLE_MS)) continue;
-    const hasR = evs.some((e) => e.kind === 'received'), hasU = evs.some((e) => e.kind === 'used');
-    out.push({ donation_id, kind: hasR && hasU ? 'combined' : hasU ? 'used' : 'received', events: evs });
-  }
-  return out;
-}
 
 async function sendResend(key: string, to: string, mail: { subject: string; html: string; text: string }) {
   const r = await fetch('https://api.resend.com/emails', {
