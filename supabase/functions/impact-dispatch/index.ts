@@ -6,6 +6,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { renderImpactEmail, renderUseReminderEmail, type ImpactItem } from '../_shared/impact-email.ts';
 import { NOTIFY_SENDER } from '../_shared/email-layout.ts';
 import { flushOwnerAlerts, renderOwnerCouponEmail } from '../_shared/owner-alerts.ts';
+import { z } from 'npm:zod@3';
 
 const SUPA = Deno.env.get('SUPABASE_URL')!;
 const SITE = 'https://coupondonation.com';
@@ -24,7 +25,7 @@ type Impact = { donation_id: string; created_at: string; fundraiser_title: strin
   brands?: { brand: string; allocated: number; issued: number; topup: number; topup_reasons: { amount: number; reason: string }[] }[];
   coupons: { id: string; store_name: string; issued_brand?: string; brand_change_reason?: string | null; credential_type?: string | null; value: number; created_at: string; revealed_at: string | null; used_at: string | null; used_category: string | null; used_note: string | null; receipt_count: number }[] };
 
-async function sendResend(key: string, to: string, mail: { subject: string; html: string; text: string }) {
+async function sendResend(key: string, to: string, mail: { subject: string; html: string; text: string; headers?: Record<string, string> }) {
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ from: NOTIFY_SENDER.from, reply_to: NOTIFY_SENDER.replyTo, to: [to], ...mail }),
@@ -52,18 +53,16 @@ Deno.serve(async (req) => {
   // Founder-only inbox-placement messages built entirely from sample data.
   if (body?.sample) {
     if (!key) return json({ error: 'Missing Resend key' }, 400);
+    const parsed = z.object({ sample: z.literal(true), sample_kind: z.enum(['donor_used', 'organizer_ready']) }).safeParse(body);
+    if (!parsed.success) return json({ error: 'Choose one approved sample type' }, 400);
     const now = Date.now(), h = 3600_000;
     const base = { fundraiserTitle: 'Help Our Family With Groceries This Month', organizer: 'Maria G.', donatedAt: new Date(now - 26 * h).toISOString(),
       donorFirstName: 'Alex', impactUrl: `${SITE}/impact/sample`, thankUrl: `${SITE}/impact/sample#thanks`, stopUrl: `${SITE}/impact/sample`, sample: true };
-    const owner = await sendResend(key, SAMPLE_TO, renderOwnerCouponEmail({ fundraiserTitle: base.fundraiserTitle, firstName: 'Maria', test: true, dashboardUrl: `${SITE}/my-fundraisers`,
-      items: [{ brand: 'DoorDash', value: 20, type: 'code' }] }));
-    const received = await sendResend(key, SAMPLE_TO, renderImpactEmail({ ...base, kind: 'received', items: [
-      { brand: 'DoorDash', value: 20, createdAt: new Date(now - 25 * h).toISOString(), receivedAt: new Date(now - 5 * 60_000).toISOString() }] }));
-    const used = await sendResend(key, SAMPLE_TO, renderImpactEmail({ ...base, kind: 'used', items: [
-      { brand: 'DoorDash', value: 20, createdAt: new Date(now - 25 * h).toISOString(), receivedAt: new Date(now - 4 * h).toISOString(), usedAt: new Date(now - 10 * 60_000).toISOString(),
-        category: 'Meals', note: 'Dinner for the kids after a long week. Thank you so much.', hasReceipt: true }] }));
-    const reminder = await sendResend(key, SAMPLE_TO, renderUseReminderEmail({ brand: 'DoorDash', fundraiserTitle: base.fundraiserTitle, firstName: 'Maria', dashboardUrl: `${SITE}/my-fundraisers`, sample: true }));
-    return json({ sample: true, to: SAMPLE_TO, owner_alert_id: owner, received_id: received, used_id: used, reminder_id: reminder });
+    const mail = parsed.data.sample_kind === 'organizer_ready'
+      ? renderOwnerCouponEmail({ fundraiserTitle: base.fundraiserTitle, firstName: 'Maria', test: true, dashboardUrl: `${SITE}/my-fundraisers`, items: [{ brand: 'DoorDash', value: 20, type: 'code' }] })
+      : renderImpactEmail({ ...base, kind: 'used', items: [{ brand: 'DoorDash', value: 20, createdAt: new Date(now - 25 * h).toISOString(), receivedAt: new Date(now - 4 * h).toISOString(), usedAt: new Date(now - 10 * 60_000).toISOString(), category: 'Meals', note: 'Dinner for the kids after a long week. Thank you so much.', hasReceipt: true }] });
+    const id = await sendResend(key, SAMPLE_TO, mail);
+    return json({ sample: true, kind: parsed.data.sample_kind, to: SAMPLE_TO, resend_id: id });
   }
 
   const report: Record<string, unknown> = {};

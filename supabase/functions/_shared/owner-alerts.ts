@@ -1,13 +1,9 @@
 // Owner "You've received a coupon" alerts. One queue (coupon_owner_alerts, unique per coupon + credential version),
 // flushed right after an admin save and again by the 5-minute dispatcher. One email per fundraiser per flush; never contains codes.
 // deno-lint-ignore-file no-explicit-any
-import { NOTIFY_SENDER } from './email-layout.ts';
+import { NOTIFY_SENDER, shell } from './email-layout.ts';
 
 const SITE = 'https://coupondonation.com';
-const LOGO_URL = `${SITE}/favicon-192.png`;
-const INK = '#13201a', BODY = '#4a5650', MUTED = '#86918b';
-const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
-const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const usd = (n: number) => `$${Number(n).toFixed(Number(n) % 1 ? 2 : 0)}`;
 
 const LOGOS: Record<string, string> = {
@@ -29,12 +25,12 @@ export type AlertItem = { brand: string; value: number; type?: string | null };
 export function renderOwnerCouponEmail(o: { fundraiserTitle: string; items: AlertItem[]; dashboardUrl: string; firstName?: string; test?: boolean }) {
   const one = o.items.length === 1 ? o.items[0] : null;
   const total = o.items.reduce((s, i) => s + Number(i.value), 0);
-  const what = one ? `a ${usd(one.value)} ${one.brand} ${typeLabel(one.type)}` : `${o.items.length} coupons worth ${usd(total)}`;
   const subject = 'A donation arrived for your fundraiser';
   const detail = one ? `It arrived as a ${usd(one.value)} ${one.brand} card.` : `It arrived as ${o.items.length} cards totaling ${usd(total)}.`;
   const intro = `A donation to “${o.fundraiserTitle}” is ready. ${detail} Sign in to reveal ${one ? 'the details' : 'their details'} securely.`;
-  const html = `<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light only"/><title>${esc(subject)}</title></head>
-<body style="margin:0;background:#ffffff"><div style="display:none;max-height:0;overflow:hidden;opacity:0">A donation is ready in your fundraiser dashboard.</div><main style="max-width:560px;margin:0 auto;padding:28px 22px"><img src="${LOGO_URL}" width="32" height="32" alt="CouponDonation" style="display:block;width:32px;height:32px;margin-bottom:24px"><p style="font:15px/23px ${FONT};color:${INK}">Hi ${esc(o.firstName || 'there')},</p><p style="font:15px/23px ${FONT};color:${BODY}">${esc(intro)}</p><p style="font:15px/23px ${FONT}"><a href="${esc(o.dashboardUrl)}" style="color:${INK};text-decoration:underline">Open your fundraiser dashboard</a></p><p style="font:15px/23px ${FONT};color:${INK}">— The CouponDonation team</p><p style="font:12px/18px ${FONT};color:${MUTED}">Codes and card details are never included in email.${o.test ? ' This is a test message.' : ''}</p></main></body></html>`;
+  const html = shell({ preheader: 'A donation is ready in your fundraiser dashboard.', greeting: `Hi ${o.firstName || 'there'}`, status: 'Ready for organizer', headline: 'A donation is ready to receive', paragraphs: [intro], valueCard: { label: 'Available in your dashboard', value: usd(total), details: [o.fundraiserTitle, `${o.items.length} ${o.items.length === 1 ? 'item' : 'items'} ready`] }, timeline: [
+    { label: 'Donation recorded', complete: true }, { label: 'Coupon created', complete: true }, { label: 'Reveal securely', detail: 'Only the organizer can view the details.', complete: false }, { label: 'Mark used', complete: false },
+  ], link: { label: 'Open Coupons', url: o.dashboardUrl }, footer: `Codes and card details are available only after you sign in. They are never included in email.${o.test ? ' This is a test message.' : ''}`, sample: o.test });
   const text = [`Hi ${o.firstName || 'there'},`, '', intro, '', `Open your fundraiser dashboard: ${o.dashboardUrl}`, '', '— The CouponDonation team', '', `Codes and card details are never included in email.${o.test ? ' This is a test message.' : ''}`].join('\n');
   return { subject, html, text };
 }
