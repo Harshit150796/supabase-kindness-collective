@@ -24,7 +24,7 @@ type Impact = { donation_id: string; created_at: string; fundraiser_title: strin
   brands?: { brand: string; allocated: number; issued: number; topup: number; topup_reasons: { amount: number; reason: string }[] }[];
   coupons: { id: string; store_name: string; issued_brand?: string; brand_change_reason?: string | null; credential_type?: string | null; value: number; created_at: string; revealed_at: string | null; used_at: string | null; used_category: string | null; used_note: string | null; receipt_count: number }[] };
 
-async function sendResend(key: string, to: string, mail: { subject: string; html: string; text: string }) {
+async function sendResend(key: string, to: string, mail: { subject: string; html: string; text: string; headers?: Record<string, string> }) {
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ from: NOTIFY_SENDER.from, reply_to: NOTIFY_SENDER.replyTo, to: [to], ...mail }),

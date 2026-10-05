@@ -1,9 +1,5 @@
 /** Personal proof-of-impact emails. Never contains spendable credentials. */
-const LOGO_URL = 'https://coupondonation.com/favicon-192.png';
-const INK = '#13201a';
-const BODY = '#4a5650';
-const MUTED = '#86918b';
-const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+import { shell, escapeHtml, type RenderedEmail, type TimelineStep } from './email-layout.ts';
 
 export interface ImpactItem {
   brand: string; value: number; issuedBrand?: string | null; brandReason?: string | null; type?: string | null;
@@ -16,7 +12,6 @@ export interface ImpactEmailInput {
   items: ImpactItem[]; topups?: { amount: number; reason: string }[]; impactUrl: string; thankUrl: string; stopUrl: string; sample?: boolean;
 }
 
-const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const usd = (n: number) => `$${Number(n).toFixed(Number(n) % 1 ? 2 : 0)}`;
 export const etTime = (iso: string) => new Intl.DateTimeFormat('en-US', {
   timeZone: 'America/New_York', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
@@ -25,7 +20,7 @@ const kindOf = (t?: string | null) => t === 'gift_card' ? 'card' : t === 'prepai
 const shown = (i: ImpactItem) => `${i.issuedBrand || i.brand} ${kindOf(i.type)}`;
 const swapped = (i: ImpactItem) => !!i.issuedBrand && i.issuedBrand.toLowerCase() !== i.brand.toLowerCase();
 
-export function renderImpactEmail(o: ImpactEmailInput) {
+export function renderImpactEmail(o: ImpactEmailInput): RenderedEmail {
   const anyUsed = o.items.some((i) => i.usedAt);
   const eventTime = (anyUsed ? o.items.find((i) => i.usedAt)?.usedAt : o.items.find((i) => i.receivedAt)?.receivedAt) ?? new Date().toISOString();
   const subject = o.kind === 'received'
@@ -41,25 +36,40 @@ export function renderImpactEmail(o: ImpactEmailInput) {
     : `${o.organizer} received what your donation created for “${o.fundraiserTitle}” and has already shared that it was used. ${detail}`;
   const disclosures = o.items.filter(swapped).map((i) => `You selected ${i.brand}; it was issued as a ${shown(i)}${i.brandReason ? ` because ${i.brandReason.replace(/^because\s+/i, '').replace(/\.$/, '')}` : ''}.`);
   const topup = (o.topups ?? []).length ? `CouponDonation added ${(o.topups ?? []).map((t) => `${usd(t.amount)} (${t.reason})`).join(' and ')} beyond the original donation.` : '';
-  const usedDetails = o.items.filter((i) => i.usedAt && (i.category || i.note)).map((i) => [i.category ? `Used for: ${i.category}` : '', i.note ? `Note: “${i.note}”` : ''].filter(Boolean).join('<br>'));
-  const timeline = [
-    `Donated · ${etTime(o.donatedAt)}`,
-    `Received · ${etTime(o.items.find((i) => i.receivedAt)?.receivedAt ?? eventTime)}`,
-    anyUsed ? `Used · ${etTime(o.items.find((i) => i.usedAt)?.usedAt ?? eventTime)}` : '',
-  ].filter(Boolean);
-  const html = `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(subject)}</title></head><body style="margin:0;background:#ffffff"><div style="display:none;max-height:0;overflow:hidden;opacity:0">There is an update about your donation.</div><main style="max-width:560px;margin:0 auto;padding:28px 22px"><img src="${LOGO_URL}" width="32" height="32" alt="CouponDonation" style="display:block;width:32px;height:32px;margin-bottom:24px"><p style="font:15px/23px ${FONT};color:${INK}">Hi ${esc(o.donorFirstName || 'there')},</p><p style="font:15px/23px ${FONT};color:${BODY}">${esc(intro)}</p>${timeline.map((line) => `<p style="margin:3px 0;font:14px/21px ${FONT};color:${INK}">${esc(line)}</p>`).join('')}${disclosures.concat(topup ? [topup] : []).map((line) => `<p style="font:14px/21px ${FONT};color:${BODY}">${esc(line)}</p>`).join('')}${usedDetails.map((line) => `<p style="font:14px/21px ${FONT};color:${BODY}">${line}</p>`).join('')}<p style="font:15px/23px ${FONT}"><a href="${esc(o.impactUrl)}" style="color:${INK};text-decoration:underline">View your donation update</a></p><p style="font:15px/23px ${FONT};color:${INK}">— The CouponDonation team</p><p style="font:12px/18px ${FONT};color:${MUTED}">We never email codes or card details. Retailers do not tell us what was purchased; any use details were shared by the organizer.${o.sample ? ' This is a test message.' : ''}<br><a href="${esc(o.stopUrl)}" style="color:${MUTED};text-decoration:underline">Stop impact emails</a></p></main></body></html>`;
+  const usedDetails = o.items.filter((i) => i.usedAt && (i.category || i.note)).flatMap((i) => [i.category ? `Used for: ${i.category}` : '', i.note ? `Organizer note: “${i.note}”` : '']).filter(Boolean);
+  const createdAt = o.items[0]?.createdAt ?? o.donatedAt;
+  const receivedAt = o.items.find((i) => i.receivedAt)?.receivedAt;
+  const usedAt = o.items.find((i) => i.usedAt)?.usedAt;
+  const timeline: TimelineStep[] = [
+    { label: 'Donated', detail: etTime(o.donatedAt), complete: true },
+    { label: 'Coupon created', detail: etTime(createdAt), complete: true },
+    { label: 'Received', detail: receivedAt ? etTime(receivedAt) : undefined, complete: !!receivedAt },
+    { label: 'Used', detail: usedAt ? etTime(usedAt) : undefined, complete: !!usedAt },
+  ];
+  const total = o.items.reduce((sum, i) => sum + Number(i.value), 0);
+  const html = shell({
+    preheader: 'There is an update about your donation.', greeting: `Hi ${o.donorFirstName || 'there'}`,
+    status: o.kind === 'received' ? 'Donation received' : o.kind === 'used' ? 'Donation used' : 'Donation update',
+    headline: o.kind === 'received' ? 'Your donation reached the organizer' : 'Your donation made an impact',
+    paragraphs: [intro, ...disclosures, ...(topup ? [topup] : []), ...usedDetails],
+    valueCard: { label: 'Donation impact', value: usd(total), details: [o.fundraiserTitle, `${o.items.length} ${o.items.length === 1 ? 'item' : 'items'} tracked`] },
+    timeline, link: { label: 'View your donation update', url: o.impactUrl },
+    secondaryLink: o.kind === 'used' ? { label: 'Thank the organizer', url: o.thankUrl } : undefined,
+    footer: `We never email codes or card details. Retailers do not tell us what was purchased; any use details were shared by the organizer.${o.sample ? ' This is a test message.' : ''}<br><a href="${escapeHtml(o.stopUrl)}" style="color:#6f7b74;text-decoration:underline;">Stop impact emails</a>`, sample: o.sample,
+  });
+  const timelineText = timeline.map((s) => `${s.complete ? '●' : '○'} ${s.label}${s.detail ? ` · ${s.detail}` : ''}`);
   const text = [
-    `Hi ${o.donorFirstName || 'there'},`, '', intro, '', ...timeline, '', ...disclosures, topup, ...usedDetails.map((x) => x.replace(/<br>/g, '\n')), '',
+    `Hi ${o.donorFirstName || 'there'},`, '', intro, '', `${usd(total)} · ${o.fundraiserTitle}`, '', ...timelineText, '', ...disclosures, topup, ...usedDetails, '',
     `View your donation update: ${o.impactUrl}`, '', '— The CouponDonation team', '',
     `We never email codes or card details.${o.sample ? ' This is a test message.' : ''}`, `Stop impact emails: ${o.stopUrl}`,
   ].filter((line) => line !== '').join('\n');
-  return { subject, html, text };
+  return { subject, html, text, headers: { 'List-Unsubscribe': `<${o.stopUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } };
 }
 
 export function renderUseReminderEmail(o: { brand: string; fundraiserTitle: string; dashboardUrl: string; firstName?: string | null; sample?: boolean }) {
   const intro = `A ${o.brand} card for “${o.fundraiserTitle}” was revealed seven days ago. If you used it, you may mark it used; adding a note or receipt is optional and never affects your help.`;
   const subject = 'A quick note about your fundraiser';
-  const html = `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${subject}</title></head><body style="margin:0;background:#ffffff"><div style="display:none;max-height:0;overflow:hidden;opacity:0">A quick note from CouponDonation.</div><main style="max-width:560px;margin:0 auto;padding:28px 22px"><img src="${LOGO_URL}" width="32" height="32" alt="CouponDonation" style="display:block;width:32px;height:32px;margin-bottom:24px"><p style="font:15px/23px ${FONT};color:${INK}">Hi ${esc(o.firstName || 'there')},</p><p style="font:15px/23px ${FONT};color:${BODY}">${esc(intro)}</p><p style="font:15px/23px ${FONT}"><a href="${esc(o.dashboardUrl)}" style="color:${INK};text-decoration:underline">Open your fundraiser dashboard</a></p><p style="font:15px/23px ${FONT};color:${INK}">— The CouponDonation team</p><p style="font:12px/18px ${FONT};color:${MUTED}">This is the only reminder we’ll send for this card.${o.sample ? ' This is a test message.' : ''}</p></main></body></html>`;
+  const html = shell({ preheader: 'A quick note from CouponDonation.', greeting: `Hi ${o.firstName || 'there'}`, status: 'Organizer reminder', headline: 'A quick check-in', paragraphs: [intro], valueCard: { label: 'Fundraiser', value: o.fundraiserTitle, details: [o.brand] }, link: { label: 'Open your fundraiser dashboard', url: o.dashboardUrl }, footer: `This is the only reminder we’ll send for this card.${o.sample ? ' This is a test message.' : ''}`, sample: o.sample });
   const text = [`Hi ${o.firstName || 'there'},`, '', intro, '', `Open your fundraiser dashboard: ${o.dashboardUrl}`, '', '— The CouponDonation team', '', `This is the only reminder we'll send for this card.${o.sample ? ' This is a test message.' : ''}`].join('\n');
   return { subject, html, text };
 }

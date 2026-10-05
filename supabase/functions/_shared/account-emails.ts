@@ -26,13 +26,21 @@ export function renderDonationConfirmation(o: {
     ? `${o.coins.coins.toLocaleString('en-US')} Gold Coins were added to your account for this donation.`
     : `You have ${o.coins.coins.toLocaleString('en-US')} Gold Coins waiting. Sign in with this email address to claim them.`;
   const details = [`Amount charged: ${money(o.amount)}`, `Date: ${formatET(o.at)}`, forLine, `Reference: ${shortRef(o.donationId)}`];
-  const subject = o.fundraiserTitle ? `Your donation to “${o.fundraiserTitle}” is confirmed` : 'Your CouponDonation donation is confirmed';
+  const subject = o.fundraiserTitle ? 'Your fundraiser donation is confirmed' : 'Your direct donation is confirmed';
   const footerLines = [CHARITY_LINE, 'Questions? Just reply to this email.', ...(o.test ? ['This is a test message.'] : [])];
   const greeting = o.firstName ? `Hi ${o.firstName}` : 'Hi there';
   const html = shell({
     preheader: 'Thank you. Here are the details of your donation.', greeting,
-    paragraphs: ['Thank you for your donation.', details.map(escapeHtml).join('<br>'), escapeHtml(next), ...(coinLine ? [escapeHtml(coinLine)] : [])],
-    link: o.link, footer: footerLines.map(escapeHtml).join('<br>'),
+    status: 'Donation confirmed', headline: 'Your donation is recorded',
+    paragraphs: ['Thank you for your donation.', next, ...(coinLine ? [coinLine] : [])],
+    valueCard: { label: 'Donation record', value: money(o.amount), details: [formatET(o.at), forLine, `Reference ${shortRef(o.donationId)}`] },
+    timeline: [
+      { label: 'Donated', detail: formatET(o.at), complete: true },
+      { label: 'Coupon created', detail: 'We will update you when it is ready.', complete: false },
+      { label: 'Received', complete: false },
+      { label: 'Used', complete: false },
+    ],
+    link: o.link, footer: footerLines.map(escapeHtml).join('<br>'), sample: o.test,
   });
   const text = [`${greeting},`, '', 'Thank you for your donation.', '', ...details, '', next, ...(coinLine ? ['', coinLine] : []), '',
     `${o.link.label}: ${o.link.url}`, '', '— The CouponDonation team', '', ...footerLines].join('\n');
@@ -44,10 +52,11 @@ export function renderFundraiserLive(o: { firstName?: string; title: string; slu
   const greeting = o.firstName ? `Hi ${o.firstName}` : 'Hi there';
   const p1 = `Your fundraiser “${o.title}” is approved and now visible to donors.`;
   const p2 = 'You can manage it any time from your dashboard.';
-  const html = shell({ preheader: 'Your fundraiser is now visible to donors.', greeting, paragraphs: [escapeHtml(p1), escapeHtml(p2)],
-    link: { label: 'View your fundraiser', url }, footer: o.test ? 'This is a test message.' : undefined });
+  const html = shell({ preheader: 'Your fundraiser is now visible to donors.', greeting, status: 'Fundraiser live', headline: 'Your fundraiser is ready to share', paragraphs: [p1, p2],
+    valueCard: { label: 'Fundraiser', value: o.title, details: ['Approved and visible to donors'] },
+    link: { label: 'View your fundraiser', url }, footer: o.test ? 'This is a test message.' : undefined, sample: o.test });
   const text = [`${greeting},`, '', p1, '', `View your fundraiser: ${url}`, '', p2, '', '— The CouponDonation team', ...(o.test ? ['', 'This is a test message.'] : [])].join('\n');
-  return { subject: `Your fundraiser “${o.title}” is live`, html, text };
+  return { subject: 'Your fundraiser is live', html, text };
 }
 
 export async function sendAccountMail(key: string, to: string, mail: RenderedEmail) {
