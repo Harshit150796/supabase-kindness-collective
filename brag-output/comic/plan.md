@@ -42,3 +42,27 @@ rm -f comic-score.wav && ./deliver-comic.sh h     # 16:9
 ```
 
 Run this against the repo's Vite dev server on 127.0.0.1:5173.
+
+---
+
+# Co-op mode: give or get help (second comic cut)
+
+A 36.5s two-player cut for both audiences. Player 1 ("I need help") applies and shares. Player 2 ("I want to help someone") gives. Both watch the same coupon land: Player 1 reveals and marks it used, Player 2 gets the update, and they fill the goal together. It ends on the homepage's own dual call to action.
+
+| Format | File |
+| --- | --- |
+| 16:9, 1920×1080 | `coupon-coop-16x9.mp4` |
+| 9:16, 1080×1920 | `coupon-coop-9x16.mp4` |
+
+| # | Time | Scene | Real product moment |
+| --- | --- | --- | --- |
+| 1 | 0.0–3.5 | Hook | The homepage's split doors: "I need help" / "I want to help someone". "Two players. One goal." |
+| 2 | 3.5–11.0 | Apply (P1) | The 4-step application ("Who are we helping?" → "Review and submit your request"), "Free to apply. You receive retail coupons only — never cash.", Submit Fundraiser, "Great work!" |
+| 3 | 11.0–13.5 | Share (P1) | "Your fundraiser is ready to share." → Share Fundraiser → "Link copied!" |
+| 4 | 13.5–18.0 | Give (P2) | Donate now on the example fundraiser, coupons deal out: "Coupons, not cash" |
+| 5 | 18.0–24.5 | Arrive (P1) | "A donation arrived for your fundraiser" → Coupons → Reveal code → Used → Mark as used → "Marked as used" |
+| 6 | 24.5–28.0 | Update (P2) | "An update on your donation to “Example fundraiser”": Donated → Coupon created → Received → Used |
+| 7 | 28.0–32.0 | Goal (both) | Three donors fill the example goal → Fully funded → "Co-op complete!" |
+| 8 | 32.0–36.5 | CTA | "Help someone this week. Or ask for help yourself." with Start donating / Apply for support, and "U.S. residents, free to apply." |
+
+On screen, Reveal code is what turns the donor's step to Received, and Mark as used is what turns it to Used, exactly as the product works. Coupon codes are always masked. The film never promises timing, approval or verification. Rebuild with `PAGE=coop node dump-cues.mjs`, then `FILM=coop ./deliver-comic.sh h` (or `v`).

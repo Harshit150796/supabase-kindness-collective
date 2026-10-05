@@ -1,0 +1,129 @@
+{
+ "SC": {
+  "hook": [
+   0,
+   3.5
+  ],
+  "apply": [
+   3.5,
+   11
+  ],
+  "share": [
+   11,
+   13.5
+  ],
+  "give": [
+   13.5,
+   18
+  ],
+  "arrive": [
+   18,
+   24.5
+  ],
+  "update": [
+   24.5,
+   28
+  ],
+  "goal": [
+   28,
+   32
+  ],
+  "cta": [
+   32,
+   36.5
+  ]
+ },
+ "T": {
+  "hookBubble": 1.2,
+  "p1In": -0.25,
+  "p2In": -0.1,
+  "tabsIn": 3.45,
+  "applyBubble": 3.7,
+  "step": [
+   3.5,
+   5.45,
+   7.05,
+   8.5
+  ],
+  "tapFamily": 4.25,
+  "tapFood": 4.75,
+  "next1": 5.2,
+  "cover": 5.95,
+  "next2": 6.8,
+  "chip": 7.55,
+  "next3": 8.25,
+  "submit": 9.3,
+  "great": 9.55,
+  "shareH": 11.1,
+  "shareBubble": 11.2,
+  "shareBtn": 11.35,
+  "shareTap": 12.25,
+  "giveBubble": 13.7,
+  "donateTap": 14.4,
+  "deal": 14.65,
+  "giveNote": 15,
+  "notCash": 15.6,
+  "mail": 18.15,
+  "arriveBubble": 18.3,
+  "couponsCard": 18.7,
+  "reveal": 19.95,
+  "usedTap": 21.2,
+  "dialog": 21.35,
+  "markTap": 22.7,
+  "toast": 22.9,
+  "updMail": 24.65,
+  "updBubble": 24.8,
+  "recv": 25.4,
+  "used": 26,
+  "goalBubble": 28.2,
+  "g1": 28.6,
+  "g2": 29.1,
+  "g3": 29.6,
+  "funded": 30.1,
+  "done": 30.5,
+  "ctaHead": 32.2,
+  "ctaBtns": 32.8,
+  "ctaNote": 33.1,
+  "plate": 33.4,
+  "url": 33.6
+ },
+ "TAPS": {
+  "tapFamily": 4.25,
+  "tapFood": 4.75,
+  "next1": 5.2,
+  "cover": 5.7,
+  "next2": 6.8,
+  "chip": 7.55,
+  "next3": 8.25,
+  "submit": 9.3,
+  "shareTap": 12.25,
+  "donateTap": 14.4,
+  "reveal": 19.95,
+  "usedTap": 21.2,
+  "markTap": 22.7,
+  "g1": 28.6
+ },
+ "TURN": [
+  [
+   3.5,
+   1
+  ],
+  [
+   13.5,
+   2
+  ],
+  [
+   18,
+   1
+  ],
+  [
+   24.5,
+   2
+  ],
+  [
+   28,
+   3
+  ]
+ ],
+ "DUR": 36.5
+}

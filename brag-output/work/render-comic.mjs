@@ -1,5 +1,5 @@
 // Comic film renderer.
-//   node render-comic.mjs <h|v> stills 1.2,4.5            -> stills-<fmt>/t-<t>.png
+//   [PAGE=coop] node render-comic.mjs <h|v> stills 1.2,4.5  -> stills-[coop-]<fmt>/t-<t>.png
 //   node render-comic.mjs <h|v> video <fps> <out.mp4>    -> high-quality master at <fps>
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
@@ -7,7 +7,8 @@ import fs from 'node:fs';
 
 const [fmt, mode, a1, a2] = process.argv.slice(2);
 const W = fmt === 'v' ? 1080 : 1920, H = fmt === 'v' ? 1920 : 1080;
-const URL = `http://127.0.0.1:5173/brag-output/work/comic/index.html?f=${fmt}`;
+const PAGE = process.env.PAGE || 'index'; // index = Level 1, coop = Co-op mode
+const URL = `http://127.0.0.1:5173/brag-output/work/comic/${PAGE}.html?f=${fmt}`;
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
 page.on('pageerror', (e) => console.log('pageerror', e.message));
@@ -22,7 +23,7 @@ page.on('framenavigated', (f) => { if (f === page.mainFrame()) { console.log('Er
 const shot = async (t, opts = {}) => { await page.evaluate((tt) => window.renderFrame(tt), t); return page.screenshot({ type: 'png', clip: { x: 0, y: 0, width: W, height: H }, ...opts }); };
 
 if (mode === 'stills') {
-  const dir = `stills-${fmt}`; fs.mkdirSync(dir, { recursive: true });
+  const dir = `stills-${PAGE === 'index' ? '' : PAGE + '-'}${fmt}`; fs.mkdirSync(dir, { recursive: true });
   for (const s of a1.split(',')) { const t = Number(s); await shot(Math.max(0, t - 0.05)); await shot(t, { path: `${dir}/t-${t.toFixed(2)}.png` }); }
   console.log('stills', a1);
 } else {
