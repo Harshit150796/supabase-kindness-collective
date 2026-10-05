@@ -582,7 +582,7 @@ const FundraiserDashboard = () => {
           )}
           {fundraiser && (
             <div id="updates" className="scroll-mt-24">
-              <OrganizerTools fundraiserId={fundraiser.id} isOwner={isOwnerView} />
+              <OrganizerTools fundraiserId={fundraiser.id} isOwner={isOwnerView} openTeamSignal={teamSignal} />
             </div>
           )}
         </main>
@@ -594,7 +594,7 @@ const FundraiserDashboard = () => {
         shareUrl={shareUrl}
         title={fundraiser.title}
         slug={fundraiser.unique_slug || undefined}
-        amountRaised={fundraiser.amount_raised}
+        amountRaised={ledger?.total ?? fundraiser.amount_raised}
         goalAmount={fundraiser.monthly_goal}
       />
 
