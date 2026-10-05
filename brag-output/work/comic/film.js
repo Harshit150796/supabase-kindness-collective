@@ -433,7 +433,7 @@ function renderFrame(t) {
 
   // HUD: enters with the first lesson, celebrates each checkpoint, leaves before the end card
   const hudIn = k(t, T.hudIn, T.hudIn + 0.55, E.outBack), hudOut = k(t, SC.cta[0] - 0.15, SC.cta[0] + 0.3, E.inCubic);
-  vis(hudLayer, hudIn > 0 && hudOut < 1);
+  vis(hudLayer, t >= T.hudIn && hudOut < 1); // explicit: outBack(0) is ~2e-16, not 0
   hud.style.transform = `translateY(${(1 - hudIn) * -L(170, 360) - hudOut * L(200, 400)}px)`;
   const done = CHECK.filter((c) => t >= c).length;
   const prevC = done ? CHECK[done - 1] : 0;
