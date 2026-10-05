@@ -35,7 +35,9 @@ function Confirm({ title, description, action, onConfirm, children }: { title: s
   );
 }
 
-export function OrganizerTools({ fundraiserId, isOwner }: { fundraiserId: string; isOwner: boolean }) {
+export function OrganizerTools({ fundraiserId, isOwner, openTeamSignal = 0 }: { fundraiserId: string; isOwner: boolean; openTeamSignal?: number }) {
+  const [tab, setTab] = useState('updates');
+  useEffect(() => { if (openTeamSignal) setTab('team'); }, [openTeamSignal]);
   const { toast } = useToast();
   const [team, setTeam] = useState<Row[]>([]);
   const [email, setEmail] = useState('');
@@ -121,7 +123,7 @@ export function OrganizerTools({ fundraiserId, isOwner }: { fundraiserId: string
         <h2 className="font-display text-3xl font-normal">Organizer tools</h2>
         <Button variant="outline" asChild><Link to="/messages"><MessageCircle className="mr-2 h-4 w-4" />Inbox</Link></Button>
       </div>
-      <Tabs defaultValue="updates" className="mt-6">
+      <Tabs value={tab} onValueChange={setTab} className="mt-6">
         <TabsList><TabsTrigger value="updates">Updates</TabsTrigger><TabsTrigger value="team">Team</TabsTrigger>{isOwner && <TabsTrigger value="settings">Settings</TabsTrigger>}</TabsList>
 
         <TabsContent value="updates" className="space-y-4 pt-4">

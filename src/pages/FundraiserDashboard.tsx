@@ -85,7 +85,10 @@ const FundraiserDashboard = () => {
   const { toast } = useToast();
 
   const [fundraiser, setFundraiser] = useState<Fundraiser | null>(null);
-  const [donations, setDonations] = useState<Donation[]>([]);
+  // Headline total, donor count and list all come from this one ledger, so they can never disagree.
+  const [ledger, setLedger] = useState<{ total: number; count: number; donations: Donation[] } | null>(null);
+  const donations = ledger?.donations ?? [];
+  const [teamSignal, setTeamSignal] = useState(0);
   const [images, setImages] = useState<FundraiserImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -137,19 +140,20 @@ const FundraiserDashboard = () => {
   const fetchDonations = useCallback(async () => {
     if (!id) return;
     try {
-      const { data, error } = await supabase
-        .from("donations")
-        .select("*")
-        .eq("fundraiser_id", id)
-        .order("created_at", { ascending: false })
-        .limit(10);
-
+      // One source for the headline total, the donor count and the list: the team-gated RPC.
+      const { data, error } = await (supabase.rpc as any)("get_my_fundraiser_donations", { _fundraiser_id: id });
       if (error) throw error;
-      setDonations(data || []);
+      const l = data as { total: number | string; count: number; donations: Donation[] } | null;
+      setLedger(l ? { total: Number(l.total) || 0, count: Number(l.count) || 0, donations: (l.donations || []).map((d) => ({ ...d, amount: Number(d.amount) })) } : null);
+    } catch (error) {
+      console.error("Error fetching donations:", error);
+      setLedger(null);
+    }
+    try {
       const { data: cs } = await (supabase.rpc as any)("get_my_fundraiser_coupons", { _fundraiser_id: id });
       setCoupons((cs as OwnerCoupon[]) || []);
     } catch (error) {
-      console.error("Error fetching donations:", error);
+      console.error("Error fetching coupons:", error);
     }
   }, [id]);
 
@@ -161,7 +165,7 @@ const FundraiserDashboard = () => {
 
     // Clear data when user changes to prevent cross-account data flash
     setFundraiser(null);
-    setDonations([]);
+    setLedger(null);
     setImages([]);
     setLoading(true);
 
@@ -229,8 +233,8 @@ const FundraiserDashboard = () => {
   };
 
   const getProgressPercentage = () => {
-    if (!fundraiser || !fundraiser.monthly_goal) return 0;
-    return Math.min((fundraiser.amount_raised / fundraiser.monthly_goal) * 100, 100);
+    if (!fundraiser || !fundraiser.monthly_goal || !ledger) return 0;
+    return Math.min((ledger.total / fundraiser.monthly_goal) * 100, 100);
   };
 
   const getStatusBadge = (status: string) => {
@@ -436,14 +440,14 @@ const FundraiserDashboard = () => {
                       <div className="flex-1 min-w-0">
                         <div className="mb-2">
                           <span className="text-2xl lg:text-3xl font-bold text-foreground">
-                            ${fundraiser.amount_raised.toLocaleString()}
+                            {ledger ? `$${ledger.total.toLocaleString()}` : "—"}
                           </span>
                           <span className="text-muted-foreground ml-2 text-sm lg:text-base">
                             of ${fundraiser.monthly_goal.toLocaleString()} goal
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground mb-4">
-                          {fundraiser.donors_count} donor{fundraiser.donors_count !== 1 ? "s" : ""} have contributed
+                          {ledger ? `${ledger.count} donor${ledger.count !== 1 ? "s" : ""} ${ledger.count === 1 ? "has" : "have"} contributed` : "Donation totals are unavailable right now"}
                         </p>
                       </div>
                     </div>
@@ -468,7 +472,7 @@ const FundraiserDashboard = () => {
                       <Camera className="w-4 h-4 mr-3" />
                       Manage photos
                     </Button>
-                    <Button variant="ghost" size="sm" className="w-full justify-start h-10">
+                    <Button variant="ghost" size="sm" className="w-full justify-start h-10" onClick={() => { setTeamSignal((n) => n + 1); setTimeout(() => document.getElementById("updates")?.scrollIntoView({ behavior: "smooth" }), 50); }}>
                       <Users className="w-4 h-4 mr-3" />
                       Invite co-organizers
                     </Button>
@@ -497,7 +501,13 @@ const FundraiserDashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {donations.length === 0 ? (
+                  {donations.length === 0 && (!ledger || Number(fundraiser.amount_raised) > 0) ? (
+                    <div className="text-center py-12">
+                      <h3 className="font-semibold text-foreground mb-2">Donation details are unavailable right now</h3>
+                      <p className="text-muted-foreground text-sm mb-4">Please refresh in a moment.</p>
+                      <Button variant="outline" onClick={() => fetchDonations()}>Try again</Button>
+                    </div>
+                  ) : donations.length === 0 ? (
                     <div className="text-center py-12">
                       <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
                         <Heart className="w-8 h-8 text-muted-foreground" />
@@ -572,7 +582,7 @@ const FundraiserDashboard = () => {
           )}
           {fundraiser && (
             <div id="updates" className="scroll-mt-24">
-              <OrganizerTools fundraiserId={fundraiser.id} isOwner={isOwnerView} />
+              <OrganizerTools fundraiserId={fundraiser.id} isOwner={isOwnerView} openTeamSignal={teamSignal} />
             </div>
           )}
         </main>
@@ -584,7 +594,7 @@ const FundraiserDashboard = () => {
         shareUrl={shareUrl}
         title={fundraiser.title}
         slug={fundraiser.unique_slug || undefined}
-        amountRaised={fundraiser.amount_raised}
+        amountRaised={ledger?.total ?? fundraiser.amount_raised}
         goalAmount={fundraiser.monthly_goal}
       />
 

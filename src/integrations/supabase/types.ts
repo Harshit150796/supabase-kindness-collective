@@ -3150,6 +3150,10 @@ export type Database = {
           value_expires_on: string
         }[]
       }
+      get_my_fundraiser_donations: {
+        Args: { _fundraiser_id: string }
+        Returns: Json
+      }
       get_proof_stats: { Args: never; Returns: Json }
       get_public_donation_stats: {
         Args: never
