@@ -284,7 +284,7 @@ function renderFrame(t) {
     ui.labels.forEach((l, b) => { const p = k(t, 4.05 + b * 0.08, 4.8 + b * 0.08); const o = Math.min(p, 1 - k(t, 6.4, 6.65, E.inCubic)); l.style.opacity = o; l.style.transform = `translateY(${(1 - p) * 24 + drift * 0.7}px)`; });
   }
 
-  // ===== B: the Giving Tree
+  // ===== B: the homepage tree
   const bOn = t >= T.bIn && t < T.cIn + 0.6;
   vis($('#b'), bOn);
   if (bOn) {

@@ -1,0 +1,117 @@
+/* Film-specific layout. Sizes are set from JS per format (h = 16:9, v = 9:16). */
+.ui-scale { position: absolute; transform-origin: 0 0; }
+.ui-host { background: hsl(var(--card)); }
+.example-tag { position: absolute; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; background: hsl(123 20% 7%); color: hsl(120 8% 98.5%); padding: 6px 14px 5px; }
+.title-lettering { position: absolute; font-weight: 700; text-transform: uppercase; line-height: 0.92; letter-spacing: 0.01em; }
+.big-serif { position: absolute; line-height: 0.98; }
+.coin { position: absolute; left: 0; top: 0; width: 96px; height: 96px; overflow: visible; }
+.trail { position: absolute; }
+.trail-step { position: absolute; top: 0; display: flex; flex-direction: column; align-items: center; text-align: center; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+.trail-node { width: 64px; height: 64px; border: 7px solid hsl(123 20% 7%); background: hsl(120 8% 98.5%); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+.trail-node.on { background: hsl(212 80% 42%); color: #fff; }
+.trail-node svg { width: 34px; height: 34px; }
+.quiz-opt { position: absolute; border: 6px solid hsl(123 20% 7%); background: hsl(120 8% 98.5%); font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 18px; padding: 0 26px; }
+.quiz-opt .key { font-family: inherit; font-weight: 700; font-size: 1.1em; color: hsl(123 46% 34%); }
+.quiz-opt.right { background: hsl(123 46% 85%); }
+.quiz-opt.wrong { color: hsl(123 20% 7% / 0.45); }
+.strike { position: absolute; left: -2%; top: 50%; height: 7px; background: hsl(123 20% 7%); transform-origin: 0 50%; }
+.cta-btn { position: absolute; display: inline-flex; align-items: center; justify-content: center; gap: 0.4em; font-weight: 700; border: 7px solid hsl(123 20% 7%); border-radius: 16px; }
+.cta-btn.p { background: hsl(123 46% 34%); color: hsl(120 8% 98.5%); }
+.cta-btn.o { background: hsl(120 8% 98.5%); color: hsl(123 20% 7%); }
+.cta-btn svg { width: 1em; height: 1em; }
+.badge2 { position: absolute; width: max-content; display: flex; align-items: center; gap: 0.3em; background: hsl(var(--background)); border-radius: 24px; padding: 0.25em 0.6em 0.25em 0.3em; font-weight: 700; white-space: nowrap; }
+.badge2 img { width: 1.5em; height: 1.5em; }
+.wm .c { color: #2e7d32; } .wm .d { color: #1565c0; }
+
+/* ---- scene elements ---- */
+.note-line { position: absolute; text-align: center; font-size: 34px; font-weight: 500; color: hsl(123 10% 30%); }
+.door-label { position: absolute; color: hsl(123 20% 13%); }
+.find-steps { position: absolute; display: flex; justify-content: center; gap: 12px; font-size: 22px; transform-origin: 50% 0; }
+.real-nav { position: absolute; }
+.real-nav a { display: inline-flex; }
+.real-nav svg { width: 1em; height: 1em; }
+
+/* number-free sketch of the real FundraiserCard */
+.fr-sketch { position: absolute; background: hsl(var(--card)); border-radius: 16px; padding: 0 0 22px; overflow: hidden; }
+.fr-art { position: relative; height: 250px; background: hsl(123 46% 85%); background-image: radial-gradient(hsl(123 46% 34% / .18) 28%, transparent 31%); background-size: 20px 20px; }
+.fr-art .mascot { width: 300px; height: 330px; }
+.fr-bar { height: 22px; margin: 22px 26px 0; border-radius: 6px; background: hsl(123 12% 86%); }
+.fr-bar.w1 { width: 72%; } .fr-bar.w2 { width: 46%; margin-top: 12px; height: 16px; }
+.fr-goal { height: 8px; margin: 26px 26px 0; border-radius: 4px; background: hsl(123 12% 90%); position: relative; }
+.fr-goal div { position: absolute; left: 0; top: 0; bottom: 0; width: 38%; background: hsl(123 46% 34%); border-radius: 4px; }
+.fr-foot { display: flex; justify-content: space-between; align-items: center; margin: 22px 26px 0; font-size: 24px; }
+.fr-lock { display: inline-flex; align-items: center; gap: 8px; color: hsl(123 10% 38%); }
+.fr-lock svg { width: 24px; height: 24px; }
+.fr-donate { font-weight: 700; color: hsl(123 46% 34%); font-size: 30px; padding: 6px 4px; }
+
+.deck-lbl { position: absolute; display: flex; align-items: center; justify-content: center; gap: 14px; font-size: 36px; font-weight: 700; }
+.deck-lbl img { height: 44px; width: auto; }
+.stamp { position: absolute; text-align: center; font-weight: 700; text-transform: uppercase; color: hsl(123 46% 34%); border: 9px solid hsl(123 46% 34%); border-radius: 10px; padding: 10px 24px 6px; background: hsl(120 8% 98.5% / 0.92); letter-spacing: 0.02em; }
+
+.pay-btn { position: absolute; display: inline-flex; align-items: center; justify-content: center; width: 300px; height: 120px; background: hsl(123 46% 34%); color: hsl(120 8% 98.5%); border-radius: 8px; border: 6px solid hsl(120 8% 98.5%); }
+.pay-btn svg { width: 60px; height: 60px; }
+.pay-lock { overflow: visible; }
+.sec-row { position: absolute; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.sec-badge { font-size: 26px; }
+.sec-badge h3 { font-size: 46px !important; }
+.sec-badge p { font-size: 24px !important; line-height: 1.35 !important; }
+.sec-badge svg { width: 54px !important; height: 54px !important; }
+
+.coin-line { position: absolute; display: flex; justify-content: center; align-items: center; gap: 20px; font-weight: 700; color: hsl(212 80% 42%); }
+.coin-line svg { width: 1em; height: 1em; }
+
+.mail-card { position: absolute; display: flex; align-items: center; gap: 30px; background: hsl(var(--card)); border-radius: 24px; padding: 30px 40px; }
+.mail-ico svg { width: 120px; height: 84px; }
+.mail-from { font-size: 28px; font-weight: 700; color: hsl(123 10% 38%); }
+.mail-subj { font-size: 42px; font-weight: 600; line-height: 1.15; }
+.trail2 { position: absolute; }
+.trail2-line, .trail2-prog { position: absolute; height: 8px; border-radius: 4px; background: hsl(123 20% 7% / 0.15); }
+.trail2-prog { background: hsl(123 46% 34%); transform-origin: 0 50%; }
+.trail2-step { position: absolute; display: flex; flex-direction: column; align-items: center; }
+.trail2-dot { width: 52px; height: 52px; border-radius: 10px; border: 6px solid hsl(123 20% 7%); background: hsl(120 8% 98.5%); color: transparent; display: flex; align-items: center; justify-content: center; }
+.trail2-dot svg { width: 30px; height: 30px; }
+.trail2-step.on .trail2-dot { background: hsl(123 46% 34%); color: #fff; }
+.trail2-lbl { margin-top: 22px; font-size: 38px; font-weight: 700; text-align: center; line-height: 1.1; }
+
+.goal-ring { position: absolute; overflow: visible; }
+.goal-lbl { position: absolute; text-align: center; font-weight: 600; color: hsl(123 10% 30%); }
+.goal-btn { position: absolute; display: flex; align-items: center; justify-content: center; gap: 16px; height: 108px; font-size: 44px; font-weight: 600; border-radius: 8px; }
+.goal-btn svg { width: 40px; height: 40px; }
+.goal-btn.primary { background: hsl(123 46% 34%); color: hsl(120 8% 98.5%); }
+.goal-btn.funded { background: hsl(123 46% 85%); color: hsl(123 46% 28%); border-radius: 999px; }
+.goal-btn.ink { background: hsl(123 20% 7%); color: hsl(120 8% 98.5%); }
+
+.cta-big { position: absolute; display: flex; justify-content: center; }
+.cta-big > * { pointer-events: none; }
+.cta-big { gap: 0; }
+.cta-big svg { width: 54px; height: 54px; }
+.cta-big { font-size: 60px; font-weight: 700; color: hsl(123 20% 7%); }
+.cta-big span { margin: 0 20px; }
+.cta-big { align-items: center; }
+.cta-big::before { content: ''; }
+.cta-big { width: auto; }
+.cta-big > svg:first-child, .cta-big > span, .cta-big > svg:last-child { position: relative; }
+.cta-big { }
+.cta-big-inner { }
+.ghost .hand path { fill: hsl(123 46% 85%); }
+.quiz { position: absolute; }
+.cta-pill { display: inline-flex; align-items: center; gap: 0; background: hsl(123 18% 93%); color: hsl(123 46% 28%); padding: 28px 52px; border-radius: 8px; }
+
+.big-serif i { font-style: italic; color: hsl(123 46% 34%); }
+.q-sticker { position: absolute; left: 0; top: 0; display: none; align-items: center; justify-content: center; width: 150px; height: 64px; background: hsl(120 8% 98.5%); border: 6px solid hsl(123 20% 7%); border-radius: 12px; font-family: inherit; font-weight: 700; font-size: 48px; line-height: 1; color: hsl(123 46% 34%); }
+.toast-real { position: absolute; display: none; background: hsl(var(--card)); color: hsl(123 20% 13%); border-radius: 10px; padding: 22px 30px; font-size: 32px; font-weight: 600; }
+
+.ui-scale h1, .ui-scale h2, .ui-scale h3 { font-weight: 400 !important; }
+.mail-body { font-size: 26px; color: hsl(123 10% 38%); margin-top: 8px; line-height: 1.3; max-width: 760px; }
+.fr-panel { position: absolute; }
+.fr-ring { position: absolute; left: 50%; top: 20px; width: 340px; height: 340px; margin-left: -170px; }
+.fr-ring-lbl { position: absolute; left: 0; right: 0; top: 168px; text-align: center; font-size: 34px; font-weight: 600; color: hsl(123 10% 30%); }
+.fr-panel .goal-btn { left: 60px; right: 60px; }
+.fr-donate { top: 400px; }
+.fr-share { top: 528px; }
+.deck-lbl.col { flex-direction: column; gap: 6px; font-size: 30px; }
+.deck-lbl.col img { height: 40px; }
+.quiz-cap { line-height: 1.12; transform-origin: 0 50%; }
+.level-stamp { color: hsl(123 46% 28%); border-color: hsl(123 46% 28%); background: hsl(120 8% 98.5% / 0.95); }
+
+.hud-lbl.alt { top: 64px; }

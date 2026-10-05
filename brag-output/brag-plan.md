@@ -22,7 +22,7 @@ On a deep ink screen, a huge serif **$50** slowly pushes in under the line "Wher
 
 ## Highlights
 1. **$50 → 9 coupons**, using the app's real impact math.
-2. **The Giving Tree**: the homepage's real 3D tree with brand-coupon fruit, captured from the running app.
+2. **The homepage tree**: the homepage's real 3D tree with brand-coupon fruit, captured from the running app.
 3. **Choose where your help can be used**: the real donate UI, with Walmart, Target and Amazon selected, ending on "9 Coupons Created".
 4. **See where every dollar goes**: the 95¢ ring and the coupon trace.
 5. **Recipients**: the real apply screen, "Who are we helping?" Two quick taps.
@@ -45,7 +45,7 @@ On a deep ink screen, a huge serif **$50** slowly pushes in under the line "Wher
 |---|---|---|---|---|
 | 1 | 0.0–3.0 | **Hook** | Ink. Giant serif "$50". "Where does your donation actually go?" | Slow push-in, words rise in one by one. Low pad and a ticking pulse, with a riser into the drop. |
 | 2 | 3.0–7.0 | **Burst** | $50 shatters into 9 coupon cards (3 Walmart, 3 Target, 3 Amazon, $5 each) that fan into a grid. "Here, $50 became 9 real coupons." / "For verified families. Never cash." | Impact plus a full beat on 3.0, and the coupons land on 16ths. |
-| 3 | 7.0–11.0 | **Reveal** | The real 3D Giving Tree slowly orbits and pushes in. Logo badge plus wordmark, and the rotating kicker TRANSPARENT → TRACKABLE → REAL-TIME. | Big chord swell, shimmer. |
+| 3 | 7.0–11.0 | **Reveal** | The real 3D homepage tree slowly orbits and pushes in. Logo badge plus wordmark, and the rotating kicker TRANSPARENT → TRACKABLE → REAL-TIME. | Big chord swell, shimmer. |
 | 4 | 11.0–15.0 | **Donor flow** | Real donate UI: "Choose where your help can be used." A cursor taps Walmart, Target and Amazon (chips fill in), then a wipe to the impact card: $50 · 9 Coupons Created plus the breakdown. | Soft UI ticks in key, synced to the taps. |
 | 5 | 15.0–18.5 | **Trust** | Deep-forest band. The ring draws to 95%: "95¢ of every $1". "See where every dollar goes." The trace steps tick in. | Rising arpeggio, with a tick on each step. |
 | 6 | 18.5–21.5 | **Recipients** | Real apply UI: "Who are we helping?" Taps on My Family and Food & Groceries. Caption: "Need help? Apply in about 3 minutes." with "Free to apply." | Groove continues, lighter. |

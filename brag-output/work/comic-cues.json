@@ -1,0 +1,121 @@
+{
+ "SC": {
+  "hook": [
+   0,
+   3.5
+  ],
+  "find": [
+   3.5,
+   8
+  ],
+  "stores": [
+   8,
+   12.5
+  ],
+  "amount": [
+   12.5,
+   18.5
+  ],
+  "coupons": [
+   18.5,
+   22
+  ],
+  "pay": [
+   22,
+   27
+  ],
+  "coins": [
+   27,
+   33
+  ],
+  "track": [
+   33,
+   38
+  ],
+  "goal": [
+   38,
+   42.5
+  ],
+  "cta": [
+   42.5,
+   47
+  ]
+ },
+ "T": {
+  "trunk": 1,
+  "ticketDrop": 1.1,
+  "ticketLand": 1.55,
+  "hookBubble": 1.2,
+  "hudIn": 3.45,
+  "findBubble": 3.75,
+  "door": 5.1,
+  "findSteps": 5.4,
+  "storesBubble": 8.2,
+  "walmart": 8.6,
+  "target": 9.05,
+  "amazon": 9.5,
+  "storesNote": 9.7,
+  "preset": 13.05,
+  "sticker": 13.3,
+  "quizQ": 13.35,
+  "quizOpts": 13.6,
+  "wrong": 15.3,
+  "right": 16.6,
+  "deal": 18.75,
+  "couponsBubble": 19.1,
+  "deckLbl": 19.45,
+  "stamp": 19.85,
+  "lock": 22.2,
+  "payBubble": 22.25,
+  "pay": 24,
+  "wipe": 24.45,
+  "bonus": 26.7,
+  "coinsQ": 27.45,
+  "coinOpts": 27.75,
+  "coinWrong": 29.2,
+  "coin": 29.85,
+  "mail": 33.15,
+  "trackBubble": 33.3,
+  "hops": [
+   33.9,
+   34.4,
+   34.9,
+   35.4
+  ],
+  "trackNote": 34,
+  "goalBubble": 38.2,
+  "g1": 38.9,
+  "g2": 39.5,
+  "g3": 40,
+  "funded": 40.5,
+  "levelDone": 40.9,
+  "ctaHead": 42.7,
+  "ctaBtn": 43.25,
+  "ctaNote": 43.6,
+  "plate": 43.9,
+  "url": 44.1
+ },
+ "CHECK": [
+  5.5,
+  9.9,
+  16.900000000000002,
+  19.950000000000003,
+  24.5,
+  30.1,
+  35.5,
+  40.5
+ ],
+ "TAPS": {
+  "trunk": 1,
+  "door": 5.1,
+  "walmart": 8.6,
+  "target": 9.05,
+  "amazon": 9.5,
+  "preset": 13.05,
+  "right": 16.6,
+  "pay": 24,
+  "coin": 29.85,
+  "g1": 38.9
+ },
+ "DUR": 47
+}

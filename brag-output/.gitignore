@@ -8,3 +8,10 @@ work/*.mp4
 work/*.wav
 work/*.log
 work/final/
+work/stills-h/
+work/stills-v/
+work/review/
+work/research/
+work/*.png
+work/__pycache__/
+work/comic/film.v1.js

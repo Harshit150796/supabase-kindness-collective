@@ -1,0 +1,17 @@
+import { chromium } from 'playwright';
+import fs from 'node:fs';
+const browser = await chromium.launch();
+const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
+await ctx.route(/supabase\.co/, (r) => r.abort());
+await ctx.addInitScript(() => localStorage.setItem('cd_privacy_consent', JSON.stringify({ accepted: true, at: new Date().toISOString() })));
+const page = await ctx.newPage();
+await page.goto('http://127.0.0.1:5173/donation-success', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(3500);
+await page.screenshot({ path: 'shots/success.png' });
+fs.writeFileSync('markup/success-main.frag', await page.evaluate(() => { const h = [...document.querySelectorAll('h1,h2')].find((e) => /Thank you/i.test(e.textContent)); let n = h; for (let i = 0; i < 3 && n.parentElement; i++) n = n.parentElement; return n.outerHTML; }));
+await page.goto('http://127.0.0.1:5173/donate', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(3000);
+fs.writeFileSync('markup/security.frag', await page.evaluate(() => { const h = [...document.querySelectorAll('h2,h3')].find((e) => /Security without/i.test(e.textContent)); let n = h; while (n && n.tagName !== 'SECTION') n = n.parentElement; return n.outerHTML; }));
+const t = await page.evaluate(() => document.querySelector('section') && [...document.querySelectorAll('h2')].map((h) => h.textContent).join(' | '));
+console.log(t);
+await browser.close();
