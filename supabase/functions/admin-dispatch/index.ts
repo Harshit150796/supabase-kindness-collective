@@ -3,7 +3,7 @@
 // creates pending-approval auto-tasks by polling, then fans out to notify-dispatch and email-scheduler.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { NOTIFY_SENDER, shell } from '../_shared/email-layout.ts';
+import { ADMIN_SENDER, shell } from '../_shared/email-layout.ts';
 import { processAccountEmail } from '../_shared/account-emails.ts';
 
 const SUPA = Deno.env.get('SUPABASE_URL')!;
@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     const text = ['Hi team,', '', `There ${items.length === 1 ? 'is one account item' : `are ${items.length} account items`} ready for review.`, '', ...items.map((i) => `- ${i.line}`), '', `Open the admin portal: ${SITE}/admin`, '', '— The CouponDonation team'].join('\n');
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: NOTIFY_SENDER.from, reply_to: NOTIFY_SENDER.replyTo, to: recipients, subject, html, text }),
+      body: JSON.stringify({ from: ADMIN_SENDER.from, reply_to: ADMIN_SENDER.replyTo, to: recipients, subject, html, text }),
     });
     const t = await r.text();
     if (!r.ok) throw new Error(`[${r.status}] ${t}`);
