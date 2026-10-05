@@ -42,6 +42,7 @@ Deno.test('impact subjects contain no amount, retailer, product term, or punctua
     const mail = renderImpactEmail({ kind, fundraiserTitle: 'Family Grocery Support', organizer: 'Maria G.', donatedAt: old, impactUrl: 'https://coupondonation.com/impact/example', thankUrl: 'https://coupondonation.com/impact/example#thanks', stopUrl: 'https://coupondonation.com/impact/example?stop=1',
       items: [{ brand: 'DoorDash', value: 20, createdAt: old, receivedAt: old, usedAt: kind === 'received' ? null : old }] });
     assertEquals(/\$|doordash|gift card|coupon|free|deal|offer|save|!|\p{Extended_Pictographic}/iu.test(mail.subject), false);
+    assertEquals(mail.subject.startsWith('Your donation'), true);
     assert(mail.html.includes('Hi there,'));
     assert(mail.html.includes('— The CouponDonation team'));
     assertEquals(mail.html.includes('/brands/'), false);

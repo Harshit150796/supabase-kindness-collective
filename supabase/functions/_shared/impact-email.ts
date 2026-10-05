@@ -24,8 +24,8 @@ export function renderImpactEmail(o: ImpactEmailInput): RenderedEmail {
   const anyUsed = o.items.some((i) => i.usedAt);
   const eventTime = (anyUsed ? o.items.find((i) => i.usedAt)?.usedAt : o.items.find((i) => i.receivedAt)?.receivedAt) ?? new Date().toISOString();
   const subject = o.kind === 'received'
-    ? `Your donation to “${o.fundraiserTitle}” was received`
-    : `An update on your donation to “${o.fundraiserTitle}”`;
+    ? 'Your donation reached the organizer'
+    : 'Your donation made an impact';
   const detail = o.items.length === 1
     ? `It arrived as a ${usd(o.items[0].value)} ${shown(o.items[0])}.`
     : `It arrived as ${o.items.length} cards with a total value of ${usd(o.items.reduce((sum, i) => sum + Number(i.value), 0))}.`;

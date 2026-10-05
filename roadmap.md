@@ -3,8 +3,8 @@
 ## Transactional email design system
 - [x] Replace divergent production renderers with one table-based branded renderer.
 - [x] Preserve impact grouping, dedupe, and the 10-minute settle window while adding impact-only stop headers.
-- [ ] Render and inspect every template at desktop and 320px.
-- [ ] Send and verify only the two founder-requested test messages; do not publish.
+- [x] Render and inspect every template at desktop and 320px.
+- [x] Send and verify only the two founder-requested test messages; do not publish.
 
 ## Done
 - [x] Rewrite `WhatWeDo` as a light, organic donation branch using only existing ivory, gold, emerald, and semantic text/surface tokens.
