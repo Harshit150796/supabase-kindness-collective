@@ -1,5 +1,5 @@
 /** Personal proof-of-impact emails. Never contains spendable credentials. */
-import { shell, escapeHtml, type RenderedEmail, type TimelineStep } from './email-layout.ts';
+import { shell, escapeHtml, SUPPORT_LINE, type RenderedEmail, type TimelineStep } from './email-layout.ts';
 
 export interface ImpactItem {
   brand: string; value: number; issuedBrand?: string | null; brandReason?: string | null; type?: string | null;
@@ -61,7 +61,7 @@ export function renderImpactEmail(o: ImpactEmailInput): RenderedEmail {
   const text = [
     `Hi ${o.donorFirstName || 'there'},`, '', intro, '', `${usd(total)} · ${o.fundraiserTitle}`, '', ...timelineText, '', ...disclosures, topup, ...usedDetails, '',
     `View your donation update: ${o.impactUrl}`, '', '— The CouponDonation team', '',
-    `We never email codes or card details.${o.sample ? ' This is a test message.' : ''}`, `Stop impact emails: ${o.stopUrl}`,
+    `We never email codes or card details.${o.sample ? ' This is a test message.' : ''}`, SUPPORT_LINE, `Stop impact emails: ${o.stopUrl}`,
   ].filter((line) => line !== '').join('\n');
   return { subject, html, text, headers: { 'List-Unsubscribe': `<${o.stopUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } };
 }
@@ -70,6 +70,6 @@ export function renderUseReminderEmail(o: { brand: string; fundraiserTitle: stri
   const intro = `A ${o.brand} card for “${o.fundraiserTitle}” was revealed seven days ago. If you used it, you may mark it used; adding a note or receipt is optional and never affects your help.`;
   const subject = 'A quick note about your fundraiser';
   const html = shell({ preheader: 'A quick note from CouponDonation.', greeting: `Hi ${o.firstName || 'there'}`, status: 'Organizer reminder', headline: 'A quick check-in', paragraphs: [intro], valueCard: { label: 'Fundraiser', value: o.fundraiserTitle, details: [o.brand] }, link: { label: 'Open your fundraiser dashboard', url: o.dashboardUrl }, footer: `This is the only reminder we’ll send for this card.${o.sample ? ' This is a test message.' : ''}`, sample: o.sample });
-  const text = [`Hi ${o.firstName || 'there'},`, '', intro, '', `Open your fundraiser dashboard: ${o.dashboardUrl}`, '', '— The CouponDonation team', '', `This is the only reminder we'll send for this card.${o.sample ? ' This is a test message.' : ''}`].join('\n');
+  const text = [`Hi ${o.firstName || 'there'},`, '', intro, '', `Open your fundraiser dashboard: ${o.dashboardUrl}`, '', '— The CouponDonation team', '', `This is the only reminder we'll send for this card.${o.sample ? ' This is a test message.' : ''}`, SUPPORT_LINE].join('\n');
   return { subject, html, text };
 }

@@ -3,7 +3,7 @@
 // creates pending-approval auto-tasks by polling, then fans out to notify-dispatch and email-scheduler.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { NOTIFY_SENDER, shell } from '../_shared/email-layout.ts';
+import { ADMIN_SENDER, shell } from '../_shared/email-layout.ts';
 import { processAccountEmail } from '../_shared/account-emails.ts';
 
 const SUPA = Deno.env.get('SUPABASE_URL')!;
@@ -32,11 +32,11 @@ Deno.serve(async (req) => {
   const key = Deno.env.get('RESEND_API_KEY');
 
   const send = async (subject: string, items: { line: string; link: string }[]) => {
-    const html = shell({ preheader: 'There is new account activity to review.', greeting: 'Hi team', status: 'Admin notice', headline: 'Account activity needs review', paragraphs: [`There ${items.length === 1 ? 'is one account item' : `are ${items.length} account items`} ready for review.`, ...items.map((i) => i.line)], valueCard: { label: 'Review queue', value: `${items.length}`, details: [items.length === 1 ? 'item ready' : 'items ready'] }, link: { label: 'Open the admin portal', url: `${SITE}/admin` }, footer: 'Internal account notification. Manage recipients in Admin Settings.' });
+    const html = shell({ preheader: 'There is new account activity to review.', greeting: 'Hi team', status: 'Admin notice', headline: 'Account activity needs review', paragraphs: [`There ${items.length === 1 ? 'is one account item' : `are ${items.length} account items`} ready for review.`, ...items.map((i) => i.line)], valueCard: { label: 'Review queue', value: `${items.length}`, details: [items.length === 1 ? 'item ready' : 'items ready'] }, link: { label: 'Open the admin portal', url: `${SITE}/admin` }, footer: 'Internal account notification. Manage recipients in Admin Settings.', recipient: false });
     const text = ['Hi team,', '', `There ${items.length === 1 ? 'is one account item' : `are ${items.length} account items`} ready for review.`, '', ...items.map((i) => `- ${i.line}`), '', `Open the admin portal: ${SITE}/admin`, '', '— The CouponDonation team'].join('\n');
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: NOTIFY_SENDER.from, reply_to: NOTIFY_SENDER.replyTo, to: recipients, subject, html, text }),
+      body: JSON.stringify({ from: ADMIN_SENDER.from, reply_to: ADMIN_SENDER.replyTo, to: recipients, subject, html, text }),
     });
     const t = await r.text();
     if (!r.ok) throw new Error(`[${r.status}] ${t}`);

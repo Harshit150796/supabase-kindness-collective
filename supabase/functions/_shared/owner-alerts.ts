@@ -1,7 +1,7 @@
 // Owner "You've received a coupon" alerts. One queue (coupon_owner_alerts, unique per coupon + credential version),
 // flushed right after an admin save and again by the 5-minute dispatcher. One email per fundraiser per flush; never contains codes.
 // deno-lint-ignore-file no-explicit-any
-import { NOTIFY_SENDER, shell } from './email-layout.ts';
+import { NOTIFY_SENDER, SUPPORT_LINE, shell } from './email-layout.ts';
 
 const SITE = 'https://coupondonation.com';
 const usd = (n: number) => `$${Number(n).toFixed(Number(n) % 1 ? 2 : 0)}`;
@@ -31,7 +31,7 @@ export function renderOwnerCouponEmail(o: { fundraiserTitle: string; items: Aler
   const html = shell({ preheader: 'A donation is ready in your fundraiser dashboard.', greeting: `Hi ${o.firstName || 'there'}`, status: 'Ready for organizer', headline: 'A donation is ready to receive', paragraphs: [intro], valueCard: { label: 'Available in your dashboard', value: usd(total), details: [o.fundraiserTitle, `${o.items.length} ${o.items.length === 1 ? 'item' : 'items'} ready`] }, timeline: [
     { label: 'Donation recorded', complete: true }, { label: 'Coupon created', complete: true }, { label: 'Reveal securely', detail: 'Only the organizer can view the details.', complete: false }, { label: 'Mark used', complete: false },
   ], link: { label: 'Open Coupons', url: o.dashboardUrl }, footer: `Codes and card details are available only after you sign in. They are never included in email.${o.test ? ' This is a test message.' : ''}`, sample: o.test });
-  const text = [`Hi ${o.firstName || 'there'},`, '', intro, '', `Open your fundraiser dashboard: ${o.dashboardUrl}`, '', '— The CouponDonation team', '', `Codes and card details are never included in email.${o.test ? ' This is a test message.' : ''}`].join('\n');
+  const text = [`Hi ${o.firstName || 'there'},`, '', intro, '', `Open your fundraiser dashboard: ${o.dashboardUrl}`, '', '— The CouponDonation team', '', `Codes and card details are never included in email.${o.test ? ' This is a test message.' : ''}`, SUPPORT_LINE].join('\n');
   return { subject, html, text };
 }
 
