@@ -49,8 +49,8 @@ export function OwnerCouponsSection({ coupons, isOwner, onChanged }: { coupons: 
   };
 
   return (
-    <section id="coupons" className="scroll-mt-24 rounded-2xl bg-card p-5 sm:p-6">
-      <h2 className="font-display text-2xl font-normal text-foreground">Coupons</h2>
+    <section id="coupons" className="scroll-mt-32">
+      <h2 className="font-display text-3xl font-normal text-foreground">Coupons</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         {isOwner ? 'Coupons your fundraiser received. Codes stay hidden until you reveal them.' : 'Coupon statuses for this fundraiser. Codes are visible to the fundraiser owner only.'}
       </p>
@@ -65,12 +65,12 @@ export function OwnerCouponsSection({ coupons, isOwner, onChanged }: { coupons: 
                 <h3 className="font-medium text-foreground">{brand}</h3>
                 <span className="text-xs text-muted-foreground">${list.reduce((s, c) => s + Number(c.value ?? 0), 0)} total</span>
               </div>
-              <ul className="divide-y divide-border">
-                {list.map((c) => {
+              <ul className="divide-y divide-border border-y border-border">
+                {list.map((c, i) => {
                   const r = revealed[c.id];
                   const receivedAt = r?.revealed_at ?? c.revealed_at;
                   return (
-                    <li key={c.id} className="py-3 text-sm">
+                    <li key={c.id} className="dash-rise py-4 text-sm" style={{ animationDelay: `${i * 40}ms` }}>
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="font-medium text-foreground">${Number(c.value ?? 0)} {kind(c.credential_type)}{c.card_last4 && !r ? <span className="ml-2 text-xs font-normal text-muted-foreground">•••• {c.card_last4}</span> : null}</span>
                         <span className="text-xs text-muted-foreground">
