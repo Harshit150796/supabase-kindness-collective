@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>CouponDonation brag composition</title>
+<!-- The project's own compiled Tailwind + design tokens + fonts (served by the repo's Vite dev server). -->
+<script type="module">import '/src/index.css';</script>
+<style>
+  html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+  /* Every frame is a pure function of time: no CSS-driven motion anywhere. */
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: hsl(var(--ink)); font-family: 'Instrument Sans', 'Instrument Sans Fallback', system-ui, sans-serif; letter-spacing: 0; -webkit-font-smoothing: antialiased; }
+  .layer { position: absolute; inset: 0; display: none; }
+  .serif { font-family: 'Instrument Serif', 'Instrument Serif Fallback', Georgia, serif; font-weight: 400; letter-spacing: 0; }
+  .ink { background: hsl(var(--ink)); color: hsl(var(--ink-foreground)); }
+  .vig { position: absolute; inset: 0; background: radial-gradient(ellipse 75% 70% at 50% 45%, transparent 40%, rgba(0, 0, 0, 0.42) 100%); pointer-events: none; }
+  .mask { display: inline-block; overflow: hidden; vertical-align: top; padding: 0 0.04em; margin: 0 -0.04em; }
+  .mask > span { display: inline-block; will-change: transform; }
+  .line { display: block; overflow: hidden; padding-bottom: 0.08em; margin-bottom: -0.08em; }
+  .line > span { display: inline-block; will-change: transform; }
+
+  /* ---------- Scene A: hook + burst (ink) ---------- */
+  #a-amt { position: absolute; left: 0; right: 0; top: 70px; text-align: center; font-size: 520px; line-height: 0.92; color: hsl(var(--ink-foreground)); white-space: nowrap; }
+  #a-amt .cur { font-size: 0.52em; vertical-align: 0.62em; color: hsl(var(--primary-45)); margin-right: 0.04em; }
+  #a-q { position: absolute; left: 0; right: 0; top: 690px; text-align: center; font-size: 100px; line-height: 1.05; color: hsl(var(--ink-foreground)); margin: 0; }
+  #a-q .w { display: inline-block; margin: 0 0.12em; }
+  .ring { position: absolute; left: 50%; top: 50%; border-radius: 50%; border: 3px solid hsl(var(--primary-45)); transform: translate(-50%, -50%); width: 10px; height: 10px; }
+  .ring.blue { border-color: hsl(212 80% 58%); border-width: 2px; }
+  #a-head { position: absolute; left: 0; right: 0; top: 96px; text-align: center; font-size: 108px; line-height: 1; color: hsl(var(--ink-foreground)); }
+  #a-head em { font-style: normal; color: hsl(var(--primary-85)); }
+  #a-sub { position: absolute; left: 0; right: 0; top: 236px; text-align: center; font-size: 34px; color: hsl(var(--ink-foreground) / 0.68); }
+  .deck-label { position: absolute; top: 862px; width: 440px; margin-left: -220px; text-align: center; font-size: 28px; color: hsl(var(--ink-foreground) / 0.72); }
+  .deck-label b { color: hsl(var(--ink-foreground)); font-weight: 600; }
+
+  .cpn { position: absolute; left: 0; top: 0; width: 380px; height: 216px; margin: -108px 0 0 -190px; background: hsl(var(--card)); border-radius: 24px; display: flex; color: hsl(var(--foreground)); will-change: transform; }
+  .cpn-l { flex: 1; padding: 26px 24px 22px 28px; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
+  .cpn-logo { height: 50px; display: flex; align-items: center; }
+  .cpn-logo img { height: 100%; width: auto; display: block; }
+  .cpn-logo.wide img { height: 40px; }
+  .cpn-v { font-size: 96px; line-height: 0.78; color: hsl(var(--primary)); }
+  .cpn-t { font-size: 17px; color: hsl(var(--muted-foreground)); margin-top: 10px; }
+  .cpn-r { position: relative; width: 106px; border-left: 2px dashed hsl(var(--border)); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 26px 0 22px; }
+  .cpn-r::before, .cpn-r::after { content: ''; position: absolute; left: -15px; width: 28px; height: 28px; border-radius: 50%; background: hsl(var(--ink)); }
+  .cpn-r::before { top: -14px; } .cpn-r::after { bottom: -14px; }
+  .cpn-bars { width: 60px; height: 112px; }
+  .cpn-ok { display: flex; align-items: center; gap: 5px; font-size: 14px; font-weight: 600; color: hsl(var(--verify)); }
+  .cpn-ok svg { width: 17px; height: 17px; }
+
+  /* ---------- Scene B: the real 3D Giving Tree ---------- */
+  #b-clip { position: absolute; inset: 0; overflow: hidden; background: #8fb8e0; }
+  #tree { max-width: none; position: absolute; left: 50%; top: 50%; width: 2304px; height: 1296px; transform-origin: 50% 50%; }
+  #b-kick { position: absolute; left: 0; right: 0; top: 92px; text-align: center; font-size: 34px; letter-spacing: 0.2em; font-weight: 600; color: hsl(var(--foreground) / 0.78); text-transform: uppercase; white-space: nowrap; }
+  #b-kick .kw { position: relative; display: inline-block; overflow: hidden; vertical-align: top; height: 1.25em; margin-left: 0.35em; color: hsl(var(--primary-28)); font-weight: 700; text-align: left; }
+  #b-kick .kw span { position: absolute; left: 0; top: 0; white-space: nowrap; }
+  #b-kick .kw .sizer { position: static; visibility: hidden; }
+  .badge { position: absolute; display: flex; align-items: center; gap: 22px; background: hsl(var(--card)); border-radius: 30px; padding: 20px 40px 20px 22px; }
+  .badge img { width: 104px; height: 104px; display: block; }
+  .wm { font-weight: 700; font-size: 68px; line-height: 1; letter-spacing: 0; white-space: nowrap; }
+  .wm .c { color: #2e7d32; } .wm .d { color: #1565c0; }
+  #b-badge { left: 50%; top: 870px; }
+  #b-dim { position: absolute; inset: 0; background: hsl(var(--ink)); opacity: 0; }
+
+  /* ---------- Scene C: the real donate flow ---------- */
+  #c { background: hsl(var(--primary-93)); }
+  #c-left { position: absolute; left: 120px; top: 250px; width: 680px; }
+  #c-left h2 { font-size: 118px; line-height: 0.98; margin: 0; color: hsl(var(--foreground)); }
+  #c-left p { margin: 40px 0 0; font-size: 31px; line-height: 1.4; color: hsl(var(--muted-foreground)); max-width: 620px; }
+  #c-right { position: absolute; left: 872px; top: 52px; width: 768px; transform-origin: 0 0; }
+  #c-cards { position: relative; }
+  #c-impact { position: absolute; left: 0; top: 0; width: 100%; }
+  .chipbar-wrap { overflow: hidden; }
+  .stagger-children > *, .stagger-fast > * { opacity: 1 !important; }
+
+  /* ---------- Scene D: trust (deep forest) ---------- */
+  #d { background: hsl(var(--primary-20)); color: hsl(var(--primary-foreground)); }
+  #d-ring { position: absolute; left: 150px; top: 230px; width: 620px; height: 620px; }
+  #d-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  #d-ring .num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #d-ring .num strong { font-size: 220px; line-height: 0.9; font-weight: 400; }
+  #d-ring .num span { font-size: 34px; color: hsl(var(--primary-foreground) / 0.72); margin-top: 6px; }
+  #d-head { position: absolute; left: 900px; top: 236px; width: 900px; font-size: 128px; line-height: 0.96; }
+  #d-trace { position: absolute; left: 896px; top: 640px; width: 880px; height: 220px; }
+  #d-track, #d-prog { position: absolute; left: 7px; top: 7px; height: 2px; width: 820px; background: hsl(var(--primary-foreground) / 0.22); }
+  #d-prog { background: hsl(212 80% 62%); transform-origin: 0 50%; }
+  .step { position: absolute; top: 0; width: 220px; }
+  .step .node { width: 16px; height: 16px; border-radius: 50%; background: hsl(var(--primary-20)); border: 2px solid hsl(var(--primary-foreground) / 0.4); box-sizing: border-box; }
+  .step .node.on { background: hsl(212 80% 62%); border-color: hsl(212 80% 62%); }
+  .step .n { margin-top: 30px; font-size: 22px; color: hsl(var(--primary-foreground) / 0.6); display: flex; align-items: center; gap: 8px; }
+  .step .n svg { width: 22px; height: 22px; color: hsl(212 80% 70%); }
+  .step .l { margin-top: 10px; font-size: 34px; line-height: 1.12; font-weight: 500; }
+
+  /* ---------- Scene E: the real apply flow ---------- */
+  #e { background: #fff; }
+  #e-left { position: absolute; left: 0; top: 0; bottom: 0; width: 780px; background: rgb(237, 242, 237); background-image: radial-gradient(hsl(var(--primary) / 0.10) 1.4px, transparent 1.4px); background-size: 26px 26px; }
+  #e-logo { position: absolute; left: 64px; top: 58px; display: flex; align-items: center; gap: 14px; }
+  #e-logo img { width: 58px; height: 58px; }
+  #e-logo .wm { font-size: 34px; }
+  #e-head { position: absolute; left: 64px; top: 300px; width: 680px; font-size: 118px; line-height: 0.98; color: hsl(var(--foreground)); }
+  #e-sub { position: absolute; left: 66px; top: 700px; width: 640px; font-size: 31px; line-height: 1.4; color: hsl(var(--muted-foreground)); }
+  #e-right { position: absolute; left: 826px; top: 168px; width: 1018px; transform-origin: 0 0; }
+  #e-right .state { position: absolute; left: 0; top: 0; width: 100%; }
+  #e-cont { position: absolute; right: 70px; bottom: 56px; transform-origin: 100% 100%; }
+
+  /* ---------- Scene F: outro (ink) ---------- */
+  #f-head { position: absolute; left: 0; right: 0; top: 168px; text-align: center; font-size: 140px; line-height: 1.02; }
+  #f-head .l2 { color: hsl(var(--primary-85)); }
+  #f-btns { position: absolute; left: 0; right: 0; top: 560px; display: flex; justify-content: center; gap: 32px; }
+  .cta { display: inline-flex; align-items: center; gap: 16px; height: 100px; padding: 0 52px; border-radius: 14px; font-size: 38px; font-weight: 600; }
+  .cta svg { width: 36px; height: 36px; }
+  .cta.p { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+  .cta.o { background: hsl(var(--background)); color: hsl(var(--foreground)); }
+  #f-badge { left: 50%; top: 768px; }
+  #f-url { position: absolute; left: 0; right: 0; top: 960px; text-align: center; font-size: 40px; font-weight: 500; color: hsl(var(--ink-foreground) / 0.82); }
+
+  /* ---------- cursor ---------- */
+  #cursor { position: absolute; left: 0; top: 0; width: 46px; height: 46px; display: none; z-index: 50; transform-origin: 8px 6px; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.28)); }
+  #tap { position: absolute; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; border: 3px solid hsl(var(--primary)); display: none; z-index: 49; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <!-- A: hook + burst -->
+  <div id="a-bg" class="layer ink"><div class="vig"></div></div>
+  <div id="a-fg" class="layer" style="z-index:5">
+    <div id="a-amt" class="serif"><span class="mask"><span id="a-amt-in"><span class="cur">$</span>50</span></span></div>
+    <h1 id="a-q" class="serif"></h1>
+    <div id="a-ring1" class="ring"></div>
+    <div id="a-ring2" class="ring blue"></div>
+    <div id="a-head" class="serif"><span class="line"><span>Here, $50 became <em>9 real coupons.</em></span></span></div>
+    <div id="a-sub"><span class="line"><span>For verified families. Never cash.</span></span></div>
+    <div id="a-decks"></div>
+  </div>
+
+  <!-- B: real 3D Giving Tree from the homepage hero -->
+  <div id="b" class="layer" style="z-index:3">
+    <div id="b-clip"><img id="tree" alt="" /></div>
+    <div id="b-kick">CouponDonation is<span class="kw"><span class="sizer">TRANSPARENT</span><span>Transparent</span><span>Trackable</span><span>Real-time</span></span></div>
+    <div id="b-badge" class="badge"><img src="/favicon-512.png" alt="" /><span class="wm"><span class="c">Coupon</span><span class="d">Donation</span></span></div>
+    <div id="b-dim"></div>
+  </div>
+
+  <!-- C: real donate flow -->
+  <div id="c" class="layer" style="z-index:6">
+    <div id="c-left">
+      <h2 class="serif"><span class="line"><span>Choose where</span></span><span class="line"><span>your help can</span></span><span class="line"><span>be used.</span></span></h2>
+      <p><span class="line"><span>Pick the stores. Set the amount.</span></span><span class="line"><span>See every coupon it creates.</span></span></p>
+    </div>
+    <div id="c-right">
+      <div id="c-steps" class="flex justify-center gap-3 mb-10"></div>
+      <div id="c-cards"><div id="c-card"></div><div id="c-impact"></div></div>
+    </div>
+  </div>
+
+  <!-- D: trust -->
+  <div id="d" class="layer" style="z-index:7">
+    <div id="d-ring">
+      <svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="82" fill="none" stroke="hsl(var(--primary-foreground) / .14)" stroke-width="14" /><circle id="d-arc" cx="100" cy="100" r="82" fill="none" stroke="hsl(var(--primary-foreground))" stroke-width="14" stroke-linecap="round" /></svg>
+      <div class="num"><strong class="serif" id="d-num">95¢</strong><span>of every $1</span></div>
+    </div>
+    <div id="d-head" class="serif"><span class="line"><span>See where every</span></span><span class="line"><span>dollar goes.</span></span></div>
+    <div id="d-trace"><div id="d-track"></div><div id="d-prog"></div></div>
+  </div>
+
+  <!-- E: real apply flow -->
+  <div id="e" class="layer" style="z-index:8">
+    <div id="e-left">
+      <div id="e-logo"><img src="/favicon-512.png" alt="" /><span class="wm"><span class="c">Coupon</span><span class="d">Donation</span></span></div>
+      <div id="e-head" class="serif"><span class="line"><span>Need help?</span></span><span class="line"><span>Apply in about</span></span><span class="line"><span>3 minutes.</span></span></div>
+      <div id="e-sub"><span class="line"><span>Two quick taps — no typing yet.</span></span><span class="line"><span>Free to apply. Coupons, never cash.</span></span></div>
+    </div>
+    <div id="e-right"></div>
+    <div id="e-cont"></div>
+  </div>
+
+  <!-- F: outro -->
+  <div id="f" class="layer ink" style="z-index:9">
+    <div class="vig"></div>
+    <div id="f-head" class="serif"><span class="line"><span>Help someone this week.</span></span><span class="line l2"><span>Or ask for help yourself.</span></span></div>
+    <div id="f-btns">
+      <div class="cta p" id="f-b1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>Donate now<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+      <div class="cta o" id="f-b2">Apply as Recipient</div>
+    </div>
+    <div id="f-badge" class="badge"><img src="/favicon-512.png" alt="" /><span class="wm"><span class="c">Coupon</span><span class="d">Donation</span></span></div>
+    <div id="f-url">coupondonation.com</div>
+  </div>
+
+  <div id="tap"></div>
+  <svg id="cursor" viewBox="0 0 32 32"><path d="M6 3.5v22.2l5.6-5.3 3.6 8.3 3.9-1.7-3.6-8.1h7.7z" fill="#fff" stroke="hsl(123 20% 7%)" stroke-width="1.8" stroke-linejoin="round"/></svg>
+</div>
+<script type="module" src="./comp.js"></script>
+</body>
+</html>

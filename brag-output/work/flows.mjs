@@ -1,0 +1,20 @@
+import { chromium } from 'playwright';
+import fs from 'node:fs';
+const browser = await chromium.launch();
+const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
+await ctx.route(/supabase\.co/, (r) => r.abort());
+const page = await ctx.newPage();
+await page.goto('http://127.0.0.1:5173/donate', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(3000);
+await page.getByRole('button', { name: 'Okay' }).click().catch(() => {});
+for (const b of ['Walmart', 'Target', 'Amazon']) { await page.getByText(b, { exact: true }).first().click(); await page.waitForTimeout(400); }
+await page.screenshot({ path: 'shots/donate-selected.png' });
+const btns = await page.locator('button').allInnerTexts();
+console.log('buttons:', btns.filter(Boolean).slice(0, 40).join(' | '));
+await page.getByRole('button', { name: /continue/i }).first().click().catch(e => console.log('no continue', e.message.slice(0, 80)));
+await page.waitForTimeout(800);
+await page.screenshot({ path: 'shots/donate-step2.png' });
+await page.getByRole('button', { name: /continue|see impact|next/i }).first().click().catch(e => console.log('no next', e.message.slice(0, 80)));
+await page.waitForTimeout(800);
+await page.screenshot({ path: 'shots/donate-step3.png', fullPage: true });
+await browser.close();

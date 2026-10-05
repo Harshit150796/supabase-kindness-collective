@@ -1,0 +1,1 @@
+<div style="opacity: 1; transform: none;"><h2 class="font-display text-5xl font-normal leading-none text-foreground md:text-6xl">Choose where your help can be used.</h2></div>

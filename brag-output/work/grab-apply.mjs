@@ -1,0 +1,25 @@
+import { chromium } from 'playwright';
+import fs from 'node:fs';
+const browser = await chromium.launch();
+const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
+await ctx.route(/supabase\.co/, (r) => r.abort());
+await ctx.addInitScript(() => localStorage.setItem('cd_privacy_consent', JSON.stringify({ accepted: true, at: new Date().toISOString() })));
+const page = await ctx.newPage();
+const grab = () => page.evaluate(() => {
+  const h = [...document.querySelectorAll('*')].find(e => e.childElementCount === 0 && e.textContent.trim() === 'Who needs help?');
+  let n = h; while (n && !n.textContent.includes('Free to apply')) n = n.parentElement;
+  const r = n.getBoundingClientRect();
+  const cont = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Continue');
+  return { html: n.outerHTML, rect: [r.x, r.y, r.width, r.height], cont: cont.outerHTML };
+});
+await page.goto('http://127.0.0.1:5173/apply', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(3000);
+const a = await grab();
+fs.writeFileSync('markup/apply-form-0.html', a.html); fs.writeFileSync('markup/apply-continue-0.html', a.cont);
+await page.getByText('My Family', { exact: true }).click(); await page.waitForTimeout(300);
+fs.writeFileSync('markup/apply-form-1.html', (await grab()).html);
+await page.getByText('Food & Groceries', { exact: true }).click(); await page.waitForTimeout(400);
+const c = await grab();
+fs.writeFileSync('markup/apply-form-2.html', c.html); fs.writeFileSync('markup/apply-continue-2.html', c.cont);
+console.log(a.rect);
+await browser.close();

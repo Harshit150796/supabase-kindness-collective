@@ -1,0 +1,10 @@
+# heavy / regenerable intermediates
+work/tree/
+work/shots/
+work/stills/
+work/sheets/
+work/node_modules
+work/*.mp4
+work/*.wav
+work/*.log
+work/final/

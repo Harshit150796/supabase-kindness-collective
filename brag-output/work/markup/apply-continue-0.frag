@@ -1,0 +1,1 @@
+<button disabled="" class="bg-primary text-primary-foreground font-semibold px-10 py-3.5 rounded-full hover:bg-primary/90 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 press-effect">Continue</button>
