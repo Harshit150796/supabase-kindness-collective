@@ -2,22 +2,22 @@
  "SC": {
   "hook": [
    0,
-   3.5
+   3
   ],
   "apply": [
-   3.5,
-   11
+   3,
+   10.5
   ],
   "share": [
-   11,
-   13.5
+   10.5,
+   13
   ],
   "give": [
-   13.5,
-   18
+   13,
+   17.5
   ],
   "arrive": [
-   18,
+   17.5,
    24.5
   ],
   "update": [
@@ -34,43 +34,43 @@
   ]
  },
  "T": {
-  "hookBubble": 1.2,
-  "p1In": -0.25,
-  "p2In": -0.1,
-  "tabsIn": 3.45,
-  "applyBubble": 3.7,
+  "hookBubble": 0.9,
+  "p1In": -0.6,
+  "p2In": -0.5,
+  "tabsIn": 2.95,
+  "applyBubble": 3.2,
   "step": [
-   3.5,
-   5.45,
-   7.05,
-   8.5
+   3,
+   4.95,
+   6.55,
+   8
   ],
-  "tapFamily": 4.25,
-  "tapFood": 4.75,
-  "next1": 5.2,
-  "cover": 5.95,
-  "next2": 6.8,
-  "chip": 7.55,
-  "next3": 8.25,
-  "submit": 9.3,
-  "great": 9.55,
-  "shareH": 11.1,
-  "shareBubble": 11.2,
-  "shareBtn": 11.35,
-  "shareTap": 12.25,
-  "giveBubble": 13.7,
-  "donateTap": 14.4,
-  "deal": 14.65,
-  "giveNote": 15,
-  "notCash": 15.6,
-  "mail": 18.15,
-  "arriveBubble": 18.3,
-  "couponsCard": 18.7,
-  "reveal": 19.95,
-  "usedTap": 21.2,
-  "dialog": 21.35,
-  "markTap": 22.7,
-  "toast": 22.9,
+  "tapFamily": 3.75,
+  "tapFood": 4.25,
+  "next1": 4.7,
+  "cover": 5.45,
+  "next2": 6.3,
+  "chip": 7.05,
+  "next3": 7.75,
+  "submit": 8.8,
+  "great": 9.05,
+  "shareH": 10.6,
+  "shareBubble": 10.7,
+  "shareBtn": 10.85,
+  "shareTap": 11.75,
+  "giveBubble": 13.2,
+  "donateTap": 13.9,
+  "deal": 14.15,
+  "giveNote": 13.5,
+  "notCash": 15.1,
+  "mail": 17.65,
+  "arriveBubble": 17.8,
+  "couponsCard": 18.2,
+  "reveal": 19.1,
+  "usedTap": 20.05,
+  "dialog": 20.2,
+  "markTap": 22.1,
+  "toast": 22.3,
   "updMail": 24.65,
   "updBubble": 24.8,
   "recv": 25.4,
@@ -88,32 +88,32 @@
   "url": 33.6
  },
  "TAPS": {
-  "tapFamily": 4.25,
-  "tapFood": 4.75,
-  "next1": 5.2,
-  "cover": 5.7,
-  "next2": 6.8,
-  "chip": 7.55,
-  "next3": 8.25,
-  "submit": 9.3,
-  "shareTap": 12.25,
-  "donateTap": 14.4,
-  "reveal": 19.95,
-  "usedTap": 21.2,
-  "markTap": 22.7,
+  "tapFamily": 3.75,
+  "tapFood": 4.25,
+  "next1": 4.7,
+  "cover": 5.2,
+  "next2": 6.3,
+  "chip": 7.05,
+  "next3": 7.75,
+  "submit": 8.8,
+  "shareTap": 11.75,
+  "donateTap": 13.9,
+  "reveal": 19.1,
+  "usedTap": 20.05,
+  "markTap": 22.1,
   "g1": 28.6
  },
  "TURN": [
   [
-   3.5,
+   3,
    1
   ],
   [
-   13.5,
+   13,
    2
   ],
   [
-   18,
+   17.5,
    1
   ],
   [

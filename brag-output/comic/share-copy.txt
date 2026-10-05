@@ -20,4 +20,4 @@ Two players, one goal. Player 1 asks for help in four steps, Player 2 taps Donat
 Reels / TikTok / Shorts caption:
 Co-op mode: one asks for help, one gives, and both see it land. Start donating or apply for support at coupondonation.com.
 
-As in Level 1, every on-screen line is the site's own copy: the application steps, the coupon screens, the emails and the homepage call to action. The fundraiser, goal and amounts are labelled examples, and codes are never shown.
+As in Level 1, every on-screen line is the site's own copy: the application steps, the coupon screens, the emails and the homepage call to action. The goal is labelled as an example, the fundraiser title is one of the app's own suggested titles, personal details appear as grey bars, and codes are never shown.

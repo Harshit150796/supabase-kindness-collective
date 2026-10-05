@@ -9,7 +9,8 @@ const [fmt, mode, a1, a2] = process.argv.slice(2);
 const W = fmt === 'v' ? 1080 : 1920, H = fmt === 'v' ? 1920 : 1080;
 const PAGE = process.env.PAGE || 'index'; // index = Level 1, coop = Co-op mode
 const URL = `http://127.0.0.1:5173/brag-output/work/comic/${PAGE}.html?f=${fmt}`;
-const browser = await chromium.launch();
+// grayscale text antialiasing: LCD subpixel AA would put orange/blue fringes on every glyph
+const browser = await chromium.launch({ args: ['--disable-lcd-text'] });
 const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
 page.on('pageerror', (e) => console.log('pageerror', e.message));
 page.on('console', (m) => { if (m.type() === 'error') console.log('console', m.text()); });

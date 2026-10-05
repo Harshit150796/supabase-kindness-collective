@@ -2,7 +2,6 @@
 .coop-tabs { position: absolute; display: flex; justify-content: center; gap: 56px; font-weight: 600; letter-spacing: 0; }
 .coop-tab span { display: inline-block; padding-bottom: 10px; border-bottom: 5px solid transparent; color: hsl(123 20% 7% / 0.5); }
 .coop-tab.on span { color: hsl(123 46% 28%); border-bottom-color: hsl(123 46% 34%); }
-.door-player { position: absolute; text-align: center; font-weight: 700; color: hsl(123 46% 28%); }
 
 /* application: headline panel */
 .apply-wm { position: absolute; display: flex; align-items: center; gap: 0.35em; font-weight: 700; white-space: nowrap; }
@@ -23,7 +22,6 @@
 .apply-step { position: absolute; inset: 0; display: none; flex-direction: column; gap: 18px; }
 .apply-lbl { display: flex; justify-content: space-between; align-items: baseline; font-size: 32px; font-weight: 600; color: hsl(123 20% 7%); }
 .apply-lbl em { font-style: normal; font-size: 24px; color: hsl(123 46% 34%); }
-.apply-lbl.big { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 56px; line-height: 1; }
 .apply-sub { font-size: 25px; color: hsl(123 10% 35%); line-height: 1.35; }
 .benef { display: flex; align-items: center; gap: 22px; border: 2px solid hsl(123 12% 86%); border-radius: 16px; padding: 18px 24px; background: hsl(var(--card)); }
 .benef.on { border-color: hsl(123 46% 34%); background: hsl(123 46% 95%); }
@@ -54,6 +52,10 @@
 .amount-in .val { font-size: 54px; font-weight: 700; color: hsl(123 20% 7%); }
 .amount-in .usd { margin-left: auto; font-size: 21px; font-weight: 600; color: hsl(123 10% 38%); background: hsl(123 18% 92%); border-radius: 8px; padding: 6px 14px; }
 .zip-in { border: 2px solid hsl(123 12% 84%); border-radius: 14px; padding: 18px 22px; font-size: 25px; color: hsl(123 6% 56%); }
+/* filled story / ZIP: grey bars like the review rows (no invented copy or ZIP) */
+.story.filled, .zip-in.filled { font-size: 0; }
+.story.filled::before, .story.filled::after, .zip-in.filled::before { content: ''; display: block; height: 14px; border-radius: 7px; background: hsl(123 12% 82%); margin: 12px 0; }
+.story.filled::before { width: 92%; } .story.filled::after { width: 64%; } .zip-in.filled::before { width: 22%; margin: 6px 0; }
 .review-title { font-size: 46px; font-weight: 700; color: hsl(123 20% 7%); }
 .review-rows { border: 2px solid hsl(123 12% 86%); border-radius: 16px; overflow: hidden; }
 .review-row { display: grid; grid-template-columns: 210px 1fr auto; align-items: center; padding: 18px 24px; font-size: 27px; border-bottom: 2px solid hsl(123 12% 92%); }
@@ -81,7 +83,7 @@
 .cpn-sub { font-size: 26px; color: hsl(123 10% 38%); line-height: 1.3; }
 .cpn-row { display: flex; align-items: center; gap: 16px; }
 .cpn-row img { width: 46px; height: 46px; }
-.cpn-name { font-family: 'Instrument Serif', serif; font-size: 42px; }
+.cpn-name { font-size: 32px; font-weight: 500; color: hsl(123 20% 7%); }
 .cpn-status { margin-left: auto; font-size: 28px; font-weight: 600; color: hsl(123 10% 38%); transform-origin: 100% 50%; }
 .cpn-status.on { color: hsl(123 46% 30%); }
 .cpn-code { display: none; align-items: center; gap: 18px; font-size: 26px; }
@@ -106,7 +108,7 @@
 .cta-duo.col { flex-direction: column; align-items: center; gap: 26px; font-size: 48px; }
 .cta-duo svg { width: 1em; height: 1em; }
 .cta-duo .cta-pill span { margin: 0 0.4em; }
-.cta-pill.alt { background: transparent; color: hsl(120 8% 98.5%); box-shadow: inset 0 0 0 4px hsl(120 8% 98.5% / 0.85); }
+.cta-pill.alt { background: hsl(120 8% 98.5% / 0.10); color: hsl(120 8% 98.5%); box-shadow: inset 0 0 0 2px hsl(120 8% 98.5% / 0.40); }
 
 /* phone: the form renders at full size, option descriptions hidden */
 .apply-form.phone .apply-step { gap: 12px; }

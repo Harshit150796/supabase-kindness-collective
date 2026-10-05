@@ -56,13 +56,13 @@ A 36.5s two-player cut for both audiences. Player 1 ("I need help") applies and 
 
 | # | Time | Scene | Real product moment |
 | --- | --- | --- | --- |
-| 1 | 0.0–3.5 | Hook | The homepage's split doors: "I need help" / "I want to help someone". "Two players. One goal." |
-| 2 | 3.5–11.0 | Apply (P1) | The 4-step application ("Who are we helping?" → "Review and submit your request"), "Free to apply. You receive retail coupons only — never cash.", Submit Fundraiser, "Great work!" |
-| 3 | 11.0–13.5 | Share (P1) | "Your fundraiser is ready to share." → Share Fundraiser → "Link copied!" |
-| 4 | 13.5–18.0 | Give (P2) | Donate now on the example fundraiser, coupons deal out: "Coupons, not cash" |
-| 5 | 18.0–24.5 | Arrive (P1) | "A donation arrived for your fundraiser" → Coupons → Reveal code → Used → Mark as used → "Marked as used" |
+| 1 | 0.0–3.0 | Hook | The homepage's split doors: "I need help" / "I want to help someone". "Two players. One goal." |
+| 2 | 3.0–10.5 | Apply (P1) | The 4-step application ("Who are we helping?" → "Review and submit your request"), "Free to apply. You receive retail coupons only — never cash.", Submit Fundraiser, "Great work!" |
+| 3 | 10.5–13.0 | Share (P1) | "Your fundraiser is ready to share." → Share Fundraiser → "Link copied!" |
+| 4 | 13.0–17.5 | Give (P2) | Donate now. The example goal fills a third, and coupons deal out: "Coupons, not cash". |
+| 5 | 17.5–24.5 | Arrive (P1) | "A donation arrived for your fundraiser" → Coupons → Reveal code → Used → Mark as used → "Marked as used" |
 | 6 | 24.5–28.0 | Update (P2) | "An update on your donation to “Example fundraiser”": Donated → Coupon created → Received → Used |
-| 7 | 28.0–32.0 | Goal (both) | Three donors fill the example goal → Fully funded → "Co-op complete!" |
+| 7 | 28.0–32.0 | Goal (both) | Player 1 taps Share, more donors fill the rest → Fully funded → "Co-op complete!" ("Only completed donations count.") |
 | 8 | 32.0–36.5 | CTA | "Help someone this week. Or ask for help yourself." with Start donating / Apply for support, and "U.S. residents, free to apply." |
 
-On screen, Reveal code is what turns the donor's step to Received, and Mark as used is what turns it to Used, exactly as the product works. Coupon codes are always masked. The film never promises timing, approval or verification. Rebuild with `PAGE=coop node dump-cues.mjs`, then `FILM=coop ./deliver-comic.sh h` (or `v`).
+On screen, Reveal code is what turns the donor's step to Received, and Mark as used is what turns it to Used, exactly as the product works. Coupon codes are always masked. Player 1's story and ZIP code fill in as grey bars, so no personal details are invented. The donor email uses the fundraiser's own (suggested) title. The film never promises timing, approval, verification or that a request closes. A five-lens review plus an adversarial verify pass drove the final fixes. Rebuild with `PAGE=coop node dump-cues.mjs`, then `FILM=coop ./deliver-comic.sh h` (or `v`).

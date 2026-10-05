@@ -32,13 +32,13 @@ const TXT = {
   arriveSubj: 'A donation arrived for your fundraiser',                // owner-alerts.ts
   arriveFoot: 'Codes and card details are never included in email.',
   couponsSub: 'Coupons your fundraiser received. Codes stay hidden until you reveal them.', // OwnerCouponsSection.tsx
-  arrive: 'Tap <em>Reveal code</em>,<br>then <em>Used</em>.',
-  optional: 'Everything here is optional. Sharing less never affects your help.',
-  toastT: 'Marked as used', toastD: 'Your donor will get a short note. Thank you.',
-  updSubj: 'An update on your donation to “Example fundraiser”',      // impact-email.ts
+  arrive: 'Player 1 taps <em>Reveal code</em>,<br>then <em>Used</em>.',
+  optional: 'Everything here is optional.',
+  toastT: 'Marked as used', toastD: 'Your donor will get a short note.',
+  updSubj: 'An update on your donation to “Help Feed My Family This Month”',      // impact-email.ts
   update: 'Player 2 gets<br>the update.',
   goal: 'Fill it<br><em>together.</em>',
-  goalNote: "One goal. Once it's fully funded, your request closes.",   // GoalStep.tsx
+  goalNote: 'Only completed donations count.',                        // totals count completed donations only (get_fundraiser_totals)
   done: 'Co-op complete!',
   ctaH: 'Help someone this week.<br>Or ask for help yourself.',        // CTASection.tsx
   ctaGive: 'Start donating', ctaApply: 'Apply for support', ctaNote: 'U.S. residents, free to apply.',
@@ -46,13 +46,13 @@ const TXT = {
 const TABS = ['Player 1 · I need help', 'Player 2 · I want to help someone'];
 
 // ------------------------------------------------------------------ timeline (scene-relative cues)
-const DURS = { hook: 3.5, apply: 7.5, share: 2.5, give: 4.5, arrive: 6.5, update: 3.5, goal: 4.0, cta: 4.5 };
+const DURS = { hook: 3.0, apply: 7.5, share: 2.5, give: 4.5, arrive: 7.0, update: 3.5, goal: 4.0, cta: 4.5 };
 const SC = {}; let acc = 0;
 for (const [n, d] of Object.entries(DURS)) { SC[n] = [acc, acc + d]; acc += d; }
 const DUR = acc; // 36.5 s
 const at = (scene, dt) => SC[scene][0] + dt;
 const T = {
-  hookBubble: at('hook', 1.2), p1In: at('hook', -0.25), p2In: at('hook', -0.1),
+  hookBubble: at('hook', 0.9), p1In: at('hook', -0.6), p2In: at('hook', -0.5),
   tabsIn: at('apply', -0.05), applyBubble: at('apply', 0.2),
   step: [0, 1.95, 3.55, 5.0].map((d) => at('apply', d)),
   tapFamily: at('apply', 0.75), tapFood: at('apply', 1.25), next1: at('apply', 1.7),
@@ -60,9 +60,9 @@ const T = {
   chip: at('apply', 4.05), next3: at('apply', 4.75),
   submit: at('apply', 5.8), great: at('apply', 6.05),
   shareH: at('share', 0.1), shareBubble: at('share', 0.2), shareBtn: at('share', 0.35), shareTap: at('share', 1.25),
-  giveBubble: at('give', 0.2), donateTap: at('give', 0.9), deal: at('give', 1.15), giveNote: at('give', 1.5), notCash: at('give', 2.1),
+  giveBubble: at('give', 0.2), donateTap: at('give', 0.9), deal: at('give', 1.15), giveNote: at('give', 0.5), notCash: at('give', 2.1),
   mail: at('arrive', 0.15), arriveBubble: at('arrive', 0.3), couponsCard: at('arrive', 0.7),
-  reveal: at('arrive', 1.95), usedTap: at('arrive', 3.2), dialog: at('arrive', 3.35), markTap: at('arrive', 4.7), toast: at('arrive', 4.9),
+  reveal: at('arrive', 1.6), usedTap: at('arrive', 2.55), dialog: at('arrive', 2.7), markTap: at('arrive', 4.6), toast: at('arrive', 4.8),
   updMail: at('update', 0.15), updBubble: at('update', 0.3), recv: at('update', 0.9), used: at('update', 1.5),
   goalBubble: at('goal', 0.2), g1: at('goal', 0.6), g2: at('goal', 1.1), g3: at('goal', 1.6), funded: at('goal', 2.1), done: at('goal', 2.5),
   ctaHead: at('cta', 0.2), ctaBtns: at('cta', 0.8), ctaNote: at('cta', 1.1), plate: at('cta', 1.4), url: at('cta', 1.6),
@@ -133,12 +133,11 @@ function buildHook() {
   const doors = V ? [{ x: 40, y: 400, w: 1000, h: 470 }, { x: 40, y: 900, w: 1000, h: 470 }] : [{ x: 60, y: 190, w: 880, h: 640 }, { x: 980, y: 190, w: 880, h: 640 }];
   B.doors = doors.map((r, i) => {
     const p = panel(s, i ? '' : 'green', i ? 'hsl(var(--card))' : null, r);
-    const tag = div('door-player', p, `Player ${i + 1}`); box(tag, 0, L(150, 90), r.w); tag.style.fontSize = L('36px', '34px');
-    const h = div('big-serif serif', p, i ? TXT.p2 : TXT.p1); box(h, L(60, 50), L(215, 145), r.w - L(120, 100));
+    const h = div('big-serif serif', p, i ? TXT.p2 : TXT.p1); box(h, L(60, 50), L(170, 110), r.w - L(120, 100));
     h.style.textAlign = 'center'; h.style.fontSize = L(i ? '96px' : '112px', i ? '78px' : '96px');
     return p;
   });
-  B.players = [0, 1].map(() => { const m = C.mascot(fx); m.svg.style.zIndex = 41; return m; });
+  B.players = [0, 1].map(() => { const m = C.mascot(s); m.svg.style.zIndex = 41; return m; });
   B.doorRects = doors;
   B.coopSfx = C.sfx(fx, TXT.coop, { size: L(120, 100), fill: 'hsl(123 46% 45%)', rot: -5 });
   B.hookBubble = speech(s, TXT.hi, { x: 1125, y: 862, w: 440, h: 160, tail: { x: -0.12, y: 0.75 } });
@@ -187,19 +186,19 @@ function form2(form) {
   B.upload = div('upload', media, `${ICON.upload}<div class="up-t">Upload photos or videos</div><div class="up-d">Add up to 5 — the first one becomes your cover</div>`);
   B.coverTile = div('cover-tile', media, `<div class="halftone" style="--dot:hsl(123 46% 34% / 0.22);--ds:18px"></div><div class="cover-ic">${ICON.heart}</div><div class="cover-badge">Cover</div>`);
   B.added = div('media-meta', f, '<span>1 of 5 added</span><span>1 ready</span>');
-  div('story', f, 'Share why you need food assistance. Tell donors about your situation, your family, and how coupons will help you...');
+  B.story = div('story', f, 'Share why you need food assistance. Tell donors about your situation, your family, and how coupons will help you...');
   return f;
 }
 function form3(form) {
   const f = div('apply-step', form);
-  div('apply-lbl big', f, 'How much do you need?');
+  div('apply-lbl', f, 'How much do you need?');
   div('apply-sub', f, "One goal. Once it's fully funded, your request closes.");
   B.amount = div('amount-in', f, '<span class="cur">$</span><span class="val"></span><span class="usd">USD total</span>');
   const chips = div('chips', f);
   B.amtChips = ['$100', '$250', '$500', '$1,000'].map((c) => div('chip', chips, `<span>${c}</span>`));
   div('apply-lbl', f, 'Where are you located?');
   div('apply-sub', f, 'Your ZIP code matches you with retailers near you. Vouchers are redeemable at US retailers only.');
-  div('zip-in', f, 'ZIP code');
+  B.zip = div('zip-in', f, 'ZIP code');
   return f;
 }
 function form4(form) {
@@ -218,7 +217,7 @@ function buildShare() {
   const ht = div('halftone', p); ht.style.setProperty('--dot', 'hsl(120 8% 98.5% / 0.10)');
   B.mega = div('share-mega', p, ICON.megaphone); box(B.mega, PANEL.w / 2 - L(70, 70), L(90, 120), L(140, 140), L(140, 140));
   B.shareH = div('big-serif serif', p, TXT.shareH); box(B.shareH, L(100, 50), L(260, 300), PANEL.w - L(200, 100));
-  Object.assign(B.shareH.style, { textAlign: 'center', fontSize: L('100px', '80px'), color: 'hsl(120 8% 98.5%)' });
+  Object.assign(B.shareH.style, { textAlign: 'center', fontSize: L('100px', '70px'), color: 'hsl(120 8% 98.5%)' });
   B.shareSub = div('note-line', p, TXT.shareSub); box(B.shareSub, L(360, 70), L(420, 520), PANEL.w - L(720, 140));
   Object.assign(B.shareSub.style, { color: 'hsl(120 8% 98.5% / 0.88)', fontSize: L('36px', '36px') });
   // Share uses the campaign 'ink' token (the app's own ShareScreen button is verify-blue; blue stays verification-only here)
@@ -234,20 +233,20 @@ function buildGive() {
   const pl = panel(s, 'green', null, left), pr = panel(s, '', 'hsl(var(--card))', right);
   // the example fundraiser card (number-free): ring + Donate now + Share
   const card = div('fr-panel', pl);
-  card.innerHTML = `<svg class="fr-ring" viewBox="0 0 200 200"><circle cx="100" cy="100" r="80" fill="none" stroke="hsl(123 18% 86%)" stroke-width="16"/><circle cx="100" cy="100" r="80" fill="none" stroke="hsl(123 46% 34%)" stroke-width="16" stroke-linecap="round" transform="rotate(-90 100 100)" stroke-dasharray="502.65" stroke-dashoffset="330"/></svg>
+  card.innerHTML = `<svg class="fr-ring" viewBox="0 0 200 200"><circle cx="100" cy="100" r="80" fill="none" stroke="hsl(123 18% 86%)" stroke-width="16"/><circle cx="100" cy="100" r="80" fill="none" stroke="hsl(123 46% 34%)" stroke-width="16" stroke-linecap="round" transform="rotate(-90 100 100)" stroke-dasharray="502.65" stroke-dashoffset="502.65"/></svg>
     <div class="fr-ring-lbl">Example goal</div>
     <div class="goal-btn primary fr-donate">${ICON.heart}<span>Donate now</span></div>
     <div class="goal-btn ink fr-share">${ICON.share}<span>Share</span></div>`;
   box(card, L(0, 150), L(30, 0), 700, 700);
   if (V) { card.style.transformOrigin = '50% 0'; card.style.transform = 'scale(0.68)'; }
-  B.donateBtn = $('.fr-donate', card);
+  B.donateBtn = $('.fr-donate', card); B.frArc = card.querySelectorAll('circle')[1];
   B.giveNote = div('note-line', s, TXT.giveNote);
   box(B.giveNote, L(100, 80), L(800, 1300), L(620, 860)); B.giveNote.style.fontSize = L('32px', '32px'); B.giveNote.style.textAlign = L('left', 'center');
   if (!V) B.giveNote.style.top = '850px';
   // three store decks
   const brands = ['/brand-logos/walmart.svg', '/brand-logos/target.svg', '/brand-logos/amazon.svg'];
   const deckX = V ? [230, 540, 830] : [960, 1240, 1520], deckY = V ? 1205 : 610;
-  B.tickets = brands.map((logo, b) => { const m = C.mascot(fx); m.svg.style.zIndex = 41; return { m, b, start: T.deal + b * 0.12, to: { x: deckX[b], y: deckY }, seed: b + 3 }; });
+  B.tickets = brands.map((logo, b) => { const m = C.mascot(s); m.svg.style.zIndex = 41; return { m, b, start: T.deal + b * 0.12, to: { x: deckX[b], y: deckY }, seed: b + 3 }; });
   B.deckLogos = brands.map((logo, b) => { const d = div('deck-logo', s, `<img src="${logo}" alt="">`); box(d, deckX[b] - 120, L(650, 1218), 240); return d; });
   B.notCash = div('stamp', s, TXT.notCash); box(B.notCash, L(880, 170), L(215, 908), L(900, 740)); B.notCash.style.fontSize = L('72px', '54px'); B.notCash.style.whiteSpace = 'nowrap';
   B.giveBubble = speech(s, TXT.give, { x: 1190, y: 830, w: 440, h: 160, tail: { x: 1.2, y: 0.35 } });
@@ -257,8 +256,8 @@ function buildArrive() {
   const s = scenes.arrive;
   panel(s, 'green');
   B.mail = div('mail-card', s, `<div class="mail-ico">${ICON.mail}</div><div><div class="mail-from">CouponDonation</div><div class="mail-subj">${TXT.arriveSubj}</div><div class="mail-body">${TXT.arriveFoot}</div></div>`);
-  box(B.mail, L(110, 70), L(190, 425), L(1100, 940));
-  const cw = L(1100, 940);
+  box(B.mail, L(110, 70), L(190, 425), L(1100, 860));
+  const cw = L(1100, 860);
   B.couponsCard = div('cpn-card', s, `<div class="cpn-h serif">Coupons</div><div class="cpn-sub">${TXT.couponsSub}</div>
     <div class="cpn-row"><img src="/brand-logos/walmart.svg" alt=""><span class="cpn-name">Walmart</span><span class="cpn-status"></span></div>
     <div class="cpn-code"><span class="lbl">Code</span><span class="mask">•••• •••• ••••</span><span class="cpn-copy">${ICON.copy}<span>Copy</span></span></div>
@@ -267,18 +266,18 @@ function buildArrive() {
   B.status = $('.cpn-status', B.couponsCard); B.code = $('.cpn-code', B.couponsCard);
   B.revealBtn = $('.cpn-reveal', B.couponsCard); B.usedBtn = $('.cpn-used', B.couponsCard);
   B.dialog = div('cpn-dialog', s, `<div class="dlg-t">${TXT.optional}</div><div class="dlg-btn">Mark as used</div>`);
-  box(B.dialog, L(1230, 110), L(330, 900), L(560, 860));
+  box(B.dialog, L(1230, 110), L(330, 1170), L(560, 800));
   B.markBtn = $('.dlg-btn', B.dialog);
   B.toast = div('toast-real toast2', s, `${ICON.check}<div><b>${TXT.toastT}</b><span>${TXT.toastD}</span></div>`);
-  box(B.toast, L(1230, 110), L(330, 1180), L(560, 860));
-  B.arriveBubble = speech(s, TXT.arrive, { x: 1255, y: 800, w: 420, h: 170, tail: { x: 1.13, y: 0.6 } });
+  box(B.toast, L(1230, 110), L(330, 1180), L(560, 800));
+  B.arriveBubble = speech(s, TXT.arrive, { x: 1215, y: 790, w: 460, h: 190, tail: { x: 1.13, y: 0.6 } });
 }
 
 function buildUpdate() {
   const s = scenes.update;
   panel(s, 'green');
   B.updMail = div('mail-card', s, `<div class="mail-ico">${ICON.mail}</div><div><div class="mail-from">CouponDonation</div><div class="mail-subj">${TXT.updSubj}</div></div>`);
-  box(B.updMail, L(200, 70), L(190, 425), L(1100, 940));
+  box(B.updMail, L(200, 70), L(190, 425), L(1100, 860));
   const labels = ['Donated', 'Coupon created', 'Received', 'Used'];
   const tw = L(1300, 700);
   B.trail = div('trail2', s); box(B.trail, L(200, 190), L(560, 800), tw); B.trailW = tw;
@@ -308,7 +307,7 @@ function buildGoal() {
   B.ghosts = [0, 1].map(() => { const g = C.tapPrompt(fx); g.style.zIndex = 59; g.classList.add('ghost'); return g; });
   B.fundSfx = C.sfx(fx, 'Fully funded!', { size: L(96, 84), fill: 'hsl(123 46% 45%)', rot: -5 });
   B.doneStamp = div('stamp level-stamp', s, TXT.done);
-  box(B.doneStamp, L(70, 140), L(640, 560), L(640, 760)); B.doneStamp.style.fontSize = L('84px', '70px');
+  box(B.doneStamp, L(70, 140), L(640, 730), L(640, 760)); B.doneStamp.style.fontSize = L('84px', '60px'); B.doneStamp.style.background = 'hsl(120 8% 98.5%)';
   B.goalBubble = speech(s, TXT.goal, { x: 1230, y: 820, w: 380, h: 170, tail: { x: 1.2, y: 0.35 } });
 }
 
@@ -318,7 +317,7 @@ function buildCta() {
   const dg = div('halftone', p); dg.style.setProperty('--dot', 'hsl(120 8% 98.5% / 0.10)');
   B.ctaHead = div('big-serif serif', s, TXT.ctaH); box(B.ctaHead, L(0, 60), L(130, 330), L(W, 960));
   Object.assign(B.ctaHead.style, { textAlign: 'center', fontSize: L('116px', '84px'), color: 'hsl(120 8% 98.5%)' });
-  B.ctaBtns = div('cta-duo', s, `<div class="cta-pill">${ICON.heart}<span>${TXT.ctaGive}</span>${ICON.arrow}</div><div class="cta-pill alt"><span>${TXT.ctaApply}</span>${ICON.arrow}</div>`);
+  B.ctaBtns = div('cta-duo', s, `<div class="cta-pill">${ICON.heart}<span>${TXT.ctaGive}</span>${ICON.arrow}</div><div class="cta-pill alt">${ICON.org}<span>${TXT.ctaApply}</span>${ICON.arrow}</div>`);
   box(B.ctaBtns, 0, L(470, 640), W);
   if (V) B.ctaBtns.classList.add('col');
   B.ctaNote = div('note-line', s, TXT.ctaNote); box(B.ctaNote, 0, L(620, 950), W); B.ctaNote.style.color = 'hsl(120 8% 98.5% / 0.85)'; B.ctaNote.style.fontSize = L('40px', '40px');
@@ -346,11 +345,12 @@ function guideState(t) {
 }
 
 // ------------------------------------------------------------------ tap-hand choreography
-function center(el) { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+// tap point: lower right of the target so finger and palm hang below its label; null while the target is hidden
+function center(el) { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 ? { x: r.left + r.width * 0.75, y: r.bottom - 4 } : null; }
 const offB = () => ({ x: W * 0.62, y: H + 90 });
 let PATH = [];
 function cursorPlan() {
-  const c = (sel) => () => center(sel());
+  const c = (sel) => { let last = null; return () => (last = center(sel()) || last) || offB(); }; // hidden target: keep its last position
   const hold = (tt, sel, a = 0.15, b = 0.3) => [{ t: tt - a, at: c(sel) }, { t: tt + b, at: c(sel) }];
   return [
     { t: T.tapFamily - 0.6, at: offB }, ...hold(T.tapFamily, () => $('.benef-t', B.benef[1])), ...hold(T.tapFood, () => B.cats[0], 0.12, 0.12),
@@ -359,7 +359,7 @@ function cursorPlan() {
     { t: T.shareTap - 0.6, at: offB }, ...hold(T.shareTap, () => B.shareBtn, 0.12, 0.4),
     { t: T.donateTap - 0.6, at: offB }, ...hold(T.donateTap, () => B.donateBtn, 0.12, 0.35), { t: T.donateTap + 0.8, at: offB },
     { t: T.reveal - 0.6, at: offB }, ...hold(T.reveal, () => (B.revealBtn.style.display === 'none' ? B.usedBtn : B.revealBtn), 0.15, 0.3), ...hold(T.usedTap, () => B.usedBtn, 0.2, 0.2), ...hold(T.markTap, () => B.markBtn, 0.25, 0.3), { t: T.markTap + 0.9, at: offB },
-    { t: T.g1 - 0.6, at: offB }, ...hold(T.g1, () => B.goalDonate, 0.05, 0.25), { t: T.g1 + 0.6, at: offB },
+    { t: T.g1 - 0.6, at: offB }, ...hold(T.g1, () => B.goalShare, 0.05, 0.25), { t: T.g1 + 0.6, at: offB },
   ];
 }
 const CURSOR_ON = [[T.tapFamily - 0.6, T.submit + 0.7], [T.shareTap - 0.6, T.shareTap + 0.6], [T.donateTap - 0.6, T.donateTap + 0.75], [T.reveal - 0.6, T.markTap + 0.85], [T.g1 - 0.6, T.g1 + 0.6]];
@@ -371,7 +371,7 @@ function setCursor(t) {
   let p = PATH[0].at();
   for (let i = 0; i < PATH.length - 1; i++) {
     const a = PATH[i], b = PATH[i + 1];
-    if (t >= a.t && t <= b.t) { const e = E.inOutCubic(cl((t - a.t) / (b.t - a.t))); const pa = a.at(), pb = b.at(); p = { x: lerp(pa.x, pb.x, e), y: lerp(pa.y, pb.y, e) - Math.sin(Math.PI * e) * 40 }; break; }
+    if (t >= a.t && t <= b.t) { const e = E.inOutCubic(cl((t - a.t) / (b.t - a.t))); const pa = a.at(), pb = b.at(); p = { x: lerp(pa.x, pb.x, e), y: lerp(pa.y, pb.y, e) - Math.sin(Math.PI * e) * Math.min(40, Math.hypot(pb.x - pa.x, pb.y - pa.y) * 0.2) }; break; }
     if (t > b.t) p = b.at();
   }
   const op = Math.min(k(t, on[0], on[0] + 0.2, E.outCubic), 1 - k(t, on[1] - 0.2, on[1], E.inCubic));
@@ -422,15 +422,14 @@ function renderFrame(t) {
   // ---- hook (frame 0 is a finished panel)
   sceneIn(scenes.hook, t, 0, SC.hook[1]);
   if (live('hook', t)) {
-    C.setSfx(B.coopSfx, t, -0.2, 1.3, { x: W / 2, y: L(120, 300) });
+    C.setSfx(B.coopSfx, t, -0.5, 1.6, { x: L(W / 2, 480), y: L(140, 345) });
     C.setBubble(B.hookBubble, t, T.hookBubble, 1e9);
-    const outH = k(t, SC.hook[1] - 0.12, SC.hook[1] + 0.22, E.inCubic);
     B.players.forEach((m, i) => {
       const t0 = i ? T.p2In : T.p1In; if (t < t0) return;
       vis(m.svg, true);
       const r = B.doorRects[i], p = k(t, t0, t0 + 0.45, E.outBackBig);
       const x = r.x + r.w / 2, y = V ? r.y + r.h - 30 : r.y + r.h - 70;
-      C.setMascot(m, { x: x - outH * W * 1.1, y: y + (1 - p) * 120, scale: L(0.85, 0.7) * lerp(0.4, 1, p), rot: 0, squash: Math.max(0, 1 - Math.abs(t - t0 - 0.3) / 0.12) * 0.5, gaze: [i ? -0.5 : 0.5, 0], blink: C.blinkAt(t, 11 + i), mouth: 0, smile: 1, armL: 150 + Math.sin(t * 9 + i) * 15, armR: 150, brows: 0.4 });
+      C.setMascot(m, { x, y: y + (1 - p) * 120, scale: L(0.85, 0.7) * lerp(0.4, 1, p), rot: 0, squash: Math.max(0, 1 - Math.abs(t - t0 - 0.3) / 0.12) * 0.5, gaze: [i ? -0.5 : 0.5, 0], blink: C.blinkAt(t, 11 + i), mouth: 0, smile: 1, armL: 150 + Math.sin(t * 9 + i) * 15, armR: 150, brows: 0.4 });
     });
   }
   // ---- apply: four steps in one card
@@ -457,7 +456,9 @@ function renderFrame(t) {
     B.amtChips[1].style.transform = `scale(${press(t, T.chip, 0.1)})`;
     $('span', B.next).textContent = si === 3 ? 'Submit Fundraiser' : 'Continue';
     B.next.classList.toggle('wide', si === 3);
-    const enabled = (si === 0 && t >= T.tapFood) || (si === 1 && t >= T.cover) || (si === 2 && t >= T.chip) || si === 3;
+    const storyOn = t >= T.cover + 0.3, zipOn = t >= T.chip + 0.3;
+    B.story.classList.toggle('filled', storyOn); B.zip.classList.toggle('filled', zipOn);
+    const enabled = (si === 0 && t >= T.tapFood) || (si === 1 && storyOn) || (si === 2 && zipOn) || si === 3;
     B.next.classList.toggle('off', !enabled);
     B.next.style.transform = `scale(${Math.min(press(t, T.next1), press(t, T.next2), press(t, T.next3), press(t, T.submit))})`;
     const r = B.next.getBoundingClientRect();
@@ -490,18 +491,18 @@ function renderFrame(t) {
     C.setBubble(B.giveBubble, t, T.giveBubble, 1e9);
     B.donateBtn.style.transform = `scale(${press(t, T.donateTap)})`;
     B.giveNote.style.opacity = k(t, T.giveNote, T.giveNote + 0.4);
-    const out = k(t, SC.give[1] - 0.12, SC.give[1] + 0.22, E.inCubic);
+    B.frArc.setAttribute('stroke-dashoffset', (502.65 * (1 - 0.34 * k(t, T.deal, T.deal + 0.6, E.outCubic))).toFixed(2));
     const db = B.donateBtn.getBoundingClientRect();
     B.tickets.forEach((tk) => {
       if (t < tk.start) return;
       vis(tk.m.svg, true);
       const p = cl((t - tk.start) / 0.7), e = E.outExpo(p);
-      const x = lerp(db.left + db.width / 2, tk.to.x, e) - out * W * 1.1, y = lerp(db.top, tk.to.y, e) - Math.sin(Math.PI * cl(p * 1.05)) * 220 + Math.sin((t - tk.start) * 3 + tk.seed) * 4;
+      const x = lerp(db.left + db.width / 2, tk.to.x, e), y = lerp(db.top, tk.to.y, e) - Math.sin(Math.PI * cl(p * 1.05)) * 220 + Math.sin((t - tk.start) * 3 + tk.seed) * 4;
       const land = Math.max(0, 1 - Math.abs(t - tk.start - 0.42) / 0.12);
       const cheer = t > T.notCash;
       C.setMascot(tk.m, { x, y, scale: L(1.0, 0.7) * lerp(0.3, 1, e), rot: lerp((hash(tk.seed) - 0.5) * 90, 0, E.outBack(p)), squash: land * 0.5, gaze: [Math.sin(t * 1.3 + tk.seed) * 0.6, 0], blink: C.blinkAt(t, tk.seed + 20), mouth: cheer ? 0.6 : 0, smile: 1, armL: cheer ? 150 : 30, armR: cheer ? 150 : 30, brows: 0.3 });
     });
-    B.deckLogos.forEach((d, i) => { const p = k(t, T.deal + 0.3 + i * 0.12, T.deal + 0.7 + i * 0.12, E.outBack); d.style.opacity = cl(p * 2); d.style.transform = `translateY(${(1 - p) * 30}px)`; });
+    B.deckLogos.forEach((d, i) => { const p = k(t, SC.give[0] + 0.3 + i * 0.1, SC.give[0] + 0.7 + i * 0.1, E.outBack); d.style.opacity = cl(p * 2); d.style.transform = `translateY(${(1 - p) * 30}px)`; });
     const sp = k(t, T.notCash, T.notCash + 0.25, E.outBackBig);
     B.notCash.style.opacity = t >= T.notCash ? 1 : 0; B.notCash.style.transform = `rotate(-4deg) scale(${lerp(2.2, 1, sp)})`;
   }
@@ -549,15 +550,16 @@ function renderFrame(t) {
   sceneIn(scenes.goal, t, ...SC.goal);
   if (live('goal', t)) {
     C.setBubble(B.goalBubble, t, T.goalBubble, T.done - 0.15);
-    const fills = [[T.g1, 0.34], [T.g2, 0.67], [T.g3, 1.0]];
-    let f = 0; for (const [tt, v] of fills) f = lerp(f, v, k(t, tt, tt + 0.5, E.outBack));
+    const fills = [[T.g2, 0.67], [T.g3, 1.0]];
+    let f = 0.34; for (const [tt, v] of fills) f = lerp(f, v, k(t, tt, tt + 0.5, E.outBack));
     f = Math.min(1, f);
     const Cc = 2 * Math.PI * 80;
     B.goalArc.setAttribute('stroke-dasharray', Cc.toFixed(2)); B.goalArc.setAttribute('stroke-dashoffset', (Cc * (1 - f)).toFixed(2)); B.goalArc.style.opacity = f > 0.003 ? 1 : 0;
     const funded = t >= T.funded;
     vis(B.goalDonate, !funded, 'flex'); vis(B.fundedBtn, funded, 'flex');
     B.fundedBtn.style.transform = `scale(${lerp(1.3, 1, k(t, T.funded, T.funded + 0.4, E.outBackBig))})`;
-    B.goalDonate.style.transform = `scale(${Math.min(press(t, T.g1, 0.06), press(t, T.g2, 0.06), press(t, T.g3, 0.06))})`;
+    B.goalDonate.style.transform = `scale(${Math.min(press(t, T.g2, 0.06), press(t, T.g3, 0.06))})`;
+    B.goalShare.style.transform = `scale(${press(t, T.g1, 0.06)})`;
     B.goalNote.style.opacity = k(t, T.g1 + 0.3, T.g1 + 0.7);
     const ring = B.goalRing.getBoundingClientRect();
     C.setSfx(B.fundSfx, t, T.funded, 0.5, { x: ring.left + ring.width / 2, y: ring.top + L(-10, 40) });
@@ -590,6 +592,7 @@ function renderFrame(t) {
       el.style.opacity = cl(bp * 2); el.style.transform = `translateY(${(1 - bp) * 50}px) scale(${1 + nud})`;
     });
     B.ctaNote.style.opacity = k(t, T.ctaNote, T.ctaNote + 0.4);
+    if (!V) { const ar = $$('.cta-pill', B.ctaBtns)[1].getBoundingClientRect(); B.ctaNote.style.left = ar.left + 'px'; B.ctaNote.style.width = ar.width + 'px'; }
     const pp = k(t, T.plate, T.plate + 0.5, E.outBack); B.plate.style.opacity = cl(pp * 2); B.plate.style.transform = `translate(-50%, ${(1 - pp) * 40}px)`;
     B.url.style.opacity = k(t, T.url, T.url + 0.4);
   }
@@ -610,6 +613,7 @@ async function init() {
   await document.fonts.load('600 40px "Instrument Sans"');
   await document.fonts.ready;
   await Promise.all($$('img').map((im) => (im.complete ? im.decode().catch(() => {}) : new Promise((r) => { im.onload = im.onerror = r; }))));
+  for (const tt of TAP_TIMES) renderFrame(tt); // measure every tap target while it is on screen (stills render out of order)
   window.compDuration = DUR;
   window.compReady = true;
 }

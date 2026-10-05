@@ -7,7 +7,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 FMT=${1:-h}
 FILM=${FILM:-comic}                       # comic = Level 1 (index.html), coop = Co-op mode (coop.html)
-if [ "$FILM" = coop ]; then PAGE=coop; SLUG=coupon-coop; DEF_POSTER=2.80; else PAGE=index; SLUG=coupon-level1; DEF_POSTER=20.40; fi
+if [ "$FILM" = coop ]; then PAGE=coop; SLUG=coupon-coop; DEF_POSTER=2.40; else PAGE=index; SLUG=coupon-level1; DEF_POSTER=20.40; fi
 POSTER_T=${POSTER_T:-$DEF_POSTER}
 NAME=$SLUG-$([ "$FMT" = v ] && echo 9x16 || echo 16x9)
 OUT=../comic
