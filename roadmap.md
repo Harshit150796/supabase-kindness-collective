@@ -5,7 +5,7 @@
 - [x] Preserve impact grouping, dedupe, and the 10-minute settle window while adding impact-only stop headers.
 - [x] Render and inspect every template at desktop and 320px.
 - [x] Send and verify only the two founder-requested test messages; do not publish.
-- [ ] Add the shared support contact and support Reply-To to all recipient account mail; verify and deploy without test sends.
+- [x] Add the shared support contact and support Reply-To to all recipient account mail; verify and deploy without test sends.
 
 ## Done
 - [x] Rewrite `WhatWeDo` as a light, organic donation branch using only existing ivory, gold, emerald, and semantic text/surface tokens.
