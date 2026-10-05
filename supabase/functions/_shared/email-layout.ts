@@ -1,6 +1,8 @@
 /** One email-safe renderer for every non-marketing message. */
 const LOGO_URL = 'https://coupondonation.com/favicon-192.png';
-const SUPPORT_EMAIL = 'connect@coupondonation.com';
+export const SUPPORT_EMAIL = 'support@coupondonation.com';
+export const SUPPORT_LINE = 'Questions or concerns? Email support@coupondonation.com and a person will reply.';
+export const SECURITY_SUPPORT_LINE = "Didn't request this? Email support@coupondonation.com right away.";
 const INK = '#102017';
 const BODY = '#435149';
 const MUTED = '#6f7b74';
@@ -37,6 +39,7 @@ export function shell(opts: {
   preheader: string; greeting?: string; status?: string; headline?: string; paragraphs: string[];
   valueCard?: ValueCard; timeline?: TimelineStep[]; link?: { label: string; url: string };
   secondaryLink?: { label: string; url: string }; footer?: string; sample?: boolean; code?: string;
+  recipient?: boolean; security?: boolean;
 }): string {
   const greeting = `${opts.greeting ?? 'Hi there'},`;
   const status = opts.status ? row(escapeHtml(opts.status.toUpperCase()), `padding:0 0 10px;font-family:${FONT};font-size:11px;line-height:16px;font-weight:700;letter-spacing:1.2px;color:${GREEN};`) : '';
@@ -57,7 +60,9 @@ export function shell(opts: {
   const secondary = opts.secondaryLink ? row(`<a href="${escapeHtml(opts.secondaryLink.url)}" style="font-family:${FONT};font-size:13px;line-height:20px;color:${INK};text-decoration:underline;">${escapeHtml(opts.secondaryLink.label)}</a>`, 'padding:0 0 18px;') : '';
   const banner = opts.sample ? row('SAMPLE EMAIL · sample data, not a real donation', `padding:9px 12px;font-family:${FONT};font-size:10px;line-height:15px;font-weight:700;letter-spacing:.7px;color:${INK};background:${SOFT};border:1px solid ${LINE};`) : '';
   const lockup = table(`<tr><td width="44" valign="middle"><img src="${LOGO_URL}" width="36" height="36" alt="CouponDonation" style="display:block;width:36px;height:36px;border:0;"></td><td valign="middle" style="font-family:${FONT};font-size:17px;line-height:22px;font-weight:700;"><span style="color:${GREEN};">Coupon</span><span style="color:${BLUE};">Donation</span></td></tr>`);
-  const body = banner + row(lockup, 'padding:22px 0 34px;') + status + headline + row(escapeHtml(greeting), `padding:0 0 16px;font-family:${FONT};font-size:15px;line-height:23px;color:${INK};`) + paragraphs + code + card + timeline + cta + secondary + row('— The CouponDonation team', `padding:3px 0 0;font-family:${FONT};font-size:15px;line-height:23px;color:${INK};`) + (opts.footer ? row(opts.footer, `padding:24px 0 0;font-family:${FONT};font-size:11px;line-height:17px;color:${MUTED};`) : '');
+  const support = opts.recipient === false ? '' : `${opts.footer ? '<br>' : ''}${escapeHtml(opts.security ? SECURITY_SUPPORT_LINE : 'Questions or concerns? Email ')}${opts.security ? '' : `<a href="mailto:${SUPPORT_EMAIL}" style="color:${MUTED};text-decoration:underline;">${SUPPORT_EMAIL}</a>${escapeHtml(' and a person will reply.')}`}`;
+  const footer = opts.footer || support ? row(`${opts.footer ?? ''}${support}`, `padding:24px 0 0;font-family:${FONT};font-size:11px;line-height:17px;color:${MUTED};`) : '';
+  const body = banner + row(lockup, 'padding:22px 0 34px;') + status + headline + row(escapeHtml(greeting), `padding:0 0 16px;font-family:${FONT};font-size:15px;line-height:23px;color:${INK};`) + paragraphs + code + card + timeline + cta + secondary + row('— The CouponDonation team', `padding:3px 0 0;font-family:${FONT};font-size:15px;line-height:23px;color:${INK};`) + footer;
   return `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"><title>CouponDonation</title></head><body bgcolor="#f4f7f5" style="margin:0;padding:0;background:#f4f7f5;">${table(row(`<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(opts.preheader)}&nbsp;&zwnj;&nbsp;&zwnj;</div>${table(row(table(body, 'style="max-width:600px;background:#ffffff;"'), 'padding:0 24px 34px;'), 'width="600" bgcolor="#ffffff" style="width:100%;max-width:600px;background:#ffffff;"')}`, 'padding:20px 0;background:#f4f7f5;',), 'bgcolor="#f4f7f5"')} </body></html>`;
 }
 
@@ -66,11 +71,11 @@ export function renderOtpEmail(opts: { code: string; expiresInMinutes: number })
   const { code, expiresInMinutes } = opts;
   const html = shell({
     preheader: `Use this code to confirm your CouponDonation account.`,
-    paragraphs: [`Use this verification code to confirm your email address. It expires in ${expiresInMinutes} minutes.`, "If you didn't request it, you can ignore this message."], code,
+    paragraphs: [`Use this verification code to confirm your email address. It expires in ${expiresInMinutes} minutes.`], code, security: true,
   });
 
   const text = [
-    "Hi there,", "", `Your verification code is ${code}. It expires in ${expiresInMinutes} minutes.`, "", "Enter it on CouponDonation to confirm your email address. If you didn't request it, you can ignore this message.", "", "— The CouponDonation team",
+    "Hi there,", "", `Your verification code is ${code}. It expires in ${expiresInMinutes} minutes.`, "", "Enter it on CouponDonation to confirm your email address.", "", "— The CouponDonation team", "", SECURITY_SUPPORT_LINE,
   ].join("\n");
 
   return { subject: "Your CouponDonation verification code", html, text };
@@ -90,12 +95,13 @@ export function renderPasswordResetEmail(opts: {
   const html = shell({
     preheader: "Use this link to reset your CouponDonation password.",
     status: 'Account security', headline: 'Reset your password',
-    paragraphs: [`We received a request to reset your CouponDonation password. This link expires in ${minutesLabel} and can be used once.`, "If you didn't request this, you can ignore this message."],
+    paragraphs: [`We received a request to reset your CouponDonation password. This link expires in ${minutesLabel} and can be used once.`],
     link: { label: "Reset your password", url: resetUrl },
+    security: true,
   });
 
   const text = [
-    "Hi there,", "", `We received a request to reset your CouponDonation password. This link expires in ${minutesLabel} and can be used once.`, "", `Reset your password: ${resetUrl}`, "", "If you didn't request this, you can ignore this message.", "", "— The CouponDonation team",
+    "Hi there,", "", `We received a request to reset your CouponDonation password. This link expires in ${minutesLabel} and can be used once.`, "", `Reset your password: ${resetUrl}`, "", "— The CouponDonation team", "", SECURITY_SUPPORT_LINE,
   ].join("\n");
 
   return { subject: "Reset your CouponDonation password", html, text };
@@ -114,7 +120,7 @@ export function renderNoticeEmail(opts: {
     preheader: opts.intro.slice(0, 120), greeting: opts.firstName ? `Hi ${opts.firstName}` : 'Hi there',
     status: 'Account update', headline: opts.heading, paragraphs: [opts.intro], link: { label: opts.ctaLabel, url: opts.ctaUrl }, footer: opts.footerNote ? escapeHtml(opts.footerNote) : undefined,
   });
-  const text = [opts.firstName ? `Hi ${opts.firstName},` : 'Hi there,', '', opts.intro, '', `${opts.ctaLabel}: ${opts.ctaUrl}`, '', '— The CouponDonation team', opts.footerNote ?? ''].join('\n');
+  const text = [opts.firstName ? `Hi ${opts.firstName},` : 'Hi there,', '', opts.intro, '', `${opts.ctaLabel}: ${opts.ctaUrl}`, '', '— The CouponDonation team', '', opts.footerNote ?? '', SUPPORT_LINE].filter(Boolean).join('\n');
   return { subject: opts.subject, html, text };
 }
 

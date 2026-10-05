@@ -1,6 +1,6 @@
 // Donation confirmations and "fundraiser is live" emails. Exactly once per source via
 // claim_account_email (unique kind+source_id). Reads payment tables only; never writes them.
-import { shell, escapeHtml, NOTIFY_SENDER, type RenderedEmail } from './email-layout.ts';
+import { shell, escapeHtml, NOTIFY_SENDER, SUPPORT_LINE, type RenderedEmail } from './email-layout.ts';
 
 const SITE = 'https://coupondonation.com';
 const TOKEN_DAYS = 30;
@@ -43,7 +43,7 @@ export function renderDonationConfirmation(o: {
     link: o.link, footer: footerLines.map(escapeHtml).join('<br>'), sample: o.test,
   });
   const text = [`${greeting},`, '', 'Thank you for your donation.', '', ...details, '', next, ...(coinLine ? ['', coinLine] : []), '',
-    `${o.link.label}: ${o.link.url}`, '', '— The CouponDonation team', '', ...footerLines].join('\n');
+    `${o.link.label}: ${o.link.url}`, '', '— The CouponDonation team', '', ...footerLines, SUPPORT_LINE].join('\n');
   return { subject, html, text };
 }
 
@@ -55,7 +55,7 @@ export function renderFundraiserLive(o: { firstName?: string; title: string; slu
   const html = shell({ preheader: 'Your fundraiser is now visible to donors.', greeting, status: 'Fundraiser live', headline: 'Your fundraiser is ready to share', paragraphs: [p1, p2],
     valueCard: { label: 'Fundraiser', value: o.title, details: ['Approved and visible to donors'] },
     link: { label: 'View your fundraiser', url }, footer: o.test ? 'This is a test message.' : undefined, sample: o.test });
-  const text = [`${greeting},`, '', p1, '', `View your fundraiser: ${url}`, '', p2, '', '— The CouponDonation team', ...(o.test ? ['', 'This is a test message.'] : [])].join('\n');
+  const text = [`${greeting},`, '', p1, '', `View your fundraiser: ${url}`, '', p2, '', '— The CouponDonation team', ...(o.test ? ['', 'This is a test message.'] : []), '', SUPPORT_LINE].join('\n');
   return { subject: 'Your fundraiser is live', html, text };
 }
 
