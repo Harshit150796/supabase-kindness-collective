@@ -3073,6 +3073,16 @@ export type Database = {
         }[]
       }
       get_donation_impact: { Args: { _donation_id: string }; Returns: Json }
+      get_fundraiser_cards: {
+        Args: { _ids: string[] }
+        Returns: {
+          donations_count: number
+          fundraiser_id: string
+          latest_donation_at: string
+          organizer_name: string
+          total_raised: number
+        }[]
+      }
       get_fundraiser_coupon_trail: {
         Args: { _fundraiser_id: string }
         Returns: {

@@ -8,6 +8,8 @@ export interface LandingStats {
   coupons_claimed: number;
   active_fundraisers: number;
   coupons_received: number;
+  coupons_pending: number;
+  pending_value_total: number;
   coupons_used: number;
   issued_value_total: number;
   issued_value_month: number;
@@ -34,6 +36,8 @@ function fetchStats(): Promise<LandingStats | null> {
         coupons_created: Number(d.coupons_created) || 0,
         coupons_claimed: Number(d.coupons_claimed) || 0,
         coupons_received: Number(d.coupons_received) || 0,
+        coupons_pending: Number(d.coupons_pending) || 0,
+        pending_value_total: Number(d.pending_value_total) || 0,
         coupons_used: Number(d.coupons_used) || 0,
         issued_value_total: Number(d.issued_value_total) || 0,
         issued_value_month: Number(d.issued_value_month) || 0,
@@ -61,3 +65,5 @@ export function useLandingStats() {
 
 export const formatUSD = (n: number) =>
   '$' + Math.round(n).toLocaleString('en-US');
+
+export const plural = (n: number, one: string, many = one + 's') => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;

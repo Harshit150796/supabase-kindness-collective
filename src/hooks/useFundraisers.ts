@@ -63,25 +63,23 @@ export function useFundraisers(options?: { limit?: number; category?: string }) 
       }
 
       const rows = (data || []) as Omit<Fundraiser, 'live_raised' | 'live_donations_count'>[];
-      return await Promise.all(rows.map(async (row) => {
-        const [totals, organizer, recent] = await Promise.all([
-          supabase.rpc('get_fundraiser_totals' as never, { _fundraiser_id: row.id } as never).abortSignal(controller.signal),
-          supabase.rpc('get_fundraiser_organizer' as never, { _fundraiser_id: row.id } as never).abortSignal(controller.signal),
-          supabase.rpc('get_fundraiser_donations' as never, { _fundraiser_id: row.id, _limit: 1, _order: 'recent' } as never).abortSignal(controller.signal),
-        ]);
-        const failed = [totals, organizer, recent].find(result => result.error);
-        if (failed?.error) throw failed.error;
-        const totalRow = (totals.data as Array<{ total_raised: number; donations_count: number }> | null)?.[0];
-        const organizerRow = (organizer.data as Array<{ display_name: string }> | null)?.[0];
-        const recentRow = (recent.data as Array<{ created_at: string }> | null)?.[0];
+      if (rows.length === 0) return [] as Fundraiser[];
+      // One batched, privacy-safe request for every card's live numbers.
+      const cards = await supabase
+        .rpc('get_fundraiser_cards' as never, { _ids: rows.map(r => r.id) } as never)
+        .abortSignal(controller.signal);
+      if (cards.error) throw cards.error;
+      const byId = new Map(((cards.data as Array<{ fundraiser_id: string; total_raised: number; donations_count: number; organizer_name: string | null; latest_donation_at: string | null }> | null) ?? []).map(c => [c.fundraiser_id, c]));
+      return rows.map((row) => {
+        const c = byId.get(row.id);
         return {
           ...row,
-          live_raised: Number(totalRow?.total_raised ?? 0),
-          live_donations_count: Number(totalRow?.donations_count ?? 0),
-          organizer_name: organizerRow?.display_name,
-          latest_donation_at: recentRow?.created_at ?? null,
+          live_raised: Number(c?.total_raised ?? 0),
+          live_donations_count: Number(c?.donations_count ?? 0),
+          organizer_name: c?.organizer_name ?? undefined,
+          latest_donation_at: c?.latest_donation_at ?? null,
         } as Fundraiser;
-      }));
+      });
       } finally { window.clearTimeout(timeout); }
     },
     retry: 1,

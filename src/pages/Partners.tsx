@@ -58,13 +58,13 @@ export default function Partners() {
           {sent ? <p className="mt-6 text-lg">Thank you. Our team will reply by email.</p> : (
             <form onSubmit={submit} className="mt-8 grid gap-5 sm:grid-cols-2" noValidate>
               <div className="sm:col-span-2"><Label htmlFor="org">Organization name</Label><Input id="org" value={f.org_name} onChange={set('org_name')} maxLength={160} required /></div>
-              <div><Label htmlFor="type">Type</Label><select id="type" value={f.org_type} onChange={set('org_type')} className="mt-1 h-10 w-full border border-input bg-background px-3 text-sm"><option>Church</option><option>Nonprofit</option><option>Community organization</option><option>School</option><option>Other</option></select></div>
+              <div><Label htmlFor="type">Type</Label><select id="type" value={f.org_type} onChange={set('org_type')} className="mt-1 h-11 w-full border border-input bg-background px-3 text-sm"><option>Church</option><option>Nonprofit</option><option>Community organization</option><option>School</option><option>Other</option></select></div>
               <div><Label htmlFor="fam">Families you serve (approx.)</Label><Input id="fam" type="number" min={0} value={f.families_count} onChange={set('families_count')} /></div>
               <div><Label htmlFor="cn">Contact name</Label><Input id="cn" value={f.contact_name} onChange={set('contact_name')} maxLength={120} required /></div>
               <div><Label htmlFor="em">Email</Label><Input id="em" type="email" value={f.email} onChange={set('email')} maxLength={255} required /></div>
               <div className="sm:col-span-2"><Label htmlFor="cs">City, state</Label><Input id="cs" value={f.city_state} onChange={set('city_state')} maxLength={120} /></div>
               <div className="sm:col-span-2"><Label htmlFor="msg">Message</Label><Textarea id="msg" value={f.message} onChange={set('message')} maxLength={2000} rows={5} /></div>
-              <div className="absolute -left-[9999px]" aria-hidden="true"><label>Website<input tabIndex={-1} autoComplete="off" value={f.website} onChange={set('website')} /></label></div>
+              <div className="absolute -left-[9999px]" aria-hidden="true"><label>Website<input tabIndex={-1} autoComplete="off" className="h-11" value={f.website} onChange={set('website')} /></label></div>
               <div className="sm:col-span-2"><Button type="submit" disabled={busy}>{busy ? 'Sending…' : 'Send inquiry'}</Button></div>
             </form>
           )}

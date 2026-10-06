@@ -248,3 +248,11 @@
 - [x] Rebuild all organizer dashboard sections to the prescribed typography, surfaces, density, states, and motion.
 - [x] Run the full test suite, typecheck, and production build; verify protected-route behavior at 1440/768/390.
 - [ ] Signed-in visual and control walkthrough at 1440/768/390 — unverified because this project uses external unmanaged auth.
+
+## Live re-audit follow-up (Oct 6)
+- [x] Figures: pluralised labels; "Coupons being prepared" value stage from get_landing_stats
+- [x] Footer two-column link groups on phones (390: 1,273 → 1,013px)
+- [x] Tree model re-compressed 1,491 → 1,268 KB with identical look; poster kept on 2g/3g
+- [x] Batched card RPC (get_fundraiser_cards); one shared top-donors request
+- [x] Small text/tap target leftovers; compact navbar on short landscape
+- [ ] Tree model under 400 KB — not possible without visibly changing the tree (needs founder decision)
