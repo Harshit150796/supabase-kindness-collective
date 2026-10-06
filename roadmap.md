@@ -224,3 +224,8 @@
 - [x] Newsletter Reply-To connect@ on every send
 - [x] Self-undoing proofs + four founder-only samples delivered
 - [ ] Fast path inactive until checkout success URLs carry a reference (needs founder approval — checkout change)
+
+## Fundraiser dashboard privacy and visual upgrade (Oct 6)
+- [ ] Remove donor contact identifiers from the organizer ledger RPC and prove anonymity/display-name behavior.
+- [ ] Rebuild all organizer dashboard sections to the prescribed typography, surfaces, density, states, and motion.
+- [ ] Run the full test suite, verify the live dashboard at 1440/768/390, and report any unverified controls.
