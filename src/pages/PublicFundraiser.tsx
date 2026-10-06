@@ -61,7 +61,7 @@ const PublicFundraiser = () => {
     (async () => {
       const { data, error } = await supabase.from("fundraisers")
         .select("id,title,story,category,monthly_goal,cover_photo_url,status,unique_slug,created_at,user_id,allow_messages,beneficiary_display_name,show_beneficiary_name")
-        .eq("unique_slug", slug).maybeSingle();
+        .eq(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug) ? "id" : "unique_slug", slug).maybeSingle();
       if (error || !data) setError("Fundraiser not found");
       else if (data.status !== "active" && data.status !== "pending") setError("This fundraiser is no longer active");
       else { setFundraiser(data as Fundraiser); fetchImages(data.id); }

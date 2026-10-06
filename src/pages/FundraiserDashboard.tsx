@@ -3,7 +3,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Share2, Edit2, Copy, Check, ExternalLink, Users, Trash2, Camera, ArrowLeft, UserRound } from "lucide-react";
 import { OwnerCouponsSection } from "@/components/fundraiser/OwnerCouponsSection";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ProductSkeleton as Skeleton, PageHeader, CardSurface, SectionLabel, Stat, StatusChip } from "@/components/ui/organizer";
+import { fundraiserPublicUrl } from "@/lib/fundraiserSharing";
 import { DonationCouponList, type OwnerCoupon } from "@/components/fundraiser/DonationCouponList";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -59,14 +60,6 @@ const SECTIONS = [
   { id: "coupons", label: "Coupons" },
   { id: "updates", label: "Organizer tools" },
 ] as const;
-
-const STATUS_LABEL: Record<string, string> = { active: "Live", pending: "Under review", paused: "Paused", rejected: "Not approved", completed: "Completed" };
-
-const statusTone = (status: string) => status === "active"
-  ? "bg-primary/10 text-primary"
-  : status === "pending"
-    ? "bg-warning/15 text-warning-foreground"
-    : "bg-muted text-muted-foreground";
 
 const reducedMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const usd = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
@@ -235,7 +228,7 @@ const FundraiserDashboard = () => {
     }
   };
 
-  const shareUrl = fundraiser?.unique_slug ? `${window.location.origin}/f/${fundraiser.unique_slug}` : `${window.location.origin}/fundraiser/${id}`;
+  const shareUrl = fundraiserPublicUrl(fundraiser?.unique_slug ?? null, id ?? "");
 
   const handleCopyLink = async () => {
     try {
@@ -299,7 +292,7 @@ const FundraiserDashboard = () => {
             <div className="space-y-2">
               <p className="font-sans text-[15px] font-semibold leading-snug text-foreground">{fundraiser.title}</p>
               <div className="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
-                <span className={cn("rounded-full px-2 py-1 font-semibold", statusTone(fundraiser.status))}>{STATUS_LABEL[fundraiser.status] ?? fundraiser.status}</span>
+                <StatusChip status={fundraiser.status} />
                 <span>{days} day{days !== 1 ? "s" : ""} running</span>
               </div>
             </div>
@@ -326,34 +319,20 @@ const FundraiserDashboard = () => {
         <main className="min-w-0 max-w-4xl space-y-8">
           {/* Overview */}
           <section id="overview" className="scroll-mt-32 space-y-6">
-            <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-[13px] text-muted-foreground lg:hidden">
-                  <span className={cn("rounded-full px-2 py-1 font-semibold", statusTone(fundraiser.status))}>{STATUS_LABEL[fundraiser.status] ?? fundraiser.status}</span>
-                  <span>{days} day{days !== 1 ? "s" : ""} running</span>
-                </div>
-                <h1 className="font-display text-[40px] font-normal leading-[44px] text-foreground">{fundraiser.title}</h1>
-                <p className="text-[13px] text-muted-foreground">Started {formatDate(fundraiser.created_at)} · {fundraiser.category}</p>
-              </div>
-              <div className="flex shrink-0 gap-2">
-                <Button variant="outline" size="sm" onClick={() => window.open(shareUrl, "_blank", "noopener")}>
-                  <ExternalLink className="mr-2 h-4 w-4" />Public page
-                </Button>
-                <Button size="sm" className="bg-ink text-ink-foreground hover:bg-ink/90" onClick={() => setShowShareModal(true)}>
-                  <Share2 className="mr-2 h-4 w-4" />Share
-                </Button>
-              </div>
-            </header>
+            <PageHeader title={fundraiser.title} subtitle={`Started ${formatDate(fundraiser.created_at)} · ${fundraiser.category}`} action={<div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => window.open(shareUrl, "_blank", "noopener")}><ExternalLink className="mr-2 h-4 w-4" />Public page</Button>
+              <Button size="sm" className="bg-ink text-ink-foreground hover:bg-ink/90" onClick={() => setShowShareModal(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
+            </div>} />
 
             <FundraiserGallery images={images} isOwner onAddPhotos={() => setShowImageModal(true)} fundraiserTitle={fundraiser.title} coverPhotoUrl={fundraiser.cover_photo_url} category={fundraiser.category} />
 
             {/* Ledger */}
-            <div className="dash-card dash-card-enter px-6 py-7 sm:px-8 sm:py-8">
+            <CardSurface index={0} className="px-6 py-7 sm:px-8 sm:py-8">
               <div className="flex flex-col items-start gap-7 sm:flex-row sm:items-center sm:gap-10">
                 <ProgressRing pct={pct} />
                 <div className="min-w-0 space-y-2">
-                  <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Raised</p>
-                  <p className="font-display text-[64px] font-normal leading-none tabular-nums text-foreground sm:text-[72px]">
+                  <SectionLabel>Raised</SectionLabel>
+                  <p className="product-hero-number text-foreground">
                     {ledgerLoaded ? (ledger ? usd(Math.round(animatedTotal * 100) / 100) : "—") : <Skeleton className="h-16 w-40" />}
                   </p>
                   <p className="text-[15px] leading-[23px] text-muted-foreground">
@@ -368,13 +347,10 @@ const FundraiserDashboard = () => {
                   { k: "Donors", v: ledger ? String(ledger.count) : "—" },
                   { k: "Coupons received", v: String(liveCoupons.length) },
                 ].map((s, i) => (
-                  <div key={s.k} className={cn("min-w-0 rounded-xl bg-muted/50 px-3 py-3 sm:px-4", i > 0 && "")}>
-                    <dt className="text-[12px] leading-4 text-muted-foreground">{s.k}</dt>
-                    <dd className="mt-1 font-display text-[28px] leading-8 tabular-nums text-foreground">{s.v}</dd>
-                  </div>
+                  <Stat key={s.k} label={s.k} value={s.v} />
                 ))}
               </dl>
-            </div>
+            </CardSurface>
 
             {/* Routine actions */}
             <div className="flex flex-wrap gap-1 rounded-xl border border-border bg-card p-1.5 shadow-sm">
@@ -394,8 +370,8 @@ const FundraiserDashboard = () => {
           {/* Donations */}
           <section id="donations" className="dash-card dash-card-enter scroll-mt-32 overflow-hidden" style={{ animationDelay: "60ms" }}>
             <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-6">
-              <h2 className="font-sans text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Donations</h2>
-              {ledger && ledger.count > 0 && <span className="text-[13px] text-muted-foreground">{ledger.count} completed</span>}
+              <SectionLabel>Donations</SectionLabel>
+              {ledger && ledger.count > 0 && <span className="text-[13px] text-muted-foreground">{donations.length} completed</span>}
             </div>
             <div>
               {!ledgerLoaded ? (
