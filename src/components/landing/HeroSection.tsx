@@ -31,9 +31,11 @@ export function HeroSection() {
   const [can3D, setCan3D] = useState(false);
   useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    // Slow links (2g/slow-2g/3g) keep the static poster, like Save-Data.
+    const slow = /^(slow-2g|2g|3g)$/.test(connection?.effectiveType ?? '');
     let secondFrame = 0;
-    const mount = () => setCan3D(!query.matches && !connection?.saveData && canRender3D());
+    const mount = () => setCan3D(!query.matches && !connection?.saveData && !slow && canRender3D());
     const firstFrame = requestAnimationFrame(() => { secondFrame = requestAnimationFrame(mount); });
     query.addEventListener('change', mount);
     return () => { cancelAnimationFrame(firstFrame); cancelAnimationFrame(secondFrame); query.removeEventListener('change', mount); };
