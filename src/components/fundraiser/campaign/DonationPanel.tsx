@@ -72,7 +72,7 @@ export function DonationPanel({ live, goal, onDonate, onShare, fundraiserId, clo
         <div className="min-w-0">
           <p className="font-display text-4xl leading-none text-foreground">{usd(live.totalRaised)}</p>
           <p className="mt-2 text-sm text-muted-foreground">raised of {usd(goal)} goal</p>
-          {live.donationsCount > 0 && <p className="mt-1 text-sm text-muted-foreground">{live.donationsCount.toLocaleString()} {live.donationsCount === 1 ? 'donation' : 'donations'}</p>}
+          <p className="mt-1 text-sm text-muted-foreground">{live.donationsCount.toLocaleString()} {live.donationsCount === 1 ? 'donor' : 'donors'}</p>
         </div>
       </div>
       <div className="mt-6 space-y-3">
