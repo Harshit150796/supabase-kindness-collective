@@ -27,7 +27,10 @@ export const TIER_SETTINGS: Record<DeviceTier, TierSettings> = {
   medium: { ...HIGH, tier: 'medium', shadowMapSize: 1024, dprCap: 1.5, plantCap: 32, fireflyCount: 24, ambientBirds: 4 },
   low: { ...HIGH, tier: 'low', shadowMapSize: 1024, dprCap: 1.5, plantCap: 6, fireflyCount: 8, ambientBirds: 1, trunkRipple: false },
 };
-/** MSAA is context-owned: keep it and alpha-to-coverage rather than remounting/changing leaf edges. */
+/** MSAA is context-owned: keep it and alpha-to-coverage rather than remounting/changing leaf edges.
+ * leafCount describes the authored GLB canopy, not a procedural density switch:
+ * even last-resort ambient reductions never change its geometry or materials.
+ */
 export function qualitySettings(initial: DeviceTier, step: number): TierSettings {
   if (initial !== 'high') return TIER_SETTINGS[initial];
   if (step >= 6) return TIER_SETTINGS.low;
