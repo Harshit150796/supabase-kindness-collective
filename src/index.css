@@ -617,3 +617,8 @@
 .lazy-responsive-region { --lazy-reserved-height: var(--lazy-mobile); }
 @media (min-width: 768px) { .lazy-responsive-region { --lazy-reserved-height: var(--lazy-tablet); } }
 @media (min-width: 1024px) { .lazy-responsive-region { --lazy-reserved-height: var(--lazy-desktop); } }
+
+@media (max-width: 600px) {
+  [data-sonner-toaster] { left: 16px !important; right: 16px !important; width: calc(100vw - 32px) !important; }
+  [data-sonner-toast] { width: 100% !important; }
+}
