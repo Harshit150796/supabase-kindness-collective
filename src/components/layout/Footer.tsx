@@ -7,9 +7,9 @@ import logo from '@/assets/logo.png';
 const linkClass = 'inline-flex min-h-11 items-center py-2.5 transition-colors hover:text-primary-foreground';
 export function Footer() {
   return <footer className="footer-surface text-primary-foreground">
-    <div className="mx-auto max-w-7xl px-4 pb-24 pt-14 sm:px-6 lg:px-8 lg:pt-16">
-      <div className="grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 md:grid-cols-12">
-        <div className="space-y-5 sm:col-span-2 md:col-span-12 lg:col-span-4">
+    <div className="mx-auto max-w-7xl px-4 pb-20 pt-10 md:pb-24 md:pt-14 sm:px-6 lg:px-8 lg:pt-16">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-12 md:gap-x-8 md:gap-y-10">
+        <div className="col-span-2 space-y-4 md:col-span-12 lg:col-span-4">
           <div data-footer-lockup className="footer-lockup flex w-fit max-w-full items-center gap-2.5 whitespace-nowrap rounded-xl px-4 py-3">
             <img src={logo} alt="" className="h-10 w-10 shrink-0 object-contain" />
             <span data-footer-wordmark className="font-sans text-xl font-bold"><span className="brand-coupon">Coupon</span><span className="brand-donation">Donation</span></span>
@@ -18,23 +18,23 @@ export function Footer() {
         </div>
         <div className="md:col-span-3 lg:col-span-2">
           <SectionLabel className="mb-4 text-primary-foreground/65">Discover</SectionLabel>
-          <ul className="space-y-1 text-[15px] leading-[23px] text-primary-foreground/85">
+          <ul className="text-[15px] leading-[23px] text-primary-foreground/85">
             <li><Link to="/about" className={linkClass}>About us</Link></li><li><Link to="/how-it-works" className={linkClass}>How it works</Link></li><li><Link to="/faq" className={linkClass}>FAQ</Link></li><li><Link to="/stories" className={linkClass}>Fundraisers</Link></li>
           </ul>
         </div>
         <div className="md:col-span-3 lg:col-span-2">
           <SectionLabel className="mb-4 text-primary-foreground/65">Take part</SectionLabel>
-          <ul className="space-y-1 text-[15px] leading-[23px] text-primary-foreground/85">
+          <ul className="text-[15px] leading-[23px] text-primary-foreground/85">
             <li><Link to="/donate" className={linkClass}>Give support</Link></li><li><Link to="/apply" className={linkClass}>Start a fundraiser</Link></li><li><Link to="/partners" className={linkClass}>Partner with us</Link></li><li><Link to="/auth?mode=signup" className={linkClass}>Create an account</Link></li>
           </ul>
         </div>
         <div className="md:col-span-3 lg:col-span-2">
           <SectionLabel className="mb-4 text-primary-foreground/65">Find help</SectionLabel>
-          <ul className="space-y-1 text-[15px] leading-[23px] text-primary-foreground/85">{NEEDS.map(n => <li key={n.slug}><Link to={`/help/${n.slug}`} className={linkClass}>{n.name}</Link></li>)}</ul>
+          <ul className="text-[15px] leading-[23px] text-primary-foreground/85">{NEEDS.map(n => <li key={n.slug}><Link to={`/help/${n.slug}`} className={linkClass}>{n.name}</Link></li>)}</ul>
         </div>
-        <div className="min-w-0 md:col-span-3 lg:col-span-2">
+        <div className="col-span-2 min-w-0 md:col-span-3 lg:col-span-2">
           <SectionLabel className="mb-4 text-primary-foreground/65">Contact</SectionLabel>
-          <ul className="space-y-4 text-[13px] leading-5 text-primary-foreground/85">
+          <ul className="grid grid-cols-1 gap-x-6 sm:grid-cols-2 md:grid-cols-1 md:space-y-2 text-[13px] leading-5 text-primary-foreground/85">
             <li className="flex items-start gap-2"><Mail className="mt-0.5 h-4 w-4 shrink-0" /><a href="mailto:support@coupondonation.com" className="min-h-11 inline-flex items-center min-w-0 break-words hover:text-primary-foreground">support@<wbr />coupondonation.com</a></li>
             <li><span className="block text-primary-foreground/65">Partnerships</span><a href="mailto:connect@coupondonation.com" className="min-h-11 inline-flex items-center break-words hover:text-primary-foreground">connect@<wbr />coupondonation.com</a></li>
             <li className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0" /><a href="tel:+13158986745" className="inline-flex min-h-11 items-center">+1 (315) 898-6745</a></li>
@@ -42,9 +42,9 @@ export function Footer() {
           </ul>
         </div>
       </div>
-      <div className="mt-12 flex flex-col justify-between gap-5 border-t border-primary-foreground/20 pt-6 text-[13px] leading-5 text-primary-foreground/70 md:flex-row">
+      <div className="mt-8 md:mt-12 flex flex-col justify-between gap-5 border-t border-primary-foreground/20 pt-6 text-[13px] leading-5 text-primary-foreground/70 md:flex-row">
         <p>© {new Date().getFullYear()} CouponDonation. All rights reserved.</p>
-        <div className="flex flex-wrap gap-x-6 gap-y-3"><Link to="/privacy" className={linkClass}>Privacy policy</Link><Link to="/cookies" className={linkClass}>Cookie policy</Link><Link to="/terms" className={linkClass}>Terms of service</Link></div>
+        <div className="flex flex-wrap gap-x-6"><Link to="/privacy" className={linkClass}>Privacy policy</Link><Link to="/cookies" className={linkClass}>Cookie policy</Link><Link to="/terms" className={linkClass}>Terms of service</Link></div>
       </div>
     </div>
   </footer>;
