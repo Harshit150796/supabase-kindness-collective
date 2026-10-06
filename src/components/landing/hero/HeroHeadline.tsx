@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useMotionPreference } from "@/hooks/useMotionPreference";
 import { ArrowRight } from "lucide-react";
 
 const MOBILE_BREAKPOINT = 768;
@@ -18,6 +19,7 @@ function getIsMobile() {
 
 export function HeroHeadline() {
   const [isMobile, setIsMobile] = useState(getIsMobile);
+  const preference = useMotionPreference();
   const [idx, setIdx] = useState(0);
 
   useEffect(() => {
@@ -28,10 +30,10 @@ export function HeroHeadline() {
   }, []);
 
   useEffect(() => {
-    if (isMobile) return; // static on mobile — avoids 2.8s "blink" over the tree
+    if (isMobile || preference === "gentle") return; // static on mobile — avoids 2.8s "blink" over the tree
     const id = setInterval(() => setIdx((i) => (i + 1) % ROTATING_WORDS.length), 2800);
     return () => clearInterval(id);
-  }, [isMobile]);
+  }, [isMobile, preference]);
 
   return (
     <div

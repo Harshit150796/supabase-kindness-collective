@@ -98,5 +98,5 @@ export function WordReveal({ children, className }: { children: string; classNam
 
 export function MotionBar({ value, className }: { value: number; className?: string }) {
   const preference = useMotionPreference();
-  return <motion.div className={className} initial={preference === 'gentle' ? false : { scaleX: 0, opacity: 1 }} whileInView={{ scaleX: Math.max(0, Math.min(value, 100)) / 100, opacity: 1 }} viewport={{ once: true, amount: 0.6 }} transition={{ duration: preference === 'full' ? 0.4 : 0, ease: [0.16, 1, 0.3, 1] }} style={{ transformOrigin: 'left' }} />;
+  return <motion.div className={className} initial={preference === 'gentle' ? { scaleX: Math.max(0, Math.min(value, 100)) / 100 } : { scaleX: 0, opacity: 1 }} whileInView={{ scaleX: Math.max(0, Math.min(value, 100)) / 100, opacity: 1 }} viewport={{ once: true, amount: 0.6 }} transition={{ duration: preference === 'full' ? 0.4 : 0, ease: [0.16, 1, 0.3, 1] }} style={{ transformOrigin: 'left' }} />;
 }
