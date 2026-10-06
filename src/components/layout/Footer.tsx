@@ -7,7 +7,7 @@ import logo from '@/assets/logo.png';
 const linkClass = 'inline-block py-1 transition-colors hover:text-primary-foreground';
 export function Footer() {
   return <footer className="footer-surface text-primary-foreground">
-    <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-16">
+    <div className="mx-auto max-w-7xl px-4 pb-24 pt-14 sm:px-6 lg:px-8 lg:pt-16">
       <div className="grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 md:grid-cols-12">
         <div className="space-y-5 sm:col-span-2 md:col-span-12 lg:col-span-4">
           <div data-footer-lockup className="footer-lockup flex w-fit max-w-full items-center gap-2.5 whitespace-nowrap rounded-xl px-4 py-3">
