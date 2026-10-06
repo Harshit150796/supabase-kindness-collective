@@ -35,7 +35,7 @@ export function Footer() {
         <div className="col-span-2 min-w-0 md:col-span-3 lg:col-span-2">
           <SectionLabel className="mb-2 md:mb-4 text-primary-foreground/65">Contact</SectionLabel>
           <ul className="grid grid-cols-1 gap-x-6 sm:grid-cols-2 md:grid-cols-1 md:space-y-2 text-[13px] leading-5 text-primary-foreground/85">
-            <li className="flex items-start gap-2"><Mail className="mt-0.5 h-4 w-4 shrink-0" /><a href="mailto:support@coupondonation.com" className="min-h-11 inline-flex items-center min-w-0 break-words hover:text-primary-foreground">support@<wbr />coupondonation.com</a></li>
+            <li className="flex items-center gap-2"><Mail className="h-4 w-4 shrink-0" /><a href="mailto:support@coupondonation.com" className="min-h-11 inline-flex items-center min-w-0 break-words hover:text-primary-foreground">support@<wbr />coupondonation.com</a></li>
             <li className="flex flex-wrap items-center gap-x-2"><span className="text-primary-foreground/65">Partnerships</span><a href="mailto:connect@coupondonation.com" className="min-h-11 inline-flex items-center break-words hover:text-primary-foreground">connect@<wbr />coupondonation.com</a></li>
             <li className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0" /><a href="tel:+13158986745" className="inline-flex min-h-11 items-center">+1 (315) 898-6745</a></li>
             <li className="flex min-h-11 items-center gap-2"><MapPin className="h-4 w-4 shrink-0" /><span>United States</span></li>
