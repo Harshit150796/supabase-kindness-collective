@@ -554,7 +554,7 @@
 .product-page-title { font-family: "Instrument Serif", Georgia, serif; font-size: 40px; line-height: 44px; font-weight: 400; }
 .product-body { font-family: "Instrument Sans", sans-serif; font-size: 15px; line-height: 23px; }
 .product-meta { font-family: "Instrument Sans", sans-serif; font-size: 13px; line-height: 20px; color: hsl(var(--muted-foreground)); }
-.product-section-label { font-family: "Instrument Sans", sans-serif; font-size: 12px; line-height: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: hsl(var(--muted-foreground)); }
+.product-section-label { font-family: "Instrument Sans", sans-serif; font-size: 12px; line-height: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
 .product-stat { font-family: "Instrument Serif", Georgia, serif; font-size: 28px; line-height: 32px; font-variant-numeric: tabular-nums; }
 .product-hero-number { font-family: "Instrument Serif", Georgia, serif; font-size: 64px; line-height: 1; font-variant-numeric: tabular-nums; }
 .footer-surface { background: hsl(var(--primary-20)); }

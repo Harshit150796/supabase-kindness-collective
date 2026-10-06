@@ -10,10 +10,10 @@ export function CardSurface({ className, interactive, index, style, ...props }: 
   return <div className={cn("dash-card", interactive && "dash-interactive-card", index != null && "dash-card-enter", className)} style={index != null ? { animationDelay: `${Math.min(index, 10) * 60}ms`, ...style } : style} {...props} />;
 }
 export function SectionLabel({ children, className }: { children: ReactNode; className?: string }) {
-  return <h2 className={cn("product-section-label", className)}>{children}</h2>;
+  return <h2 className={cn("product-section-label text-muted-foreground", className)}>{children}</h2>;
 }
 export function Stat({ label, value, className }: { label: string; value: ReactNode; className?: string }) {
-  return <div className={cn("min-w-0", className)}><dt className="product-section-label">{label}</dt><dd className="product-stat mt-2">{value}</dd></div>;
+  return <div className={cn("min-w-0", className)}><dt className="product-section-label text-muted-foreground">{label}</dt><dd className="product-stat mt-2">{value}</dd></div>;
 }
 const labels: Record<string, string> = { active: "Live", pending: "Under review", paused: "Paused", completed: "Completed", rejected: "Not approved", ready: "Ready", used: "Used", preparing: "Being prepared" };
 export function StatusChip({ status }: { status: string }) {
