@@ -33,7 +33,7 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-border/70 bg-background lg:bg-background/90 lg:backdrop-blur-lg">
       <div className="container mx-auto px-4">
-        <div className="flex h-18 items-center justify-between py-3">
+        <div className="flex h-18 items-center justify-between py-3 [@media(max-height:500px)]:h-[52px] [@media(max-height:500px)]:py-1">
           {/* Logo */}
           <Link to="/" className="group flex min-h-11 shrink-0 items-center gap-3">
             <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" {...({ fetchpriority: 'high' } as any)} />
@@ -50,35 +50,35 @@ export function Navbar() {
           <div className="hidden items-center gap-3 whitespace-nowrap xl:flex xl:gap-8">
             <Link 
               to="/about" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors inline-flex min-h-11 min-w-11 items-center justify-center px-3 py-1.5"
             >
               About Us
             </Link>
             <Link 
               to="/stories" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors inline-flex min-h-11 min-w-11 items-center justify-center px-3 py-1.5"
             >
               Stories
             </Link>
             <Link 
               to="/how-it-works" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors inline-flex min-h-11 min-w-11 items-center justify-center px-3 py-1.5"
             >
               How It Works
             </Link>
             <Link 
               to="/faq" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors inline-flex min-h-11 min-w-11 items-center justify-center px-3 py-1.5"
             >
               FAQ
             </Link>
             <Link 
               to="/blog" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors inline-flex min-h-11 min-w-11 items-center justify-center px-3 py-1.5"
             >
               Blog
             </Link>
-            <Link to="/partners" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5">Partners</Link>
+            <Link to="/partners" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors inline-flex min-h-11 min-w-11 items-center justify-center px-3 py-1.5">Partners</Link>
             <Button asChild size="sm"><Link to="/apply">Start a fundraiser</Link></Button>
           </div>
 

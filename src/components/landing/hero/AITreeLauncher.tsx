@@ -18,7 +18,7 @@ export function AITreeLauncher({ onClick, hidden }: Props) {
         <Leaf className="w-3 h-3 md:w-4 md:h-4" />
         <span className="hidden md:block absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-verify animate-pulse" />
       </span>
-      <span className="text-[11px] md:text-sm font-semibold whitespace-nowrap">
+      <span className="text-[13px] md:text-sm font-semibold whitespace-nowrap">
         <span className="md:hidden">Ask Coupon</span>
         <span className="hidden md:inline">Talk to Coupon</span>
       </span>
