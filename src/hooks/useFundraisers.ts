@@ -33,6 +33,9 @@ export function useFundraisers(options?: { limit?: number; category?: string }) 
   return useQuery({
     queryKey: ['fundraisers', 'active', options?.category, options?.limit],
     queryFn: async () => {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 12000);
+      try {
       let query = supabase
         .from('fundraisers')
         .select(`
@@ -41,7 +44,8 @@ export function useFundraisers(options?: { limit?: number; category?: string }) 
           fundraiser_images (id, image_url, is_primary, display_order)
         `)
         .eq('status', 'active')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .abortSignal(controller.signal);
 
       if (options?.category && options.category !== 'all') {
         query = query.eq('category', options.category);
@@ -59,12 +63,14 @@ export function useFundraisers(options?: { limit?: number; category?: string }) 
       }
 
       const rows = (data || []) as Omit<Fundraiser, 'live_raised' | 'live_donations_count'>[];
-      return Promise.all(rows.map(async (row) => {
+      return await Promise.all(rows.map(async (row) => {
         const [totals, organizer, recent] = await Promise.all([
-          supabase.rpc('get_fundraiser_totals' as never, { _fundraiser_id: row.id } as never),
-          supabase.rpc('get_fundraiser_organizer' as never, { _fundraiser_id: row.id } as never),
-          supabase.rpc('get_fundraiser_donations' as never, { _fundraiser_id: row.id, _limit: 1, _order: 'recent' } as never),
+          supabase.rpc('get_fundraiser_totals' as never, { _fundraiser_id: row.id } as never).abortSignal(controller.signal),
+          supabase.rpc('get_fundraiser_organizer' as never, { _fundraiser_id: row.id } as never).abortSignal(controller.signal),
+          supabase.rpc('get_fundraiser_donations' as never, { _fundraiser_id: row.id, _limit: 1, _order: 'recent' } as never).abortSignal(controller.signal),
         ]);
+        const failed = [totals, organizer, recent].find(result => result.error);
+        if (failed?.error) throw failed.error;
         const totalRow = (totals.data as Array<{ total_raised: number; donations_count: number }> | null)?.[0];
         const organizerRow = (organizer.data as Array<{ display_name: string }> | null)?.[0];
         const recentRow = (recent.data as Array<{ created_at: string }> | null)?.[0];
@@ -76,7 +82,10 @@ export function useFundraisers(options?: { limit?: number; category?: string }) 
           latest_donation_at: recentRow?.created_at ?? null,
         } as Fundraiser;
       }));
+      } finally { window.clearTimeout(timeout); }
     },
+    retry: 1,
+    retryDelay: 500,
     refetchInterval: () => document.hidden ? false : 30_000,
     refetchIntervalInBackground: false,
   });

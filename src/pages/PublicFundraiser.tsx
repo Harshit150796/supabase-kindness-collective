@@ -110,7 +110,7 @@ const PublicFundraiser = () => {
       <Navbar />
 
       <main className="container mx-auto px-4 pt-24 md:pt-28">
-        <Link to="/stories" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ChevronLeft className="h-4 w-4" />All fundraisers</Link>
+        <Link to="/stories" className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ChevronLeft className="h-4 w-4" />All fundraisers</Link>
         <Reveal><h1 className="mt-4 max-w-4xl font-display text-4xl font-normal leading-[1.05] text-ink md:text-6xl dark:text-foreground">{fundraiser.title}</h1></Reveal>
 
         <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-14">
@@ -167,8 +167,8 @@ const PublicFundraiser = () => {
 
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-6 text-sm text-muted-foreground">
               {created && <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />Created {created}</span>}
-              <Link to={`/stories?category=${fundraiser.category}`} className="flex items-center gap-1.5 hover:text-foreground"><Tag className="h-4 w-4" />{categoryLabels[fundraiser.category] ?? fundraiser.category}</Link>
-              <button onClick={() => setReport(true)} className="flex items-center gap-1.5 hover:text-foreground"><Flag className="h-4 w-4" />Report fundraiser</button>
+              <Link to={`/stories?category=${fundraiser.category}`} className="flex min-h-11 items-center gap-2 py-2.5 hover:text-foreground"><Tag className="h-4 w-4" />{categoryLabels[fundraiser.category] ?? fundraiser.category}</Link>
+              <button onClick={() => setReport(true)} className="flex min-h-11 items-center gap-2 py-2.5 hover:text-foreground"><Flag className="h-4 w-4" />Report fundraiser</button>
             </div>
           </div>
 
@@ -197,7 +197,7 @@ const PublicFundraiser = () => {
         </div>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 z-40 flex gap-3 border-t border-border bg-background/95 p-3 backdrop-blur lg:hidden">
+      <div className="campaign-sticky-actions fixed inset-x-0 bottom-0 z-40 flex gap-3 border-t border-border bg-background/95 p-3 backdrop-blur lg:hidden">
         <Button className="h-12 flex-1 text-base font-semibold" onClick={donate}><Heart className="mr-2 h-4 w-4" />Donate</Button>
         <Button className="h-12 flex-1 bg-ink text-ink-foreground hover:bg-ink/90" onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
       </div>

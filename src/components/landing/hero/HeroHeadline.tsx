@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useMotionPreference } from "@/hooks/useMotionPreference";
 import { ArrowRight } from "lucide-react";
 
 const MOBILE_BREAKPOINT = 768;
@@ -18,6 +19,7 @@ function getIsMobile() {
 
 export function HeroHeadline() {
   const [isMobile, setIsMobile] = useState(getIsMobile);
+  const preference = useMotionPreference();
   const [idx, setIdx] = useState(0);
 
   useEffect(() => {
@@ -28,10 +30,10 @@ export function HeroHeadline() {
   }, []);
 
   useEffect(() => {
-    if (isMobile) return; // static on mobile — avoids 2.8s "blink" over the tree
+    if (isMobile || preference === "gentle") return; // static on mobile — avoids 2.8s "blink" over the tree
     const id = setInterval(() => setIdx((i) => (i + 1) % ROTATING_WORDS.length), 2800);
     return () => clearInterval(id);
-  }, [isMobile]);
+  }, [isMobile, preference]);
 
   return (
     <div
@@ -44,20 +46,20 @@ export function HeroHeadline() {
           CouponDonation is
         </span>
         {isMobile ? (
-          <span className="inline-block text-xs uppercase tracking-[0.2em] font-bold text-emerald-700">
+          <span className="inline-block text-xs uppercase tracking-[0.2em] font-bold text-primary">
             {ROTATING_WORDS[0]}
           </span>
         ) : (
           <span
             key={ROTATING_WORDS[idx]}
-            className="inline-block text-xs uppercase tracking-[0.2em] font-bold text-emerald-700 animate-in fade-in slide-in-from-bottom-1 duration-500"
+            className="inline-block text-xs uppercase tracking-[0.2em] font-bold text-primary animate-in fade-in slide-in-from-bottom-1 duration-500"
           >
             {ROTATING_WORDS[idx]}
           </span>
         )}
       </div>
       <div className="mt-3 md:mt-4 inline-flex items-center justify-center gap-1.5 md:gap-2">
-        <Button asChild size="sm" className="shadow-lg whitespace-nowrap">
+        <Button asChild size="sm" className="min-h-11 shadow-lg whitespace-nowrap">
           <Link to="/donate">
             Donate now <ArrowRight className="ml-1 w-3.5 h-3.5" />
           </Link>
@@ -66,7 +68,7 @@ export function HeroHeadline() {
           asChild
           size="sm"
           variant="outline"
-          className="whitespace-nowrap bg-background shadow-lg"
+          className="min-h-11 whitespace-nowrap bg-background shadow-lg"
         >
           <Link to="/apply">Apply as Recipient</Link>
         </Button>

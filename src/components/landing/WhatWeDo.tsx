@@ -283,68 +283,25 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
   }, [inView, progress, reduced, step.offset]);
 
   return (
-    <li
-      ref={itemRef}
-      data-mobile-step={index + 1}
-      data-in-view={inView ? 'true' : 'false'}
-      className={`relative flex flex-col items-center justify-center py-12 text-center ${reduced ? 'min-h-0' : 'min-h-[640px] sm:min-h-[680px] md:min-h-[720px]'}`}
-    >
-      <motion.div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[43%] h-[min(68vw,290px)] w-[min(68vw,290px)] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
-        style={{ background: `radial-gradient(circle, color-mix(in hsl, ${step.accent} 18%, transparent), transparent 68%)` }}
-        initial={false}
-        animate={{ opacity: reduced || inView ? 1 : 0 }}
-        transition={{ duration: 0.55 }}
-      />
-      <motion.div
-        data-mobile-step-art
-        className="relative h-[clamp(200px,60vw,260px)] w-[clamp(200px,60vw,260px)] shrink-0 overflow-hidden"
-        initial={false}
-        animate={{ opacity: reduced || inView ? 1 : 0.45, scale: 1, y: reduced || inView ? 0 : 12 }}
-        transition={{ type: 'spring', stiffness: 190, damping: 24 }}
-      >
+    <li ref={itemRef} data-mobile-step={index + 1} data-in-view={inView ? 'true' : 'false'} className="grid grid-cols-[76px_minmax(0,1fr)] items-center gap-4 py-5 sm:grid-cols-[100px_minmax(0,1fr)]">
+      <div data-mobile-step-art className="h-[76px] w-[76px] overflow-hidden sm:h-[100px] sm:w-[100px]">
         <Art progress={progress} still={reduced} offset={step.offset} />
-      </motion.div>
-      <motion.div
-        className="relative mt-7 max-w-lg"
-        initial={false}
-        animate={{ opacity: reduced || inView ? 1 : 0, y: reduced || inView ? 0 : 24 }}
-        transition={{ type: 'spring', stiffness: 220, damping: 26, delay: reduced ? 0 : 0.16 }}
-      >
-        <div className="flex items-center justify-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold" style={{ color: step.accent, borderColor: step.accent }}>{index + 1}</span>
-          <h3 className="text-xl font-semibold text-foreground sm:text-2xl">{step.title}</h3>
-        </div>
-        <p className="mt-3 text-base leading-relaxed text-muted-foreground sm:text-lg">{step.body}</p>
-      </motion.div>
-      <nav className="relative mt-6 flex items-center justify-center" aria-label={`How it works, step ${index + 1} of 4`}>
-        {steps.map((target, targetIndex) => (
-          <Button
-            key={target.title}
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-11 w-11"
-            onClick={() => onNavigate(targetIndex)}
-            aria-label={`Go to step ${targetIndex + 1}: ${target.title}`}
-          >
-            <span className={`block h-1.5 rounded-full transition-[width,background-color] duration-300 ${targetIndex === index ? 'w-7 bg-primary' : 'w-2 bg-border'}`} />
-          </Button>
-        ))}
-      </nav>
+      </div>
+      <div>
+        <h3 className="font-sans text-lg font-semibold text-foreground"><span className="mr-2 text-sm tabular-nums text-primary">0{index + 1}</span>{step.title}</h3>
+        <p className="mt-2 text-[15px] leading-[23px] text-muted-foreground">{step.body}</p>
+      </div>
     </li>
   );
 }
 
 export function WhatWeDo() {
-  // Animations always play, even when the phone reports reduced motion
-  // (Battery Saver etc. switch that on silently).
-  useMotionPreference();
+  // Reduced-motion visitors get still illustrations.
+  const preference = useMotionPreference();
   const sectionRef = useRef<HTMLElement>(null);
   const mobileStepRefs = useRef<Array<HTMLLIElement | null>>([]);
   const progress = useMotionValue(0);
-  const still = false;
+  const still = preference === 'gentle';
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
   const { scrollYProgress: desktopScroll } = useScroll({ target: sectionRef, offset: ['start end', 'end start'] });
   const idleTimerRef = useRef<number | null>(null);
@@ -403,7 +360,7 @@ export function WhatWeDo() {
   }, [still]);
 
   return (
-    <section ref={sectionRef} className="relative py-24 md:py-36" style={{ backgroundColor: 'hsl(var(--primary-97))' }}>
+    <section ref={sectionRef} className="relative py-12 lg:py-24" style={{ backgroundColor: 'hsl(var(--primary-97))' }}>
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ background: 'radial-gradient(60% 40% at 12% 18%, hsl(var(--verify) / 0.04), transparent 70%), radial-gradient(60% 40% at 88% 82%, hsl(var(--primary) / 0.05), transparent 70%)' }} />
       </div>
@@ -413,8 +370,8 @@ export function WhatWeDo() {
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">CouponDonation turns your donation into coupons, gift cards and credits — so it arrives as food, medicine or transport, never as cash. And you can always see exactly where it went.</p>
         </div>
 
-        <div className="relative mt-8 lg:hidden">
-          <ol>
+        <div className="relative mt-6 lg:hidden">
+          <ol className="divide-y divide-border">
             {steps.map((step, index) => (
               <MobileInViewStep key={step.title} step={step} index={index} reduced={still} onRegister={registerMobileStep} onNavigate={jumpToStep} />
             ))}
@@ -446,8 +403,8 @@ export function WhatWeDo() {
           </ol>
         </div>
 
-        <div className="mt-12 overflow-hidden border-y border-primary/20 bg-primary/[0.03] px-0 py-10 md:mt-20 md:px-10 md:py-12">
-          <div className="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_280px] md:gap-12">
+        <div className="mt-8 overflow-hidden border-y border-primary/20 bg-primary/[0.03] px-0 py-6 lg:mt-20 lg:px-10 lg:py-12">
+          <div className="grid items-center gap-5 sm:grid-cols-[minmax(0,1fr)_220px] lg:gap-12">
             <div className="text-center md:text-left">
                <p className="font-display text-3xl font-normal leading-snug text-foreground md:text-5xl">Donate $10 today. Check where it went in 2036.</p>
               <p className="mt-4 max-w-2xl text-base text-muted-foreground md:text-lg">Every donation keeps its receipt. Permanently verifiable — not a promise, a record.</p>
@@ -457,17 +414,17 @@ export function WhatWeDo() {
         </div>
 
         <div className="grid border-y border-border sm:grid-cols-2 sm:divide-x sm:divide-border">
-          <Link to="/donate" className="group flex min-h-32 items-center gap-4 border-b border-border p-6 transition-colors hover:bg-primary/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:border-b-0">
+          <Link to="/donate" className="group flex min-h-24 items-center gap-4 border-b border-border p-4 transition-colors hover:bg-primary/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:border-b-0">
             <DonateDoorIcon />
             <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-lg font-semibold text-foreground md:text-xl">I want to help someone <ArrowRight className="h-4 w-4 shrink-0 text-primary transition-transform group-hover:translate-x-1" /></span><span className="mt-1 block text-base text-muted-foreground">Pick a real need and cover it.</span></span>
           </Link>
-          <Link to="/apply" className="group flex min-h-32 items-center gap-4 p-6 transition-colors hover:bg-verify/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+          <Link to="/apply" className="group flex min-h-24 items-center gap-4 p-4 transition-colors hover:bg-verify/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
             <ApplyDoorIcon />
             <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-lg font-semibold text-foreground md:text-xl">I need help <ArrowRight className="h-4 w-4 shrink-0 text-verify transition-transform group-hover:translate-x-1" /></span><span className="mt-1 block text-base text-muted-foreground">Tell us what you need. U.S. residents, free to apply.</span></span>
           </Link>
         </div>
 
-        <div className="mt-10 flex flex-col items-center gap-2 text-center">
+        <div className="mt-6 flex flex-col items-center gap-2 text-center">
           <p className="text-base text-muted-foreground">Real people are asking right now. Here's who.</p>
           <motion.span aria-hidden="true" style={{ y: still ? 0 : chevronY }}><ChevronDown className="h-5 w-5 text-primary/70" /></motion.span>
         </div>

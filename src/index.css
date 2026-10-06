@@ -597,3 +597,36 @@
   .dash-interactive-card:hover { transform: none; }
   .skeleton-shimmer::after { animation: none; display: none; }
 }
+
+/* Touch requirements belong to shared controls, not individual forms. */
+@media (max-width: 767px), (pointer: coarse) {
+  .touch-form-control, input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), textarea, select { font-size: 16px !important; }
+  .touch-control { min-height: 44px; }
+  .touch-control:not(:has(span)):has(svg:only-child) { min-width: 44px; }
+}
+@media (max-height: 500px) {
+  .hero-stage { height: 330px; }
+  .campaign-sticky-actions { padding: 4px 12px max(4px, env(safe-area-inset-bottom)); gap: 8px; }
+  .campaign-sticky-actions > * { height: 44px; min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-in, .animate-fade-in, .animate-pulse, .animate-slide-up { animation: none !important; }
+}
+
+.lazy-responsive-region { --lazy-reserved-height: var(--lazy-mobile); }
+@media (min-width: 768px) { .lazy-responsive-region { --lazy-reserved-height: var(--lazy-tablet); } }
+@media (min-width: 1024px) { .lazy-responsive-region { --lazy-reserved-height: var(--lazy-desktop); } }
+
+@media (max-width: 600px) {
+  [data-sonner-toaster] { left: 16px !important; right: 16px !important; width: calc(100vw - 32px) !important; }
+  [data-sonner-toast] { width: 100% !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-in-right, .animate-slide-in-left, .stagger-children > *, .stagger-fast > * { animation: none !important; opacity: 1 !important; transform: none !important; }
+}

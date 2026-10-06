@@ -8,7 +8,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SessionSecurityProvider } from "@/components/auth/SessionSecurityProvider";
 import { GeoGuard } from "@/components/auth/GeoGuard";
-import Index from "./pages/Index";
+const Index = lazy(() => import("./pages/Index"));
 import { PrivacyConsentBanner } from "./components/PrivacyConsentBanner";
 
 // All non-homepage routes are lazy-loaded so mobile users don't download

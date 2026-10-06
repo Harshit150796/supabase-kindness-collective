@@ -26,7 +26,7 @@ type CategoryFilter = 'all' | 'family' | 'child' | 'emergency' | 'community';
 export default function Stories() {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
   const [fundraiserFilters, setFundraiserFilters] = useState<FundraiserFilters>({ category: 'all', state: 'all' });
-  const { data: fundraisers, isLoading } = useFundraisers();
+  const { data: fundraisers, isLoading, isError, refetch } = useFundraisers();
   const stats = useLandingStats();
   const { donors, loading: donorsLoading } = useTopDonors();
   const stateMap = useZipStates(fundraisers || []);
@@ -72,7 +72,7 @@ export default function Stories() {
             <FundraiserFilterBar filters={fundraiserFilters} onChange={setFundraiserFilters} />
             {isLoading ? (
               <div className="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3">{[1,2,3].map((item) => <div key={item}><Skeleton className="aspect-[4/3] w-full rounded-sm" /><Skeleton className="mt-4 h-5 w-3/4" /><Skeleton className="mt-3 h-2 w-full" /></div>)}</div>
-            ) : filteredFundraisers.length > 0 ? (
+            ) : isError ? (<div className="mt-8 border-y border-border py-12"><p>Campaigns could not be loaded.</p><Button variant="outline" className="mt-4" onClick={() => refetch()}>Try again</Button></div>) : filteredFundraisers.length > 0 ? (
               <div className="mt-8 grid gap-x-7 gap-y-12 md:grid-cols-2 lg:grid-cols-3">{filteredFundraisers.map((fundraiser) => <FundraiserCard key={fundraiser.id} fundraiser={fundraiser} />)}<StartFundraiserCard /></div>
             ) : (
               <div className="mt-8 border-y border-border py-14"><h3 className="font-display text-3xl text-foreground">No matching fundraisers yet.</h3><p className="mt-3 text-muted-foreground">Clear the filters or start a fundraiser of your own.</p></div>
@@ -84,7 +84,7 @@ export default function Stories() {
         <section className="py-24 md:py-32" style={{backgroundColor:'hsl(var(--primary-97))'}}>
           <div className="container mx-auto px-4">
             <div className="mb-10 max-w-3xl"><LineReveal><h2 className="font-display text-5xl font-normal text-foreground md:text-6xl">Stories behind everyday needs.</h2></LineReveal><Reveal delay={0.08}><p className="mt-4 text-lg text-muted-foreground">These are editorial stories, not live fundraisers. Their text and photographs remain separate from campaign totals.</p></Reveal></div>
-            <div className="mb-8 flex flex-wrap gap-2">{categories.map((category) => <Button key={category} variant={activeCategory === category ? 'default' : 'outline'} size="sm" onClick={() => setActiveCategory(category)}>{category === 'all' ? 'All stories' : categoryLabels[category]}</Button>)}</div>
+            <div className="mb-8 flex snap-x gap-2 overflow-x-auto [&>*]:shrink-0 [&>*]:snap-start">{categories.map((category) => <Button key={category} variant={activeCategory === category ? 'default' : 'outline'} size="sm" onClick={() => setActiveCategory(category)}>{category === 'all' ? 'All stories' : categoryLabels[category]}</Button>)}</div>
             <div className="grid gap-x-7 gap-y-12 md:grid-cols-2 lg:grid-cols-3">{filteredStories.map((story, index) => <EditorialStoryCard key={story.id} story={story} index={index} />)}</div>
           </div>
         </section>
@@ -107,7 +107,7 @@ function EditorialStoryCard({ story, index }: { story: ImpactStory; index: numbe
       <Link to={`/story/${story.id}`} className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
         <article>
           <ImageReveal className="aspect-[4/3] bg-muted"><img src={story.image} alt={story.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]" loading="lazy" /></ImageReveal>
-          <div className="pt-5"><div className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />{story.location}</div><h3 className="mt-3 font-display text-3xl font-normal text-foreground">{story.name}</h3><p className="mt-3 line-clamp-3 leading-relaxed text-muted-foreground">{story.story}</p><span className="mt-5 inline-flex items-center text-sm font-medium text-primary">Read the story <ArrowRight className="ml-2 h-4 w-4" /></span></div>
+          <div className="pt-5"><div className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />{story.location}</div><h3 className="mt-3 font-display text-3xl font-normal text-foreground">{story.name}</h3><p className="mt-3 line-clamp-3 leading-relaxed text-muted-foreground">{story.story}</p><span className="mt-5 inline-flex min-h-11 items-center text-sm font-medium text-primary py-2">Read the story <ArrowRight className="ml-2 h-4 w-4" /></span></div>
         </article>
       </Link>
     </Reveal>

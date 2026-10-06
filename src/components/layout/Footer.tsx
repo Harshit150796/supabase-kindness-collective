@@ -4,7 +4,7 @@ import { Mail, Phone, MapPin } from 'lucide-react';
 import { SectionLabel } from '@/components/ui/organizer';
 import logo from '@/assets/logo.png';
 
-const linkClass = 'inline-block py-1 transition-colors hover:text-primary-foreground';
+const linkClass = 'inline-flex min-h-11 items-center py-2.5 transition-colors hover:text-primary-foreground';
 export function Footer() {
   return <footer className="footer-surface text-primary-foreground">
     <div className="mx-auto max-w-7xl px-4 pb-24 pt-14 sm:px-6 lg:px-8 lg:pt-16">
@@ -35,9 +35,9 @@ export function Footer() {
         <div className="min-w-0 md:col-span-3 lg:col-span-2">
           <SectionLabel className="mb-4 text-primary-foreground/65">Contact</SectionLabel>
           <ul className="space-y-4 text-[13px] leading-5 text-primary-foreground/85">
-            <li className="flex items-start gap-2"><Mail className="mt-0.5 h-4 w-4 shrink-0" /><a href="mailto:support@coupondonation.com" className="min-w-0 break-words hover:text-primary-foreground">support@<wbr />coupondonation.com</a></li>
-            <li><span className="block text-primary-foreground/65">Partnerships</span><a href="mailto:connect@coupondonation.com" className="break-words hover:text-primary-foreground">connect@<wbr />coupondonation.com</a></li>
-            <li className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0" /><a href="tel:+13158986745">+1 (315) 898-6745</a></li>
+            <li className="flex items-start gap-2"><Mail className="mt-0.5 h-4 w-4 shrink-0" /><a href="mailto:support@coupondonation.com" className="min-h-11 inline-flex items-center min-w-0 break-words hover:text-primary-foreground">support@<wbr />coupondonation.com</a></li>
+            <li><span className="block text-primary-foreground/65">Partnerships</span><a href="mailto:connect@coupondonation.com" className="min-h-11 inline-flex items-center break-words hover:text-primary-foreground">connect@<wbr />coupondonation.com</a></li>
+            <li className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0" /><a href="tel:+13158986745" className="inline-flex min-h-11 items-center">+1 (315) 898-6745</a></li>
             <li className="flex items-center gap-2"><MapPin className="h-4 w-4 shrink-0" /><span>United States</span></li>
           </ul>
         </div>

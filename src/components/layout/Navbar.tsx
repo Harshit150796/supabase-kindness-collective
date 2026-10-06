@@ -35,55 +35,55 @@ export function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex h-18 items-center justify-between py-3">
           {/* Logo */}
-          <Link to="/" className="group flex shrink-0 items-center gap-3">
+          <Link to="/" className="group flex min-h-11 shrink-0 items-center gap-3">
             <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" {...({ fetchpriority: 'high' } as any)} />
             <div className="flex flex-col">
               <span className="font-bold text-base sm:text-lg leading-tight">
-                <span className="text-[#2e7d32]">Coupon</span>
-                <span className="text-[#1565c0]">Donation</span>
+                <span className="brand-coupon">Coupon</span>
+                <span className="brand-donation">Donation</span>
               </span>
-              <span className="text-[10px] text-muted-foreground leading-tight">Transforming Giving</span>
+              <span className="hidden text-xs text-muted-foreground leading-tight sm:block">Transforming Giving</span>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden items-center gap-3 whitespace-nowrap lg:flex xl:gap-8">
+          <div className="hidden items-center gap-3 whitespace-nowrap xl:flex xl:gap-8">
             <Link 
               to="/about" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
             >
               About Us
             </Link>
             <Link 
               to="/stories" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
             >
               Stories
             </Link>
             <Link 
               to="/how-it-works" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
             >
               How It Works
             </Link>
             <Link 
               to="/faq" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
             >
               FAQ
             </Link>
             <Link 
               to="/blog" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
             >
               Blog
             </Link>
-            <Link to="/partners" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Partners</Link>
+            <Link to="/partners" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5">Partners</Link>
             <Button asChild size="sm"><Link to="/apply">Start a fundraiser</Link></Button>
           </div>
 
           {/* Auth Buttons */}
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden xl:flex items-center gap-3">
             {user && (
               <Link to="/messages" className="relative rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground" aria-label={unread ? `Messages, ${unread} unread` : 'Messages'}>
                 <MessageCircle className="h-5 w-5" />
@@ -169,41 +169,41 @@ export function Navbar() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className="lg:hidden p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+          <Button variant="ghost" size="icon" aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            className="xl:hidden p-2 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-muted transition-colors flex-shrink-0"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          </Button>
         </div>
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden py-6 space-y-4 border-t border-border animate-fade-in">
+          <div className="xl:hidden py-6 space-y-4 border-t border-border animate-fade-in">
             <Link 
               to="/about" 
-              className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="block py-3 text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               About Us
             </Link>
             <Link 
               to="/stories" 
-              className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="block py-3 text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Stories
             </Link>
             <Link 
               to="/how-it-works" 
-              className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="block py-3 text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               How It Works
             </Link>
             <Link 
               to="/blog" 
-              className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="block py-3 text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Blog
@@ -215,12 +215,12 @@ export function Navbar() {
             )}
             <Link 
               to="/faq" 
-              className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="block py-3 text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               FAQ
             </Link>
-            <Link to="/partners" className="block py-2 text-muted-foreground hover:text-foreground transition-colors" onClick={() => setMobileMenuOpen(false)}>Partners</Link>
+            <Link to="/partners" className="block py-3 text-muted-foreground hover:text-foreground transition-colors" onClick={() => setMobileMenuOpen(false)}>Partners</Link>
             <Button asChild className="w-full"><Link to="/apply" onClick={() => setMobileMenuOpen(false)}>Start a fundraiser</Link></Button>
             <div className="pt-4 border-t border-border space-y-3">
               {user ? (

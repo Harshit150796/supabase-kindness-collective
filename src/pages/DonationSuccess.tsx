@@ -47,13 +47,13 @@ export default function DonationSuccess() {
       <Navbar />
       
       <main className="flex-1 flex items-center justify-center py-20 px-4">
-        <Card className="max-w-lg w-full rounded-md p-8 text-center space-y-6 shadow-sm">
+        <Card className="min-w-0 max-w-lg w-full [overflow-wrap:anywhere] [&>*]:min-w-0 rounded-md p-6 sm:p-8 text-center space-y-6 shadow-sm">
           {/* Success Icon */}
           <div className="relative">
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
               <CheckCircle className="w-10 h-10 text-primary" />
             </div>
-            <div className="absolute -bottom-1 -right-1 left-1/2 transform -translate-x-1/2 translate-x-8">
+            <div className="absolute -bottom-1 left-1/2 w-8 transform -translate-x-1/2 translate-x-8">
               <Heart className="w-8 h-8 text-primary fill-primary animate-pulse" />
             </div>
           </div>

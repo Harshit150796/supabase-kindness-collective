@@ -1,5 +1,14 @@
 # Roadmap
 
+## Responsive and performance pass (Oct 6)
+- [x] Measure baseline downloads and homepage scroll length.
+- [x] Isolate route/tree/chart downloads and provide an immediate tree poster.
+- [x] Compact homepage storytelling, consolidate authoritative figures, and repair loading/reveal states.
+- [x] Fix shared forms, touch controls, footer, short-view donation bar, and success wrapping.
+- [x] Verify all 14 requested sizes on public routes, stepped phone/tablet recordings, and existing/new tests; do not publish.
+- [ ] Production compressed after-transfer comparison / <350KB JS target and independent TypeScript check — unverified; see docs/verification/responsive-performance-oct-6.md.
+- [ ] Authenticated screens and exhaustive rotating orbit checks — unverified.
+
 ## Fundraiser home, footer and authoritative totals (Oct 6)
 - [x] Recompute completed-donation totals automatically, backfill every campaign, and prove distinct donors/refunds/idempotence.
 - [x] Extract shared organizer primitives; rebuild My fundraisers with one private RPC and working public sharing.

@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import poster from '@/assets/tree-poster.webp';
 import { HeroHeadline } from '@/components/landing/hero/HeroHeadline';
 import { TopDonorsPanel } from '@/components/landing/hero/TopDonorsPanel';
 import { AITreeLauncher } from '@/components/landing/hero/AITreeLauncher';
-import { AITreeChat } from '@/components/landing/hero/AITreeChat';
+const AITreeChat = lazy(() => import('@/components/landing/hero/AITreeChat').then(m => ({ default: m.AITreeChat })));
 import { Tree3DErrorBoundary } from '@/components/landing/Tree3DErrorBoundary';
-import { Tree3DScene } from '@/components/landing/Tree3DScene';
+const Tree3DScene = lazy(() => import('@/components/landing/Tree3DScene'));
 
 const BOT_UA_RE = /(bot|crawler|spider|crawling|Googlebot|bingbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|Discordbot|HeadlessChrome|Lighthouse|PageSpeed)/i;
 
@@ -24,30 +25,33 @@ function canRender3D(): boolean {
   }
 }
 
-const GradientFallback = () => (
-  <div
-    aria-hidden
-    className="absolute inset-0 w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#CFE6F5] to-[#E8F1E0]"
-  />
-);
-
 export function HeroSection() {
   const [chatOpen, setChatOpen] = useState(false);
-  // Mount the 3D canvas on the first client render — only gated by WebGL/bot capability.
-  const [can3D] = useState(() => canRender3D());
+  // The static tree paints first; reduced-motion and Save-Data visitors keep it.
+  const [can3D, setCan3D] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    let secondFrame = 0;
+    const mount = () => setCan3D(!query.matches && !connection?.saveData && canRender3D());
+    const firstFrame = requestAnimationFrame(() => { secondFrame = requestAnimationFrame(mount); });
+    query.addEventListener('change', mount);
+    return () => { cancelAnimationFrame(firstFrame); cancelAnimationFrame(secondFrame); query.removeEventListener('change', mount); };
+  }, []);
 
   return (
+    <>
     <section
-      className="relative w-full h-[58svh] md:h-[74vh] overflow-hidden"
+      className="hero-stage relative w-full h-[58svh] min-h-[330px] md:h-[74vh] overflow-hidden"
       style={{ contain: 'layout paint' }}
     >
       {/* Stacked layers — no DOM swap, no CLS. The gradient always paints first;
           the canvas wrapper sits on top immediately once WebGL capability is known. */}
-      <GradientFallback />
+      <img data-tree-poster src={poster} alt="The CouponDonation tree, growing familiar retailer logos" className="absolute inset-0 h-full w-full object-cover" fetchPriority="high" />
       <div className="absolute inset-0 w-full h-full">
         {can3D && (
           <Tree3DErrorBoundary>
-            <Tree3DScene />
+            <Suspense fallback={null}><Tree3DScene /></Suspense>
           </Tree3DErrorBoundary>
         )}
       </div>
@@ -58,8 +62,10 @@ export function HeroSection() {
         <HeroHeadline />
         <TopDonorsPanel />
         <AITreeLauncher onClick={() => setChatOpen(true)} hidden={chatOpen} />
-        <AITreeChat open={chatOpen} onClose={() => setChatOpen(false)} />
+        {chatOpen && <Suspense fallback={null}><AITreeChat open={chatOpen} onClose={() => setChatOpen(false)} /></Suspense>}
       </div>
     </section>
+    <TopDonorsPanel compact />
+    </>
   );
 }
