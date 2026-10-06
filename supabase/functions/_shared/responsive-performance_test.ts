@@ -20,3 +20,27 @@ Deno.test('responsive currency formatting handles numeric database strings', () 
   assertEquals(usd(1000), '$1,000');
   assertEquals(usd('20.5'), '$20.5');
 });
+
+Deno.test('figure labels pluralise counts', () => {
+  const plural = (n: number, one: string, many = one + 's') => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
+  assertEquals(plural(1, 'coupon'), '1 coupon');
+  assertEquals(plural(2, 'coupon'), '2 coupons');
+  assertEquals(plural(0, 'coupon'), '0 coupons');
+});
+
+Deno.test('slow connections keep the static tree poster', async () => {
+  const hero = await Deno.readTextFile('src/components/landing/HeroSection.tsx');
+  assert(hero.includes("/^(slow-2g|2g|3g)$/"));
+  assert(hero.includes('!slow'));
+});
+
+Deno.test('fundraiser list loads card numbers in one batched request', async () => {
+  const hook = await Deno.readTextFile('src/hooks/useFundraisers.ts');
+  assert(hook.includes("get_fundraiser_cards"));
+  assert(!hook.includes("get_fundraiser_totals"));
+});
+
+Deno.test('tree model stays under its compressed budget', async () => {
+  const { size } = await Deno.stat('public/models/tree.glb');
+  assert(size < 1_300_000, `tree.glb is ${size} bytes`);
+});

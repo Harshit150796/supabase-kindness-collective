@@ -22,7 +22,6 @@ type ArtProps = { progress: MotionValue<number>; still: boolean; offset: number 
 
 const svgProps = {
   viewBox: '0 0 120 120',
-  'aria-hidden': true as const,
   focusable: 'false' as const,
   className: 'h-full w-full overflow-hidden',
   'aria-hidden': true as const,
