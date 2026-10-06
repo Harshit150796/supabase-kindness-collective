@@ -47,7 +47,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden items-center gap-3 whitespace-nowrap lg:flex xl:gap-8">
+          <div className="hidden items-center gap-3 whitespace-nowrap xl:flex xl:gap-8">
             <Link 
               to="/about" 
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
@@ -83,7 +83,7 @@ export function Navbar() {
           </div>
 
           {/* Auth Buttons */}
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden xl:flex items-center gap-3">
             {user && (
               <Link to="/messages" className="relative rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground" aria-label={unread ? `Messages, ${unread} unread` : 'Messages'}>
                 <MessageCircle className="h-5 w-5" />
@@ -170,7 +170,7 @@ export function Navbar() {
 
           {/* Mobile Menu Button */}
           <Button variant="ghost" size="icon" aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-            className="lg:hidden p-2 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+            className="xl:hidden p-2 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-muted transition-colors flex-shrink-0"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -179,7 +179,7 @@ export function Navbar() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden py-6 space-y-4 border-t border-border animate-fade-in">
+          <div className="xl:hidden py-6 space-y-4 border-t border-border animate-fade-in">
             <Link 
               to="/about" 
               className="block py-3 text-muted-foreground hover:text-foreground transition-colors"
