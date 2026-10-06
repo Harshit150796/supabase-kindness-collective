@@ -9,6 +9,8 @@
 
 ## Design System Rules
 
+- Lazy section short states fill reservations to preserve scroll; shared count/retry logic prevents false zeros and early failures.
+
 - CouponDonation UI uses logo green `hsl(123 46% 34%)` as primary and logo blue `hsl(212 80% 42%)` as its only secondary accent; warm UI colors are forbidden outside protected third-party and 3D artwork.
 - Shared organizer primitives own titles/numerals, surfaces, labels, stats, status, progress and states to prevent page drift; controls use sans.
 - Marketing pages alternate neutral, soft-green, and deep-forest bands; tonal panels have no borders or shadows, and hairlines are for tables.
@@ -16,8 +18,8 @@
 - Shared motion uses bold translate/scale/clip/parallax in full mode; gentle mode stays visible with opacity and at most 16px rise.
 - Public photos stay local; without verified people-photo consent, use coupon/receipt/trace visuals.
 - Preserve the two-color CouponDonation wordmark exactly as `#2e7d32` for Coupon and `#1565c0` for Donation.
-- The hero's rotating “CouponDonation is …” uppercase kicker is a founder-approved exception to the no-eyebrow rule and must not be removed.
-- The homepage Live Donation Tracking chart uses vertical bars in each retailer's own brand colour — a founder-approved exception to the no-warm-colour rule.
+- Preserve the founder-approved rotating “CouponDonation is …” hero kicker exception.
+- Live Donation Tracking bars retain retailer colours (founder-approved warm-colour exception).
 - Messages are written only by the `send-message` edge function after server moderation (`_shared/moderation.ts`); clients have read-only access, so safety rules hold.
 - Public fundraiser pages read donors, organizers and coupon totals through security-definer read functions only; donations/profiles stay private under RLS.
 - Donation INSERT/relevant UPDATE triggers recompute distinct completed-donor totals; legacy payment RPC recomputes idempotently. No checkout/coupon triggers or realtime.

@@ -2,6 +2,7 @@ import { animate, motion, useInView, useScroll, useTransform } from 'motion/reac
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { cn } from '@/lib/utils';
+import { figureDisplay } from '@/lib/landingPresentation';
 
 type RevealProps = { children: ReactNode; className?: string; delay?: number };
 
@@ -69,18 +70,18 @@ export function CountUp({ value, className }: { value: number; className?: strin
   const ref = useRef<HTMLSpanElement>(null);
   const visible = useInView(ref, { once: true, amount: 0.5 });
   const preference = useMotionPreference();
-  const [display, setDisplay] = useState(0);
+  const [display, setDisplay] = useState(value);
   useEffect(() => {
-    if (preference === 'gentle') { setDisplay(value); return; }
+    if (preference === 'gentle' || value < 10) { setDisplay(value); return; }
     if (!visible) return;
-    const controls = animate(0, value, {
+    const controls = animate(value > 0 ? 1 : 0, value, {
       duration: preference === 'full' ? 1.6 : 0.7,
       ease: 'easeOut',
       onUpdate: (latest) => setDisplay(Math.round(latest)),
     });
     return () => controls.stop();
   }, [preference, value, visible]);
-  return <span ref={ref} className={className}>{display.toLocaleString()}</span>;
+  return <span ref={ref} className={className}>{figureDisplay(value, display, preference === 'gentle', visible).toLocaleString()}</span>;
 }
 
 export function Parallax({ children, className, distance = 70 }: RevealProps & { distance?: number }) {

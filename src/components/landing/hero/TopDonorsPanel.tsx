@@ -36,7 +36,7 @@ export function TopDonorsPanel({ compact = false }: { compact?: boolean }) {
   }, [collapsed]);
 
   return (
-    <div className={compact ? "relative w-full px-4 py-2 lg:hidden [@media(max-height:500px)]:block" : "absolute top-32 right-4 z-30 w-[260px] hidden lg:block [@media(max-height:500px)]:hidden pointer-events-auto"}>
+    <div className={compact ? "relative w-full px-4 py-2 xl:hidden [@media(max-height:500px)]:block" : "absolute top-32 right-4 z-30 w-[260px] hidden xl:block [@media(max-height:500px)]:hidden pointer-events-auto"}>
       <div className="rounded-2xl border border-border bg-background/85 backdrop-blur-xl shadow-2xl overflow-hidden">
         <Button variant="ghost"
           onClick={() => setCollapsed((c) => !c)}

@@ -1,6 +1,7 @@
 import { Quote, CheckCircle2 } from 'lucide-react';
 import { useCMSTestimonials } from '@/hooks/useCMSContent';
 import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
+import { ReservedSectionState } from './ReservedSectionState';
 
 const roleColors: Record<string, string> = {
   donor: 'bg-primary/10 text-primary',
@@ -9,7 +10,7 @@ const roleColors: Record<string, string> = {
 };
 
 export function TestimonialsSection() {
-  const { data: cmsTestimonials } = useCMSTestimonials(true);
+  const { data: cmsTestimonials, isLoading, isError, refetch } = useCMSTestimonials(true);
 
   const displayTestimonials = (cmsTestimonials || []).map((t: any) => ({
         id: t.id,
@@ -22,10 +23,14 @@ export function TestimonialsSection() {
         verified: t.verified,
       }));
 
-  if (displayTestimonials.length === 0) return null;
+  if (displayTestimonials.length === 0) return <section className="flex min-h-[var(--lazy-reserved-height,590px)] flex-col bg-secondary/45 py-14 lg:py-28">
+    <ReservedSectionState title={isLoading ? 'Gathering their words.' : isError ? 'Their stories are taking longer to arrive.' : 'Every story starts with someone.'}
+      description={isLoading ? 'Published accounts will appear here when they arrive.' : isError ? 'Please try again to read published accounts from our community.' : 'There are no published accounts here yet. Explore the fundraisers and stories behind this community.'}
+      onRetry={isError ? () => refetch() : undefined} />
+  </section>;
 
   return (
-    <section className="bg-secondary/45 py-14 lg:py-28">
+    <section className="min-h-[var(--lazy-reserved-height,0px)] bg-secondary/45 py-14 lg:py-28">
       <div className="container mx-auto px-4">
         <div className="mx-auto mb-12 max-w-3xl text-center md:mb-16">
           <LineReveal><h2 className="font-display text-5xl font-normal leading-none text-foreground md:text-6xl">In their own words.</h2></LineReveal>
