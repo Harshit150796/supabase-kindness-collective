@@ -14,6 +14,8 @@ function getGpuString(): string {
     const ext = gl.getExtension('WEBGL_debug_renderer_info');
     if (!ext) return '';
     const s = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL);
+    // Detection uses a throwaway context, never the live scene's context.
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
     return typeof s === 'string' ? s : '';
   } catch {
     return '';
@@ -34,8 +36,9 @@ export function useDeviceTier(forced?: DeviceTier) {
   const initial = useMemo(() => forced ?? detectDeviceTier(), [forced]);
   const [step, setStep] = useState(0);
   const requestDowngrade = useCallback(() => {
+    if (initial !== 'high') return;
     setStep((previous) => Math.min(previous + 1, 6));
-  }, []);
+  }, [initial]);
   const settings = useMemo(() => qualitySettings(initial, step), [initial, step]);
   return { initialTier: initial, tier: settings.tier, settings, step, requestDowngrade };
 }
