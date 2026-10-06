@@ -29,6 +29,7 @@ The redundant eye action is removed. Share uses native sharing or clipboard plus
 | `src/pages/FundraiserDashboard.tsx` | Stored fundraiser fields for fallback/share metadata; main visible totals from privacy-safe donation RPC. |
 | `src/hooks/useFundraisers.ts` | Selects both fundraiser columns for campaign listing consumers; now reconciled at source. |
 | `src/pages/admin/AdminFundraisers.tsx` | Displays both stored counters for operational comparison. |
+| `supabase/functions/coupon-chat/index.ts` | Reads both stored fundraiser counters into campaign assistant context; now reconciled at source. |
 | `src/pages/overlays/QRCodeOverlay.tsx` | Selects and displays stored `amount_raised`, including live row updates. |
 | `src/pages/overlays/ProgressBarOverlay.tsx` | Selects/displays stored `amount_raised` and computes progress, including live row updates. |
 | `src/hooks/useFeaturedStories.ts` | Reads both fields from CMS editorial stories, not live fundraiser counters. |
@@ -40,6 +41,8 @@ The redundant eye action is removed. Share uses native sharing or clipboard plus
 | `src/integrations/supabase/types.ts` | Generated schema/type declarations, not a runtime reader. |
 
 Public campaign totals travel through `useFundraiserLive.ts` → `get_fundraiser_totals` → campaign `DonationPanel.tsx`; this RPC now uses the same distinct-donor formula, and the public label says donors rather than donations. Static/CMS story totals are deliberately distinguished from real donation counters; this change cannot make manual editorial figures ledger-derived.
+
+Final read-only all-fundraiser comparison returned **0 inconsistent fundraisers** after the rollback proof. The Stripe webhook contains a totals-related comment/call, not an additional direct counter reader; its source was preserved.
 
 ## Proposed next passes — no additional restyling performed
 
