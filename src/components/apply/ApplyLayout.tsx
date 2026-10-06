@@ -130,7 +130,7 @@ export const ApplyLayout = ({
       </div>
 
       {/* Right Panel - Form Section */}
-      <div className="min-w-0 lg:w-[58%] bg-card flex flex-col min-h-[60vh] lg:min-h-dvh shadow-[-10px_0_40px_-15px_rgba(0,0,0,0.05)]">
+      <div className="min-w-0 overflow-x-clip lg:w-[58%] bg-card flex flex-col min-h-[60vh] lg:min-h-dvh shadow-[-10px_0_40px_-15px_rgba(0,0,0,0.05)]">
         {/* Auth Status */}
         <div className="p-6 lg:p-10 flex justify-end">
           {isAuthenticated ? (
