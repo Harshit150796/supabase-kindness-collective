@@ -4,7 +4,7 @@ import { Mail, Phone, MapPin } from 'lucide-react';
 import { SectionLabel } from '@/components/ui/organizer';
 import logo from '@/assets/logo.png';
 
-const linkClass = 'inline-block py-1 transition-colors hover:text-primary-foreground';
+const linkClass = 'inline-block py-2.5 transition-colors hover:text-primary-foreground';
 export function Footer() {
   return <footer className="footer-surface text-primary-foreground">
     <div className="mx-auto max-w-7xl px-4 pb-24 pt-14 sm:px-6 lg:px-8 lg:pt-16">

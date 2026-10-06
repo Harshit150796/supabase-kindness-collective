@@ -167,8 +167,8 @@ const PublicFundraiser = () => {
 
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-6 text-sm text-muted-foreground">
               {created && <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />Created {created}</span>}
-              <Link to={`/stories?category=${fundraiser.category}`} className="flex items-center gap-1.5 hover:text-foreground"><Tag className="h-4 w-4" />{categoryLabels[fundraiser.category] ?? fundraiser.category}</Link>
-              <button onClick={() => setReport(true)} className="flex items-center gap-1.5 hover:text-foreground"><Flag className="h-4 w-4" />Report fundraiser</button>
+              <Link to={`/stories?category=${fundraiser.category}`} className="flex items-center gap-2 py-2.5 hover:text-foreground"><Tag className="h-4 w-4" />{categoryLabels[fundraiser.category] ?? fundraiser.category}</Link>
+              <button onClick={() => setReport(true)} className="flex items-center gap-2 py-2.5 hover:text-foreground"><Flag className="h-4 w-4" />Report fundraiser</button>
             </div>
           </div>
 

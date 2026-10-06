@@ -398,7 +398,7 @@ export default function Auth() {
                             <button
                               type="button"
                               onClick={() => setAuthView('forgot-password')}
-                              className="text-sm text-primary hover:underline"
+                              className="text-sm font-medium text-primary hover:underline py-1"
                             >
                               Forgot Password?
                             </button>

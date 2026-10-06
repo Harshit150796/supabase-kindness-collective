@@ -107,7 +107,7 @@ function EditorialStoryCard({ story, index }: { story: ImpactStory; index: numbe
       <Link to={`/story/${story.id}`} className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
         <article>
           <ImageReveal className="aspect-[4/3] bg-muted"><img src={story.image} alt={story.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]" loading="lazy" /></ImageReveal>
-          <div className="pt-5"><div className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />{story.location}</div><h3 className="mt-3 font-display text-3xl font-normal text-foreground">{story.name}</h3><p className="mt-3 line-clamp-3 leading-relaxed text-muted-foreground">{story.story}</p><span className="mt-5 inline-flex items-center text-sm font-medium text-primary">Read the story <ArrowRight className="ml-2 h-4 w-4" /></span></div>
+          <div className="pt-5"><div className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />{story.location}</div><h3 className="mt-3 font-display text-3xl font-normal text-foreground">{story.name}</h3><p className="mt-3 line-clamp-3 leading-relaxed text-muted-foreground">{story.story}</p><span className="mt-5 inline-flex items-center text-sm font-medium text-primary py-2">Read the story <ArrowRight className="ml-2 h-4 w-4" /></span></div>
         </article>
       </Link>
     </Reveal>

@@ -47,7 +47,7 @@ export default function DonationSuccess() {
       <Navbar />
       
       <main className="flex-1 flex items-center justify-center py-20 px-4">
-        <Card className="max-w-lg w-full rounded-md p-8 text-center space-y-6 shadow-sm">
+        <Card className="max-w-lg w-full rounded-md p-6 sm:p-8 text-center space-y-6 shadow-sm">
           {/* Success Icon */}
           <div className="relative">
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">

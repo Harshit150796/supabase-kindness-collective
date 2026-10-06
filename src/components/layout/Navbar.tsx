@@ -50,35 +50,35 @@ export function Navbar() {
           <div className="hidden items-center gap-3 whitespace-nowrap lg:flex xl:gap-8">
             <Link 
               to="/about" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
             >
               About Us
             </Link>
             <Link 
               to="/stories" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
             >
               Stories
             </Link>
             <Link 
               to="/how-it-works" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
             >
               How It Works
             </Link>
             <Link 
               to="/faq" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
             >
               FAQ
             </Link>
             <Link 
               to="/blog" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
             >
               Blog
             </Link>
-            <Link to="/partners" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Partners</Link>
+            <Link to="/partners" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5">Partners</Link>
             <Button asChild size="sm"><Link to="/apply">Start a fundraiser</Link></Button>
           </div>
 
@@ -170,7 +170,7 @@ export function Navbar() {
 
           {/* Mobile Menu Button */}
           <button
-            className="lg:hidden p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+            className="lg:hidden p-2 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-muted transition-colors flex-shrink-0"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -182,28 +182,28 @@ export function Navbar() {
           <div className="lg:hidden py-6 space-y-4 border-t border-border animate-fade-in">
             <Link 
               to="/about" 
-              className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="block py-3 text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               About Us
             </Link>
             <Link 
               to="/stories" 
-              className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="block py-3 text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Stories
             </Link>
             <Link 
               to="/how-it-works" 
-              className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="block py-3 text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               How It Works
             </Link>
             <Link 
               to="/blog" 
-              className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="block py-3 text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Blog
@@ -215,12 +215,12 @@ export function Navbar() {
             )}
             <Link 
               to="/faq" 
-              className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="block py-3 text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               FAQ
             </Link>
-            <Link to="/partners" className="block py-2 text-muted-foreground hover:text-foreground transition-colors" onClick={() => setMobileMenuOpen(false)}>Partners</Link>
+            <Link to="/partners" className="block py-3 text-muted-foreground hover:text-foreground transition-colors" onClick={() => setMobileMenuOpen(false)}>Partners</Link>
             <Button asChild className="w-full"><Link to="/apply" onClick={() => setMobileMenuOpen(false)}>Start a fundraiser</Link></Button>
             <div className="pt-4 border-t border-border space-y-3">
               {user ? (

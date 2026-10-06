@@ -87,7 +87,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="shrink-0 snap-start inline-flex items-center gap-2 rounded-full border border-border bg-background hover:bg-muted transition-colors px-4 py-2 text-sm font-semibold text-foreground"
+              className="shrink-0 snap-start inline-flex items-center gap-2 rounded-full border border-border bg-background hover:bg-muted transition-colors px-4 py-2.5 text-sm font-semibold text-foreground"
             >
               <activeCategory.Icon className="w-4 h-4" />
               {activeCategory.label}
@@ -122,7 +122,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="shrink-0 snap-start inline-flex items-center gap-2 rounded-full border border-border bg-background hover:bg-muted transition-colors px-4 py-2 text-sm font-semibold text-foreground"
+              className="shrink-0 snap-start inline-flex items-center gap-2 rounded-full border border-border bg-background hover:bg-muted transition-colors px-4 py-2.5 text-sm font-semibold text-foreground"
             >
               {activeState ? activeState.name : 'All states'}
               <ChevronDown className="w-4 h-4 opacity-60" />
@@ -185,7 +185,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
                 onChange({ ...filters, category: active ? 'all' : c.value })
               }
               className={cn(
-                'shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium transition-colors',
+                'shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full px-3.5 py-2.5 text-sm font-medium transition-colors',
                 active
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-foreground hover:bg-muted/70'

@@ -61,7 +61,7 @@ export default function NeedPage() {
             <div><h2 className="font-display text-4xl">Questions</h2>
               <Accordion type="single" collapsible className="mt-6">{page.faq.map((f, i) => <AccordionItem key={f.q} value={`q${i}`}><AccordionTrigger className="text-left">{f.q}</AccordionTrigger><AccordionContent className="text-muted-foreground">{f.a}</AccordionContent></AccordionItem>)}</Accordion>
             </div>
-            <nav aria-label="Other needs"><h2 className="font-display text-3xl">Other needs</h2><ul className="mt-5 space-y-2">{NEEDS.filter((n) => n.slug !== page.slug).map((n) => <li key={n.slug}><Link to={`/help/${n.slug}`} className="text-primary hover:underline">{n.name}</Link></li>)}</ul></nav>
+            <nav aria-label="Other needs"><h2 className="font-display text-3xl">Other needs</h2><ul className="mt-5 space-y-2">{NEEDS.filter((n) => n.slug !== page.slug).map((n) => <li key={n.slug}><Link to={`/help/${n.slug}`} className="inline-block py-2 text-primary hover:underline">{n.name}</Link></li>)}</ul></nav>
           </div>
         </section>
       </main>
