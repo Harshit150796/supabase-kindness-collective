@@ -77,7 +77,7 @@ export function BrandLeaderboard() {
   const [chartVisible, setChartVisible] = useState(false);
   const motionPreference = useMotionPreference();
   const leaderboardData = (stats?.brands ?? []).slice(0, 6).map((brand) => ({ name: brand.name, donations: Math.round(brand.total) }));
-  const animatedData = leaderboardData.map((brand) => ({ ...brand, donations: chartVisible ? brand.donations : 0 }));
+  const animatedData = leaderboardData;
   const [recent, setRecent] = useState<RecentDonation[]>([]);
   const [donationIndex, setDonationIndex] = useState(0);
 
@@ -103,10 +103,10 @@ export function BrandLeaderboard() {
   }, []);
 
   useEffect(() => {
-    if (recent.length < 2) return;
+    if (recent.length < 2 || motionPreference !== 'full') return;
     const interval = window.setInterval(() => setDonationIndex((current) => (current + 1) % recent.length), 4000);
     return () => window.clearInterval(interval);
-  }, [recent.length]);
+  }, [recent.length, motionPreference]);
 
   const latestDonation = recent[donationIndex];
   return <div className="mt-8 rounded-2xl bg-background py-6">
