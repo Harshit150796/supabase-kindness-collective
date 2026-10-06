@@ -87,16 +87,24 @@ function CameraRig({
   zoomProgressRef: React.MutableRefObject<number>;
   isMobile: boolean;
 }) {
-  const { camera, mouse } = useThree();
+  const { camera, mouse, size } = useThree();
   const { parallaxBoostRef } = useInteraction();
   const lastInteractionRef = useRef(performance.now() / 1000);
   const resetAnim = useRef<{ start: number; from: THREE.Vector3 } | null>(null);
-  const defaultCam = isMobile ? MOBILE_CAM : DEFAULT_CAM;
+  // Fit the full rotating canopy envelope, not just the trunk, on narrow canvases.
+  const aspect = size.width / Math.max(size.height, 1);
+  const verticalFov = THREE.MathUtils.degToRad(isMobile ? 32 : 38);
+  const fitDist = Math.max(isMobile ? MOBILE_BASE_DIST : 13,
+    4.5 / (Math.tan(verticalFov / 2) * Math.min(aspect, 1)));
+  const defaultCam = (isMobile ? MOBILE_CAM : DEFAULT_CAM).clone();
+  defaultCam.z = fitDist;
   const target = isMobile ? MOBILE_TARGET : TARGET;
-  const baseDist = isMobile ? MOBILE_BASE_DIST : 13;
+  const baseDist = fitDist;
   // Seed at the current zoom progress so the initial (already pulled-back) view
   // paints immediately instead of animating outward on load.
   const currentDistRef = useRef(baseDist + zoomProgressRef.current * 4);
+
+  useEffect(() => { currentDistRef.current = baseDist + zoomProgressRef.current * 4; }, [baseDist, zoomProgressRef]);
 
   // Track interactions on the controls
   useEffect(() => {
@@ -675,11 +683,10 @@ export function Tree3DScene() {
       const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
       if (dy > 0 && cur >= 1) return;
       if (dy < 0 && cur <= 0) return;
-      e.preventDefault();
       zoomProgressRef.current = Math.max(0, Math.min(1, cur + dy * WHEEL_SENSITIVITY));
     };
 
-    el.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('wheel', onWheel, { passive: true });
     return () => {
       el.removeEventListener('wheel', onWheel);
     };
@@ -782,7 +789,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
           enableDamping
           dampingFactor={0.08}
           minDistance={isMobile ? 12 : 9}
-          maxDistance={isMobile ? 20 : 17}
+          maxDistance={60}
           minPolarAngle={Math.PI / 3}
           maxPolarAngle={Math.PI / 2.1}
           target={isMobile ? [0, 3.6, 0] : [0, 3.4, 0]}

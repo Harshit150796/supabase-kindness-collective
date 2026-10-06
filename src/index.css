@@ -597,3 +597,19 @@
   .dash-interactive-card:hover { transform: none; }
   .skeleton-shimmer::after { animation: none; display: none; }
 }
+
+/* Touch requirements belong to shared controls, not individual forms. */
+@media (max-width: 767px), (pointer: coarse) {
+  .touch-form-control, input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), textarea, select { font-size: 16px !important; }
+  .touch-control { min-height: 44px; }
+  .touch-control:not(:has(span)):has(svg:only-child) { min-width: 44px; }
+}
+@media (max-height: 500px) {
+  .hero-stage { height: 330px; }
+  .campaign-sticky-actions { padding: 4px 12px max(4px, env(safe-area-inset-bottom)); gap: 8px; }
+  .campaign-sticky-actions > * { height: 44px; min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-in, .animate-fade-in, .animate-pulse, .animate-slide-up { animation: none !important; }
+}

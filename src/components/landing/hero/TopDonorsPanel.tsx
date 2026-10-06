@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTopDonors } from "@/hooks/useTopDonors";
 import { ChevronDown, ChevronUp, Trophy } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "hero-top-donors-collapsed";
@@ -22,7 +23,7 @@ function formatAmount(n: number) {
   return `$${Math.round(n)}`;
 }
 
-export function TopDonorsPanel() {
+export function TopDonorsPanel({ compact = false }: { compact?: boolean }) {
   const { donors, loading } = useTopDonors();
   // Collapsed by default; expands only if the visitor opts in.
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -35,17 +36,17 @@ export function TopDonorsPanel() {
   }, [collapsed]);
 
   return (
-    <div className="absolute top-28 md:top-32 right-3 md:right-4 z-30 w-[260px] hidden md:block pointer-events-auto">
+    <div className={compact ? "relative w-full px-4 py-2 lg:hidden" : "absolute top-32 right-4 z-30 w-[260px] hidden lg:block pointer-events-auto"}>
       <div className="rounded-2xl border border-border bg-background/85 backdrop-blur-xl shadow-2xl overflow-hidden">
-        <button
+        <Button variant="ghost"
           onClick={() => setCollapsed((c) => !c)}
-          className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
+          className="h-auto min-h-11 w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
         >
           <div className="flex items-center gap-2">
             <Trophy className="w-4 h-4 text-verify" />
             <div className="text-left">
               <div className="text-sm font-bold text-foreground leading-tight">Top Donors</div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">This week</div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">This week</div>
             </div>
           </div>
           {collapsed ? (
@@ -53,7 +54,7 @@ export function TopDonorsPanel() {
           ) : (
             <ChevronUp className="w-4 h-4 text-muted-foreground" />
           )}
-        </button>
+        </Button>
 
         {!collapsed && (
           <div className="px-3 pb-3 space-y-1.5">

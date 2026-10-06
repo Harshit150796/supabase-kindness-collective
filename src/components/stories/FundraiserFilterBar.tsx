@@ -87,7 +87,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="shrink-0 snap-start inline-flex items-center gap-2 rounded-full border border-border bg-background hover:bg-muted transition-colors px-4 py-2.5 text-sm font-semibold text-foreground"
+              className="touch-control min-h-11 shrink-0 snap-start inline-flex items-center gap-2 rounded-full border border-border bg-background hover:bg-muted transition-colors px-4 py-2.5 text-sm font-semibold text-foreground"
             >
               <activeCategory.Icon className="w-4 h-4" />
               {activeCategory.label}
@@ -103,7 +103,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
                     key={c.value}
                     onClick={() => onChange({ ...filters, category: c.value })}
                     className={cn(
-                      'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm text-left transition-colors',
+                      'touch-control min-h-11 w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm text-left transition-colors',
                       active ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted text-foreground'
                     )}
                   >
@@ -122,7 +122,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="shrink-0 snap-start inline-flex items-center gap-2 rounded-full border border-border bg-background hover:bg-muted transition-colors px-4 py-2.5 text-sm font-semibold text-foreground"
+              className="touch-control min-h-11 shrink-0 snap-start inline-flex items-center gap-2 rounded-full border border-border bg-background hover:bg-muted transition-colors px-4 py-2.5 text-sm font-semibold text-foreground"
             >
               {activeState ? activeState.name : 'All states'}
               <ChevronDown className="w-4 h-4 opacity-60" />
@@ -142,7 +142,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
               <button
                 onClick={() => onChange({ ...filters, state: 'all' })}
                 className={cn(
-                  'w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-sm text-left transition-colors',
+                  'touch-control min-h-11 w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-sm text-left transition-colors',
                   filters.state === 'all' ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted text-foreground'
                 )}
               >
@@ -156,7 +156,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
                     key={s.code}
                     onClick={() => onChange({ ...filters, state: s.code })}
                     className={cn(
-                      'w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-sm text-left transition-colors',
+                      'touch-control min-h-11 w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-sm text-left transition-colors',
                       active ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted text-foreground'
                     )}
                   >
@@ -185,7 +185,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
                 onChange({ ...filters, category: active ? 'all' : c.value })
               }
               className={cn(
-                'shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full px-3.5 py-2.5 text-sm font-medium transition-colors',
+                'touch-control min-h-11 shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full px-3.5 py-2.5 text-sm font-medium transition-colors',
                 active
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-foreground hover:bg-muted/70'

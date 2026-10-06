@@ -39,10 +39,10 @@ export function Navbar() {
             <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" {...({ fetchpriority: 'high' } as any)} />
             <div className="flex flex-col">
               <span className="font-bold text-base sm:text-lg leading-tight">
-                <span className="text-[#2e7d32]">Coupon</span>
-                <span className="text-[#1565c0]">Donation</span>
+                <span className="brand-coupon">Coupon</span>
+                <span className="brand-donation">Donation</span>
               </span>
-              <span className="text-[10px] text-muted-foreground leading-tight">Transforming Giving</span>
+              <span className="hidden text-xs text-muted-foreground leading-tight sm:block">Transforming Giving</span>
             </div>
           </Link>
 
@@ -169,12 +169,12 @@ export function Navbar() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button
+          <Button variant="ghost" size="icon" aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             className="lg:hidden p-2 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-muted transition-colors flex-shrink-0"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          </Button>
         </div>
 
         {/* Mobile Menu */}

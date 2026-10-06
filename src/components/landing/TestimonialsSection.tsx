@@ -5,7 +5,7 @@ import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
 const roleColors: Record<string, string> = {
   donor: 'bg-primary/10 text-primary',
   recipient: 'bg-verify/10 text-verify',
-  partner: 'bg-blue-500/10 text-blue-600'
+  partner: 'bg-verify/10 text-verify'
 };
 
 export function TestimonialsSection() {
@@ -25,19 +25,19 @@ export function TestimonialsSection() {
   if (displayTestimonials.length === 0) return null;
 
   return (
-    <section className="bg-secondary/45 py-24 md:py-36">
+    <section className="bg-secondary/45 py-14 lg:py-28">
       <div className="container mx-auto px-4">
         <div className="mx-auto mb-12 max-w-3xl text-center md:mb-16">
           <LineReveal><h2 className="font-display text-5xl font-normal leading-none text-foreground md:text-6xl">In their own words.</h2></LineReveal>
           <Reveal delay={0.1} className="mt-5"><p className="text-lg text-muted-foreground">Published accounts from people who have used or supported CouponDonation.</p></Reveal>
         </div>
 
-        <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mx-auto flex max-w-6xl snap-x snap-mandatory gap-5 overflow-x-auto pb-3 md:grid md:grid-cols-2 lg:grid-cols-4">
           {displayTestimonials.map((testimonial, index) => (
             <Reveal
               key={testimonial.id} 
               delay={index * 0.07}
-              className="rounded-[1.5rem] bg-background p-7 transition-transform duration-500 hover:-translate-y-1"
+              className="w-[min(82vw,340px)] shrink-0 snap-start rounded-[1.5rem] bg-background p-7 transition-transform duration-180 hover:-translate-y-0.5 md:w-auto"
             >
                 <Quote className="w-8 h-8 text-primary/20 mb-4" />
                 <p className="text-foreground text-sm leading-relaxed mb-6">

@@ -65,6 +65,8 @@ export function useFundraisers(options?: { limit?: number; category?: string }) 
           supabase.rpc('get_fundraiser_organizer' as never, { _fundraiser_id: row.id } as never),
           supabase.rpc('get_fundraiser_donations' as never, { _fundraiser_id: row.id, _limit: 1, _order: 'recent' } as never),
         ]);
+        const failed = [totals, organizer, recent].find(result => result.error);
+        if (failed?.error) throw failed.error;
         const totalRow = (totals.data as Array<{ total_raised: number; donations_count: number }> | null)?.[0];
         const organizerRow = (organizer.data as Array<{ display_name: string }> | null)?.[0];
         const recentRow = (recent.data as Array<{ created_at: string }> | null)?.[0];
@@ -77,6 +79,8 @@ export function useFundraisers(options?: { limit?: number; category?: string }) 
         } as Fundraiser;
       }));
     },
+    retry: 1,
+    retryDelay: 500,
     refetchInterval: () => document.hidden ? false : 30_000,
     refetchIntervalInBackground: false,
   });
