@@ -35,7 +35,7 @@ export function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex h-18 items-center justify-between py-3">
           {/* Logo */}
-          <Link to="/" className="group flex shrink-0 items-center gap-3">
+          <Link to="/" className="group flex min-h-11 shrink-0 items-center gap-3">
             <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" {...({ fetchpriority: 'high' } as any)} />
             <div className="flex flex-col">
               <span className="font-bold text-base sm:text-lg leading-tight">
