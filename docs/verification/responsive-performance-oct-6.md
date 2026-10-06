@@ -25,21 +25,21 @@ The old received/claimed display depended on legacy status/redemption transition
 One aggregate snapshot showed **$1,484 completed donations**, **$20 credential-issued coupon value**, and **$1,214 retailer allocations**. These are different stages, now labelled and defined, not presented as interchangeable totals. Recipient-reported use is explicitly not independent proof of purchase. Only public aggregates are exposed.
 
 ## Browser evidence
-Signed-out Chromium checked public routes and protected-route redirects. A 14-size × 10-route sweep completed (140 checks), followed by a broader 33-route matrix. Required sizes: 320×568, 360×780, 390×844, 430×932, 844×390, 768×1024, 820×1180, 1024×768, 1180×820, 1280×800, 1366×768, 1440×900, 1920×1080, 2560×1440.
+Signed-out Chromium checked public routes and protected-route redirects. A 14-size × 10-route sweep completed (140 checks), followed by a broader completed 33-route × 14-size matrix (462 checks), plus narrow-screen rechecks after fixes. Required sizes: 320×568, 360×780, 390×844, 430×932, 844×390, 768×1024, 820×1180, 1024×768, 1180×820, 1280×800, 1366×768, 1440×900, 1920×1080, 2560×1440.
 
 Stepped homepage recordings used 85% viewport increments, never full-page screenshots. Viewed both phone/tablet contact sheets: story art stays with captions, no full-screen sticky gaps below lg, testimonials visible, figures distinguish received/used, and footer wordmark has comfortable padding. Live WebGL screenshots at 320, 390 and 768 show the canopy/logos inside canvas bounds and CTA separation. This proves sampled frames, not every position of a full orbit.
 
-Earlier comparable local measurements: phone **16,768px / 19.87 screens → 11,088px / 13.14 screens**; tablet **15,405px / 15.04 → 10,793px / 10.54 screens**. Final measurements below supersede these if footer touch-spacing changes affect length. User-supplied live baselines (~16,400/~15,100px) are from different conditions.
+Earlier comparable local measurements: phone **16,768px / 19.87 screens → 11,088px / 13.14 screens**; tablet **15,405px / 15.04 → 10,793px / 10.54 screens**. Final phone height remained 11,088px. A later tablet measurement encountered a transient route/viewport reset and was discarded; the completed, visually reviewed 768px recording is the valid evidence. User-supplied live baselines (~16,400/~15,100px) are from different conditions.
 
-Browser network checks on `/cookies`, `/about`, and `/f/help-feed-my-family-this-month-7kvke2` found **no Three, tree GLB, scene or Recharts requests**. Reduced-motion homepage rendered no canvas. Simulated fundraiser fetch failure displayed the error state; Retry recovered the real campaign. The repaired `/apply` had no horizontal overflow at 320, 390 or 844.
+Browser network checks on `/cookies`, `/about`, and `/f/help-feed-my-family-this-month-7kvke2` found **no Three, tree GLB, scene or Recharts requests**. Reduced-motion homepage rendered no canvas. Simulated fundraiser fetch failure displayed the error state; Retry recovered the real campaign. The repaired `/apply` had no horizontal overflow at 320, 360, 390, 1440 and 1920 after fixing its entrance-animation scrollable overflow as well as the toast.
 
 ## Tests and limits
-- All **42 existing Deno tests passed**, zero failures.
+- All **42 existing Deno tests passed**, plus **2 new regression tests** (44 total), zero failures.
 - Automatic preview build logs reported clean builds after edits. A separate TypeScript-only check was not run; do not equate build success with that check.
 - Before-change transferred resources at 390px (KB, JS / all): `/` **1,116.9 / 2,749.9**; `/cookies` **1,122.5 / 2,712.4**; public fundraiser **1,148.6 / 2,738.4**; `/about` **1,127.9 / 4,003.3**.
 - **After-change production compressed transfer totals and the <350KB JS target are unverified.** Localhost is Vite development; its raw/module transfers are not comparable. The harness performs builds; no separate manual build or website publish was performed.
 - **Authenticated owner/donor/admin screens remain unverified**: external unmanaged auth. Redirect checks do not prove those screens.
 - Chromium touch emulation is not a physical iPhone Safari focus/zoom test. Shared computed form sizes were checked; native Web Share availability is platform-dependent.
-- Live landscape WebGL screenshot stalled in headless Chromium; static landscape layout is checked, but full landscape orbit framing remains unverified.
+- Live landscape WebGL screenshot succeeded after retry and dismissing the cookie overlay; full rotating landscape orbit framing remains unverified.
 - Matrix checks inspect initial render, not every authenticated modal or later route state. Cookie-bar controls were excluded from touch audits and left untouched as requested.
 - Supabase reported pre-existing security findings; the aggregate migration introduced none. No unrelated policy/payment fixes were attempted.
