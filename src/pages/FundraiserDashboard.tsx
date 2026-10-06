@@ -70,13 +70,13 @@ function useCountUpOnce(target: number | null, ms = 600) {
   const done = useRef(false);
   useEffect(() => {
     if (target == null) return;
-    if (done.current || reducedMotion()) { done.current = true; setValue(target); return; }
+    if (done.current || target < 10) { done.current = true; setValue(target); return; }
     done.current = true;
     const start = performance.now();
     let raf = 0;
     const tick = (t: number) => {
       const p = Math.min((t - start) / ms, 1);
-      setValue(target * (1 - Math.pow(1 - p, 3)));
+      setValue(Math.max(1, target * (1 - Math.pow(1 - p, 3))));
       if (p < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);

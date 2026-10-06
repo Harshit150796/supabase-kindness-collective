@@ -8,6 +8,7 @@ import { useInteraction } from './InteractionContext';
 import { SparkleBurst } from './SparkleBurst';
 import { toast } from 'sonner';
 import type { BranchTip } from './Tree';
+import { useMotionPreference } from '@/hooks/useMotionPreference';
 
 export type CouponState =
   | { phase: 'hanging' }
@@ -49,6 +50,7 @@ function logoSize(aspect: number, alphaCoverage: number, mark: CouponData['mark'
 }
 
 export function CouponFruit({ branch, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false, labelSuppressed = false }: Props) {
+  const gentle = useMotionPreference() === 'gentle';
   const groupRef = useRef<THREE.Group>(null);
   const velocityRef = useRef({ y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 });
   const posRef = useRef(new THREE.Vector3());
@@ -91,7 +93,7 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
     const unit = (index * 0.6180339) % 1;
     // Mobile gets a slightly wider ring than before so coupons don't land in
     // one tight cluster under the trunk, while still staying clear of the edges.
-    const rad = isMobile ? 1.6 + unit * 1.7 : 1.8 + unit * 3.2;
+    const rad = 1.8 + unit * 3.2;
     return { x: Math.cos(ang) * rad, z: Math.sin(ang) * rad };
   }, [index, isMobile]);
 
@@ -104,7 +106,7 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
       const tFall = Math.sqrt((2 * dropH) / 9.8);
       const dx = scatterTarget.x - hangingPosition.x;
       const dz = scatterTarget.z - hangingPosition.z;
-      const jitter = isMobile ? 0.06 : 0.12;
+      const jitter = 0.12;
       velocityRef.current = {
         y: 0.4,
         x: dx / tFall + (Math.random() - 0.5) * jitter,
@@ -131,6 +133,7 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
 
   const handlePointer = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
+    if (gentle) return;
     if (state.phase === 'hanging') {
       onClickHanging(index);
     } else if (state.phase === 'falling' && !caughtRef.current) {
@@ -160,8 +163,8 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
 
     if (state.phase === 'hanging') {
       // Pendulum sway with mixed sines (perlin-ish)
-      const sway = Math.sin(t * 0.7 + index * 1.3) * 0.14 + Math.sin(t * 1.7 + index) * 0.04;
-      const swayZ = Math.cos(t * 0.5 + index * 0.7) * 0.07;
+      const sway = gentle ? 0 : Math.sin(t * 0.7 + index * 1.3) * 0.14 + Math.sin(t * 1.7 + index) * 0.04;
+      const swayZ = gentle ? 0 : Math.cos(t * 0.5 + index * 0.7) * 0.07;
       groupRef.current.position.copy(hangingPosition);
       const targetYaw = Math.atan2(
         camera.position.x - hangingPosition.x,
@@ -173,7 +176,7 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
       );
       const facingYaw = groupRef.current.rotation.y + yawDelta * (1 - Math.exp(-12 * dt));
       groupRef.current.rotation.set(hangingTilt.x + swayZ, facingYaw + sway * 0.18, hangingTilt.z + sway);
-      const breathe = 1 + Math.sin(t * 1.2 + index) * 0.02;
+      const breathe = gentle ? 1 : 1 + Math.sin(t * 1.2 + index) * 0.02;
       groupRef.current.scale.setScalar(breathe * opticalScale);
     } else if (state.phase === 'falling') {
       velocityRef.current.y -= 9.8 * dt;

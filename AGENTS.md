@@ -15,7 +15,10 @@
 - Shared organizer primitives own titles/numerals, surfaces, labels, stats, status, progress and states to prevent page drift; controls use sans.
 - Marketing pages alternate neutral, soft-green, and deep-forest bands; tonal panels have no borders or shadows, and hairlines are for tables.
 - No eyebrow headings, decorative pills, icon circles, gradient text, glow shadows or card-on-card.
-- Shared motion uses bold translate/scale/clip/parallax in full mode; gentle mode stays visible with opacity and at most 16px rise.
+- Shared motion pre-triggers reveals before viewport entry and immediately completes late/flung entries; gentle mode uses opacity-only transitions to avoid blank content.
+- Tree quality starts from shared desktop settings except known software renderers; committed visible-frame sampling reduces shadow/DPR costs before ambient density so screen size never selects artwork.
+- Preserve context-owned MSAA and leaf alpha-to-coverage during adaptation; changing the antialias method would remount WebGL or alter the leaf silhouette.
+- Tree model and appearance are shared across viewport sizes; camera aspect fitting and mobile label placement may vary, but lights, materials, exposure and geometry do not.
 - Public photos stay local; without verified people-photo consent, use coupon/receipt/trace visuals.
 - Preserve the two-color CouponDonation wordmark exactly as `#2e7d32` for Coupon and `#1565c0` for Donation.
 - Preserve the founder-approved rotating “CouponDonation is …” hero kicker exception.

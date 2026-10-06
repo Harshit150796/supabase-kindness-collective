@@ -1,5 +1,13 @@
 # Roadmap
 
+## Restore mobile animations and tree fidelity (Oct 6)
+- [ ] Remove network guessing; mount live gentle tree and respond to Save-Data changes.
+- [ ] Start all hardware at desktop appearance; measure frames and reduce invisible costs first; retain software-renderer fallback.
+- [ ] Restore early full reveals, gentle fades/count-ups/headline and touch states.
+- [ ] Animate compact story steps and add an accessible marquee pause control.
+- [ ] Verify simulated phones, reduced motion, settings debug and stable 390/1024 scroll recordings; run tests and report real-device limits.
+- [ ] Optional phone-only model: do not ship without frozen-time DPR 2/3 visual/SSIM proof.
+
 ## Live re-audit follow-up: tablet hero, short states and truthful figures
 - [x] Keep Top Donors below the hero until xl; verify 1024/1180.
 - [x] Fill reserved error/empty states and add generous automatic retry/backoff; force failures and recovery.
@@ -262,3 +270,16 @@
 - [x] Batched card RPC (get_fundraiser_cards); one shared top-donors request
 - [x] Small text/tap target leftovers; compact navbar on short landscape
 - [ ] Tree model under 400 KB — not possible without visibly changing the tree (needs founder decision)
+
+## Restore mobile motion and shared tree fidelity (Oct 6)
+- [x] Remove estimated network-speed gating; honor explicit Save-Data changes; live gentle tree.
+- [x] Same initial desktop artwork/settings on phones/tablets; no width/DPR/CPU/memory score.
+- [x] Measured visible-frame fallback: shadows then DPR, before last-resort ambient reductions; preserve GLB canopy.
+- [ ] Antialias-method downgrade — deliberately retained context MSAA/leaf coverage; switching risks context reset or altered edges.
+- [x] Early visible shared reveals, gentle opacity fades, compact story animations/caption stagger, phone headline rotation and touch feedback.
+- [x] Visible marquee pause control and active tree settings in motiondebug.
+- [x] Browser simulations, gentle camera evidence, 390/1024 stepped recordings: no height decreases/hidden reveals/overflow; 58 tests passed; automatic build clean.
+- [ ] Real capable iPhone/Android frame-rate/final-settings proof and frozen-time visual-equivalence comparison — hardware unavailable.
+- [ ] Optional phone-model SSIM experiment — not attempted; identical shared model retained.
+- [ ] Separate TS-only diagnostics — not independently run; automatic preview build reported clean.
+- Report: docs/mobile-motion-verification.md. No publishing, DB changes or unique-content removal.

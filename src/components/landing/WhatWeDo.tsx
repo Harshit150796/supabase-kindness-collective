@@ -4,7 +4,6 @@ import {
   motion,
   useMotionValue,
   useMotionValueEvent,
-  useInView,
   useScroll,
   useTransform,
   type MotionValue,
@@ -13,6 +12,7 @@ import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
+import { useEarlyReveal } from '@/components/ui/editorial-motion';
 
 const BLUE = 'hsl(var(--verify))';
 const EMERALD = 'hsl(var(--primary))';
@@ -259,7 +259,7 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
 }) {
   const itemRef = useRef<HTMLLIElement>(null);
   const progress = useMotionValue(step.offset);
-  const inView = useInView(itemRef, { amount: 0.45 });
+  const { visible: inView, instant } = useEarlyReveal(itemRef);
   const animationRef = useRef<ReturnType<typeof animate> | null>(null);
   const Art = step.Art;
 
@@ -276,22 +276,22 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
     }
     if (inView) {
       progress.set(step.offset);
-      animationRef.current = animate(progress, step.offset + 0.82, { duration: 1.8, ease: [0.22, 1, 0.36, 1] });
+      animationRef.current = animate(progress, step.offset + 0.82, { duration: instant ? 0 : 1.8, ease: [0.22, 1, 0.36, 1] });
     } else {
       progress.set(step.offset);
     }
     return () => animationRef.current?.stop();
-  }, [inView, progress, reduced, step.offset]);
+  }, [inView, instant, progress, reduced, step.offset]);
 
   return (
     <li ref={itemRef} data-mobile-step={index + 1} data-in-view={inView ? 'true' : 'false'} className="grid grid-cols-[76px_minmax(0,1fr)] items-center gap-4 py-5 sm:grid-cols-[100px_minmax(0,1fr)]">
-      <div data-mobile-step-art className="h-[76px] w-[76px] overflow-hidden sm:h-[100px] sm:w-[100px]">
+      <motion.div data-mobile-step-art initial={reduced ? { opacity: 0.7 } : { opacity: 1 }} animate={inView || reduced ? { opacity: 1 } : undefined} transition={{ duration: reduced ? 0.18 : 0.55 }} className="h-[76px] w-[76px] overflow-hidden sm:h-[100px] sm:w-[100px]">
         <Art progress={progress} still={reduced} offset={step.offset} />
-      </div>
-      <div>
+      </motion.div>
+      <motion.div initial={reduced ? { opacity: 0.7 } : { opacity: 0, y: 12 }} animate={inView || reduced ? { opacity: 1, y: 0 } : undefined} transition={{ duration: instant ? 0 : reduced ? 0.18 : 0.55, delay: instant || reduced ? 0 : 0.12 }}>
         <h3 className="font-sans text-lg font-semibold text-foreground"><span className="mr-2 text-sm tabular-nums text-primary">0{index + 1}</span>{step.title}</h3>
         <p className="mt-2 text-[15px] leading-[23px] text-muted-foreground">{step.body}</p>
-      </div>
+      </motion.div>
     </li>
   );
 }

@@ -3,6 +3,7 @@ import { useGLTF } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useInteraction } from './InteractionContext';
+import { useMotionPreference } from '@/hooks/useMotionPreference';
 
 const MODEL_URL = '/models/tree.glb';
 useGLTF.preload(MODEL_URL);
@@ -124,6 +125,7 @@ export function Tree(_props: { leafCount?: number; lowPower?: boolean }) {
   const uWind = useRef({ value: 0 });
   const { shakeEvent, windRef } = useInteraction();
   const lowPower = !!_props.lowPower;
+  const gentle = useMotionPreference() === 'gentle';
 
   // Renderer capabilities — read once, never assumed.
   const caps = useMemo(() => {
@@ -250,14 +252,14 @@ export function Tree(_props: { leafCount?: number; lowPower?: boolean }) {
   }, [scene, caps]);
 
   useFrame((_, dt) => {
-    uTime.current.value += dt;
+    uTime.current.value += Math.min(dt, 0.05) * (gentle ? 0.35 : 1);
 
     // Wind decays
     windRef.current.value = Math.max(0, windRef.current.value - dt * 1.2);
-    uWind.current.value = windRef.current.value;
+    uWind.current.value = gentle ? 0 : windRef.current.value;
 
     // Shake wobble on root
-    if (rootRef.current && shakeEvent) {
+    if (!gentle && rootRef.current && shakeEvent) {
       const elapsed = performance.now() / 1000 - shakeEvent.time;
       if (elapsed < 1.4) {
         const decay = Math.exp(-elapsed * 2.5);

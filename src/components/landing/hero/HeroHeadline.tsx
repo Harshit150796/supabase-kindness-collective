@@ -30,10 +30,9 @@ export function HeroHeadline() {
   }, []);
 
   useEffect(() => {
-    if (isMobile || preference === "gentle") return; // static on mobile — avoids 2.8s "blink" over the tree
     const id = setInterval(() => setIdx((i) => (i + 1) % ROTATING_WORDS.length), 2800);
     return () => clearInterval(id);
-  }, [isMobile, preference]);
+  }, [preference]);
 
   return (
     <div
@@ -45,18 +44,9 @@ export function HeroHeadline() {
         <span className="text-xs uppercase tracking-[0.2em] text-foreground/70 font-semibold">
           CouponDonation is
         </span>
-        {isMobile ? (
-          <span className="inline-block text-xs uppercase tracking-[0.2em] font-bold text-primary">
-            {ROTATING_WORDS[0]}
-          </span>
-        ) : (
-          <span
-            key={ROTATING_WORDS[idx]}
-            className="inline-block text-xs uppercase tracking-[0.2em] font-bold text-primary animate-in fade-in slide-in-from-bottom-1 duration-500"
-          >
-            {ROTATING_WORDS[idx]}
-          </span>
-        )}
+        <span className="relative inline-grid text-xs uppercase tracking-[0.2em] font-bold text-primary">
+          {ROTATING_WORDS.map((word, index) => <span key={word} aria-hidden={index !== idx} className={`col-start-1 row-start-1 transition-[opacity,transform] duration-500 ${preference === 'gentle' ? 'translate-y-0' : index === idx ? 'translate-y-0' : 'translate-y-1'} ${index === idx ? 'opacity-100' : 'opacity-0'}`}>{word}</span>)}
+        </span>
       </div>
       <div className="mt-3 md:mt-4 inline-flex items-center justify-center gap-1.5 md:gap-2">
         <Button asChild size="sm" className="min-h-11 shadow-lg whitespace-nowrap">

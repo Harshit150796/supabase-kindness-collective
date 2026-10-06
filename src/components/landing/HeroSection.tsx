@@ -5,6 +5,7 @@ import { TopDonorsPanel } from '@/components/landing/hero/TopDonorsPanel';
 import { AITreeLauncher } from '@/components/landing/hero/AITreeLauncher';
 const AITreeChat = lazy(() => import('@/components/landing/hero/AITreeChat').then(m => ({ default: m.AITreeChat })));
 import { Tree3DErrorBoundary } from '@/components/landing/Tree3DErrorBoundary';
+import { allowLiveTree } from '@/lib/treeQuality';
 const Tree3DScene = lazy(() => import('@/components/landing/Tree3DScene'));
 
 const BOT_UA_RE = /(bot|crawler|spider|crawling|Googlebot|bingbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|Discordbot|HeadlessChrome|Lighthouse|PageSpeed)/i;
@@ -27,18 +28,15 @@ function canRender3D(): boolean {
 
 export function HeroSection() {
   const [chatOpen, setChatOpen] = useState(false);
-  // The static tree paints first; reduced-motion and Save-Data visitors keep it.
+  // Poster-first for everyone. Only an explicit data-saving choice keeps it static.
   const [can3D, setCan3D] = useState(false);
   useEffect(() => {
-    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
-    // Slow links (2g/slow-2g/3g) keep the static poster, like Save-Data.
-    const slow = /^(slow-2g|2g|3g)$/.test(connection?.effectiveType ?? '');
+    const connection = (navigator as Navigator & { connection?: EventTarget & { saveData?: boolean } }).connection;
     let secondFrame = 0;
-    const mount = () => setCan3D(!query.matches && !connection?.saveData && !slow && canRender3D());
+    const mount = () => setCan3D(allowLiveTree(connection?.saveData) && canRender3D());
     const firstFrame = requestAnimationFrame(() => { secondFrame = requestAnimationFrame(mount); });
-    query.addEventListener('change', mount);
-    return () => { cancelAnimationFrame(firstFrame); cancelAnimationFrame(secondFrame); query.removeEventListener('change', mount); };
+    connection?.addEventListener?.('change', mount);
+    return () => { cancelAnimationFrame(firstFrame); cancelAnimationFrame(secondFrame); connection?.removeEventListener?.('change', mount); };
   }, []);
 
   return (
