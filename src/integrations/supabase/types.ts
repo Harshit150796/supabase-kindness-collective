@@ -3012,6 +3012,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      assert_fundraiser_totals: { Args: never; Returns: boolean }
       attach_procured_codes: {
         Args: { _brand: string; _codes: string[]; _value: number }
         Returns: number
@@ -3154,6 +3155,7 @@ export type Database = {
         Args: { _fundraiser_id: string }
         Returns: Json
       }
+      get_my_fundraisers: { Args: never; Returns: Json }
       get_proof_stats: { Args: never; Returns: Json }
       get_public_donation_stats: {
         Args: never
@@ -3226,6 +3228,10 @@ export type Database = {
         Returns: undefined
       }
       owner_reveal_coupon: { Args: { _coupon_id: string }; Returns: Json }
+      recompute_fundraiser_totals: {
+        Args: { _fundraiser_id: string }
+        Returns: undefined
+      }
       set_comment_hidden: {
         Args: { _comment_id: string; _hidden: boolean }
         Returns: undefined

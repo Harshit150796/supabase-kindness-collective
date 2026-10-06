@@ -1,5 +1,14 @@
 # Roadmap
 
+## Fundraiser home, footer and authoritative totals (Oct 6)
+- [x] Recompute completed-donation totals automatically, backfill every campaign, and prove distinct donors/refunds/idempotence.
+- [x] Extract shared organizer primitives; rebuild My fundraisers with one private RPC and working public sharing.
+- [x] Rebuild footer and verify wordmark containment at 1440/1024/768/390.
+- [x] Run existing tests, verify live public totals and fixture layouts/actions; report unavailable signed-in verification.
+- [x] Inventory totals readers and all routes; propose ordered next design passes without publishing.
+
+- [ ] Actual authenticated owner browser walkthrough — external unmanaged auth; SQL role-context and fixture evidence only.
+
 ## Transactional email design system
 - [x] Replace divergent production renderers with one table-based branded renderer.
 - [x] Preserve impact grouping, dedupe, and the 10-minute settle window while adding impact-only stop headers.

@@ -28,6 +28,7 @@ export default {
           foreground: "hsl(var(--warning-foreground))",
         },
         background: "hsl(var(--background))",
+        "primary-20": "hsl(var(--primary-20))",
         foreground: "hsl(var(--foreground))",
         ink: {
           DEFAULT: "hsl(var(--ink))",
