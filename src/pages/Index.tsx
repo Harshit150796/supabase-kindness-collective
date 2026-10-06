@@ -36,16 +36,16 @@ const Index = () => {
         <WhatWeDo />
 
         <LazyOnView minHeight={2700} intrinsicSize={{ mobile: 2700, tablet: 1650, desktop: 1450 }} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
+          <>
             <ImpactStories />
             <CompletedCampaigns limit={3} compact />
-          </Suspense>
+          </>
         </LazyOnView>
 
         <LazyOnView minHeight={510} intrinsicSize={{ mobile: 510, tablet: 480, desktop: 430 }} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
+          <>
             <TrustTransparency />
-          </Suspense>
+          </>
         </LazyOnView>
 
 
@@ -56,39 +56,39 @@ const Index = () => {
         </section>
 
         <LazyOnView minHeight={1550} intrinsicSize={{ mobile: 1550, tablet: 1250, desktop: 900 }} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
+          <>
             <DonationFlow />
-          </Suspense>
+          </>
         </LazyOnView>
 
         <LazyOnView minHeight={780} intrinsicSize={{ mobile: 780, tablet: 710, desktop: 480 }} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
+          <>
             <SecurityBadges />
-          </Suspense>
+          </>
         </LazyOnView>
 
         <LazyOnView minHeight={680} intrinsicSize={{ mobile: 680, tablet: 1100, desktop: 760 }} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
+          <>
             <TestimonialsSection />
-          </Suspense>
+          </>
         </LazyOnView>
 
         <LazyOnView minHeight={1100} intrinsicSize={{ mobile: 1100, tablet: 900, desktop: 800 }} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
+          <>
             <ImpactDashboard />
-          </Suspense>
+          </>
         </LazyOnView>
 
         <LazyOnView minHeight={470} intrinsicSize={{ mobile: 470, tablet: 420, desktop: 400 }} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
+          <>
             <CTASection />
-          </Suspense>
+          </>
         </LazyOnView>
       </main>
       <LazyOnView minHeight={1150} intrinsicSize={{ mobile: 1150, tablet: 700, desktop: 470 }} rootMargin="900px" contentVisibilityAuto>
-        <Suspense fallback={null}>
+        <>
           <Footer />
-        </Suspense>
+        </>
       </LazyOnView>
     </div>
   );
