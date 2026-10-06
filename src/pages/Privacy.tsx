@@ -94,7 +94,7 @@ export default function Privacy() {
                 If you have questions about this Privacy Policy, please contact us at:
               </p>
               <p className="text-muted-foreground mt-2">
-                Email: <a href="mailto:hello@coupondonation.com" className="text-primary hover:underline">hello@coupondonation.com</a>
+                Email: <a href="mailto:hello@coupondonation.com" className="inline-flex min-h-11 items-center text-primary hover:underline">hello@coupondonation.com</a>
               </p>
             </section>
           </div>

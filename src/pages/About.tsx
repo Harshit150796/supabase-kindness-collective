@@ -241,7 +241,7 @@ export default function About() {
                 <blockquote className="font-about-serif text-2xl italic leading-snug text-foreground md:text-4xl">“{founder.statement}”</blockquote>
                 <div className="my-7 h-px w-12 bg-accent" />
                 <p className="text-base leading-relaxed text-muted-foreground md:text-lg">{founder.bio}</p>
-                <a href={founder.linkedin} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex items-center gap-2 border-b border-foreground pb-1 text-sm font-semibold text-foreground transition-colors hover:text-primary">
+                <a href={founder.linkedin} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex min-h-11 items-center gap-2 border-b border-foreground pb-1 text-sm font-semibold text-foreground transition-colors hover:text-primary">
                   <Linkedin className="h-4 w-4" /> Connect on LinkedIn <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               </div>

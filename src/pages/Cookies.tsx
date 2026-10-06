@@ -74,7 +74,7 @@ export default function Cookies() {
                 If you have questions about our use of cookies, please contact us at:
               </p>
               <p className="text-muted-foreground mt-2">
-                Email: <a href="mailto:connect@coupondonation.com" className="text-primary hover:underline">connect@coupondonation.com</a>
+                Email: <a href="mailto:connect@coupondonation.com" className="inline-flex min-h-11 items-center text-primary hover:underline">connect@coupondonation.com</a>
               </p>
             </section>
           </div>
