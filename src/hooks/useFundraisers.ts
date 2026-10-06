@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fundraiserRetryPolicy } from '@/lib/landingPresentation';
 
 interface FundraiserImage {
   id: string;
@@ -32,9 +33,12 @@ export interface Fundraiser {
 export function useFundraisers(options?: { limit?: number; category?: string }) {
   return useQuery({
     queryKey: ['fundraisers', 'active', options?.category, options?.limit],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 12000);
+      const cancel = () => controller.abort();
+      signal.addEventListener('abort', cancel, { once: true });
+      if (signal.aborted) cancel();
+      const timeout = window.setTimeout(cancel, fundraiserRetryPolicy.attemptTimeout);
       try {
       let query = supabase
         .from('fundraisers')
@@ -80,10 +84,10 @@ export function useFundraisers(options?: { limit?: number; category?: string }) 
           latest_donation_at: c?.latest_donation_at ?? null,
         } as Fundraiser;
       });
-      } finally { window.clearTimeout(timeout); }
+      } finally { window.clearTimeout(timeout); signal.removeEventListener('abort', cancel); }
     },
-    retry: 1,
-    retryDelay: 500,
+    retry: fundraiserRetryPolicy.retry,
+    retryDelay: fundraiserRetryPolicy.retryDelay,
     refetchInterval: () => document.hidden ? false : 30_000,
     refetchIntervalInBackground: false,
   });

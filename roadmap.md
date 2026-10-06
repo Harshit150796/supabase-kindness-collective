@@ -1,5 +1,11 @@
 # Roadmap
 
+## Live re-audit follow-up: tablet hero, short states and truthful figures
+- [ ] Keep Top Donors below the hero until xl; verify 1024/1180.
+- [ ] Fill reserved error/empty states and add generous automatic retry/backoff; force failures and recovery.
+- [ ] Show small figures immediately, including reduced motion; test first visible render at 390/1024.
+- [ ] Verify nondecreasing scroll heights, existing tests and preview health; do not publish.
+
 ## Responsive and performance pass (Oct 6)
 - [x] Measure baseline downloads and homepage scroll length.
 - [x] Isolate route/tree/chart downloads and provide an immediate tree poster.
