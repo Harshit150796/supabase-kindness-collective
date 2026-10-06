@@ -46,7 +46,7 @@ export const ApplyLayout = ({
   return (
     <div className="min-h-dvh flex flex-col lg:flex-row animate-fade-in">
       {/* Left Panel - Info Section with gradient and decorative elements */}
-      <div className="lg:w-[42%] relative overflow-hidden bg-gradient-to-br from-secondary via-secondary/80 to-primary/5 p-6 lg:p-10 flex flex-col">
+      <div className="min-w-0 lg:w-[42%] relative overflow-hidden bg-gradient-to-br from-secondary via-secondary/80 to-primary/5 p-6 lg:p-10 flex flex-col">
         {/* Decorative floating shapes */}
         <div className="absolute top-20 right-10 w-32 h-32 rounded-full bg-primary/5 float-slow" />
         <div className="absolute bottom-32 left-5 w-24 h-24 rounded-full bg-accent/10 float-slow-reverse" />
@@ -66,13 +66,13 @@ export const ApplyLayout = ({
           {/* Logo */}
           <Link 
             to="/" 
-            className="inline-flex items-center gap-3 mb-10 lg:mb-14 group hover-lift"
+            className="inline-flex min-h-11 max-w-full items-center gap-2 mb-10 lg:mb-14 group hover-lift"
           >
             <div className="relative">
               <img src={logo} alt="CouponDonation" className="w-11 h-11 transition-transform group-hover:scale-105" />
               <div className="absolute inset-0 rounded-full bg-primary/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <span className="font-bold text-xl"><span className="text-[#2e7d32]">Coupon</span><span className="text-[#1565c0]">Donation</span></span>
+            <span className="whitespace-nowrap font-bold text-lg sm:text-xl"><span className="text-[#2e7d32]">Coupon</span><span className="text-[#1565c0]">Donation</span></span>
           </Link>
 
           {/* Step Indicator with animation */}
@@ -130,7 +130,7 @@ export const ApplyLayout = ({
       </div>
 
       {/* Right Panel - Form Section */}
-      <div className="lg:w-[58%] bg-card flex flex-col min-h-[60vh] lg:min-h-dvh shadow-[-10px_0_40px_-15px_rgba(0,0,0,0.05)]">
+      <div className="min-w-0 lg:w-[58%] bg-card flex flex-col min-h-[60vh] lg:min-h-dvh shadow-[-10px_0_40px_-15px_rgba(0,0,0,0.05)]">
         {/* Auth Status */}
         <div className="p-6 lg:p-10 flex justify-end">
           {isAuthenticated ? (
@@ -138,7 +138,7 @@ export const ApplyLayout = ({
               <span className="text-sm text-muted-foreground truncate max-w-[200px]">{userEmail}</span>
               <Link 
                 to="/profile" 
-                className="text-primary hover:text-primary/80 font-medium transition-all hover:translate-x-1 inline-flex items-center gap-1"
+                className="text-primary hover:text-primary/80 font-medium transition-all hover:translate-x-1 inline-flex min-h-11 items-center gap-1"
               >
                 My Account
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,7 +149,7 @@ export const ApplyLayout = ({
           ) : (
             <Link 
               to="/auth" 
-              className="text-primary hover:text-primary/80 font-medium transition-all hover:translate-x-1 inline-flex items-center gap-1"
+              className="text-primary hover:text-primary/80 font-medium transition-all hover:translate-x-1 inline-flex min-h-11 items-center gap-1"
             >
               Sign in
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
