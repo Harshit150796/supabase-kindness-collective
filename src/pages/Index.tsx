@@ -35,14 +35,14 @@ const Index = () => {
 
         <WhatWeDo />
 
-        <LazyOnView minHeight={2700} intrinsicSize={{ mobile: 2700, tablet: 1650, desktop: 1450 }} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={1150} intrinsicSize={{ mobile: 1150, tablet: 680, desktop: 1900 }} rootMargin="900px" contentVisibilityAuto>
           <>
             <ImpactStories />
             <CompletedCampaigns limit={3} compact />
           </>
         </LazyOnView>
 
-        <LazyOnView minHeight={510} intrinsicSize={{ mobile: 510, tablet: 480, desktop: 430 }} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={560} intrinsicSize={{ mobile: 560, tablet: 450, desktop: 400 }} rootMargin="900px" contentVisibilityAuto>
           <>
             <TrustTransparency />
           </>
@@ -55,37 +55,37 @@ const Index = () => {
           </div>
         </section>
 
-        <LazyOnView minHeight={1550} intrinsicSize={{ mobile: 1550, tablet: 1250, desktop: 900 }} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={1120} intrinsicSize={{ mobile: 1120, tablet: 1100, desktop: 1020 }} rootMargin="900px" contentVisibilityAuto>
           <>
             <DonationFlow />
           </>
         </LazyOnView>
 
-        <LazyOnView minHeight={780} intrinsicSize={{ mobile: 780, tablet: 710, desktop: 480 }} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={980} intrinsicSize={{ mobile: 980, tablet: 840, desktop: 530 }} rootMargin="900px" contentVisibilityAuto>
           <>
             <SecurityBadges />
           </>
         </LazyOnView>
 
-        <LazyOnView minHeight={680} intrinsicSize={{ mobile: 680, tablet: 1100, desktop: 760 }} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={590} intrinsicSize={{ mobile: 590, tablet: 880, desktop: 720 }} rootMargin="900px" contentVisibilityAuto>
           <>
             <TestimonialsSection />
           </>
         </LazyOnView>
 
-        <LazyOnView minHeight={1100} intrinsicSize={{ mobile: 1100, tablet: 900, desktop: 800 }} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={1180} intrinsicSize={{ mobile: 1180, tablet: 1170, desktop: 1120 }} rootMargin="900px" contentVisibilityAuto>
           <>
             <ImpactDashboard />
           </>
         </LazyOnView>
 
-        <LazyOnView minHeight={470} intrinsicSize={{ mobile: 470, tablet: 420, desktop: 400 }} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={800} intrinsicSize={{ mobile: 800, tablet: 890, desktop: 580 }} rootMargin="900px" contentVisibilityAuto>
           <>
             <CTASection />
           </>
         </LazyOnView>
       </main>
-      <LazyOnView minHeight={1150} intrinsicSize={{ mobile: 1150, tablet: 700, desktop: 470 }} rootMargin="900px" contentVisibilityAuto>
+      <LazyOnView minHeight={1600} intrinsicSize={{ mobile: 1600, tablet: 800, desktop: 640 }} rootMargin="900px" contentVisibilityAuto>
         <>
           <Footer />
         </>
