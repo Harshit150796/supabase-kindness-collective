@@ -118,13 +118,13 @@ export function OrganizerTools({ fundraiserId, isOwner, openTeamSignal = 0 }: { 
   };
 
   return (
-    <section className="mt-10 rounded-[1.5rem] bg-card p-6 md:p-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-3xl font-normal">Organizer tools</h2>
+    <section className="dash-card dash-card-enter overflow-hidden" style={{ animationDelay: '180ms' }}>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
+        <h2 className="font-sans text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Organizer tools</h2>
         <Button variant="outline" asChild><Link to="/messages"><MessageCircle className="mr-2 h-4 w-4" />Inbox</Link></Button>
       </div>
-      <Tabs value={tab} onValueChange={setTab} className="mt-6">
-        <TabsList><TabsTrigger value="updates">Updates</TabsTrigger><TabsTrigger value="team">Team</TabsTrigger>{isOwner && <TabsTrigger value="settings">Settings</TabsTrigger>}</TabsList>
+      <Tabs value={tab} onValueChange={setTab} className="px-5 py-5 sm:px-6">
+        <TabsList className="w-full justify-start overflow-x-auto"><TabsTrigger value="updates">Updates</TabsTrigger><TabsTrigger value="team">Team</TabsTrigger>{isOwner && <TabsTrigger value="settings">Settings</TabsTrigger>}</TabsList>
 
         <TabsContent value="updates" className="space-y-4 pt-4">
           <Input placeholder="Update title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={140} />

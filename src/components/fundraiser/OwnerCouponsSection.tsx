@@ -49,32 +49,34 @@ export function OwnerCouponsSection({ coupons, isOwner, onChanged }: { coupons: 
   };
 
   return (
-    <section id="coupons" className="scroll-mt-32">
-      <h2 className="font-display text-3xl font-normal text-foreground">Coupons</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
+    <section id="coupons" className="dash-card dash-card-enter scroll-mt-32 overflow-hidden" style={{ animationDelay: '120ms' }}>
+      <div className="border-b border-border px-5 py-4 sm:px-6">
+      <h2 className="font-sans text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Coupons</h2>
+      <p className="mt-1 text-[13px] text-muted-foreground">
         {isOwner ? 'Coupons your fundraiser received. Codes stay hidden until you reveal them.' : 'Coupon statuses for this fundraiser. Codes are visible to the fundraiser owner only.'}
       </p>
+      </div>
       {!coupons.length ? (
-        <p className="mt-6 text-sm text-muted-foreground">No coupons yet. They appear here once a donation is completed.</p>
+        <p className="px-6 py-10 text-center text-[15px] leading-[23px] text-muted-foreground">No coupons yet. They appear here once a donation is completed.</p>
       ) : (
-        <div className="mt-5 space-y-6">
+        <div className="space-y-1 p-3 sm:p-4">
           {groups.map(([brand, list]) => (
-            <div key={brand}>
-              <div className="mb-2 flex items-center gap-2">
-                {logoFor(brand) && <img src={logoFor(brand)!} alt="" className="h-6 w-6 rounded bg-background object-contain p-0.5" />}
-                <h3 className="font-medium text-foreground">{brand}</h3>
-                <span className="text-xs text-muted-foreground">${list.reduce((s, c) => s + Number(c.value ?? 0), 0)} total</span>
+            <div key={brand} className="dash-interactive-card rounded-xl border border-transparent px-3 py-3 hover:border-border hover:bg-muted/30">
+              <div className="mb-1 flex items-center gap-2">
+                {logoFor(brand) && <img src={logoFor(brand)!} alt="" className="h-7 w-7 rounded-md bg-background object-contain p-1" />}
+                <h3 className="text-[15px] font-semibold text-foreground">{brand}</h3>
+                <span className="text-[13px] text-muted-foreground">${list.reduce((s, c) => s + Number(c.value ?? 0), 0)} total</span>
               </div>
-              <ul className="divide-y divide-border border-y border-border">
+              <ul className="ml-9 divide-y divide-border">
                 {list.map((c, i) => {
                   const r = revealed[c.id];
                   const receivedAt = r?.revealed_at ?? c.revealed_at;
                   return (
-                    <li key={c.id} className="dash-rise py-4 text-sm" style={{ animationDelay: `${i * 40}ms` }}>
+                    <li key={c.id} className="dash-rise rounded-lg px-2 py-3 text-[13px] transition-colors duration-200 hover:bg-primary/[0.035]" style={{ animationDelay: `${i * 40}ms` }}>
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="font-medium text-foreground">${Number(c.value ?? 0)} {kind(c.credential_type)}{c.card_last4 && !r ? <span className="ml-2 text-xs font-normal text-muted-foreground">•••• {c.card_last4}</span> : null}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {c.used_at ? `Used · ${when(c.used_at)}` : receivedAt ? `Received · ${when(receivedAt)}` : c.can_reveal || (!isOwner && ['claimed', 'reserved', 'redeemed'].includes(c.status)) ? 'Ready' : 'Coupon being prepared'}
+                        <span className="font-medium text-foreground">${Number(c.value ?? 0)} {kind(c.credential_type)}{c.card_last4 && !r ? <span className="ml-2 text-[12px] font-normal text-muted-foreground">•••• {c.card_last4}</span> : null}</span>
+                        <span className={c.used_at ? 'rounded-full bg-muted px-2 py-1 text-[12px] font-semibold text-muted-foreground' : receivedAt || c.can_reveal || (!isOwner && ['claimed', 'reserved', 'redeemed'].includes(c.status)) ? 'rounded-full bg-primary/10 px-2 py-1 text-[12px] font-semibold text-primary' : 'rounded-full bg-warning/15 px-2 py-1 text-[12px] font-semibold text-warning-foreground'}>
+                          {c.used_at ? 'Used' : receivedAt ? 'Received' : c.can_reveal || (!isOwner && ['claimed', 'reserved', 'redeemed'].includes(c.status)) ? 'Ready to reveal' : 'Being prepared'}
                         </span>
                       </div>
                       {isOwner && c.can_reveal && !r && (
