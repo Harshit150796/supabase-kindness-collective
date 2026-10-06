@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import poster from '@/assets/tree-poster.webp.asset.json';
+import poster from '@/assets/tree-poster.webp';
 import { HeroHeadline } from '@/components/landing/hero/HeroHeadline';
 import { TopDonorsPanel } from '@/components/landing/hero/TopDonorsPanel';
 import { AITreeLauncher } from '@/components/landing/hero/AITreeLauncher';
@@ -27,7 +27,7 @@ function canRender3D(): boolean {
 
 export function HeroSection() {
   const [chatOpen, setChatOpen] = useState(false);
-  // Mount the 3D canvas on the first client render — only gated by WebGL/bot capability.
+  // The static tree paints first; reduced-motion and Save-Data visitors keep it.
   const [can3D, setCan3D] = useState(false);
   useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -47,7 +47,7 @@ export function HeroSection() {
     >
       {/* Stacked layers — no DOM swap, no CLS. The gradient always paints first;
           the canvas wrapper sits on top immediately once WebGL capability is known. */}
-      <img data-tree-poster src={poster.url} alt="The CouponDonation tree, growing familiar retailer logos" className="absolute inset-0 h-full w-full object-cover" fetchPriority="high" />
+      <img data-tree-poster src={poster} alt="The CouponDonation tree, growing familiar retailer logos" className="absolute inset-0 h-full w-full object-cover" fetchPriority="high" />
       <div className="absolute inset-0 w-full h-full">
         {can3D && (
           <Tree3DErrorBoundary>

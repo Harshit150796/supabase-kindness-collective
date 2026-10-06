@@ -24,8 +24,8 @@ import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { ProductTraceVisual } from '@/components/marketing/ProductTraceVisual';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import harshitSmall from '@/assets/harshit-400.webp.asset.json';
-import harshitLarge from '@/assets/harshit-800.webp.asset.json';
+import harshitSmall from '@/assets/harshit-400.webp';
+import harshitLarge from '@/assets/harshit-800.webp';
 
 const journey = [
   { icon: HeartHandshake, label: 'Donation', text: 'Support a public fundraiser.' },
@@ -61,7 +61,7 @@ const principles = [
 const founder = {
   name: 'Harshit Agrawal',
   role: 'Founder & CEO',
-  image: harshitLarge.url,
+  image: harshitLarge,
   linkedin: 'https://www.linkedin.com/in/harshit-agrawal-71565a139',
   statement: 'CouponDonation began with one question: why should giving require blind trust?',
   bio: 'Harshit founded CouponDonation to create a clearer connection between a donor’s decision and the support a recipient can actually use. His focus is building a trusted giving system where choice, visibility, and accountability are part of the product—not an afterthought.',
@@ -231,7 +231,7 @@ export default function About() {
             <Reveal className="mt-16 grid gap-9 md:mt-24 md:grid-cols-12 md:items-center md:gap-14">
               <div className="relative md:col-span-5">
                 <div aria-hidden="true" className="absolute -left-3 -top-3 h-20 w-20 border-l border-t border-accent" />
-                <img width={800} height={1000} loading="lazy" decoding="async" srcSet={`${harshitSmall.url} 400w, ${harshitLarge.url} 800w`} sizes="(min-width: 1024px) 480px, (min-width: 768px) 40vw, calc(100vw - 40px)" src={founder.image} alt={`${founder.name}, ${founder.role} at CouponDonation`} className="aspect-[4/5] w-full object-cover object-top grayscale-[20%]" />
+                <img width={800} height={1000} loading="lazy" decoding="async" srcSet={`${harshitSmall} 400w, ${harshitLarge} 800w`} sizes="(min-width: 1024px) 480px, (min-width: 768px) 40vw, calc(100vw - 40px)" src={founder.image} alt={`${founder.name}, ${founder.role} at CouponDonation`} className="aspect-[4/5] w-full object-cover object-top grayscale-[20%]" />
                 <div className="absolute bottom-5 right-0 bg-background px-5 py-4 shadow-card-hover md:-right-6">
                   <p className="font-about-serif text-lg italic">{founder.name}</p>
                   <p className="mt-1 text-sm text-primary">{founder.role}</p>

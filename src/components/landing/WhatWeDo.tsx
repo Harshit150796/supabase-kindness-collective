@@ -296,8 +296,7 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
 }
 
 export function WhatWeDo() {
-  // Animations always play, even when the phone reports reduced motion
-  // (Battery Saver etc. switch that on silently).
+  // Reduced-motion visitors get still illustrations.
   const preference = useMotionPreference();
   const sectionRef = useRef<HTMLElement>(null);
   const mobileStepRefs = useRef<Array<HTMLLIElement | null>>([]);
