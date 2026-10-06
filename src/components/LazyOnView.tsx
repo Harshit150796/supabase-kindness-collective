@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Suspense, useLayoutEffect, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -32,6 +32,7 @@ export function LazyOnView({
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [show, setShow] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     if (show) return;
@@ -61,7 +62,10 @@ export function LazyOnView({
     style['--lazy-tablet'] = `${intrinsicSize.tablet}px`;
     style['--lazy-desktop'] = `${intrinsicSize.desktop}px`;
   }
-  if (!show) style.minHeight = intrinsic;
+  // Keep the (conservative) reservation even after mount: content that is still
+  // fetching its own data must never collapse the page under the reader.
+  style.minHeight = intrinsic;
+  void mounted;
   if (contentVisibilityAuto) {
     style.contentVisibility = 'auto';
     style.containIntrinsicSize = `auto ${intrinsic}`;
@@ -69,7 +73,13 @@ export function LazyOnView({
 
   return (
     <div ref={ref} className={[intrinsicSize ? "lazy-responsive-region" : "", className].filter(Boolean).join(" ")} style={style}>
-      {show ? children : null}
+      {show ? <Suspense fallback={<div aria-hidden="true" style={{ height: intrinsic }} />}><MountSignal onMount={() => setMounted(true)}>{children}</MountSignal></Suspense> : null}
     </div>
   );
+}
+
+/** Fires only after the lazily loaded children actually commit to the DOM. */
+function MountSignal({ children, onMount }: { children: ReactNode; onMount: () => void }) {
+  useLayoutEffect(() => { onMount(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return <>{children}</>;
 }
