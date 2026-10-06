@@ -8,7 +8,7 @@ Deno.test('tree preload is homepage-scoped and route entry is lazy', async () =>
   assert(app.includes("lazy(() => import"));
   assert(hero.includes("lazy(() => import('@/components/landing/Tree3DScene')"));
   assert(hero.includes('connection?.saveData'));
-  assert(hero.includes('prefers-reduced-motion: reduce'));
+  assert(!hero.includes('!query.matches'));
 });
 
 Deno.test('responsive currency formatting handles numeric database strings', () => {
@@ -28,10 +28,11 @@ Deno.test('figure labels pluralise counts', () => {
   assertEquals(plural(0, 'coupon'), '0 coupons');
 });
 
-Deno.test('slow connections keep the static tree poster', async () => {
+Deno.test('estimated connection speeds never deny the live tree', async () => {
   const hero = await Deno.readTextFile('src/components/landing/HeroSection.tsx');
-  assert(hero.includes("/^(slow-2g|2g|3g)$/"));
-  assert(hero.includes('!slow'));
+  assert(!hero.includes('effectiveType'));
+  assert(hero.includes('allowLiveTree(connection?.saveData)'));
+  assert(hero.includes("connection?.addEventListener?.('change', mount)"));
 });
 
 Deno.test('fundraiser list loads card numbers in one batched request', async () => {

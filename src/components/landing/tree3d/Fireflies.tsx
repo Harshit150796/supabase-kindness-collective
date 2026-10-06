@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useInteraction } from './InteractionContext';
 
-export function Fireflies({ count = 40 }: { count?: number }) {
+export function Fireflies({ count = 40, gentle = false }: { count?: number; gentle?: boolean }) {
   const { timeOfDay } = useInteraction();
   const ref = useRef<THREE.InstancedMesh>(null);
   const matRef = useRef<THREE.MeshBasicMaterial>(null);
@@ -42,10 +42,10 @@ export function Fireflies({ count = 40 }: { count?: number }) {
     const t = performance.now() / 1000;
     for (let i = 0; i < count; i++) {
       const d = data[i];
-      const x = d.cx + Math.sin(t * d.sx + d.phase) * d.rx;
-      const y = d.cy + Math.sin(t * d.sy + d.phase * 1.7) * d.ry;
-      const z = d.cz + Math.cos(t * d.sz + d.phase) * d.rz;
-      const flicker = 0.6 + Math.sin(t * 3 * d.flicker + d.seed) * 0.4;
+      const x = d.cx + (gentle ? 0 : Math.sin(t * d.sx + d.phase) * d.rx);
+      const y = d.cy + (gentle ? 0 : Math.sin(t * d.sy + d.phase * 1.7) * d.ry);
+      const z = d.cz + (gentle ? 0 : Math.cos(t * d.sz + d.phase) * d.rz);
+      const flicker = 0.6 + Math.sin(t * (gentle ? 0.6 : 3) * d.flicker + d.seed) * 0.4;
       dummy.position.set(x, y, z);
       dummy.scale.setScalar(flicker * 0.06);
       dummy.updateMatrix();

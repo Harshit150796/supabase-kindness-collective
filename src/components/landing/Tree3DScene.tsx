@@ -21,7 +21,9 @@ import { AmbientBirds } from './tree3d/AmbientBirds';
 import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
 import { TransparencyPopover } from './tree3d/TransparencyPopover';
 import { PlantsLayer } from './tree3d/PlantsLayer';
-import { settingsForTier, useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
+import { useMotionPreference } from '@/hooks/useMotionPreference';
+import { shouldReduceQuality } from '@/lib/treeQuality';
+import { useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
 
 const GROUND_Y = -0.01;
 const DEFAULT_CAM = new THREE.Vector3(0, 4.0, 13);
@@ -29,22 +31,6 @@ const TARGET = new THREE.Vector3(0, 3.4, 0);
 const MOBILE_CAM = new THREE.Vector3(0, 4.4, 16);
 const MOBILE_TARGET = new THREE.Vector3(0, 3.6, 0);
 const MOBILE_BASE_DIST = 16;
-
-/**
- * Mobile rebalance: spend the budget on tone mapping, MSAA, shadows and canopy
- * density rather than raw pixels. Values only — no colours change.
- */
-function mobileSettings(s: TierSettings): TierSettings {
-  if (s.tier === 'low') return s;
-  return {
-    ...s,
-    dprCap: 2,
-    shadows: true,
-    shadowMapSize: 1024,
-    antialias: true,
-    leafCount: 4200,
-  };
-}
 
 // Frame-loop scratch objects — avoids per-frame allocation inside useFrame.
 const TMP_OFFSET = new THREE.Vector3();
@@ -87,7 +73,8 @@ function CameraRig({
   zoomProgressRef: React.MutableRefObject<number>;
   isMobile: boolean;
 }) {
-  const { camera, mouse, size } = useThree();
+  const { camera, mouse, size, gl } = useThree();
+  const gentle = useMotionPreference() === 'gentle';
   const { parallaxBoostRef } = useInteraction();
   const lastInteractionRef = useRef(performance.now() / 1000);
   const resetAnim = useRef<{ start: number; from: THREE.Vector3 } | null>(null);
@@ -104,7 +91,13 @@ function CameraRig({
   // paints immediately instead of animating outward on load.
   const currentDistRef = useRef(baseDist + zoomProgressRef.current * 4);
 
-  useEffect(() => { currentDistRef.current = baseDist + zoomProgressRef.current * 4; }, [baseDist, zoomProgressRef]);
+  useEffect(() => {
+    currentDistRef.current = baseDist + zoomProgressRef.current * 4;
+    if (gentle) {
+      camera.position.copy(defaultCam); camera.position.z = currentDistRef.current;
+      camera.lookAt(target); controlsRef.current?.target.copy(target);
+    }
+  }, [baseDist, zoomProgressRef, gentle, camera, controlsRef]);
 
   // Track interactions on the controls
   useEffect(() => {
@@ -137,6 +130,8 @@ function CameraRig({
   }, [camera]);
 
   useFrame((_, dt) => {
+    gl.domElement.dataset.treeCamera = camera.position.toArray().map(v => v.toFixed(4)).join(',');
+    if (gentle) return;
     const c = controlsRef.current;
     if (!c) return;
     const now = performance.now() / 1000;
@@ -184,6 +179,13 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = fals
   const fillRef = useRef<THREE.DirectionalLight>(null);
   const fogColorRef = useRef(new THREE.Color('#DCE6D5'));
   const { scene } = useThree();
+  useEffect(() => {
+    const light = dirRef.current;
+    if (!light) return;
+    light.shadow.map?.dispose(); light.shadow.map = null;
+    light.shadow.mapSize.set(shadowSize, shadowSize);
+    light.shadow.needsUpdate = true;
+  }, [shadowSize]);
 
   const targets: Record<TimeOfDay, { dirCol: string; dirInt: number; ambCol: string; ambInt: number; fillCol: string; fillInt: number; fog: string }> = useMemo(
     () => ({
@@ -283,43 +285,33 @@ function ShadowSwitch({ enabled }: { enabled: boolean }) {
   return null;
 }
 
-/**
- * Rolling 2s frame-rate sampler. Ignores the first 2s of warm-up and fires at
- * most once; the hook itself enforces one downgrade per session.
- */
-function PerfWatchdog({ onSlow }: { onSlow: () => void }) {
-  const startRef = useRef(performance.now());
-  const windowStartRef = useRef(0);
-  const framesRef = useRef(0);
-  const firedRef = useRef(false);
-
-  useFrame(() => {
-    if (firedRef.current) return;
+/** Sample only committed, visible rendering; loading/hidden time is not hardware evidence. */
+function PerfWatchdog({ onSlow, active }: { onSlow: () => void; active: boolean }) {
+  const sample = useRef({ start: 0, frames: 0, warm: 0 });
+  useEffect(() => { sample.current = { start: 0, frames: 0, warm: performance.now() }; }, [active]);
+  useFrame(({ gl }) => {
+    if (!active || document.hidden) return;
     const now = performance.now();
-    if (now - startRef.current < 2000) return;
-    if (windowStartRef.current === 0) {
-      windowStartRef.current = now;
-      framesRef.current = 0;
-      return;
-    }
-    framesRef.current++;
-    const elapsed = now - windowStartRef.current;
-    if (elapsed < 2000) return;
-    const fps = (framesRef.current * 1000) / elapsed;
-    const canvas = document.querySelector('canvas');
-    if (canvas) canvas.dataset.treeFps = fps.toFixed(1);
-    windowStartRef.current = now;
-    framesRef.current = 0;
-    if (fps < 45) {
-      firedRef.current = true;
-      onSlow();
-    }
+    const s = sample.current;
+    if (now - s.warm < 750) return;
+    if (!s.start) { s.start = now; return; }
+    s.frames++;
+    const elapsed = now - s.start;
+    if (elapsed < 2500) return;
+    const fps = s.frames * 1000 / elapsed;
+    gl.domElement.dataset.treeFps = fps.toFixed(1);
+    s.start = now; s.frames = 0;
+    if (shouldReduceQuality(fps, active, elapsed)) onSlow();
   });
-
   return null;
 }
 
-function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boolean }) {
+function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobile: boolean; onReady: () => void }) {
+  const gentle = useMotionPreference() === 'gentle';
+  useEffect(() => {
+    if (gentle) setStates(previous => previous.map(() => ({ phase: 'hanging' })));
+  }, [gentle]);
+  useEffect(() => { const frame = requestAnimationFrame(onReady); return () => cancelAnimationFrame(frame); }, [onReady]);
   const { leafCount, plantCap } = settings;
   const visibleFruitCount = Math.min(18, COUPON_FRUITS.length);
   // Open with 18 distinct, instantly recognizable brands — no two marks from the
@@ -464,7 +456,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
 
   // Auto drops on timer
   useEffect(() => {
-    if (!logosReady || donations.length === 0) return;
+    if (gentle || !logosReady || donations.length === 0) return;
     const interval = setInterval(() => {
       setStates((prev) => {
         const hangingIdx = prev.map((s, i) => (s.phase === 'hanging' ? i : -1)).filter((i) => i >= 0);
@@ -478,11 +470,11 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
       });
     }, 4000);
     return () => clearInterval(interval);
-  }, [donations, logosReady]);
+  }, [donations, logosReady, gentle]);
 
   // Shake event → cascade drop 3-5 hanging coupons
   useEffect(() => {
-    if (!logosReady || !shakeEvent) return;
+    if (gentle || !logosReady || !shakeEvent) return;
     setStates((prev) => {
       const hangingIdx = prev.map((s, i) => (s.phase === 'hanging' ? i : -1)).filter((i) => i >= 0);
       if (hangingIdx.length === 0) return prev;
@@ -501,7 +493,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
       return next;
     });
     bumpWind(0.5);
-  }, [shakeEvent, donations, bumpWind, logosReady]);
+  }, [shakeEvent, donations, bumpWind, logosReady, gentle]);
 
   // On phones only the most recently landed coupon shows its donor label,
   // so overlapping cards can never stack on a narrow screen.
@@ -545,21 +537,20 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
 
   return (
     <>
-      <DayNightLights shadowSize={settings.shadowMapSize} shadowBlur={isMobile ? 5 : settings.shadows && settings.tier === 'high' ? 25 : 6} tightShadow={isMobile} />
+      <DayNightLights shadowSize={settings.shadowMapSize} />
       <ProceduralEnvironment />
-      {!isMobile && <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />}
-      {isMobile && <hemisphereLight args={['#cfe8d8', '#3a4a3a', 0.45]} />}
-      <fog attach="fog" args={isMobile ? ['#DCE6D5', 25, 70] : ['#DCE6D5', 18, 45]} />
+      <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />
+      <fog attach="fog" args={['#DCE6D5', 18, 45]} />
 
-      <Sky isMobile={isMobile} />
+      <Sky gentle={gentle} />
 
       <Tree leafCount={leafCount} lowPower={settings.tier === 'low'} />
-      <Ground y={GROUND_Y} isMobile={isMobile} />
-      <HitZones />
-      {settings.fireflies && <Fireflies count={settings.fireflyCount} />}
-      {settings.trunkRipple && <TrunkRipple />}
-      <Bird />
-      <AmbientBirds count={settings.ambientBirds} />
+      <Ground y={GROUND_Y} />
+      {!gentle && <HitZones />}
+      {settings.fireflies && <Fireflies count={settings.fireflyCount} gentle={gentle} />}
+      {settings.trunkRipple && !gentle && <TrunkRipple />}
+      {!gentle && <Bird />}
+      {!gentle && <AmbientBirds count={settings.ambientBirds} />}
       <PlantsLayer cap={plantCap} />
 
 
@@ -629,11 +620,8 @@ export function Tree3DScene() {
   // Tier is resolved synchronously on first render and never re-detected, so the
   // Canvas never re-initialises. `?tier3d=low|medium|high` forces a tier for QA.
   const forced = useMemo(() => readForcedTier(), []);
-  const { settings, initialTier, requestDowngrade } = useDeviceTier(forced);
-  const effectiveSettings = useMemo(
-    () => (isMobile ? mobileSettings(settings) : settings),
-    [isMobile, settings],
-  );
+  const gentle = useMotionPreference() === 'gentle';
+  const { settings: effectiveSettings, initialTier, requestDowngrade, step } = useDeviceTier(forced);
 
   // DPR follows the tier cap; changing it later only calls setPixelRatio in place.
   const dpr = useMemo<[number, number]>(() => {
@@ -644,8 +632,8 @@ export function Tree3DScene() {
   const enablePost = false;
   // Antialias must be fixed at context creation time — derived from the first tier.
   const antialias = useMemo(
-    () => (isMobile ? mobileSettings(settingsForTier(initialTier)).antialias : initialTier !== 'low'),
-    [initialTier, isMobile],
+    () => true,
+    [],
   );
 
   useEffect(() => {
@@ -707,10 +695,19 @@ export function Tree3DScene() {
           willChange: 'transform',
         }}
         data-tree-tier={effectiveSettings.tier}
+        data-tree-initial-tier={initialTier}
+        data-tree-quality-step={step}
+        data-tree-settings={JSON.stringify(effectiveSettings)}
+        data-tree-shadow-size={effectiveSettings.shadowMapSize}
+        data-tree-dpr-cap={effectiveSettings.dprCap}
+        data-tree-leaves={effectiveSettings.leafCount}
         data-tree-fireflies={effectiveSettings.fireflyCount}
         data-tree-birds={effectiveSettings.ambientBirds}
         data-tree-plant-cap={effectiveSettings.plantCap}
-        data-tree-trunk-ripple={effectiveSettings.trunkRipple}
+        data-tree-trunk-ripple={!gentle && effectiveSettings.trunkRipple}
+        data-tree-motion={gentle ? "gentle" : "full"}
+        data-tree-active-birds={gentle ? 0 : effectiveSettings.ambientBirds}
+        data-tree-rendering={effectiveInView ? "active" : "paused"}
       >
         {mounted ? (
           <Tree3DInner
@@ -749,6 +746,9 @@ interface InnerProps {
 
 function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, settings, antialias, isMobile, onSlow }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
+  const gentle = useMotionPreference() === 'gentle';
+  const [ready, setReady] = useState(false);
+  const sceneReady = useCallback(() => setReady(true), []);
   const lastClickRef = useRef(0);
   // Fixed at first render so the WebGL context is never recreated.
   const initialShadows = useRef(settings.shadows).current;
@@ -763,16 +763,17 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
         gl={{
           antialias,
           alpha: true,
-          powerPreference: isMobile && settings.tier === 'low' ? 'low-power' : 'high-performance',
-          toneMapping: isMobile && settings.tier === 'low' ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping,
-          toneMappingExposure: isMobile && settings.tier === 'low' ? 1.2 : 1.25,
+          powerPreference: 'high-performance',
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.25,
         }}
 
-        style={{ background: 'transparent' }}
+        style={{ background: 'transparent', opacity: ready ? 1 : 0 }}
         onPointerDown={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(true); }}
         onPointerUp={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(false); }}
         onPointerLeave={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(false); }}
         onClick={() => {
+          if (gentle) return;
           spawnRipple();
           const now = performance.now();
           if (now - lastClickRef.current < 350) {
@@ -784,6 +785,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
         {/* PerformanceMonitor removed — was causing DPR rescaling flicker */}
         <OrbitControls
           ref={controlsRef}
+          enabled={!gentle}
           enablePan={false}
           enableZoom={false}
           enableDamping
@@ -796,11 +798,11 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
           makeDefault
         />
         <CameraRig controlsRef={controlsRef} zoomProgressRef={zoomProgressRef} isMobile={isMobile} />
-        <WindTracker />
+        {!gentle && <WindTracker />}
         <ShadowSwitch enabled={settings.shadows} />
-        <PerfWatchdog onSlow={onSlow} />
         <Suspense fallback={null}>
-          <Scene settings={settings} isMobile={isMobile} />
+          <Scene settings={settings} isMobile={isMobile} onReady={sceneReady} />
+          <PerfWatchdog onSlow={onSlow} active={inView && ready} />
         </Suspense>
 
       </Canvas>

@@ -1,5 +1,13 @@
 # Roadmap
 
+## Restore mobile animations and tree fidelity (Oct 6)
+- [ ] Remove network guessing; mount live gentle tree and respond to Save-Data changes.
+- [ ] Start all hardware at desktop appearance; measure frames and reduce invisible costs first; retain software-renderer fallback.
+- [ ] Restore early full reveals, gentle fades/count-ups/headline and touch states.
+- [ ] Animate compact story steps and add an accessible marquee pause control.
+- [ ] Verify simulated phones, reduced motion, settings debug and stable 390/1024 scroll recordings; run tests and report real-device limits.
+- [ ] Optional phone-only model: do not ship without frozen-time DPR 2/3 visual/SSIM proof.
+
 ## Live re-audit follow-up: tablet hero, short states and truthful figures
 - [x] Keep Top Donors below the hero until xl; verify 1024/1180.
 - [x] Fill reserved error/empty states and add generous automatic retry/backoff; force failures and recovery.

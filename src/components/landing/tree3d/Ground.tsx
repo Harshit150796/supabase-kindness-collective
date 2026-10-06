@@ -3,7 +3,7 @@ import { ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 import { getGroundTexture, getGroundNormalMap } from './textures';
 
-export function Ground({ y = -0.01, isMobile = false }: { y?: number; isMobile?: boolean }) {
+export function Ground({ y = -0.01 }: { y?: number }) {
   const tex = useMemo(() => getGroundTexture(), []);
   const nrm = useMemo(() => getGroundNormalMap(), []);
 
@@ -30,13 +30,13 @@ export function Ground({ y = -0.01, isMobile = false }: { y?: number; isMobile?:
 
       <ContactShadows
         position={[0, y + 0.005, 0]}
-        opacity={isMobile ? 0.45 : 0.6}
+        opacity={0.6}
         scale={14}
-        blur={isMobile ? 1.5 : 2.8}
+        blur={2.8}
         far={9}
-        resolution={isMobile ? 256 : 1024}
+        resolution={1024}
         color="#1f2937"
-        frames={isMobile ? 1 : Infinity}
+        frames={Infinity}
       />
 
       {pebbles.map((p, i) => (

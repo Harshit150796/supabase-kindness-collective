@@ -6,64 +6,61 @@ import { figureDisplay } from '@/lib/landingPresentation';
 
 type RevealProps = { children: ReactNode; className?: string; delay?: number };
 
+/** Pre-trigger below the viewport; a fling past the trigger finishes immediately. */
+export function useEarlyReveal<T extends HTMLElement>(ref: React.RefObject<T>) {
+  const [visible, setVisible] = useState(false);
+  const [instant, setInstant] = useState(false);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    let triggered = false;
+    let done = false;
+    let frame = 0;
+    let lastY = window.scrollY;
+    const check = () => {
+      frame = 0;
+      if (done) return;
+      const rect = node.getBoundingClientRect();
+      const height = window.innerHeight;
+      const fling = Math.abs(window.scrollY - lastY) > height * 0.35;
+      lastY = window.scrollY;
+      if (rect.top <= height * 1.2) {
+        // Late mounting and flings must not leave visible content waiting on a fade.
+        if (rect.top <= height * 0.8 || (fling && rect.top < height)) {
+          setInstant(true); done = true;
+        }
+        if (!triggered) { triggered = true; setVisible(true); }
+      }
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(check); };
+    const observer = new IntersectionObserver(check, { rootMargin: `0px 0px ${Math.round(window.innerHeight * 0.2)}px 0px`, threshold: 0 });
+    observer.observe(node);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    check();
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); window.removeEventListener('scroll', onScroll); };
+  }, [ref]);
+  return { visible, instant };
+}
+
 export function Reveal({ children, className, delay = 0 }: RevealProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const visible = useInView(ref, { once: true, amount: 0.1 });
+  const { visible, instant } = useEarlyReveal(ref);
   const preference = useMotionPreference();
-  return (
-    <motion.div
-      ref={ref}
-      className={className}
-      initial={preference === 'gentle' ? false : { opacity: 0.85, y: 16 }}
-      animate={visible || preference === 'gentle' ? { opacity: 1, y: 0 } : undefined}
-      transition={{ duration: preference === 'full' ? 0.35 : 0, delay: Math.min(delay, 0.08), ease: [0.16, 1, 0.3, 1] }}
-    >
-      {children}
-    </motion.div>
-  );
+  const gentle = preference === 'gentle';
+  return <motion.div ref={ref} data-reveal className={className}
+    initial={gentle ? { opacity: 0.7 } : { opacity: 0, y: 24 }}
+    animate={visible || gentle ? { opacity: 1, y: 0 } : undefined}
+    transition={{ duration: instant ? 0 : gentle ? 0.18 : 0.6, delay: gentle || instant ? 0 : Math.min(delay, 0.08), ease: [0.16, 1, 0.3, 1] }}>
+    {children}
+  </motion.div>;
 }
 
 export function LineReveal({ children, className, delay = 0 }: RevealProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const visible = useInView(ref, { once: true, amount: 0.1 });
-  const preference = useMotionPreference();
-  return (
-    <div ref={ref} className={cn(preference === 'full' && 'overflow-hidden', className)}>
-      <motion.div
-        initial={preference === 'gentle' ? false : { opacity: 0.85, y: 16 }}
-        animate={visible || preference === 'gentle' ? { opacity: 1, y: 0 } : undefined}
-        transition={{ duration: preference === 'full' ? 0.35 : 0, delay: Math.min(delay, 0.08), ease: [0.16, 1, 0.3, 1] }}
-      >
-        {children}
-      </motion.div>
-    </div>
-  );
+  return <Reveal className={className} delay={delay}>{children}</Reveal>;
 }
 
 export function ImageReveal({ children, className, delay = 0 }: RevealProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.08 });
-  const [fallbackVisible, setFallbackVisible] = useState(false);
-  const preference = useMotionPreference();
-  const full = preference === 'full';
-  useEffect(() => {
-    const timer = window.setTimeout(() => setFallbackVisible(true), 900);
-    return () => window.clearTimeout(timer);
-  }, []);
-  const visible = preference !== 'full' || inView || fallbackVisible;
-  return (
-    <motion.div
-      ref={ref}
-      className={cn('overflow-hidden', className)}
-      initial={false}
-      animate={visible ? { opacity: 1, clipPath: 'inset(0 0 0 0)' } : undefined}
-      transition={{ duration: full ? 0.35 : 0, delay: Math.min(delay, 0.08), ease: [0.16, 1, 0.3, 1] }}
-    >
-      <motion.div className="h-full w-full" initial={{ scale: full ? 1.03 : 1 }} animate={visible ? { scale: 1 } : undefined} transition={{ duration: full ? 0.35 : 0, delay: Math.min(delay, 0.08), ease: [0.16, 1, 0.3, 1] }}>
-        {children}
-      </motion.div>
-    </motion.div>
-  );
+  return <Reveal className={cn('overflow-hidden', className)} delay={delay}>{children}</Reveal>;
 }
 
 export function CountUp({ value, className }: { value: number; className?: string }) {
@@ -72,7 +69,7 @@ export function CountUp({ value, className }: { value: number; className?: strin
   const preference = useMotionPreference();
   const [display, setDisplay] = useState(value);
   useEffect(() => {
-    if (preference === 'gentle' || value < 10) { setDisplay(value); return; }
+    if (value < 10) { setDisplay(value); return; }
     if (!visible) return;
     const controls = animate(value > 0 ? 1 : 0, value, {
       duration: preference === 'full' ? 1.6 : 0.7,
@@ -81,7 +78,7 @@ export function CountUp({ value, className }: { value: number; className?: strin
     });
     return () => controls.stop();
   }, [preference, value, visible]);
-  return <span ref={ref} className={className}>{figureDisplay(value, display, preference === 'gentle', visible).toLocaleString()}</span>;
+  return <span ref={ref} className={className}>{figureDisplay(value, display, false, visible).toLocaleString()}</span>;
 }
 
 export function Parallax({ children, className, distance = 70 }: RevealProps & { distance?: number }) {
@@ -93,8 +90,7 @@ export function Parallax({ children, className, distance = 70 }: RevealProps & {
 }
 
 export function WordReveal({ children, className }: { children: string; className?: string }) {
-  const preference = useMotionPreference();
-  return <p className={className}>{children.split(/\s+/).map((word, index) => <motion.span key={`${word}-${index}`} className="inline-block" initial={preference === 'gentle' ? false : { opacity: 0.85, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.1 }} transition={{ duration: preference === 'full' ? 0.35 : 0, delay: Math.min(index * 0.04, 0.08), ease: [0.16, 1, 0.3, 1] }}>{word}{index < children.split(/\s+/).length - 1 ? '\u00a0' : ''}</motion.span>)}</p>;
+  return <Reveal className={className}><p>{children}</p></Reveal>;
 }
 
 export function MotionBar({ value, className }: { value: number; className?: string }) {
