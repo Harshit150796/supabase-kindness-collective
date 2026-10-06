@@ -564,9 +564,22 @@
   transform: translateY(-2px);
   box-shadow: 0 10px 28px hsl(var(--surface-shadow) / 0.08);
 }
+@keyframes skeleton-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+.skeleton-shimmer { position: relative; }
+.skeleton-shimmer::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(90deg, transparent, hsl(var(--card) / 0.72), transparent);
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
 @media (prefers-reduced-motion: reduce) {
   .dash-rise,
   .dash-card-enter { animation: none; }
   .dash-interactive-card { transition: none; }
   .dash-interactive-card:hover { transform: none; }
+  .skeleton-shimmer::after { animation: none; display: none; }
 }

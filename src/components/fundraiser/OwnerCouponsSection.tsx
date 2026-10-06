@@ -61,7 +61,7 @@ export function OwnerCouponsSection({ coupons, isOwner, onChanged }: { coupons: 
       ) : (
         <div className="space-y-1 p-3 sm:p-4">
           {groups.map(([brand, list]) => (
-            <div key={brand} className="rounded-xl border border-transparent px-3 py-3 transition-colors duration-200 hover:border-border hover:bg-muted/30">
+            <div key={brand} className="dash-interactive-card rounded-xl border border-transparent px-3 py-3 hover:border-border hover:bg-muted/30">
               <div className="mb-1 flex items-center gap-2">
                 {logoFor(brand) && <img src={logoFor(brand)!} alt="" className="h-7 w-7 rounded-md bg-background object-contain p-1" />}
                 <h3 className="text-[15px] font-semibold text-foreground">{brand}</h3>
