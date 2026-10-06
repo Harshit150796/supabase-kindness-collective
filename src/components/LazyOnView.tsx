@@ -62,7 +62,10 @@ export function LazyOnView({
     style['--lazy-tablet'] = `${intrinsicSize.tablet}px`;
     style['--lazy-desktop'] = `${intrinsicSize.desktop}px`;
   }
-  if (!mounted) style.minHeight = intrinsic;
+  // Keep the (conservative) reservation even after mount: content that is still
+  // fetching its own data must never collapse the page under the reader.
+  style.minHeight = intrinsic;
+  void mounted;
   if (contentVisibilityAuto) {
     style.contentVisibility = 'auto';
     style.containIntrinsicSize = `auto ${intrinsic}`;
