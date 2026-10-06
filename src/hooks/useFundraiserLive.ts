@@ -79,4 +79,7 @@ export const timeAgo = (iso: string) => {
   if (s < 604800) return `${Math.floor(s / 86400)} d ago`;
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
-export const usd = (n: number) => `$${n.toLocaleString('en-US', { maximumFractionDigits: n % 1 ? 2 : 0 })}`;
+export const usd = (n: number) => {
+  const value = Number(n) || 0;
+  return `$${value.toLocaleString('en-US', { maximumFractionDigits: value % 1 ? 2 : 0 })}`;
+};
