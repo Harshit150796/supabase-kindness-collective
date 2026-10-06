@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export type MotionPreference = 'full' | 'gentle';
 
@@ -45,12 +46,12 @@ export function MotionDebug() {
     return () => window.clearInterval(timer);
   }, [show]);
   if (!show) return null;
-  return (
+  return createPortal(
     <div className="fixed bottom-2 left-2 z-[100] rounded-md border border-border bg-card px-3 py-2 text-xs text-foreground shadow-lg">
       <div>Reduce motion reported: {pref === 'gentle' ? 'YES' : 'no'}</div>
       <div>Width: {window.innerWidth}px</div>
       <div>Initial renderer tier: {initialTier}</div>
       <div className="max-w-[min(360px,85vw)]">Active tree: {settings}</div>
-    </div>
+    </div>, document.body
   );
 }
