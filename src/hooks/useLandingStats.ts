@@ -7,6 +7,12 @@ export interface LandingStats {
   coupons_created: number;
   coupons_claimed: number;
   active_fundraisers: number;
+  coupons_received: number;
+  coupons_used: number;
+  issued_value_total: number;
+  issued_value_month: number;
+  used_month: number;
+  allocated_total: number;
   brands: { name: string; total: number }[];
 }
 
@@ -27,6 +33,12 @@ function fetchStats(): Promise<LandingStats | null> {
         total_raised: Number(d.total_raised) || 0,
         coupons_created: Number(d.coupons_created) || 0,
         coupons_claimed: Number(d.coupons_claimed) || 0,
+        coupons_received: Number(d.coupons_received) || 0,
+        coupons_used: Number(d.coupons_used) || 0,
+        issued_value_total: Number(d.issued_value_total) || 0,
+        issued_value_month: Number(d.issued_value_month) || 0,
+        used_month: Number(d.used_month) || 0,
+        allocated_total: Number(d.allocated_total) || 0,
         active_fundraisers: Number(d.active_fundraisers) || 0,
         brands: (d.brands || []).map((b: any) => ({ name: b.name, total: Number(b.total) || 0 })),
       };

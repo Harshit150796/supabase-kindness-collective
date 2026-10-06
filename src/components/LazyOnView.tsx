@@ -4,6 +4,7 @@ interface Props {
   children: ReactNode;
   /** Minimum height reserved before children render — prevents layout shift. */
   minHeight?: number | string;
+  intrinsicSize?: { mobile: number; tablet: number; desktop: number };
   /** rootMargin for the IntersectionObserver. */
   rootMargin?: string;
   /** Optional className passed to the wrapper. */
@@ -24,6 +25,7 @@ interface Props {
 export function LazyOnView({
   children,
   minHeight = 400,
+  intrinsicSize,
   rootMargin = '300px',
   className,
   contentVisibilityAuto = false,
@@ -53,15 +55,20 @@ export function LazyOnView({
   }, [show, rootMargin]);
 
   const style: CSSProperties & Record<string, string | number> = {};
-  if (!show) style.minHeight = minHeight;
+  const intrinsic = intrinsicSize ? 'var(--lazy-reserved-height)' : typeof minHeight === 'number' ? `${minHeight}px` : minHeight;
+  if (intrinsicSize) {
+    style['--lazy-mobile'] = `${intrinsicSize.mobile}px`;
+    style['--lazy-tablet'] = `${intrinsicSize.tablet}px`;
+    style['--lazy-desktop'] = `${intrinsicSize.desktop}px`;
+  }
+  if (!show) style.minHeight = intrinsic;
   if (contentVisibilityAuto) {
     style.contentVisibility = 'auto';
-    const intrinsic = typeof minHeight === 'number' ? `${minHeight}px` : minHeight;
-    style.containIntrinsicSize = `0 ${intrinsic}`;
+    style.containIntrinsicSize = `auto ${intrinsic}`;
   }
 
   return (
-    <div ref={ref} className={className} style={style}>
+    <div ref={ref} className={[intrinsicSize ? "lazy-responsive-region" : "", className].filter(Boolean).join(" ")} style={style}>
       {show ? children : null}
     </div>
   );

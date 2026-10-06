@@ -613,3 +613,7 @@
   html { scroll-behavior: auto; }
   .animate-in, .animate-fade-in, .animate-pulse, .animate-slide-up { animation: none !important; }
 }
+
+.lazy-responsive-region { --lazy-reserved-height: var(--lazy-mobile); }
+@media (min-width: 768px) { .lazy-responsive-region { --lazy-reserved-height: var(--lazy-tablet); } }
+@media (min-width: 1024px) { .lazy-responsive-region { --lazy-reserved-height: var(--lazy-desktop); } }
