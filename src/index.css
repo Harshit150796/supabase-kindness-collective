@@ -87,6 +87,9 @@
     --warning: 38 74% 42%;
     --warning-foreground: 32 70% 24%;
     --surface-shadow: 123 20% 13%;
+    --brand-coupon: 122.424242 46.478873% 33.529412%;
+    --brand-donation: 211.929825 79.069767% 41.764706%;
+    --brand-surface: 0 0% 100%;
 
     --radius: 0.375rem;
 
@@ -547,7 +550,18 @@
   }
 }
 
-/* Organizer dashboard surfaces and motion. */
+/* Shared product hierarchy, surfaces and motion. */
+.product-page-title { font-family: "Instrument Serif", Georgia, serif; font-size: 40px; line-height: 44px; font-weight: 400; }
+.product-body { font-family: "Instrument Sans", sans-serif; font-size: 15px; line-height: 23px; }
+.product-meta { font-family: "Instrument Sans", sans-serif; font-size: 13px; line-height: 20px; color: hsl(var(--muted-foreground)); }
+.product-section-label { font-family: "Instrument Sans", sans-serif; font-size: 12px; line-height: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: hsl(var(--muted-foreground)); }
+.product-stat { font-family: "Instrument Serif", Georgia, serif; font-size: 28px; line-height: 32px; font-variant-numeric: tabular-nums; }
+.product-hero-number { font-family: "Instrument Serif", Georgia, serif; font-size: 64px; line-height: 1; font-variant-numeric: tabular-nums; }
+.footer-surface { background: hsl(var(--primary-20)); }
+.footer-lockup { background: hsl(var(--brand-surface)); }
+.brand-coupon { color: hsl(var(--brand-coupon)); }
+.brand-donation { color: hsl(var(--brand-donation)); }
+@media (min-width: 640px) { .product-hero-number { font-size: 72px; } }
 @keyframes dash-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 .dash-rise,
 .dash-card-enter { animation: dash-rise 360ms cubic-bezier(0.22, 1, 0.36, 1) both; }

@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
   return <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div className="min-w-0 space-y-2"><h1 className="product-page-title">{title}</h1>{subtitle && <p className="product-body text-muted-foreground">{subtitle}</p>}</div>{action && <div className="shrink-0">{action}</div>}</header>;
 }
-export function CardSurface({ className, interactive, index, ...props }: HTMLAttributes<HTMLDivElement> & { interactive?: boolean; index?: number }) {
-  return <div className={cn("dash-card", interactive && "dash-interactive-card", index != null && "dash-card-enter", className)} style={index != null ? { animationDelay: `${Math.min(index, 10) * 60}ms`, ...props.style } : props.style} {...props} />;
+export function CardSurface({ className, interactive, index, style, ...props }: HTMLAttributes<HTMLDivElement> & { interactive?: boolean; index?: number }) {
+  return <div className={cn("dash-card", interactive && "dash-interactive-card", index != null && "dash-card-enter", className)} style={index != null ? { animationDelay: `${Math.min(index, 10) * 60}ms`, ...style } : style} {...props} />;
 }
 export function SectionLabel({ children, className }: { children: ReactNode; className?: string }) {
   return <h2 className={cn("product-section-label", className)}>{children}</h2>;
