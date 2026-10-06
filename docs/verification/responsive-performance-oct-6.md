@@ -40,7 +40,7 @@ Browser network checks on `/cookies`, `/about`, and `/f/help-feed-my-family-this
 - **After-change production compressed transfer totals and the <350KB JS target are unverified.** Localhost is Vite development; its raw/module transfers are not comparable. The harness performs builds; no separate manual build or website publish was performed.
 - **Authenticated owner/donor/admin screens remain unverified**: external unmanaged auth. Redirect checks do not prove those screens.
 - Chromium touch emulation is not a physical iPhone Safari focus/zoom test. Shared computed form sizes were checked; native Web Share availability is platform-dependent.
-- Live landscape WebGL screenshot succeeded after retry and dismissing the cookie overlay; full rotating landscape orbit framing remains unverified.
+- Live landscape WebGL mounted, but the screenshot remained obscured by the untouched cookie overlay; unobscured landscape canopy/orbit framing remains unverified.
 - Matrix checks inspect initial render, not every authenticated modal or later route state. Cookie-bar controls were excluded from touch audits and left untouched as requested.
 - Supabase reported pre-existing security findings; the aggregate migration introduced none. No unrelated policy/payment fixes were attempted.
 
