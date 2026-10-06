@@ -64,7 +64,7 @@ export default function Partners() {
               <div><Label htmlFor="em">Email</Label><Input id="em" type="email" value={f.email} onChange={set('email')} maxLength={255} required /></div>
               <div className="sm:col-span-2"><Label htmlFor="cs">City, state</Label><Input id="cs" value={f.city_state} onChange={set('city_state')} maxLength={120} /></div>
               <div className="sm:col-span-2"><Label htmlFor="msg">Message</Label><Textarea id="msg" value={f.message} onChange={set('message')} maxLength={2000} rows={5} /></div>
-              <div className="absolute -left-[9999px]" aria-hidden="true"><label>Website<input tabIndex={-1} autoComplete="off" value={f.website} onChange={set('website')} /></label></div>
+              <div className="absolute -left-[9999px]" aria-hidden="true"><label>Website<input tabIndex={-1} autoComplete="off" className="h-11" value={f.website} onChange={set('website')} /></label></div>
               <div className="sm:col-span-2"><Button type="submit" disabled={busy}>{busy ? 'Sending…' : 'Send inquiry'}</Button></div>
             </form>
           )}
