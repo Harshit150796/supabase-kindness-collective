@@ -42,7 +42,7 @@ export function HeroSection() {
   return (
     <>
     <section
-      className="hero-stage relative w-full h-[58svh] min-h-[330px] md:h-[74vh] overflow-hidden"
+      className="hero-stage relative w-full h-[58svh] min-h-[330px] md:h-[74vh] [@media(max-height:500px)]:h-[calc(100svh-64px)] [@media(max-height:500px)]:min-h-[300px] [@media(max-height:500px)]:max-h-[480px] overflow-hidden"
       style={{ contain: 'layout paint' }}
     >
       {/* Stacked layers — no DOM swap, no CLS. The gradient always paints first;
