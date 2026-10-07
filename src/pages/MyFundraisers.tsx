@@ -36,7 +36,7 @@ function FundraiserHomeCard({ fundraiser: f, index }: { fundraiser: Fundraiser; 
   return <CardSurface index={index} interactive className="group relative overflow-hidden">
     <div className="grid md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.6fr)]">
       <div className="aspect-[16/10] overflow-hidden md:aspect-auto md:min-h-80">
-        {image && !failedImage ? <img src={transformedFundraiserImage(image, 900) ?? image} alt={f.title} onError={() => setFailedImage(true)} className="h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-[1.03]" loading="lazy" /> : <FundraiserImageFallback category={f.category} />}
+        {image && !failedImage ? <img src={transformedFundraiserImage(image, 900) ?? image} alt={f.title} onError={() => setFailedImage(true)} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" loading="lazy" /> : <FundraiserImageFallback category={f.category} />}
       </div>
       <div className="min-w-0 p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-3">

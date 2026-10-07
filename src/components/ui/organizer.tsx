@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
+import { forwardRef, useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,9 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
 export function CardSurface({ className, interactive, index, style, ...props }: HTMLAttributes<HTMLDivElement> & { interactive?: boolean; index?: number }) {
   return <div className={cn("dash-card", interactive && "dash-interactive-card", index != null && "dash-card-enter", className)} style={index != null ? { animationDelay: `${Math.min(index, 10) * 60}ms`, ...style } : style} {...props} />;
 }
-export function SectionLabel({ children, className }: { children: ReactNode; className?: string }) {
-  return <h2 className={cn("product-section-label text-muted-foreground", className)}>{children}</h2>;
-}
+export const SectionLabel = forwardRef<HTMLHeadingElement, { children: ReactNode; className?: string }>(function SectionLabel({ children, className }, ref) {
+  return <h2 ref={ref} className={cn("product-section-label text-muted-foreground", className)}>{children}</h2>;
+});
 export function Stat({ label, value, className }: { label: string; value: ReactNode; className?: string }) {
   return <div className={cn("min-w-0", className)}><dt className="product-section-label text-muted-foreground">{label}</dt><dd className="product-stat mt-2">{value}</dd></div>;
 }
@@ -23,13 +23,12 @@ export function ProgressBar({ value }: { value: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [entered, setEntered] = useState(false);
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setEntered(true); return; }
     const observer = new IntersectionObserver(([entry]) => { if (entry?.isIntersecting) { setEntered(true); observer.disconnect(); } }, { threshold: 0.2 });
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
   }, []);
   const pct = Math.max(0, Math.min(100, value));
-  return <div ref={ref} role="progressbar" aria-label="Fundraiser goal" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} className="h-2.5 overflow-hidden rounded-full bg-primary/10"><div className="h-full origin-left bg-primary motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-out" style={{ transform: `scaleX(${entered ? pct / 100 : 0})` }} /></div>;
+  return <div ref={ref} role="progressbar" aria-label="Fundraiser goal" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} className="h-2.5 overflow-hidden rounded-full bg-primary/10"><div className="h-full origin-left bg-primary transition-transform duration-700 ease-out" style={{ transform: `scaleX(${entered ? pct / 100 : 0})` }} /></div>;
 }
 export function EmptyState({ title, description, action, error }: { title: string; description: string; action?: ReactNode; error?: boolean }) {
   return <div role={error ? "alert" : undefined} className="flex min-h-72 flex-col items-center justify-center px-6 py-14 text-center"><p className="font-sans text-lg font-semibold text-foreground">{title}</p><p className="product-body mt-3 max-w-md text-muted-foreground">{description}</p>{action && <div className="mt-6">{action}</div>}</div>;

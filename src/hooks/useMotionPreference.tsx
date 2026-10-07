@@ -5,26 +5,13 @@ export type MotionPreference = 'full' | 'gentle';
 
 const QUERY = '(prefers-reduced-motion: reduce)';
 
-function read(): MotionPreference {
-  if (typeof window === 'undefined') return 'full';
-  try {
-    return window.matchMedia?.(QUERY)?.matches ? 'gentle' : 'full';
-  } catch {
-    return 'full';
-  }
+/** Founder decision: every device gets full motion, whatever the OS setting. */
+export function useMotionPreference(): MotionPreference {
+  return 'full';
 }
 
-/** Animations always play; 'gentle' only means calmer, never frozen. */
-export function useMotionPreference(): MotionPreference {
-  const [pref, setPref] = useState<MotionPreference>(read);
-  useEffect(() => {
-    const mql = window.matchMedia?.(QUERY);
-    if (!mql) return;
-    const onChange = () => setPref(read());
-    mql.addEventListener?.('change', onChange);
-    return () => mql.removeEventListener?.('change', onChange);
-  }, []);
-  return pref;
+function osReducedMotion(): boolean {
+  try { return window.matchMedia?.(QUERY)?.matches ?? false; } catch { return false; }
 }
 
 /** Visible only with ?motiondebug=1 in the URL. */
@@ -48,7 +35,7 @@ export function MotionDebug() {
   if (!show) return null;
   return createPortal(
     <div className="fixed bottom-2 left-2 z-[100] rounded-md border border-border bg-card px-3 py-2 text-xs text-foreground shadow-lg">
-      <div>Reduce motion reported: {pref === 'gentle' ? 'YES' : 'no'}</div>
+      <div>Phone Reduce Motion setting: {osReducedMotion() ? 'on' : 'off'} · site motion: {pref}</div>
       <div>Width: {window.innerWidth}px</div>
       <div>Initial renderer tier: {initialTier}</div>
       <div className="max-w-[min(360px,85vw)]">Active tree: {settings}</div>
