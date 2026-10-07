@@ -760,7 +760,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
       <Canvas
         shadows={initialShadows ? { type: THREE.PCFSoftShadowMap } : false}
         dpr={dpr}
-        frameloop={inView ? 'always' : 'demand'}
+        frameloop={inView ? 'always' : 'never'}
         camera={{ position: isMobile ? [0, 4.4, 16] : [0, 4.0, 13], fov: isMobile ? 32 : 38 }}
         gl={{
           antialias,
