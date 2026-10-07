@@ -68,6 +68,15 @@ Deno.test('the transparency section keeps its ring, allocation bars and journey 
   assert(transparency.includes('data-journey-line'));
   assert(transparency.includes('duration: 1.6'));
 });
+Deno.test('homepage sections retain their approved motion entry points', async () => {
+  const story = await Deno.readTextFile('src/components/landing/WhatWeDo.tsx');
+  const security = await Deno.readTextFile('src/components/landing/SecurityBadges.tsx');
+  const impact = await Deno.readTextFile('src/components/landing/ImpactDashboard.tsx');
+  assert(story.includes('<LineReveal><h2'));
+  assert(story.includes('startIdleMotion();'));
+  assert(security.includes('initial={{opacity:0,scale:.92,rotate:-4}}'));
+  assert(impact.includes('formatter={item.currency ? formatUSD : undefined}'));
+});
 Deno.test('all four compact giving stories keep a visible animation loop', async () => {
   const story = await Deno.readTextFile('src/components/landing/WhatWeDo.tsx');
   assertEquals((story.match(/data-mobile-step=/g) ?? []).length, 1);

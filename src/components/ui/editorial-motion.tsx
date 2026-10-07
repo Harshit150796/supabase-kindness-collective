@@ -70,7 +70,7 @@ export function ImageReveal({ children, className, delay = 0 }: RevealProps) {
   return <Reveal className={cn('overflow-hidden', className)} delay={delay}>{children}</Reveal>;
 }
 
-export const CountUp = forwardRef<HTMLSpanElement, { value: number; className?: string }>(function CountUp({ value, className }, forwarded) {
+export const CountUp = forwardRef<HTMLSpanElement, { value: number; className?: string; formatter?: (value: number) => string }>(function CountUp({ value, className, formatter }, forwarded) {
   const ref = useRef<HTMLSpanElement>(null);
   const setRef = useCallback((node: HTMLSpanElement | null) => { ref.current = node; assignRef(forwarded, node); }, [forwarded]);
   const visible = useInView(ref, { once: true, amount: 0.5 });
@@ -86,7 +86,8 @@ export const CountUp = forwardRef<HTMLSpanElement, { value: number; className?: 
     });
     return () => controls.stop();
   }, [preference, value, visible]);
-  return <span ref={setRef} className={className}>{figureDisplay(value, display, false, visible).toLocaleString()}</span>;
+  const shown = figureDisplay(value, display, false, visible);
+  return <span ref={setRef} className={className}>{formatter ? formatter(shown) : shown.toLocaleString()}</span>;
 });
 
 export function Parallax({ children, className, distance = 70 }: RevealProps & { distance?: number }) {

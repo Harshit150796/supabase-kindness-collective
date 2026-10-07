@@ -12,7 +12,7 @@ import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { useEarlyReveal } from '@/components/ui/editorial-motion';
+import { LineReveal, Reveal, useEarlyReveal } from '@/components/ui/editorial-motion';
 
 const BLUE = 'hsl(var(--verify))';
 const EMERALD = 'hsl(var(--primary))';
@@ -351,6 +351,12 @@ export function WhatWeDo() {
     if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
   }, []);
 
+  useEffect(() => {
+    if (!isDesktop || still) return;
+    startIdleMotion();
+    return () => idleAnimationRef.current?.stop();
+  }, [isDesktop, startIdleMotion, still]);
+
   const connectorPhase = useTransform(progress, (value) => ((value % 1) + 1) % 1);
   const connectorPosition = mapValue(connectorPhase, [0, 0.12, 0.24, 0.36, 0.62, 1], [0, 0, 33, 66, 100, 100]);
   const connectorLeft = useTransform(connectorPosition, (value) => `${value}%`);
@@ -379,8 +385,8 @@ export function WhatWeDo() {
       </div>
       <div className="container relative mx-auto px-4">
         <div className="max-w-3xl">
-          <h2 className="font-display text-5xl font-normal leading-[1.02] text-foreground md:text-6xl">Give what people need.</h2>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">CouponDonation turns your donation into coupons, gift cards and credits — so it arrives as food, medicine or transport, never as cash. And you can always see exactly where it went.</p>
+          <LineReveal><h2 className="font-display text-5xl font-normal leading-[1.02] text-foreground md:text-6xl">Give what people need.</h2></LineReveal>
+          <Reveal delay={0.06}><p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">CouponDonation turns your donation into coupons, gift cards and credits — so it arrives as food, medicine or transport, never as cash. And you can always see exactly where it went.</p></Reveal>
         </div>
 
         <div className="relative mt-6 lg:hidden">
@@ -416,7 +422,7 @@ export function WhatWeDo() {
           </ol>
         </div>
 
-        <div className="mt-8 overflow-hidden border-y border-primary/20 bg-primary/[0.03] px-0 py-6 lg:mt-20 lg:px-10 lg:py-12">
+        <Reveal className="mt-8 overflow-hidden border-y border-primary/20 bg-primary/[0.03] px-0 py-6 lg:mt-20 lg:px-10 lg:py-12">
           <div className="grid items-center gap-5 sm:grid-cols-[minmax(0,1fr)_220px] lg:gap-12">
             <div className="text-center md:text-left">
                <p className="font-display text-3xl font-normal leading-snug text-foreground md:text-5xl">Donate $10 today. Check where it went in 2036.</p>
@@ -424,9 +430,9 @@ export function WhatWeDo() {
             </div>
             <ProofReceipt progress={progress} still={still} />
           </div>
-        </div>
+        </Reveal>
 
-        <div className="grid border-y border-border sm:grid-cols-2 sm:divide-x sm:divide-border">
+        <Reveal className="grid border-y border-border sm:grid-cols-2 sm:divide-x sm:divide-border">
           <Link to="/donate" className="group flex min-h-24 items-center gap-4 border-b border-border p-4 transition-colors hover:bg-primary/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:border-b-0">
             <DonateDoorIcon />
             <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-lg font-semibold text-foreground md:text-xl">I want to help someone <ArrowRight className="h-4 w-4 shrink-0 text-primary transition-transform group-hover:translate-x-1" /></span><span className="mt-1 block text-base text-muted-foreground">Pick a real need and cover it.</span></span>
@@ -435,7 +441,7 @@ export function WhatWeDo() {
             <ApplyDoorIcon />
             <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-lg font-semibold text-foreground md:text-xl">I need help <ArrowRight className="h-4 w-4 shrink-0 text-verify transition-transform group-hover:translate-x-1" /></span><span className="mt-1 block text-base text-muted-foreground">Tell us what you need. U.S. residents, free to apply.</span></span>
           </Link>
-        </div>
+        </Reveal>
 
         <div className="mt-6 flex flex-col items-center gap-2 text-center">
           <p className="text-base text-muted-foreground">Real people are asking right now. Here's who.</p>
