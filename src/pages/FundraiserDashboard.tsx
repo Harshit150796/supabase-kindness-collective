@@ -61,7 +61,7 @@ const SECTIONS = [
   { id: "updates", label: "Organizer tools" },
 ] as const;
 
-const reducedMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const reducedMotion = () => false; // Founder decision: full motion on every device.
 const usd = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
 
 /** Counts up to `target` once, the first time a real value arrives. Never re-animates. */
@@ -100,7 +100,7 @@ function ProgressRing({ pct }: { pct: number }) {
         <circle
           cx="60" cy="60" r={R} fill="none" strokeWidth="4" strokeLinecap="round"
           strokeDasharray={C} strokeDashoffset={C * (1 - Math.max(pct, pct > 0 ? 0.6 : 0) / 100)}
-          className="stroke-primary motion-safe:transition-[stroke-dashoffset] motion-safe:duration-[900ms] motion-safe:ease-out"
+          className="stroke-primary transition-[stroke-dashoffset] duration-[900ms] ease-out"
           style={{ strokeDashoffset: C * (1 - (drawn > 0 ? Math.max(drawn, 0.6) : 0) / 100) }}
         />
       </svg>
@@ -299,7 +299,7 @@ const FundraiserDashboard = () => {
             <nav aria-label="Dashboard sections" className="relative space-y-0.5 border-l border-border py-0.5">
               <span
                 aria-hidden="true"
-                className="absolute -left-px top-0.5 h-9 w-0.5 bg-primary transition-transform duration-200 ease-out motion-reduce:transition-none"
+                className="absolute -left-px top-0.5 h-9 w-0.5 bg-primary transition-transform duration-200 ease-out"
                 style={{ transform: `translateY(${Math.max(0, SECTIONS.findIndex((s) => s.id === active)) * 38}px)` }}
               />
               {SECTIONS.map((s) => (

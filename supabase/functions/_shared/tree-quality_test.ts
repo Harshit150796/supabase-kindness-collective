@@ -1,3 +1,4 @@
+import { revealMode } from '../../../src/lib/landingPresentation.ts';
 import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { allowLiveTree, qualitySettings, rendererTier, shouldReduceQuality, TIER_SETTINGS } from '../../../src/lib/treeQuality.ts';
 
@@ -34,26 +35,21 @@ Deno.test('only explicit Save-Data prevents tree mounting', () => {
   assert(allowLiveTree(false));
   assert(!allowLiveTree(true));
 });
-Deno.test('reveals trigger early, fling entries complete, and gentle mode fades', async () => {
-  const motion = await Deno.readTextFile('src/components/ui/editorial-motion.tsx');
-  assert(motion.includes('height * 1.2'));
-  assert(motion.includes('height * 0.8'));
-  assert(motion.includes('rootMargin:'));
-  assert(motion.includes('opacity: 0, y: 24'));
-  assert(motion.includes('gentle ? 0.18 : 0.6'));
-  assert(motion.includes('Math.min(delay, 0.08)'));
-  assert(!motion.includes("preference === 'gentle' || value < 10"));
+Deno.test('reveal waits until 20% below the viewport (844px screen)', () => {
+  assertEquals(revealMode(1100, 1500, 844, 0), 'wait');
+  assertEquals(revealMode(1000, 1400, 844, 0), 'animate');
 });
-Deno.test('gentle scene is live with fixed camera and no flying elements', async () => {
-  const scene = await Deno.readTextFile('src/components/landing/Tree3DScene.tsx');
-  const flies = await Deno.readTextFile('src/components/landing/tree3d/Fireflies.tsx');
-  const brands = await Deno.readTextFile('src/components/landing/LiveActivityBar.tsx');
-  assert(scene.includes('enabled={!gentle}'));
-  assert(scene.includes('if (gentle) return;'));
-  assert(scene.includes('gentle || !logosReady'));
-  assert(scene.includes('gentle={gentle}'));
-  assert(!scene.includes('mobileSettings'));
-  assert(flies.includes('gentle ? 0 : Math.sin'));
-  assert(brands.includes('Pause brand animation'));
-  assert(brands.includes("gentle || paused ? 'paused' : 'running'"));
+Deno.test('content mounting already on screen still animates instead of snapping', () => {
+  assertEquals(revealMode(300, 700, 844, 0), 'late');
+});
+Deno.test('only content scrolled past or a fling over 6 screens per second finishes instantly', () => {
+  assertEquals(revealMode(-900, -100, 844, 0), 'instant');
+  assertEquals(revealMode(300, 700, 844, 7), 'instant');
+  assertEquals(revealMode(300, 700, 844, 2), 'late');
+});
+Deno.test('full motion on every device regardless of the OS Reduce Motion setting', async () => {
+  const hook = await Deno.readTextFile('src/hooks/useMotionPreference.tsx');
+  const css = await Deno.readTextFile('src/index.css');
+  assert(/useMotionPreference\(\): MotionPreference \{\s*return 'full';/.test(hook));
+  assert(!css.includes('prefers-reduced-motion'));
 });

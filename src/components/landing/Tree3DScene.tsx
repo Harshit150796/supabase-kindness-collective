@@ -286,14 +286,15 @@ function ShadowSwitch({ enabled }: { enabled: boolean }) {
 }
 
 /** Sample only committed, visible rendering; loading/hidden time is not hardware evidence. */
+/** Page-load jank must not count: wait 2s, then step down only after two slow samples in a row. */
 function PerfWatchdog({ onSlow, active }: { onSlow: () => void; active: boolean }) {
-  const sample = useRef({ start: 0, frames: 0, warm: 0 });
-  useEffect(() => { sample.current = { start: 0, frames: 0, warm: performance.now() }; }, [active]);
+  const sample = useRef({ start: 0, frames: 0, warm: 0, strikes: 0 });
+  useEffect(() => { sample.current = { start: 0, frames: 0, warm: performance.now(), strikes: 0 }; }, [active]);
   useFrame(({ gl }) => {
     if (!active || document.hidden) return;
     const now = performance.now();
     const s = sample.current;
-    if (now - s.warm < 750) return;
+    if (now - s.warm < 2000) return;
     if (!s.start) { s.start = now; return; }
     s.frames++;
     const elapsed = now - s.start;
@@ -301,7 +302,8 @@ function PerfWatchdog({ onSlow, active }: { onSlow: () => void; active: boolean 
     const fps = s.frames * 1000 / elapsed;
     gl.domElement.dataset.treeFps = fps.toFixed(1);
     s.start = now; s.frames = 0;
-    if (shouldReduceQuality(fps, active, elapsed)) onSlow();
+    s.strikes = shouldReduceQuality(fps, active, elapsed) ? s.strikes + 1 : 0;
+    if (s.strikes >= 2) { s.strikes = 0; onSlow(); }
   });
   return null;
 }
