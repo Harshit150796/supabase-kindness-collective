@@ -42,14 +42,14 @@ const Index = () => {
           </>
         </LazyOnView>
 
-        <LazyOnView minHeight={560} intrinsicSize={{ mobile: 560, tablet: 450, desktop: 400 }} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={1040} intrinsicSize={{ mobile: 1040, tablet: 820, desktop: 760 }} rootMargin="900px" contentVisibilityAuto>
           <>
             <TrustTransparency />
           </>
         </LazyOnView>
 
 
-        <section className="bg-background py-12 lg:py-24">
+        <section className="bg-background py-8 lg:py-14">
           <div className="container mx-auto max-w-6xl px-4">
             <WordReveal className="font-display text-5xl leading-tight text-foreground md:text-7xl">We don't track the person. We track the money.</WordReveal>
           </div>

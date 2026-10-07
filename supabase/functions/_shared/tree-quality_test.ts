@@ -58,6 +58,15 @@ Deno.test('top donors are removed and the brand rail uses one 48-second speed', 
   assert(!chat.includes('get_top_donors_week'));
   assert(rail.includes('[animation-duration:48s]'));
   assert(!rail.includes('lg:[animation-duration:48s]'));
+  assert(!rail.includes('Pause brand animation'));
+  assert(!rail.includes('Resume brand animation'));
+});
+Deno.test('the transparency section keeps its ring, allocation bars and journey motion', async () => {
+  const transparency = await Deno.readTextFile('src/components/landing/TrustTransparency.tsx');
+  assert(transparency.includes('data-allocation-ring'));
+  assert(transparency.includes('<MotionBar value={percent}'));
+  assert(transparency.includes('data-journey-line'));
+  assert(transparency.includes('duration: 1.6'));
 });
 Deno.test('all four compact giving stories keep a visible animation loop', async () => {
   const story = await Deno.readTextFile('src/components/landing/WhatWeDo.tsx');

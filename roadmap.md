@@ -1,5 +1,11 @@
 # Roadmap
 
+## Restore complete homepage motion and tighten the 95¢ transition (Oct 7)
+- [x] Remove the unrequested retailer-logo pause control while retaining the universal 48-second loop.
+- [x] Restore the animated 95¢ ring, allocation bars, staggered labels, and donation-to-use journey.
+- [x] Match the 95¢ lazy reservation to its animated content and pull the following statement upward.
+- [ ] Verify every homepage motion path, responsive spacing, stable scroll height, tests, and build; do not publish.
+
 ## Restore every approved animation and remove Top Donors (Oct 7)
 - [x] Audit homepage and prior motion work across shared, lazy, CSS, chart, and 3D paths.
 - [x] Remove Top Donors UI and all donor-leaderboard requests; keep retailer reporting intact.

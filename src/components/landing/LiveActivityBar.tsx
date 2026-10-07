@@ -1,12 +1,7 @@
-import { useState } from 'react';
-import { Pause, Play } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { brandList } from '@/data/brandLogos';
-import { MotionDebug, useMotionPreference } from '@/hooks/useMotionPreference';
+import { MotionDebug } from '@/hooks/useMotionPreference';
 
 export const LiveActivityBar = () => {
-  const gentle = useMotionPreference() === 'gentle';
-  const [paused, setPaused] = useState(false);
   return (
     <section
       aria-labelledby="redeemable-at-heading"
@@ -34,7 +29,6 @@ export const LiveActivityBar = () => {
             <div
               data-brand-marquee
               className="flex w-max animate-marquee [animation-duration:48s] hover:[animation-play-state:paused] active:[animation-play-state:paused]"
-              style={{ animationPlayState: gentle || paused ? 'paused' : 'running' }}
             >
               {[0, 1].map((group) => (
                 <div
@@ -60,9 +54,6 @@ export const LiveActivityBar = () => {
               ))}
             </div>
           </div>
-          <Button variant="ghost" size="icon" aria-label={gentle || paused ? 'Resume brand animation' : 'Pause brand animation'} title={gentle ? 'Brand animation paused for reduced motion' : paused ? 'Resume brand animation' : 'Pause brand animation'} aria-pressed={gentle || paused} disabled={gentle} onClick={() => setPaused(value => !value)}>
-            {gentle || paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-          </Button>
         </div>
       </div>
     </section>
