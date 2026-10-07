@@ -56,6 +56,14 @@ Deno.test('top donors are removed and the brand rail uses one 48-second speed', 
   assert(rail.includes('[animation-duration:48s]'));
   assert(!rail.includes('lg:[animation-duration:48s]'));
 });
+Deno.test('all four compact giving stories keep a visible animation loop', async () => {
+  const story = await Deno.readTextFile('src/components/landing/WhatWeDo.tsx');
+  assertEquals((story.match(/data-mobile-step=/g) ?? []).length, 1);
+  assert(story.includes('duration: 6'));
+  assert(story.includes('repeat: Infinity'));
+  assert(story.includes('data-giving-steps="compact"'));
+  assert(story.includes('data-desktop-step={index + 1}'));
+});
 Deno.test('full motion on every device regardless of the OS Reduce Motion setting', async () => {
   const hook = await Deno.readTextFile('src/hooks/useMotionPreference.tsx');
   const css = await Deno.readTextFile('src/index.css');
