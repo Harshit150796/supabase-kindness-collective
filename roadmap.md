@@ -283,3 +283,12 @@
 - [ ] Optional phone-model SSIM experiment — not attempted; identical shared model retained.
 - [ ] Separate TS-only diagnostics — not independently run; automatic preview build reported clean.
 - Report: docs/mobile-motion-verification.md. No publishing, DB changes or unique-content removal.
+
+## All animations on every phone (Oct 7)
+- [x] Full motion regardless of OS Reduce Motion (founder decision); removed CSS/Tailwind/JS reduced-motion switches.
+- [x] Late-mounting sections animate instead of snapping; time-based fling detection.
+- [x] Tree stops drawing completely while off-screen (was ~2 fps mid-page in tests, now ~59 fps).
+- [x] Tree quality step-down waits 2s and needs two slow samples.
+- [x] WebKit (iPhone) + Chromium (Android) recordings: home, iPad landscape, About, How It Works; Reduce Motion on/off; 60 tests pass.
+- [ ] Publish — founder publishes; live site still runs the older version.
+- [ ] Real-phone smoothness — hardware unavailable.

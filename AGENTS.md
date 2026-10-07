@@ -15,7 +15,9 @@
 - Shared organizer primitives own titles/numerals, surfaces, labels, stats, status, progress and states to prevent page drift; controls use sans.
 - Marketing pages alternate neutral, soft-green, and deep-forest bands; tonal panels have no borders or shadows, and hairlines are for tables.
 - No eyebrow headings, decorative pills, icon circles, gradient text, glow shadows or card-on-card.
-- Shared motion pre-triggers reveals before viewport entry and immediately completes late/flung entries; gentle mode uses opacity-only transitions to avoid blank content.
+- Shared reveals decide via `revealMode` (pre-trigger 20% below viewport, late on-screen mounts still animate, time-based fling detection) so busy frames never skip motion.
+- The 3D tree canvas uses `frameloop='never'` while off-screen or tab-hidden; demand mode kept redrawing and starved page animations on phones.
+- Motion is full on every device; the OS reduced-motion setting is not consulted (founder decision lives in memory).
 - Tree quality starts from shared desktop settings except known software renderers; committed visible-frame sampling reduces shadow/DPR costs before ambient density so screen size never selects artwork.
 - Preserve context-owned MSAA and leaf alpha-to-coverage during adaptation; changing the antialias method would remount WebGL or alter the leaf silhouette.
 - Tree model and appearance are shared across viewport sizes; camera aspect fitting and mobile label placement may vary, but lights, materials, exposure and geometry do not.
