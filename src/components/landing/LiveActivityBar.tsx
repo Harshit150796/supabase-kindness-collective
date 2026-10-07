@@ -33,7 +33,7 @@ export const LiveActivityBar = () => {
             <MotionDebug />
             <div
               data-brand-marquee
-              className="flex w-max animate-marquee lg:[animation-duration:48s] hover:[animation-play-state:paused] active:[animation-play-state:paused]"
+              className="flex w-max animate-marquee [animation-duration:48s] hover:[animation-play-state:paused] active:[animation-play-state:paused]"
               style={{ animationPlayState: gentle || paused ? 'paused' : 'running' }}
             >
               {[0, 1].map((group) => (

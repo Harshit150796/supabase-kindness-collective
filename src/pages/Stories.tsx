@@ -10,7 +10,6 @@ import { LineReveal, Reveal, ImageReveal } from '@/components/ui/editorial-motio
 import { impactStories, type ImpactStory } from '@/data/impactStories';
 import { useFundraisers } from '@/hooks/useFundraisers';
 import { useLandingStats, formatUSD } from '@/hooks/useLandingStats';
-import { useTopDonors } from '@/hooks/useTopDonors';
 import { FundraiserCard } from '@/components/stories/FundraiserCard';
 import { StartFundraiserCard } from '@/components/fundraiser/StartFundraiserCard';
 import { CompletedCampaigns } from '@/components/proof/ProofSections';
@@ -28,7 +27,6 @@ export default function Stories() {
   const [fundraiserFilters, setFundraiserFilters] = useState<FundraiserFilters>({ category: 'all', state: 'all' });
   const { data: fundraisers, isLoading, isError, refetch } = useFundraisers();
   const stats = useLandingStats();
-  const { donors, loading: donorsLoading } = useTopDonors();
   const stateMap = useZipStates(fundraisers || []);
   const filteredFundraisers = useMemo(() => (fundraisers || []).filter((item) => {
     if (fundraiserFilters.category !== 'all' && item.category !== fundraiserFilters.category) return false;
@@ -90,8 +88,7 @@ export default function Stories() {
         </section>
 
         <section className="py-24 md:py-32">
-          <div className="container mx-auto grid gap-16 px-4 lg:grid-cols-2">
-            <div><LineReveal><h2 className="font-display text-5xl font-normal text-foreground">Donors this week.</h2></LineReveal><div className="mt-8 divide-y divide-border border-y border-border">{donorsLoading ? <Skeleton className="my-6 h-20 w-full" /> : donors.length ? donors.map((donor, index) => <Reveal key={`${donor.display_name}-${index}`} className="grid grid-cols-[2rem_1fr_auto] gap-4 py-5"><span className="text-sm text-muted-foreground">0{index+1}</span><div><p className="font-medium text-foreground">{donor.display_name}</p><p className="text-sm text-muted-foreground">{donor.donations_count} completed {donor.donations_count === 1 ? 'donation' : 'donations'}</p></div><strong className="text-primary">{formatUSD(donor.total)}</strong></Reveal>) : <p className="py-8 text-muted-foreground">The weekly list will appear after completed donations are recorded.</p>}</div></div>
+          <div className="container mx-auto max-w-4xl px-4">
             <div><LineReveal><h2 className="font-display text-5xl font-normal text-foreground">Retailers donors chose.</h2></LineReveal><div className="mt-8 divide-y divide-border border-y border-border">{stats?.brands.length ? stats.brands.slice(0,5).map((brand, index) => <Reveal key={brand.name} className="grid grid-cols-[2rem_2.5rem_1fr_auto] items-center gap-3 py-5"><span className="text-sm text-muted-foreground">0{index+1}</span><img src={brandLogos[brand.name]?.logo} alt="" className="h-8 w-8 object-contain" /><span className="font-medium text-foreground">{brand.name}</span><strong className="text-primary">{formatUSD(brand.total)}</strong></Reveal>) : <p className="py-8 text-muted-foreground">Retailer totals will appear after completed donations are allocated.</p>}</div></div>
           </div>
         </section>

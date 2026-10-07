@@ -276,7 +276,13 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
     }
     if (inView) {
       progress.set(step.offset);
-      animationRef.current = animate(progress, step.offset + 0.82, { duration: instant ? 0 : 1.8, ease: [0.22, 1, 0.36, 1] });
+      // Keep each compact story visibly alive while it is near the viewport.
+      // A one-shot 1.8s run was often over before phone users looked at the row.
+      animationRef.current = animate(progress, step.offset + 1, {
+        duration: 6,
+        ease: 'linear',
+        repeat: Infinity,
+      });
     } else {
       progress.set(step.offset);
     }
@@ -285,10 +291,16 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
 
   return (
     <li ref={itemRef} data-mobile-step={index + 1} data-in-view={inView ? 'true' : 'false'} className="grid grid-cols-[76px_minmax(0,1fr)] items-center gap-4 py-5 sm:grid-cols-[100px_minmax(0,1fr)]">
-      <motion.div data-mobile-step-art initial={reduced ? { opacity: 0.7 } : { opacity: 1 }} animate={inView || reduced ? { opacity: 1 } : undefined} transition={{ duration: reduced ? 0.18 : 0.55 }} className="h-[76px] w-[76px] overflow-hidden sm:h-[100px] sm:w-[100px]">
+      <motion.div
+        data-mobile-step-art
+        initial={reduced ? { opacity: 0.7 } : { opacity: 0, scale: 0.94, y: 4 }}
+        animate={inView || reduced ? (reduced ? { opacity: 1, scale: 1, y: 0 } : { opacity: 1, scale: 1, y: [0, -3, 0] }) : undefined}
+        transition={reduced ? { duration: 0.18 } : { opacity: { duration: 0.55 }, scale: { duration: 0.55, ease: [0.16, 1, 0.3, 1] }, y: { duration: 3, ease: 'easeInOut', repeat: Infinity } }}
+        className="h-[76px] w-[76px] overflow-hidden sm:h-[100px] sm:w-[100px]"
+      >
         <Art progress={progress} still={reduced} offset={step.offset} />
       </motion.div>
-      <motion.div initial={reduced ? { opacity: 0.7 } : { opacity: 0, y: 12 }} animate={inView || reduced ? { opacity: 1, y: 0 } : undefined} transition={{ duration: instant ? 0 : reduced ? 0.18 : 0.55, delay: instant || reduced ? 0 : 0.12 }}>
+      <motion.div initial={reduced ? { opacity: 0.7 } : { opacity: 0, y: 12 }} animate={inView || reduced ? { opacity: 1, y: 0 } : undefined} transition={{ duration: reduced ? 0.18 : 0.55, delay: reduced ? 0 : 0.12 }}>
         <h3 className="font-sans text-lg font-semibold text-foreground"><span className="mr-2 text-sm tabular-nums text-primary">0{index + 1}</span>{step.title}</h3>
         <p className="mt-2 text-[15px] leading-[23px] text-muted-foreground">{step.body}</p>
       </motion.div>
@@ -372,7 +384,7 @@ export function WhatWeDo() {
         </div>
 
         <div className="relative mt-6 lg:hidden">
-          <ol className="divide-y divide-border">
+          <ol className="divide-y divide-border" data-giving-steps="compact">
             {steps.map((step, index) => (
               <MobileInViewStep key={step.title} step={step} index={index} reduced={still} onRegister={registerMobileStep} onNavigate={jumpToStep} />
             ))}
@@ -389,8 +401,8 @@ export function WhatWeDo() {
             {steps.map((step, index) => {
               const Art = step.Art;
               return (
-                <li key={step.title} className="relative pl-8 lg:pl-0">
-                  <motion.div className="mx-auto h-[130px] w-[130px] overflow-hidden sm:h-[150px] sm:w-[150px] lg:mx-0" whileHover={still ? undefined : { y: -4 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }} onMouseEnter={restartSharedClock}>
+                <li key={step.title} className="relative pl-8 lg:pl-0" data-desktop-step={index + 1}>
+                  <motion.div className="mx-auto h-[130px] w-[130px] overflow-hidden sm:h-[150px] sm:w-[150px] lg:mx-0" whileHover={still ? undefined : { y: -4 }} whileTap={still ? undefined : { scale: 0.97 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }} onMouseEnter={restartSharedClock} onFocus={restartSharedClock} onPointerDown={restartSharedClock}>
                     <Art progress={progress} still={still} offset={step.offset} />
                   </motion.div>
                   <div className="mt-4 flex items-center gap-2">

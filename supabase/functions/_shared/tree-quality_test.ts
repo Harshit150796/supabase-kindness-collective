@@ -42,10 +42,31 @@ Deno.test('reveal waits until 20% below the viewport (844px screen)', () => {
 Deno.test('content mounting already on screen still animates instead of snapping', () => {
   assertEquals(revealMode(300, 700, 844, 0), 'late');
 });
-Deno.test('only content scrolled past or a fling over 6 screens per second finishes instantly', () => {
+Deno.test('only content already scrolled past finishes instantly', () => {
   assertEquals(revealMode(-900, -100, 844, 0), 'instant');
-  assertEquals(revealMode(300, 700, 844, 7), 'instant');
+  assertEquals(revealMode(300, 700, 844, 7), 'late');
   assertEquals(revealMode(300, 700, 844, 2), 'late');
+});
+Deno.test('top donors are removed and the brand rail uses one 48-second speed', async () => {
+  const hero = await Deno.readTextFile('src/components/landing/HeroSection.tsx');
+  const stories = await Deno.readTextFile('src/pages/Stories.tsx');
+  const rail = await Deno.readTextFile('src/components/landing/LiveActivityBar.tsx');
+  const chat = await Deno.readTextFile('supabase/functions/coupon-chat/index.ts');
+  assert(!hero.includes('TopDonors'));
+  assert(!stories.includes('useTopDonors'));
+  assert(!chat.includes('getTopDonors'));
+  assert(!chat.includes('get_top_donors_week'));
+  assert(rail.includes('[animation-duration:48s]'));
+  assert(!rail.includes('lg:[animation-duration:48s]'));
+});
+Deno.test('all four compact giving stories keep a visible animation loop', async () => {
+  const story = await Deno.readTextFile('src/components/landing/WhatWeDo.tsx');
+  assertEquals((story.match(/data-mobile-step=/g) ?? []).length, 1);
+  assert(story.includes('duration: 6'));
+  assert(story.includes('repeat: Infinity'));
+  assert(story.includes('y: [0, -3, 0]'));
+  assert(story.includes('data-giving-steps="compact"'));
+  assert(story.includes('data-desktop-step={index + 1}'));
 });
 Deno.test('full motion on every device regardless of the OS Reduce Motion setting', async () => {
   const hook = await Deno.readTextFile('src/hooks/useMotionPreference.tsx');

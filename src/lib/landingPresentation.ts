@@ -12,12 +12,12 @@ export type RevealMode = 'wait' | 'animate' | 'late' | 'instant';
 /**
  * Scroll reveal decision. Pre-triggers 20% below the viewport; content already
  * on screen when it mounts still animates ("late"); only content scrolled past
- * or a genuine fling (over 6 screens per second) finishes instantly. Speed is
- * time-based so a janky frame on a busy phone is never mistaken for a fling.
+ * or content already scrolled completely past finishes instantly. Visible
+ * content always animates so browser throttling can never erase the reveal.
  */
-export function revealMode(top: number, bottom: number, viewport: number, screensPerSecond: number): RevealMode {
+export function revealMode(top: number, bottom: number, viewport: number, _screensPerSecond: number): RevealMode {
   if (top > viewport * 1.2) return 'wait';
-  if (bottom < 0 || screensPerSecond > 6) return 'instant';
+  if (bottom < 0) return 'instant';
   if (top < viewport * 0.9) return 'late';
   return 'animate';
 }
