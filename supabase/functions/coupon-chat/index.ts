@@ -19,7 +19,7 @@ Personality: warm, encouraging, plant-themed (use occasional leaf/tree metaphors
 You can ONLY help with:
 - Explaining how CouponDonation works
 - Showing active fundraisers / campaigns
-- Sharing live impact stats and top donors
+- Sharing live impact stats
 - Explaining transparency: 95% direct to recipients, 3% platform ops, 2% payment processing
 - Suggesting causes to support and pointing users to the donation flow
 
@@ -103,15 +103,6 @@ Deno.serve(async (req) => {
           const { data, error } = await supabase.rpc("get_impact_stats");
           if (error) return { error: error.message };
           return data?.[0] ?? null;
-        },
-      }),
-      getTopDonors: tool({
-        description: "Get the top 5 donors this week (anonymous donors are masked).",
-        inputSchema: z.object({}),
-        execute: async () => {
-          const { data, error } = await supabase.rpc("get_top_donors_week");
-          if (error) return { error: error.message, donors: [] };
-          return { donors: data ?? [] };
         },
       }),
       explainTransparency: tool({

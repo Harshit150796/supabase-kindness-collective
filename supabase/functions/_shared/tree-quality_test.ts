@@ -51,8 +51,11 @@ Deno.test('top donors are removed and the brand rail uses one 48-second speed', 
   const hero = await Deno.readTextFile('src/components/landing/HeroSection.tsx');
   const stories = await Deno.readTextFile('src/pages/Stories.tsx');
   const rail = await Deno.readTextFile('src/components/landing/LiveActivityBar.tsx');
+  const chat = await Deno.readTextFile('supabase/functions/coupon-chat/index.ts');
   assert(!hero.includes('TopDonors'));
   assert(!stories.includes('useTopDonors'));
+  assert(!chat.includes('getTopDonors'));
+  assert(!chat.includes('get_top_donors_week'));
   assert(rail.includes('[animation-duration:48s]'));
   assert(!rail.includes('lg:[animation-duration:48s]'));
 });

@@ -5,7 +5,7 @@
 - [x] Remove Top Donors UI and all donor-leaderboard requests; keep retailer reporting intact.
 - [x] Use the desktop 48-second retailer-rail timing universally.
 - [x] Restore visible compact giving-step loops, shared reveals, campaign entrances, and touch restarts.
-- [ ] Verify Chromium/WebKit motion, section order, stable height, overflow, runtime console, tests, and build; do not publish.
+- [x] Verify Chromium/WebKit motion, section order, stable height, overflow, runtime console, tests, and build; do not publish.
 
 ## Restore mobile animations and tree fidelity (Oct 6)
 - [ ] Remove network guessing; mount live gentle tree and respond to Save-Data changes.

@@ -301,23 +301,6 @@ function ToolResults({ toolParts }: { toolParts: any[] }) {
           );
         }
 
-        if (toolName === "getTopDonors" && Array.isArray(output.donors)) {
-          return (
-            <div key={i} className="rounded-lg border border-border bg-card p-2 space-y-1">
-              {output.donors.slice(0, 5).map((d: any, j: number) => (
-                <div key={j} className="flex items-center justify-between text-xs">
-                  <span className="text-foreground truncate">
-                    {j + 1}. {d.display_name}
-                  </span>
-                  <span className="font-semibold text-primary">
-                    ${Math.round(Number(d.total))}
-                  </span>
-                </div>
-              ))}
-            </div>
-          );
-        }
-
         if (toolName === "explainTransparency" && Array.isArray(output.breakdown)) {
           return (
             <div key={i} className="rounded-lg border border-border bg-card p-2.5 space-y-1.5">
