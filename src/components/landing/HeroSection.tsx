@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import poster from '@/assets/tree-poster.webp';
 import { HeroHeadline } from '@/components/landing/hero/HeroHeadline';
-import { TopDonorsPanel } from '@/components/landing/hero/TopDonorsPanel';
 import { AITreeLauncher } from '@/components/landing/hero/AITreeLauncher';
 const AITreeChat = lazy(() => import('@/components/landing/hero/AITreeChat').then(m => ({ default: m.AITreeChat })));
 import { Tree3DErrorBoundary } from '@/components/landing/Tree3DErrorBoundary';
@@ -40,7 +39,6 @@ export function HeroSection() {
   }, []);
 
   return (
-    <>
     <section
       className="hero-stage relative w-full h-[58svh] min-h-[330px] md:h-[74vh] [@media(max-height:500px)]:h-[calc(100svh-64px)] [@media(max-height:500px)]:min-h-[300px] [@media(max-height:500px)]:max-h-[480px] overflow-hidden"
       style={{ contain: 'layout paint' }}
@@ -60,12 +58,9 @@ export function HeroSection() {
       {/* Overlay layer — pointer-events isolated so 3D scene stays interactive */}
       <div className="absolute inset-0 pointer-events-none">
         <HeroHeadline />
-        <TopDonorsPanel />
         <AITreeLauncher onClick={() => setChatOpen(true)} hidden={chatOpen} />
         {chatOpen && <Suspense fallback={null}><AITreeChat open={chatOpen} onClose={() => setChatOpen(false)} /></Suspense>}
       </div>
     </section>
-    <TopDonorsPanel compact />
-    </>
   );
 }

@@ -9,8 +9,8 @@ type RevealProps = { children: ReactNode; className?: string; delay?: number };
 /**
  * Pre-trigger 20% below the viewport so motion plays as content arrives.
  * Content that mounts already on screen (late data, lazy chunks) still plays a
- * shorter fade-and-rise instead of snapping in. Only true flings and content
- * already scrolled past finish instantly.
+ * shorter fade-and-rise instead of snapping in. Only content already scrolled
+ * completely past finishes instantly.
  */
 export function useEarlyReveal<T extends HTMLElement>(ref: React.RefObject<T>) {
   const [visible, setVisible] = useState(false);
@@ -21,18 +21,13 @@ export function useEarlyReveal<T extends HTMLElement>(ref: React.RefObject<T>) {
     if (!node) return;
     let done = false;
     let frame = 0;
-    let lastY = window.scrollY;
-    let lastT = performance.now();
     const check = () => {
       frame = 0;
       if (done) return;
       const rect = node.getBoundingClientRect();
       const height = window.innerHeight;
-      const now = performance.now();
-      const speed = Math.abs(window.scrollY - lastY) / height / Math.max((now - lastT) / 1000, 0.016);
-      lastY = window.scrollY; lastT = now;
       if (rect.width === 0 && rect.height === 0) return; // hidden (display:none) variants
-      const mode = revealMode(rect.top, rect.bottom, height, speed);
+      const mode = revealMode(rect.top, rect.bottom, height, 0);
       if (mode === 'wait') return;
       done = true;
       node.dataset.revealMode = mode;
