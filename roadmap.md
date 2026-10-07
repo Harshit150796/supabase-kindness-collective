@@ -1,5 +1,11 @@
 # Roadmap
 
+## Restore complete homepage motion and tighten the 95¢ transition (Oct 7)
+- [x] Remove the unrequested retailer-logo pause control while retaining the universal 48-second loop.
+- [x] Restore the animated 95¢ ring, allocation bars, staggered labels, and donation-to-use journey.
+- [x] Match the 95¢ lazy reservation to its animated content and pull the following statement upward.
+- [ ] Verify every homepage motion path, responsive spacing, stable scroll height, tests, and build; do not publish.
+
 ## Restore every approved animation and remove Top Donors (Oct 7)
 - [x] Audit homepage and prior motion work across shared, lazy, CSS, chart, and 3D paths.
 - [x] Remove Top Donors UI and all donor-leaderboard requests; keep retailer reporting intact.
@@ -284,7 +290,7 @@
 - [x] Measured visible-frame fallback: shadows then DPR, before last-resort ambient reductions; preserve GLB canopy.
 - [ ] Antialias-method downgrade — deliberately retained context MSAA/leaf coverage; switching risks context reset or altered edges.
 - [x] Early visible shared reveals, gentle opacity fades, compact story animations/caption stagger, phone headline rotation and touch feedback.
-- [x] Visible marquee pause control and active tree settings in motiondebug.
+- [x] Active tree settings in motiondebug; the later unrequested marquee pause control was removed.
 - [x] Browser simulations, gentle camera evidence, 390/1024 stepped recordings: no height decreases/hidden reveals/overflow; 58 tests passed; automatic build clean.
 - [ ] Real capable iPhone/Android frame-rate/final-settings proof and frozen-time visual-equivalence comparison — hardware unavailable.
 - [ ] Optional phone-model SSIM experiment — not attempted; identical shared model retained.
@@ -299,3 +305,11 @@
 - [x] WebKit (iPhone) + Chromium (Android) recordings: home, iPad landscape, About, How It Works; Reduce Motion on/off; 60 tests pass.
 - [ ] Publish — founder publishes; live site still runs the older version.
 - [ ] Real-phone smoothness — hardware unavailable.
+
+## Restore complete homepage motion and tighten the 95¢ transition (Oct 7)
+- [x] Remove the unrequested retailer-logo pause control while retaining the universal 48-second loop.
+- [x] Restore the animated 95¢ ring, allocation bars, staggered labels, and donation-to-use journey.
+- [x] Match the 95¢ lazy reservation to its animated content and pull the following statement upward.
+- [x] Restore automatic four-step desktop motion, section entrances, donation form/footer reveals, and currency count-ups.
+- [x] Verify mobile and desktop motion with OS Reduce Motion enabled: all four giving illustrations move, page height stays stable, no runtime errors; 24 tests, TypeScript, diff, and automatic build clean.
+- [ ] Physical-device and published-site behavior — not verified; no publishing performed.

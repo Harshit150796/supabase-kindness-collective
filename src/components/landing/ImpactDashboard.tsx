@@ -17,7 +17,7 @@ export function ImpactDashboard() {
       <LineReveal><h2 id="impact-figures-heading" className="font-display text-4xl md:text-6xl">The numbers, as they are.</h2></LineReveal>
       <Reveal><p className="mt-5 max-w-3xl text-muted-foreground">One platform snapshot, different stages of giving. Donations, allocations and issued value are not interchangeable totals.</p></Reveal>
       {stats ? <><div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">{items.map(item => <Reveal key={item.label} className="rounded-2xl bg-background p-4 sm:p-6">
-        <div className="font-display text-4xl tabular-nums sm:text-5xl">{item.currency ? formatUSD(item.value) : <CountUp value={item.value}/>}</div>
+        <div className="font-display text-4xl tabular-nums sm:text-5xl"><CountUp value={item.value} formatter={item.currency ? formatUSD : undefined}/></div>
         <p className="mt-3 text-sm font-semibold">{item.label}</p><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{item.definition}</p>
       </Reveal>)}</div><p className="mt-5 text-sm text-muted-foreground">{plural(stats.donations_count,'completed donation')}; {plural(stats.coupons_pending,'coupon')} still being prepared. This calendar month: {formatUSD(stats.issued_value_month)} issued; {plural(stats.used_month,'coupon')} marked used. All-time retailer allocations: {formatUSD(stats.allocated_total)}.</p></> : <ReservedSectionState title="Waiting for the platform snapshot." description="Figures appear only when the latest totals are available. Refresh to try again, or browse the stories in the meantime." onRetry={() => window.location.reload()} />}
       {stats && <Suspense fallback={<div className="min-h-[320px]"/>}><BrandLeaderboard /></Suspense>}

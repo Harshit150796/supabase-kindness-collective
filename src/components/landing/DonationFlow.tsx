@@ -356,7 +356,7 @@ export function DonationFlow() {
         </div>
 
         {/* Interactive Flow */}
-        <Card className="mx-auto max-w-3xl rounded-[1.5rem] border-0 p-6 shadow-card-hover md:p-10">
+        <Reveal className="mx-auto max-w-3xl"><Card className="rounded-[1.5rem] border-0 p-6 shadow-card-hover md:p-10">
           {/* Step 1: Choose Brands (Multi-Select) */}
           {step === 1 && (
             <div className="space-y-6 animate-fade-in">
@@ -881,7 +881,7 @@ export function DonationFlow() {
               )}
             </div>
           )}
-        </Card>
+        </Card></Reveal>
       </div>
     </section>
   );

@@ -58,6 +58,28 @@ Deno.test('top donors are removed and the brand rail uses one 48-second speed', 
   assert(!chat.includes('get_top_donors_week'));
   assert(rail.includes('[animation-duration:48s]'));
   assert(!rail.includes('lg:[animation-duration:48s]'));
+  assert(!rail.includes('Pause brand animation'));
+  assert(!rail.includes('Resume brand animation'));
+});
+Deno.test('the transparency section keeps its ring, allocation bars and journey motion', async () => {
+  const transparency = await Deno.readTextFile('src/components/landing/TrustTransparency.tsx');
+  assert(transparency.includes('data-allocation-ring'));
+  assert(transparency.includes('<MotionBar value={percent}'));
+  assert(transparency.includes('data-journey-line'));
+  assert(transparency.includes('duration: 1.6'));
+});
+Deno.test('homepage sections retain their approved motion entry points', async () => {
+  const story = await Deno.readTextFile('src/components/landing/WhatWeDo.tsx');
+  const security = await Deno.readTextFile('src/components/landing/SecurityBadges.tsx');
+  const impact = await Deno.readTextFile('src/components/landing/ImpactDashboard.tsx');
+  const donation = await Deno.readTextFile('src/components/landing/DonationFlow.tsx');
+  const footer = await Deno.readTextFile('src/components/layout/Footer.tsx');
+  assert(story.includes('<LineReveal><h2'));
+  assert(story.includes('startIdleMotion();'));
+  assert(security.includes('initial={{opacity:0,scale:.92,rotate:-4}}'));
+  assert(impact.includes('formatter={item.currency ? formatUSD : undefined}'));
+  assert(donation.includes('<Reveal className="mx-auto max-w-3xl"><Card'));
+  assert(footer.includes('<Reveal className="grid grid-cols-2'));
 });
 Deno.test('all four compact giving stories keep a visible animation loop', async () => {
   const story = await Deno.readTextFile('src/components/landing/WhatWeDo.tsx');

@@ -2,13 +2,14 @@ import { NEEDS } from '@/data/needs';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { SectionLabel } from '@/components/ui/organizer';
+import { Reveal } from '@/components/ui/editorial-motion';
 import logo from '@/assets/logo.png';
 
 const linkClass = 'inline-flex min-h-11 items-center py-2.5 transition-colors hover:text-primary-foreground';
 export function Footer() {
   return <footer className="footer-surface text-primary-foreground">
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 md:pb-24 md:pt-14 sm:px-6 lg:px-8 lg:pt-16">
-      <div className="grid grid-cols-2 gap-x-6 gap-y-6 md:grid-cols-12 md:gap-x-8 md:gap-y-10">
+      <Reveal className="grid grid-cols-2 gap-x-6 gap-y-6 md:grid-cols-12 md:gap-x-8 md:gap-y-10">
         <div className="col-span-2 space-y-4 md:col-span-12 lg:col-span-4">
           <div data-footer-lockup className="footer-lockup flex w-fit max-w-full items-center gap-2.5 whitespace-nowrap rounded-xl px-4 py-3">
             <img src={logo} alt="" className="h-10 w-10 shrink-0 object-contain" />
@@ -41,11 +42,11 @@ export function Footer() {
             <li className="flex min-h-11 items-center gap-2"><MapPin className="h-4 w-4 shrink-0" /><span>United States</span></li>
           </ul>
         </div>
-      </div>
-      <div className="mt-6 md:mt-12 flex flex-col justify-between gap-2 md:gap-5 border-t border-primary-foreground/20 pt-4 md:pt-6 text-[13px] leading-5 text-primary-foreground/70 md:flex-row">
+      </Reveal>
+      <Reveal className="mt-6 md:mt-12 flex flex-col justify-between gap-2 md:gap-5 border-t border-primary-foreground/20 pt-4 md:pt-6 text-[13px] leading-5 text-primary-foreground/70 md:flex-row">
         <p>© {new Date().getFullYear()} CouponDonation. All rights reserved.</p>
         <div className="flex flex-wrap gap-x-6"><Link to="/privacy" className={linkClass}>Privacy policy</Link><Link to="/cookies" className={linkClass}>Cookie policy</Link><Link to="/terms" className={linkClass}>Terms of service</Link></div>
-      </div>
+      </Reveal>
     </div>
   </footer>;
 }
