@@ -61,6 +61,7 @@ Deno.test('all four compact giving stories keep a visible animation loop', async
   assertEquals((story.match(/data-mobile-step=/g) ?? []).length, 1);
   assert(story.includes('duration: 6'));
   assert(story.includes('repeat: Infinity'));
+  assert(story.includes('y: [0, -3, 0]'));
   assert(story.includes('data-giving-steps="compact"'));
   assert(story.includes('data-desktop-step={index + 1}'));
 });

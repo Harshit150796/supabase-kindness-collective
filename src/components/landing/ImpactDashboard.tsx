@@ -15,7 +15,7 @@ export function ImpactDashboard() {
   return <section className="flex min-h-[var(--lazy-reserved-height,0px)] flex-col bg-primary/5 py-14 lg:py-28" aria-labelledby="impact-figures-heading">
     <div className="container mx-auto flex flex-1 flex-col max-w-6xl px-4">
       <LineReveal><h2 id="impact-figures-heading" className="font-display text-4xl md:text-6xl">The numbers, as they are.</h2></LineReveal>
-      <p className="mt-5 max-w-3xl text-muted-foreground">One platform snapshot, different stages of giving. Donations, allocations and issued value are not interchangeable totals.</p>
+      <Reveal><p className="mt-5 max-w-3xl text-muted-foreground">One platform snapshot, different stages of giving. Donations, allocations and issued value are not interchangeable totals.</p></Reveal>
       {stats ? <><div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">{items.map(item => <Reveal key={item.label} className="rounded-2xl bg-background p-4 sm:p-6">
         <div className="font-display text-4xl tabular-nums sm:text-5xl">{item.currency ? formatUSD(item.value) : <CountUp value={item.value}/>}</div>
         <p className="mt-3 text-sm font-semibold">{item.label}</p><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{item.definition}</p>

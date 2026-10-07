@@ -291,7 +291,13 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
 
   return (
     <li ref={itemRef} data-mobile-step={index + 1} data-in-view={inView ? 'true' : 'false'} className="grid grid-cols-[76px_minmax(0,1fr)] items-center gap-4 py-5 sm:grid-cols-[100px_minmax(0,1fr)]">
-      <motion.div data-mobile-step-art initial={reduced ? { opacity: 0.7 } : { opacity: 0, scale: 0.94 }} animate={inView || reduced ? { opacity: 1, scale: 1 } : undefined} transition={{ duration: reduced ? 0.18 : 0.55, ease: [0.16, 1, 0.3, 1] }} className="h-[76px] w-[76px] overflow-hidden sm:h-[100px] sm:w-[100px]">
+      <motion.div
+        data-mobile-step-art
+        initial={reduced ? { opacity: 0.7 } : { opacity: 0, scale: 0.94, y: 4 }}
+        animate={inView || reduced ? (reduced ? { opacity: 1, scale: 1, y: 0 } : { opacity: 1, scale: 1, y: [0, -3, 0] }) : undefined}
+        transition={reduced ? { duration: 0.18 } : { opacity: { duration: 0.55 }, scale: { duration: 0.55, ease: [0.16, 1, 0.3, 1] }, y: { duration: 3, ease: 'easeInOut', repeat: Infinity } }}
+        className="h-[76px] w-[76px] overflow-hidden sm:h-[100px] sm:w-[100px]"
+      >
         <Art progress={progress} still={reduced} offset={step.offset} />
       </motion.div>
       <motion.div initial={reduced ? { opacity: 0.7 } : { opacity: 0, y: 12 }} animate={inView || reduced ? { opacity: 1, y: 0 } : undefined} transition={{ duration: reduced ? 0.18 : 0.55, delay: reduced ? 0 : 0.12 }}>
