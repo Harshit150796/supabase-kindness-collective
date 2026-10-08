@@ -610,7 +610,7 @@ function readForcedTier(): DeviceTier | undefined {
   }
 }
 
-export function Tree3DScene() {
+export function Tree3DScene({ onReady }: { onReady?: () => void }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   // 0 = zoomed in, 1 = zoomed out. Start mostly out so one wheel gesture finishes it.
@@ -722,6 +722,7 @@ export function Tree3DScene() {
             antialias={antialias}
             isMobile={isMobile}
             onSlow={forced ? () => undefined : requestDowngrade}
+            onReady={onReady}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#FFF2D8] to-[#D8E0CC]" />
@@ -744,13 +745,17 @@ interface InnerProps {
   antialias: boolean;
   isMobile: boolean;
   onSlow: () => void;
+  onReady?: () => void;
 }
 
-function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, settings, antialias, isMobile, onSlow }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, settings, antialias, isMobile, onSlow, onReady }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const gentle = useMotionPreference() === 'gentle';
   const [ready, setReady] = useState(false);
-  const sceneReady = useCallback(() => setReady(true), []);
+  const sceneReady = useCallback(() => {
+    setReady(true);
+    onReady?.();
+  }, [onReady]);
   const lastClickRef = useRef(0);
   // Fixed at first render so the WebGL context is never recreated.
   const initialShadows = useRef(settings.shadows).current;

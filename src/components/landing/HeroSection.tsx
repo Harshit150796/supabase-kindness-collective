@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import poster from '@/assets/tree-poster.webp';
+import desktopPoster from '@/assets/tree-poster-desktop.webp';
+import mobilePoster from '@/assets/tree-poster-mobile.webp';
 import { HeroHeadline } from '@/components/landing/hero/HeroHeadline';
 import { AITreeLauncher } from '@/components/landing/hero/AITreeLauncher';
 const AITreeChat = lazy(() => import('@/components/landing/hero/AITreeChat').then(m => ({ default: m.AITreeChat })));
@@ -27,6 +28,7 @@ function canRender3D(): boolean {
 
 export function HeroSection() {
   const [chatOpen, setChatOpen] = useState(false);
+  const [treeReady, setTreeReady] = useState(false);
   // Poster-first for everyone. Only an explicit data-saving choice keeps it static.
   const [can3D, setCan3D] = useState(false);
   useEffect(() => {
@@ -45,11 +47,23 @@ export function HeroSection() {
     >
       {/* Stacked layers — no DOM swap, no CLS. The gradient always paints first;
           the canvas wrapper sits on top immediately once WebGL capability is known. */}
-      <img data-tree-poster src={poster} alt="The CouponDonation tree, growing familiar retailer logos" className="absolute inset-0 h-full w-full object-cover" fetchPriority="high" />
+      <picture
+        data-tree-poster
+        className={`absolute inset-0 transition-opacity duration-500 ${treeReady ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
+      >
+        <source media="(max-width: 767px)" srcSet={mobilePoster} />
+        <img
+          src={desktopPoster}
+          alt="The CouponDonation tree, growing familiar retailer logos"
+          className="h-full w-full object-cover"
+          fetchPriority="high"
+          decoding="async"
+        />
+      </picture>
       <div className="absolute inset-0 w-full h-full">
         {can3D && (
           <Tree3DErrorBoundary>
-            <Suspense fallback={null}><Tree3DScene /></Suspense>
+            <Suspense fallback={null}><Tree3DScene onReady={() => setTreeReady(true)} /></Suspense>
           </Tree3DErrorBoundary>
         )}
       </div>

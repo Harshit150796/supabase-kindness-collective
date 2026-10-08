@@ -329,5 +329,5 @@
 - [x] Remove five hidden rear logo fruits and limit startup decoding to the 13 visible opening brands.
 - [x] Preload replacement brands only when selected; lazy-decode the duplicate retailer rail and lazy-load completed campaigns.
 - [ ] Replace the baked canopy only if a visual comparison proves the reduced model indistinguishable.
-- [ ] Capture matched phone/desktop posters after the optimized live tree is visually approved.
+- [x] Capture matched phone/desktop posters from the approved tree and crossfade only after the canvas commits.
 - [ ] Physical-device and published-site performance — not verified; no publishing performed.
