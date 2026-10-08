@@ -337,5 +337,8 @@
 
 ## Poster/live-tree handoff (Oct 8)
 - [x] Parallel 18-logo startup, drawn-frame reveal with safety timeout, controls listener timing, bounded sky/light/fog easing.
-- [ ] Recapture daytime panorama and sharp phone posters; measure all requested overlays and cold 4G timing.
-- [ ] Verify decoder requests, mobile engines, scroll stability and tests. No publishing.
+- [x] Recapture daytime panorama and 2x phone posters; measure nine overlays and cold 4G timing (no speed improvement established).
+- [x] Verify local decoder, both phone engines, 70 tests, fallback failure and orbit hook; desktop sampled overlays pass. No publishing.
+- [ ] Physical-phone/production timing — hardware and unpublished bundled version unavailable.
+- [ ] WebKit monotonic height — one observed decrease; repeat timed out, cause unisolated.
+- [ ] All-18 individual logo offsets / literal first GPU frame — not instrumented; four sampled desktop marks measured.
