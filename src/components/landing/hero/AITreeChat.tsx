@@ -26,7 +26,6 @@ const SUPABASE_URL =
 const SUGGESTIONS = [
   "Show me active campaigns",
   "Where does my money go?",
-  "Top donors this week",
   "How does CouponDonation work?",
 ];
 

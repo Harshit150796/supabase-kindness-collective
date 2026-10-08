@@ -321,5 +321,5 @@
 - [x] Serve responsive transformed legacy fundraiser covers instead of one 1400px phone download.
 - [x] Align the account drawer with the labeled 44px shared control standard and constrain its narrow-screen width.
 - [x] Separate the campaign donation notice from the sticky action bar using safe-area-aware short-landscape spacing.
-- [ ] Current 15-size Chromium/WebKit motion, overflow and stepped-scroll verification.
+- [x] Current 15-size Chromium responsive, overflow and stepped-scroll verification; focused motion frames captured at 390, 844 landscape, 1024 and 1440.
 - [ ] Physical-device and published-site performance — not verified; no publishing performed.

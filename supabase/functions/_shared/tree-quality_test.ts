@@ -68,6 +68,7 @@ Deno.test('device-safe interfaces retain dynamic viewport and touch equivalents'
   const dashboard = await Deno.readTextFile('src/components/layout/DashboardLayout.tsx');
   const story = await Deno.readTextFile('src/components/landing/WhatWeDo.tsx');
   assert(chat.includes('100dvh'));
+  assert(!chat.toLowerCase().includes('top donors'));
   assert(gallery.includes('srcSet='));
   assert(gallery.includes('sizes='));
   assert(dashboard.includes("aria-label={sidebarOpen ? 'Close account navigation' : 'Open account navigation'}"));
