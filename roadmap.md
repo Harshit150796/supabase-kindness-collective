@@ -334,3 +334,8 @@
 
 - [x] Restore 18-fruit tree layout (296764a7), staged rear-logo decode, recaptured posters
 - [x] Self-host Draco decoder at /draco/ (no gstatic)
+
+## Poster/live-tree handoff (Oct 8)
+- [x] Parallel 18-logo startup, drawn-frame reveal with safety timeout, controls listener timing, bounded sky/light/fog easing.
+- [ ] Recapture daytime panorama and sharp phone posters; measure all requested overlays and cold 4G timing.
+- [ ] Verify decoder requests, mobile engines, scroll stability and tests. No publishing.

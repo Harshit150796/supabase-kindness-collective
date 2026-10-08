@@ -59,7 +59,7 @@ export function Sky({ gentle = false }: { gentle?: boolean } = {}) {
     targets.top.set(p.top);
     targets.mid.set(p.mid);
     targets.bot.set(p.bot);
-    const k = Math.min(1, dt * 1.5);
+    const k = Math.min(dt * 1.5, 0.05);
     (mat.uniforms.topColor.value as THREE.Color).lerp(targets.top, k);
     (mat.uniforms.midColor.value as THREE.Color).lerp(targets.mid, k);
     (mat.uniforms.bottomColor.value as THREE.Color).lerp(targets.bot, k);

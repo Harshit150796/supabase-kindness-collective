@@ -6,7 +6,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 // Postprocessing intentionally not imported — bloom/vignette disabled, keeps mobile bundle smaller.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { Tree, getBranchTips, isRearBranchSlot } from './tree3d/Tree';
+import { Tree, getBranchTips } from './tree3d/Tree';
 import { CouponFruit, type CouponState } from './tree3d/CouponFruit';
 import { Ground } from './tree3d/Ground';
 import { Sky } from './tree3d/Sky';
@@ -24,6 +24,18 @@ import { PlantsLayer } from './tree3d/PlantsLayer';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { shouldReduceQuality } from '@/lib/treeQuality';
 import { useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
+
+// Start all opening SVG decodes alongside the model/Draco preload at module evaluation.
+const OPENING_LOGOS = [
+  'walmart', 'cvs', 'target', 'dominos', 'aldi',
+  'starbucks', 'mcdonalds', 'instacart', 'amazon', 'home-depot', 'uber', 'publix',
+  'doordash', 'walgreens', 'taco-bell', 'whole-foods', 'costco', 'lyft',
+];
+const OPENING_FRUITS = OPENING_LOGOS.flatMap(logo => {
+  const fruit = COUPON_FRUITS.find(fruit => fruit.logo === logo);
+  return fruit ? [fruit] : [];
+});
+const openingLogoPreload = preloadCouponLogos(OPENING_FRUITS);
 
 const GROUND_Y = -0.01;
 const DEFAULT_CAM = new THREE.Vector3(0, 4.0, 13);
@@ -73,7 +85,7 @@ function CameraRig({
   zoomProgressRef: React.MutableRefObject<number>;
   isMobile: boolean;
 }) {
-  const { camera, mouse, size, gl } = useThree();
+  const { camera, mouse, size, gl, controls } = useThree();
   const gentle = useMotionPreference() === 'gentle';
   const { parallaxBoostRef } = useInteraction();
   const lastInteractionRef = useRef(performance.now() / 1000);
@@ -99,26 +111,33 @@ function CameraRig({
     }
   }, [baseDist, zoomProgressRef, gentle, camera, controlsRef]);
 
-  // Track interactions on the controls
+  // Drei creates the controls after its first render. Wait for the actual ref,
+  // rather than treating the still-null first effect as a completed attachment.
   useEffect(() => {
-    const c = controlsRef.current;
-    if (!c) return;
-    const onStart = () => {
-      lastInteractionRef.current = performance.now() / 1000;
-      resetAnim.current = null;
+    let frame = 0;
+    let detach: (() => void) | undefined;
+    const attach = () => {
+      const c = controlsRef.current;
+      if (!c) { frame = requestAnimationFrame(attach); return; }
+      const onStart = () => {
+        lastInteractionRef.current = performance.now() / 1000;
+        resetAnim.current = null;
+      };
+      const onChange = () => {
+        lastInteractionRef.current = performance.now() / 1000;
+        gl.domElement.dataset.treeAzimuth = c.getAzimuthalAngle().toFixed(4);
+      };
+      gl.domElement.dataset.treeAzimuth = c.getAzimuthalAngle().toFixed(4);
+      c.addEventListener('start', onStart);
+      c.addEventListener('change', onChange);
+      detach = () => {
+        c.removeEventListener('start', onStart);
+        c.removeEventListener('change', onChange);
+      };
     };
-    const onChange = () => {
-      lastInteractionRef.current = performance.now() / 1000;
-      const canvas = c.domElement;
-      canvas.dataset.treeAzimuth = c.getAzimuthalAngle().toFixed(4);
-    };
-    c.addEventListener('start', onStart);
-    c.addEventListener('change', onChange);
-    return () => {
-      c.removeEventListener('start', onStart);
-      c.removeEventListener('change', onChange);
-    };
-  }, [controlsRef]);
+    attach();
+    return () => { cancelAnimationFrame(frame); detach?.(); };
+  }, [controlsRef, controls, gl]);
 
   // Expose reset on double-click via window event
   useEffect(() => {
@@ -218,7 +237,7 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = fals
   useFrame((_, dt) => {
     const t = targets[timeOfDay];
     const tc = targetColors[timeOfDay];
-    const k = Math.min(1, dt * 1.5);
+    const k = Math.min(dt * 1.5, 0.05);
     if (dirRef.current) {
       dirColor.lerp(tc.dir, k);
       dirRef.current.color.copy(dirColor);
@@ -313,7 +332,7 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
   useEffect(() => {
     if (gentle) setStates(previous => previous.map(() => ({ phase: 'hanging' })));
   }, [gentle]);
-  useEffect(() => { const frame = requestAnimationFrame(onReady); return () => cancelAnimationFrame(frame); }, [onReady]);
+
   const { plantCap } = settings;
   const visibleFruitCount = Math.min(18, COUPON_FRUITS.length);
   // Open with 18 distinct, instantly recognizable brands — no two marks from the
@@ -322,12 +341,7 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
   const initialBrandIndices = useMemo(() => {
     // Opening-facing slots lead with distinct red, blue, green, and orange
     // silhouettes. Wider marks stay separated while rear slots retain depth.
-    const openingLogos = [
-      'walmart', 'cvs', 'target', 'dominos', 'aldi',
-      'starbucks', 'mcdonalds', 'instacart', 'amazon', 'home-depot', 'uber', 'publix',
-      'doordash', 'walgreens', 'taco-bell', 'whole-foods', 'costco', 'lyft',
-    ];
-    return openingLogos
+    return OPENING_LOGOS
       .map((logo) => COUPON_FRUITS.findIndex((fruit) => fruit.logo === logo))
       .filter((index) => index >= 0)
       .slice(0, visibleFruitCount);
@@ -337,40 +351,43 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
   const branchTips = useMemo(() => {
     return getBranchTips(visibleFruitCount);
   }, [visibleFruitCount]);
-  // Front-facing slots decode first; rear-slot logos decode right after the
-  // first ready frame and mount in place (hanging state, no grow-in).
-  const [rearReady, setRearReady] = useState(false);
   const [logosReady, setLogosReady] = useState(false);
+  const { gl } = useThree();
+  const revealRef = useRef({ frames: 0, revealed: false });
+  const reveal = useCallback((reason: 'logos' | 'safety') => {
+    if (revealRef.current.revealed) return;
+    revealRef.current.revealed = true;
+    gl.domElement.dataset.treeRevealReason = reason;
+    gl.domElement.dataset.treeRevealMs = performance.now().toFixed(1);
+    onReady();
+  }, [gl, onReady]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => reveal('safety'), 3000);
+    return () => window.clearTimeout(timer);
+  }, [reveal]);
   useEffect(() => {
     let active = true;
-    const openingFruits = initialBrandIndices
-      .filter((_, slot) => !isRearBranchSlot(slot))
-      .map((index) => COUPON_FRUITS[index]).filter(Boolean);
-    const rearFruits = initialBrandIndices
-      .filter((_, slot) => isRearBranchSlot(slot))
-      .map((index) => COUPON_FRUITS[index]).filter(Boolean);
-    preloadCouponLogos(openingFruits).then((diagnostics) => {
+    openingLogoPreload.then((diagnostics) => {
       if (!active) return;
-      const canvas = document.querySelector<HTMLCanvasElement>('canvas');
-      if (canvas) {
-        canvas.dataset.treeLogosReady = 'true';
-        canvas.dataset.treeLogoFailures = diagnostics.failed.join('|');
-        canvas.dataset.treeLogoInvalid = diagnostics.invalid.join('|');
-        canvas.dataset.treeSlotsFinite = String(
-          branchTips.every(({ tip, faceOffset }) =>
-            [tip.x, tip.y, tip.z, faceOffset].every(Number.isFinite),
-          ),
-        );
-      }
+      const canvas = gl.domElement;
+      canvas.dataset.treeLogoFailures = diagnostics.failed.join('|');
+      canvas.dataset.treeLogoInvalid = diagnostics.invalid.join('|');
+      canvas.dataset.treeSlotsFinite = String(branchTips.every(({ tip, faceOffset }) =>
+        [tip.x, tip.y, tip.z, faceOffset].every(Number.isFinite)));
       setLogosReady(true);
-      requestAnimationFrame(() => {
-        preloadCouponLogos(rearFruits).then(() => { if (active) setRearReady(true); });
-      });
     });
-    return () => {
-      active = false;
-    };
-  }, [branchTips, initialBrandIndices]);
+    return () => { active = false; };
+  }, [branchTips, gl]);
+  // useFrame runs before rendering. The second committed frame proves the first
+  // full 18-fruit frame has already been drawn/uploaded before revealing it.
+  useFrame(() => {
+    if (!logosReady) return;
+    revealRef.current.frames++;
+    if (revealRef.current.frames < 2) return;
+    gl.domElement.dataset.treeLogosReady = 'true';
+    gl.domElement.dataset.treeDrawnLogos = String(OPENING_FRUITS.length);
+    reveal('logos');
+  });
   const [brandIndices, setBrandIndices] = useState(() => initialBrandIndices);
   const replacementQueueRef = useRef(
     COUPON_FRUITS.map((_, index) => index).filter((index) => !initialBrandIndices.includes(index)),
@@ -569,7 +586,7 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
       <PlantsLayer cap={plantCap} />
 
 
-      {logosReady && brandIndices.map((brandIndex, i) => (rearReady || !isRearBranchSlot(i)) && (
+      {logosReady && brandIndices.map((brandIndex, i) => (
         <CouponFruit
           key={i}
           index={i}
