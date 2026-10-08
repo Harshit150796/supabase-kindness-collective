@@ -4,12 +4,12 @@ import { HeroSection } from '@/components/landing/HeroSection';
 import { WhatWeDo } from '@/components/landing/WhatWeDo';
 import { SEO } from '@/components/SEO';
 import { LazyOnView } from '@/components/LazyOnView';
-import { CompletedCampaigns } from '@/components/proof/ProofSections';
 import { WordReveal } from '@/components/ui/editorial-motion';
 
 // Below-the-fold sections — lazy chunks, only fetched as user scrolls.
 import { LiveActivityBar } from '@/components/landing/LiveActivityBar';
 const ImpactStories = lazy(() => import('@/components/landing/ImpactStories').then(m => ({ default: m.ImpactStories })));
+const CompletedCampaigns = lazy(() => import('@/components/proof/ProofSections').then(m => ({ default: m.CompletedCampaigns })));
 const TrustTransparency = lazy(() => import('@/components/landing/TrustTransparency').then(m => ({ default: m.TrustTransparency })));
 const DonationFlow = lazy(() => import('@/components/landing/DonationFlow').then(m => ({ default: m.DonationFlow })));
 const SecurityBadges = lazy(() => import('@/components/landing/SecurityBadges').then(m => ({ default: m.SecurityBadges })));

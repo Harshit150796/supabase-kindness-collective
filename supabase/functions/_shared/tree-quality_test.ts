@@ -61,6 +61,17 @@ Deno.test('top donors are removed and the brand rail uses one 48-second speed', 
   assert(!rail.includes('animation-play-state:paused'));
   assert(!rail.includes('Pause brand animation'));
   assert(!rail.includes('Resume brand animation'));
+  assert(rail.includes("loading={group === 0 ? 'eager' : 'lazy'}"));
+});
+Deno.test('tree startup mounts front fruit only and preloads replacement logos on demand', async () => {
+  const scene = await Deno.readTextFile('src/components/landing/Tree3DScene.tsx');
+  const tree = await Deno.readTextFile('src/components/landing/tree3d/Tree.tsx');
+  const coupons = await Deno.readTextFile('src/components/landing/tree3d/couponDesign.ts');
+  assert(scene.includes('getFrontBranchTips()'));
+  assert(scene.includes('preloadCouponLogos(openingFruits)'));
+  assert(scene.includes('preloadCouponLogos([COUPON_FRUITS[chosen]])'));
+  assert(tree.includes('band.frontCount'));
+  assert(!coupons.includes("COUPON_FRUITS.forEach((f) => loadLogo(f.logo))"));
 });
 Deno.test('device-safe interfaces retain dynamic viewport and touch equivalents', async () => {
   const chat = await Deno.readTextFile('src/components/landing/hero/AITreeChat.tsx');

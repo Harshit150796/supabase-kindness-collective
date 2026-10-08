@@ -45,3 +45,12 @@ Deno.test('tree model stays under its compressed budget', async () => {
   const { size } = await Deno.stat('public/models/tree.glb');
   assert(size < 1_300_000, `tree.glb is ${size} bytes`);
 });
+
+Deno.test('responsive poster matches the live tree and yields only after canvas readiness', async () => {
+  const hero = await Deno.readTextFile('src/components/landing/HeroSection.tsx');
+  assert(hero.includes("tree-poster-desktop.webp"));
+  assert(hero.includes("tree-poster-mobile.webp"));
+  assert(hero.includes('<source media="(max-width: 767px)"'));
+  assert(hero.includes("treeReady ? 'pointer-events-none opacity-0' : 'opacity-100'"));
+  assert(hero.includes('<Tree3DScene onReady={() => setTreeReady(true)} />'));
+});

@@ -277,8 +277,8 @@ export interface CouponLogoDiagnostics {
  * proportions or received its brand-specific fallback proportions. The tree
  * can render immediately, while fruit meshes wait for this one shared gate.
  */
-export async function preloadCouponLogos(): Promise<CouponLogoDiagnostics> {
-  const entries = COUPON_FRUITS.map((fruit) => ({ fruit, entry: loadLogo(fruit.logo) }));
+export async function preloadCouponLogos(fruits: readonly CouponData[] = COUPON_FRUITS): Promise<CouponLogoDiagnostics> {
+  const entries = fruits.map((fruit) => ({ fruit, entry: loadLogo(fruit.logo) }));
   await Promise.all(entries.map(({ entry }) => entry.settled));
 
   const ready: string[] = [];
@@ -301,6 +301,3 @@ export async function preloadCouponLogos(): Promise<CouponLogoDiagnostics> {
   });
   return { ready, failed, invalid };
 }
-
-// Preload + decode the complete local brand set once at module initialisation.
-if (typeof window !== 'undefined') COUPON_FRUITS.forEach((f) => loadLogo(f.logo));

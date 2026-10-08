@@ -6,7 +6,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 // Postprocessing intentionally not imported — bloom/vignette disabled, keeps mobile bundle smaller.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { Tree, getBranchTips } from './tree3d/Tree';
+import { Tree, getFrontBranchTips } from './tree3d/Tree';
 import { CouponFruit, type CouponState } from './tree3d/CouponFruit';
 import { Ground } from './tree3d/Ground';
 import { Sky } from './tree3d/Sky';
@@ -314,9 +314,12 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
     if (gentle) setStates(previous => previous.map(() => ({ phase: 'hanging' })));
   }, [gentle]);
   useEffect(() => { const frame = requestAnimationFrame(onReady); return () => cancelAnimationFrame(frame); }, [onReady]);
-  const { leafCount, plantCap } = settings;
-  const visibleFruitCount = Math.min(18, COUPON_FRUITS.length);
-  // Open with 18 distinct, instantly recognizable brands — no two marks from the
+  const { plantCap } = settings;
+  // Thirteen opening fruits use the authored front-facing branch anchors. The
+  // five rear anchors used to decode and animate logos hidden inside the canopy.
+  const branchTips = useMemo(() => getFrontBranchTips(), []);
+  const visibleFruitCount = Math.min(branchTips.length, COUPON_FRUITS.length);
+  // Open with distinct, instantly recognizable brands — no two marks from the
   // same family (Uber / Uber Eats) hang at the same time. Every omitted brand
   // enters through the same non-repeating replacement queue after a fruit falls.
   const initialBrandIndices = useMemo(() => {
@@ -325,22 +328,18 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
     const openingLogos = [
       'walmart', 'cvs', 'target', 'dominos', 'aldi',
       'starbucks', 'mcdonalds', 'instacart', 'amazon', 'home-depot', 'uber', 'publix',
-      'doordash', 'walgreens', 'taco-bell', 'whole-foods', 'costco', 'lyft',
+      'doordash',
     ];
     return openingLogos
       .map((logo) => COUPON_FRUITS.findIndex((fruit) => fruit.logo === logo))
       .filter((index) => index >= 0)
       .slice(0, visibleFruitCount);
   }, [visibleFruitCount]);
-
-
-  const branchTips = useMemo(() => {
-    return getBranchTips(visibleFruitCount);
-  }, [visibleFruitCount]);
   const [logosReady, setLogosReady] = useState(false);
   useEffect(() => {
     let active = true;
-    preloadCouponLogos().then((diagnostics) => {
+    const openingFruits = initialBrandIndices.map((index) => COUPON_FRUITS[index]).filter(Boolean);
+    preloadCouponLogos(openingFruits).then((diagnostics) => {
       if (!active) return;
       const canvas = document.querySelector<HTMLCanvasElement>('canvas');
       if (canvas) {
@@ -358,7 +357,7 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
     return () => {
       active = false;
     };
-  }, [branchTips]);
+  }, [branchTips, initialBrandIndices]);
   const [brandIndices, setBrandIndices] = useState(() => initialBrandIndices);
   const replacementQueueRef = useRef(
     COUPON_FRUITS.map((_, index) => index).filter((index) => !initialBrandIndices.includes(index)),
@@ -391,6 +390,7 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
       const pick = queue.findIndex(isFree);
       if (pick >= 0) {
         const [chosen] = queue.splice(pick, 1);
+        void preloadCouponLogos([COUPON_FRUITS[chosen]]);
         return chosen;
       }
       let seed = 0x9e3779b9 ^ shuffleRoundRef.current++;
@@ -546,7 +546,7 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
 
       <Sky gentle={gentle} />
 
-      <Tree leafCount={leafCount} lowPower={settings.tier === 'low'} />
+      <Tree lowPower={settings.tier === 'low'} />
       <Ground y={GROUND_Y} />
       {!gentle && <HitZones />}
       {settings.fireflies && <Fireflies count={settings.fireflyCount} gentle={gentle} />}
@@ -610,7 +610,7 @@ function readForcedTier(): DeviceTier | undefined {
   }
 }
 
-export function Tree3DScene() {
+export function Tree3DScene({ onReady }: { onReady?: () => void }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   // 0 = zoomed in, 1 = zoomed out. Start mostly out so one wheel gesture finishes it.
@@ -722,6 +722,7 @@ export function Tree3DScene() {
             antialias={antialias}
             isMobile={isMobile}
             onSlow={forced ? () => undefined : requestDowngrade}
+            onReady={onReady}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#FFF2D8] to-[#D8E0CC]" />
@@ -744,13 +745,17 @@ interface InnerProps {
   antialias: boolean;
   isMobile: boolean;
   onSlow: () => void;
+  onReady?: () => void;
 }
 
-function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, settings, antialias, isMobile, onSlow }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, settings, antialias, isMobile, onSlow, onReady }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const gentle = useMotionPreference() === 'gentle';
   const [ready, setReady] = useState(false);
-  const sceneReady = useCallback(() => setReady(true), []);
+  const sceneReady = useCallback(() => {
+    setReady(true);
+    onReady?.();
+  }, [onReady]);
   const lastClickRef = useRef(0);
   // Fixed at first render so the WebGL context is never recreated.
   const initialShadows = useRef(settings.shadows).current;
