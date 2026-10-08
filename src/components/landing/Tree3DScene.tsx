@@ -6,7 +6,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 // Postprocessing intentionally not imported — bloom/vignette disabled, keeps mobile bundle smaller.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { Tree, getFrontBranchTips } from './tree3d/Tree';
+import { Tree, getBranchTips, isRearBranchSlot } from './tree3d/Tree';
 import { CouponFruit, type CouponState } from './tree3d/CouponFruit';
 import { Ground } from './tree3d/Ground';
 import { Sky } from './tree3d/Sky';
@@ -315,11 +315,8 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
   }, [gentle]);
   useEffect(() => { const frame = requestAnimationFrame(onReady); return () => cancelAnimationFrame(frame); }, [onReady]);
   const { plantCap } = settings;
-  // Thirteen opening fruits use the authored front-facing branch anchors. The
-  // five rear anchors used to decode and animate logos hidden inside the canopy.
-  const branchTips = useMemo(() => getFrontBranchTips(), []);
-  const visibleFruitCount = Math.min(branchTips.length, COUPON_FRUITS.length);
-  // Open with distinct, instantly recognizable brands — no two marks from the
+  const visibleFruitCount = Math.min(18, COUPON_FRUITS.length);
+  // Open with 18 distinct, instantly recognizable brands — no two marks from the
   // same family (Uber / Uber Eats) hang at the same time. Every omitted brand
   // enters through the same non-repeating replacement queue after a fruit falls.
   const initialBrandIndices = useMemo(() => {
@@ -328,17 +325,30 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
     const openingLogos = [
       'walmart', 'cvs', 'target', 'dominos', 'aldi',
       'starbucks', 'mcdonalds', 'instacart', 'amazon', 'home-depot', 'uber', 'publix',
-      'doordash',
+      'doordash', 'walgreens', 'taco-bell', 'whole-foods', 'costco', 'lyft',
     ];
     return openingLogos
       .map((logo) => COUPON_FRUITS.findIndex((fruit) => fruit.logo === logo))
       .filter((index) => index >= 0)
       .slice(0, visibleFruitCount);
   }, [visibleFruitCount]);
+
+
+  const branchTips = useMemo(() => {
+    return getBranchTips(visibleFruitCount);
+  }, [visibleFruitCount]);
+  // Front-facing slots decode first; rear-slot logos decode right after the
+  // first ready frame and mount in place (hanging state, no grow-in).
+  const [rearReady, setRearReady] = useState(false);
   const [logosReady, setLogosReady] = useState(false);
   useEffect(() => {
     let active = true;
-    const openingFruits = initialBrandIndices.map((index) => COUPON_FRUITS[index]).filter(Boolean);
+    const openingFruits = initialBrandIndices
+      .filter((_, slot) => !isRearBranchSlot(slot))
+      .map((index) => COUPON_FRUITS[index]).filter(Boolean);
+    const rearFruits = initialBrandIndices
+      .filter((_, slot) => isRearBranchSlot(slot))
+      .map((index) => COUPON_FRUITS[index]).filter(Boolean);
     preloadCouponLogos(openingFruits).then((diagnostics) => {
       if (!active) return;
       const canvas = document.querySelector<HTMLCanvasElement>('canvas');
@@ -353,6 +363,9 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
         );
       }
       setLogosReady(true);
+      requestAnimationFrame(() => {
+        preloadCouponLogos(rearFruits).then(() => { if (active) setRearReady(true); });
+      });
     });
     return () => {
       active = false;
@@ -556,7 +569,7 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
       <PlantsLayer cap={plantCap} />
 
 
-      {logosReady && brandIndices.map((brandIndex, i) => (
+      {logosReady && brandIndices.map((brandIndex, i) => (rearReady || !isRearBranchSlot(i)) && (
         <CouponFruit
           key={i}
           index={i}

@@ -1,10 +1,11 @@
 # 3D tree rules
 - Tree fruit animations share one transparent WebGL logo path.
 - Tree slots stay stable while allowed brands rotate non-repeating; exclude Trader Joe's, eBay, and Postmates.
-- Use 13 deterministic, color-balanced front canopy slots with no duplicate hanging brand; do not mount hidden rear fruits.
+- Use 18 deterministic, color-balanced canopy slots with front bias, orbit coverage, and no duplicate hanging brand.
 - Use official local SVG artwork when available and preserve its colors/proportions; prefer recognizable emblems unless a brand is wordmark-led.
 - Tree anchors use slot-specific leaf clearance and vertical correction.
-- Opening tree logo meshes mount after their scoped preload settles; replacement logos preload on demand.
+- Tree logo meshes mount after the shared logo preload settles; front slots decode first, rear slots right after the first ready frame, replacement logos on demand.
+- Draco decoder is self-hosted at /draco/ (copied from three's bundled libs) so the tree never depends on a third-party host.
 - The 3D tree canvas uses `frameloop='never'` while off-screen or tab-hidden; demand mode kept redrawing and starved page animations on phones.
 - Tree quality starts from shared desktop settings except known software renderers; committed visible-frame sampling reduces shadow/DPR costs before ambient density so screen size never selects artwork.
 - Preserve context-owned MSAA and leaf alpha-to-coverage during adaptation; changing the antialias method would remount WebGL or alter the leaf silhouette.

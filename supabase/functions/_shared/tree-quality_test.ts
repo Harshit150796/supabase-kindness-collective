@@ -63,11 +63,16 @@ Deno.test('top donors are removed and the brand rail uses one 48-second speed', 
   assert(!rail.includes('Resume brand animation'));
   assert(rail.includes("loading={group === 0 ? 'eager' : 'lazy'}"));
 });
-Deno.test('tree startup mounts front fruit only and preloads replacement logos on demand', async () => {
+Deno.test('tree startup restores 18-slot layout and preloads replacement logos on demand', async () => {
   const scene = await Deno.readTextFile('src/components/landing/Tree3DScene.tsx');
   const tree = await Deno.readTextFile('src/components/landing/tree3d/Tree.tsx');
   const coupons = await Deno.readTextFile('src/components/landing/tree3d/couponDesign.ts');
-  assert(scene.includes('getFrontBranchTips()'));
+  assert(scene.includes('getBranchTips(visibleFruitCount)'));
+  assert(scene.includes('Math.min(18, COUPON_FRUITS.length)'));
+  assert(scene.includes("'doordash', 'walgreens', 'taco-bell', 'whole-foods', 'costco', 'lyft',"));
+  assert(!tree.includes('getFrontBranchTips'));
+  assert(tree.includes("useGLTF.preload(MODEL_URL, DRACO_PATH)"));
+  assert(!tree.includes('gstatic'));
   assert(scene.includes('preloadCouponLogos(openingFruits)'));
   assert(scene.includes('preloadCouponLogos([COUPON_FRUITS[chosen]])'));
   assert(tree.includes('band.frontCount'));
