@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+.cursor-trail { position: fixed; inset: 0; pointer-events: none; z-index: 40; opacity: 0; transition: opacity .15s; --cursor-color: #1565C0; }
+.cursor-visible { opacity: 1; }
+.cursor-light { --cursor-color: #fff; }
+.cursor-trail > span { position: absolute; top: 0; left: 0; will-change: transform; }
+.cursor-trail i { display: block; width: 22px; height: 22px; margin: -11px; border-radius: 50%; background: var(--cursor-color); transition: transform .25s, opacity .25s; }
+.cursor-trail > span:first-child i { border: 2px solid hsl(var(--brand-surface)); box-shadow: 0 2px 8px hsl(var(--surface-shadow) / .16); }
+.cursor-trail > span:nth-child(2) i { width: 13px; height: 13px; margin: -6.5px; }
+.cursor-trail > span:nth-child(3) i { width: 7px; height: 7px; margin: -3.5px; }
+.cursor-hover > span:first-child i { transform: scale(2.3); opacity: .45; }
+.heading-line-mask { display: block; overflow: hidden; padding-bottom: .12em; margin-bottom: -.12em; }
+.heading-line { display: block; transform: translateY(110%); opacity: 0; transition: transform .8s cubic-bezier(.16,1,.3,1), opacity .8s; }
+.lines-revealed .heading-line { transform: translateY(0); opacity: 1; }
+.cta-wipe { clip-path: inset(100% 0 0); transition: clip-path .9s cubic-bezier(.16,1,.3,1); }
+.cta-wipe-visible { clip-path: inset(0); }
+.cta-wipe-visible .heading-line { transition-delay: .9s; }
+
 @font-face {
   font-family: "Instrument Sans";
   src: url("/fonts/instrument-sans-variable.woff2") format("woff2");
@@ -625,3 +641,6 @@
   footer :is(button, a[href]):not(:disabled):active { scale: 0.98; }
   .group:active .group-hover\:translate-x-1 { translate: 4px 0; }
 }
+
+/* Entrance settlement; the static seed paints without this sheet. */
+html.cd-intro nav{transform:translateY(-110%)}html.cd-iris nav{transform:none;transition:transform .6s .2s}html.cd-intro .hero-stage>picture,html.cd-intro .hero-stage>div:first-of-type{transform:scale(1.06)}html.cd-iris .hero-stage>picture,html.cd-iris .hero-stage>div:first-of-type{transform:scale(1);transition:transform .9s cubic-bezier(.16,1,.3,1)}html.cd-intro .hero-headline{opacity:0;transform:translate(-50%,24px)}html.cd-iris .hero-headline{opacity:1;transform:translate(-50%);transition:transform .8s .3s,opacity .8s .3s}

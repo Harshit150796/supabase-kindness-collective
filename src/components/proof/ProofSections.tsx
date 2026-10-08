@@ -1,3 +1,4 @@
+import { ResponsivePhoto } from '@/components/ResponsivePhoto';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,7 +35,7 @@ export function CompletedCampaigns({ limit, compact = false }: { limit?: number;
         <div className={`mt-10 grid gap-8 ${compact ? 'md:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
           {rows.map((f, index) => (
             <Reveal key={f.id} delay={index * 0.06}><Link to={`/f/${f.unique_slug}`} className="group block">
-              <ImageReveal className="aspect-[16/10] bg-muted">{f.cover_photo_url ? <img src={transformedFundraiserImage(f.cover_photo_url, 800) ?? f.cover_photo_url} alt={f.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]" /> : <FundraiserImageFallback category={f.category} />}</ImageReveal>
+              <ImageReveal className="aspect-[16/10] bg-muted">{f.cover_photo_url ? <ResponsivePhoto src={f.cover_photo_url} width={1200} height={750} alt={f.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]" /> : <FundraiserImageFallback category={f.category} />}</ImageReveal>
               <h3 className="mt-4 line-clamp-2 font-display text-2xl group-hover:underline">{f.title}</h3>
               <dl className="mt-3 grid grid-cols-3 gap-2 text-sm tabular-nums">
                 <div><dt className="text-muted-foreground">Raised</dt><dd className="font-semibold">{usd(Number(f.raised))}</dd></div>

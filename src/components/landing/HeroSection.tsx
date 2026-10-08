@@ -6,6 +6,7 @@ import { AITreeLauncher } from '@/components/landing/hero/AITreeLauncher';
 const AITreeChat = lazy(() => import('@/components/landing/hero/AITreeChat').then(m => ({ default: m.AITreeChat })));
 import { Tree3DErrorBoundary } from '@/components/landing/Tree3DErrorBoundary';
 import { allowLiveTree } from '@/lib/treeQuality';
+import { announceTreeReady } from '@/lib/treeReady';
 const Tree3DScene = lazy(() => import('@/components/landing/Tree3DScene'));
 
 const BOT_UA_RE = /(bot|crawler|spider|crawling|Googlebot|bingbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|Discordbot|HeadlessChrome|Lighthouse|PageSpeed)/i;
@@ -34,7 +35,11 @@ export function HeroSection() {
   useEffect(() => {
     const connection = (navigator as Navigator & { connection?: EventTarget & { saveData?: boolean } }).connection;
     let secondFrame = 0;
-    const mount = () => setCan3D(allowLiveTree(connection?.saveData) && canRender3D());
+    const mount = () => {
+      const allowed = allowLiveTree(connection?.saveData) && canRender3D();
+      setCan3D(allowed);
+      if (!allowed) announceTreeReady();
+    };
     const firstFrame = requestAnimationFrame(() => { secondFrame = requestAnimationFrame(mount); });
     connection?.addEventListener?.('change', mount);
     return () => { cancelAnimationFrame(firstFrame); cancelAnimationFrame(secondFrame); connection?.removeEventListener?.('change', mount); };
@@ -54,6 +59,7 @@ export function HeroSection() {
         <source media="(max-width: 767px)" srcSet={mobilePoster} />
         <img
           src={desktopPoster}
+          width={2880} height={828}
           alt="The CouponDonation tree, growing familiar retailer logos"
           className="h-full w-full object-cover"
           fetchPriority="high"

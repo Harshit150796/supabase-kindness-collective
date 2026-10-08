@@ -377,7 +377,7 @@ export function DonationFlow() {
                       >
                         {info && (
                           <div className="w-5 h-5 rounded bg-white p-0.5 flex items-center justify-center">
-                            <img src={info.logo} alt={info.name} className="w-full h-full object-contain" />
+                            <img width={48} height={48} loading="lazy" decoding="async" src={info.logo} alt={info.name} className="w-full h-full object-contain" />
                           </div>
                         )}
                         <span className="text-sm font-medium text-foreground">{brand.brandName}</span>
@@ -426,7 +426,7 @@ export function DonationFlow() {
                       </div>
                       
                       <div className="w-12 h-12 rounded-lg bg-background border border-border/50 flex items-center justify-center p-2">
-                        <img 
+                        <img width={48} height={48} loading="lazy" decoding="async" 
                           src={brand.logo} 
                           alt={brand.name}
                           className="w-full h-full object-contain"
@@ -535,7 +535,7 @@ export function DonationFlow() {
                         {index > 0 && <span className="mx-1">+</span>}
                         {info && (
                           <div className="w-6 h-6 rounded bg-background border border-border/50 flex items-center justify-center p-0.5">
-                            <img src={info.logo} alt={info.name} className="w-full h-full object-contain" />
+                            <img width={48} height={48} loading="lazy" decoding="async" src={info.logo} alt={info.name} className="w-full h-full object-contain" />
                           </div>
                         )}
                         <span className="font-medium text-sm">{allocation.brandName}</span>
@@ -727,7 +727,7 @@ export function DonationFlow() {
                           {index > 0 && <span className="text-muted-foreground mx-0.5">+</span>}
                           {info && (
                             <div className="w-6 h-6 rounded bg-background border border-border/50 flex items-center justify-center p-0.5">
-                              <img src={info.logo} alt={info.name} className="w-full h-full object-contain" />
+                              <img width={48} height={48} loading="lazy" decoding="async" src={info.logo} alt={info.name} className="w-full h-full object-contain" />
                             </div>
                           )}
                         </span>
@@ -770,7 +770,7 @@ export function DonationFlow() {
                             <div className="flex items-center gap-2">
                               {info && (
                                 <div className="w-6 h-6 rounded bg-white p-0.5 flex items-center justify-center">
-                                  <img src={info.logo} alt={info.name} className="w-full h-full object-contain" />
+                                  <img width={48} height={48} loading="lazy" decoding="async" src={info.logo} alt={info.name} className="w-full h-full object-contain" />
                                 </div>
                               )}
                               <span className="text-foreground">{allocation.brandName}</span>

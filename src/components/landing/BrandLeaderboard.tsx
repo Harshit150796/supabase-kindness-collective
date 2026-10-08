@@ -42,7 +42,7 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<
   const data = payload[0].payload;
   const brand = findBrand(data.name);
   return <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 shadow-lg">
-    {brand && <img src={brand.logo} alt="" className="h-8 w-8 object-contain" />}
+    {brand && <img width={48} height={48} loading="lazy" decoding="async" src={brand.logo} alt="" className="h-8 w-8 object-contain" />}
     <div><p className="font-semibold text-foreground">{data.name}</p><p className="font-bold text-primary">${data.donations.toLocaleString()} allocated</p></div>
   </div>;
 }
@@ -65,7 +65,7 @@ function DonationAvatar({ donation }: { donation: RecentDonation }) {
   const brand = firstRecognizedBrand(donation.brand);
   const initial = donation.name.trim().charAt(0).toUpperCase();
   return <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-secondary md:h-10 md:w-10">
-    {brand && !failed ? <img src={brand.logo} alt="" className="h-5 w-5 object-contain md:h-6 md:w-6" onError={() => setFailed(true)} />
+    {brand && !failed ? <img width={48} height={48} loading="lazy" decoding="async" src={brand.logo} alt="" className="h-5 w-5 object-contain md:h-6 md:w-6" onError={() => setFailed(true)} />
       : initial ? <span className="text-xs font-semibold text-primary md:text-sm" aria-hidden="true">{initial}</span>
       : <Heart className="h-4 w-4 text-primary" aria-hidden="true" />}
   </div>;

@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { CheckCircle, Heart, PieChart, ShoppingCart, TicketCheck } from 'lucide-react';
 import { motion, useInView } from 'motion/react';
 import { LineReveal, MotionBar, Reveal } from '@/components/ui/editorial-motion';
+import { CouponScrollPath } from './CouponScrollPath';
 
 const breakdown = [
   { label: 'Recipient purchases', percent: 95, Icon: Heart },
@@ -48,7 +49,7 @@ function AllocationRing() {
 
 export function TrustTransparency() {
   return (
-    <section className="flex min-h-[var(--lazy-reserved-height,0px)] flex-col justify-center bg-[hsl(var(--primary-20))] py-14 text-primary-foreground lg:py-20">
+    <section data-cursor="light" className="flex min-h-[var(--lazy-reserved-height,0px)] flex-col justify-center bg-[hsl(var(--primary-20))] py-14 text-primary-foreground lg:py-20">
       <div className="container mx-auto max-w-6xl px-4">
         <div className="grid gap-10 lg:grid-cols-[.8fr_1.2fr] lg:items-center">
           <Reveal><AllocationRing /></Reveal>
@@ -72,10 +73,11 @@ export function TrustTransparency() {
         </div>
 
         <div className="relative mt-12 grid gap-7 border-t border-primary-foreground/20 pt-10 md:grid-cols-4">
-          <motion.div data-journey-line aria-hidden="true" className="absolute left-0 right-0 top-[3.7rem] hidden h-px origin-left bg-primary-foreground/35 md:block" initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true, amount: 0.6 }} transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }} />
+          <motion.div data-journey-line aria-hidden="true" className="absolute left-2.5 top-10 bottom-4 w-px origin-top bg-primary-foreground/25 md:bottom-auto md:left-0 md:right-0 md:top-12 md:h-px md:w-auto md:origin-left" initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: true, amount: .2 }} transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }} />
+          <CouponScrollPath />
           {journey.map(({ title, text, Icon }, index) => (
             <Reveal key={title} delay={index * 0.07} className="relative grid grid-cols-[28px_1fr] gap-x-3 md:block">
-              <Icon className="relative z-10 h-5 w-5 text-primary-foreground md:mb-7" />
+              <Icon data-journey-step className="relative z-10 h-5 w-5 text-primary-foreground md:mb-7" />
               <div><span className="text-xs text-primary-foreground/55">0{index + 1}</span><h3 className="mt-1 font-display text-2xl font-normal">{title}</h3><p className="mt-2 text-sm leading-relaxed text-primary-foreground/70">{text}</p></div>
             </Reveal>
           ))}

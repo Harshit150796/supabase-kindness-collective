@@ -2,6 +2,7 @@ import { Quote, CheckCircle2 } from 'lucide-react';
 import { useCMSTestimonials } from '@/hooks/useCMSContent';
 import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
 import { ReservedSectionState } from './ReservedSectionState';
+import { photoUrl } from '@/lib/responsivePhotos';
 
 const roleColors: Record<string, string> = {
   donor: 'bg-primary/10 text-primary',
@@ -53,7 +54,8 @@ export function TestimonialsSection() {
                   <div className="relative">
                     {testimonial.image && (
                       <img 
-                        src={testimonial.image}
+                        src={photoUrl(testimonial.image, 96)}
+                        width={48} height={48} loading="lazy" decoding="async"
                         alt={testimonial.name}
                         className="w-12 h-12 rounded-full object-cover"
                       />

@@ -1,3 +1,4 @@
+import { ResponsivePhoto } from '@/components/ResponsivePhoto';
 import { useState } from "react";
 import { Camera, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -142,8 +143,8 @@ export function FundraiserGallery({
   if (sortedImages.length === 1) {
     return (
       <div className="relative w-full h-64 lg:h-80 bg-muted/30">
-        <img
-          src={transformedFundraiserImage(sortedImages[0].image_url, 1400) ?? sortedImages[0].image_url}
+        <ResponsivePhoto sizes="(max-width: 1023px) calc(100vw - 2rem), 760px" width={1200} height={600} loading="eager"
+          src={sortedImages[0].image_url}
           alt={fundraiserTitle}
           className="w-full h-full object-cover"
         />
@@ -169,8 +170,8 @@ export function FundraiserGallery({
     <div className="relative">
       {/* Main image */}
       <div className="relative w-full h-64 lg:h-80 overflow-hidden bg-muted/30">
-        <img
-          src={transformedFundraiserImage(sortedImages[activeIndex].image_url, 1400) ?? sortedImages[activeIndex].image_url}
+        <ResponsivePhoto sizes="(max-width: 1023px) calc(100vw - 2rem), 760px" width={1200} height={600} loading="eager"
+          src={sortedImages[activeIndex].image_url}
           alt={`${fundraiserTitle} - Photo ${activeIndex + 1}`}
           className="w-full h-full object-cover transition-opacity duration-300"
         />
@@ -225,7 +226,7 @@ export function FundraiserGallery({
           >
             <img
               src={transformedFundraiserImage(image.image_url, 160) ?? image.image_url}
-              alt={`Thumbnail ${index + 1}`}
+              alt={`Thumbnail ${index + 1}`} width={48} height={48} loading="lazy" decoding="async"
               className="w-full h-full object-cover"
             />
           </button>

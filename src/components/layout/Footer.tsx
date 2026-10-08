@@ -7,12 +7,12 @@ import logo from '@/assets/logo.png';
 
 const linkClass = 'inline-flex min-h-11 items-center py-2.5 transition-colors hover:text-primary-foreground';
 export function Footer() {
-  return <footer className="footer-surface text-primary-foreground">
+  return <footer data-cursor="light" className="footer-surface text-primary-foreground">
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 md:pb-24 md:pt-14 sm:px-6 lg:px-8 lg:pt-16">
       <Reveal className="grid grid-cols-2 gap-x-6 gap-y-6 md:grid-cols-12 md:gap-x-8 md:gap-y-10">
         <div className="col-span-2 space-y-4 md:col-span-12 lg:col-span-4">
           <div data-footer-lockup className="footer-lockup flex w-fit max-w-full items-center gap-2.5 whitespace-nowrap rounded-xl px-4 py-3">
-            <img src={logo} alt="" className="h-10 w-10 shrink-0 object-contain" />
+            <img src={logo} alt="" width={40} height={40} loading="lazy" decoding="async" className="h-10 w-10 shrink-0 object-contain" />
             <span data-footer-wordmark className="font-sans text-xl font-bold"><span className="brand-coupon">Coupon</span><span className="brand-donation">Donation</span></span>
           </div>
           <p className="max-w-xs font-sans text-[16px] leading-6 md:text-[18px] md:leading-7 text-primary-foreground">Make the path of every donation visible.</p>

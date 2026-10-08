@@ -10,6 +10,8 @@ import { SessionSecurityProvider } from "@/components/auth/SessionSecurityProvid
 import { GeoGuard } from "@/components/auth/GeoGuard";
 const Index = lazy(() => import("./pages/Index"));
 import { PrivacyConsentBanner } from "./components/PrivacyConsentBanner";
+import { CursorTrail } from './components/CursorTrail';
+import { PageChoreography } from './components/PageChoreography';
 
 // All non-homepage routes are lazy-loaded so mobile users don't download
 // the entire app on first paint.
@@ -214,6 +216,8 @@ const App = () => (
             <AuthProvider>
               <SessionSecurityProvider>
                 <AppRoutes />
+                <CursorTrail />
+                <PageChoreography />
                 <PrivacyConsentBanner />
               </SessionSecurityProvider>
             </AuthProvider>

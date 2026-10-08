@@ -342,3 +342,10 @@
 - [ ] Physical-phone/production timing — hardware and unpublished bundled version unavailable.
 - [ ] WebKit monotonic height — one observed decrease; repeat timed out, cause unisolated.
 - [ ] All-18 individual logo offsets / literal first GPU frame — not instrumented; four sampled desktop marks measured.
+
+## Founder-approved seed opening and page choreography (Oct 8)
+- [x] First-HTML visit-gated opening, skip/iris and tree-ready bridge; alignment/timing checks.
+- [x] Fine-pointer cursor trail, shared line reveals, coupon scroll path, CTA wipe, directional navbar.
+- [x] Phone image delivery pass on home, campaign, Stories and Blog.
+- [x] Rule tests (76 passed), browser flows and measured report; nothing published.
+- [ ] Production-bundled after-transfer measurement, real-device smoothness and pixel-measured live-tree alignment remain unverified; preview module transfer is not comparable to published bundles.
