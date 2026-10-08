@@ -12,6 +12,8 @@ Make the full site fit and perform well from small phones through tablets, lapto
 - The tree currently starts at desktop visual quality except on software rendering, pauses only when off-screen or the tab is hidden, and reduces invisible rendering costs only after measured slow frames. Its authored model, leaf geometry, materials, lighting, camera treatment, exposure, and tone mapping remain shared across devices.
 - Existing verification covered a broad 14-size responsive matrix, but it predates the latest full homepage animation restoration and therefore must be rerun rather than treated as current proof.
 - Some approved motion still uses separate phone/tablet and desktop implementations, and several interactive surfaces rely on hover styling; these paths need direct touch and breakpoint verification.
+- The tree chat still uses static viewport height, which can clip behind mobile browser chrome; the legacy fundraiser cover fallback also requests one 1400px image at phone widths instead of responsive variants.
+- The mobile account drawer toggle does not yet guarantee the same 44px labeled target as the public navigation, and the campaign donation bar plus live-donation notice need short-landscape collision testing.
 
 ## Changes
 
@@ -33,6 +35,7 @@ Make the full site fit and perform well from small phones through tablets, lapto
 
 - Recheck shared navigation, footers, forms, dialogs, horizontal selectors, dashboards, application steps, donation screens, public campaign pages, story pages, and empty/error/loading states at narrow, intermediate, laptop, wide, and short-landscape sizes.
 - Fix horizontal overflow, clipped text, unstable reservations, fixed/sticky overlap, cramped actions, undersized touch targets, mobile input zoom, and content that becomes unreachable behind menus or donation bars.
+- Switch the tree chat to dynamic mobile viewport sizing, make legacy fundraiser covers responsive, and align the account drawer control with the shared labeled 44px touch standard.
 - Preserve the established desktop compositions and unique content; use responsive reflow rather than removing content.
 - Keep the cookie bar unchanged.
 
