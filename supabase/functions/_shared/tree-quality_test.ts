@@ -58,8 +58,22 @@ Deno.test('top donors are removed and the brand rail uses one 48-second speed', 
   assert(!chat.includes('get_top_donors_week'));
   assert(rail.includes('[animation-duration:48s]'));
   assert(!rail.includes('lg:[animation-duration:48s]'));
+  assert(!rail.includes('animation-play-state:paused'));
   assert(!rail.includes('Pause brand animation'));
   assert(!rail.includes('Resume brand animation'));
+});
+Deno.test('device-safe interfaces retain dynamic viewport and touch equivalents', async () => {
+  const chat = await Deno.readTextFile('src/components/landing/hero/AITreeChat.tsx');
+  const gallery = await Deno.readTextFile('src/components/fundraiser/FundraiserGallery.tsx');
+  const dashboard = await Deno.readTextFile('src/components/layout/DashboardLayout.tsx');
+  const story = await Deno.readTextFile('src/components/landing/WhatWeDo.tsx');
+  assert(chat.includes('100dvh'));
+  assert(!chat.toLowerCase().includes('top donors'));
+  assert(gallery.includes('srcSet='));
+  assert(gallery.includes('sizes='));
+  assert(dashboard.includes("aria-label={sidebarOpen ? 'Close account navigation' : 'Open account navigation'}"));
+  assert(dashboard.includes('min-h-11 min-w-11'));
+  assert(!story.includes("matchMedia('(pointer: fine)').matches"));
 });
 Deno.test('the transparency section keeps its ring, allocation bars and journey motion', async () => {
   const transparency = await Deno.readTextFile('src/components/landing/TrustTransparency.tsx');

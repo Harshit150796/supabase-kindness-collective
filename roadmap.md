@@ -313,3 +313,13 @@
 - [x] Restore automatic four-step desktop motion, section entrances, donation form/footer reveals, and currency count-ups.
 - [x] Verify mobile and desktop motion with OS Reduce Motion enabled: all four giving illustrations move, page height stays stable, no runtime errors; 24 tests, TypeScript, diff, and automatic build clean.
 - [ ] Physical-device and published-site behavior — not verified; no publishing performed.
+
+## Optimize every device without reducing motion (Oct 8)
+- [x] Audit device, pointer, lazy-mount, visibility and motion-preference gates across public and shared account surfaces.
+- [x] Keep the retailer rail continuously moving at the universal 48-second speed; add touch equivalents for logo/story interactions.
+- [x] Make the tree chat use dynamic viewport height and safe-area positioning, including short landscape.
+- [x] Serve responsive transformed legacy fundraiser covers instead of one 1400px phone download.
+- [x] Align the account drawer with the labeled 44px shared control standard and constrain its narrow-screen width.
+- [x] Separate the campaign donation notice from the sticky action bar using safe-area-aware short-landscape spacing.
+- [x] Current 15-size Chromium responsive, overflow and stepped-scroll verification; focused motion frames captured at 390, 844 landscape, 1024 and 1440.
+- [ ] Physical-device and published-site performance — not verified; no publishing performed.

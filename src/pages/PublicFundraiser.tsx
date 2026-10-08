@@ -192,7 +192,7 @@ const PublicFundraiser = () => {
       <Footer />
 
       {live.justDonated && (
-        <div role="status" className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 animate-fade-in rounded-full bg-ink px-5 py-3 text-sm text-ink-foreground shadow-lg lg:bottom-8">
+        <div role="status" className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] left-1/2 z-50 max-w-[calc(100vw-2rem)] -translate-x-1/2 animate-fade-in whitespace-nowrap rounded-full bg-ink px-5 py-3 text-sm text-ink-foreground shadow-lg [@media(max-height:500px)]:bottom-[calc(3.75rem+env(safe-area-inset-bottom))] lg:bottom-8">
           <Heart className="mr-2 inline h-4 w-4 text-primary" />{live.justDonated.display_name} just donated {usd(live.justDonated.amount)}
         </div>
       )}

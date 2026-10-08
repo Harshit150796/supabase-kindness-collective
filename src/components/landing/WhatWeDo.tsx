@@ -309,7 +309,7 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
 }
 
 export function WhatWeDo() {
-  // Reduced-motion visitors get still illustrations.
+  // The founder-approved motion hook currently returns full on every device.
   const preference = useMotionPreference();
   const sectionRef = useRef<HTMLElement>(null);
   const mobileStepRefs = useRef<Array<HTMLLIElement | null>>([]);
@@ -363,7 +363,7 @@ export function WhatWeDo() {
   const chevronY = mapValue(progress, [0, 0.5, 1], [0, 5, 0]);
 
   const restartSharedClock = () => {
-    if (!still && isDesktop && typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches) {
+    if (!still && isDesktop) {
       idleAnimationRef.current?.stop();
       progress.set(0);
       startIdleMotion();

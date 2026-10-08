@@ -48,9 +48,19 @@ export function FundraiserGallery({
       return (
       <div className="relative w-full h-64 lg:h-80 bg-muted/30">
         <img
-          src={transformedFundraiserImage(coverPhotoUrl, 1400) ?? coverPhotoUrl}
+          src={transformedFundraiserImage(coverPhotoUrl, 960) ?? coverPhotoUrl}
+          srcSet={[
+            [480, transformedFundraiserImage(coverPhotoUrl, 480)],
+            [768, transformedFundraiserImage(coverPhotoUrl, 768)],
+            [1200, transformedFundraiserImage(coverPhotoUrl, 1200)],
+          ].filter((entry): entry is [number, string] => typeof entry[1] === 'string').map(([width, url]) => `${url} ${width}w`).join(', ') || undefined}
+          sizes="(max-width: 767px) 100vw, (max-width: 1023px) calc(100vw - 2rem), min(760px, calc(100vw - 28rem))"
+          width={1200}
+          height={600}
           alt={fundraiserTitle}
           className="w-full h-full object-cover"
+          loading="eager"
+          decoding="async"
         />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
           

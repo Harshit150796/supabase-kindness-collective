@@ -57,16 +57,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <img src={logo} alt="CouponDonation" className="w-8 h-8 object-contain" width={32} height={32} loading="eager" decoding="async" fetchPriority="high" />
           <span className="font-bold"><span className="text-[#2e7d32]">Coupon</span><span className="text-[#1565c0]">Donation</span></span>
         </Link>
-        <button onClick={() => setSidebarOpen(!sidebarOpen)}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="min-h-11 min-w-11"
+          aria-label={sidebarOpen ? 'Close account navigation' : 'Open account navigation'}
+          aria-expanded={sidebarOpen}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
           {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+        </Button>
       </header>
 
       <div className="flex">
         {/* Sidebar */}
         <aside className={`
           fixed lg:static inset-y-0 left-0 z-50
-          w-64 bg-background border-r border-border
+          w-64 max-w-[80vw] bg-background border-r border-border
           transform transition-transform lg:transform-none
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
