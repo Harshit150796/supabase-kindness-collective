@@ -28,7 +28,7 @@ export const LiveActivityBar = () => {
             <MotionDebug />
             <div
               data-brand-marquee
-              className="flex w-max animate-marquee [animation-duration:48s] hover:[animation-play-state:paused] active:[animation-play-state:paused]"
+              className="flex w-max animate-marquee [animation-duration:48s]"
             >
               {[0, 1].map((group) => (
                 <div
@@ -39,7 +39,7 @@ export const LiveActivityBar = () => {
                   {brandList.map((brand) => (
                     <div
                       key={`${group}-${brand.name}`}
-                      className="flex h-14 w-16 shrink-0 items-center justify-center transition-transform duration-300 hover:scale-105 md:h-16 md:w-20"
+                      className="flex h-14 w-16 shrink-0 items-center justify-center transition-transform duration-300 hover:scale-105 active:scale-105 md:h-16 md:w-20"
                       title={brand.name}
                     >
                       <img

@@ -93,8 +93,8 @@ export function AITreeChat({ open, onClose }: Props) {
   if (!open) return null;
 
   return (
-    <div className="absolute bottom-4 right-4 z-40 pointer-events-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="flex flex-col w-[360px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-8rem)] rounded-2xl border border-border bg-background/95 backdrop-blur-xl shadow-2xl overflow-hidden">
+    <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-40 pointer-events-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="flex h-[520px] max-h-[calc(100dvh-8rem)] w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-border bg-background/95 shadow-2xl backdrop-blur-xl [@media(max-height:500px)]:h-[calc(100dvh-5rem)] [@media(max-height:500px)]:max-h-[calc(100dvh-5rem)]">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-primary/5">
           <div className="flex items-center gap-2">
