@@ -73,7 +73,9 @@ Deno.test('tree startup restores 18-slot layout and preloads replacement logos o
   assert(!tree.includes('getFrontBranchTips'));
   assert(tree.includes("useGLTF.preload(MODEL_URL, DRACO_PATH)"));
   assert(!tree.includes('gstatic'));
-  assert(scene.includes('preloadCouponLogos(openingFruits)'));
+  assert(scene.includes('const openingLogoPreload = preloadCouponLogos(OPENING_FRUITS)'));
+  assert(!scene.includes('rearReady'));
+  assert(!scene.includes('isRearBranchSlot'));
   assert(scene.includes('preloadCouponLogos([COUPON_FRUITS[chosen]])'));
   assert(tree.includes('band.frontCount'));
   assert(!coupons.includes("COUPON_FRUITS.forEach((f) => loadLogo(f.logo))"));
@@ -125,4 +127,45 @@ Deno.test('full motion on every device regardless of the OS Reduce Motion settin
   const css = await Deno.readTextFile('src/index.css');
   assert(/useMotionPreference\(\): MotionPreference \{\s*return 'full';/.test(hook));
   assert(!css.includes('prefers-reduced-motion'));
+});
+
+Deno.test('poster reveal follows a drawn 18-logo frame with a 3s safety escape', async () => {
+  const scene = await Deno.readTextFile('src/components/landing/Tree3DScene.tsx');
+  assert(scene.indexOf('const openingLogoPreload') < scene.indexOf('function Scene'));
+  assert(scene.includes('openingLogoPreload.then'));
+  assert(scene.includes('if (!logosReady) return;'));
+  assert(scene.includes('if (revealRef.current.frames < 2) return;'));
+  assert(scene.includes("reveal('logos')"));
+  assert(scene.includes("window.setTimeout(() => reveal('safety'), 3000)"));
+  assert(!scene.includes('requestAnimationFrame(onReady)'));
+  assert(scene.includes('logosReady && brandIndices.map'));
+  const sky = await Deno.readTextFile('src/components/landing/tree3d/Sky.tsx');
+  assert(sky.includes('Math.min(dt * 1.5, 0.05)'));
+  assert(scene.includes('Math.min(dt * 1.5, 0.05)'));
+});
+Deno.test('daytime posters retain wide landscape and 2x phone capture sizes and budgets', async () => {
+  // cwebp emits VP8 lossy WebP: the frame width/height follow its start code.
+  async function dimensions(path: string) {
+    const b = await Deno.readFile(path);
+    const chunk = new TextDecoder().decode(b.subarray(12, 16));
+    assertEquals(chunk, 'VP8 ');
+    assertEquals(Array.from(b.subarray(23, 26)), [157, 1, 42]);
+    return { width: (b[26] | b[27] << 8) & 16383, height: (b[28] | b[29] << 8) & 16383, bytes: b.length };
+  }
+  const desktop = await dimensions('src/assets/tree-poster-desktop.webp');
+  const mobile = await dimensions('src/assets/tree-poster-mobile.webp');
+  assertEquals([desktop.width, desktop.height], [2880, 828]);
+  assertEquals([mobile.width, mobile.height], [780, 978]);
+  assert(desktop.bytes <= 160000);
+  assert(mobile.bytes <= 70000);
+});
+Deno.test('Draco runtime uses only the self-hosted decoder', async () => {
+  const tree = await Deno.readTextFile('src/components/landing/tree3d/Tree.tsx');
+  assert(tree.includes("const DRACO_PATH = '/draco/'"));
+  assert(tree.includes('useGLTF(MODEL_URL, DRACO_PATH)'));
+  assert(tree.includes('useGLTF.preload(MODEL_URL, DRACO_PATH)'));
+  assert(!tree.includes('gstatic.com'));
+  for (const name of ['draco_decoder.js', 'draco_decoder.wasm', 'draco_wasm_wrapper.js']) {
+    assert((await Deno.stat(`public/draco/${name}`)).size > 0);
+  }
 });
