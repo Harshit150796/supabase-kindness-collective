@@ -331,3 +331,6 @@
 - [ ] Replace the baked canopy only if a visual comparison proves the reduced model indistinguishable.
 - [x] Capture matched phone/desktop posters from the approved tree and crossfade only after the canvas commits.
 - [ ] Physical-device and published-site performance — not verified; no publishing performed.
+
+- [x] Restore 18-fruit tree layout (296764a7), staged rear-logo decode, recaptured posters
+- [x] Self-host Draco decoder at /draco/ (no gstatic)
