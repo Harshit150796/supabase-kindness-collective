@@ -117,7 +117,33 @@ export function getBranchTips(count = 18): BranchTip[] {
   return tips;
 }
 
-export function Tree(_props: { leafCount?: number; lowPower?: boolean }) {
+/** Opening view uses only the authored front-facing branch anchors. */
+export function getFrontBranchTips(): BranchTip[] {
+  const tips: BranchTip[] = [];
+  let slot = 0;
+  for (const band of CANOPY_BANDS) {
+    for (let index = 0; index < band.frontCount; index++) {
+      const t = index / (band.frontCount - 1);
+      const theta = THREE.MathUtils.lerp(-band.frontSpan, band.frontSpan, t) + band.phase;
+      const visibility = SLOT_VISIBILITY[slot] ?? { faceOffset: 0.42, y: 0 };
+      const yJitter = ((index % 3) - 1) * 0.16;
+      const radialStagger = index % 2 === 0 ? 1.04 : 0.96;
+      tips.push({
+        tip: new THREE.Vector3(
+          Math.sin(theta) * band.radiusX * radialStagger,
+          band.y + yJitter + visibility.y,
+          Math.cos(theta) * band.radiusZ * radialStagger,
+        ),
+        faceOffset: visibility.faceOffset,
+      });
+      slot += 1;
+    }
+    slot += band.count - band.frontCount;
+  }
+  return tips;
+}
+
+export function Tree(_props: { lowPower?: boolean }) {
   const { scene } = useGLTF(MODEL_URL) as unknown as { scene: THREE.Group };
   const gl = useThree((s) => s.gl);
   const rootRef = useRef<THREE.Group>(null);

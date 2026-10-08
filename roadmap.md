@@ -323,3 +323,11 @@
 - [x] Separate the campaign donation notice from the sticky action bar using safe-area-aware short-landscape spacing.
 - [x] Current 15-size Chromium responsive, overflow and stepped-scroll verification; focused motion frames captured at 390, 844 landscape, 1024 and 1440.
 - [ ] Physical-device and published-site performance — not verified; no publishing performed.
+
+## Faster tree and homepage startup (Oct 8)
+- [x] Confirm the previous 7,000-leaf setting was diagnostic only and measure the baked tree model.
+- [x] Remove five hidden rear logo fruits and limit startup decoding to the 13 visible opening brands.
+- [x] Preload replacement brands only when selected; lazy-decode the duplicate retailer rail and lazy-load completed campaigns.
+- [ ] Replace the baked canopy only if a visual comparison proves the reduced model indistinguishable.
+- [ ] Capture matched phone/desktop posters after the optimized live tree is visually approved.
+- [ ] Physical-device and published-site performance — not verified; no publishing performed.

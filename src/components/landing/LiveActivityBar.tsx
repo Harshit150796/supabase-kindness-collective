@@ -46,7 +46,8 @@ export const LiveActivityBar = () => {
                         src={brand.logo}
                         alt={group === 0 ? brand.name : ''}
                         className="h-9 w-10 object-contain md:h-11 md:w-12"
-                        loading="eager"
+                        loading={group === 0 ? 'eager' : 'lazy'}
+                        decoding="async"
                       />
                     </div>
                   ))}
