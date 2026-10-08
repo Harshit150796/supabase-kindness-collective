@@ -48,6 +48,7 @@ export const LiveActivityBar = () => {
                         className="h-9 w-10 object-contain md:h-11 md:w-12"
                         loading={group === 0 ? 'eager' : 'lazy'}
                         decoding="async"
+                        width={48} height={44}
                       />
                     </div>
                   ))}

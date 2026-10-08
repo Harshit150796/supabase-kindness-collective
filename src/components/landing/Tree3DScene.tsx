@@ -359,6 +359,8 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
     revealRef.current.revealed = true;
     gl.domElement.dataset.treeRevealReason = reason;
     gl.domElement.dataset.treeRevealMs = performance.now().toFixed(1);
+    window.__cdTreeReady = true;
+    window.dispatchEvent(new Event('cd:tree-ready'));
     onReady();
   }, [gl, onReady]);
   useEffect(() => {

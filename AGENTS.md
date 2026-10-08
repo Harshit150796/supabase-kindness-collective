@@ -8,6 +8,8 @@
 - Marketing pages alternate neutral, soft-green, and deep-forest bands; tonal panels have no borders or shadows, and hairlines are for tables.
 - No eyebrow headings, decorative pills, icon circles, gradient text, glow shadows or card-on-card.
 - Shared reveals decide via `revealMode` (pre-trigger 20% below viewport, late on-screen mounts still animate, time-based fling detection) so busy frames never skip motion.
+- The first-HTML opening is independent of React mounting; tree readiness only signals its exit, never gates loading. Editorial reveals share one observer, and line measurement waits for fonts and initial tree frames to protect startup.
+- Responsive public photos use known managed-host transforms or generated local variants; never append transformation parameters to unknown hosts.
 - Motion is full on every device; the OS reduced-motion setting is not consulted (founder decision lives in memory).
 - Public photos stay local; without verified people-photo consent, use coupon/receipt/trace visuals.
 - Preserve the two-color CouponDonation wordmark exactly as `#2e7d32` for Coupon and `#1565c0` for Donation.

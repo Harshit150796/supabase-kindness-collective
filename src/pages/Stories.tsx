@@ -1,3 +1,4 @@
+import { ResponsivePhoto } from '@/components/ResponsivePhoto';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Heart, MapPin, PlusCircle } from 'lucide-react';
@@ -89,7 +90,7 @@ export default function Stories() {
 
         <section className="py-24 md:py-32">
           <div className="container mx-auto max-w-4xl px-4">
-            <div><LineReveal><h2 className="font-display text-5xl font-normal text-foreground">Retailers donors chose.</h2></LineReveal><div className="mt-8 divide-y divide-border border-y border-border">{stats?.brands.length ? stats.brands.slice(0,5).map((brand, index) => <Reveal key={brand.name} className="grid grid-cols-[2rem_2.5rem_1fr_auto] items-center gap-3 py-5"><span className="text-sm text-muted-foreground">0{index+1}</span><img src={brandLogos[brand.name]?.logo} alt="" className="h-8 w-8 object-contain" /><span className="font-medium text-foreground">{brand.name}</span><strong className="text-primary">{formatUSD(brand.total)}</strong></Reveal>) : <p className="py-8 text-muted-foreground">Retailer totals will appear after completed donations are allocated.</p>}</div></div>
+            <div><LineReveal><h2 className="font-display text-5xl font-normal text-foreground">Retailers donors chose.</h2></LineReveal><div className="mt-8 divide-y divide-border border-y border-border">{stats?.brands.length ? stats.brands.slice(0,5).map((brand, index) => <Reveal key={brand.name} className="grid grid-cols-[2rem_2.5rem_1fr_auto] items-center gap-3 py-5"><span className="text-sm text-muted-foreground">0{index+1}</span><img width={32} height={32} loading="lazy" decoding="async" src={brandLogos[brand.name]?.logo} alt="" className="h-8 w-8 object-contain" /><span className="font-medium text-foreground">{brand.name}</span><strong className="text-primary">{formatUSD(brand.total)}</strong></Reveal>) : <p className="py-8 text-muted-foreground">Retailer totals will appear after completed donations are allocated.</p>}</div></div>
           </div>
         </section>
       </main>
@@ -103,7 +104,7 @@ function EditorialStoryCard({ story, index }: { story: ImpactStory; index: numbe
     <Reveal delay={index * 0.05}>
       <Link to={`/story/${story.id}`} className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
         <article>
-          <ImageReveal className="aspect-[4/3] bg-muted"><img src={story.image} alt={story.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02] group-active:scale-[1.02]" loading="lazy" /></ImageReveal>
+          <ImageReveal className="aspect-[4/3] bg-muted"><ResponsivePhoto src={story.image} width={1200} height={900} alt={story.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02] group-active:scale-[1.02]" loading="lazy" /></ImageReveal>
           <div className="pt-5"><div className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />{story.location}</div><h3 className="mt-3 font-display text-3xl font-normal text-foreground">{story.name}</h3><p className="mt-3 line-clamp-3 leading-relaxed text-muted-foreground">{story.story}</p><span className="mt-5 inline-flex min-h-11 items-center text-sm font-medium text-primary py-2">Read the story <ArrowRight className="ml-2 h-4 w-4" /></span></div>
         </article>
       </Link>

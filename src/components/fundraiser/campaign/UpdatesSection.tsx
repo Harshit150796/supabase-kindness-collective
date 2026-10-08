@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { timeAgo } from '@/hooks/useFundraiserLive';
+import { ResponsivePhoto } from '@/components/ResponsivePhoto';
 
 interface Update { id: string; title: string; body: string; image_url: string | null; created_at: string }
 
@@ -27,7 +28,7 @@ export function UpdatesSection({ fundraiserId }: { fundraiserId: string }) {
             <p className="text-sm text-muted-foreground">{timeAgo(u.created_at)}</p>
             <h3 className="mt-1 text-xl font-medium text-foreground">{u.title}</h3>
             <p className="mt-2 whitespace-pre-line text-muted-foreground">{u.body}</p>
-            {u.image_url && <img src={u.image_url} alt="" loading="lazy" className="mt-4 max-h-96 w-full rounded-[1rem] object-contain bg-muted/30" />}
+            {u.image_url && <ResponsivePhoto src={u.image_url} alt="" sizes="(max-width: 767px) calc(100vw - 3rem), 720px" className="mt-4 max-h-96 w-full rounded-[1rem] object-contain bg-muted/30" />}
           </li>
         ))}
       </ol>

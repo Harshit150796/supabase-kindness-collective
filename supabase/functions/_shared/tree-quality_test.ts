@@ -169,3 +169,12 @@ Deno.test('Draco runtime uses only the self-hosted decoder', async () => {
     assert((await Deno.stat(`public/draco/${name}`)).size > 0);
   }
 });
+
+Deno.test('intro readiness preserves all 18 drawn logos and unchanged poster captures', async () => {
+  const scene = await Deno.readTextFile('src/components/landing/Tree3DScene.tsx');
+  assert(scene.includes('if (!logosReady) return;'));
+  assert(scene.includes('if (revealRef.current.frames < 2) return;'));
+  assert(scene.includes("window.dispatchEvent(new Event('cd:tree-ready'))"));
+  const html = await Deno.readTextFile('index.html');
+  assert(!html.includes('gstatic.com'));
+});

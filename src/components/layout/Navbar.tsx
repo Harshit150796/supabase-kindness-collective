@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { useAuth } from '@/hooks/useAuth';
 import { Coins, Menu, X, User, LogOut, Megaphone, Heart, Settings, DollarSign, Gift, MessageCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,25 @@ export function Navbar() {
   const unread = useUnreadMessages();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    let last = window.scrollY, frame = 0;
+    const update = () => {
+      frame = 0;
+      const y = window.scrollY, hero = document.querySelector<HTMLElement>('.hero-stage');
+      const afterHero = !hero || hero.getBoundingClientRect().bottom <= 0;
+      const open = mobileMenuOpen || accountOpen || !!navRef.current?.querySelector('[data-state="open"]');
+      if (y <= 100 || open || !afterHero || y < last) setHidden(false);
+      else if (y > last + 2) setHidden(true);
+      last = y;
+    };
+    const scroll = () => { if (!frame) frame = requestAnimationFrame(update); };
+    setHidden(false);
+    addEventListener('scroll', scroll, { passive: true });
+    return () => { removeEventListener('scroll', scroll); cancelAnimationFrame(frame); };
+  }, [mobileMenuOpen, accountOpen]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -31,12 +50,12 @@ export function Navbar() {
 
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border/70 bg-background lg:bg-background/90 lg:backdrop-blur-lg">
+    <nav ref={navRef} className={`sticky top-0 z-50 border-b border-border/70 bg-background lg:bg-background/90 lg:backdrop-blur-lg transition-transform duration-300 ${hidden ? '-translate-y-full' : 'translate-y-0'}`}>
       <div className="container mx-auto px-4">
         <div className="flex h-18 items-center justify-between py-3 [@media(max-height:500px)]:h-[52px] [@media(max-height:500px)]:py-1">
           {/* Logo */}
           <Link to="/" className="group flex min-h-11 shrink-0 items-center gap-3">
-            <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" {...({ fetchpriority: 'high' } as any)} />
+            <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" />
             <div className="flex flex-col">
               <span className="font-bold text-base sm:text-lg leading-tight">
                 <span className="brand-coupon">Coupon</span>
@@ -91,7 +110,7 @@ export function Navbar() {
               </Link>
             )}
             {user ? (
-              <DropdownMenu>
+              <DropdownMenu onOpenChange={setAccountOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2">
                     <User className="w-4 h-4" />

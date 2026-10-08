@@ -1,8 +1,9 @@
-import { animate, motion, useInView, useScroll, useTransform } from 'motion/react';
+import { animate, motion, useScroll, useTransform } from 'motion/react';
 import { forwardRef, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { cn } from '@/lib/utils';
-import { figureDisplay, revealMode } from '@/lib/landingPresentation';
+import { figureDisplay } from '@/lib/landingPresentation';
+import { observeEarly } from '@/lib/earlyObserver';
 
 type RevealProps = { children: ReactNode; className?: string; delay?: number };
 
@@ -19,28 +20,11 @@ export function useEarlyReveal<T extends HTMLElement>(ref: React.RefObject<T>) {
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    let done = false;
-    let frame = 0;
-    const check = () => {
-      frame = 0;
-      if (done) return;
-      const rect = node.getBoundingClientRect();
-      const height = window.innerHeight;
-      if (rect.width === 0 && rect.height === 0) return; // hidden (display:none) variants
-      const mode = revealMode(rect.top, rect.bottom, height, 0);
-      if (mode === 'wait') return;
-      done = true;
-      node.dataset.revealMode = mode;
+    return observeEarly(node, mode => {
       if (mode === 'instant') setInstant(true);
       else if (mode === 'late') setLate(true);
       setVisible(true);
-    };
-    const onScroll = () => { if (!frame) frame = requestAnimationFrame(check); };
-    const observer = new IntersectionObserver(() => check(), { rootMargin: `0px 0px ${Math.round(window.innerHeight * 0.2)}px 0px`, threshold: 0 });
-    observer.observe(node);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    frame = requestAnimationFrame(check);
-    return () => { observer.disconnect(); cancelAnimationFrame(frame); window.removeEventListener('scroll', onScroll); };
+    });
   }, [ref]);
   return { visible, instant, late };
 }
@@ -73,7 +57,7 @@ export function ImageReveal({ children, className, delay = 0 }: RevealProps) {
 export const CountUp = forwardRef<HTMLSpanElement, { value: number; className?: string; formatter?: (value: number) => string }>(function CountUp({ value, className, formatter }, forwarded) {
   const ref = useRef<HTMLSpanElement>(null);
   const setRef = useCallback((node: HTMLSpanElement | null) => { ref.current = node; assignRef(forwarded, node); }, [forwarded]);
-  const visible = useInView(ref, { once: true, amount: 0.5 });
+  const { visible } = useEarlyReveal(ref);
   const preference = useMotionPreference();
   const [display, setDisplay] = useState(value);
   useEffect(() => {
