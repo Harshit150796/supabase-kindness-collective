@@ -3,7 +3,10 @@ import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./index.css";
 
-createRoot(document.getElementById("root")!).render(
+if (document.documentElement.classList.contains('cd-intro')) void import('@/components/landing/Tree3DScene');
+const root = document.getElementById('root');
+if (!root) throw new Error('Missing application root');
+createRoot(root).render(
   <HelmetProvider>
     <App />
   </HelmetProvider>

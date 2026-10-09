@@ -30,7 +30,17 @@ function canRender3D(): boolean {
 export function HeroSection() {
   const [chatOpen, setChatOpen] = useState(false);
   const [treeReady, setTreeReady] = useState(false);
-  // Poster-first for everyone. Only an explicit data-saving choice keeps it static.
+  const [openingCovered] = useState(() => document.documentElement.classList.contains('cd-intro') && !document.documentElement.classList.contains('cd-iris'));
+  const [posterAllowed, setPosterAllowed] = useState(() => !document.documentElement.classList.contains('cd-intro') || document.documentElement.classList.contains('cd-iris'));
+  const [treeFailed, setTreeFailed] = useState(false);
+  useEffect(() => {
+    if (!openingCovered) return;
+    const fallback = () => { if (!window.__cdTreeReady) setPosterAllowed(true); };
+    const elapsed = performance.now() - Number(document.documentElement.dataset.introStarted ?? performance.now());
+    const timer = window.setTimeout(fallback, Math.max(0, 5000 - elapsed));
+    window.addEventListener('cd:intro-poster-fallback', fallback);
+    return () => { clearTimeout(timer); window.removeEventListener('cd:intro-poster-fallback', fallback); };
+  }, [openingCovered]);
   const [can3D, setCan3D] = useState(false);
   useEffect(() => {
     const connection = (navigator as Navigator & { connection?: EventTarget & { saveData?: boolean } }).connection;
@@ -38,7 +48,7 @@ export function HeroSection() {
     const mount = () => {
       const allowed = allowLiveTree(connection?.saveData) && canRender3D();
       setCan3D(allowed);
-      if (!allowed) announceTreeReady();
+      if (!allowed) { setPosterAllowed(true); announceTreeReady(); }
     };
     const firstFrame = requestAnimationFrame(() => { secondFrame = requestAnimationFrame(mount); });
     connection?.addEventListener?.('change', mount);
@@ -52,7 +62,7 @@ export function HeroSection() {
     >
       {/* Stacked layers — no DOM swap, no CLS. The gradient always paints first;
           the canvas wrapper sits on top immediately once WebGL capability is known. */}
-      <picture
+      {posterAllowed && <picture
         data-tree-poster
         className={`absolute inset-0 transition-opacity duration-500 ${treeReady ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
       >
@@ -65,11 +75,11 @@ export function HeroSection() {
           fetchPriority="high"
           decoding="async"
         />
-      </picture>
+      </picture>}
       <div className="absolute inset-0 w-full h-full">
-        {can3D && (
-          <Tree3DErrorBoundary>
-            <Suspense fallback={null}><Tree3DScene onReady={() => setTreeReady(true)} /></Suspense>
+        {can3D && !treeFailed && (
+          <Tree3DErrorBoundary onError={() => { setTreeFailed(true); setPosterAllowed(true); setTreeReady(false); announceTreeReady(); }}>
+            <Suspense fallback={null}><Tree3DScene directPalette={openingCovered} onReady={() => setTreeReady(true)} /></Suspense>
           </Tree3DErrorBoundary>
         )}
       </div>

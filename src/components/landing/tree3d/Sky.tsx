@@ -9,7 +9,7 @@ const PALETTES = {
   night: { top: '#0A1530', mid: '#1F2C5C', bot: '#3A4A7E' },
 };
 
-export function Sky({ gentle = false }: { gentle?: boolean } = {}) {
+export function Sky({ gentle = false, directPalette = false }: { gentle?: boolean; directPalette?: boolean } = {}) {
   const { timeOfDay } = useInteraction();
 
   const targets = useMemo(
@@ -22,13 +22,14 @@ export function Sky({ gentle = false }: { gentle?: boolean } = {}) {
   );
 
   const mat = useMemo(() => {
+    const initial = PALETTES[directPalette ? timeOfDay : 'day'];
     return new THREE.ShaderMaterial({
       side: THREE.BackSide,
       depthWrite: false,
       uniforms: {
-        topColor: { value: new THREE.Color(PALETTES.day.top) },
-        midColor: { value: new THREE.Color(PALETTES.day.mid) },
-        bottomColor: { value: new THREE.Color(PALETTES.day.bot) },
+        topColor: { value: new THREE.Color(initial.top) },
+        midColor: { value: new THREE.Color(initial.mid) },
+        bottomColor: { value: new THREE.Color(initial.bot) },
       },
       vertexShader: `
         varying vec3 vWorldPos;
