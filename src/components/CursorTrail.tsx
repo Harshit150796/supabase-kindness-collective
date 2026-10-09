@@ -31,11 +31,13 @@ export function CursorTrail() {
       let hovered: Element | null = null;
       let backgroundCache: BgCache | undefined;
       let posterRect: { src: string; at: number; left: number; top: number; width: number; height: number } | undefined;
-      // Poster rect cached in page coordinates; refreshed on resize, src change or after 500ms.
-      const posterPageRect = (image: HTMLImageElement, now: number) => {
-        if (!posterRect || posterRect.src !== image.currentSrc || now - posterRect.at > 500) {
+      let posterStale = true;
+      // Poster rect cached in viewport coordinates; refreshed only when stale, on src change or after 500ms.
+      const posterViewRect = (image: HTMLImageElement, now: number) => {
+        if (!posterRect || posterStale || posterRect.src !== image.currentSrc || now - posterRect.at > 500) {
           const r = image.getBoundingClientRect();
-          posterRect = { src: image.currentSrc, at: now, left: r.left + scrollX, top: r.top + scrollY, width: r.width, height: r.height };
+          posterRect = { src: image.currentSrc, at: now, left: r.left, top: r.top, width: r.width, height: r.height };
+          posterStale = false;
         }
         return posterRect;
       };
@@ -77,8 +79,7 @@ export function CursorTrail() {
         const poster = stage.querySelector<HTMLImageElement>('[data-tree-poster] img');
         const picture = poster?.closest('picture');
         if (poster && picture && !picture.classList.contains('opacity-0')) {
-          const pr = posterPageRect(poster, now);
-          const rgb = samplePoster(poster, x, y, { left: pr.left - scrollX, top: pr.top - scrollY, width: pr.width, height: pr.height });
+          const rgb = samplePoster(poster, x, y, posterViewRect(poster, now));
           if (rgb) paint(stableColour(tone, rgb));
         } else {
           canvasTarget = stage.querySelector('canvas');
@@ -124,10 +125,11 @@ export function CursorTrail() {
       const timer = window.setInterval(() => { if (canvasTarget && active) request(); }, 100);
       const observer = new MutationObserver(() => { if (html.classList.contains('cd-intro')) hide(); });
       observer.observe(html, { attributes: true, attributeFilter: ['class'] });
-      const resize = () => { posterRect = undefined; };
+      const resize = () => { posterStale = true; };
+      const scrolled = () => { posterStale = true; request(); };
       window.addEventListener('resize', resize, { passive: true });
       window.addEventListener('pointermove', move, { passive: true });
-      window.addEventListener('scroll', request, { passive: true, capture: true });
+      window.addEventListener('scroll', scrolled, { passive: true, capture: true });
       document.addEventListener('mouseleave', leave); window.addEventListener('blur', blur); window.addEventListener('focus', focus);
       window.addEventListener('pointerdown', down); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
       window.addEventListener('cd:cursor-bg', background); window.addEventListener('cd:intro-iris', hide); window.addEventListener('cd:intro-end', introEnd);
