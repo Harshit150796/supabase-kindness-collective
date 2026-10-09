@@ -80,10 +80,10 @@ export function CursorTrail() {
         const picture = poster?.closest('picture');
         if (poster && picture && !picture.classList.contains('opacity-0')) {
           const rgb = samplePoster(poster, x, y, posterViewRect(poster, now));
-          if (rgb) paint(stableColour(tone, rgb));
+          if (rgb) paint(stableColour(tone, rgb, now));
         } else {
           canvasTarget = stage.querySelector('canvas');
-          if (canvasTarget && sampled && !sampled.used && near(sampled)) { sampled.used = true; paint(stableColour(tone, sampled)); }
+          if (canvasTarget && sampled && !sampled.used && near(sampled)) { sampled.used = true; paint(stableColour(tone, sampled, now)); }
         }
       };
       const tick = (ts: number) => {
@@ -119,7 +119,7 @@ export function CursorTrail() {
       const introEnd = () => { arm(); request(); };
       const background = (event: Event) => {
         sampled = { ...(event as CustomEvent<Sample>).detail };
-        if (active && canvasTarget && near(sampled)) { sampled.used = true; paint(stableColour(tone, sampled)); }
+        if (active && canvasTarget && near(sampled)) { sampled.used = true; paint(stableColour(tone, sampled, performance.now())); }
       };
       routeChanged.current = () => { backgroundCache = undefined; if (admin()) hide(); else { arm(); request(); } };
       const timer = window.setInterval(() => { if (canvasTarget && active) request(); }, 100);
