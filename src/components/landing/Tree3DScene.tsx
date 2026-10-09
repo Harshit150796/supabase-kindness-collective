@@ -795,6 +795,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
   return (
     <>
       <Canvas
+        resize={{ offsetSize: true }}
         shadows={initialShadows ? { type: THREE.PCFSoftShadowMap } : false}
         dpr={dpr}
         frameloop={inView ? 'always' : 'never'}

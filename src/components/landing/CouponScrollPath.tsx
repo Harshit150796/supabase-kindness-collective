@@ -11,17 +11,26 @@ export function CouponScrollPath() {
     let frame = 0;
     const size = () => {
       const items = Array.from(section.querySelectorAll<HTMLElement>('[data-journey-step]'));
-      const parent = section.getBoundingClientRect();
-      const points = items.map(item => { const rect = item.getBoundingClientRect(); return [rect.left - parent.left + 10, rect.top - parent.top + 10]; });
-      node.setAttribute('viewBox', `0 0 ${parent.width} ${parent.height}`);
+      const points = items.map(item => {
+        let x = item.offsetWidth / 2, y = item.offsetHeight / 2;
+        let current: HTMLElement | null = item;
+        while (current && current !== section) {
+          x += current.offsetLeft; y += current.offsetTop;
+          current = current.offsetParent instanceof HTMLElement ? current.offsetParent : null;
+        }
+        return [x, y];
+      });
+      node.setAttribute('viewBox', `0 0 ${section.clientWidth} ${section.clientHeight}`);
       curve.setAttribute('d', points.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join(' '));
       update();
     };
     const update = () => {
       frame = 0;
       const rect = section.getBoundingClientRect();
-      const progress = Math.max(0, Math.min(1, (innerHeight * .8 - rect.top) / (rect.height + innerHeight * .3)));
-      const point = curve.getPointAtLength(curve.getTotalLength() * progress);
+      const progress = Math.max(0, Math.min(1, (innerHeight * .85 - (rect.top + rect.height / 2)) / (innerHeight * .5)));
+      const length = curve.getTotalLength();
+      if (!length) return;
+      const point = curve.getPointAtLength(length * progress);
       ticket.setAttribute('transform', `translate(${point.x} ${point.y})`);
     };
     const scroll = () => { if (!frame) frame = requestAnimationFrame(update); };

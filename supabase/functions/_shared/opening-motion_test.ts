@@ -2,10 +2,12 @@ import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.t
 
 async function runGate({ path = '/', query = '', ua = 'Mozilla Safari', seen = 0, storageFails = false } = {}) {
   const html = await Deno.readTextFile('index.html');
-  const source = html.match(/<script>(.*?)<\/script>/s)![1];
+  const match = html.match(/<script>(.*?)<\/script>/s);
+  if (!match) throw new Error('Missing intro script');
+  const source = match[1];
   let removed = false, shown = false, stored = '';
   const now = 2000000;
-  const node = { remove() { removed = true; }, setAttribute() {}, addEventListener() {} };
+  const node = { style: {}, remove() { removed = true; }, setAttribute() {}, addEventListener() {} };
   const document = {
     documentElement: { style: { setProperty() {} }, classList: { add() { shown = true; } } },
     getElementById() { return node; }, querySelector() { return null; },
@@ -20,6 +22,9 @@ Deno.test('intro gates homepage, bots, 30-minute activity, overrides and blocked
   assert((await runGate({ path: '/about' })).removed);
   assert((await runGate({ ua: 'Googlebot' })).removed);
   assert((await runGate({ seen: 1999999 })).removed);
+  assert((await runGate({ seen: 200000 })).shown); // exactly 30 minutes
+  assert((await runGate({ seen: 200001 })).removed); // one ms inside visit
+  assert((await runGate({ path: '/f/test' })).removed);
   assert((await runGate({ seen: 199999 })).shown);
   assert((await runGate({ query: '?intro=0' })).removed);
   assert((await runGate({ query: '?intro=1', seen: 1999999 })).shown);

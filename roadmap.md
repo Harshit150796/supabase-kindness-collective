@@ -349,3 +349,10 @@
 - [x] Phone image delivery pass on home, campaign, Stories and Blog.
 - [x] Rule tests (76 passed), browser flows and measured report; nothing published.
 - [ ] Production-bundled after-transfer measurement, real-device smoothness and pixel-measured live-tree alignment remain unverified; preview module transfer is not comparable to published bundles.
+
+## Opening review corrections (Oct 8)
+- [x] Protect canvas layout measurement; uniformly scaled compositor-only opening shapes, under the inline budget.
+- [x] Correct cursor layering, hollow hover ring and scroll colour checks; align journey path using layout positions.
+- [x] Preserve React heading nodes with a removable, aria-hidden line overlay.
+- [x] Desktop/phone size, blocked-thread Chromium recording, cursor/path checks; 36 tests passed, preview build OK; nothing published.
+- [ ] Physical iPhone/Safari blocked-thread smoothness and frozen-live pixel registration: blocked on physical hardware/reference capture; simulated evidence and limits documented.
