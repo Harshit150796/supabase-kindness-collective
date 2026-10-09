@@ -32,7 +32,7 @@ Deno.test('intro gates homepage, bots, 30-minute activity, overrides and blocked
 Deno.test('static opening has disabled-JS default, safety, skip and bounded inline budget', async () => {
   const html = await Deno.readTextFile('index.html');
   const intro = html.slice(html.indexOf('<style id="cd-intro-style">'), html.indexOf('<div id="root"'));
-  assert(new TextEncoder().encode(intro).length <= 7400);
+  assert(new TextEncoder().encode(intro).length <= 6600);
   assert(intro.includes('display:none'));
   assert(intro.includes('Skip intro'));
   assert(intro.includes('Escape'));
