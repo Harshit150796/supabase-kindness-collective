@@ -61,21 +61,34 @@ Deno.test('cursor dt uses performance.now at callback start, with 16ms first fra
   assert(trail.includes('let settled = !hadMove'));
   assert(trail.includes('TRAIL_SETTLE_PX'));
 });
-Deno.test('textured colour needs two consecutive samples unless luminance jumps over 0.15', () => {
+Deno.test('textured colour alternating white/blue every 16ms for 2s never switches', () => {
   const s: ColourHysteresis = {};
   const shade = {r:70,g:115,b:60}, leaf = {r:100,g:150,b:80};
-  assertEquals(stableColour(s, shade), 'white');
-  assertEquals(stableColour(s, leaf), "white"); // single blue-classified sample, small jump: held
-  assertEquals(stableColour(s, leaf), "blue");  // second consecutive: switch
-  const j: ColourHysteresis = {};
-  stableColour(j, shade);
-  assertEquals(stableColour(j, {r:150,g:205,b:235}), 'green'); // sky edge: big luminance jump switches at once
-
+  assertEquals(stableColour(s, shade, 0), 'white');
+  for (let t = 16; t <= 2000; t += 16) assertEquals(stableColour(s, t % 32 ? leaf : shade, t), 'white');
 });
-Deno.test('DOM backgrounds switch immediately', () => {
+Deno.test('textured colour switches only after 160ms of a steady new colour', () => {
   const s: ColourHysteresis = {};
-  stableColour(s, {r:10,g:10,b:10});
+  const shade = {r:70,g:115,b:60}, leaf = {r:100,g:150,b:80};
+  assertEquals(stableColour(s, shade, 0), 'white');
+  assertEquals(stableColour(s, leaf, 100), 'white');  // wait starts
+  assertEquals(stableColour(s, leaf, 200), 'white');  // 100ms: held
+  assertEquals(stableColour(s, leaf, 259), 'white');  // 159ms: held
+  assertEquals(stableColour(s, leaf, 260), 'blue');   // 160ms: switch
+  // an interrupting match of the current colour restarts the wait
+  assertEquals(stableColour(s, shade, 300), 'blue');
+  assertEquals(stableColour(s, leaf, 320), 'blue');
+  assertEquals(stableColour(s, shade, 340), 'blue');  // current colour: pending cleared
+  assertEquals(stableColour(s, leaf, 360), 'blue');   // wait restarts here
+  assertEquals(stableColour(s, leaf, 500), 'blue');   // 140ms: held
+  assertEquals(stableColour(s, leaf, 520), 'white');  // 160ms: switch
+});
+Deno.test('DOM backgrounds switch immediately and reset pending state', () => {
+  const s: ColourHysteresis = {};
+  stableColour(s, {r:10,g:10,b:10}, 0);
+  stableColour(s, {r:100,g:150,b:80}, 16); // pending blue
   assertEquals(immediateColour(s, {r:255,g:255,b:255}), 'blue');
+  assertEquals(s.pending, undefined);
 });
 Deno.test('probe averages a 7x7 block from one 196-byte read', async () => {
   const px = new Uint8Array(196); for (let i = 0; i < 196; i += 4) { px[i] = i < 98 ? 0 : 200; px[i+3] = 255; }
