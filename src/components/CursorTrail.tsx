@@ -136,7 +136,7 @@ export function CursorTrail() {
       arm();
       dispose = () => {
         hide(); cancelAnimationFrame(frame); frame = 0; clearInterval(timer); observer.disconnect(); routeChanged.current = () => {};
-        window.removeEventListener('scroll', request, true); window.removeEventListener('pointermove', move); window.removeEventListener('resize', resize);
+        window.removeEventListener('scroll', scrolled, true); window.removeEventListener('pointermove', move); window.removeEventListener('resize', resize);
         document.removeEventListener('mouseleave', leave); window.removeEventListener('blur', blur); window.removeEventListener('focus', focus);
         window.removeEventListener('pointerdown', down); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
         window.removeEventListener('cd:cursor-bg', background); window.removeEventListener('cd:intro-iris', hide); window.removeEventListener('cd:intro-end', introEnd);
