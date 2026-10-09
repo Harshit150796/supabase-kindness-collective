@@ -361,3 +361,8 @@
 - [x] Restore all six compositor-animated trunk/branch/twig shapes at original coordinates and timings.
 - [x] Preserve Supabase photo proportions in both shared image helpers.
 - [x] Verify 1200/2200ms intro frames and real 390px homepage/Stories cards; 40 regression tests pass, preview build OK; nothing published.
+
+## Founder cursor rebuild (Oct 9)
+- [x] Compositor chasing, replacement-pointer lifecycle, top-level portal, press and hollow hover states.
+- [x] Background colour layers with poster/DOM sampling and desktop-hover-only tree probe.
+- [ ] Verify jitter, lifecycle, colours, layering, phone exclusion and tests; report limits. No publishing.

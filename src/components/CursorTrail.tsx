@@ -1,62 +1,85 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
-
-export const CURSOR_QUERY = '(hover: hover) and (pointer: fine)';
-
+import { CURSOR_QUERY, TEXT_ENTRY_SELECTOR, cursorColour, elementBackground, samplePoster, type CursorRGB } from '@/lib/cursorBackground';
+export { CURSOR_QUERY } from '@/lib/cursorBackground';
 export function CursorTrail() {
   const { pathname } = useLocation();
   const host = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const root = host.current;
-    if (!root || pathname.startsWith('/admin')) return;
-    const query = matchMedia(CURSOR_QUERY);
+    if (!root) return;
+    const html = document.documentElement, query = matchMedia(CURSOR_QUERY);
     let dispose = () => {};
     const setup = () => {
       dispose();
-      if (!query.matches) return;
+      if (!query.matches || pathname.startsWith('/admin')) return;
       const dots = Array.from(root.children) as HTMLElement[];
-      const points = dots.map(() => ({ x: -100, y: -100 }));
-      let x = -100, y = -100, frame = 0, last = 0, active = false;
-      let needsHitTest = false;
+      let x = -100, y = -100, frame = 0, active = false, inside = false, focused = document.hasFocus();
+      let canvasTarget: HTMLCanvasElement | null = null;
+      let sampled: (CursorRGB & { x: number; y: number }) | undefined;
+      const colour = (rgb: CursorRGB, photo = false) => { root.dataset.colour = cursorColour(rgb, photo); };
+      const hide = () => {
+        active = false; canvasTarget = null;
+        html.classList.remove('cd-cursor-active'); root.classList.remove('cursor-visible', 'cursor-pressed');
+      };
       const checkTarget = () => {
         const target = document.elementFromPoint(x, y);
-        root.classList.toggle('cursor-hover', !!target?.closest('a,button,[role=button],input,select,textarea,label,summary,[data-cursor=hover]'));
-        root.classList.toggle('cursor-light', !!target?.closest('[data-cursor=light],.bg-primary,.bg-primary-20,.bg-ink,.bg-charcoal'));
-        needsHitTest = false;
+        if (!inside || !focused || html.classList.contains('cd-intro') || !target || target.closest(`${TEXT_ENTRY_SELECTOR},iframe`)) { hide(); return; }
+        root.classList.toggle('cursor-hover', !!target.closest('a,button,[role=button],label,summary,[data-cursor=hover]'));
+        if (!active) {
+          dots.forEach(dot => { dot.style.transition = 'none'; dot.style.transform = `translate3d(${x}px,${y}px,0)`; });
+          void root.offsetWidth;
+          dots.forEach(dot => { dot.style.transition = ''; });
+        }
+        active = true; html.classList.add('cd-cursor-active'); root.classList.add('cursor-visible');
+        const poster = target.closest('.hero-stage')?.querySelector<HTMLImageElement>('[data-tree-poster] img');
+        const picture = poster?.closest('picture');
+        const posterVisible = poster && picture && !picture.classList.contains('opacity-0');
+        canvasTarget = !posterVisible && target instanceof HTMLCanvasElement ? target : null;
+        if (posterVisible) {
+          const rgb = samplePoster(poster, x, y); if (rgb) colour(rgb);
+        } else if (canvasTarget) {
+          if (sampled && Math.abs(sampled.x - x) < 2 && Math.abs(sampled.y - y) < 2) colour(sampled);
+        } else { const bg = elementBackground(target); colour(bg.rgb, bg.photo); }
       };
-      const scroll = () => { needsHitTest = true; if (active && !frame) frame = requestAnimationFrame(tick); };
+      // One-shot input batching, never a chasing animation loop.
+      const flush = () => { frame = 0; checkTarget(); if (active) dots.forEach(dot => { dot.style.transform = `translate3d(${x}px,${y}px,0)`; }); };
+      const schedule = () => { if (!frame) frame = requestAnimationFrame(flush); };
       const move = (event: PointerEvent) => {
         if (event.pointerType !== 'mouse') return;
-        x = event.clientX; y = event.clientY;
-        if (!active) points.forEach(point => { point.x = x; point.y = y; });
-        active = true;
-        needsHitTest = true;
-        if (!frame) frame = requestAnimationFrame(tick);
+        const events = event.getCoalescedEvents?.(); const point = events?.[events.length - 1] ?? event;
+        x = point.clientX; y = point.clientY; inside = true; schedule();
       };
-      const hide = () => { active = false; root.classList.remove('cursor-visible'); cancelAnimationFrame(frame); frame = 0; last = 0; };
-      const tick = (time: number) => {
-        frame = 0;
-        const blocked = document.documentElement.classList.contains('cd-intro');
-        root.classList.toggle('cursor-visible', active && !blocked);
-        if (!active || blocked) { last = 0; return; }
-        if (needsHitTest) checkTarget();
-        const dt = last ? Math.min(64, time - last) : 16.667; last = time;
-        points.forEach((point, index) => {
-          const k = 1 - Math.pow(1 - [0.35, 0.16, 0.09][index], dt / 16.667);
-          point.x += (x - point.x) * k; point.y += (y - point.y) * k;
-          dots[index].style.transform = `translate3d(${point.x}px,${point.y}px,0)`;
-        });
-        frame = requestAnimationFrame(tick);
+      const leave = () => { inside = false; hide(); };
+      const blur = () => { focused = false; hide(); };
+      const focus = () => { focused = true; schedule(); };
+      const down = () => { if (active) root.classList.add('cursor-pressed'); };
+      const up = () => root.classList.remove('cursor-pressed');
+      const background = (event: Event) => {
+        sampled = (event as CustomEvent<CursorRGB & { x: number; y: number }>).detail;
+        if (active && canvasTarget && Math.abs(sampled.x - x) < 2 && Math.abs(sampled.y - y) < 2) colour(sampled);
       };
+      const timer = window.setInterval(() => { if (canvasTarget && active) schedule(); }, 100);
+      const observer = new MutationObserver(() => { if (html.classList.contains('cd-intro')) hide(); });
+      observer.observe(html, { attributes: true, attributeFilter: ['class'] });
       window.addEventListener('pointermove', move, { passive: true });
-      window.addEventListener('scroll', scroll, { passive: true });
-      document.addEventListener('mouseleave', hide);
-      window.addEventListener('blur', hide);
-      window.addEventListener('cd:intro-iris', hide);
-      dispose = () => { hide(); window.removeEventListener('scroll', scroll); window.removeEventListener('pointermove', move); document.removeEventListener('mouseleave', hide); window.removeEventListener('blur', hide); window.removeEventListener('cd:intro-iris', hide); };
+      window.addEventListener('scroll', schedule, { passive: true, capture: true });
+      document.addEventListener('mouseleave', leave); window.addEventListener('blur', blur); window.addEventListener('focus', focus);
+      window.addEventListener('pointerdown', down); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+      window.addEventListener('cd:cursor-bg', background); window.addEventListener('cd:intro-iris', hide); window.addEventListener('cd:intro-end', schedule);
+      dispose = () => {
+        hide(); cancelAnimationFrame(frame); clearInterval(timer); observer.disconnect();
+        window.removeEventListener('scroll', schedule, true); window.removeEventListener('pointermove', move);
+        document.removeEventListener('mouseleave', leave); window.removeEventListener('blur', blur); window.removeEventListener('focus', focus);
+        window.removeEventListener('pointerdown', down); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
+        window.removeEventListener('cd:cursor-bg', background); window.removeEventListener('cd:intro-iris', hide); window.removeEventListener('cd:intro-end', schedule);
+      };
     };
     setup(); query.addEventListener('change', setup);
     return () => { dispose(); query.removeEventListener('change', setup); };
   }, [pathname]);
-  return <div ref={host} className="cursor-trail" aria-hidden="true"><span><i /></span><span><i /></span><span><i /></span></div>;
+  return createPortal(<div ref={host} className="cursor-trail" data-colour="blue" aria-hidden="true">
+    {[0, 1, 2].map(index => <span key={index}><i>{(['white', 'blue', 'green'] as const).map(colour => <b key={colour} className={`cursor-layer cursor-layer-${colour}`} />)}</i></span>)}
+  </div>, document.body);
 }

@@ -55,15 +55,16 @@ Deno.test('tree readiness is emitted at reveal, with unavailable-tree fallback',
   assert(hero.includes('if (!allowed) announceTreeReady()'));
 });
 
-Deno.test('cursor is fine-pointer only, admin excluded, RAF/ref driven and never hides mouse', async () => {
+Deno.test('cursor is fine-pointer only, admin excluded and compositor driven', async () => {
   const cursor = await Deno.readTextFile('src/components/CursorTrail.tsx');
   const css = await Deno.readTextFile('src/index.css');
-  assert(cursor.includes('(hover: hover) and (pointer: fine)'));
+  const background = await Deno.readTextFile('src/lib/cursorBackground.ts');
+  assert(background.includes('(hover: hover) and (pointer: fine)'));
   assert(cursor.includes("pathname.startsWith('/admin')"));
   assert(cursor.includes('translate3d'));
-  assert(cursor.includes('Math.pow'));
+  assert(!cursor.includes('Math.pow'));
   assert(!cursor.includes('useState'));
-  assert(!css.includes('cursor: none'));
+  assert(css.includes('cursor: none'));
 });
 
 Deno.test('effects reuse installed motion and avoid additional animation libraries', async () => {
