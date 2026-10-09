@@ -21,6 +21,7 @@ import { AmbientBirds } from './tree3d/AmbientBirds';
 import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
 import { TransparencyPopover } from './tree3d/TransparencyPopover';
 import { PlantsLayer } from './tree3d/PlantsLayer';
+import { CursorPixelProbe } from './tree3d/CursorPixelProbe';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { shouldReduceQuality } from '@/lib/treeQuality';
 import { useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
@@ -823,6 +824,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
         }}
       >
         {/* PerformanceMonitor removed — was causing DPR rescaling flicker */}
+        <CursorPixelProbe />
         <OrbitControls
           ref={controlsRef}
           enabled={!gentle}

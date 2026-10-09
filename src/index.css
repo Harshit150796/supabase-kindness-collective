@@ -2,16 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
-.cursor-trail { position: fixed; inset: 0; pointer-events: none; z-index: 55; opacity: 0; transition: opacity .15s; --cursor-color: hsl(var(--brand-donation)); }
+ .cursor-trail { position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; opacity: 0; transition: opacity .15s; }
 .cursor-visible { opacity: 1; }
-.cursor-light { --cursor-color: hsl(var(--brand-surface)); }
-.cursor-trail > span { position: absolute; top: 0; left: 0; will-change: transform; }
-.cursor-trail i { display: block; width: 22px; height: 22px; margin: -11px; border-radius: 50%; background: var(--cursor-color); transition: transform .25s, opacity .25s, background-color .25s, border-color .25s; }
-.cursor-trail > span:first-child i { border: 2px solid hsl(var(--brand-surface)); box-shadow: 0 2px 8px hsl(var(--surface-shadow) / .16); }
+@media (hover: hover) and (pointer: fine) {
+  html.cd-cursor-active, html.cd-cursor-active body, html.cd-cursor-active body * { cursor: none !important; }
+  html.cd-cursor-active input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]), html.cd-cursor-active textarea, html.cd-cursor-active [contenteditable]:not([contenteditable="false"]) { cursor: text !important; }
+  html.cd-cursor-active select, html.cd-cursor-active iframe { cursor: auto !important; }
+}
+.cursor-trail > span { position: absolute; top: 0; left: 0; will-change: transform; transition: transform 70ms cubic-bezier(.22,1,.36,1); }
+.cursor-trail > span:nth-child(2) { transition-duration: 300ms; }
+.cursor-trail > span:nth-child(3) { transition-duration: 600ms; }
+.cursor-trail i { position: absolute; display: block; width: 22px; height: 22px; margin: -11px; border-radius: 50%; transition: transform 200ms cubic-bezier(.22,1,.36,1), opacity 200ms; }
+.cursor-layer { position: absolute; inset: 0; border-radius: 50%; opacity: 0; will-change: opacity; transition: opacity 200ms; }
+.cursor-layer-white { --dot-colour: hsl(var(--brand-surface)); background: var(--dot-colour); }
+.cursor-layer-blue { --dot-colour: hsl(var(--brand-donation)); background: var(--dot-colour); }
+.cursor-layer-green { --dot-colour: hsl(var(--brand-coupon)); background: var(--dot-colour); }
+.cursor-trail[data-colour="white"] .cursor-layer-white, .cursor-trail[data-colour="blue"] .cursor-layer-blue, .cursor-trail[data-colour="green"] .cursor-layer-green { opacity: 1; }
+.cursor-trail > span:first-child .cursor-layer { border: 2px solid hsl(var(--brand-surface)); box-shadow: 0 2px 8px hsl(var(--surface-shadow) / .16); }
+.cursor-trail > span:first-child .cursor-layer-white { border-color: hsl(var(--brand-donation) / .35); }
 .cursor-trail > span:nth-child(2) i { width: 13px; height: 13px; margin: -6.5px; }
 .cursor-trail > span:nth-child(3) i { width: 7px; height: 7px; margin: -3.5px; }
-.cursor-hover > span:first-child i { width: 44px; height: 44px; margin: -22px; background: transparent; border: 2px solid var(--cursor-color); box-shadow: none; }
+.cursor-hover > span:first-child i { width: 44px; height: 44px; margin: -22px; }
+.cursor-hover > span:first-child .cursor-layer { background: transparent; border-color: var(--dot-colour); box-shadow: none; }
 .cursor-hover > span:not(:first-child) i { opacity: 0; }
+.cursor-pressed > span:first-child i { transform: scale(.85); }
 .line-reveal-host { position: relative; }
 .line-reveal-active { -webkit-text-fill-color: transparent; }
 .heading-line-overlay { position: absolute; inset: 0; pointer-events: none; -webkit-text-fill-color: currentColor; }
