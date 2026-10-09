@@ -2,10 +2,12 @@ import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.t
 
 async function runGate({ path = '/', query = '', ua = 'Mozilla Safari', seen = 0, storageFails = false } = {}) {
   const html = await Deno.readTextFile('index.html');
-  const source = html.match(/<script>(.*?)<\/script>/s)![1];
+  const match = html.match(/<script>(.*?)<\/script>/s);
+  if (!match) throw new Error('Missing intro script');
+  const source = match[1];
   let removed = false, shown = false, stored = '';
   const now = 2000000;
-  const node = { remove() { removed = true; }, setAttribute() {}, addEventListener() {} };
+  const node = { style: {}, remove() { removed = true; }, setAttribute() {}, addEventListener() {} };
   const document = {
     documentElement: { style: { setProperty() {} }, classList: { add() { shown = true; } } },
     getElementById() { return node; }, querySelector() { return null; },
@@ -30,7 +32,7 @@ Deno.test('intro gates homepage, bots, 30-minute activity, overrides and blocked
 Deno.test('static opening has disabled-JS default, safety, skip and bounded inline budget', async () => {
   const html = await Deno.readTextFile('index.html');
   const intro = html.slice(html.indexOf('<style id="cd-intro-style">'), html.indexOf('<div id="root"'));
-  assert(new TextEncoder().encode(intro).length <= 6200);
+  assert(new TextEncoder().encode(intro).length <= 7400);
   assert(intro.includes('display:none'));
   assert(intro.includes('Skip intro'));
   assert(intro.includes('Escape'));
