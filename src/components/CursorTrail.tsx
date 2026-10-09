@@ -21,7 +21,8 @@ export function CursorTrail() {
       const colour = (rgb: CursorRGB, photo = false) => { root.dataset.colour = cursorColour(rgb, photo); };
       const hide = () => {
         active = false; canvasTarget = null;
-        html.classList.remove('cd-cursor-active'); root.classList.remove('cursor-visible', 'cursor-pressed');
+        if (html.classList.contains('cd-cursor-active')) html.classList.remove('cd-cursor-active');
+        root.classList.remove('cursor-visible', 'cursor-pressed');
       };
       const checkTarget = () => {
         const target = document.elementFromPoint(x, y);
