@@ -358,6 +358,6 @@
 - [ ] Physical iPhone/Safari blocked-thread smoothness and frozen-live pixel registration: blocked on physical hardware/reference capture; simulated evidence and limits documented.
 
 ## Round-2 intro and phone photo corrections (Oct 9)
-- [ ] Restore all six compositor-animated trunk/branch/twig shapes at original coordinates and timings.
-- [ ] Preserve Supabase photo proportions in both shared image helpers.
-- [ ] Verify 1200/2200ms intro frames and real 390px homepage/Stories cards; run regression tests, do not publish.
+- [x] Restore all six compositor-animated trunk/branch/twig shapes at original coordinates and timings.
+- [x] Preserve Supabase photo proportions in both shared image helpers.
+- [x] Verify 1200/2200ms intro frames and real 390px homepage/Stories cards; 40 regression tests pass, preview build OK; nothing published.
