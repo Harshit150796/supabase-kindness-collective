@@ -2,7 +2,8 @@
 
 ## Cursor light smoothing and hit-test follow-up (Oct 9)
 - [x] Smooth all three dots with callback execution time; cache move targets/backgrounds; soften the hover ring only.
-- [ ] Verify timing tests, homepage hit-test counter, zero settled writes and console/build health; do not publish.
+- [x] Verify 20 tests, homepage move hit tests (0), settled writes next second (0), animated ring and clean build; no runtime errors, existing preview ref warnings reported. Nothing published.
+- [ ] Physical-mouse/accelerated-tree callback cost — hardware unavailable; DOM/poster verification used WebGL disabled.
 
 ## Restore complete homepage motion and tighten the 95¢ transition (Oct 7)
 - [x] Remove the unrequested retailer-logo pause control while retaining the universal 48-second loop.
