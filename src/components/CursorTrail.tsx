@@ -49,7 +49,7 @@ export function CursorTrail() {
       const write = (i: number) => { dots[i].style.transform = `translate3d(${pos[i].x}px,${pos[i].y}px,0)`; };
       // Hide the system pointer from load; dots stay invisible until the first move.
       const arm = () => {
-        if (focused && !admin() && !html.classList.contains('cd-intro') && !html.classList.contains('cd-cursor-active')) html.classList.add('cd-cursor-active');
+        if (focused && !admin() && !html.classList.contains('cd-cursor-active')) html.classList.add('cd-cursor-active');
       };
       const hide = () => {
         active = false; canvasTarget = null;
@@ -62,12 +62,19 @@ export function CursorTrail() {
       };
       const checkTarget = (target: Element | null, now: number) => {
         if (!inside) return;
-        if (!focused || admin() || html.classList.contains('cd-intro') || !target || target.closest(`${TEXT_ENTRY_SELECTOR},iframe`)) { hide(); return; }
+        if (!focused || admin() || !target || target.closest(`${TEXT_ENTRY_SELECTOR},iframe`)) { hide(); return; }
         root.classList.toggle('cursor-hover', !!target.closest('a,button,[role=button],label,summary,[data-cursor=hover]'));
         if (!active) pos.forEach(p => { p.x = x; p.y = y; }); // first entry: all dots at the pointer
         active = true;
         if (!html.classList.contains('cd-cursor-active')) html.classList.add('cd-cursor-active');
         root.classList.add('cursor-visible');
+        if (html.classList.contains('cd-intro') && !html.classList.contains('cd-iris')) {
+          const intro = document.getElementById('cd-intro');
+          root.classList.remove('cursor-hover');
+          canvasTarget = null;
+          if (intro) { const bg = elementBackground(intro); paint(immediateColour(tone, bg.rgb, false)); }
+          return;
+        }
         if (!backgroundCache || backgroundCache.target !== target || now - backgroundCache.at > 150) {
           const stage = target.closest('.hero-stage');
           backgroundCache = { target, at: now, value: stage ? stageBackground(target, stage) : elementBackground(target) };
@@ -75,7 +82,8 @@ export function CursorTrail() {
         const bg = backgroundCache.value;
         canvasTarget = null;
         if (bg) { paint(immediateColour(tone, bg.rgb, bg.photo)); return; }
-        const stage = target.closest('.hero-stage')!;
+        const stage = target.closest('.hero-stage');
+        if (!stage) return;
         const poster = stage.querySelector<HTMLImageElement>('[data-tree-poster] img');
         const picture = poster?.closest('picture');
         if (poster && picture && !picture.classList.contains('opacity-0')) {
@@ -124,7 +132,7 @@ export function CursorTrail() {
       };
       routeChanged.current = () => { backgroundCache = undefined; if (admin()) hide(); else { arm(); request(); } };
       const timer = window.setInterval(() => { if (canvasTarget && active) request(); }, 100);
-      const observer = new MutationObserver(() => { if (html.classList.contains('cd-intro')) hide(); });
+      const observer = new MutationObserver(() => { backgroundCache = undefined; arm(); if (inside) request(); });
       observer.observe(html, { attributes: true, attributeFilter: ['class'] });
       const resize = () => { posterStale = true; };
       const scrolled = () => { posterStale = true; request(); };
@@ -133,14 +141,14 @@ export function CursorTrail() {
       window.addEventListener('scroll', scrolled, { passive: true, capture: true });
       document.addEventListener('mouseleave', leave); window.addEventListener('blur', blur); window.addEventListener('focus', focus);
       window.addEventListener('pointerdown', down); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
-      window.addEventListener('cd:cursor-bg', background); window.addEventListener('cd:intro-iris', hide); window.addEventListener('cd:intro-end', introEnd);
+      window.addEventListener('cd:cursor-bg', background); window.addEventListener('cd:intro-iris', introEnd); window.addEventListener('cd:intro-end', introEnd);
       arm();
       dispose = () => {
         hide(); cancelAnimationFrame(frame); frame = 0; clearInterval(timer); observer.disconnect(); routeChanged.current = () => {};
         window.removeEventListener('scroll', scrolled, true); window.removeEventListener('pointermove', move); window.removeEventListener('resize', resize);
         document.removeEventListener('mouseleave', leave); window.removeEventListener('blur', blur); window.removeEventListener('focus', focus);
         window.removeEventListener('pointerdown', down); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
-        window.removeEventListener('cd:cursor-bg', background); window.removeEventListener('cd:intro-iris', hide); window.removeEventListener('cd:intro-end', introEnd);
+        window.removeEventListener('cd:cursor-bg', background); window.removeEventListener('cd:intro-iris', introEnd); window.removeEventListener('cd:intro-end', introEnd);
       };
     };
     setup(); query.addEventListener('change', setup);

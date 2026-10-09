@@ -192,7 +192,7 @@ function CameraRig({
   return null;
 }
 
-function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = false }: { shadowSize?: number; shadowBlur?: number; tightShadow?: boolean }) {
+function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = false, directPalette = false }: { shadowSize?: number; shadowBlur?: number; tightShadow?: boolean; directPalette?: boolean }) {
   const { timeOfDay } = useInteraction();
   const dirRef = useRef<THREE.DirectionalLight>(null);
   const ambRef = useRef<THREE.AmbientLight>(null);
@@ -231,10 +231,13 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = fals
     >;
   }, [targets]);
 
-  const dirColor = useMemo(() => new THREE.Color(targets.day.dirCol), [targets]);
-  const ambColor = useMemo(() => new THREE.Color(targets.day.ambCol), [targets]);
-  const fillColor = useMemo(() => new THREE.Color(targets.day.fillCol), [targets]);
+  const initialTime = useRef<TimeOfDay>(directPalette ? timeOfDay : 'day').current;
+  const initial = targets[initialTime];
+  const dirColor = useMemo(() => new THREE.Color(initial.dirCol), [targets]);
+  const ambColor = useMemo(() => new THREE.Color(initial.ambCol), [targets]);
+  const fillColor = useMemo(() => new THREE.Color(initial.fillCol), [targets]);
 
+  useEffect(() => { fogColorRef.current.set(initial.fog); }, [initial]);
   useFrame((_, dt) => {
     const t = targets[timeOfDay];
     const tc = targetColors[timeOfDay];
@@ -263,12 +266,12 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = fals
 
   return (
     <>
-      <ambientLight ref={ambRef} intensity={0.75} color="#F4F1E8" />
+      <ambientLight ref={ambRef} intensity={initial.ambInt} color={initial.ambCol} />
       <directionalLight
         ref={dirRef}
         position={[6, 11, 5]}
-        intensity={1.35}
-        color="#FFF4E0"
+        intensity={initial.dirInt}
+        color={initial.dirCol}
         castShadow
         shadow-mapSize-width={shadowSize}
         shadow-mapSize-height={shadowSize}
@@ -280,7 +283,7 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = fals
         shadow-radius={8}
         shadow-blurSamples={shadowBlur}
       />
-      <directionalLight ref={fillRef} position={[-6, 5, -3]} intensity={0.45} color="#BFD8E8" />
+      <directionalLight ref={fillRef} position={[-6, 5, -3]} intensity={initial.fillInt} color={initial.fillCol} />
     </>
   );
 }
@@ -328,7 +331,7 @@ function PerfWatchdog({ onSlow, active }: { onSlow: () => void; active: boolean 
   return null;
 }
 
-function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobile: boolean; onReady: () => void }) {
+function Scene({ settings, isMobile, onReady, directPalette }: { settings: TierSettings; isMobile: boolean; onReady: () => void; directPalette: boolean }) {
   const gentle = useMotionPreference() === 'gentle';
   useEffect(() => {
     if (gentle) setStates(previous => previous.map(() => ({ phase: 'hanging' })));
@@ -365,9 +368,12 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
     onReady();
   }, [gl, onReady]);
   useEffect(() => {
+    // An opening-covered scene must prove a full drawn frame; the inline cap
+    // owns its fallback, rather than announcing a timer as live readiness.
+    if (directPalette) return;
     const timer = window.setTimeout(() => reveal('safety'), 3000);
     return () => window.clearTimeout(timer);
-  }, [reveal]);
+  }, [reveal, directPalette]);
   useEffect(() => {
     let active = true;
     openingLogoPreload.then((diagnostics) => {
@@ -572,12 +578,12 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
 
   return (
     <>
-      <DayNightLights shadowSize={settings.shadowMapSize} />
+      <DayNightLights directPalette={directPalette} shadowSize={settings.shadowMapSize} />
       <ProceduralEnvironment />
       <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />
       <fog attach="fog" args={['#DCE6D5', 18, 45]} />
 
-      <Sky gentle={gentle} />
+      <Sky gentle={gentle} directPalette={directPalette} />
 
       <Tree lowPower={settings.tier === 'low'} />
       <Ground y={GROUND_Y} />
@@ -643,7 +649,7 @@ function readForcedTier(): DeviceTier | undefined {
   }
 }
 
-export function Tree3DScene({ onReady }: { onReady?: () => void }) {
+export function Tree3DScene({ onReady, directPalette = false }: { onReady?: () => void; directPalette?: boolean }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   // 0 = zoomed in, 1 = zoomed out. Start mostly out so one wheel gesture finishes it.
@@ -756,6 +762,7 @@ export function Tree3DScene({ onReady }: { onReady?: () => void }) {
             isMobile={isMobile}
             onSlow={forced ? () => undefined : requestDowngrade}
             onReady={onReady}
+            directPalette={directPalette}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#FFF2D8] to-[#D8E0CC]" />
@@ -779,9 +786,10 @@ interface InnerProps {
   isMobile: boolean;
   onSlow: () => void;
   onReady?: () => void;
+  directPalette: boolean;
 }
 
-function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, settings, antialias, isMobile, onSlow, onReady }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, settings, antialias, isMobile, onSlow, onReady, directPalette }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const gentle = useMotionPreference() === 'gentle';
   const [ready, setReady] = useState(false);
@@ -843,7 +851,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
         {!gentle && <WindTracker />}
         <ShadowSwitch enabled={settings.shadows} />
         <Suspense fallback={null}>
-          <Scene settings={settings} isMobile={isMobile} onReady={sceneReady} />
+          <Scene directPalette={directPalette} settings={settings} isMobile={isMobile} onReady={sceneReady} />
           <PerfWatchdog onSlow={onSlow} active={inView && ready} />
         </Suspense>
 

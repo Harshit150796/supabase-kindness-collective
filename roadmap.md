@@ -1,5 +1,11 @@
 # Roadmap
 
+## Harshit's cinematic every-load opening (Oct 9)
+- [ ] Replace visit/skip gates with every-full-homepage opening and cinematic time-of-day artwork.
+- [ ] Start tree assets/module concurrently; suppress poster until fallback; match direct live palette.
+- [ ] Enable opening cursor dots and add timing/gating tests.
+- [ ] Verify repeat loads, no skip, preload/fallback/readiness/cap and day/night desktop/phone captures; do not publish.
+
 ## Poster rect caching and AGENTS.md timing note (Oct 9)
 - [x] Cache poster rect in page coordinates, refresh on resize/src change/500ms; derive viewport rect from scroll offsets.
 - [x] AGENTS.md cursor timing rule now says rAF timestamp with >6ms clock fallback (frameDt).
