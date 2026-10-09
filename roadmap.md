@@ -356,3 +356,8 @@
 - [x] Preserve React heading nodes with a removable, aria-hidden line overlay.
 - [x] Desktop/phone size, blocked-thread Chromium recording, cursor/path checks; 36 tests passed, preview build OK; nothing published.
 - [ ] Physical iPhone/Safari blocked-thread smoothness and frozen-live pixel registration: blocked on physical hardware/reference capture; simulated evidence and limits documented.
+
+## Round-2 intro and phone photo corrections (Oct 9)
+- [x] Restore all six compositor-animated trunk/branch/twig shapes at original coordinates and timings.
+- [x] Preserve Supabase photo proportions in both shared image helpers.
+- [x] Verify 1200/2200ms intro frames and real 390px homepage/Stories cards; 40 regression tests pass, preview build OK; nothing published.

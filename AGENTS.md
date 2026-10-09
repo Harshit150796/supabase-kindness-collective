@@ -10,7 +10,7 @@
 - Shared reveals decide via `revealMode` (pre-trigger 20% below viewport, late on-screen mounts still animate, time-based fling detection) so busy frames never skip motion.
 - The first-HTML opening uses compositor-animated HTML wrappers independently of React; only the poster settles in scale, and Canvas uses offsetSize measurements so transforms cannot change tree framing.
 - Editorial line reveals use removable aria-hidden overlays without replacing React-owned nodes; font/initial-frame settlement and the shared observer protect startup.
-- Responsive public photos use known managed-host transforms or generated local variants; never append transformation parameters to unknown hosts.
+- Responsive public photos use proportional contain transforms on managed Supabase hosts or generated local variants; never append transformation parameters to unknown hosts or crop at delivery, because presentation framing belongs to the image container.
 - Motion is full on every device; the OS reduced-motion setting is not consulted (founder decision lives in memory).
 - Public photos stay local; without verified people-photo consent, use coupon/receipt/trace visuals.
 - Preserve the two-color CouponDonation wordmark exactly as `#2e7d32` for Coupon and `#1565c0` for Donation.
