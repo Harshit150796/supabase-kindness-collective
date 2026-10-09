@@ -30,7 +30,7 @@ Deno.test('probe rate is capped at twelve reads a second and fine pointers', () 
 Deno.test('probe is read-only and gates before default-framebuffer read', async () => {
   const probe = await Deno.readTextFile('src/components/landing/tree3d/CursorPixelProbe.tsx');
   assert(probe.indexOf('!query.matches') < probe.indexOf('gl.readPixels'));
-  assert(probe.indexOf('document.elementFromPoint(x, y) !== canvas') < probe.indexOf('gl.readPixels'));
+  assert(probe.indexOf('hit !== canvas') < probe.indexOf('gl.readPixels'));
   assert(probe.includes('addAfterEffect'));
   for (const forbidden of ['bindFramebuffer(', 'setRenderTarget(', 'invalidate(', 'preserveDrawingBuffer:']) assert(!probe.includes(forbidden));
 });
@@ -54,8 +54,8 @@ Deno.test('lead dot has no transition and trail loop is rAF-only', async () => {
 });
 Deno.test('cursor dt uses performance.now at callback start, with 16ms first frame and lead included in settlement', async () => {
   const trail = await Deno.readTextFile('src/components/CursorTrail.tsx');
-  assert(/const tick = \(\) => \{\s*const now = performance\.now\(\);/.test(trail));
-  assert(trail.includes('const dt = last ? now - last : 16'));
+  assert(/const tick = \(ts: number\) => \{\s*const now = performance\.now\(\);/.test(trail));
+  assert(trail.includes('const dt = lastTs ? frameDt(ts - lastTs, now - lastNow) : 16'));
   assert(trail.includes('for (let i = 0; i < pos.length; i++)'));
   assert(trail.includes('trailFactor(dt, TRAIL_TAU[i])'));
   assert(trail.includes('let settled = !hadMove'));
@@ -83,4 +83,11 @@ Deno.test('probe averages a 7x7 block from one 196-byte read', async () => {
   assertEquals(averagePixels(new Uint8Array(196)), undefined);
   const probe = await Deno.readTextFile('src/components/landing/tree3d/CursorPixelProbe.tsx');
   assert(probe.includes('BLOCK = 7') && (probe.match(/readPixels\(/g) ?? []).length === 1);
+});
+import { frameDt } from '../../../src/lib/cursorBackground.ts';
+Deno.test('frameDt trusts rAF unless it disagrees with the clock by more than 6ms', () => {
+  assertEquals(frameDt(16.67, 18.2), 16.67);
+  assertEquals(frameDt(33.3, 25), 25);
+  assertEquals(frameDt(400, 400), 64);
+  assertEquals(frameDt(-5, -4), 0);
 });

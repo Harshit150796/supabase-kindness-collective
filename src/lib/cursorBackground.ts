@@ -58,6 +58,15 @@ export const TRAIL_SETTLE_PX = 0.3;
 export function trailFactor(dt: number, tau: number) {
   return 1 - Math.exp(-Math.min(Math.max(dt, 0), TRAIL_MAX_DT) / tau);
 }
+// rAF timestamps are steadier than callback time unless the two disagree by >6ms (overload).
+export function frameDt(rafDelta: number, nowDelta: number) {
+  const dt = Math.abs(rafDelta - nowDelta) > 6 ? nowDelta : rafDelta;
+  return Math.min(Math.max(dt, 0), TRAIL_MAX_DT);
+}
+export function opaqueBackground(node: Element) {
+  const v = getComputedStyle(node).backgroundColor.match(/[\d.]+/g)?.map(Number);
+  return !!v && v.length >= 3 && (v.length < 4 || v[3] >= .99);
+}
 export function luminance({ r, g, b }: CursorRGB) {
   const linear = (v: number) => (v /= 255) <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
   return .2126 * linear(r) + .7152 * linear(g) + .0722 * linear(b);

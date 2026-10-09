@@ -378,3 +378,6 @@
 - [x] 7×7 averaged probe read and textured-colour hysteresis; DOM colours immediate.
 - [x] Screencast benchmark: zero busy stalls; busy CV 0.17–0.30 vs previous 0.75; 50 Deno + 3 Bun tests pass. Nothing published.
 - [ ] Busy CV ≤0.15 confirmation — blocked on a lower-noise capture rig (this sandbox's compositor-only control already measures 0.22–0.24).
+
+## Cursor frame timing, poster colours, route persistence (Oct 9)
+- [x] frameDt hybrid, stage poster sampling, route-persistent setup, pointer hidden from load; verified in preview, unpublished.

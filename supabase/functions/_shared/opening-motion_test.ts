@@ -60,7 +60,8 @@ Deno.test('cursor is fine-pointer only, admin excluded and compositor driven', a
   const css = await Deno.readTextFile('src/index.css');
   const background = await Deno.readTextFile('src/lib/cursorBackground.ts');
   assert(background.includes('(hover: hover) and (pointer: fine)'));
-  assert(cursor.includes("pathname.startsWith('/admin')"));
+  assert(cursor.includes("path.current.startsWith('/admin')"));
+  assert(/\}, \[\]\);\s*return createPortal/.test(cursor)); // set up once, survives route changes
   assert(cursor.includes('translate3d'));
   assert(!cursor.includes('Math.pow'));
   assert(!cursor.includes('useState'));
