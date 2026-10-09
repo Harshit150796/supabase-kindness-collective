@@ -27,7 +27,7 @@ export function resolveFundraiserImage(source: FundraiserImageSource): string | 
 export function transformedFundraiserImage(url: string | null, width = 960, quality = 76) {
   if (!url || !url.includes('/storage/v1/object/public/')) return url;
   const rendered = url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
-  return `${rendered}?width=${width}&quality=${quality}&resize=cover`;
+  return `${rendered}?width=${width}&quality=${quality}&resize=contain`;
 }
 
 export function FundraiserImageFallback({ category, className = '' }: { category?: string | null; className?: string }) {
