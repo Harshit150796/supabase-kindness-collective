@@ -75,3 +75,30 @@ Deno.test('effects reuse installed motion and avoid additional animation librari
   const path = await Deno.readTextFile('src/components/landing/CouponScrollPath.tsx');
   assert(path.includes('getPointAtLength'));
 });
+
+Deno.test('opening mounts trunk and five branches at original coordinates and delays', async () => {
+  const html = await Deno.readTextFile('index.html');
+  const source = html.match(/<script>(.*?)<\/script>/s)?.[1];
+  assert(source);
+  type Shape = { className: string; style: { cssText: string }; innerHTML: string; append(...nodes: Shape[]): void };
+  const nodes = new Map<string, Shape & { children: Shape[] }>();
+  const create = () => ({ className: '', style: { cssText: '' }, innerHTML: '', children: [] as Shape[], append(...children: Shape[]) { this.children.push(...children); }, querySelector() {}, addEventListener() {} });
+  const document = {
+    documentElement: { style: { setProperty() {} }, classList: { add() {} } },
+    createElement: create,
+    getElementById(id: string) { let node = nodes.get(id); if (!node) { node = create(); nodes.set(id, node); } return node; },
+    querySelector() { return null; },
+  };
+  new Function('document', 'location', 'navigator', 'localStorage', 'Date', 'performance', 'innerWidth', 'innerHeight', 'addEventListener', 'setTimeout', source)(document, { pathname: '/', search: '?intro=1' }, { userAgent: 'Safari' }, { getItem() { return null; }, setItem() {} }, { now: () => 2000000 }, { now: () => 0 }, 390, 664, () => {}, () => {});
+  const shapes = nodes.get('cd-b')?.children ?? [];
+  assertEquals(shapes.length, 6);
+  const expected = [[640,586,640,430,10,.55],[640,500,548,430,6,.9],[640,478,734,414,6,.97],[640,432,640,320,6,1.02],[580,462,568,410,4,1.12],[700,444,714,396,4,1.16]];
+  expected.forEach(([x,y,X,Y,width,delay], index) => {
+    const shape = shapes[index];
+    const left = Math.min(x,X), top = Math.min(y,Y);
+    assertEquals(shape.className, index === 0 ? 'b v' : 'b');
+    assert(shape.style.cssText.includes(`--d:${delay}s`));
+    assert(shape.style.cssText.includes(`stroke-width:${width}px`));
+    assert(shape.innerHTML.includes(`M${x-left} ${y-top}L${X-left} ${Y-top}`));
+  });
+});
