@@ -51,14 +51,14 @@ Deno.test('lead dot has no transition and trail loop is rAF-only', async () => {
 });
 Deno.test('textured colour needs two consecutive samples unless luminance jumps over 0.15', () => {
   const s: ColourHysteresis = {};
-  const shade = {r:30,g:70,b:35}, leaf = {r:110,g:180,b:75};
+  const shade = {r:70,g:115,b:60}, leaf = {r:100,g:150,b:80};
   assertEquals(stableColour(s, shade), 'white');
-  assertEquals(stableColour(s, {r:60,g:110,b:60}), 'white'); // single blue-classified sample, small jump: held
-  assertEquals(stableColour(s, {r:60,g:110,b:60}), 'blue');  // second consecutive: switch
+  assertEquals(stableColour(s, leaf), "white"); // single blue-classified sample, small jump: held
+  assertEquals(stableColour(s, leaf), "blue");  // second consecutive: switch
   const j: ColourHysteresis = {};
   stableColour(j, shade);
   assertEquals(stableColour(j, {r:150,g:205,b:235}), 'green'); // sky edge: big luminance jump switches at once
-  void leaf;
+
 });
 Deno.test('DOM backgrounds switch immediately', () => {
   const s: ColourHysteresis = {};
