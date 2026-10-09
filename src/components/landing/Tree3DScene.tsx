@@ -368,9 +368,12 @@ function Scene({ settings, isMobile, onReady, directPalette }: { settings: TierS
     onReady();
   }, [gl, onReady]);
   useEffect(() => {
+    // An opening-covered scene must prove a full drawn frame; the inline cap
+    // owns its fallback, rather than announcing a timer as live readiness.
+    if (directPalette) return;
     const timer = window.setTimeout(() => reveal('safety'), 3000);
     return () => window.clearTimeout(timer);
-  }, [reveal]);
+  }, [reveal, directPalette]);
   useEffect(() => {
     let active = true;
     openingLogoPreload.then((diagnostics) => {

@@ -1,6 +1,4 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import desktopPoster from '@/assets/tree-poster-desktop.webp';
-import mobilePoster from '@/assets/tree-poster-mobile.webp';
 import { HeroHeadline } from '@/components/landing/hero/HeroHeadline';
 import { AITreeLauncher } from '@/components/landing/hero/AITreeLauncher';
 const AITreeChat = lazy(() => import('@/components/landing/hero/AITreeChat').then(m => ({ default: m.AITreeChat })));
@@ -8,6 +6,7 @@ import { Tree3DErrorBoundary } from '@/components/landing/Tree3DErrorBoundary';
 import { allowLiveTree } from '@/lib/treeQuality';
 import { announceTreeReady } from '@/lib/treeReady';
 const Tree3DScene = lazy(() => import('@/components/landing/Tree3DScene'));
+const TreePoster = lazy(() => import('@/components/landing/TreePoster'));
 
 const BOT_UA_RE = /(bot|crawler|spider|crawling|Googlebot|bingbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|Discordbot|HeadlessChrome|Lighthouse|PageSpeed)/i;
 
@@ -60,22 +59,7 @@ export function HeroSection() {
       className="hero-stage relative w-full h-[58svh] min-h-[330px] md:h-[74vh] [@media(max-height:500px)]:h-[calc(100svh-64px)] [@media(max-height:500px)]:min-h-[300px] [@media(max-height:500px)]:max-h-[480px] overflow-hidden"
       style={{ contain: 'layout paint' }}
     >
-      {/* Stacked layers — no DOM swap, no CLS. The gradient always paints first;
-          the canvas wrapper sits on top immediately once WebGL capability is known. */}
-      {posterAllowed && <picture
-        data-tree-poster
-        className={`absolute inset-0 transition-opacity duration-500 ${treeReady ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
-      >
-        <source media="(max-width: 767px)" srcSet={mobilePoster} />
-        <img
-          src={desktopPoster}
-          width={2880} height={828}
-          alt="The CouponDonation tree, growing familiar retailer logos"
-          className="h-full w-full object-cover"
-          fetchPriority="high"
-          decoding="async"
-        />
-      </picture>}
+      {posterAllowed && <Suspense fallback={null}><TreePoster ready={treeReady} /></Suspense>}
       <div className="absolute inset-0 w-full h-full">
         {can3D && !treeFailed && (
           <Tree3DErrorBoundary onError={() => { setTreeFailed(true); setPosterAllowed(true); setTreeReady(false); announceTreeReady(); }}>
