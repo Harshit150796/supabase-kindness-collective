@@ -72,19 +72,20 @@ export function luminance({ r, g, b }: CursorRGB) {
   const linear = (v: number) => (v /= 255) <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
   return .2126 * linear(r) + .7152 * linear(g) + .0722 * linear(b);
 }
-export type ColourHysteresis = { current?: CursorColour; pending?: CursorColour; luminance?: number };
-// Textured sources (tree, poster) switch only on two consecutive matching samples or a >0.15 luminance jump.
-export function stableColour(state: ColourHysteresis, rgb: CursorRGB, photo = false): CursorColour {
-  const next = cursorColour(rgb, photo), L = luminance(rgb);
-  const jump = state.luminance !== undefined && Math.abs(L - state.luminance) > .15;
-  state.luminance = L;
-  if (!state.current || next === state.current || jump || state.pending === next) { state.current = next; state.pending = undefined; }
-  else state.pending = next;
+export const COLOUR_HOLD_MS = 160;
+export type ColourHysteresis = { current?: CursorColour; pending?: CursorColour; pendingSince?: number };
+// Textured sources (tree, poster) switch only after a new colour is seen continuously for 160ms.
+export function stableColour(state: ColourHysteresis, rgb: CursorRGB, now: number, photo = false): CursorColour {
+  const next = cursorColour(rgb, photo);
+  if (!state.current) { state.current = next; state.pending = undefined; return next; }
+  if (next === state.current) { state.pending = undefined; return state.current; }
+  if (state.pending !== next) { state.pending = next; state.pendingSince = now; return state.current; }
+  if (now - (state.pendingSince ?? now) >= COLOUR_HOLD_MS) { state.current = next; state.pending = undefined; }
   return state.current;
 }
 // Flat DOM colours apply immediately and reset the textured history.
 export function immediateColour(state: ColourHysteresis, rgb: CursorRGB, photo = false): CursorColour {
-  state.current = cursorColour(rgb, photo); state.pending = undefined; state.luminance = luminance(rgb);
+  state.current = cursorColour(rgb, photo); state.pending = undefined;
   return state.current;
 }
 export function averagePixels(pixels: Uint8Array): CursorRGB | undefined {

@@ -80,10 +80,10 @@ export function CursorTrail() {
         const picture = poster?.closest('picture');
         if (poster && picture && !picture.classList.contains('opacity-0')) {
           const rgb = samplePoster(poster, x, y, posterViewRect(poster, now));
-          if (rgb) paint(stableColour(tone, rgb));
+          if (rgb) paint(stableColour(tone, rgb, now));
         } else {
           canvasTarget = stage.querySelector('canvas');
-          if (canvasTarget && sampled && !sampled.used && near(sampled)) { sampled.used = true; paint(stableColour(tone, sampled)); }
+          if (canvasTarget && sampled && !sampled.used && near(sampled)) { sampled.used = true; paint(stableColour(tone, sampled, now)); }
         }
       };
       const tick = (ts: number) => {
@@ -92,7 +92,7 @@ export function CursorTrail() {
         const dt = lastTs ? frameDt(ts - lastTs, now - lastNow) : 16; lastTs = ts; lastNow = now;
         const hadMove = moved; moved = false;
         if (recheck) { recheck = false; if (inside) { hovered = document.elementFromPoint(x, y); checkTarget(hovered, now); } }
-        else if (hadMove) checkTarget(hovered, now);
+        else if (hadMove || tone.pending) checkTarget(hovered, now); // keep sampling while a colour hold is pending
         if (!active) { lastTs = 0; return; }
         let settled = !hadMove;
         for (let i = 0; i < pos.length; i++) {
@@ -101,6 +101,7 @@ export function CursorTrail() {
           if (Math.abs(x - p.x) < TRAIL_SETTLE_PX && Math.abs(y - p.y) < TRAIL_SETTLE_PX) { p.x = x; p.y = y; } else settled = false;
           write(i);
         }
+        if (tone.pending) settled = false; // keep the loop alive until the colour hold resolves
         if (settled) lastTs = 0; else frame = requestAnimationFrame(tick);
       };
       const start = () => { if (!frame) frame = requestAnimationFrame(tick); };
@@ -119,7 +120,7 @@ export function CursorTrail() {
       const introEnd = () => { arm(); request(); };
       const background = (event: Event) => {
         sampled = { ...(event as CustomEvent<Sample>).detail };
-        if (active && canvasTarget && near(sampled)) { sampled.used = true; paint(stableColour(tone, sampled)); }
+        if (active && canvasTarget && near(sampled)) { sampled.used = true; paint(stableColour(tone, sampled, performance.now())); }
       };
       routeChanged.current = () => { backgroundCache = undefined; if (admin()) hide(); else { arm(); request(); } };
       const timer = window.setInterval(() => { if (canvasTarget && active) request(); }, 100);
