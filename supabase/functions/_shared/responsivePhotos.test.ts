@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { photoUrl, responsivePhoto } from './responsivePhotos';
-import { transformedFundraiserImage } from './fundraiserImages';
+import { photoUrl, responsivePhoto } from '../../../src/lib/responsivePhotos';
+import { transformedFundraiserImage } from '../../../src/lib/fundraiserImages';
 
 const original = 'https://example.supabase.co/storage/v1/object/public/fundraisers/cover.webp';
 
