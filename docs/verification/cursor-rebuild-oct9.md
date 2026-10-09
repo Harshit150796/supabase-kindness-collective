@@ -41,3 +41,17 @@ Not verified: real-device tree FPS/readPixels overhead; accelerated homepage bef
 Poster sampling showed blue at a sampled sky point and white at a dark canopy point; those follow measured luminance/hue, not named semantic areas. Photos similarly follow the founder's hue checks before the photo fallback.
 
 Evidence/scripts: `/tmp/browser/cursor/` contains benchmark samples, QA JSON, navbar ring, real dialog/dropdown and day-tree screenshots.
+## Motion follow-up — rAF direct lead + exponential tails
+
+- Lead dot: no transition; one rAF callback writes the latest coalesced pointer position. Tails: `k = 1 - exp(-dt/τ)`, dt clamped to 64ms, τ 170ms / 340ms. All wrapper transform transitions removed (computed `0s`); colour-layer opacity and inner hover/press transitions kept.
+- Loop starts on pointermove/recheck and stops when no move arrived and both tails are within 0.3px. Idle check: tails converged to the lead and 0 style writes in the following second.
+- Probe averages one 7×7 `readPixels` (196 bytes). Tree/poster colour uses hysteresis (two consecutive classifications or luminance jump > .15); DOM colours stay immediate.
+
+On-screen CDP screencast (everyNthFrame 1, PNG), /about, WebGL disabled, 1280×1800, 200px radius at ~1500px/s, 5s, first 15 frames dropped, lead dot QA-recoloured to track it:
+
+| Technique | Speed CV idle | Speed CV busy (25ms/frame) | Stalled frames busy |
+|---|---:|---:|---:|
+| Previous 70ms ease-out transition (same rig) | 0.53 | 0.75 | 5 |
+| New direct rAF lead (7 busy / 6 idle runs) | 0.24–0.31 | 0.17–0.30 (4 of 7 under 0.19) | 0 in every run |
+
+**The ≤0.15 busy target was not reached here.** The rig's own floor is high: a pure compositor CSS keyframe orbit measured 0.22–0.24 CV and screencast frame intervals varied 10–45%. Driver input was fire-and-forget CDP mouse events every ~4ms from Python. The stall-free result is consistent; the absolute CV needs your quieter rig. Scripts and raw frames: `/tmp/browser/cursor2/`.

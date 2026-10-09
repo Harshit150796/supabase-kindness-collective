@@ -367,3 +367,9 @@
 - [x] Background colour layers with poster/DOM sampling and desktop-hover-only tree probe.
 - [x] Verify controlled jitter, lifecycle, colour mapping, real portal layering, phone exclusion and 46 tests; document limits. No publishing.
 - [ ] Hardware-tree jitter/performance and all live scene colour locations — blocked on hardware acceleration; software rendering is too slow for reliable measurements.
+
+## Cursor motion follow-up (Oct 9)
+- [x] Direct rAF lead, time-based exponential tails (170/340ms), loop stops when settled; transitions removed.
+- [x] 7×7 averaged probe read and textured-colour hysteresis; DOM colours immediate.
+- [x] Screencast benchmark: zero busy stalls; busy CV 0.17–0.30 vs previous 0.75; 50 Deno + 3 Bun tests pass. Nothing published.
+- [ ] Busy CV ≤0.15 confirmation — blocked on a lower-noise capture rig (this sandbox's compositor-only control already measures 0.22–0.24).
