@@ -1,5 +1,9 @@
 # Roadmap
 
+## Cursor light smoothing and hit-test follow-up (Oct 9)
+- [x] Smooth all three dots with callback execution time; cache move targets/backgrounds; soften the hover ring only.
+- [ ] Verify timing tests, homepage hit-test counter, zero settled writes and console/build health; do not publish.
+
 ## Restore complete homepage motion and tighten the 95¢ transition (Oct 7)
 - [x] Remove the unrequested retailer-logo pause control while retaining the universal 48-second loop.
 - [x] Restore the animated 95¢ ring, allocation bars, staggered labels, and donation-to-use journey.

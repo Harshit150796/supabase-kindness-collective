@@ -23,6 +23,8 @@ export function CursorTrail() {
       let x = -100, y = -100, frame = 0, last = 0, moved = false, recheck = false;
       let active = false, inside = false, focused = document.hasFocus();
       let canvasTarget: HTMLCanvasElement | null = null;
+      let hovered: Element | null = null;
+      let backgroundCache: { target: Element; at: number; value: ReturnType<typeof elementBackground> } | undefined;
       let sampled: Sample | undefined;
       const tone: ColourHysteresis = {};
       const paint = (colour: string) => { if (root.dataset.colour !== colour) root.dataset.colour = colour; };
@@ -33,8 +35,7 @@ export function CursorTrail() {
         if (html.classList.contains('cd-cursor-active')) html.classList.remove('cd-cursor-active');
         root.classList.remove('cursor-visible', 'cursor-pressed');
       };
-      const checkTarget = () => {
-        const target = document.elementFromPoint(x, y);
+      const checkTarget = (target: Element | null, now: number) => {
         if (!inside || !focused || html.classList.contains('cd-intro') || !target || target.closest(`${TEXT_ENTRY_SELECTOR},iframe`)) { hide(); return; }
         root.classList.toggle('cursor-hover', !!target.closest('a,button,[role=button],label,summary,[data-cursor=hover]'));
         if (!active) pos.forEach(p => { p.x = x; p.y = y; }); // first entry: all dots at the pointer
@@ -49,19 +50,26 @@ export function CursorTrail() {
           const rgb = samplePoster(poster, x, y); if (rgb) paint(stableColour(tone, rgb));
         } else if (canvasTarget) {
           if (sampled && !sampled.used && near(sampled)) { sampled.used = true; paint(stableColour(tone, sampled)); }
-        } else { const bg = elementBackground(target); paint(immediateColour(tone, bg.rgb, bg.photo)); }
+        } else {
+          if (!backgroundCache || backgroundCache.target !== target || now - backgroundCache.at > 150) {
+            backgroundCache = { target, at: now, value: elementBackground(target) };
+          }
+          const bg = backgroundCache.value;
+          paint(immediateColour(tone, bg.rgb, bg.photo));
+        }
       };
-      // One rAF loop, alive only while moving or while the tail is still settling.
-      const tick = (now: number) => {
+      // Use callback execution time, not Chrome's scheduled rAF timestamp.
+      const tick = () => {
+        const now = performance.now();
         frame = 0;
         const dt = last ? now - last : 16; last = now;
         const hadMove = moved; moved = false;
-        if (hadMove || recheck) { recheck = false; checkTarget(); }
+        if (recheck) { hovered = document.elementFromPoint(x, y); recheck = false; checkTarget(hovered, now); }
+        else if (hadMove) checkTarget(hovered, now);
         if (!active) { last = 0; return; }
-        pos[0].x = x; pos[0].y = y; write(0); // lead dot is the cursor: no smoothing
         let settled = !hadMove;
-        for (let i = 1; i < pos.length; i++) {
-          const k = trailFactor(dt, TRAIL_TAU[i - 1]), p = pos[i];
+        for (let i = 0; i < pos.length; i++) {
+          const k = trailFactor(dt, TRAIL_TAU[i]), p = pos[i];
           p.x += (x - p.x) * k; p.y += (y - p.y) * k;
           if (Math.abs(x - p.x) < TRAIL_SETTLE_PX && Math.abs(y - p.y) < TRAIL_SETTLE_PX) { p.x = x; p.y = y; } else settled = false;
           write(i);
@@ -73,6 +81,7 @@ export function CursorTrail() {
       const move = (event: PointerEvent) => {
         if (event.pointerType !== 'mouse') return;
         const events = event.getCoalescedEvents?.(); const point = events?.[events.length - 1] ?? event;
+        hovered = event.target instanceof Element ? event.target : null;
         x = point.clientX; y = point.clientY; inside = true; moved = true; start();
       };
       const leave = () => { inside = false; hide(); };

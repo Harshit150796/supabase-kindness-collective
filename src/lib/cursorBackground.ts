@@ -51,7 +51,7 @@ export function elementBackground(target: Element): { rgb: CursorRGB; photo: boo
   }
   return { rgb: { r: 255, g: 255, b: 255 }, photo };
 }
-export const TRAIL_TAU = [170, 340] as const;
+export const TRAIL_TAU = [20, 170, 340] as const;
 export const TRAIL_MAX_DT = 64;
 export const TRAIL_SETTLE_PX = 0.3;
 // Time-based exponential smoothing factor, frame-rate independent.
