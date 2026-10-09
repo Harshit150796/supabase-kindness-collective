@@ -78,10 +78,11 @@ Deno.test('textured colour switches only after 160ms of a steady new colour', ()
   // an interrupting match of the current colour restarts the wait
   assertEquals(stableColour(s, shade, 300), 'blue');
   assertEquals(stableColour(s, leaf, 320), 'blue');
-  assertEquals(stableColour(s, shade, 340), 'blue');  // current colour: pending cleared
-  assertEquals(stableColour(s, leaf, 360), 'blue');   // wait restarts here
-  assertEquals(stableColour(s, leaf, 500), 'blue');   // 140ms: held
-  assertEquals(stableColour(s, leaf, 520), 'white');  // 160ms: switch
+  assertEquals(stableColour(s, shade, 340), 'blue');  // new colour: wait restarts here
+  assertEquals(stableColour(s, leaf, 360), 'blue');   // current colour: pending cleared
+  assertEquals(stableColour(s, shade, 380), 'blue');  // wait restarts again
+  assertEquals(stableColour(s, shade, 500), 'blue');  // 120ms: held
+  assertEquals(stableColour(s, shade, 540), 'white'); // 160ms: switch
 });
 Deno.test('DOM backgrounds switch immediately and reset pending state', () => {
   const s: ColourHysteresis = {};
