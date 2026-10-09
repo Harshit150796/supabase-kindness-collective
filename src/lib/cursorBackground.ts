@@ -23,7 +23,8 @@ export function coverSamplePoint(x: number, y: number, width: number, height: nu
   return { x: (x + (imageWidth * scale - width) / 2) / scale, y: (y + (imageHeight * scale - height) / 2) / scale };
 }
 let posterCache: { source: string; canvas: HTMLCanvasElement; context: CanvasRenderingContext2D } | undefined;
-export function samplePoster(image: HTMLImageElement, x: number, y: number): CursorRGB | undefined {
+export type PosterRect = { left: number; top: number; width: number; height: number };
+export function samplePoster(image: HTMLImageElement, x: number, y: number, rect?: PosterRect): CursorRGB | undefined {
   if (!image.complete || !image.naturalWidth) return;
   if (!posterCache || posterCache.source !== image.currentSrc) {
     const canvas = document.createElement('canvas');
@@ -34,7 +35,7 @@ export function samplePoster(image: HTMLImageElement, x: number, y: number): Cur
     try { context.drawImage(image, 0, 0, canvas.width, canvas.height); } catch { return; }
     posterCache = { source: image.currentSrc, canvas, context };
   }
-  const rect = image.getBoundingClientRect();
+  rect ??= image.getBoundingClientRect();
   const point = coverSamplePoint(x - rect.left, y - rect.top, rect.width, rect.height, posterCache.canvas.width, posterCache.canvas.height);
   try {
     const pixel = posterCache.context.getImageData(Math.max(0, Math.min(posterCache.canvas.width - 1, Math.floor(point.x))), Math.max(0, Math.min(posterCache.canvas.height - 1, Math.floor(point.y))), 1, 1).data;
