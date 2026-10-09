@@ -101,6 +101,7 @@ export function CursorTrail() {
           if (Math.abs(x - p.x) < TRAIL_SETTLE_PX && Math.abs(y - p.y) < TRAIL_SETTLE_PX) { p.x = x; p.y = y; } else settled = false;
           write(i);
         }
+        if (tone.pending) settled = false; // keep the loop alive until the colour hold resolves
         if (settled) lastTs = 0; else frame = requestAnimationFrame(tick);
       };
       const start = () => { if (!frame) frame = requestAnimationFrame(tick); };
