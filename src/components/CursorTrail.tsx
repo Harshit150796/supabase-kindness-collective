@@ -92,7 +92,7 @@ export function CursorTrail() {
         const dt = lastTs ? frameDt(ts - lastTs, now - lastNow) : 16; lastTs = ts; lastNow = now;
         const hadMove = moved; moved = false;
         if (recheck) { recheck = false; if (inside) { hovered = document.elementFromPoint(x, y); checkTarget(hovered, now); } }
-        else if (hadMove) checkTarget(hovered, now);
+        else if (hadMove || tone.pending) checkTarget(hovered, now); // keep sampling while a colour hold is pending
         if (!active) { lastTs = 0; return; }
         let settled = !hadMove;
         for (let i = 0; i < pos.length; i++) {
