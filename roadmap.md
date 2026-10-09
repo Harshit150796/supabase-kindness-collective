@@ -1,5 +1,10 @@
 # Roadmap
 
+## Poster rect caching and AGENTS.md timing note (Oct 9)
+- [x] Cache poster rect in page coordinates, refresh on resize/src change/500ms; derive viewport rect from scroll offsets.
+- [x] AGENTS.md cursor timing rule now says rAF timestamp with >6ms clock fallback (frameDt).
+- [x] Verified: poster colours unchanged (sky green, canopy white, grass blue), 1 getBoundingClientRect per moves burst, 21 tests, build OK. Nothing published.
+
 ## Cursor light smoothing and hit-test follow-up (Oct 9)
 - [x] Smooth all three dots with callback execution time; cache move targets/backgrounds; soften the hover ring only.
 - [x] Verify 20 tests, homepage move hit tests (0), settled writes next second (0), animated ring and clean build; no runtime errors, existing preview ref warnings reported. Nothing published.

@@ -30,6 +30,15 @@ export function CursorTrail() {
       let canvasTarget: HTMLCanvasElement | null = null;
       let hovered: Element | null = null;
       let backgroundCache: BgCache | undefined;
+      let posterRect: { src: string; at: number; left: number; top: number; width: number; height: number } | undefined;
+      // Poster rect cached in page coordinates; refreshed on resize, src change or after 500ms.
+      const posterPageRect = (image: HTMLImageElement, now: number) => {
+        if (!posterRect || posterRect.src !== image.currentSrc || now - posterRect.at > 500) {
+          const r = image.getBoundingClientRect();
+          posterRect = { src: image.currentSrc, at: now, left: r.left + scrollX, top: r.top + scrollY, width: r.width, height: r.height };
+        }
+        return posterRect;
+      };
       let sampled: Sample | undefined;
       const tone: ColourHysteresis = {};
       const admin = () => path.current.startsWith('/admin');
@@ -68,7 +77,9 @@ export function CursorTrail() {
         const poster = stage.querySelector<HTMLImageElement>('[data-tree-poster] img');
         const picture = poster?.closest('picture');
         if (poster && picture && !picture.classList.contains('opacity-0')) {
-          const rgb = samplePoster(poster, x, y); if (rgb) paint(stableColour(tone, rgb));
+          const pr = posterPageRect(poster, now);
+          const rgb = samplePoster(poster, x, y, { left: pr.left - scrollX, top: pr.top - scrollY, width: pr.width, height: pr.height });
+          if (rgb) paint(stableColour(tone, rgb));
         } else {
           canvasTarget = stage.querySelector('canvas');
           if (canvasTarget && sampled && !sampled.used && near(sampled)) { sampled.used = true; paint(stableColour(tone, sampled)); }
@@ -113,6 +124,8 @@ export function CursorTrail() {
       const timer = window.setInterval(() => { if (canvasTarget && active) request(); }, 100);
       const observer = new MutationObserver(() => { if (html.classList.contains('cd-intro')) hide(); });
       observer.observe(html, { attributes: true, attributeFilter: ['class'] });
+      const resize = () => { posterRect = undefined; };
+      window.addEventListener('resize', resize, { passive: true });
       window.addEventListener('pointermove', move, { passive: true });
       window.addEventListener('scroll', request, { passive: true, capture: true });
       document.addEventListener('mouseleave', leave); window.addEventListener('blur', blur); window.addEventListener('focus', focus);
@@ -121,7 +134,7 @@ export function CursorTrail() {
       arm();
       dispose = () => {
         hide(); cancelAnimationFrame(frame); frame = 0; clearInterval(timer); observer.disconnect(); routeChanged.current = () => {};
-        window.removeEventListener('scroll', request, true); window.removeEventListener('pointermove', move);
+        window.removeEventListener('scroll', request, true); window.removeEventListener('pointermove', move); window.removeEventListener('resize', resize);
         document.removeEventListener('mouseleave', leave); window.removeEventListener('blur', blur); window.removeEventListener('focus', focus);
         window.removeEventListener('pointerdown', down); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
         window.removeEventListener('cd:cursor-bg', background); window.removeEventListener('cd:intro-iris', hide); window.removeEventListener('cd:intro-end', introEnd);
