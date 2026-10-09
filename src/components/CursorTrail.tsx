@@ -33,10 +33,12 @@ export function CursorTrail() {
           void root.offsetWidth;
           dots.forEach(dot => { dot.style.transition = ''; });
         }
-        active = true; html.classList.add('cd-cursor-active'); root.classList.add('cursor-visible');
+        active = true;
+        if (!html.classList.contains('cd-cursor-active')) html.classList.add('cd-cursor-active');
+        root.classList.add('cursor-visible');
         const poster = target.closest('.hero-stage')?.querySelector<HTMLImageElement>('[data-tree-poster] img');
         const picture = poster?.closest('picture');
-        const posterVisible = poster && picture && !picture.classList.contains('opacity-0');
+        const posterVisible = poster && picture && !picture.classList.contains('opacity-0') && (target instanceof HTMLCanvasElement || target === poster || target === picture);
         canvasTarget = !posterVisible && target instanceof HTMLCanvasElement ? target : null;
         if (posterVisible) {
           const rgb = samplePoster(poster, x, y); if (rgb) colour(rgb);
