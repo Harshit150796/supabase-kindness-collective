@@ -51,3 +51,34 @@ export function elementBackground(target: Element): { rgb: CursorRGB; photo: boo
   }
   return { rgb: { r: 255, g: 255, b: 255 }, photo };
 }
+export const TRAIL_TAU = [170, 340] as const;
+export const TRAIL_MAX_DT = 64;
+export const TRAIL_SETTLE_PX = 0.3;
+// Time-based exponential smoothing factor, frame-rate independent.
+export function trailFactor(dt: number, tau: number) {
+  return 1 - Math.exp(-Math.min(Math.max(dt, 0), TRAIL_MAX_DT) / tau);
+}
+export function luminance({ r, g, b }: CursorRGB) {
+  const linear = (v: number) => (v /= 255) <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
+  return .2126 * linear(r) + .7152 * linear(g) + .0722 * linear(b);
+}
+export type ColourHysteresis = { current?: CursorColour; pending?: CursorColour; luminance?: number };
+// Textured sources (tree, poster) switch only on two consecutive matching samples or a >0.15 luminance jump.
+export function stableColour(state: ColourHysteresis, rgb: CursorRGB, photo = false): CursorColour {
+  const next = cursorColour(rgb, photo), L = luminance(rgb);
+  const jump = state.luminance !== undefined && Math.abs(L - state.luminance) > .15;
+  state.luminance = L;
+  if (!state.current || next === state.current || jump || state.pending === next) { state.current = next; state.pending = undefined; }
+  else state.pending = next;
+  return state.current;
+}
+// Flat DOM colours apply immediately and reset the textured history.
+export function immediateColour(state: ColourHysteresis, rgb: CursorRGB, photo = false): CursorColour {
+  state.current = cursorColour(rgb, photo); state.pending = undefined; state.luminance = luminance(rgb);
+  return state.current;
+}
+export function averagePixels(pixels: Uint8Array): CursorRGB | undefined {
+  let r = 0, g = 0, b = 0, n = 0;
+  for (let i = 0; i < pixels.length; i += 4) if (pixels[i + 3]) { r += pixels[i]; g += pixels[i + 1]; b += pixels[i + 2]; n++; }
+  return n ? { r: r / n, g: g / n, b: b / n } : undefined;
+}
