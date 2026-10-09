@@ -10,8 +10,8 @@
   html.cd-cursor-active select, html.cd-cursor-active iframe { cursor: auto !important; }
 }
 .cursor-trail > span { position: absolute; top: 0; left: 0; will-change: transform; }
-.cursor-trail i { position: absolute; display: block; width: 22px; height: 22px; margin: -11px; border-radius: 50%; transition: transform 200ms cubic-bezier(.22,1,.36,1), opacity 200ms; }
-.cursor-layer { position: absolute; inset: 0; border-radius: 50%; opacity: 0; will-change: opacity; transition: opacity 200ms; }
+.cursor-trail i { position: absolute; display: block; width: 22px; height: 22px; margin: -11px; border-radius: 50%; transition: transform 200ms cubic-bezier(.22,1,.36,1), opacity 200ms, width 250ms cubic-bezier(.22,1,.36,1), height 250ms cubic-bezier(.22,1,.36,1), margin 250ms cubic-bezier(.22,1,.36,1); }
+.cursor-layer { position: absolute; inset: 0; border-radius: 50%; opacity: 0; will-change: opacity; transition: opacity 200ms, background-color 200ms, border-color 200ms; }
 .cursor-layer-white { --dot-colour: hsl(var(--brand-surface)); background: var(--dot-colour); }
 .cursor-layer-blue { --dot-colour: hsl(var(--brand-donation)); background: var(--dot-colour); }
 .cursor-layer-green { --dot-colour: hsl(var(--brand-coupon)); background: var(--dot-colour); }

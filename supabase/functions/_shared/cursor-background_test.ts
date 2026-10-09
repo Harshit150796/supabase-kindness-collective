@@ -35,9 +35,12 @@ Deno.test('probe is read-only and gates before default-framebuffer read', async 
   for (const forbidden of ['bindFramebuffer(', 'setRenderTarget(', 'invalidate(', 'preserveDrawingBuffer:']) assert(!probe.includes(forbidden));
 });
 import { trailFactor, stableColour, immediateColour, averagePixels, TRAIL_TAU, TRAIL_MAX_DT, type ColourHysteresis } from '../../../src/lib/cursorBackground.ts';
-Deno.test('trailing dots use time-based exponential smoothing with 170/340ms and dt clamped to 64ms', () => {
-  assertEquals(TRAIL_TAU, [170, 340]);
+Deno.test('all dots use exponential smoothing with 20/170/340ms and dt clamped to 0–64ms', () => {
+  assertEquals(TRAIL_TAU, [20, 170, 340]);
   assertEquals(TRAIL_MAX_DT, 64);
+  assertEquals(trailFactor(-1, 20), 0);
+  assertEquals(trailFactor(0, 20), 0);
+  assert(Math.abs(trailFactor(25, TRAIL_TAU[0]) - (1 - Math.exp(-25 / 20))) < 1e-12);
   assertEquals(trailFactor(170, 170), trailFactor(64, 170));
   assert(Math.abs(trailFactor(16, 170) - (1 - Math.exp(-16 / 170))) < 1e-12);
   assert(trailFactor(16, 340) < trailFactor(16, 170));
@@ -48,6 +51,15 @@ Deno.test('lead dot has no transition and trail loop is rAF-only', async () => {
   assert(!/\.cursor-trail > span[^{]*\{[^}]*transition/.test(css));
   assert(trail.includes('requestAnimationFrame(tick)'));
   assert(!trail.includes("style.transition"));
+});
+Deno.test('cursor dt uses performance.now at callback start, with 16ms first frame and lead included in settlement', async () => {
+  const trail = await Deno.readTextFile('src/components/CursorTrail.tsx');
+  assert(/const tick = \(\) => \{\s*const now = performance\.now\(\);/.test(trail));
+  assert(trail.includes('const dt = last ? now - last : 16'));
+  assert(trail.includes('for (let i = 0; i < pos.length; i++)'));
+  assert(trail.includes('trailFactor(dt, TRAIL_TAU[i])'));
+  assert(trail.includes('let settled = !hadMove'));
+  assert(trail.includes('TRAIL_SETTLE_PX'));
 });
 Deno.test('textured colour needs two consecutive samples unless luminance jumps over 0.15', () => {
   const s: ColourHysteresis = {};
@@ -67,7 +79,7 @@ Deno.test('DOM backgrounds switch immediately', () => {
 });
 Deno.test('probe averages a 7x7 block from one 196-byte read', async () => {
   const px = new Uint8Array(196); for (let i = 0; i < 196; i += 4) { px[i] = i < 98 ? 0 : 200; px[i+3] = 255; }
-  const avg = averagePixels(px)!; assert(avg.r > 90 && avg.r < 110);
+  const avg = averagePixels(px); assert(avg && avg.r > 90 && avg.r < 110);
   assertEquals(averagePixels(new Uint8Array(196)), undefined);
   const probe = await Deno.readTextFile('src/components/landing/tree3d/CursorPixelProbe.tsx');
   assert(probe.includes('BLOCK = 7') && (probe.match(/readPixels\(/g) ?? []).length === 1);
