@@ -124,6 +124,8 @@ export function CursorTrail() {
       const timer = window.setInterval(() => { if (canvasTarget && active) request(); }, 100);
       const observer = new MutationObserver(() => { if (html.classList.contains('cd-intro')) hide(); });
       observer.observe(html, { attributes: true, attributeFilter: ['class'] });
+      const resize = () => { posterRect = undefined; };
+      window.addEventListener('resize', resize, { passive: true });
       window.addEventListener('pointermove', move, { passive: true });
       window.addEventListener('scroll', request, { passive: true, capture: true });
       document.addEventListener('mouseleave', leave); window.addEventListener('blur', blur); window.addEventListener('focus', focus);
@@ -132,7 +134,7 @@ export function CursorTrail() {
       arm();
       dispose = () => {
         hide(); cancelAnimationFrame(frame); frame = 0; clearInterval(timer); observer.disconnect(); routeChanged.current = () => {};
-        window.removeEventListener('scroll', request, true); window.removeEventListener('pointermove', move);
+        window.removeEventListener('scroll', request, true); window.removeEventListener('pointermove', move); window.removeEventListener('resize', resize);
         document.removeEventListener('mouseleave', leave); window.removeEventListener('blur', blur); window.removeEventListener('focus', focus);
         window.removeEventListener('pointerdown', down); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
         window.removeEventListener('cd:cursor-bg', background); window.removeEventListener('cd:intro-iris', hide); window.removeEventListener('cd:intro-end', introEnd);
