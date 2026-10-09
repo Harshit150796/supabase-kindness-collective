@@ -8,7 +8,7 @@ export function CursorPixelProbe() {
   useEffect(() => {
     const query = matchMedia(CURSOR_QUERY), canvas = renderer.domElement, gl = renderer.getContext();
     const pixels = new Uint8Array(BLOCK * BLOCK * 4); // 196 bytes
-    let x = -1, y = -1, last = -Infinity;
+    let x = -1, y = -1, last = -Infinity, hit: Element | null = null;
     const move = (event: PointerEvent) => {
       if (event.pointerType !== 'mouse') return;
       const events = event.getCoalescedEvents?.();
@@ -19,7 +19,7 @@ export function CursorPixelProbe() {
     const unsubscribe = addAfterEffect(() => {
       if (!query.matches || !document.documentElement.classList.contains('cd-cursor-active') || document.hidden) return;
       const now = performance.now();
-      if (now - last < CURSOR_SAMPLE_INTERVAL || document.elementFromPoint(x, y) !== canvas) return;
+      if (now - last < CURSOR_SAMPLE_INTERVAL || !(hit = document.elementFromPoint(x, y)) || (hit !== canvas && !hit.contains(canvas))) return;
       const rect = canvas.getBoundingClientRect();
       if (!rect.width || !rect.height || gl.drawingBufferWidth < BLOCK || gl.drawingBufferHeight < BLOCK || gl.isContextLost() || gl.getParameter(gl.FRAMEBUFFER_BINDING) !== null) return;
       last = now;
