@@ -9,7 +9,7 @@
 - No eyebrow headings, decorative pills, icon circles, gradient text, glow shadows or card-on-card.
 - Shared reveals decide via `revealMode` (pre-trigger 20% below viewport, late on-screen mounts still animate, time-based fling detection) so busy frames never skip motion.
 - Opening HTML animates independently on the compositor; only the poster scales, and Canvas measures offsetSize to preserve framing.
-- Cursor uses a settling rAF loop timed by performance.now, event targets for moves and cached DOM colours to avoid forced layout; CSS owns colour/hover, with a lazy-tree read-only probe.
+- Cursor uses a settling rAF loop timed by the rAF timestamp, falling back to the clock past 6ms (frameDt); event targets for moves, cached DOM colours; CSS owns colour/hover; lazy-tree read-only probe.
 - Editorial line reveals use removable aria-hidden overlays without replacing React-owned nodes; font/initial-frame settlement and the shared observer protect startup.
 - Responsive public photos use proportional contain transforms on managed Supabase hosts or generated local variants; never append transformation parameters to unknown hosts or crop at delivery, because presentation framing belongs to the image container.
 - Motion is full on every device; the OS reduced-motion setting is not consulted (founder decision lives in memory).
