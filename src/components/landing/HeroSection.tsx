@@ -5,8 +5,8 @@ const AITreeChat = lazy(() => import('@/components/landing/hero/AITreeChat').the
 import { Tree3DErrorBoundary } from '@/components/landing/Tree3DErrorBoundary';
 import { allowLiveTree } from '@/lib/treeQuality';
 import { announceTreeReady } from '@/lib/treeReady';
+import TreePoster from '@/components/landing/TreePoster';
 const Tree3DScene = lazy(() => import('@/components/landing/Tree3DScene'));
-const TreePoster = lazy(() => import('@/components/landing/TreePoster'));
 
 const BOT_UA_RE = /(bot|crawler|spider|crawling|Googlebot|bingbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|Discordbot|HeadlessChrome|Lighthouse|PageSpeed)/i;
 
@@ -32,6 +32,11 @@ export function HeroSection() {
   const [openingCovered] = useState(() => document.documentElement.classList.contains('cd-intro') && !document.documentElement.classList.contains('cd-iris'));
   const [posterAllowed, setPosterAllowed] = useState(() => !document.documentElement.classList.contains('cd-intro') || document.documentElement.classList.contains('cd-iris'));
   const [treeFailed, setTreeFailed] = useState(false);
+  // A hero without the live tree is announced as ready only once its picture has
+  // painted, so the opening never reveals an empty hero.
+  const [posterOnly, setPosterOnly] = useState(false);
+  const [posterLoaded, setPosterLoaded] = useState(false);
+  useEffect(() => { if (posterOnly && posterLoaded) announceTreeReady(); }, [posterOnly, posterLoaded]);
   useEffect(() => {
     if (!openingCovered) return;
     const fallback = () => { if (!window.__cdTreeReady) setPosterAllowed(true); };
@@ -47,7 +52,7 @@ export function HeroSection() {
     const mount = () => {
       const allowed = allowLiveTree(connection?.saveData) && canRender3D();
       setCan3D(allowed);
-      if (!allowed) { setPosterAllowed(true); announceTreeReady(); }
+      if (!allowed) { setPosterAllowed(true); setPosterOnly(true); }
     };
     const firstFrame = requestAnimationFrame(() => { secondFrame = requestAnimationFrame(mount); });
     connection?.addEventListener?.('change', mount);
@@ -59,10 +64,10 @@ export function HeroSection() {
       className="hero-stage relative w-full h-[58svh] min-h-[330px] md:h-[74vh] [@media(max-height:500px)]:h-[calc(100svh-64px)] [@media(max-height:500px)]:min-h-[300px] [@media(max-height:500px)]:max-h-[480px] overflow-hidden"
       style={{ contain: 'layout paint' }}
     >
-      {posterAllowed && <Suspense fallback={null}><TreePoster ready={treeReady} /></Suspense>}
+      {posterAllowed && <TreePoster ready={treeReady} onLoaded={() => setPosterLoaded(true)} />}
       <div className="absolute inset-0 w-full h-full">
         {can3D && !treeFailed && (
-          <Tree3DErrorBoundary onError={() => { setTreeFailed(true); setPosterAllowed(true); setTreeReady(false); announceTreeReady(); }}>
+          <Tree3DErrorBoundary onError={() => { setTreeFailed(true); setPosterAllowed(true); setTreeReady(false); setPosterOnly(true); }}>
             <Suspense fallback={null}><Tree3DScene directPalette={openingCovered} onReady={() => setTreeReady(true)} /></Suspense>
           </Tree3DErrorBoundary>
         )}

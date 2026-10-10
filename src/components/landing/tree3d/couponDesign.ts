@@ -37,6 +37,19 @@ type LogoEntry = {
   resolveSettled: () => void;
 };
 const logos = new Map<string, LogoEntry>();
+// Rasterising all 18 SVGs back to back blocked the main thread for seconds on
+// slower devices, right while the opening and the app's first render run.
+// Each logo now rasterises in its own task, one after another.
+let rasterQueue: Promise<void> = Promise.resolve();
+// Normal priority on purpose: background tasks can starve while the tree renders on slow devices.
+const nextTask = () => new Promise<void>((resolve) => { setTimeout(resolve, 0); });
+function inOwnTask<T>(work: () => T): Promise<T> {
+  const run = rasterQueue
+    .then(nextTask)
+    .then(work);
+  rasterQueue = run.then(() => undefined, () => undefined);
+  return run;
+}
 
 function finish(entry: LogoEntry, status: 'ready' | 'error') {
   entry.status = status;
@@ -67,7 +80,7 @@ function loadLogo(slug: string): LogoEntry {
   img.src = `/brand-logos/${slug}.svg`;
   img
     .decode()
-    .then(() => {
+    .then(() => inOwnTask(() => {
       const sourceAspect = Math.max(0.08, img.naturalWidth / Math.max(1, img.naturalHeight));
       // Measure alpha on a small probe, then perform the final raster at 1024px.
       // This removes millions of first-load pixel iterations without lowering
@@ -136,7 +149,7 @@ function loadLogo(slug: string): LogoEntry {
        entry.alphaCoverage = alphaSum / Math.max(1, w * h);
        entry.luminance = luminanceSum / Math.max(1, alphaSum);
       finish(entry, 'ready');
-    })
+    }))
     .catch(() => finish(entry, 'error'));
   return entry;
 }

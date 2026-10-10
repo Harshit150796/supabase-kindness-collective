@@ -1,3 +1,3 @@
 /// <reference types="vite/client" />
 
-interface Window { __cdTreeReady?: boolean }
+interface Window { __cdTreeReady?: boolean; __cdWebGL?: boolean }
