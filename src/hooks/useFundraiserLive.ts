@@ -71,15 +71,21 @@ export function useFundraiserLive(fundraiserId: string | undefined): FundraiserL
   return state;
 }
 
+// Formatters are built once: the toLocale* helpers construct a new Intl
+// formatter on every call, which made each fundraiser card cost tens of ms to mount.
+const dateFormat = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const wholeDollars = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+const centDollars = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+
 export const timeAgo = (iso: string) => {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
   if (s < 60) return 'just now';
   if (s < 3600) return `${Math.floor(s / 60)} min ago`;
   if (s < 86400) return `${Math.floor(s / 3600)} hr ago`;
   if (s < 604800) return `${Math.floor(s / 86400)} d ago`;
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return dateFormat.format(new Date(iso));
 };
 export const usd = (n: number) => {
   const value = Number(n) || 0;
-  return `$${value.toLocaleString('en-US', { maximumFractionDigits: value % 1 ? 2 : 0 })}`;
+  return `$${(value % 1 ? centDollars : wholeDollars).format(value)}`;
 };

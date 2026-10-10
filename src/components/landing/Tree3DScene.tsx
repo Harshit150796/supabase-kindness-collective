@@ -22,6 +22,7 @@ import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
 import { TransparencyPopover } from './tree3d/TransparencyPopover';
 import { PlantsLayer } from './tree3d/PlantsLayer';
 import { CursorPixelProbe } from './tree3d/CursorPixelProbe';
+import { prewarmTreeTextures } from './tree3d/textures';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { shouldReduceQuality } from '@/lib/treeQuality';
 import { useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
@@ -36,7 +37,9 @@ const OPENING_FRUITS = OPENING_LOGOS.flatMap(logo => {
   const fruit = COUPON_FRUITS.find(fruit => fruit.logo === logo);
   return fruit ? [fruit] : [];
 });
-const openingLogoPreload = preloadCouponLogos(OPENING_FRUITS);
+const openingLogoPreload = preloadCouponLogos(OPENING_FRUITS, { paintAhead: true });
+// The ground and leaf textures are drawn while the model downloads, not when it lands.
+prewarmTreeTextures();
 
 const GROUND_Y = -0.01;
 const DEFAULT_CAM = new THREE.Vector3(0, 4.0, 13);
@@ -60,8 +63,8 @@ function ProceduralEnvironment() {
   useEffect(() => {
     const previousEnvironment = scene.environment;
     const room = new RoomEnvironment();
+    // fromScene never uses the equirectangular shader, so it is not compiled here.
     const generator = new THREE.PMREMGenerator(gl);
-    generator.compileEquirectangularShader();
     const target = generator.fromScene(room, 0.04);
     scene.environment = target.texture;
 
@@ -72,6 +75,58 @@ function ProceduralEnvironment() {
       room.dispose();
     };
   }, [gl, scene]);
+
+  return null;
+}
+
+/**
+ * Compiles every scene shader before the first frame. With KHR_parallel_shader_compile
+ * the GPU compiles them in parallel while the page keeps animating, instead of the
+ * first frame freezing the main thread on each one in turn; without the extension the
+ * work is only queued early. The first frame then reuses the finished programs.
+ */
+function ShaderWarmup({ onDone }: { onDone: () => void }) {
+  const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
+  const camera = useThree((state) => state.camera);
+
+  useEffect(() => {
+    let done = false;
+    let timer = 0;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      window.clearTimeout(timer);
+      gl.domElement.dataset.treeCompiledMs = performance.now().toFixed(1);
+      onDone();
+    };
+    let pending: THREE.Material[] = [];
+    try {
+      // Runs after the scene's own effects, so lights, fog, shadows and the
+      // environment map match the first frame and its programs are reused.
+      pending = [...gl.compile(scene, camera)];
+    } catch {
+      finish();
+      return;
+    }
+    // A lost context never reports completion; past the deadline the first frame
+    // simply compiles whatever is left, as it would have without this step.
+    const deadline = performance.now() + 5000;
+    const poll = () => {
+      if (done) return;
+      pending = pending.filter((material) => {
+        const program = gl.properties.get(material)?.currentProgram;
+        return !!program && typeof program.isReady === 'function' && !program.isReady();
+      });
+      if (!pending.length || performance.now() > deadline) finish();
+      else timer = window.setTimeout(poll, 16);
+    };
+    poll();
+    return () => {
+      done = true;
+      window.clearTimeout(timer);
+    };
+  }, [gl, scene, camera, onDone]);
 
   return null;
 }
@@ -192,7 +247,7 @@ function CameraRig({
   return null;
 }
 
-function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = false, directPalette = false }: { shadowSize?: number; shadowBlur?: number; tightShadow?: boolean; directPalette?: boolean }) {
+function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = false }: { shadowSize?: number; shadowBlur?: number; tightShadow?: boolean }) {
   const { timeOfDay } = useInteraction();
   const dirRef = useRef<THREE.DirectionalLight>(null);
   const ambRef = useRef<THREE.AmbientLight>(null);
@@ -210,7 +265,6 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = fals
   const targets: Record<TimeOfDay, { dirCol: string; dirInt: number; ambCol: string; ambInt: number; fillCol: string; fillInt: number; fog: string }> = useMemo(
     () => ({
       day: { dirCol: '#FFF4E0', dirInt: 1.35, ambCol: '#F4F1E8', ambInt: 0.75, fillCol: '#BFD8E8', fillInt: 0.45, fog: '#DCE6D5' },
-      sunset: { dirCol: '#FFA060', dirInt: 1.0, ambCol: '#FFD0A0', ambInt: 0.55, fillCol: '#9B7BB5', fillInt: 0.35, fog: '#E8B890' },
       night: { dirCol: '#9DB4E6', dirInt: 0.45, ambCol: '#5A6B8A', ambInt: 0.35, fillCol: '#3A4A7E', fillInt: 0.2, fog: '#1A2440' },
     }),
     []
@@ -225,13 +279,14 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = fals
       fill: new THREE.Color(targets[k].fillCol),
       fog: new THREE.Color(targets[k].fog),
     });
-    return { day: build('day'), sunset: build('sunset'), night: build('night') } as Record<
+    return { day: build('day'), night: build('night') } as Record<
       TimeOfDay,
       { dir: THREE.Color; amb: THREE.Color; fill: THREE.Color; fog: THREE.Color }
     >;
   }, [targets]);
 
-  const initialTime = useRef<TimeOfDay>(directPalette ? timeOfDay : 'day').current;
+  // Lights start in this load's sky, so a night scene never opens in daylight.
+  const initialTime = useRef<TimeOfDay>(timeOfDay).current;
   const initial = targets[initialTime];
   const dirColor = useMemo(() => new THREE.Color(initial.dirCol), [targets]);
   const ambColor = useMemo(() => new THREE.Color(initial.ambCol), [targets]);
@@ -331,7 +386,7 @@ function PerfWatchdog({ onSlow, active }: { onSlow: () => void; active: boolean 
   return null;
 }
 
-function Scene({ settings, isMobile, onReady, directPalette }: { settings: TierSettings; isMobile: boolean; onReady: () => void; directPalette: boolean }) {
+function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobile: boolean; onReady: () => void }) {
   const gentle = useMotionPreference() === 'gentle';
   useEffect(() => {
     if (gentle) setStates(previous => previous.map(() => ({ phase: 'hanging' })));
@@ -367,13 +422,14 @@ function Scene({ settings, isMobile, onReady, directPalette }: { settings: TierS
     window.dispatchEvent(new Event('cd:tree-ready'));
     onReady();
   }, [gl, onReady]);
+  // A scene mounted under the opening must prove a full drawn frame; the inline
+  // cap owns its fallback, rather than announcing a timer as live readiness.
+  const underOpening = useRef(typeof document !== 'undefined' && document.documentElement.classList.contains('cd-intro')).current;
   useEffect(() => {
-    // An opening-covered scene must prove a full drawn frame; the inline cap
-    // owns its fallback, rather than announcing a timer as live readiness.
-    if (directPalette) return;
+    if (underOpening) return;
     const timer = window.setTimeout(() => reveal('safety'), 3000);
     return () => window.clearTimeout(timer);
-  }, [reveal, directPalette]);
+  }, [reveal, underOpening]);
   useEffect(() => {
     let active = true;
     openingLogoPreload.then((diagnostics) => {
@@ -578,12 +634,11 @@ function Scene({ settings, isMobile, onReady, directPalette }: { settings: TierS
 
   return (
     <>
-      <DayNightLights directPalette={directPalette} shadowSize={settings.shadowMapSize} />
-      <ProceduralEnvironment />
+      <DayNightLights shadowSize={settings.shadowMapSize} />
       <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />
       <fog attach="fog" args={['#DCE6D5', 18, 45]} />
 
-      <Sky gentle={gentle} directPalette={directPalette} />
+      <Sky gentle={gentle} />
 
       <Tree lowPower={settings.tier === 'low'} />
       <Ground y={GROUND_Y} />
@@ -649,7 +704,7 @@ function readForcedTier(): DeviceTier | undefined {
   }
 }
 
-export function Tree3DScene({ onReady, directPalette = false }: { onReady?: () => void; directPalette?: boolean }) {
+export function Tree3DScene({ onReady }: { onReady?: () => void }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   // 0 = zoomed in, 1 = zoomed out. Start mostly out so one wheel gesture finishes it.
@@ -657,17 +712,6 @@ export function Tree3DScene({ onReady, directPalette = false }: { onReady?: () =
   const [inView, setInView] = useState(true);
   const isMobile = useIsMobile();
   const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
-  // The opening clips #root to a zero circle, so the IntersectionObserver reports
-  // the hero as hidden until the iris. Keep rendering behind the opening so the
-  // tree is drawn by the time it is revealed.
-  const [openingCovers, setOpeningCovers] = useState(() => typeof document !== 'undefined' && document.documentElement.classList.contains('cd-intro'));
-  useEffect(() => {
-    if (!openingCovers) return;
-    const end = () => setOpeningCovers(false);
-    window.addEventListener('cd:intro-end', end);
-    if (!document.documentElement.classList.contains('cd-intro')) end();
-    return () => window.removeEventListener('cd:intro-end', end);
-  }, [openingCovers]);
 
   // Tier is resolved synchronously on first render and never re-detected, so the
   // Canvas never re-initialises. `?tier3d=low|medium|high` forces a tier for QA.
@@ -734,7 +778,7 @@ export function Tree3DScene({ onReady, directPalette = false }: { onReady?: () =
 
   // Render while in view + tab visible. We no longer downgrade based on scroll
   // position on mobile — that caused visible pause/resume hitches.
-  const effectiveInView = (inView || openingCovers) && tabVisible;
+  const effectiveInView = inView && tabVisible;
 
   return (
     <InteractionProvider>
@@ -773,7 +817,6 @@ export function Tree3DScene({ onReady, directPalette = false }: { onReady?: () =
             isMobile={isMobile}
             onSlow={forced ? () => undefined : requestDowngrade}
             onReady={onReady}
-            directPalette={directPalette}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#FFF2D8] to-[#D8E0CC]" />
@@ -797,10 +840,9 @@ interface InnerProps {
   isMobile: boolean;
   onSlow: () => void;
   onReady?: () => void;
-  directPalette: boolean;
 }
 
-function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, settings, antialias, isMobile, onSlow, onReady, directPalette }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, settings, antialias, isMobile, onSlow, onReady }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const gentle = useMotionPreference() === 'gentle';
   const [ready, setReady] = useState(false);
@@ -811,6 +853,9 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
   const lastClickRef = useRef(0);
   // Fixed at first render so the WebGL context is never recreated.
   const initialShadows = useRef(settings.shadows).current;
+  // No frame is drawn until the scene's shaders have compiled (see ShaderWarmup).
+  const [compiled, setCompiled] = useState(false);
+  const shadersCompiled = useCallback(() => setCompiled(true), []);
 
   return (
     <>
@@ -818,7 +863,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
         resize={{ offsetSize: true }}
         shadows={initialShadows ? { type: THREE.PCFSoftShadowMap } : false}
         dpr={dpr}
-        frameloop={inView ? 'always' : 'never'}
+        frameloop={inView && compiled ? 'always' : 'never'}
         camera={{ position: isMobile ? [0, 4.4, 16] : [0, 4.0, 13], fov: isMobile ? 32 : 38 }}
         gl={{
           antialias,
@@ -827,8 +872,11 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.25,
         }}
-
-        style={{ background: 'transparent', opacity: ready ? 1 : 0 }}
+        onCreated={({ gl }) => {
+          // Each shader error check makes the page wait for the GPU; production skips them.
+          gl.debug.checkShaderErrors = import.meta.env.DEV;
+        }}
+        style={{ background: 'transparent', opacity: ready ? 1 : 0, transition: 'opacity .7s cubic-bezier(.4,0,.2,1)' }}
         onPointerDown={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(true); }}
         onPointerUp={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(false); }}
         onPointerLeave={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(false); }}
@@ -861,8 +909,12 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
         <CameraRig controlsRef={controlsRef} zoomProgressRef={zoomProgressRef} isMobile={isMobile} />
         {!gentle && <WindTracker />}
         <ShadowSwitch enabled={settings.shadows} />
+        {/* Outside Suspense: the environment map is built while the model downloads. */}
+        <ProceduralEnvironment />
         <Suspense fallback={null}>
-          <Scene directPalette={directPalette} settings={settings} isMobile={isMobile} onReady={sceneReady} />
+          <Scene settings={settings} isMobile={isMobile} onReady={sceneReady} />
+          {/* After Scene, so its effects (environment map, shadows) run before compiling. */}
+          <ShaderWarmup onDone={shadersCompiled} />
           <PerfWatchdog onSlow={onSlow} active={inView && ready} />
         </Suspense>
 

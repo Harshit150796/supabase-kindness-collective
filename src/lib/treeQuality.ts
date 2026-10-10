@@ -41,4 +41,3 @@ export function qualitySettings(initial: DeviceTier, step: number): TierSettings
 export function shouldReduceQuality(fps: number, visible: boolean, sampleMs: number): boolean {
   return visible && sampleMs >= 2500 && Number.isFinite(fps) && fps < 45;
 }
-export function allowLiveTree(saveData?: boolean): boolean { return saveData !== true; }

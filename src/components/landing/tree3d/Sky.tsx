@@ -5,11 +5,10 @@ import { useInteraction } from './InteractionContext';
 
 const PALETTES = {
   day: { top: '#7FB5E6', mid: '#CFE6F5', bot: '#E8F1E0' },
-  sunset: { top: '#5B7BB5', mid: '#FFD89E', bot: '#FF8E5C' },
   night: { top: '#0A1530', mid: '#1F2C5C', bot: '#3A4A7E' },
 };
 
-export function Sky({ gentle = false, directPalette = false }: { gentle?: boolean; directPalette?: boolean } = {}) {
+export function Sky({ gentle = false }: { gentle?: boolean } = {}) {
   const { timeOfDay } = useInteraction();
 
   const targets = useMemo(
@@ -22,7 +21,8 @@ export function Sky({ gentle = false, directPalette = false }: { gentle?: boolea
   );
 
   const mat = useMemo(() => {
-    const initial = PALETTES[directPalette ? timeOfDay : 'day'];
+    // Starts in this load's sky: no daylight moment before a night scene.
+    const initial = PALETTES[timeOfDay];
     return new THREE.ShaderMaterial({
       side: THREE.BackSide,
       depthWrite: false,
@@ -75,7 +75,7 @@ export function Sky({ gentle = false, directPalette = false }: { gentle?: boolea
       {timeOfDay !== 'night' && (
         <mesh position={[8, 9, -12]}>
           <sphereGeometry args={[1.2, 24, 24]} />
-          <meshBasicMaterial color={timeOfDay === 'sunset' ? '#FFB070' : '#FFF6D8'} toneMapped={false} />
+          <meshBasicMaterial color="#FFF6D8" toneMapped={false} />
         </mesh>
       )}
       {timeOfDay === 'night' && (

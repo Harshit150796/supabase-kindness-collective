@@ -230,9 +230,25 @@ function paintLogo(canvas: HTMLCanvasElement, data: CouponData) {
   }
 }
 
+// Opening coupons are painted ahead, one per task while the model downloads, so the
+// 18 fruits mount by uploading finished canvases instead of painting 18 keylines in
+// one frame. Each canvas is handed out once.
+const prepainted = new Map<CouponData, HTMLCanvasElement>();
+
+function prepaint(data: CouponData): Promise<void> {
+  return inOwnTask(() => {
+    if (prepainted.has(data) || loadLogo(data.logo).status !== 'ready') return;
+    const canvas = document.createElement('canvas');
+    paintLogo(canvas, data);
+    prepainted.set(data, canvas);
+  });
+}
+
 export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  paintLogo(canvas, data);
+  const ready = prepainted.get(data);
+  prepainted.delete(data);
+  const canvas = ready ?? document.createElement('canvas');
+  if (!ready) paintLogo(canvas, data);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.anisotropy = 16;
@@ -290,9 +306,14 @@ export interface CouponLogoDiagnostics {
  * proportions or received its brand-specific fallback proportions. The tree
  * can render immediately, while fruit meshes wait for this one shared gate.
  */
-export async function preloadCouponLogos(fruits: readonly CouponData[] = COUPON_FRUITS): Promise<CouponLogoDiagnostics> {
+export async function preloadCouponLogos(
+  fruits: readonly CouponData[] = COUPON_FRUITS,
+  { paintAhead = false }: { paintAhead?: boolean } = {},
+): Promise<CouponLogoDiagnostics> {
   const entries = fruits.map((fruit) => ({ fruit, entry: loadLogo(fruit.logo) }));
-  await Promise.all(entries.map(({ entry }) => entry.settled));
+  await Promise.all(entries.map(({ fruit, entry }) => (
+    paintAhead ? entry.settled.then(() => prepaint(fruit)).catch(() => undefined) : entry.settled
+  )));
 
   const ready: string[] = [];
   const failed: string[] = [];

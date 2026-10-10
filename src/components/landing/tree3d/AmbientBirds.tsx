@@ -42,8 +42,7 @@ export function AmbientBirds({ count = 6 }: { count?: number }) {
   const materials = useRef<THREE.MeshBasicMaterial[]>([]);
   const paths = useRef<Path[]>([]);
   const tmp = useMemo(() => new THREE.Vector3(), []);
-  // Reused tint colours — same values, allocated once instead of every frame.
-  const tintSunset = useMemo(() => new THREE.Color('#FFD0A0'), []);
+  // Reused tint colour — allocated once instead of every frame.
   const tintPlain = useMemo(() => new THREE.Color('#FFFFFF'), []);
 
 
@@ -60,7 +59,7 @@ export function AmbientBirds({ count = 6 }: { count?: number }) {
   useFrame(() => {
     const now = performance.now() / 1000;
     const targetOpacity = timeOfDay === 'night' ? 0 : 1;
-    const tint = timeOfDay === 'sunset' ? tintSunset : tintPlain;
+    const tint = tintPlain;
 
     for (let i = 0; i < count; i++) {
       const mesh = meshes.current[i];

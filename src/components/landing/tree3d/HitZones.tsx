@@ -68,14 +68,14 @@ export function HitZones() {
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
-      {/* Sky back-plane — click to cycle day/night */}
+      {/* Sky back-plane — click to switch between night and day */}
       <mesh
         position={[0, 6, -14]}
         onClick={(e) => {
           stop(e);
           cycleTimeOfDay();
-          const next = timeOfDay === 'day' ? 'sunset' : timeOfDay === 'sunset' ? 'night' : 'day';
-          toast(`${next === 'day' ? '☀️ Day' : next === 'sunset' ? '🌅 Sunset' : '🌙 Night'}`, {
+          const next = timeOfDay === 'day' ? 'night' : 'day';
+          toast(`${next === 'day' ? '☀️ Day' : '🌙 Night'}`, {
             duration: 1200,
           });
         }}

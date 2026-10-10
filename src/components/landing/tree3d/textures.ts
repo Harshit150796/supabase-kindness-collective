@@ -18,6 +18,9 @@ function canvasToNormalMap(src: HTMLCanvasElement, strength = 2.0): THREE.Canvas
   out.height = H;
   const octx = out.getContext('2d')!;
   const img = octx.createImageData(W, H);
+  // Read the pixel array once: `img.data` is a DOM getter, and calling it four
+  // times per pixel made this loop several times slower on phones.
+  const px = img.data;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const xl = lum[y * W + ((x - 1 + W) % W)];
@@ -32,10 +35,10 @@ function canvasToNormalMap(src: HTMLCanvasElement, strength = 2.0): THREE.Canvas
       const ny = dy / len;
       const nzn = nz / len;
       const i = (y * W + x) * 4;
-      img.data[i] = (nx * 0.5 + 0.5) * 255;
-      img.data[i + 1] = (ny * 0.5 + 0.5) * 255;
-      img.data[i + 2] = (nzn * 0.5 + 0.5) * 255;
-      img.data[i + 3] = 255;
+      px[i] = (nx * 0.5 + 0.5) * 255;
+      px[i + 1] = (ny * 0.5 + 0.5) * 255;
+      px[i + 2] = (nzn * 0.5 + 0.5) * 255;
+      px[i + 3] = 255;
     }
   }
   octx.putImageData(img, 0, 0);
@@ -370,4 +373,20 @@ export function getGroundTexture(): THREE.CanvasTexture {
 export function getGroundNormalMap(): THREE.CanvasTexture {
   if (!groundNormalCache) getGroundTexture();
   return groundNormalCache!;
+}
+
+/**
+ * Draws the leaf and ground textures ahead of time, each in its own task, so they
+ * are ready while the model is still downloading instead of being drawn in the
+ * render that mounts the tree. The textures are the same; only the timing moves.
+ */
+export function prewarmTreeTextures() {
+  const steps = [getLeafTexture, getLeafTextureB, getGroundTexture];
+  const next = () => {
+    const step = steps.shift();
+    if (!step) return;
+    step();
+    setTimeout(next, 0);
+  };
+  setTimeout(next, 0);
 }
