@@ -9,11 +9,13 @@ import { useMotionPreference } from '@/hooks/useMotionPreference';
 type RecentDonation = { name: string; amount: number; brand: string; time: string };
 type ChartDatum = { name: string; donations: number };
 
+// Built once: the toLocale* helpers construct a new Intl formatter on every call.
+const shortDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
 const timeAgo = (iso: string) => {
   const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
   if (minutes < 60) return `${Math.max(minutes, 1)} min ago`;
   const hours = Math.floor(minutes / 60);
-  return hours < 24 ? `${hours}h ago` : new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return hours < 24 ? `${hours}h ago` : shortDate.format(new Date(iso));
 };
 
 const findBrand = (name: string): BrandInfo | undefined => {

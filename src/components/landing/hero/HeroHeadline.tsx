@@ -41,10 +41,10 @@ export function HeroHeadline() {
     >
       <h1 className="sr-only">CouponDonation — Turn Donations Into Grocery Coupons for Verified Families</h1>
       <div className="flex items-center justify-center gap-2 mb-2">
-        <span className="text-xs uppercase tracking-[0.2em] text-foreground/70 font-semibold">
+        <span className="hero-kicker-lead text-xs uppercase tracking-[0.2em] text-foreground/70 font-semibold">
           CouponDonation is
         </span>
-        <span className="relative inline-grid text-xs uppercase tracking-[0.2em] font-bold text-primary">
+        <span className="hero-kicker-word relative inline-grid text-xs uppercase tracking-[0.2em] font-bold text-primary">
           {ROTATING_WORDS.map((word, index) => <span key={word} aria-hidden={index !== idx} className={`col-start-1 row-start-1 transition-[opacity,transform] duration-500 ${preference === 'gentle' ? 'translate-y-0' : index === idx ? 'translate-y-0' : 'translate-y-1'} ${index === idx ? 'opacity-100' : 'opacity-0'}`}>{word}</span>)}
         </span>
       </div>

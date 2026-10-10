@@ -1,24 +1,41 @@
-import { lazy } from 'react';
+import { lazy, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { WhatWeDo } from '@/components/landing/WhatWeDo';
 import { SEO } from '@/components/SEO';
 import { LazyOnView } from '@/components/LazyOnView';
 import { WordReveal } from '@/components/ui/editorial-motion';
+import { prefetchWhenIdle } from '@/lib/idlePrefetch';
 
-// Below-the-fold sections — lazy chunks, only fetched as user scrolls.
+// Below-the-fold sections — lazy chunks, mounted as the user scrolls. Their code is
+// also fetched in idle time after the opening, so scrolling never waits on a download.
 import { LiveActivityBar } from '@/components/landing/LiveActivityBar';
-const ImpactStories = lazy(() => import('@/components/landing/ImpactStories').then(m => ({ default: m.ImpactStories })));
-const CompletedCampaigns = lazy(() => import('@/components/proof/ProofSections').then(m => ({ default: m.CompletedCampaigns })));
-const TrustTransparency = lazy(() => import('@/components/landing/TrustTransparency').then(m => ({ default: m.TrustTransparency })));
-const DonationFlow = lazy(() => import('@/components/landing/DonationFlow').then(m => ({ default: m.DonationFlow })));
-const SecurityBadges = lazy(() => import('@/components/landing/SecurityBadges').then(m => ({ default: m.SecurityBadges })));
-const TestimonialsSection = lazy(() => import('@/components/landing/TestimonialsSection').then(m => ({ default: m.TestimonialsSection })));
-const ImpactDashboard = lazy(() => import('@/components/landing/ImpactDashboard').then(m => ({ default: m.ImpactDashboard })));
-const CTASection = lazy(() => import('@/components/landing/CTASection').then(m => ({ default: m.CTASection })));
-const Footer = lazy(() => import('@/components/layout/Footer').then(m => ({ default: m.Footer })));
+const sectionCode = {
+  stories: () => import('@/components/landing/ImpactStories'),
+  proof: () => import('@/components/proof/ProofSections'),
+  transparency: () => import('@/components/landing/TrustTransparency'),
+  donationFlow: () => import('@/components/landing/DonationFlow'),
+  security: () => import('@/components/landing/SecurityBadges'),
+  testimonials: () => import('@/components/landing/TestimonialsSection'),
+  dashboard: () => import('@/components/landing/ImpactDashboard'),
+  leaderboard: () => import('@/components/landing/BrandLeaderboard'),
+  cta: () => import('@/components/landing/CTASection'),
+  footer: () => import('@/components/layout/Footer'),
+};
+const ImpactStories = lazy(() => sectionCode.stories().then(m => ({ default: m.ImpactStories })));
+const CompletedCampaigns = lazy(() => sectionCode.proof().then(m => ({ default: m.CompletedCampaigns })));
+const TrustTransparency = lazy(() => sectionCode.transparency().then(m => ({ default: m.TrustTransparency })));
+const DonationFlow = lazy(() => sectionCode.donationFlow().then(m => ({ default: m.DonationFlow })));
+const SecurityBadges = lazy(() => sectionCode.security().then(m => ({ default: m.SecurityBadges })));
+const TestimonialsSection = lazy(() => sectionCode.testimonials().then(m => ({ default: m.TestimonialsSection })));
+const ImpactDashboard = lazy(() => sectionCode.dashboard().then(m => ({ default: m.ImpactDashboard })));
+const CTASection = lazy(() => sectionCode.cta().then(m => ({ default: m.CTASection })));
+const Footer = lazy(() => sectionCode.footer().then(m => ({ default: m.Footer })));
 
 const Index = () => {
+  // Page order, one module per idle period (BrandLeaderboard is ImpactDashboard's own lazy chart).
+  useEffect(() => prefetchWhenIdle(Object.values(sectionCode)), []);
+
   return (
     <div className="min-h-dvh bg-background">
       <SEO

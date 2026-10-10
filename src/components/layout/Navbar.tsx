@@ -11,7 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import logo from '@/assets/logo.png';
+// Same file the homepage opening shows, so the logo it flies into the nav is pixel-identical.
+const logo = '/brand/logo-256.webp';
 
 export function Navbar() {
   const { user, hasRole, signOut } = useAuth();
@@ -23,10 +24,24 @@ export function Navbar() {
   const navRef = useRef<HTMLElement>(null);
   useEffect(() => {
     let last = window.scrollY, frame = 0;
+    // An observer reports when the hero has scrolled past the top. Reading its box on
+    // every scroll frame forced a layout while the page's scroll animations ran.
+    let hero: HTMLElement | null = null, heroPassed = false;
+    const observer = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(([entry]) => {
+      heroPassed = !entry.isIntersecting && entry.boundingClientRect.bottom <= 0;
+    });
+    const watchHero = () => {
+      if (hero?.isConnected) return;
+      if (hero) observer?.unobserve(hero);
+      hero = document.querySelector<HTMLElement>('.hero-stage');
+      heroPassed = false;
+      if (hero) observer?.observe(hero);
+    };
     const update = () => {
       frame = 0;
-      const y = window.scrollY, hero = document.querySelector<HTMLElement>('.hero-stage');
-      const afterHero = !hero || hero.getBoundingClientRect().bottom <= 0;
+      watchHero();
+      const y = window.scrollY;
+      const afterHero = !hero || (observer ? heroPassed : hero.getBoundingClientRect().bottom <= 0);
       const open = mobileMenuOpen || accountOpen || !!navRef.current?.querySelector('[data-state="open"]');
       if (y <= 100 || open || !afterHero || y < last) setHidden(false);
       else if (y > last + 2) setHidden(true);
@@ -34,8 +49,9 @@ export function Navbar() {
     };
     const scroll = () => { if (!frame) frame = requestAnimationFrame(update); };
     setHidden(false);
+    watchHero();
     addEventListener('scroll', scroll, { passive: true });
-    return () => { removeEventListener('scroll', scroll); cancelAnimationFrame(frame); };
+    return () => { removeEventListener('scroll', scroll); cancelAnimationFrame(frame); observer?.disconnect(); };
   }, [mobileMenuOpen, accountOpen]);
 
   const handleSignOut = async () => {
@@ -54,7 +70,7 @@ export function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex h-18 items-center justify-between py-3 [@media(max-height:500px)]:h-[52px] [@media(max-height:500px)]:py-1">
           {/* Logo */}
-          <Link to="/" className="group flex min-h-11 shrink-0 items-center gap-3">
+          <Link to="/" data-nav-brand className="group flex min-h-11 shrink-0 items-center gap-3">
             <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" />
             <div className="flex flex-col">
               <span className="font-bold text-base sm:text-lg leading-tight">

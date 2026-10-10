@@ -63,7 +63,10 @@ export function useLandingStats() {
   return stats;
 }
 
-export const formatUSD = (n: number) =>
-  '$' + Math.round(n).toLocaleString('en-US');
+// Built once: the toLocale* helpers construct a new Intl formatter on every call.
+const enUS = new Intl.NumberFormat('en-US');
 
-export const plural = (n: number, one: string, many = one + 's') => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
+export const formatUSD = (n: number) =>
+  '$' + enUS.format(Math.round(n));
+
+export const plural = (n: number, one: string, many = one + 's') => `${enUS.format(n)} ${n === 1 ? one : many}`;

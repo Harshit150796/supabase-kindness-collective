@@ -3,9 +3,7 @@ import { HeroHeadline } from '@/components/landing/hero/HeroHeadline';
 import { AITreeLauncher } from '@/components/landing/hero/AITreeLauncher';
 const AITreeChat = lazy(() => import('@/components/landing/hero/AITreeChat').then(m => ({ default: m.AITreeChat })));
 import { Tree3DErrorBoundary } from '@/components/landing/Tree3DErrorBoundary';
-import { allowLiveTree } from '@/lib/treeQuality';
 import { announceTreeReady } from '@/lib/treeReady';
-import TreePoster from '@/components/landing/TreePoster';
 const Tree3DScene = lazy(() => import('@/components/landing/Tree3DScene'));
 
 const BOT_UA_RE = /(bot|crawler|spider|crawling|Googlebot|bingbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|Discordbot|HeadlessChrome|Lighthouse|PageSpeed)/i;
@@ -28,47 +26,31 @@ function canRender3D(): boolean {
 
 export function HeroSection() {
   const [chatOpen, setChatOpen] = useState(false);
-  const [treeReady, setTreeReady] = useState(false);
-  const [openingCovered] = useState(() => document.documentElement.classList.contains('cd-intro') && !document.documentElement.classList.contains('cd-iris'));
-  const [posterAllowed, setPosterAllowed] = useState(() => !document.documentElement.classList.contains('cd-intro') || document.documentElement.classList.contains('cd-iris'));
   const [treeFailed, setTreeFailed] = useState(false);
-  // A hero without the live tree is announced as ready only once its picture has
-  // painted, so the opening never reveals an empty hero.
-  const [posterOnly, setPosterOnly] = useState(false);
-  const [posterLoaded, setPosterLoaded] = useState(false);
-  useEffect(() => { if (posterOnly && posterLoaded) announceTreeReady(); }, [posterOnly, posterLoaded]);
-  useEffect(() => {
-    if (!openingCovered) return;
-    const fallback = () => { if (!window.__cdTreeReady) setPosterAllowed(true); };
-    const elapsed = performance.now() - Number(document.documentElement.dataset.introStarted ?? performance.now());
-    const timer = window.setTimeout(fallback, Math.max(0, 5000 - elapsed));
-    window.addEventListener('cd:intro-poster-fallback', fallback);
-    return () => { clearTimeout(timer); window.removeEventListener('cd:intro-poster-fallback', fallback); };
-  }, [openingCovered]);
   const [can3D, setCan3D] = useState(false);
   useEffect(() => {
-    const connection = (navigator as Navigator & { connection?: EventTarget & { saveData?: boolean } }).connection;
     let secondFrame = 0;
     const mount = () => {
-      const allowed = allowLiveTree(connection?.saveData) && canRender3D();
+      const allowed = canRender3D();
       setCan3D(allowed);
-      if (!allowed) { setPosterAllowed(true); setPosterOnly(true); }
+      // No still picture any more: without WebGL the hero keeps its sky-and-hill
+      // backdrop, so the opening needn't wait for a tree that will never draw.
+      if (!allowed) announceTreeReady();
     };
     const firstFrame = requestAnimationFrame(() => { secondFrame = requestAnimationFrame(mount); });
-    connection?.addEventListener?.('change', mount);
-    return () => { cancelAnimationFrame(firstFrame); cancelAnimationFrame(secondFrame); connection?.removeEventListener?.('change', mount); };
+    return () => { cancelAnimationFrame(firstFrame); cancelAnimationFrame(secondFrame); };
   }, []);
 
   return (
     <section
+      data-sky-backdrop
       className="hero-stage relative w-full h-[58svh] min-h-[330px] md:h-[74vh] [@media(max-height:500px)]:h-[calc(100svh-64px)] [@media(max-height:500px)]:min-h-[300px] [@media(max-height:500px)]:max-h-[480px] overflow-hidden"
       style={{ contain: 'layout paint' }}
     >
-      {posterAllowed && <TreePoster ready={treeReady} onLoaded={() => setPosterLoaded(true)} />}
-      <div className="absolute inset-0 w-full h-full">
+      <div className="hero-tree absolute inset-0 w-full h-full">
         {can3D && !treeFailed && (
-          <Tree3DErrorBoundary onError={() => { setTreeFailed(true); setPosterAllowed(true); setTreeReady(false); setPosterOnly(true); }}>
-            <Suspense fallback={null}><Tree3DScene directPalette={openingCovered} onReady={() => setTreeReady(true)} /></Suspense>
+          <Tree3DErrorBoundary onError={() => { setTreeFailed(true); announceTreeReady(); }}>
+            <Suspense fallback={null}><Tree3DScene /></Suspense>
           </Tree3DErrorBoundary>
         )}
       </div>

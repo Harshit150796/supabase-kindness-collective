@@ -1,7 +1,7 @@
-import { createContext, useContext, useRef, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useRef, useState, useCallback, ReactNode } from 'react';
 import type { FallingDonation } from '@/hooks/useFallingDonations';
 
-export type TimeOfDay = 'day' | 'sunset' | 'night';
+export type TimeOfDay = 'day' | 'night';
 
 export interface ShakeEvent {
   id: number;
@@ -68,20 +68,26 @@ export interface InteractionState {
 
 const Ctx = createContext<InteractionState | null>(null);
 
-function getTimeOfDayFromClock(): TimeOfDay {
-  if (typeof window !== 'undefined') {
+/**
+ * One sky per page load: night 70% of the time, blue day 30% (founder decision).
+ * The inline opening script draws it into <html data-sky> for every page so the
+ * hero backdrop, cursor and live tree agree; ?time3d=day|night forces one for QA.
+ */
+function getTimeOfDayForLoad(): TimeOfDay {
+  if (typeof document !== 'undefined') {
     const forced = new URLSearchParams(window.location.search).get('time3d');
-    if (forced === 'day' || forced === 'sunset' || forced === 'night') return forced;
+    if (forced === 'day' || forced === 'night') return forced;
+    const chosen = document.documentElement.dataset.sky;
+    if (chosen === 'day' || chosen === 'night') return chosen;
+    const picked: TimeOfDay = Math.random() < 0.7 ? 'night' : 'day';
+    document.documentElement.dataset.sky = picked;
+    return picked;
   }
-  const h = new Date().getHours();
-  if (h >= 6 && h < 17) return 'day';
-  if (h >= 17 && h < 20) return 'sunset';
   return 'night';
 }
 
 export function InteractionProvider({ children }: { children: ReactNode }) {
-  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(() => getTimeOfDayFromClock());
-  const userOverrodeRef = useRef(false);
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(() => getTimeOfDayForLoad());
   const [shakeEvent, setShakeEvent] = useState<ShakeEvent | null>(null);
   const [ripples, setRipples] = useState<RippleEvent[]>([]);
   const [birdEvent, setBirdEvent] = useState<BirdEvent | null>(null);
@@ -93,20 +99,13 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
   const lastBirdRef = useRef(0);
   const idRef = useRef(1);
 
+  // The sky stays as chosen for the visit; tapping it toggles between night and day.
   const cycleTimeOfDay = useCallback(() => {
-    userOverrodeRef.current = true;
-    setTimeOfDay((p) => (p === 'day' ? 'sunset' : p === 'sunset' ? 'night' : 'day'));
-  }, []);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      if (userOverrodeRef.current) return;
-      setTimeOfDay((prev) => {
-        const next = getTimeOfDayFromClock();
-        return next === prev ? prev : next;
-      });
-    }, 5 * 60 * 1000);
-    return () => clearInterval(id);
+    setTimeOfDay((p) => {
+      const next: TimeOfDay = p === 'day' ? 'night' : 'day';
+      document.documentElement.dataset.sky = next;
+      return next;
+    });
   }, []);
 
   const bumpWind = useCallback((v: number) => {

@@ -1,5 +1,5 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { cursorColour, coverSamplePoint, CURSOR_SAMPLE_INTERVAL, CURSOR_QUERY } from '../../../src/lib/cursorBackground.ts';
+import { cursorColour, skyBackdropColour, CURSOR_SAMPLE_INTERVAL, CURSOR_QUERY } from '../../../src/lib/cursorBackground.ts';
 Deno.test('dark backgrounds including night and forest map to white first', () => {
   assertEquals(cursorColour({r:10,g:20,b:35}), 'white');
   assertEquals(cursorColour({r:25,g:65,b:30}), 'white');
@@ -16,9 +16,10 @@ Deno.test('photos default white after dark and hue checks', () => {
 Deno.test('cream sunset red and yellow backgrounds default blue', () => {
   for (const rgb of [{r:246,g:245,b:239},{r:240,g:165,b:100},{r:250,g:140,b:140},{r:255,g:240,b:0}]) assertEquals(cursorColour(rgb), 'blue');
 });
-Deno.test('poster cover mapping is centred and proportional', () => {
-  assertEquals(coverSamplePoint(720,333,1440,666,2880,828), {x:1440,y:414});
-  assertEquals(coverSamplePoint(195,244.5,390,489,780,978), {x:390,y:489});
+Deno.test('sky backdrop paints white dots at night and green by day', () => {
+  assertEquals(cursorColour(skyBackdropColour('night')), 'white');
+  assertEquals(cursorColour(skyBackdropColour('day')), 'green');
+  assertEquals(cursorColour(skyBackdropColour(undefined)), 'white');
 });
 Deno.test('probe rate is capped at twelve reads a second and fine pointers', () => {
   assertEquals(CURSOR_SAMPLE_INTERVAL, 1000 / 12);

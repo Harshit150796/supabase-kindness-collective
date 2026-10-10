@@ -2,6 +2,8 @@
 - 3D tree rules: src/components/landing/AGENTS.md. Admin rules: src/pages/admin/AGENTS.md.
 ## Design System Rules
 - Lazy section short states fill reservations to preserve scroll; shared count/retry logic prevents false zeros and early failures.
+- Homepage section code prefetches one module per idle period after the opening (src/lib/idlePrefetch.ts, skipped on Save-Data); sections still mount on view. Scroll handlers never read layout per frame (use IntersectionObserver).
+- Format numbers and dates with module-level Intl formatters; per-call toLocale* in render paths cost tens of ms per card.
 
 - CouponDonation UI uses logo green `hsl(123 46% 34%)` as primary and logo blue `hsl(212 80% 42%)` as its only secondary accent; warm UI colors are forbidden outside protected third-party and 3D artwork.
 - Shared organizer primitives own titles/numerals, surfaces, labels, stats, status, progress and states to prevent page drift; controls use sans.

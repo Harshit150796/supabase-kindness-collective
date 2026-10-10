@@ -7,7 +7,8 @@ export function Fireflies({ count = 40, gentle = false }: { count?: number; gent
   const { timeOfDay } = useInteraction();
   const ref = useRef<THREE.InstancedMesh>(null);
   const matRef = useRef<THREE.MeshBasicMaterial>(null);
-  const opacityRef = useRef(0);
+  // A night scene opens with its fireflies already glowing (no fade-in behind the opening).
+  const opacityRef = useRef(timeOfDay === 'night' ? 1 : 0);
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
   const data = useMemo(() => {
