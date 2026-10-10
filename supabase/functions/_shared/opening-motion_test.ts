@@ -10,7 +10,7 @@ async function opening({ path = '/', query = '', ua = 'Mozilla Safari', webgl = 
   const classes = new Set<string>();
   const nodes = new Map<string, ReturnType<typeof node>>();
   function node() {
-    return { className: '', style: { cssText: '', setProperty() {} }, dataset: {} as Record<string,string>, children: [] as unknown[], isConnected: true, innerHTML: '', remove() { this.isConnected = false; }, append(...items: unknown[]) { this.children.push(...items); }, setAttribute() {} };
+    return { className: '', style: { cssText: '', setProperty() {} }, dataset: {} as Record<string,string>, children: [] as unknown[], isConnected: true, innerHTML: '', remove() { this.isConnected = false; }, append(...items: unknown[]) { this.children.push(...items); }, setAttribute() {}, getContext(type: string) { return webgl && /webgl/.test(type) ? { getExtension: () => null } : null; } };
   }
   const root = { style: { setProperty() {} }, dataset: {} as Record<string,string>, classList: { add(...names: string[]) { names.forEach(n => classes.add(n)); }, remove(...names: string[]) { names.forEach(n => classes.delete(n)); } } };
   const head = node();
@@ -42,11 +42,11 @@ Deno.test('opening has no button, Escape or pointer skip listener', async () => 
   const html = await Deno.readTextFile('index.html');
   assert(!html.includes('Skip intro'));
 });
-Deno.test('ready before drawing waits until exactly 2600ms', async () => {
-  const o = await opening();o.ready();o.advance(2599);assert(!o.classes.has('cd-iris'));o.advance(2600);assert(o.classes.has('cd-iris'));assertEquals(o.root.dataset.introReason,'ready');
+Deno.test('ready before drawing waits until exactly 2400ms', async () => {
+  const o = await opening();o.ready();o.advance(2399);assert(!o.classes.has('cd-iris'));o.advance(2400);assert(o.classes.has('cd-iris'));assertEquals(o.root.dataset.introReason,'ready');
 });
 Deno.test('drawing alone waits for the first full live tree frame', async () => {
-  const o = await opening();o.advance(2600);assert(!o.classes.has('cd-iris'));o.advance(4000);o.ready();assert(o.classes.has('cd-iris'));assertEquals(o.root.dataset.introMs,'4000');
+  const o = await opening();o.advance(2400);assert(!o.classes.has('cd-iris'));o.advance(4000);o.ready();assert(o.classes.has('cd-iris'));assertEquals(o.root.dataset.introMs,'4000');
 });
 Deno.test('fallback notification occurs at 5000ms and safety reveals at 8000ms', async () => {
   const o = await opening();let fallback = false;o.events.set('cd:intro-poster-fallback',[() => {fallback = true;}]);o.advance(4999);assert(!fallback);o.advance(5000);assert(fallback);o.advance(7999);assert(!o.classes.has('cd-iris'));o.advance(8000);assert(o.classes.has('cd-iris'));assertEquals(o.root.dataset.introReason,'cap');o.advance(8900);assert(!o.classes.has('cd-intro'));
@@ -59,14 +59,18 @@ Deno.test('live-capable opening preloads exact 18 logo URLs and model/Draco fetc
   const expected=['walmart','cvs','target','dominos','aldi','starbucks','mcdonalds','instacart','amazon','home-depot','uber','publix','doordash','walgreens','taco-bell','whole-foods','costco','lyft'];
   assertEquals(links.filter(x=>x.as==='image').map(x=>x.href),expected.map(x=>`/brand-logos/${x}.svg`));
 });
-Deno.test('no tree preloads with WebGL absent or Save-Data enabled', async () => {
+Deno.test('no tree preloads without a usable WebGL context or with Save-Data enabled', async () => {
   assertEquals((await opening({webgl:false})).head.children.length,0);
   assertEquals((await opening({saveData:true})).head.children.length,0);
   assertEquals((await opening({path:'/about'})).head.children.length,0);
 });
-Deno.test('opening clock matches live day, sunset and night thresholds and override', async () => {
-  for (const [hour,time] of [[5,'night'],[6,'day'],[16,'day'],[17,'sunset'],[19,'sunset'],[20,'night']] as const) assertEquals((await opening({hour})).nodes.get('cd-intro')?.dataset.time,time);
-  assertEquals((await opening({hour:12,query:'?time3d=night'})).nodes.get('cd-intro')?.dataset.time,'night');
+Deno.test('opening is the line-art seed-to-tree: trunk and branches, canopy circles, coupon tickets', async () => {
+  const o = await opening();
+  assertEquals(o.nodes.get('cd-b')?.children.length,6);
+  assertEquals(o.nodes.get('cd-c')?.children.length,8);
+  assertEquals(o.nodes.get('cd-t')?.children.length,8);
+  const html=await Deno.readTextFile('index.html');const intro=html.slice(html.indexOf('<style id="cd-intro-style">'),html.indexOf('<div id="root"'));
+  assert(intro.includes('#f6f5ef')||intro.includes('#F6F5EF'));
 });
 Deno.test('static opening stays hidden without JS and under 12KiB', async () => {
   const html=await Deno.readTextFile('index.html');const intro=html.slice(html.indexOf('<style id="cd-intro-style">'),html.indexOf('<div id="root"'));

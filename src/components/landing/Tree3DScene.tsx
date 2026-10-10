@@ -657,6 +657,17 @@ export function Tree3DScene({ onReady, directPalette = false }: { onReady?: () =
   const [inView, setInView] = useState(true);
   const isMobile = useIsMobile();
   const [tabVisible, setTabVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
+  // The opening clips #root to a zero circle, so the IntersectionObserver reports
+  // the hero as hidden until the iris. Keep rendering behind the opening so the
+  // tree is drawn by the time it is revealed.
+  const [openingCovers, setOpeningCovers] = useState(() => typeof document !== 'undefined' && document.documentElement.classList.contains('cd-intro'));
+  useEffect(() => {
+    if (!openingCovers) return;
+    const end = () => setOpeningCovers(false);
+    window.addEventListener('cd:intro-end', end);
+    if (!document.documentElement.classList.contains('cd-intro')) end();
+    return () => window.removeEventListener('cd:intro-end', end);
+  }, [openingCovers]);
 
   // Tier is resolved synchronously on first render and never re-detected, so the
   // Canvas never re-initialises. `?tier3d=low|medium|high` forces a tier for QA.
@@ -723,7 +734,7 @@ export function Tree3DScene({ onReady, directPalette = false }: { onReady?: () =
 
   // Render while in view + tab visible. We no longer downgrade based on scroll
   // position on mobile — that caused visible pause/resume hitches.
-  const effectiveInView = inView && tabVisible;
+  const effectiveInView = (inView || openingCovers) && tabVisible;
 
   return (
     <InteractionProvider>

@@ -4,7 +4,11 @@ Deno.test('tree preload is homepage-scoped and route entry is lazy', async () =>
   const html = await Deno.readTextFile('index.html');
   const app = await Deno.readTextFile('src/App.tsx');
   const hero = await Deno.readTextFile('src/components/landing/HeroSection.tsx');
-  assert(!html.includes('tree.glb'));
+  // The model is only preloaded by the homepage opening script, never by a static tag on every page.
+  assert(!/<link[^>]*tree\.glb/.test(html));
+  const opening = html.slice(html.indexOf('<style id="cd-intro-style">'), html.indexOf('<div id="root"'));
+  assert(opening.includes('tree.glb') && opening.includes('location.pathname'));
+  assert(html.split('tree.glb').length === 2);
   assert(app.includes("lazy(() => import"));
   assert(hero.includes("lazy(() => import('@/components/landing/Tree3DScene')"));
   assert(hero.includes('connection?.saveData'));
