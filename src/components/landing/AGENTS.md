@@ -13,11 +13,13 @@
 - Preserve context-owned MSAA and leaf alpha-to-coverage during adaptation; changing the antialias method would remount WebGL or alter the leaf silhouette.
 - Tree model and appearance are shared across viewport sizes; camera aspect fitting and mobile label placement may vary, but lights, materials, exposure and geometry do not.
 - Two skies only, chosen once per load: night 70%, blue day 30% (`html[data-sky]`, `?time3d=day|night` forces one); tapping the sky toggles them. No sunset/midday palette and no clock.
-- There is no still tree picture: without WebGL (or on error) the hero shows the CSS sky-and-hill backdrop for this load's sky and announces ready.
+- There is no still tree picture. Under the live canvas, HeroBackdrop paints the tree's own sky, ground disc and moon/sun from the same camera, palette and fog (src/lib/heroBackdrop.ts, kept in step by hero-handoff_test.ts), so the tree arrives into an unchanged scene; the CSS sky and ground on .hero-stage stay underneath as a fallback. Without WebGL (or on error) the hero keeps that backdrop and announces ready.
+- Under the opening's cover the revealed canvas appears at once (the cover's fade shows it); elsewhere it fades in over the matching backdrop.
+- Nothing compiles or uploads inside a watched frame: the warm-up uploads textures in ~8ms slices alongside the parallel compile, a never-drawn group puts later effects (sprout, sparkle) into that first compile, and the 18 coupons stay hidden until compileAsync and their texture uploads finish.
 
 ## Homepage opening (also index.html and src/main.tsx)
 - The homepage opening is the founder-approved logo-to-navbar lockup: off-white cover, logo mark, two-colour wordmark and "Transforming Giving" rise, one sheen, then the lockup flies onto the nav brand (`[data-nav-brand] img`, /brand/logo-256.webp) while the page settles in. It plays on every homepage load with no skip.
-- It holds at least 1.55s and reveals when fonts, the nav brand and the drawn live tree are ready; a progress hairline appears after 1.8s, 8s cap. Only transform/opacity animate.
+- It holds at least 1.55s and reveals when fonts, the nav brand and the drawn live tree are ready; a progress hairline appears after 1.8s, 8s cap. Only transform/opacity animate. A homepage loaded in a background tab holds the lockup still (cd-held) and starts these timers only once the tab is shown.
 - The inline script sets the sky before the homepage gate. The vite openingPreloads plugin writes the page and tree chunk lists into it at build time; tree chunks, model, Draco and logos preload only when WebGL works (window.__cdWebGL), which also gates main.tsx's early Tree3DScene import.
 - Keep the index.html opening block under 12KiB. Canvas uses offsetSize, never scales.
 

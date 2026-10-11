@@ -54,7 +54,8 @@ Deno.test('hero shows a sky backdrop in this load\'s sky until the live tree dra
   const css = await Deno.readTextFile('src/index.css');
   assert(hero.includes('if (!allowed) announceTreeReady();'));
   assert(hero.includes('className="hero-tree '));
-  assert(scene.includes("opacity: ready ? 1 : 0, transition: 'opacity .7s"));
+  assert(scene.includes("opacity: ready ? 1 : 0, transition: instant ? 'none' : 'opacity .7s"));
+  assert(hero.includes('<HeroBackdrop />'));
   assert(css.includes('.hero-stage::before{'));
 });
 
