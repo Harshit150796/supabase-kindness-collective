@@ -2,11 +2,10 @@ import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import {
-  CURSOR_QUERY, TEXT_ENTRY_SELECTOR, TRAIL_SETTLE_PX, TRAIL_TAU, elementBackground, frameDt, immediateColour, opaqueBackground,
-  skyBackdropColour, stableColour, trailFactor, type ColourHysteresis, type CursorRGB,
+  CURSOR_QUERY, NATIVE_DOT_IMAGES, TEXT_ENTRY_SELECTOR, TRAIL_SETTLE_PX, TRAIL_TAU, cursorColour, elementBackground, frameDt,
+  opaqueBackground, trailFactor,
 } from '@/lib/cursorBackground';
 export { CURSOR_QUERY } from '@/lib/cursorBackground';
-type Sample = CursorRGB & { x: number; y: number; used?: boolean };
 // null value = pointer is over the live tree or its sky backdrop (no opaque element before the hero stage).
 type BgCache = { target: Element; at: number; value: ReturnType<typeof elementBackground> | null };
 export function CursorTrail() {
@@ -26,22 +25,32 @@ export function CursorTrail() {
       const dots = Array.from(root.children) as HTMLElement[];
       const pos = dots.map(() => ({ x: -100, y: -100 }));
       let x = -100, y = -100, frame = 0, lastTs = 0, lastNow = 0, moved = false, recheck = false;
-      let active = false, inside = false, focused = document.hasFocus();
-      let canvasTarget: HTMLCanvasElement | null = null;
+      let active = false, inside = false, native = false, focused = document.hasFocus();
       let hovered: Element | null = null;
       let backgroundCache: BgCache | undefined;
-      let sampled: Sample | undefined;
-      const tone: ColourHysteresis = {};
+      // The system pointer becomes the lead dot over the live tree (see index.css) where this browser
+      // supports pointer image sets; have its images ready before the tree appears.
+      const probe = (fn: string) => typeof CSS !== 'undefined' && CSS.supports?.('cursor', `${fn}(url("${NATIVE_DOT_IMAGES[0]}") 1x) 16 16, auto`);
+      const nativeClass = probe('image-set') ? 'cd-native-dot' : probe('-webkit-image-set') ? 'cd-native-dot-webkit' : '';
+      if (nativeClass) { html.classList.add(nativeClass); NATIVE_DOT_IMAGES.forEach(src => { new Image().src = src; }); }
       const admin = () => path.current.startsWith('/admin');
       const paint = (colour: string) => { if (root.dataset.colour !== colour) root.dataset.colour = colour; };
-      const near = (s: Sample) => Math.abs(s.x - x) < 2 && Math.abs(s.y - y) < 2;
       const write = (i: number) => { dots[i].style.transform = `translate3d(${pos[i].x}px,${pos[i].y}px,0)`; };
+      // Over the live tree the OS draws the lead dot (a blue-dot pointer image), so it never waits for the
+      // tree's frames; the DOM lead dot hides and takes over again exactly at the pointer when it leaves.
+      const setNative = (on: boolean) => {
+        on &&= !!nativeClass;
+        if (on === native) return;
+        native = on;
+        root.classList.toggle('cursor-native', on);
+        if (!on) { pos[0].x = x; pos[0].y = y; write(0); }
+      };
       // Hide the system pointer from load; dots stay invisible until the first move.
       const arm = () => {
         if (focused && !admin() && !html.classList.contains('cd-cursor-active')) html.classList.add('cd-cursor-active');
       };
       const hide = () => {
-        active = false; canvasTarget = null;
+        active = false; setNative(false);
         if (html.classList.contains('cd-cursor-active')) html.classList.remove('cd-cursor-active');
         root.classList.remove('cursor-visible', 'cursor-pressed');
       };
@@ -60,23 +69,20 @@ export function CursorTrail() {
         if (html.classList.contains('cd-intro') && !html.classList.contains('cd-iris')) {
           const intro = document.getElementById('cd-intro');
           root.classList.remove('cursor-hover');
-          canvasTarget = null;
-          if (intro) { const bg = elementBackground(intro); paint(immediateColour(tone, bg.rgb, false)); }
+          setNative(false);
+          if (intro) { const bg = elementBackground(intro); paint(cursorColour(bg.rgb)); }
           return;
         }
+        const stage = target.closest('.hero-stage');
         if (!backgroundCache || backgroundCache.target !== target || now - backgroundCache.at > 150) {
-          const stage = target.closest('.hero-stage');
           backgroundCache = { target, at: now, value: stage ? stageBackground(target, stage) : elementBackground(target) };
         }
         const bg = backgroundCache.value;
-        canvasTarget = null;
-        if (bg) { paint(immediateColour(tone, bg.rgb, bg.photo)); return; }
-        const stage = target.closest('.hero-stage');
-        if (!stage) return;
-        canvasTarget = stage.querySelector('canvas');
-        // Until the live tree has drawn (or without WebGL) the hero shows its sky backdrop.
-        if (!canvasTarget?.dataset.treeRevealReason) { canvasTarget = null; paint(stableColour(tone, skyBackdropColour(html.dataset.sky), now)); return; }
-        if (sampled && !sampled.used && near(sampled)) { sampled.used = true; paint(stableColour(tone, sampled, now)); }
+        setNative(!bg && !!stage && target instanceof HTMLCanvasElement && !root.classList.contains('cursor-hover'));
+        if (bg) { paint(cursorColour(bg.rgb, bg.photo)); return; }
+        // The live tree and its sky change colour all the time, so the cursor stays blue over them
+        // instead of sampling what is underneath (reading pixels back stalled every frame on the GPU).
+        paint('blue');
       };
       const tick = (ts: number) => {
         const now = performance.now();
@@ -84,7 +90,7 @@ export function CursorTrail() {
         const dt = lastTs ? frameDt(ts - lastTs, now - lastNow) : 16; lastTs = ts; lastNow = now;
         const hadMove = moved; moved = false;
         if (recheck) { recheck = false; if (inside) { hovered = document.elementFromPoint(x, y); checkTarget(hovered, now); } }
-        else if (hadMove || tone.pending) checkTarget(hovered, now); // keep sampling while a colour hold is pending
+        else if (hadMove) checkTarget(hovered, now);
         if (!active) { lastTs = 0; return; }
         let settled = !hadMove;
         for (let i = 0; i < pos.length; i++) {
@@ -93,7 +99,6 @@ export function CursorTrail() {
           if (Math.abs(x - p.x) < TRAIL_SETTLE_PX && Math.abs(y - p.y) < TRAIL_SETTLE_PX) { p.x = x; p.y = y; } else settled = false;
           write(i);
         }
-        if (tone.pending) settled = false; // keep the loop alive until the colour hold resolves
         if (settled) lastTs = 0; else frame = requestAnimationFrame(tick);
       };
       const start = () => { if (!frame) frame = requestAnimationFrame(tick); };
@@ -110,12 +115,7 @@ export function CursorTrail() {
       const down = () => { if (active) root.classList.add('cursor-pressed'); };
       const up = () => root.classList.remove('cursor-pressed');
       const introEnd = () => { arm(); request(); };
-      const background = (event: Event) => {
-        sampled = { ...(event as CustomEvent<Sample>).detail };
-        if (active && canvasTarget && near(sampled)) { sampled.used = true; paint(stableColour(tone, sampled, performance.now())); }
-      };
       routeChanged.current = () => { backgroundCache = undefined; if (admin()) hide(); else { arm(); request(); } };
-      const timer = window.setInterval(() => { if (canvasTarget && active) request(); }, 100);
       const observer = new MutationObserver(() => { backgroundCache = undefined; arm(); if (inside) request(); });
       observer.observe(html, { attributes: true, attributeFilter: ['class'] });
       const scrolled = () => request();
@@ -123,14 +123,15 @@ export function CursorTrail() {
       window.addEventListener('scroll', scrolled, { passive: true, capture: true });
       document.addEventListener('mouseleave', leave); window.addEventListener('blur', blur); window.addEventListener('focus', focus);
       window.addEventListener('pointerdown', down); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
-      window.addEventListener('cd:cursor-bg', background); window.addEventListener('cd:intro-iris', introEnd); window.addEventListener('cd:intro-end', introEnd);
+      window.addEventListener('cd:intro-iris', introEnd); window.addEventListener('cd:intro-end', introEnd);
       arm();
       dispose = () => {
-        hide(); cancelAnimationFrame(frame); frame = 0; clearInterval(timer); observer.disconnect(); routeChanged.current = () => {};
+        hide(); cancelAnimationFrame(frame); frame = 0; observer.disconnect(); routeChanged.current = () => {};
+        if (nativeClass) html.classList.remove(nativeClass);
         window.removeEventListener('scroll', scrolled, true); window.removeEventListener('pointermove', move);
         document.removeEventListener('mouseleave', leave); window.removeEventListener('blur', blur); window.removeEventListener('focus', focus);
         window.removeEventListener('pointerdown', down); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
-        window.removeEventListener('cd:cursor-bg', background); window.removeEventListener('cd:intro-iris', introEnd); window.removeEventListener('cd:intro-end', introEnd);
+        window.removeEventListener('cd:intro-iris', introEnd); window.removeEventListener('cd:intro-end', introEnd);
       };
     };
     setup(); query.addEventListener('change', setup);

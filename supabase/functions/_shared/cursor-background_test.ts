@@ -1,5 +1,5 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { cursorColour, skyBackdropColour, CURSOR_SAMPLE_INTERVAL, CURSOR_QUERY } from '../../../src/lib/cursorBackground.ts';
+import { cursorColour, CURSOR_QUERY, NATIVE_DOT_IMAGES } from '../../../src/lib/cursorBackground.ts';
 Deno.test('dark backgrounds including night and forest map to white first', () => {
   assertEquals(cursorColour({r:10,g:20,b:35}), 'white');
   assertEquals(cursorColour({r:25,g:65,b:30}), 'white');
@@ -16,26 +16,36 @@ Deno.test('photos default white after dark and hue checks', () => {
 Deno.test('cream sunset red and yellow backgrounds default blue', () => {
   for (const rgb of [{r:246,g:245,b:239},{r:240,g:165,b:100},{r:250,g:140,b:140},{r:255,g:240,b:0}]) assertEquals(cursorColour(rgb), 'blue');
 });
-Deno.test('sky backdrop paints white dots at night and green by day', () => {
-  assertEquals(cursorColour(skyBackdropColour('night')), 'white');
-  assertEquals(cursorColour(skyBackdropColour('day')), 'green');
-  assertEquals(cursorColour(skyBackdropColour(undefined)), 'white');
-});
-Deno.test('probe rate is capped at twelve reads a second and fine pointers', () => {
-  assertEquals(CURSOR_SAMPLE_INTERVAL, 1000 / 12);
+Deno.test('the cursor stays blue over the live tree and its sky, with no pixel read-back', async () => {
+  const trail = await Deno.readTextFile('src/components/CursorTrail.tsx');
   assertEquals(CURSOR_QUERY, '(hover: hover) and (pointer: fine)');
-  let last = -Infinity, reads = 0;
-  for(let t=0;t<1000;t+=1) if(t-last>=CURSOR_SAMPLE_INTERVAL) {last=t; reads++;}
-  assertEquals(reads, 12);
+  assert(trail.includes("paint('blue');"));
+  for (const gone of ['cd:cursor-bg', 'stableColour', 'setInterval(']) assert(!trail.includes(gone));
+  // Reading WebGL pixels back makes the page wait for the GPU to finish the frame.
+  const stack = ['src'];
+  while (stack.length) {
+    const dir = stack.pop()!;
+    for await (const entry of Deno.readDir(dir)) {
+      const path = `${dir}/${entry.name}`;
+      if (entry.isDirectory) stack.push(path);
+      else if (/\.(ts|tsx)$/.test(entry.name)) assert(!(await Deno.readTextFile(path)).includes('readPixels'), path);
+    }
+  }
 });
-Deno.test('probe is read-only and gates before default-framebuffer read', async () => {
-  const probe = await Deno.readTextFile('src/components/landing/tree3d/CursorPixelProbe.tsx');
-  assert(probe.indexOf('!query.matches') < probe.indexOf('gl.readPixels'));
-  assert(probe.indexOf('hit !== canvas') < probe.indexOf('gl.readPixels'));
-  assert(probe.includes('addAfterEffect'));
-  for (const forbidden of ['bindFramebuffer(', 'setRenderTarget(', 'invalidate(', 'preserveDrawingBuffer:']) assert(!probe.includes(forbidden));
+Deno.test('over the live tree the lead dot is a system pointer image of the same blue dot', async () => {
+  const css = await Deno.readTextFile('src/index.css');
+  const trail = await Deno.readTextFile('src/components/CursorTrail.tsx');
+  for (const src of NATIVE_DOT_IMAGES) assert((await Deno.stat(`public${src}`)).size > 500, src);
+  assert(css.includes('html.cd-cursor-active.cd-native-dot .hero-stage canvas { cursor: image-set(url(/cursor/dot.png) 1x, url(/cursor/dot@2x.png) 2x) 16 16, auto !important; }'));
+  assert(css.includes('html.cd-cursor-active.cd-native-dot-webkit .hero-stage canvas { cursor: -webkit-image-set('));
+  assert(css.includes('.cursor-native > span:first-child { opacity: 0; }'));
+  // Only where the browser understands the syntax, only on the canvas, and the DOM dot resumes at the pointer.
+  assert(trail.includes("CSS.supports?.('cursor'"));
+  assert(trail.includes('on &&= !!nativeClass;'));
+  assert(trail.includes('target instanceof HTMLCanvasElement'));
+  assert(trail.includes('if (!on) { pos[0].x = x; pos[0].y = y; write(0); }'));
 });
-import { trailFactor, stableColour, immediateColour, averagePixels, TRAIL_TAU, TRAIL_MAX_DT, type ColourHysteresis } from '../../../src/lib/cursorBackground.ts';
+import { trailFactor, TRAIL_TAU, TRAIL_MAX_DT } from '../../../src/lib/cursorBackground.ts';
 Deno.test('all dots use exponential smoothing with 20/170/340ms and dt clamped to 0–64ms', () => {
   assertEquals(TRAIL_TAU, [20, 170, 340]);
   assertEquals(TRAIL_MAX_DT, 64);
@@ -61,43 +71,6 @@ Deno.test('cursor dt uses performance.now at callback start, with 16ms first fra
   assert(trail.includes('trailFactor(dt, TRAIL_TAU[i])'));
   assert(trail.includes('let settled = !hadMove'));
   assert(trail.includes('TRAIL_SETTLE_PX'));
-});
-Deno.test('textured colour alternating white/blue every 16ms for 2s never switches', () => {
-  const s: ColourHysteresis = {};
-  const shade = {r:70,g:115,b:60}, leaf = {r:100,g:150,b:80};
-  assertEquals(stableColour(s, shade, 0), 'white');
-  for (let t = 16; t <= 2000; t += 16) assertEquals(stableColour(s, t % 32 ? leaf : shade, t), 'white');
-});
-Deno.test('textured colour switches only after 160ms of a steady new colour', () => {
-  const s: ColourHysteresis = {};
-  const shade = {r:70,g:115,b:60}, leaf = {r:100,g:150,b:80};
-  assertEquals(stableColour(s, shade, 0), 'white');
-  assertEquals(stableColour(s, leaf, 100), 'white');  // wait starts
-  assertEquals(stableColour(s, leaf, 200), 'white');  // 100ms: held
-  assertEquals(stableColour(s, leaf, 259), 'white');  // 159ms: held
-  assertEquals(stableColour(s, leaf, 260), 'blue');   // 160ms: switch
-  // an interrupting match of the current colour restarts the wait
-  assertEquals(stableColour(s, shade, 300), 'blue');
-  assertEquals(stableColour(s, leaf, 320), 'blue');
-  assertEquals(stableColour(s, shade, 340), 'blue');  // new colour: wait restarts here
-  assertEquals(stableColour(s, leaf, 360), 'blue');   // current colour: pending cleared
-  assertEquals(stableColour(s, shade, 380), 'blue');  // wait restarts again
-  assertEquals(stableColour(s, shade, 500), 'blue');  // 120ms: held
-  assertEquals(stableColour(s, shade, 540), 'white'); // 160ms: switch
-});
-Deno.test('DOM backgrounds switch immediately and reset pending state', () => {
-  const s: ColourHysteresis = {};
-  stableColour(s, {r:10,g:10,b:10}, 0);
-  stableColour(s, {r:100,g:150,b:80}, 16); // pending blue
-  assertEquals(immediateColour(s, {r:255,g:255,b:255}), 'blue');
-  assertEquals(s.pending, undefined);
-});
-Deno.test('probe averages a 7x7 block from one 196-byte read', async () => {
-  const px = new Uint8Array(196); for (let i = 0; i < 196; i += 4) { px[i] = i < 98 ? 0 : 200; px[i+3] = 255; }
-  const avg = averagePixels(px); assert(avg && avg.r > 90 && avg.r < 110);
-  assertEquals(averagePixels(new Uint8Array(196)), undefined);
-  const probe = await Deno.readTextFile('src/components/landing/tree3d/CursorPixelProbe.tsx');
-  assert(probe.includes('BLOCK = 7') && (probe.match(/readPixels\(/g) ?? []).length === 1);
 });
 import { frameDt } from '../../../src/lib/cursorBackground.ts';
 Deno.test('frameDt trusts rAF unless it disagrees with the clock by more than 6ms', () => {

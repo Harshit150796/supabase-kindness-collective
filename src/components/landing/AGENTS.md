@@ -6,6 +6,7 @@
 - Tree anchors use slot-specific leaf clearance and vertical correction.
 - All 18 opening logos preload at tree-module evaluation (coupons painted ahead, one per task) and mount together; reveal follows a drawn full-logo frame, with a three-second safety timeout only outside the opening. Replacement logos preload on demand.
 - Draco decoder is self-hosted at /draco/ (copied from three's bundled libs) so the tree never depends on a third-party host.
+- FramePacer draws the tree itself (render priority 1): every frame until the reveal, then about 60fps on 120Hz-and-up screens so the GPU leaves the page room; PerfWatchdog counts drawn frames and steps quality down below 55fps on fine-pointer devices (45 on touch).
 - The 3D tree canvas uses `frameloop='never'` while off-screen, tab-hidden, or until ShaderWarmup has compiled the scene (parallel via KHR_parallel_shader_compile, 5s deadline); demand mode starved page animations on phones.
 - Production sets `checkShaderErrors` false (each check waits on the GPU). The environment map is built outside Suspense and the ground/leaf textures are drawn ahead, while the model downloads.
 - Tree quality starts from shared desktop settings except known software renderers; committed visible-frame sampling reduces shadow/DPR costs before ambient density so screen size never selects artwork.
@@ -23,7 +24,7 @@
 ## Homepage motion, reveals and sections
 - Shared reveals decide via `revealMode` (pre-trigger 20% below viewport, late on-screen mounts still animate, time-based fling detection) so busy frames never skip motion.
 - Editorial line reveals use removable aria-hidden overlays without replacing React-owned nodes; font/initial-frame settlement and the shared observer protect startup. Headings split only after their own faces load (italic runs included), and the painted lines stack in normal flow so they never drift off the real ones.
-- Cursor uses a settling rAF loop timed by the rAF timestamp, falling back to the clock past 6ms (frameDt); event targets for moves, cached DOM colours; CSS owns colour/hover; lazy-tree read-only probe.
+- Cursor uses a settling rAF loop timed by the rAF timestamp, falling back to the clock past 6ms (frameDt); event targets for moves, cached DOM colours; CSS owns colour/hover. Over the live tree and its sky the cursor is fixed blue (founder-chosen) and, on the tree canvas, the lead dot is the system pointer (a blue-dot image set, OS-drawn so it never waits on the tree); never read pixels back from WebGL (each read stalls on the GPU).
 - Lazy section short states fill reservations to preserve scroll; shared count/retry logic prevents false zeros and early failures.
 - Homepage section code prefetches one module per idle period after the opening (src/lib/idlePrefetch.ts, skipped on Save-Data); sections still mount on view. Scroll handlers never read layout per frame (use IntersectionObserver).
 - Homepage "Give what people need." steps: laptops (lg+) deal four cards alternating logo green and logo blue (founder-chosen), animating transform only via element.animate with px values and IntersectionObserver triggers, re-stacking only after the row leaves below the viewport; phones keep the compact animated list unchanged.

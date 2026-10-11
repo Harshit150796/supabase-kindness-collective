@@ -1,5 +1,5 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, addEffect, useFrame, useThree } from '@react-three/fiber';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
@@ -21,10 +21,10 @@ import { AmbientBirds } from './tree3d/AmbientBirds';
 import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
 import { TransparencyPopover } from './tree3d/TransparencyPopover';
 import { PlantsLayer } from './tree3d/PlantsLayer';
-import { CursorPixelProbe } from './tree3d/CursorPixelProbe';
 import { prewarmTreeTextures } from './tree3d/textures';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { shouldReduceQuality } from '@/lib/treeQuality';
+import { SLOW_TREE_FPS, shouldReduceQuality } from '@/lib/treeQuality';
+import { createRefreshTracker, pacingDivisor } from '@/lib/framePacing';
 import { useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
 
 // Start all opening SVG decodes alongside the model/Draco preload at module evaluation.
@@ -204,8 +204,14 @@ function CameraRig({
     return () => window.removeEventListener('tree3d-reset-camera', onReset);
   }, [camera]);
 
+  const cameraStampRef = useRef(0);
   useFrame((_, dt) => {
-    gl.domElement.dataset.treeCamera = camera.position.toArray().map(v => v.toFixed(4)).join(',');
+    // QA readout of the camera, a few times a second rather than a DOM write on every frame.
+    const stamp = performance.now();
+    if (stamp - cameraStampRef.current > 250) {
+      cameraStampRef.current = stamp;
+      gl.domElement.dataset.treeCamera = camera.position.toArray().map(v => v.toFixed(4)).join(',');
+    }
     if (gentle) return;
     const c = controlsRef.current;
     if (!c) return;
@@ -363,24 +369,48 @@ function ShadowSwitch({ enabled }: { enabled: boolean }) {
   return null;
 }
 
+/**
+ * Draws the scene itself (render priority 1, so R3F stops drawing on its own): every frame until the
+ * reveal, because the opening counts drawn frames, then about 60 times a second on 120Hz-and-up
+ * screens (see framePacing.ts) so the tree leaves the GPU room for the cursor and scrolling.
+ */
+const pace = { draw: true, frame: 0, drawn: 0 };
+function FramePacer() {
+  useEffect(() => {
+    const refresh = createRefreshTracker();
+    return addEffect((timestamp) => {
+      const divisor = pacingDivisor(refresh.push(timestamp));
+      pace.frame++;
+      pace.draw = !window.__cdTreeReady || divisor === 1 || pace.frame % divisor === 0;
+    });
+  }, []);
+  useFrame(({ gl, scene, camera }) => {
+    if (!pace.draw) return;
+    gl.render(scene, camera);
+    pace.drawn++;
+  }, 1);
+  return null;
+}
+
 /** Sample only committed, visible rendering; loading/hidden time is not hardware evidence. */
 /** Page-load jank must not count: wait 2s, then step down only after two slow samples in a row. */
 function PerfWatchdog({ onSlow, active }: { onSlow: () => void; active: boolean }) {
-  const sample = useRef({ start: 0, frames: 0, warm: 0, strikes: 0 });
-  useEffect(() => { sample.current = { start: 0, frames: 0, warm: performance.now(), strikes: 0 }; }, [active]);
+  const sample = useRef({ start: 0, drawn: 0, warm: 0, strikes: 0 });
+  const slowBelow = useMemo(() => (matchMedia('(hover: hover) and (pointer: fine)').matches ? SLOW_TREE_FPS.pointer : SLOW_TREE_FPS.touch), []);
+  useEffect(() => { sample.current = { start: 0, drawn: 0, warm: performance.now(), strikes: 0 }; }, [active]);
   useFrame(({ gl }) => {
     if (!active || document.hidden) return;
     const now = performance.now();
     const s = sample.current;
     if (now - s.warm < 2000) return;
-    if (!s.start) { s.start = now; return; }
-    s.frames++;
+    if (!s.start) { s.start = now; s.drawn = pace.drawn; return; }
     const elapsed = now - s.start;
     if (elapsed < 2500) return;
-    const fps = s.frames * 1000 / elapsed;
+    // Frames actually drawn, not animation callbacks: on fast screens the pacer skips some on purpose.
+    const fps = (pace.drawn - s.drawn) * 1000 / elapsed;
     gl.domElement.dataset.treeFps = fps.toFixed(1);
-    s.start = now; s.frames = 0;
-    s.strikes = shouldReduceQuality(fps, active, elapsed) ? s.strikes + 1 : 0;
+    s.start = now; s.drawn = pace.drawn;
+    s.strikes = shouldReduceQuality(fps, active, elapsed, slowBelow) ? s.strikes + 1 : 0;
     if (s.strikes >= 2) { s.strikes = 0; onSlow(); }
   });
   return null;
@@ -891,7 +921,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
         }}
       >
         {/* PerformanceMonitor removed — was causing DPR rescaling flicker */}
-        <CursorPixelProbe />
+        <FramePacer />
         <OrbitControls
           ref={controlsRef}
           enabled={!gentle}
