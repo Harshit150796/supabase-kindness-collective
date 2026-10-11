@@ -3,13 +3,11 @@ import {
   animate,
   motion,
   useMotionValue,
-  useMotionValueEvent,
-  useScroll,
   useTransform,
   type MotionValue,
 } from 'motion/react';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { LineReveal, Reveal, useEarlyReveal } from '@/components/ui/editorial-motion';
@@ -308,17 +306,122 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
   );
 }
 
+// Laptops and wide screens: the four stories play one after another and hand a baton along
+// the connector (step 1's coins fly out toward step 2, which takes them in from the left),
+// then each rests in its finished picture. The run repeats only while the row is on screen.
+// It used to scrub every illustration from the scroll position and also loop them all on a
+// shared 12s clock: the two fought (jumps), stopping mid-scroll froze half-drawn pictures,
+// and the loop kept running off screen.
+const STORY_STEP_GAP = 1.9; // seconds between one step starting and the next
+const STORY_LOOP = 12.5; // seconds from one run to the next
+const STORY_END = [0.6, 0.84, 0.84, 0.84]; // storyboard point where each picture is complete
+const STORY_LENGTH = [1.6, 2.3, 2.3, 2.3]; // seconds each picture takes to get there
+
+function StoryConnector({ progress, show, still }: { progress: MotionValue<number>; show: MotionValue<number>; still: boolean }) {
+  const x = useTransform(progress, (value) => `${value * 100}%`);
+  const dotOpacity = mapValue(progress, [0, 0.05, 0.95, 1], [0, 1, 1, 0]);
+  return (
+    <motion.div aria-hidden="true" data-giving-connector className="pointer-events-none absolute left-[170px] right-[-12px] top-[74px] h-[2px]" style={{ opacity: show }}>
+      <div className="absolute inset-0 rounded-full bg-border" />
+      <motion.div className="absolute inset-0 origin-left rounded-full bg-primary/55" style={{ scaleX: still ? 1 : progress }} />
+      {!still && (
+        <motion.div className="absolute inset-0" style={{ x }}>
+          <motion.span className="absolute -left-1 -top-[3px] h-2 w-2 rounded-full bg-primary" style={{ opacity: dotOpacity }} />
+        </motion.div>
+      )}
+    </motion.div>
+  );
+}
+
+function DesktopStory({ still }: { still: boolean }) {
+  const listRef = useRef<HTMLOListElement>(null);
+  const phase0 = useMotionValue(0), phase1 = useMotionValue(0), phase2 = useMotionValue(0), phase3 = useMotionValue(0);
+  const link0 = useMotionValue(0), link1 = useMotionValue(0), link2 = useMotionValue(0);
+  const show = useMotionValue(0);
+  const phases = useMemo(() => [phase0, phase1, phase2, phase3], [phase0, phase1, phase2, phase3]);
+  const links = useMemo(() => [link0, link1, link2], [link0, link1, link2]);
+
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    if (still) {
+      phases.forEach((phase, index) => phase.set(STORY_END[index]));
+      links.forEach((link) => link.set(1));
+      show.set(1);
+      return;
+    }
+    let timers: number[] = [];
+    let running: Array<{ stop: () => void }> = [];
+    const clear = () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+      running.forEach((animation) => animation.stop());
+      timers = [];
+      running = [];
+    };
+    const later = (seconds: number, run: () => void) => { timers.push(window.setTimeout(run, seconds * 1000)); };
+    // One run: fade in from the empty pictures, play the steps in turn, rest, fade out, repeat.
+    const play = () => {
+      clear();
+      phases.forEach((phase) => phase.set(0));
+      links.forEach((link) => link.set(0));
+      running.push(animate(show, 1, { duration: 0.45, ease: 'easeOut' }));
+      phases.forEach((phase, index) => later(0.2 + index * STORY_STEP_GAP, () => {
+        running.push(animate(phase, STORY_END[index], { duration: STORY_LENGTH[index], ease: 'linear' }));
+      }));
+      links.forEach((link, index) => later(0.2 + index * STORY_STEP_GAP + 1.2, () => {
+        running.push(animate(link, 1, { duration: 0.8, ease: [0.65, 0, 0.35, 1] }));
+      }));
+      later(STORY_LOOP, () => { running.push(animate(show, 0, { duration: 0.45, ease: 'easeIn', onComplete: play })); });
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { if (!timers.length && !running.length) { show.set(0); play(); } }
+      else clear(); // nothing animates off screen
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.25 });
+    observer.observe(list);
+    return () => { observer.disconnect(); clear(); };
+  }, [still, phases, links, show]);
+
+  return (
+    <div className="relative mt-16 hidden lg:block">
+      <ol ref={listRef} className="relative grid grid-cols-4 gap-x-8" data-giving-steps="story">
+        {steps.map((step, index) => {
+          const Art = step.Art;
+          return (
+            <li key={step.title} className="relative" data-desktop-step={index + 1}>
+              <motion.div
+                className="relative h-[150px] w-[150px] [&_svg]:overflow-visible"
+                style={{ opacity: show }}
+                whileHover={still ? undefined : { y: -4 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+              >
+                <Art progress={phases[index]} still={still} offset={0} />
+              </motion.div>
+              {index < steps.length - 1 && <StoryConnector progress={links[index]} show={show} still={still} />}
+              <div className="mt-4 flex items-baseline gap-2">
+                <span className="text-sm font-medium tabular-nums text-muted-foreground">0{index + 1}</span>
+                <h3 className="font-display text-[1.375rem] font-normal leading-tight text-foreground xl:text-2xl">{step.title}</h3>
+              </div>
+              <p className="mt-2 text-base leading-relaxed text-muted-foreground">{step.body}</p>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
 export function WhatWeDo() {
   // The founder-approved motion hook currently returns full on every device.
   const preference = useMotionPreference();
   const sectionRef = useRef<HTMLElement>(null);
   const mobileStepRefs = useRef<Array<HTMLLIElement | null>>([]);
+  // Phones keep the receipt on this still clock; laptops count it up once when it arrives.
   const progress = useMotionValue(0);
+  const receiptProgress = useMotionValue(0);
+  const receiptRef = useRef<HTMLDivElement>(null);
+  const { visible: receiptVisible } = useEarlyReveal(receiptRef);
   const still = preference === 'gentle';
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
-  const { scrollYProgress: desktopScroll } = useScroll({ target: sectionRef, offset: ['start end', 'end start'] });
-  const idleTimerRef = useRef<number | null>(null);
-  const idleAnimationRef = useRef<ReturnType<typeof animate> | null>(null);
 
   useEffect(() => {
     const query = window.matchMedia('(min-width: 1024px)');
@@ -327,48 +430,13 @@ export function WhatWeDo() {
     return () => query.removeEventListener('change', update);
   }, []);
 
-  const startIdleMotion = useCallback(() => {
-    if (still || !isDesktop) return;
-    idleAnimationRef.current?.stop();
-    const current = progress.get();
-    idleAnimationRef.current = animate(progress, current + 1, {
-      duration: 12,
-      ease: 'linear',
-      repeat: Infinity,
-    });
-  }, [isDesktop, progress, still]);
-
-  useMotionValueEvent(desktopScroll, 'change', (value) => {
-    if (still || !isDesktop) return;
-    idleAnimationRef.current?.stop();
-    progress.set(Math.max(0, Math.min(1, (value - 0.12) / 0.66)));
-    if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
-    idleTimerRef.current = window.setTimeout(startIdleMotion, 1500);
-  });
-
-  useEffect(() => () => {
-    idleAnimationRef.current?.stop();
-    if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
-  }, []);
-
   useEffect(() => {
-    if (!isDesktop || still) return;
-    startIdleMotion();
-    return () => idleAnimationRef.current?.stop();
-  }, [isDesktop, startIdleMotion, still]);
+    if (!isDesktop || still || !receiptVisible) return;
+    const animation = animate(receiptProgress, 1, { duration: 2.6, ease: [0.16, 1, 0.3, 1] });
+    return () => animation.stop();
+  }, [isDesktop, still, receiptVisible, receiptProgress]);
 
-  const connectorPhase = useTransform(progress, (value) => ((value % 1) + 1) % 1);
-  const connectorPosition = mapValue(connectorPhase, [0, 0.12, 0.24, 0.36, 0.62, 1], [0, 0, 33, 66, 100, 100]);
-  const connectorLeft = useTransform(connectorPosition, (value) => `${value}%`);
   const chevronY = mapValue(progress, [0, 0.5, 1], [0, 5, 0]);
-
-  const restartSharedClock = () => {
-    if (!still && isDesktop) {
-      idleAnimationRef.current?.stop();
-      progress.set(0);
-      startIdleMotion();
-    }
-  };
 
   const registerMobileStep = useCallback((index: number, node: HTMLLIElement | null) => {
     mobileStepRefs.current[index] = node;
@@ -397,30 +465,7 @@ export function WhatWeDo() {
           </ol>
         </div>
 
-        <div className="relative mt-14 hidden md:mt-16 lg:block">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[86px] hidden lg:block">
-            <div className="relative mx-[12%] h-px bg-border">
-              {!still && <motion.span className="absolute -top-[3px] h-[7px] w-[7px] rounded-full bg-primary/70" style={{ left: connectorLeft }} />}
-            </div>
-          </div>
-          <ol className="relative grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-4">
-            {steps.map((step, index) => {
-              const Art = step.Art;
-              return (
-                <li key={step.title} className="relative pl-8 lg:pl-0" data-desktop-step={index + 1}>
-                  <motion.div className="mx-auto h-[130px] w-[130px] overflow-hidden sm:h-[150px] sm:w-[150px] lg:mx-0" whileHover={still ? undefined : { y: -4 }} whileTap={still ? undefined : { scale: 0.97 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }} onMouseEnter={restartSharedClock} onFocus={restartSharedClock} onPointerDown={restartSharedClock}>
-                    <Art progress={progress} still={still} offset={step.offset} />
-                  </motion.div>
-                  <div className="mt-4 flex items-center gap-2">
-                     <span className="text-sm font-medium tabular-nums text-muted-foreground">0{index + 1}</span>
-                     <h3 className="font-display text-xl font-normal text-foreground md:text-2xl">{step.title}</h3>
-                  </div>
-                  <p className="mt-2 text-base leading-relaxed text-muted-foreground">{step.body}</p>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
+        <DesktopStory still={still} />
 
         <Reveal className="mt-8 overflow-hidden border-y border-primary/20 bg-primary/[0.03] px-0 py-6 lg:mt-20 lg:px-10 lg:py-12">
           <div className="grid items-center gap-5 sm:grid-cols-[minmax(0,1fr)_220px] lg:gap-12">
@@ -428,7 +473,7 @@ export function WhatWeDo() {
                <p className="font-display text-3xl font-normal leading-snug text-foreground md:text-5xl">Donate $10 today. Check where it went in 2036.</p>
               <p className="mt-4 max-w-2xl text-base text-muted-foreground md:text-lg">Every donation keeps its receipt. Permanently verifiable — not a promise, a record.</p>
             </div>
-            <ProofReceipt progress={progress} still={still} />
+            <div ref={receiptRef}><ProofReceipt progress={isDesktop ? receiptProgress : progress} still={still} /></div>
           </div>
         </Reveal>
 

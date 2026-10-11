@@ -109,7 +109,9 @@ Deno.test('homepage sections retain their approved motion entry points', async (
   const donation = await Deno.readTextFile('src/components/landing/DonationFlow.tsx');
   const footer = await Deno.readTextFile('src/components/layout/Footer.tsx');
   assert(story.includes('<LineReveal><h2'));
-  assert(story.includes('startIdleMotion();'));
+  // Laptops: the four stories play in turn and rest complete, only while on screen (no scroll scrubbing).
+  assert(story.includes('data-giving-steps="story"') && story.includes('new IntersectionObserver('));
+  assert(!story.includes('useScroll') && !story.includes('startIdleMotion'));
   assert(security.includes('initial={{opacity:0,scale:.92,rotate:-4}}'));
   assert(impact.includes('formatter={item.currency ? formatUSD : undefined}'));
   assert(donation.includes('<Reveal className="mx-auto max-w-3xl"><Card'));
