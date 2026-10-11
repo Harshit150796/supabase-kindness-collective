@@ -10,7 +10,7 @@ import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthInd
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import logo from '@/assets/logo.png';
+import { Navbar } from '@/components/layout/Navbar';
 
 const passwordSchema = z.object({
   password: z.string()
@@ -119,23 +119,20 @@ export default function ResetPassword() {
 
   if (tokenValid === null) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-dvh bg-background">
+        <Navbar />
+        <div className="flex min-h-[calc(100dvh-var(--site-header-h))] items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-dvh bg-background flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-background">
+    <Navbar />
+    <div className="flex min-h-[calc(100dvh-var(--site-header-h))] items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-            <img src={logo} alt="CouponDonation" className="w-12 h-12 object-contain" width={48} height={48} loading="eager" decoding="async" fetchPriority="high" />
-            <span className="font-bold text-2xl"><span className="text-[#2e7d32]">Coupon</span><span className="text-[#1565c0]">Donation</span></span>
-          </div>
-        </div>
-
         <Card className="rounded-md border-border shadow-sm">
           {success ? (
             <CardContent className="pt-6">
@@ -204,6 +201,7 @@ export default function ResetPassword() {
           )}
         </Card>
       </div>
+    </div>
     </div>
   );
 }

@@ -12,7 +12,7 @@
 - Shared reveals decide via `revealMode` (pre-trigger 20% below viewport, late on-screen mounts still animate, time-based fling detection) so busy frames never skip motion.
 - Opening rules, including index.html/main.tsx handoff, live in src/components/landing/AGENTS.md; read them before opening changes.
 - Cursor uses a settling rAF loop timed by the rAF timestamp, falling back to the clock past 6ms (frameDt); event targets for moves, cached DOM colours; CSS owns colour/hover; lazy-tree read-only probe.
-- Editorial line reveals use removable aria-hidden overlays without replacing React-owned nodes; font/initial-frame settlement and the shared observer protect startup.
+- Editorial line reveals use removable aria-hidden overlays without replacing React-owned nodes; font/initial-frame settlement and the shared observer protect startup. Headings split only after their own faces load (italic runs included), and the painted lines stack in normal flow so they never drift off the real ones.
 - Responsive public photos use proportional contain transforms on managed Supabase hosts or generated local variants; never append transformation parameters to unknown hosts or crop at delivery, because presentation framing belongs to the image container.
 - Motion is full on every device; the OS reduced-motion setting is not consulted (founder decision lives in memory).
 - Public photos stay local; without verified people-photo consent, use coupon/receipt/trace visuals.
@@ -35,6 +35,14 @@
 
 - No fundraiser UPDATE triggers; auto-tasks poll via admin-dispatch.
 - One 5-minute pg_cron job calls admin-dispatch with a Vault secret; downstream dispatchers reject calls without it.
+
+## Navigation Rules
+
+- Every menu item lives in src/components/navigation/siteLinks.ts; the header, full-screen menu, account dropdown and dashboard sections all read it, so a page is added or removed in one place.
+- One full-screen menu is mounted at app level (SiteMenuProvider, inside the router and auth). Pages render `<Navbar/>` (or just `<MenuButton/>`), never a menu of their own; it portals to body, makes #root inert, locks scroll, closes on Escape and route change, and returns focus.
+- Menu motion animates transform, opacity and colour only. BrandLockup is the geometry the opening lands on, so its sizes stay fixed.
+- Sign-out always goes through useSignOut(): it signs out this device and clears the stored session even when the logout request fails. Account dropdowns use `modal={false}`, because Radix modal menus left the page unclickable.
+- Sign-in links carry `next` (signInPath); Auth accepts only same-site relative paths, and `next` wins over role redirects.
 
 ## Coupon System Rules
 

@@ -8,15 +8,18 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
-import { Bell, Shield, Trash2, Mail, Heart } from "lucide-react";
+import { useSignOut } from "@/hooks/useSignOut";
+import { signInPath } from "@/lib/serverActions";
+import { Bell, Shield, Trash2, Mail, Heart, LogOut } from "lucide-react";
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
+  const signOut = useSignOut();
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate("/auth");
+      navigate(signInPath("/settings"), { replace: true });
     }
   }, [user, loading, navigate]);
 
@@ -121,6 +124,29 @@ const Settings = () => {
                   </p>
                 </div>
                 <Switch />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Session */}
+          <Card className="mb-6 rounded-md shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LogOut className="w-5 h-5 text-primary" />
+                Signed in
+              </CardTitle>
+              <CardDescription>
+                {user?.email ? `You are signed in as ${user.email}.` : 'You are signed in on this device.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-sm text-muted-foreground">
+                  Sign out here when you are on a shared or public device. Other devices stay signed in.
+                </p>
+                <Button variant="outline" size="sm" className="min-h-11 shrink-0" onClick={() => { void signOut(); }}>
+                  Sign out
+                </Button>
               </div>
             </CardContent>
           </Card>

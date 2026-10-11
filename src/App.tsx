@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SessionSecurityProvider } from "@/components/auth/SessionSecurityProvider";
@@ -11,6 +11,8 @@ import { GeoGuard } from "@/components/auth/GeoGuard";
 const Index = lazy(() => import("./pages/Index"));
 import { PrivacyConsentBanner } from "./components/PrivacyConsentBanner";
 import { CursorTrail } from './components/CursorTrail';
+import { SiteMenuProvider } from './components/navigation/SiteMenuProvider';
+import { signInPath } from './lib/serverActions';
 import { PageChoreography } from './components/PageChoreography';
 
 // All non-homepage routes are lazy-loaded so mobile users don't download
@@ -98,11 +100,13 @@ const RouteFallback = () => (
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: string[] }) {
   const { user, roles, loading, rolesLoaded } = useAuth();
+  const location = useLocation();
   
   // Wait for roles too: previously `loading` cleared before roles arrived, so a refresh or
   // deep link to a role-gated page saw roles=[] and bounced to "/" (the admin "acts weird" bug).
   if (loading || (user && !rolesLoaded)) return <div className="min-h-dvh flex items-center justify-center bg-background">Loading...</div>;
-  if (!user) return <Navigate to="/auth" replace />;
+  // Signing in brings people back to the page they asked for.
+  if (!user) return <Navigate to={signInPath(`${location.pathname}${location.search}`)} replace />;
   if (!allowedRoles.some(role => roles.includes(role as any))) return <Navigate to="/" replace />;
   
   return <>{children}</>;
@@ -215,10 +219,12 @@ const App = () => (
           <ErrorBoundary>
             <AuthProvider>
               <SessionSecurityProvider>
-                <AppRoutes />
-                <CursorTrail />
-                <PageChoreography />
-                <PrivacyConsentBanner />
+                <SiteMenuProvider>
+                  <AppRoutes />
+                  <CursorTrail />
+                  <PageChoreography />
+                  <PrivacyConsentBanner />
+                </SiteMenuProvider>
               </SessionSecurityProvider>
             </AuthProvider>
           </ErrorBoundary>

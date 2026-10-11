@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { useSignOut } from '@/hooks/useSignOut';
 import { sb, rpc, fmtDate } from '@/lib/adminApi';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -55,7 +56,8 @@ export function useTeamRole() {
 }
 
 export function AdminLayout({ children }: { children: ReactNode }) {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  const signOut = useSignOut();
   const { isAdmin, label } = useTeamRole();
   const location = useLocation();
   const navigate = useNavigate();
@@ -203,7 +205,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               <Link to="/admin/notifications" className="block px-3 py-2 text-center text-xs text-primary">View all</Link>
             </PopoverContent>
           </Popover>
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="ghost" className="rounded-full bg-primary/10 text-primary" aria-label="Account menu">{user?.email?.[0]?.toUpperCase()}</Button>
             </DropdownMenuTrigger>
@@ -211,7 +213,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               <DropdownMenuLabel className="text-xs font-normal"><span className="block truncate">{user?.email}</span><span className="text-muted-foreground">{label}</span></DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/')}><Home className="mr-2 h-4 w-4" />Public site</DropdownMenuItem>
-              <DropdownMenuItem onClick={async () => { await signOut(); navigate('/'); }}><LogOut className="mr-2 h-4 w-4" />Sign out</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => { void signOut(); }}><LogOut className="mr-2 h-4 w-4" />Sign out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>

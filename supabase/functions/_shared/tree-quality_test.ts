@@ -90,8 +90,9 @@ Deno.test('device-safe interfaces retain dynamic viewport and touch equivalents'
   assert(!chat.toLowerCase().includes('top donors'));
   assert(gallery.includes('srcSet='));
   assert(gallery.includes('sizes='));
-  assert(dashboard.includes("aria-label={sidebarOpen ? 'Close account navigation' : 'Open account navigation'}"));
-  assert(dashboard.includes('min-h-11 min-w-11'));
+  // Phones get the account sections as a swipeable row of 48px targets under the header.
+  assert(dashboard.includes('aria-label="Account sections"'));
+  assert(dashboard.includes('overflow-x-auto') && dashboard.includes('min-h-12'));
   assert(!story.includes("matchMedia('(pointer: fine)').matches"));
 });
 Deno.test('the transparency section keeps its ring, allocation bars and journey motion', async () => {

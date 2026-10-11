@@ -100,7 +100,7 @@ Deno.test('opening is the logo-to-navbar lockup on the shared logo file, with bu
   assert(intro.includes('src="/brand/logo-256.webp"'));assert(intro.includes('>Coupon<')&&intro.includes('>Donation<')&&intro.includes('>Transforming Giving<'));
   assert(intro.includes('"__CD_PAGE_CHUNKS__"')&&intro.includes('"__CD_TREE_CHUNKS__"'));
   assert(html.includes('<link rel="preload" href="/brand/logo-256.webp" as="image"'));
-  const navbar=await Deno.readTextFile('src/components/layout/Navbar.tsx');assert(navbar.includes("const logo = '/brand/logo-256.webp'"));assert(navbar.includes('data-nav-brand'));
+  const navbar=await Deno.readTextFile('src/components/layout/Navbar.tsx');const brand=await Deno.readTextFile('src/components/navigation/BrandLockup.tsx');assert(brand.includes("const logo = '/brand/logo-256.webp'"));assert(brand.includes('data-nav-brand'));assert(navbar.includes('<BrandLockup navBrand'));
   const vite=await Deno.readTextFile('vite.config.ts');assert(vite.includes('openingPreloads()'));assert(vite.includes('__CD_PAGE_CHUNKS__'));
   for (const name of ['cd-mark','cd-w1','cd-w2','cd-tag','cd-lock','cd-cover']) assert(!/#cd-(mark|w1|w2|tag|lock|cover)\{[^}]*(width|height|top|left):[^}]*transition/.test(intro), name);
 });

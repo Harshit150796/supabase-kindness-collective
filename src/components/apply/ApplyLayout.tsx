@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { ArrowLeft } from "lucide-react";
+import { MenuButton } from "@/components/navigation/MenuButton";
+import { signInPath } from "@/lib/serverActions";
 
 interface ApplyLayoutProps {
   step: number;
@@ -44,7 +46,11 @@ export const ApplyLayout = ({
   userEmail,
 }: ApplyLayoutProps) => {
   return (
-    <div className="min-h-dvh flex flex-col lg:flex-row animate-fade-in">
+    <div className="relative min-h-dvh flex flex-col lg:flex-row animate-fade-in">
+      {/* The site menu stays one tap away during the application. */}
+      <div className="absolute right-3 top-3 z-20 sm:right-4 sm:top-4">
+        <MenuButton className="bg-background/80 backdrop-blur" />
+      </div>
       {/* Left Panel - Info Section with gradient and decorative elements */}
       <div className="min-w-0 lg:w-[42%] relative overflow-hidden bg-gradient-to-br from-secondary via-secondary/80 to-primary/5 p-6 lg:p-10 flex flex-col">
         {/* Decorative floating shapes */}
@@ -148,7 +154,7 @@ export const ApplyLayout = ({
             </div>
           ) : (
             <Link 
-              to="/auth" 
+              to={signInPath("/apply")} 
               className="text-primary hover:text-primary/80 font-medium transition-all hover:translate-x-1 inline-flex min-h-11 items-center gap-1"
             >
               Sign in

@@ -3,6 +3,7 @@ import { ShareExperienceForm } from '@/components/engagement/ShareExperienceForm
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { signInPath } from '@/lib/serverActions';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,7 +53,7 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) navigate('/auth');
+    if (!authLoading && !user) navigate(signInPath('/dashboard'), { replace: true });
   }, [authLoading, user, navigate]);
 
   // Clear local state on user change so nothing leaks between accounts
