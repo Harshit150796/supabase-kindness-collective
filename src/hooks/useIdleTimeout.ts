@@ -17,11 +17,19 @@ export function useIdleTimeout({
 }: UseIdleTimeoutOptions) {
   const [showWarning, setShowWarning] = useState(false);
   const [remainingTime, setRemainingTime] = useState(warningTime);
-  
-  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const countdownRef = useRef<NodeJS.Timeout | null>(null);
-  const lastActivityRef = useRef<number>(Date.now());
+
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Read inside the activity listener; React state there would be a stale closure.
+  const warningRef = useRef(false);
+  // Latest callbacks without restarting the timers whenever a parent re-renders.
+  const onIdleRef = useRef(onIdle);
+  const onWarningRef = useRef(onWarning);
+  useEffect(() => {
+    onIdleRef.current = onIdle;
+    onWarningRef.current = onWarning;
+  });
 
   const clearAllTimers = useCallback(() => {
     if (idleTimerRef.current) {
@@ -38,51 +46,42 @@ export function useIdleTimeout({
     }
   }, []);
 
-  const startCountdown = useCallback(() => {
-    setRemainingTime(warningTime);
-    
-    countdownRef.current = setInterval(() => {
-      setRemainingTime(prev => {
-        const newTime = prev - 1000;
-        if (newTime <= 0) {
-          if (countdownRef.current) {
-            clearInterval(countdownRef.current);
-          }
-          return 0;
-        }
-        return newTime;
-      });
-    }, 1000);
-  }, [warningTime]);
-
   const resetTimers = useCallback(() => {
     if (!enabled) return;
-    
-    clearAllTimers();
-    setShowWarning(false);
-    lastActivityRef.current = Date.now();
 
-    // Set warning timer
+    clearAllTimers();
+    warningRef.current = false;
+    setShowWarning(false);
+
     warningTimerRef.current = setTimeout(() => {
+      warningRef.current = true;
       setShowWarning(true);
-      onWarning?.();
-      startCountdown();
+      setRemainingTime(warningTime);
+      onWarningRef.current?.();
+      countdownRef.current = setInterval(() => {
+        setRemainingTime((prev) => Math.max(0, prev - 1000));
+      }, 1000);
     }, idleTimeout - warningTime);
 
-    // Set idle timer
     idleTimerRef.current = setTimeout(() => {
+      clearAllTimers();
+      warningRef.current = false;
       setShowWarning(false);
-      onIdle();
+      onIdleRef.current();
     }, idleTimeout);
-  }, [enabled, idleTimeout, warningTime, onIdle, onWarning, clearAllTimers, startCountdown]);
+  }, [enabled, idleTimeout, warningTime, clearAllTimers]);
 
   const stayActive = useCallback(() => {
     resetTimers();
   }, [resetTimers]);
 
+  // The listeners and timers start once per enable. They used to restart whenever the
+  // warning appeared, which hid the warning again at once and reset the countdown, so
+  // the inactivity sign-out never happened and the dialog flashed every 13 minutes.
   useEffect(() => {
     if (!enabled) {
       clearAllTimers();
+      warningRef.current = false;
       setShowWarning(false);
       return;
     }
@@ -98,18 +97,14 @@ export function useIdleTimeout({
     ];
 
     // Throttle activity detection to avoid excessive resets
-    let throttleTimeout: NodeJS.Timeout | null = null;
+    let throttleTimeout: ReturnType<typeof setTimeout> | null = null;
     const handleActivity = () => {
-      if (throttleTimeout) return;
-      
+      // While the warning shows, only "Stay logged in" keeps the session.
+      if (throttleTimeout || warningRef.current) return;
       throttleTimeout = setTimeout(() => {
         throttleTimeout = null;
       }, 1000); // Throttle to once per second
-
-      // Only reset if not in warning state (user must click "Stay logged in")
-      if (!showWarning) {
-        resetTimers();
-      }
+      resetTimers();
     };
 
     events.forEach(event => {
@@ -128,7 +123,7 @@ export function useIdleTimeout({
         clearTimeout(throttleTimeout);
       }
     };
-  }, [enabled, resetTimers, clearAllTimers, showWarning]);
+  }, [enabled, resetTimers, clearAllTimers]);
 
   return {
     showWarning,

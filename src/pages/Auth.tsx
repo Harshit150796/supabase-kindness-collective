@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { OTPVerification } from '@/components/auth/OTPVerification';
 import { PasswordInput } from '@/components/auth/PasswordInput';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
-import logo from '@/assets/logo.png';
+import { Navbar } from '@/components/layout/Navbar';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -25,17 +25,28 @@ const authSchema = z.object({
 type AuthStep = 'form' | 'otp';
 type AuthView = 'auth' | 'forgot-password';
 
+/** Says what went wrong and what to do, instead of one message for every failure. */
+function signInErrorMessage(error: Error & { status?: number; code?: string }) {
+  const code = (error.code || '').toLowerCase();
+  const message = (error.message || '').toLowerCase();
+  if (code === 'email_not_confirmed' || message.includes('not confirmed')) return 'Confirm your email first. The link is in your inbox.';
+  if (error.status === 429 || code.includes('rate_limit') || message.includes('rate limit')) return 'Too many attempts. Wait a minute, then try again.';
+  if (!error.status || message.includes('fetch') || message.includes('network')) return 'We could not reach the server. Check your connection and try again.';
+  return 'That email and password do not match.';
+}
+
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, signIn, signUp, hasRole, loading: authLoading, rolesLoaded } = useAuth();
 
-  const [mode, setMode] = useState<'signin' | 'signup'>(
-    searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
-  );
+  const modeParam = searchParams.get('mode') === 'signup' ? 'signup' : 'signin';
+  const [mode, setMode] = useState<'signin' | 'signup'>(modeParam);
   // Signup intent only decides where we land first — it never limits the account.
   const intent = searchParams.get('intent') || searchParams.get('role');
-  const nextPath = searchParams.get('next');
+  // Only same-site paths: "next" comes from the address bar and must never send people elsewhere.
+  const rawNext = searchParams.get('next');
+  const nextPath = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') && !rawNext.startsWith('/\\') && !rawNext.startsWith('/auth') ? rawNext : null;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -50,13 +61,22 @@ export default function Auth() {
     fullName: string;
   } | null>(null);
 
+  // "Sign in" / "Create account" pressed while already on this page (the menu links
+  // here with ?mode=…): switch to that form instead of staying on the other one.
+  useEffect(() => {
+    setMode(modeParam);
+    setAuthStep('form');
+    setAuthView('auth');
+  }, [modeParam]);
+
   useEffect(() => {
     if (user && !authLoading && rolesLoaded) {
-      if (hasRole('admin')) navigate('/admin');
-      else if (nextPath) navigate(nextPath);
-      else if (intent === 'recipient') navigate('/apply');
-      else if (intent === 'donor') navigate('/dashboard/donate');
-      else navigate('/dashboard');
+      // Back to the page that asked for sign-in first; otherwise the right home.
+      if (nextPath) navigate(nextPath, { replace: true });
+      else if (hasRole('admin')) navigate('/admin', { replace: true });
+      else if (intent === 'recipient') navigate('/apply', { replace: true });
+      else if (intent === 'donor') navigate('/dashboard/donate', { replace: true });
+      else navigate('/dashboard', { replace: true });
     }
   }, [user, authLoading, rolesLoaded, hasRole, navigate, intent, nextPath]);
 
@@ -144,7 +164,7 @@ export default function Auth() {
       } else {
         const { error } = await signIn(email, password);
         if (error) {
-          toast.error('Invalid email or password');
+          toast.error(signInErrorMessage(error));
         }
       }
     } catch (error: any) {
@@ -262,23 +282,20 @@ export default function Auth() {
 
   if (authLoading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-dvh bg-background">
+        <Navbar />
+        <div className="flex min-h-[calc(100dvh-var(--site-header-h))] items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-dvh bg-background flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-background">
+    <Navbar />
+    <div className="flex min-h-[calc(100dvh-var(--site-header-h))] items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-            <img src={logo} alt="CouponDonation" className="w-12 h-12 object-contain" width={48} height={48} loading="eager" decoding="async" fetchPriority="high" />
-            <span className="font-bold text-2xl"><span className="text-[#2e7d32]">Coupon</span><span className="text-[#1565c0]">Donation</span></span>
-          </div>
-        </div>
-
         <Card className="rounded-md border-border shadow-sm">
           {authView === 'forgot-password' ? (
             <CardContent className="pt-6">
@@ -338,7 +355,7 @@ export default function Auth() {
             <>
               <CardHeader className="text-center">
                 <CardTitle className="font-display text-4xl font-normal">
-                  {mode === 'signin' ? 'Welcome Back' : 'Create Account'}
+                  {mode === 'signin' ? 'Welcome back' : 'Create an account'}
                 </CardTitle>
                 <CardDescription>
                   {mode === 'signin' 
@@ -350,8 +367,8 @@ export default function Auth() {
               <CardContent>
                 <Tabs value={mode} onValueChange={(v) => setMode(v as 'signin' | 'signup')}>
                   <TabsList className="grid w-full grid-cols-2 mb-6">
-                    <TabsTrigger value="signin">Sign In</TabsTrigger>
-                    <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                    <TabsTrigger value="signin">Sign in</TabsTrigger>
+                    <TabsTrigger value="signup">Sign up</TabsTrigger>
                   </TabsList>
 
                   <form onSubmit={handleSubmit}>
@@ -426,6 +443,7 @@ export default function Auth() {
           )}
         </Card>
       </div>
+    </div>
     </div>
   );
 }

@@ -1,155 +1,103 @@
-import { ReactNode, useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { ReactNode } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
+import { useSignOut } from '@/hooks/useSignOut';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import {
-  Home, CreditCard, Shield, LogOut, Menu, X,
-  DollarSign, TrendingUp, Megaphone, Heart, Wallet, LayoutDashboard,
-} from 'lucide-react';
-
-import logo from '@/assets/logo.png';
+import { Navbar } from '@/components/layout/Navbar';
+import { useSiteMenu } from '@/components/navigation/menuContext';
+import { DASHBOARD_EXTRA_LINKS, accountLinksFor, displayName, isActivePath } from '@/components/navigation/siteLinks';
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
+/**
+ * Account pages: the site header (with the full-screen menu) on every size, the
+ * account sections in a sidebar on wide screens and in a scrolling row on phones.
+ * The sections come from the same list as the header's account menu.
+ */
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { user, roles, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { user, roles } = useAuth();
+  const { unread } = useSiteMenu();
+  const signOut = useSignOut();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
-
-  const isTeam = roles.some((r) => ['admin', 'staff', 'viewer'].includes(r as string));
-  const getPersonalNav = () => {
-    // One generic account: giving and receiving are capabilities, not account types.
-    return [
-      { icon: Home, label: 'Home', path: '/dashboard' },
-      { icon: Heart, label: 'Donate', path: '/dashboard/donate' },
-      { icon: DollarSign, label: 'Your Giving', path: '/dashboard/giving' },
-      { icon: TrendingUp, label: 'Your Impact', path: '/dashboard/impact' },
-      { icon: Wallet, label: 'Voucher Wallet', path: '/dashboard/wallet' },
-      { icon: CreditCard, label: 'Loyalty Card', path: '/dashboard/loyalty-card' },
-      { icon: Megaphone, label: 'Your Requests', path: '/my-fundraisers' },
-      { icon: Shield, label: 'Verification', path: '/dashboard/verification' },
-      ...(isTeam ? [{ icon: LayoutDashboard, label: 'Admin portal', path: '/admin' }] : []),
-    ];
-  };
 
   // Admin pages get the dedicated operations shell; donor/recipient pages keep this layout
   // and always show the personal-account nav (previously admins saw admin links on their own donor pages).
   if (location.pathname.startsWith('/admin')) return <AdminLayout>{children}</AdminLayout>;
 
-  const navItems = getPersonalNav();
-  const roleLabel = 'My Account';
-
+  // Profile and settings live in the header's account menu; the sidebar keeps the working sections.
+  const sections = [...accountLinksFor(roles).filter((link) => link.to !== '/profile' && link.to !== '/settings'), ...DASHBOARD_EXTRA_LINKS];
+  const current = (to: string) => (to === '/dashboard' ? location.pathname === '/dashboard' : isActivePath(location.pathname, to));
+  const name = displayName(user);
 
   return (
     <div className="min-h-dvh bg-muted/30">
-      {/* Mobile Header */}
-      <header className="lg:hidden bg-background border-b border-border p-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="CouponDonation" className="w-8 h-8 object-contain" width={32} height={32} loading="eager" decoding="async" fetchPriority="high" />
-          <span className="font-bold"><span className="text-[#2e7d32]">Coupon</span><span className="text-[#1565c0]">Donation</span></span>
-        </Link>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="min-h-11 min-w-11"
-          aria-label={sidebarOpen ? 'Close account navigation' : 'Open account navigation'}
-          aria-expanded={sidebarOpen}
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </Button>
-      </header>
+      <Navbar autoHide={false} />
+
+      {/* Phones and tablets: the sections as a scrolling row under the header. */}
+      <nav aria-label="Account sections" className="sticky top-[var(--site-header-h)] z-30 border-b border-border bg-background lg:hidden">
+        <ul className="flex gap-1 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {sections.map((item) => (
+            <li key={item.to} className="shrink-0">
+              <Link
+                to={item.to}
+                aria-current={current(item.to) ? 'page' : undefined}
+                className={`relative inline-flex min-h-12 items-center gap-2 whitespace-nowrap px-3 text-sm font-medium transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary after:transition-transform ${current(item.to) ? 'text-foreground after:scale-x-100' : 'text-muted-foreground after:scale-x-0 hover:text-foreground'}`}
+              >
+                {item.label}
+                {item.unread && unread > 0 && <span className="text-xs font-semibold tabular-nums text-primary">{unread}</span>}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
       <div className="flex">
-        {/* Sidebar */}
-        <aside className={`
-          fixed lg:static inset-y-0 left-0 z-50
-          w-64 max-w-[80vw] bg-background border-r border-border
-          transform transition-transform lg:transform-none
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        `}>
-          <div className="h-full flex flex-col">
-            {/* Logo */}
-            <div className="p-6 border-b border-border hidden lg:block">
-              <Link to="/" className="flex items-center gap-2">
-                <img src={logo} alt="CouponDonation" className="w-10 h-10 object-contain" width={40} height={40} loading="eager" decoding="async" fetchPriority="high" />
-                <span className="font-bold text-xl"><span className="text-[#2e7d32]">Coupon</span><span className="text-[#1565c0]">Donation</span></span>
-              </Link>
-            </div>
+        {/* Wide screens: the sidebar. */}
+        <aside className="sticky top-[var(--site-header-h)] hidden h-[calc(100dvh-var(--site-header-h))] w-64 shrink-0 flex-col border-r border-border bg-background lg:flex">
+          <nav aria-label="Account sections" className="flex-1 space-y-1 overflow-y-auto px-4 py-6">
+            {sections.map((item) => {
+              const active = current(item.to);
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex min-h-11 items-center gap-3 rounded-lg px-4 text-sm font-medium transition-colors ${active ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                >
+                  <item.icon className={`h-[18px] w-[18px] shrink-0 ${active ? 'text-primary' : ''}`} aria-hidden="true" />
+                  <span className="flex-1">{item.label}</span>
+                  {item.unread && unread > 0 && <span className="text-xs font-semibold tabular-nums text-primary">{unread}</span>}
+                </Link>
+              );
+            })}
+          </nav>
 
-            {/* Role Badge */}
-            <div className="px-6 py-4">
-              <div className="text-xs text-muted-foreground uppercase tracking-wider">{roleLabel} Portal</div>
-            </div>
-
-            {/* Navigation */}
-            <nav className="flex-1 px-4 space-y-1">
-              {navItems.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`
-                      flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors
-                      ${isActive 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }
-                    `}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* User Section */}
-            <div className="p-4 border-t border-border">
-              <div className="flex items-center gap-3 px-4 py-2 mb-2">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-primary">
-                    {user?.email?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{user?.email}</p>
-                </div>
+          <div className="border-t border-border p-4">
+            <div className="flex items-center gap-3 px-2 pb-3">
+              <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-20 text-sm font-semibold text-primary-foreground">
+                {name.charAt(0).toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-foreground">{name}</p>
+                {user?.email && <p className="truncate text-xs text-muted-foreground">{user.email}</p>}
               </div>
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
-                onClick={handleSignOut}
-              >
-                <LogOut className="w-5 h-5" />
-                Sign Out
-              </Button>
             </div>
+            <button
+              type="button"
+              onClick={() => { void signOut(); }}
+              className="flex min-h-11 w-full items-center gap-3 rounded-lg px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <LogOut className="h-[18px] w-[18px]" aria-hidden="true" />
+              Sign out
+            </button>
           </div>
         </aside>
 
-        {/* Backdrop */}
-        {sidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-
         {/* Main Content */}
-        <main className="flex-1 p-6 lg:p-8 min-h-dvh">
+        <main className="min-w-0 flex-1 p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
