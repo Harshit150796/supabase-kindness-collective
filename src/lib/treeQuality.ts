@@ -38,6 +38,12 @@ export function qualitySettings(initial: DeviceTier, step: number): TierSettings
   return { ...HIGH, shadowMapSize: step === 0 ? 4096 : step === 1 ? 2048 : 1024,
     dprCap: step < 3 ? 2 : step === 3 ? 1.75 : 1.5 };
 }
-export function shouldReduceQuality(fps: number, visible: boolean, sampleMs: number): boolean {
-  return visible && sampleMs >= 2500 && Number.isFinite(fps) && fps < 45;
+/**
+ * Drawn frames a second below which quality steps down. Laptops and desktops aim for a steady 60,
+ * because below about 55 the cursor trail and scrolling visibly stutter over the hero; phones keep
+ * their original 45, where the tree already runs well.
+ */
+export const SLOW_TREE_FPS = { pointer: 55, touch: 45 } as const;
+export function shouldReduceQuality(fps: number, visible: boolean, sampleMs: number, slowBelow: number = SLOW_TREE_FPS.touch): boolean {
+  return visible && sampleMs >= 2500 && Number.isFinite(fps) && fps < slowBelow;
 }

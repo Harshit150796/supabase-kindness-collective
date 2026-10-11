@@ -1,7 +1,8 @@
 export type CursorColour = 'white' | 'blue' | 'green';
 export type CursorRGB = { r: number; g: number; b: number };
 export const CURSOR_QUERY = '(hover: hover) and (pointer: fine)';
-export const CURSOR_SAMPLE_INTERVAL = 1000 / 12;
+// The system pointer images that stand in for the lead dot over the live tree (index.css, CursorTrail).
+export const NATIVE_DOT_IMAGES = ['/cursor/dot.png', '/cursor/dot@2x.png', '/cursor/press.png', '/cursor/press@2x.png'] as const;
 export const TEXT_ENTRY_SELECTOR = 'input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]),textarea,select,[contenteditable]:not([contenteditable="false"])';
 export function cursorColour({ r, g, b }: CursorRGB, photo = false): CursorColour {
   const [R, G, B] = [r, g, b].map(v => v / 255);
@@ -17,10 +18,6 @@ export function cursorColour({ r, g, b }: CursorRGB, photo = false): CursorColou
   if (hue >= 75 && hue <= 165 && saturation > .2) return 'blue';
   if (hue >= 185 && hue <= 255 && saturation > .25) return 'green';
   return photo ? 'white' : 'blue';
-}
-/** Hero backdrop colour (mid sky) for this load's sky, shown before the live tree draws or without WebGL. */
-export function skyBackdropColour(sky: string | undefined): CursorRGB {
-  return sky === 'day' ? { r: 158, g: 201, b: 233 } : { r: 31, g: 44, b: 92 };
 }
 export function elementBackground(target: Element): { rgb: CursorRGB; photo: boolean } {
   let photo = false;
@@ -51,25 +48,4 @@ export function opaqueBackground(node: Element) {
 export function luminance({ r, g, b }: CursorRGB) {
   const linear = (v: number) => (v /= 255) <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
   return .2126 * linear(r) + .7152 * linear(g) + .0722 * linear(b);
-}
-export const COLOUR_HOLD_MS = 160;
-export type ColourHysteresis = { current?: CursorColour; pending?: CursorColour; pendingSince?: number };
-// Textured sources (the live tree) switch only after a new colour is seen continuously for 160ms.
-export function stableColour(state: ColourHysteresis, rgb: CursorRGB, now: number, photo = false): CursorColour {
-  const next = cursorColour(rgb, photo);
-  if (!state.current) { state.current = next; state.pending = undefined; return next; }
-  if (next === state.current) { state.pending = undefined; return state.current; }
-  if (state.pending !== next) { state.pending = next; state.pendingSince = now; return state.current; }
-  if (now - (state.pendingSince ?? now) >= COLOUR_HOLD_MS) { state.current = next; state.pending = undefined; }
-  return state.current;
-}
-// Flat DOM colours apply immediately and reset the textured history.
-export function immediateColour(state: ColourHysteresis, rgb: CursorRGB, photo = false): CursorColour {
-  state.current = cursorColour(rgb, photo); state.pending = undefined;
-  return state.current;
-}
-export function averagePixels(pixels: Uint8Array): CursorRGB | undefined {
-  let r = 0, g = 0, b = 0, n = 0;
-  for (let i = 0; i < pixels.length; i += 4) if (pixels[i + 3]) { r += pixels[i]; g += pixels[i + 1]; b += pixels[i + 2]; n++; }
-  return n ? { r: r / n, g: g / n, b: b / n } : undefined;
 }

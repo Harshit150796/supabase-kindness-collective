@@ -1,5 +1,5 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
-import { useFrame, ThreeEvent } from '@react-three/fiber';
+import { useFrame, useThree, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Html } from '@react-three/drei';
 import { drawCouponTexture, getLogo, onLogoSettled, type CouponData } from './couponDesign';
@@ -52,6 +52,7 @@ function logoSize(aspect: number, alphaCoverage: number, mark: CouponData['mark'
 export function CouponFruit({ branch, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false, labelSuppressed = false }: Props) {
   const gentle = useMotionPreference() === 'gentle';
   const groupRef = useRef<THREE.Group>(null);
+  const canvas = useThree((root) => root.gl.domElement);
   const velocityRef = useRef({ y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 });
   const posRef = useRef(new THREE.Vector3());
   const rotRef = useRef(new THREE.Euler());
@@ -252,10 +253,11 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
         onPointerDown={handlePointer}
         onPointerOver={(e) => {
           e.stopPropagation();
-          document.body.style.cursor = 'pointer';
+          // On the canvas only: a body cursor change restyled the whole page on every hover.
+          canvas.style.cursor = 'pointer';
         }}
         onPointerOut={() => {
-          document.body.style.cursor = '';
+          canvas.style.cursor = '';
         }}
       >
         {/* One transparent, aspect-correct vector silhouette for hanging and falling states. */}
