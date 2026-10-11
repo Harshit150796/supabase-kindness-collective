@@ -70,7 +70,7 @@ export default function Partners() {
           )}
         </div></section>
       </main>
-      <Footer />
+      <Footer contact={false} />
     </div>
   );
 }

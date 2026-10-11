@@ -96,6 +96,7 @@ const TONES: Record<string, string> = {
   pending: 'bg-verify/10 text-verify', todo: 'bg-muted text-foreground', in_progress: 'bg-verify/10 text-verify', open: 'bg-verify/10 text-verify',
   paused: 'bg-muted text-muted-foreground', archived: 'bg-muted text-muted-foreground', expired: 'bg-muted text-muted-foreground', dismissed: 'bg-muted text-muted-foreground',
   rejected: 'bg-destructive/10 text-destructive', failed: 'bg-destructive/10 text-destructive', blocked: 'bg-destructive/10 text-destructive', urgent: 'bg-destructive/10 text-destructive',
+  new: 'bg-primary text-primary-foreground', read: 'bg-muted text-foreground', replied: 'bg-primary/10 text-primary',
   high: 'bg-ink text-ink-foreground', medium: 'bg-muted text-foreground', low: 'bg-muted text-muted-foreground',
 };
 export function StatusBadge({ value }: { value?: string | null }) {

@@ -704,6 +704,78 @@ export type Database = {
           },
         ]
       }
+      contact_messages: {
+        Row: {
+          confirmation_email_status: string
+          created_at: string
+          email: string
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          message: string
+          name: string
+          page: string | null
+          phone: string | null
+          state: string
+          status: string
+          support_email_status: string
+          topic: string
+          user_id: string | null
+        }
+        Insert: {
+          confirmation_email_status?: string
+          created_at?: string
+          email: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          message: string
+          name: string
+          page?: string | null
+          phone?: string | null
+          state: string
+          status?: string
+          support_email_status?: string
+          topic: string
+          user_id?: string | null
+        }
+        Update: {
+          confirmation_email_status?: string
+          created_at?: string
+          email?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          message?: string
+          name?: string
+          page?: string | null
+          phone?: string | null
+          state?: string
+          status?: string
+          support_email_status?: string
+          topic?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      contact_rate_limits: {
+        Row: {
+          created_at: string
+          id: number
+          ip_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          ip_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          ip_hash?: string
+        }
+        Relationships: []
+      }
       content_reports: {
         Row: {
           admin_notes: string | null
@@ -2971,6 +3043,10 @@ export type Database = {
           link: string
           sub: string
         }[]
+      }
+      admin_set_contact_message_status: {
+        Args: { _id: string; _status: string }
+        Returns: undefined
       }
       admin_set_coupon_code: {
         Args: { _code: string; _coupon_id: string; _redemption_url?: string }

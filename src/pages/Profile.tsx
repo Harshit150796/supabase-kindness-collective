@@ -139,7 +139,7 @@ const Profile = () => {
         </div>
       </main>
 
-      <Footer />
+      <Footer contact={false} />
     </div>
   );
 };

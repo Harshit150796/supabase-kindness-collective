@@ -102,7 +102,7 @@ const Index = () => {
           </>
         </LazyOnView>
       </main>
-      <LazyOnView minHeight={1050} intrinsicSize={{ mobile: 1050, tablet: 800, desktop: 640 }} rootMargin="900px" contentVisibilityAuto>
+      <LazyOnView minHeight={2320} intrinsicSize={{ mobile: 2320, tablet: 1890, desktop: 1810 }} rootMargin="900px" contentVisibilityAuto>
         <>
           <Footer />
         </>

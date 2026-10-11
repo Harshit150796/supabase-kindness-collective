@@ -12,11 +12,12 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, Megaphone, DollarSign, Users, ShieldCheck, Gift, Package, Flag, ListTodo, Bell, FileText,
   BookOpen, MessageSquare, Newspaper, HelpCircle, Mail, UserCog, History, Settings, BarChart3, Search,
-  PanelLeftClose, PanelLeftOpen, Menu, LogOut, Home, Contact,
+  PanelLeftClose, PanelLeftOpen, Menu, LogOut, Home, Contact, Inbox,
 } from 'lucide-react';
 import logo from '@/assets/logo.png';
+import { useNewContactCount } from '@/hooks/useNewContactCount';
 
-type Item = { label: string; path: string; icon: any; adminOnly?: boolean };
+type Item = { label: string; path: string; icon: any; adminOnly?: boolean; countsNew?: boolean };
 const GROUPS: { title: string; items: Item[] }[] = [
   { title: 'Overview', items: [{ label: 'Overview', path: '/admin', icon: LayoutDashboard }, { label: 'Analytics', path: '/admin/analytics', icon: BarChart3 }] },
   { title: 'Operations', items: [
@@ -30,7 +31,11 @@ const GROUPS: { title: string; items: Item[] }[] = [
     { label: 'Partner inquiries', path: '/admin/partners', icon: Contact },
   ] },
   { title: 'Trust', items: [{ label: 'Moderation', path: '/admin/moderation', icon: Flag, adminOnly: true }] },
-  { title: 'Work', items: [{ label: 'Tasks', path: '/admin/tasks', icon: ListTodo }, { label: 'Notifications', path: '/admin/notifications', icon: Bell }] },
+  { title: 'Work', items: [
+    { label: 'Contact messages', path: '/admin/contact', icon: Inbox, countsNew: true },
+    { label: 'Tasks', path: '/admin/tasks', icon: ListTodo },
+    { label: 'Notifications', path: '/admin/notifications', icon: Bell },
+  ] },
   { title: 'Content', items: [
     { label: 'Site content', path: '/admin/content', icon: FileText },
     { label: 'Stories', path: '/admin/stories', icon: BookOpen },
@@ -123,6 +128,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     return cur && cur.path !== '/admin' ? ['Admin', cur.label] : ['Admin', 'Overview'];
   }, [location.pathname]);
 
+  const newMessages = useNewContactCount().data ?? 0;
+
   const Nav = ({ compact }: { compact: boolean }) => (
     <nav className="flex-1 space-y-4 overflow-y-auto px-2 py-3">
       {GROUPS.map((g) => {
@@ -139,6 +146,9 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                     active ? 'bg-primary text-primary-foreground' : 'text-ink-foreground/75 hover:bg-ink-foreground/10 hover:text-ink-foreground',
                     compact && 'justify-center')}>
                   <i.icon className="h-4 w-4 shrink-0" />{!compact && i.label}
+                  {i.countsNew && newMessages > 0 && (compact
+                    ? <span className="sr-only">, {newMessages} new</span>
+                    : <span className={cn('ml-auto rounded px-1.5 text-[11px] font-semibold tabular-nums', active ? 'bg-primary-foreground/20' : 'bg-primary text-primary-foreground')}>{newMessages}<span className="sr-only"> new</span></span>)}
                 </Link>
               );
             })}

@@ -338,7 +338,7 @@ const MyImpact = () => {
         </div>
       </main>
 
-      <Footer />
+      <Footer contact={false} />
 
       {/* Donation Details Modal */}
       <ImpactDonationModal

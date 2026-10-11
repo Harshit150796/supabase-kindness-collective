@@ -100,6 +100,6 @@ export default function MyFundraisers() {
         {loading || loadingData ? <div aria-label="Loading fundraisers" className="space-y-6"><FundraiserCardSkeleton /><FundraiserCardSkeleton /></div> : error ? <EmptyState error title="Your fundraisers couldn’t load" description="We couldn’t retrieve your campaigns. Please try again." action={<Button variant="outline" onClick={() => setRetry(n => n + 1)}>Try again</Button>} /> : fundraisers.length === 0 ? <EmptyState title="Your first fundraiser starts here" description="Bring your community together around the essentials you need." action={<Button className="gap-2" onClick={() => navigate("/apply")}><Plus className="h-4 w-4" />Start a fundraiser</Button>} /> : fundraisers.map((f, i) => <FundraiserHomeCard key={f.id} fundraiser={f} index={i} />)}
       </div>
     </main>
-    <Footer />
+    <Footer contact={false} />
   </div>;
 }

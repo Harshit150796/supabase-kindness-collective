@@ -183,7 +183,7 @@ const Settings = () => {
         </div>
       </main>
 
-      <Footer />
+      <Footer contact={false} />
     </div>
   );
 };
