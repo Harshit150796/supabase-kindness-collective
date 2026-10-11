@@ -677,19 +677,17 @@ html.cd-intro .hero-headline{opacity:0;transform:translate(-50%,22px)}
 html.cd-iris .hero-headline{opacity:1;transform:translate(-50%);transition:transform 1s cubic-bezier(.16,1,.3,1) .32s,opacity .8s ease .32s}
 html.cd-intro .hero-stage+section{opacity:0;transform:translateY(18px)}
 html.cd-iris .hero-stage+section{opacity:1;transform:none;transition:transform 1s cubic-bezier(.16,1,.3,1) .45s,opacity .8s ease .45s}
-/* Sky-and-ground backdrop behind the live tree, in this load's sky (no still tree picture). HeroBackdrop
-   paints the tree's exact sky and ground over this; these are the same colours as the live scene draws
-   them (its sky is written without colour conversion, so it reads deeper than the palette hexes), with
-   the ground disc's outline at the tree's framing, for the rare case the painted backdrop can't draw. */
-.hero-stage{background:linear-gradient(180deg,#689ED9 0%,#8DBCE4 25%,#9FCAE9 50%,#A4CCE4 60%)}
-html[data-sky=night] .hero-stage{background:linear-gradient(180deg,#020411 0%,#030618 25%,#04061B 50%,#04081E 60%)}
-.hero-stage::before{content:"";position:absolute;left:50%;top:62.9%;height:137.2%;aspect-ratio:2.351;transform:translateX(-50%);border-radius:50%;background:linear-gradient(180deg,#8FAF6A 0,#A6C37F 5%,#AEC887 12%)}
-html[data-sky=night] .hero-stage::before{background:linear-gradient(180deg,#6A8650 0,#8CAC6A 5%,#96B473 12%)}
-@media (max-width:767px){.hero-stage::before{top:63.6%;height:59%;aspect-ratio:3.66}}
+/* No part-built scenery behind the live tree: the hero is plain page colour until the whole scene (tree,
+   sky and ground, with the headline) fades in. On the homepage the opening holds until that scene has
+   drawn. Devices that can't run the tree get HeroBackdrop, its sky and ground painted once. */
+.hero-stage{background:hsl(var(--background))}
 /* The hero kicker follows the sky: light on the night sky (70% of loads), as before by day. */
 .hero-kicker-lead,.hero-kicker-word{transition:color 1s ease}
 html[data-sky=night] .hero-kicker-lead{color:rgb(255 255 255 / .8)}
 html[data-sky=night] .hero-kicker-word{color:hsl(123 46% 66%)}
+/* Until the night scene is behind it (it is still loading, page colour only), the kicker keeps its day colours. */
+html[data-sky=night] .hero-stage:not([data-scene]) .hero-kicker-lead{color:hsl(var(--foreground) / .7)}
+html[data-sky=night] .hero-stage:not([data-scene]) .hero-kicker-word{color:hsl(var(--primary))}
 
 /* Header height, for pages that pin things right under it. */
 :root{--site-header-h:4.5rem}

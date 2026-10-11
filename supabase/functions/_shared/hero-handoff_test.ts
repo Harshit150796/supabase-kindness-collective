@@ -1,7 +1,7 @@
 import { assert, assertAlmostEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { FOG_COLORS, PHONE_BREAKPOINT, SKY_PALETTES, heroCamera } from '../../../src/lib/heroBackdrop.ts';
 
-Deno.test('the hero backdrop is drawn from the live scene\'s own sky, fog, ground and lens', async () => {
+Deno.test('the no-WebGL fallback is drawn from the live scene\'s own sky, fog, ground and lens', async () => {
   const sky = await Deno.readTextFile('src/components/landing/tree3d/Sky.tsx');
   const ground = await Deno.readTextFile('src/components/landing/tree3d/Ground.tsx');
   const scene = await Deno.readTextFile('src/components/landing/Tree3DScene.tsx');
@@ -29,7 +29,7 @@ Deno.test('the backdrop camera lands where the live tree\'s first frame does', (
   [0, 5.2827, 22.4543].forEach((v, i) => assertAlmostEquals(phone[i], v, 0.002));
 });
 
-Deno.test('the backdrop sits under the live canvas and the tree only fades when nothing covers it', async () => {
+Deno.test('the painted scene is only a no-WebGL fallback, and the tree only fades when nothing covers it', async () => {
   const hero = await Deno.readTextFile('src/components/landing/HeroSection.tsx');
   const scene = await Deno.readTextFile('src/components/landing/Tree3DScene.tsx');
   assert(hero.indexOf('<HeroBackdrop />') > hero.indexOf('className="hero-tree ') && hero.indexOf('<HeroBackdrop />') < hero.indexOf('<Tree3DErrorBoundary'));
@@ -44,4 +44,15 @@ Deno.test('nothing compiles or uploads inside a frame people are watching', asyn
   assert(scene.includes('gl.compileAsync(root, camera, scene)') && scene.includes('prepareHidden(gl, group, camera, scene)'));
   // Textures go to the GPU one per task, during the warm-up rather than inside the first frame.
   assert(scene.includes('gl.initTexture(texture)') && scene.includes('void uploadAhead(gl, texturesUnder(scene), () => done)'));
+});
+
+Deno.test('startup creates no extra WebGL contexts once the opening has checked', async () => {
+  const html = await Deno.readTextFile('index.html');
+  const tier = await Deno.readTextFile('src/hooks/useDeviceTier.ts');
+  const hero = await Deno.readTextFile('src/components/landing/HeroSection.tsx');
+  assert(html.includes('window.__cdGpu=g?String(o.getParameter(g.UNMASKED_RENDERER_WEBGL)):""'));
+  assert(tier.includes("typeof window.__cdGpu === 'string') return window.__cdGpu;"));
+  assert(hero.includes("gl?.getExtension('WEBGL_lose_context')?.loseContext();"));
+  // Under the opening the tree mounts at once instead of after two frames.
+  assert(hero.includes("return known === undefined ? 'checking' : known ? 'live' : 'fallback';"));
 });

@@ -4,6 +4,8 @@ export { TIER_SETTINGS } from '@/lib/treeQuality';
 export type { DeviceTier, TierSettings } from '@/lib/treeQuality';
 
 function getGpuString(): string {
+  // The homepage opening already asked (index.html); a second throwaway context costs startup time.
+  if (typeof window !== 'undefined' && typeof window.__cdGpu === 'string') return window.__cdGpu;
   try {
     if (typeof document === 'undefined') return '';
     const canvas = document.createElement('canvas');
