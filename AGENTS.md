@@ -1,57 +1,28 @@
 # Project Architecture Rules
-- 3D tree rules: src/components/landing/AGENTS.md. Admin rules: src/pages/admin/AGENTS.md.
+- Directory rules: 3D tree + homepage opening/motion/reveals in src/components/landing/AGENTS.md, admin portal in src/pages/admin/AGENTS.md, site menu and sign-in/sign-out in src/components/navigation/AGENTS.md. Read the matching file before changing that area.
+
 ## Design System Rules
-- Lazy section short states fill reservations to preserve scroll; shared count/retry logic prevents false zeros and early failures.
-- Homepage section code prefetches one module per idle period after the opening (src/lib/idlePrefetch.ts, skipped on Save-Data); sections still mount on view. Scroll handlers never read layout per frame (use IntersectionObserver).
-- Format numbers and dates with module-level Intl formatters; per-call toLocale* in render paths cost tens of ms per card.
-
 - CouponDonation UI uses logo green `hsl(123 46% 34%)` as primary and logo blue `hsl(212 80% 42%)` as its only secondary accent; warm UI colors are forbidden outside protected third-party and 3D artwork.
-- Shared organizer primitives own titles/numerals, surfaces, labels, stats, status, progress and states to prevent page drift; controls use sans.
-- Marketing pages alternate neutral, soft-green, and deep-forest bands; tonal panels have no borders or shadows, and hairlines are for tables.
-- No eyebrow headings, decorative pills, icon circles, gradient text, glow shadows or card-on-card.
-- Shared reveals decide via `revealMode` (pre-trigger 20% below viewport, late on-screen mounts still animate, time-based fling detection) so busy frames never skip motion.
-- Opening rules, including index.html/main.tsx handoff, live in src/components/landing/AGENTS.md; read them before opening changes.
-- Cursor uses a settling rAF loop timed by the rAF timestamp, falling back to the clock past 6ms (frameDt); event targets for moves, cached DOM colours; CSS owns colour/hover; lazy-tree read-only probe.
-- Editorial line reveals use removable aria-hidden overlays without replacing React-owned nodes; font/initial-frame settlement and the shared observer protect startup. Headings split only after their own faces load (italic runs included), and the painted lines stack in normal flow so they never drift off the real ones.
-- Responsive public photos use proportional contain transforms on managed Supabase hosts or generated local variants; never append transformation parameters to unknown hosts or crop at delivery, because presentation framing belongs to the image container.
-- Motion is full on every device; the OS reduced-motion setting is not consulted (founder decision lives in memory).
-- Homepage "Give what people need." steps: laptops (lg+) deal four cards alternating logo green and logo blue (founder-chosen), animating transform only via element.animate with px values and IntersectionObserver triggers, re-stacking only after the row leaves below the viewport; phones keep the compact animated list unchanged.
-- Public photos stay local; without verified people-photo consent, use coupon/receipt/trace visuals.
-- Preserve the two-color CouponDonation wordmark exactly as `#2e7d32` for Coupon and `#1565c0` for Donation.
-- Preserve the founder-approved rotating “CouponDonation is …” hero kicker exception.
-- Live Donation Tracking bars retain retailer colours (founder-approved warm-colour exception).
-- Messages are written only by the `send-message` edge function after server moderation (`_shared/moderation.ts`); clients have read-only access, so safety rules hold.
-- Public fundraiser pages read donors, organizers and coupon totals through security-definer read functions only; donations/profiles stay private under RLS.
-- Donation INSERT/relevant UPDATE triggers recompute distinct completed-donor totals; legacy payment RPC recomputes idempotently. No checkout/coupon triggers or realtime.
-
+- Preserve the two-color wordmark exactly: `#2e7d32` for Coupon, `#1565c0` for Donation. Founder-approved exceptions: the rotating "CouponDonation is …" hero kicker, and retailer colours kept in the Live Donation Tracking bars.
 - Campaign pages use the `ink` token (near-black, green undertone) for Share buttons, strong headings and the dark more-fundraisers band; Donate stays primary green; blue marks verification only.
-- Comments, updates, invites and blocks are written only by the `fundraiser-actions` edge function after server moderation, keeping safety rules server-side.
-- Shared public links use branded /f/ URLs, never organizer/backend URLs.
-- Public fundraiser totals come from `get_fundraiser_totals` (completed donations), never stored counters, because stored counters drifted.
+- Marketing pages alternate neutral, soft-green and deep-forest bands; tonal panels have no borders or shadows and hairlines are for tables. No eyebrow headings, decorative pills, icon circles, gradient text, glow shadows or card-on-card.
+- Shared organizer primitives own titles/numerals, surfaces, labels, stats, status, progress and states to prevent page drift; controls use sans.
+- Motion is full on every device; the OS reduced-motion setting is not consulted (founder decision lives in memory).
+- Public photos stay local; without verified people-photo consent use coupon/receipt/trace visuals. Responsive photos use proportional contain transforms on managed Supabase hosts or generated local variants — never append transformation parameters to unknown hosts or crop at delivery, because framing belongs to the image container.
+- Format numbers and dates with module-level Intl formatters; per-call toLocale* in render paths costs tens of ms per card.
 
-- Production is Lovable hosting; vercel.json and api/share are inert.
+## Data, Privacy & Dispatch Rules
+- Messages, comments, updates, invites and blocks are written only by the `send-message` and `fundraiser-actions` edge functions after server moderation (`_shared/moderation.ts`); clients have read-only access, so safety rules hold server-side.
+- Public fundraiser pages read donors, organizers and coupon totals through security-definer read functions only, and totals come from `get_fundraiser_totals` (completed donations), never stored counters, because stored counters drifted. Donations/profiles stay private under RLS.
+- Donation INSERT/relevant UPDATE triggers recompute distinct completed-donor totals; the legacy payment RPC recomputes idempotently. No checkout/coupon triggers or realtime.
+- Shared public links use branded /f/ URLs, never organizer/backend URLs.
+- Resolve fundraiser imagery everywhere as primary gallery, then ordered gallery, then legacy cover, then branded category fallback; card delivery uses Supabase transforms and uploads create one bounded WebP.
 - Gold Coins are credited only by credit_gold_coins() from the scheduled dispatcher into the append-only gold_coin_ledger (unique per donation and entry type); payment tables stay read-only.
 - Anonymous public submissions (partner inquiries, testimonials) go through the public-submit edge function, never direct table inserts.
-- Resolve fundraiser imagery everywhere as primary gallery, then ordered gallery, then legacy cover, then branded category fallback; card delivery uses Supabase transforms and uploads create one bounded WebP.
-
-- No fundraiser UPDATE triggers; auto-tasks poll via admin-dispatch.
-- One 5-minute pg_cron job calls admin-dispatch with a Vault secret; downstream dispatchers reject calls without it.
-
-## Navigation Rules
-
-- Every menu item lives in src/components/navigation/siteLinks.ts; the header, full-screen menu, account dropdown and dashboard sections all read it, so a page is added or removed in one place.
-- One full-screen menu is mounted at app level (SiteMenuProvider, inside the router and auth). Pages render `<Navbar/>` (or just `<MenuButton/>`), never a menu of their own; it portals to body, makes #root inert, locks scroll, closes on Escape and route change, and returns focus.
-- The menu is the founder-chosen "two hands" design: a logo-green sheet grows from the Menu button and carries all content (clip-path, dropped once open); a logo-blue hand rises from the bottom-left corner holding the account (a curved foot on phones and tablets, a quarter circle on wide screens). Inside the menu the wordmark is white, a founder-approved exception.
-- Menu motion animates the sheet's clip, transform, opacity and colour only. BrandLockup is the geometry the opening lands on, so its sizes stay fixed.
-- Sign-out always goes through useSignOut(): it signs out this device and clears the stored session even when the logout request fails. Account dropdowns use `modal={false}`, because Radix modal menus left the page unclickable.
-- Sign-in links carry `next` (signInPath); Auth accepts only same-site relative paths, and `next` wins over role redirects.
+- Production is Lovable hosting; vercel.json and api/share are inert.
 
 ## Coupon System Rules
-
-- Codes/PINs stored plainly but column-locked; only owner reveal and audited staff reveal read them; prepaid = hosted link only.
-- Codes are never hard-deleted: removed codes become 'returned' (never auto-filled); unused stock is voided.
-- Donation-linked coupons are never deleted; re-splits void rows, server keeps the non-void total per donation+brand to the cent, and all coupon reads/sums exclude 'void'.
-- Coupon writes go only through security-definer RPCs; no client writes.
-- Owners reveal codes via owner_reveal_coupon; impact emails queue in donor_impact_events, sent by impact-dispatch; receipts: private bucket, signed URLs.
-- Donor confirmations and live-fundraiser emails send once via claim_account_email, from confirm-donation or admin-dispatch polling.
+- Coupon writes go only through security-definer RPCs; no client writes. Codes/PINs are stored plainly but column-locked: owners reveal via owner_reveal_coupon, staff only through an audited reveal, and prepaid is a hosted link only.
+- Codes are never hard-deleted: removed codes become 'returned' (never auto-filled) and unused stock is voided. Donation-linked coupons are never deleted — re-splits void rows, the server keeps the non-void total per donation+brand to the cent, and all coupon reads/sums exclude 'void'.
+- Impact emails queue in donor_impact_events and are sent by impact-dispatch; receipts use a private bucket with signed URLs. Donor confirmations and live-fundraiser emails send once via claim_account_email, from confirm-donation or admin-dispatch polling.
 - Fundraiser home uses one owner-scoped invoker RPC under RLS; summaries omit donor identities and credentials to preserve privacy.
