@@ -56,7 +56,7 @@ Deno.test('the open menu is a real modal: inert page, no scroll, Escape, own clo
   assert(css.includes('.site-menu-bar{position:sticky;top:0;'));
 });
 
-Deno.test('menu motion is circles, transforms and opacity only, and ends when the JS timer does', async () => {
+Deno.test('menu motion is a clip, transforms and opacity only, and ends when the JS timer does', async () => {
   const css = await read('src/index.css');
   const block = css.slice(css.indexOf('/* ---------- Site menu'));
   for (const rule of block.matchAll(/transition:([^;}]+)/g)) {
@@ -65,15 +65,17 @@ Deno.test('menu motion is circles, transforms and opacity only, and ends when th
       assert(['transform', 'opacity', 'color', 'background-color', 'clip-path'].includes(prop), `animates ${prop}`);
     }
   }
-  // The circles are clips of solid full-screen layers (no giant scaled layers to rasterise),
-  // and the sheet drops its clip once open so it covers the screen through any resize.
-  assert(block.includes('.site-menu-ring,.site-menu-sheet{position:absolute;inset:0;clip-path:circle(0px at var(--ox) var(--oy));'));
+  // The green sheet is a clip of a solid full-screen layer (no giant scaled layers to rasterise)
+  // and carries all the content; it drops its clip once open so it covers the screen through any resize.
+  assert(block.includes('.site-menu-sheet{position:absolute;inset:0;background:hsl(var(--primary));clip-path:circle(0px at var(--ox) var(--oy));'));
   assert(block.includes('.site-menu.is-settled .site-menu-sheet{clip-path:none}'));
-  // Closing: green starts at .12s and runs .56s, after two frames → done by ~.72s, inside MENU_CLOSE_MS.
+  // The blue hand grows from the bottom-left corner and holds the account.
+  assert(block.includes('transform-origin:0 100%') && block.includes('.site-menu-hand.is-account{'));
+  // Closing: the hand folds away first; the sheet starts at .2s and runs .56s, after two frames → done by ~.8s, inside MENU_CLOSE_MS.
   const provider = await read('src/components/navigation/SiteMenuProvider.tsx');
   const ms = Number(provider.match(/MENU_CLOSE_MS = (\d+)/)?.[1]);
-  assert(ms >= 740 && ms <= 900, String(ms));
-  assert(block.includes('.site-menu[data-phase=closing] .site-menu-ring-green{transition-delay:.12s}'));
+  assert(ms >= 800 && ms <= 900, String(ms));
+  assert(block.includes('.site-menu[data-phase=closing] .site-menu-sheet{transition-duration:.56s;transition-delay:.2s}'));
 });
 
 Deno.test('the header keeps the brand geometry the opening lands on', async () => {
