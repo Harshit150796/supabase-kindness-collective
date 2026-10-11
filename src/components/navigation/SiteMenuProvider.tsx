@@ -7,7 +7,7 @@ import { SiteMenu } from './SiteMenu';
 type Phase = 'closed' | 'open' | 'closing';
 
 /** Matches the exit timing in index.css (content fades, then the rings close). */
-export const MENU_CLOSE_MS = 780;
+export const MENU_CLOSE_MS = 820;
 
 /**
  * Radix menus and dialogs set `pointer-events: none` on <body> while open. When one is

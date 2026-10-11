@@ -4,13 +4,12 @@ import { Link, useLocation } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSignOut } from '@/hooks/useSignOut';
-import { BrandLockup } from './BrandLockup';
 import { MenuButton } from './MenuButton';
 import { LEGAL_LINKS, PRIMARY_LINKS, SECONDARY_LINKS, SUPPORT_EMAIL, accountLinksFor, displayName, isActivePath, signInHref, signUpHref } from './siteLinks';
 
 interface SiteMenuProps {
   phase: 'open' | 'closing';
-  /** Centre of the button that opened the menu; the circles grow from here. */
+  /** Centre of the button that opened the menu; the green sheet grows from here. */
   origin: { x: number; y: number };
   onClose: () => void;
   unread: number;
@@ -23,10 +22,10 @@ function circleFrom({ x, y }: { x: number; y: number }) {
 }
 
 /**
- * The full-screen menu. Logo green, then logo blue, then the page-coloured sheet grow
- * from the button as circles (the two hands of the logo closing around the screen).
- * Everything in the menu lives on that sheet, so nothing can show before the sheet has
- * covered it, however slowly a phone draws the circles. Closing runs the other way,
+ * The full-screen menu, "two hands" like the logo: a logo-green sheet sweeps in from the
+ * Menu button and carries the whole menu, and a logo-blue hand rises from the opposite
+ * corner holding the account. Everything lives on the sheet, so nothing can show before
+ * the sheet has covered it, however slowly a phone draws. Closing runs the other way,
  * into the Close button.
  */
 export function SiteMenu({ phase, origin, onClose, unread }: SiteMenuProps) {
@@ -69,8 +68,8 @@ export function SiteMenu({ phase, origin, onClose, unread }: SiteMenuProps) {
     return () => window.clearTimeout(timer);
   }, [shown, phase]);
 
-  // Closing: aim the circles at the Close button as it is now (the window may have been
-  // resized), put the sheet's full circle back, then shrink everything on the next frame.
+  // Closing: aim at the Close button as it is now (the window may have been resized),
+  // put the sheet's full circle back, then shrink everything on the next frame.
   useLayoutEffect(() => {
     if (phase !== 'closing') return;
     const rect = buttonRef.current?.getBoundingClientRect();
@@ -123,12 +122,10 @@ export function SiteMenu({ phase, origin, onClose, unread }: SiteMenuProps) {
       aria-label="Menu"
       tabIndex={-1}
       data-phase={phase}
+      data-cursor="light"
       className={`site-menu${shown ? ' is-open' : ''}${settled ? ' is-settled' : ''}`}
       style={style}
     >
-      <div className="site-menu-ring site-menu-ring-green" aria-hidden="true" />
-      <div className="site-menu-ring site-menu-ring-blue" aria-hidden="true" />
-
       <div
         className="site-menu-sheet"
         onTransitionEnd={(event) => {
@@ -138,14 +135,14 @@ export function SiteMenu({ phase, origin, onClose, unread }: SiteMenuProps) {
         <div className="site-menu-scroll" onScroll={onScroll}>
           <div className="site-menu-bar">
             <div className="container mx-auto flex h-18 items-center justify-between gap-3 px-4 py-3 [@media(max-height:500px)]:h-[52px] [@media(max-height:500px)]:py-1">
-              <BrandLockup onClick={onClose} />
+              <Link to="/" onClick={onClose} className="site-menu-wordmark">Coupon<span>Donation</span></Link>
               <MenuButton ref={buttonRef} expanded={shown} onClick={onClose} />
             </div>
           </div>
 
-          <div className="container mx-auto flex flex-1 flex-col px-4">
-            <div className="grid flex-1 content-start gap-8 pb-8 pt-4 sm:gap-12 sm:pb-10 sm:pt-6 lg:grid-cols-[minmax(0,1fr)_25rem] lg:content-center lg:gap-16 lg:py-10 xl:grid-cols-[minmax(0,1fr)_27rem]">
-              <nav aria-label="Site" className="min-w-0">
+          <div className="site-menu-main">
+            <div className="site-menu-frame container mx-auto px-4">
+              <nav aria-label="Site" className="site-menu-nav">
                 <ul className="site-menu-primary">
                   {PRIMARY_LINKS.map((link, index) => (
                     <li key={link.to} className="site-menu-mask">
@@ -165,60 +162,61 @@ export function SiteMenu({ phase, origin, onClose, unread }: SiteMenuProps) {
                   ))}
                 </ul>
               </nav>
+            </div>
 
-              <section aria-label="Your account" className="site-menu-account site-menu-fade" data-cursor="light">
-                {loading ? (
-                  <div className="h-44" aria-hidden="true" />
-                ) : user ? (
-                  <>
-                    <div className="flex items-center gap-4">
-                      <span aria-hidden="true" className="site-menu-avatar">{name.charAt(0).toUpperCase()}</span>
-                      <div className="min-w-0">
-                        <p className="truncate font-display text-[1.625rem] leading-tight sm:text-[1.75rem]">{name}</p>
-                        {user.email && <p className="truncate text-sm text-primary-foreground/70">{user.email}</p>}
+            <section aria-label="Your account" className={`site-menu-hand${user ? ' is-account' : ''}`}>
+              <div className="site-menu-hand-body container mx-auto px-4">
+                <div className="site-menu-hand-content">
+                  {loading ? (
+                    <div className="h-40" aria-hidden="true" />
+                  ) : user ? (
+                    <>
+                      <div className="flex items-center gap-4">
+                        <span aria-hidden="true" className="site-menu-avatar">{name.charAt(0).toUpperCase()}</span>
+                        <div className="min-w-0">
+                          <p className="truncate font-display text-[1.625rem] leading-tight sm:text-[1.75rem]">{name}</p>
+                          {user.email && <p className="truncate text-sm text-white/80">{user.email}</p>}
+                        </div>
                       </div>
-                    </div>
-                    <ul className="site-menu-account-links">
-                      {accountLinks.map((link) => (
+                      <ul className="site-menu-account-links">
+                        {accountLinks.map((link) => (
+                          <li key={link.to}>
+                            <Link to={link.to} onClick={onClose} aria-current={here(link.to)} className="site-menu-account-link">
+                              <link.icon className="h-4 w-4 shrink-0 opacity-80" aria-hidden="true" />
+                              <span className="min-w-0 flex-1 truncate">{link.label}</span>
+                              {link.unread && unread > 0 && <span className="text-[0.8125rem] font-semibold tabular-nums">{unread}<span className="max-sm:sr-only"> new</span></span>}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                      <button type="button" onClick={() => { onClose(); void signOut(); }} className="site-menu-signout">
+                        <LogOut className="h-4 w-4" aria-hidden="true" />
+                        Sign out
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="site-menu-hand-title">See where your giving goes.</p>
+                      <p className="site-menu-hand-text">Sign in to follow every coupon your donations become, or to run your fundraiser.</p>
+                      <div className="mt-6 flex flex-wrap gap-3">
+                        <Link to={signInHref(pathname, search)} onClick={onClose} className="site-menu-cta">Sign in</Link>
+                        <Link to={signUpHref(pathname, search)} onClick={onClose} className="site-menu-cta site-menu-cta-ghost">Create account</Link>
+                      </div>
+                    </>
+                  )}
+                  <div className="site-menu-legal">
+                    <a href={`mailto:${SUPPORT_EMAIL}`} className="site-menu-minor site-menu-legal-email">{SUPPORT_EMAIL}</a>
+                    <ul className="flex flex-wrap gap-x-5">
+                      {LEGAL_LINKS.map((link) => (
                         <li key={link.to}>
-                          <Link to={link.to} onClick={onClose} aria-current={here(link.to)} className="site-menu-account-link">
-                            <link.icon className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />
-                            <span className="min-w-0 flex-1 truncate">{link.label}</span>
-                            {link.unread && unread > 0 && <span className="text-[0.8125rem] font-semibold tabular-nums">{unread}<span className="max-sm:sr-only"> new</span></span>}
-                          </Link>
+                          <Link to={link.to} onClick={onClose} aria-current={here(link.to)} className="site-menu-minor">{link.label}</Link>
                         </li>
                       ))}
                     </ul>
-                    <button type="button" onClick={() => { onClose(); void signOut(); }} className="site-menu-signout">
-                      <LogOut className="h-4 w-4" aria-hidden="true" />
-                      Sign out
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <p className="font-display text-[2rem] leading-[1.08] sm:text-[2.25rem]">See where your giving goes.</p>
-                    <p className="mt-3 max-w-sm text-[0.9375rem] leading-relaxed text-primary-foreground/75">
-                      Sign in to follow every coupon your donations become, or to run your fundraiser.
-                    </p>
-                    <div className="mt-7 flex flex-wrap gap-3">
-                      <Link to={signInHref(pathname, search)} onClick={onClose} className="site-menu-cta">Sign in</Link>
-                      <Link to={signUpHref(pathname, search)} onClick={onClose} className="site-menu-cta site-menu-cta-ghost">Create account</Link>
-                    </div>
-                  </>
-                )}
-              </section>
-            </div>
-
-            <div className="site-menu-foot site-menu-fade">
-              <a href={`mailto:${SUPPORT_EMAIL}`} className="site-menu-minor">{SUPPORT_EMAIL}</a>
-              <ul className="flex flex-wrap gap-x-6">
-                {LEGAL_LINKS.map((link) => (
-                  <li key={link.to}>
-                    <Link to={link.to} onClick={onClose} aria-current={here(link.to)} className="site-menu-minor">{link.label}</Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
         </div>
       </div>
