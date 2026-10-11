@@ -21,6 +21,8 @@ import { AmbientBirds } from './tree3d/AmbientBirds';
 import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
 import { TransparencyPopover } from './tree3d/TransparencyPopover';
 import { PlantsLayer } from './tree3d/PlantsLayer';
+import { PlantSprout } from './tree3d/PlantSprout';
+import { SparkleBurst } from './tree3d/SparkleBurst';
 import { prewarmTreeTextures } from './tree3d/textures';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { SLOW_TREE_FPS, shouldReduceQuality } from '@/lib/treeQuality';
@@ -79,6 +81,49 @@ function ProceduralEnvironment() {
   return null;
 }
 
+const TEXTURE_SLOTS = ['map', 'normalMap', 'alphaMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap', 'bumpMap'] as const;
+const nextTask = () => new Promise<void>((resolve) => { window.setTimeout(resolve, 0); });
+
+/** Every texture the materials under `root` will sample. */
+function texturesUnder(root: THREE.Object3D) {
+  const found = new Set<THREE.Texture>();
+  root.traverse((object) => {
+    const material = (object as THREE.Mesh).material;
+    for (const m of Array.isArray(material) ? material : material ? [material] : []) {
+      for (const slot of TEXTURE_SLOTS) {
+        const texture = (m as unknown as Record<string, unknown>)[slot];
+        if (texture instanceof THREE.Texture) found.add(texture);
+      }
+    }
+  });
+  return found;
+}
+
+/**
+ * Sends textures to the GPU ahead of the frame that first shows them (which would otherwise stall on
+ * every one in turn), in slices of about 8ms so the page keeps its frames on slower machines too.
+ */
+async function uploadAhead(gl: THREE.WebGLRenderer, textures: Iterable<THREE.Texture>, isDone: () => boolean) {
+  let slice = performance.now();
+  for (const texture of textures) {
+    if (isDone()) return;
+    try { gl.initTexture(texture); } catch { /* the first frame uploads whatever is left */ }
+    if (performance.now() - slice > 8) { await nextTask(); slice = performance.now(); }
+  }
+}
+
+/**
+ * Compiles (in parallel where the GPU allows) and uploads everything under `root` while it is
+ * still hidden, so the frame that first shows it reuses finished programs and resident textures.
+ */
+async function prepareHidden(gl: THREE.WebGLRenderer, root: THREE.Object3D, camera: THREE.Camera, scene: THREE.Scene) {
+  let settled = false;
+  const compiled = gl.compileAsync(root, camera, scene).catch(() => undefined);
+  const deadline = new Promise((resolve) => window.setTimeout(resolve, 3000));
+  await Promise.all([Promise.race([compiled, deadline]), uploadAhead(gl, texturesUnder(root), () => settled)]);
+  settled = true;
+}
+
 /**
  * Compiles every scene shader before the first frame. With KHR_parallel_shader_compile
  * the GPU compiles them in parallel while the page keeps animating, instead of the
@@ -109,6 +154,10 @@ function ShaderWarmup({ onDone }: { onDone: () => void }) {
       finish();
       return;
     }
+    // While the GPU compiles, the model's and the ground's textures go up one per task,
+    // so the first frame doesn't upload them all at once.
+    let uploaded = false;
+    void uploadAhead(gl, texturesUnder(scene), () => done).then(() => { uploaded = true; });
     // A lost context never reports completion; past the deadline the first frame
     // simply compiles whatever is left, as it would have without this step.
     const deadline = performance.now() + 5000;
@@ -118,7 +167,7 @@ function ShaderWarmup({ onDone }: { onDone: () => void }) {
         const program = gl.properties.get(material)?.currentProgram;
         return !!program && typeof program.isReady === 'function' && !program.isReady();
       });
-      if (!pending.length || performance.now() > deadline) finish();
+      if ((!pending.length && uploaded) || performance.now() > deadline) finish();
       else timer = window.setTimeout(poll, 16);
     };
     poll();
@@ -416,7 +465,10 @@ function PerfWatchdog({ onSlow, active }: { onSlow: () => void; active: boolean 
   return null;
 }
 
-function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobile: boolean; onReady: () => void }) {
+const WARMUP_SPOT = new THREE.Vector3(0, 0, 0);
+const noop = () => undefined;
+
+function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobile: boolean; onReady: (coverUp: boolean) => void }) {
   const gentle = useMotionPreference() === 'gentle';
   useEffect(() => {
     if (gentle) setStates(previous => previous.map(() => ({ phase: 'hanging' })));
@@ -441,16 +493,25 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
     return getBranchTips(visibleFruitCount);
   }, [visibleFruitCount]);
   const [logosReady, setLogosReady] = useState(false);
+  // The coupons stay hidden until their shaders have compiled and their textures are on the GPU,
+  // so the frame that shows all 18 for the first time doesn't stall the page.
+  const [fruitsShown, setFruitsShown] = useState(false);
+  const fruitsRef = useRef<THREE.Group>(null);
   const { gl } = useThree();
+  const camera = useThree((state) => state.camera);
+  const scene = useThree((state) => state.scene);
   const revealRef = useRef({ frames: 0, revealed: false });
   const reveal = useCallback((reason: 'logos' | 'safety') => {
     if (revealRef.current.revealed) return;
     revealRef.current.revealed = true;
+    // Still under the opening's cover? Then the tree is simply there when the cover lifts.
+    const root = document.documentElement;
+    const coverUp = root.classList.contains('cd-intro') && !root.classList.contains('cd-iris');
     gl.domElement.dataset.treeRevealReason = reason;
     gl.domElement.dataset.treeRevealMs = performance.now().toFixed(1);
     window.__cdTreeReady = true;
     window.dispatchEvent(new Event('cd:tree-ready'));
-    onReady();
+    onReady(coverUp);
   }, [gl, onReady]);
   // A scene mounted under the opening must prove a full drawn frame; the inline
   // cap owns its fallback, rather than announcing a timer as live readiness.
@@ -473,10 +534,18 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
     });
     return () => { active = false; };
   }, [branchTips, gl]);
+  useEffect(() => {
+    if (!logosReady || fruitsShown) return;
+    const group = fruitsRef.current;
+    if (!group) { setFruitsShown(true); return; }
+    let active = true;
+    void prepareHidden(gl, group, camera, scene).then(() => { if (active) setFruitsShown(true); });
+    return () => { active = false; };
+  }, [logosReady, fruitsShown, gl, camera, scene]);
   // useFrame runs before rendering. The second committed frame proves the first
   // full 18-fruit frame has already been drawn/uploaded before revealing it.
   useFrame(() => {
-    if (!logosReady) return;
+    if (!fruitsShown) return;
     revealRef.current.frames++;
     if (revealRef.current.frames < 2) return;
     gl.domElement.dataset.treeLogosReady = 'true';
@@ -678,8 +747,14 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
       {!gentle && <Bird />}
       {!gentle && <AmbientBirds count={settings.ambientBirds} />}
       <PlantsLayer cap={plantCap} />
+      {/* Never drawn: puts the effects that appear later (a sprout where a coupon lands, the sparkle
+          of a tap) into the first parallel compile, so their first appearance never stalls a frame. */}
+      <group visible={false} position={[0, -40, 0]}>
+        <PlantSprout id="warmup" position={[0, 0, 0]} archetype="flower" accentColor="#ffffff" bornAt={0} seed={1} />
+        <SparkleBurst position={WARMUP_SPOT} startTime={0} onDone={noop} />
+      </group>
 
-
+      <group ref={fruitsRef} visible={fruitsShown}>
       {logosReady && brandIndices.map((brandIndex, i) => (
         <CouponFruit
           key={i}
@@ -695,6 +770,7 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
           labelSuppressed={lastLandedIdx !== i}
         />
       ))}
+      </group>
     </>
   );
 }
@@ -876,7 +952,11 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
   const { spawnRipple, setParallaxBoost } = useInteraction();
   const gentle = useMotionPreference() === 'gentle';
   const [ready, setReady] = useState(false);
-  const sceneReady = useCallback(() => {
+  // Under the opening's cover the canvas appears at once (the cover's own fade reveals it);
+  // anywhere else the tree fades in over the matching sky and ground drawn by HeroBackdrop.
+  const [instant, setInstant] = useState(false);
+  const sceneReady = useCallback((coverUp: boolean) => {
+    setInstant(coverUp);
     setReady(true);
     onReady?.();
   }, [onReady]);
@@ -906,7 +986,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
           // Each shader error check makes the page wait for the GPU; production skips them.
           gl.debug.checkShaderErrors = import.meta.env.DEV;
         }}
-        style={{ background: 'transparent', opacity: ready ? 1 : 0, transition: 'opacity .7s cubic-bezier(.4,0,.2,1)' }}
+        style={{ background: 'transparent', opacity: ready ? 1 : 0, transition: instant ? 'none' : 'opacity .7s cubic-bezier(.4,0,.2,1)' }}
         onPointerDown={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(true); }}
         onPointerUp={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(false); }}
         onPointerLeave={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(false); }}

@@ -138,7 +138,9 @@ Deno.test('live tree reveal follows a drawn 18-logo frame with a 3s safety escap
   const scene = await Deno.readTextFile('src/components/landing/Tree3DScene.tsx');
   assert(scene.indexOf('const openingLogoPreload') < scene.indexOf('function Scene'));
   assert(scene.includes('openingLogoPreload.then'));
-  assert(scene.includes('if (!logosReady) return;'));
+  // The coupons are compiled and uploaded while hidden once their logos are ready; the reveal counts frames that show them.
+  assert(scene.includes('if (!logosReady || fruitsShown) return;') && scene.includes('<group ref={fruitsRef} visible={fruitsShown}>'));
+  assert(scene.includes('if (!fruitsShown) return;'));
   assert(scene.includes('if (revealRef.current.frames < 2) return;'));
   assert(scene.includes("reveal('logos')"));
   assert(scene.includes("window.setTimeout(() => reveal('safety'), 3000)"));
@@ -182,7 +184,7 @@ Deno.test('Draco runtime uses only the self-hosted decoder', async () => {
 
 Deno.test('intro readiness preserves all 18 drawn logos', async () => {
   const scene = await Deno.readTextFile('src/components/landing/Tree3DScene.tsx');
-  assert(scene.includes('if (!logosReady) return;'));
+  assert(scene.includes('if (!fruitsShown) return;'));
   assert(scene.includes('if (revealRef.current.frames < 2) return;'));
   assert(scene.includes("window.dispatchEvent(new Event('cd:tree-ready'))"));
   const html = await Deno.readTextFile('index.html');

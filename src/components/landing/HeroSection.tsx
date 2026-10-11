@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { HeroHeadline } from '@/components/landing/hero/HeroHeadline';
 import { AITreeLauncher } from '@/components/landing/hero/AITreeLauncher';
+import { HeroBackdrop } from '@/components/landing/hero/HeroBackdrop';
 const AITreeChat = lazy(() => import('@/components/landing/hero/AITreeChat').then(m => ({ default: m.AITreeChat })));
 import { Tree3DErrorBoundary } from '@/components/landing/Tree3DErrorBoundary';
 import { announceTreeReady } from '@/lib/treeReady';
@@ -33,8 +34,8 @@ export function HeroSection() {
     const mount = () => {
       const allowed = canRender3D();
       setCan3D(allowed);
-      // No still picture any more: without WebGL the hero keeps its sky-and-hill
-      // backdrop, so the opening needn't wait for a tree that will never draw.
+      // No still picture: without WebGL the hero keeps the tree's own sky and ground
+      // (HeroBackdrop), so the opening needn't wait for a tree that will never draw.
       if (!allowed) announceTreeReady();
     };
     const firstFrame = requestAnimationFrame(() => { secondFrame = requestAnimationFrame(mount); });
@@ -48,6 +49,8 @@ export function HeroSection() {
       style={{ contain: 'layout paint' }}
     >
       <div className="hero-tree absolute inset-0 w-full h-full">
+        {/* The tree's own sky and ground, so nothing changes behind the tree when it arrives. */}
+        <HeroBackdrop />
         {can3D && !treeFailed && (
           <Tree3DErrorBoundary onError={() => { setTreeFailed(true); announceTreeReady(); }}>
             <Suspense fallback={null}><Tree3DScene /></Suspense>

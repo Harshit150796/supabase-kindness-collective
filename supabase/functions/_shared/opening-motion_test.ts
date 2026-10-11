@@ -1,6 +1,6 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 
-async function opening({ path = '/', query = '', ua = 'Mozilla Safari', webgl = true, saveData = false, hour = 12, nav = true } = {}) {
+async function opening({ path = '/', query = '', ua = 'Mozilla Safari', webgl = true, saveData = false, hour = 12, nav = true, hidden = false } = {}) {
   const html = await Deno.readTextFile('index.html');
   const source = html.match(/<script>(.*?)<\/script>/s)?.[1];
   if (!source) throw new Error('Missing opening script');
@@ -15,7 +15,7 @@ async function opening({ path = '/', query = '', ua = 'Mozilla Safari', webgl = 
   const brand = { ...node(), getBoundingClientRect() { return { left: 16, top: -60, width: 48, height: 48 }; } };
   const root = { style: { setProperty() {} }, dataset: {} as Record<string,string>, classList: { add(...names: string[]) { names.forEach(n => classes.add(n)); }, remove(...names: string[]) { names.forEach(n => classes.delete(n)); } } };
   const head = node();
-  const document = { documentElement: root, head, createElement: node, getElementById(id: string) { let n = nodes.get(id); if (!n) { n = node(); nodes.set(id,n); } return n; }, querySelector(sel: string) { return nav && sel.includes('data-nav-brand') ? brand : null; } };
+  const document = { hidden, addEventListener: (event: string, cb: () => void) => add(event, cb), removeEventListener() {}, documentElement: root, head, createElement: node, getElementById(id: string) { let n = nodes.get(id); if (!n) { n = node(); nodes.set(id,n); } return n; }, querySelector(sel: string) { return nav && sel.includes('data-nav-brand') ? brand : null; } };
   const window: { WebGLRenderingContext?: object; __cdTreeReady?: boolean } = { WebGLRenderingContext: webgl ? {} : undefined };
   const dispatch = (e: Event) => { for (const cb of events.get(e.type) ?? []) cb(); return true; };
   const add = (event: string, cb: () => void) => events.set(event, [...events.get(event) ?? [], cb]);
@@ -34,7 +34,7 @@ async function opening({ path = '/', query = '', ua = 'Mozilla Safari', webgl = 
     }
     now = to;
   }
-  return { classes, nodes, root, head, events, advance, ready() { window.__cdTreeReady = true; dispatch(new Event('cd:tree-ready')); } };
+  return { classes, nodes, root, head, events, advance, ready() { window.__cdTreeReady = true; dispatch(new Event('cd:tree-ready')); }, show() { document.hidden = false; dispatch(new Event('visibilitychange')); } };
 }
 Deno.test('every full homepage load and refresh plays without visit storage', async () => {
   for (let i = 0; i < 3; i++) assert((await opening()).classes.has('cd-intro'));
@@ -110,7 +110,7 @@ Deno.test('static opening stays hidden without JS and under 12KiB', async () => 
 });
 Deno.test('tree readiness is emitted at reveal, with unavailable-tree fallback', async () => {
   const scene=await Deno.readTextFile('src/components/landing/Tree3DScene.tsx');const fallback=await Deno.readTextFile('src/lib/treeReady.ts');
-  assert(scene.indexOf("window.dispatchEvent(new Event('cd:tree-ready'))") < scene.indexOf('    onReady();'));
+  assert(scene.indexOf("window.dispatchEvent(new Event('cd:tree-ready'))") < scene.indexOf('    onReady(coverUp);'));
   assert(fallback.includes("new Event('cd:tree-ready')"));
 });
 Deno.test('cursor remains compositor driven and survives route changes', async () => {
@@ -119,4 +119,16 @@ Deno.test('cursor remains compositor driven and survives route changes', async (
 });
 Deno.test('effects reuse installed motion without new animation packages', async () => {
   const pkg=JSON.parse(await Deno.readTextFile('package.json'));assert(pkg.dependencies.motion);for(const name of ['gsap','animejs','@react-spring/web','lottie-web'])assert(!pkg.dependencies[name]);
+});
+
+Deno.test('a homepage opened in a background tab holds its opening until someone is looking', async () => {
+  const o = await opening({ hidden: true });
+  assert(o.classes.has('cd-intro') && o.classes.has('cd-held'));
+  o.ready(); o.advance(20000);
+  assert(!o.classes.has('cd-iris'), 'neither the hold nor the 8s cap runs while the tab is hidden');
+  o.show();
+  assert(!o.classes.has('cd-held'));
+  o.advance(21549); assert(!o.classes.has('cd-iris'));
+  o.advance(21550); assert(o.classes.has('cd-iris'));
+  assertEquals(o.root.dataset.introMs, '1550');
 });
