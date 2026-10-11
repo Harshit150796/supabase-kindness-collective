@@ -67,10 +67,10 @@ Deno.test('the reveal waits for the nav logo to exist, and lands only after the 
   const o = await opening({nav:false});o.ready();o.advance(7999);assert(!o.classes.has('cd-iris'));
   const p = await opening();p.ready();p.advance(1550);assert(!p.classes.has('cd-landed'));p.advance(2509);assert(!p.classes.has('cd-landed'));p.advance(2510);assert(p.classes.has('cd-landed'));
 });
-Deno.test('loading hairline appears only when loading outlasts the animation, safety reveal at 8000ms', async () => {
+Deno.test('loading hairline appears only when loading outlasts the animation, safety reveal at 15000ms', async () => {
   const o = await opening();o.advance(1799);assert(!o.classes.has('cd-wait'));o.advance(1800);assert(o.classes.has('cd-wait'));
-  o.advance(7999);assert(!o.classes.has('cd-iris'));o.advance(8000);assert(o.classes.has('cd-iris'));assertEquals(o.root.dataset.introReason,'cap');
-  o.advance(9599);assert(o.classes.has('cd-intro'));o.advance(9600);assert(!o.classes.has('cd-intro'));assert(!o.classes.has('cd-iris'));
+  o.advance(14999);assert(!o.classes.has('cd-iris'));o.advance(15000);assert(o.classes.has('cd-iris'));assertEquals(o.root.dataset.introReason,'cap');
+  o.advance(16599);assert(o.classes.has('cd-intro'));o.advance(16600);assert(!o.classes.has('cd-intro'));assert(!o.classes.has('cd-iris'));
 });
 Deno.test('every page load picks this visit\'s sky: night 70%, day 30%, ?time3d forces one', async () => {
   const real = Math.random;
@@ -125,7 +125,7 @@ Deno.test('a homepage opened in a background tab holds its opening until someone
   const o = await opening({ hidden: true });
   assert(o.classes.has('cd-intro') && o.classes.has('cd-held'));
   o.ready(); o.advance(20000);
-  assert(!o.classes.has('cd-iris'), 'neither the hold nor the 8s cap runs while the tab is hidden');
+  assert(!o.classes.has('cd-iris'), 'neither the hold nor the safety cap runs while the tab is hidden');
   o.show();
   assert(!o.classes.has('cd-held'));
   o.advance(21549); assert(!o.classes.has('cd-iris'));

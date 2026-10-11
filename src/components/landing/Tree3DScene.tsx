@@ -953,7 +953,7 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
   const gentle = useMotionPreference() === 'gentle';
   const [ready, setReady] = useState(false);
   // Under the opening's cover the canvas appears at once (the cover's own fade reveals it);
-  // anywhere else the tree fades in over the matching sky and ground drawn by HeroBackdrop.
+  // anywhere else the whole scene fades in together with the hero's headline.
   const [instant, setInstant] = useState(false);
   const sceneReady = useCallback((coverUp: boolean) => {
     setInstant(coverUp);

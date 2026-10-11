@@ -48,15 +48,15 @@ Deno.test('tree model stays under its compressed budget', async () => {
   assert(size < 1_300_000, `tree.glb is ${size} bytes`);
 });
 
-Deno.test('hero shows a sky backdrop in this load\'s sky until the live tree draws', async () => {
+Deno.test('the hero shows the whole tree scene or nothing, and a painted scene only where the tree cannot run', async () => {
   const hero = await Deno.readTextFile('src/components/landing/HeroSection.tsx');
   const scene = await Deno.readTextFile('src/components/landing/Tree3DScene.tsx');
-  const css = await Deno.readTextFile('src/index.css');
-  assert(hero.includes('if (!allowed) announceTreeReady();'));
+  assert(hero.includes("if (mode === 'fallback') announceTreeReady();") && hero.includes('<Tree3DErrorBoundary onError={fallback}>'));
   assert(hero.includes('className="hero-tree '));
   assert(scene.includes("opacity: ready ? 1 : 0, transition: instant ? 'none' : 'opacity .7s"));
-  assert(hero.includes('<HeroBackdrop />'));
-  assert(css.includes('.hero-stage::before{'));
+  assert(hero.includes("{mode === 'fallback' && <HeroBackdrop />}"));
+  // The headline and buttons arrive with the tree (or after 3s once nothing covers the hero).
+  assert(hero.includes('style={{ opacity: visible ? 1 : 0 }}') && hero.includes('<Tree3DScene onReady={() => { setScene(true); setShown(true); }} />'));
 });
 
 Deno.test('homepage section code is fetched in idle time after the opening, not mid-scroll', async () => {

@@ -32,7 +32,7 @@ Deno.test('quality sampling ignores loading, hidden and smooth frames', () => {
 });
 Deno.test('every WebGL device mounts the live tree (no Save-Data or picture fallback)', async () => {
   const hero = await Deno.readTextFile('src/components/landing/HeroSection.tsx');
-  assert(hero.includes('const allowed = canRender3D();'));
+  assert(hero.includes("const check = () => { if (canRender3D()) setMode('live'); else fallback(); };"));
   assert(!hero.includes('saveData'));
   assert(!hero.includes('TreePoster'));
 });
@@ -157,7 +157,8 @@ Deno.test('the still tree picture is gone for good', async () => {
     assert(!exists, path);
   }
   const css = await Deno.readTextFile('src/index.css');
-  assert(css.includes('html[data-sky=night] .hero-stage{'));
+  // No part-built scenery either: plain page colour until the whole scene fades in.
+  assert(css.includes('.hero-stage{background:hsl(var(--background))}') && !css.includes('.hero-stage::before{'));
   assert(!css.includes('.hero-stage>picture'));
 });
 Deno.test('the live tree has two skies, chosen once per load (night 70%, day 30%)', async () => {
