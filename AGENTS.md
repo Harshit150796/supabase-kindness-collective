@@ -15,6 +15,7 @@
 - Editorial line reveals use removable aria-hidden overlays without replacing React-owned nodes; font/initial-frame settlement and the shared observer protect startup. Headings split only after their own faces load (italic runs included), and the painted lines stack in normal flow so they never drift off the real ones.
 - Responsive public photos use proportional contain transforms on managed Supabase hosts or generated local variants; never append transformation parameters to unknown hosts or crop at delivery, because presentation framing belongs to the image container.
 - Motion is full on every device; the OS reduced-motion setting is not consulted (founder decision lives in memory).
+- Homepage "Give what people need." steps: laptops (lg+) deal four cards alternating logo green and logo blue (founder-chosen), animating transform only via element.animate with px values and IntersectionObserver triggers, re-stacking only after the row leaves below the viewport; phones keep the compact animated list unchanged.
 - Public photos stay local; without verified people-photo consent, use coupon/receipt/trace visuals.
 - Preserve the two-color CouponDonation wordmark exactly as `#2e7d32` for Coupon and `#1565c0` for Donation.
 - Preserve the founder-approved rotating “CouponDonation is …” hero kicker exception.
