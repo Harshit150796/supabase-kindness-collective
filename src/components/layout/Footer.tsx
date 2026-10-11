@@ -4,10 +4,13 @@ import { Mail, Phone, MapPin } from 'lucide-react';
 import { SectionLabel } from '@/components/ui/organizer';
 import { Reveal } from '@/components/ui/editorial-motion';
 import logo from '@/assets/logo.png';
+import { ContactClose } from './ContactClose';
 
 const linkClass = 'inline-flex min-h-11 items-center py-2.5 transition-colors hover:text-primary-foreground';
-export function Footer() {
+/** `contact={false}` leaves out the closing contact form (account and payment pages). */
+export function Footer({ contact = true }: { contact?: boolean } = {}) {
   return <footer data-cursor="light" className="footer-surface text-primary-foreground">
+    {contact && <ContactClose />}
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 md:pb-24 md:pt-14 sm:px-6 lg:px-8 lg:pt-16">
       <Reveal className="grid grid-cols-2 gap-x-6 gap-y-6 md:grid-cols-12 md:gap-x-8 md:gap-y-10">
         <div className="col-span-2 space-y-4 md:col-span-12 lg:col-span-4">

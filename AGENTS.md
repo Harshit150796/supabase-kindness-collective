@@ -18,7 +18,7 @@
 - Shared public links use branded /f/ URLs, never organizer/backend URLs.
 - Resolve fundraiser imagery everywhere as primary gallery, then ordered gallery, then legacy cover, then branded category fallback; card delivery uses Supabase transforms and uploads create one bounded WebP.
 - Gold Coins are credited only by credit_gold_coins() from the scheduled dispatcher into the append-only gold_coin_ledger (unique per donation and entry type); payment tables stay read-only.
-- Anonymous public submissions (partner inquiries, testimonials) go through the public-submit edge function, never direct table inserts.
+- Anonymous public submissions (partner inquiries, contact messages, testimonials) go through the public-submit edge function, never direct table inserts. Contact messages (footer form, US only) are stored in contact_messages, emailed to support@coupondonation.com with the sender as Reply-To, and read by the team at /admin/contact.
 - Production is Lovable hosting; vercel.json and api/share are inert.
 
 ## Coupon System Rules

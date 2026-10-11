@@ -70,7 +70,7 @@ export default function Unsubscribe() {
           </CardContent>
         </Card>
       </main>
-      <Footer />
+      <Footer contact={false} />
     </div>
   );
 }

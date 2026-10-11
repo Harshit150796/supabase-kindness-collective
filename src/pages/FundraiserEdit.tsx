@@ -92,7 +92,7 @@ export default function FundraiserEdit() {
           )}
         </div>
       </main>
-      <Footer />
+      <Footer contact={false} />
     </div>
   );
 }
