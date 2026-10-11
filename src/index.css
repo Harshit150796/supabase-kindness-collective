@@ -804,3 +804,10 @@ html.site-menu-open{overflow:hidden;padding-right:var(--site-menu-gap,0px)}
   .site-menu-hand .site-menu-hand-body{width:auto;max-width:none;margin:0;padding:0 0 2.75rem 3.5rem}
   .site-menu-hand-content{max-width:25.5rem;pointer-events:auto}
 }
+
+/* Laptop "dealt cards" steps (WhatWeDo DesktopDeal): each card's back and face are flat sides that
+   turn separately (no shared 3D scene). The back exists only while the deck waits or deals. */
+.giving-deal-face,.giving-deal-back{-webkit-backface-visibility:hidden;backface-visibility:hidden}
+.giving-deal-back{position:absolute;inset:0;display:none}
+.giving-deal[data-deal="stacked"] .giving-deal-back,.giving-deal[data-deal="dealing"] .giving-deal-back{display:flex}
+.giving-deal[data-deal="dealt"] .giving-deal-face{-webkit-backface-visibility:visible;backface-visibility:visible}

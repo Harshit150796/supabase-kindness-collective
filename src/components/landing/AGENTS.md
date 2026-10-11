@@ -19,3 +19,11 @@
 - It holds at least 1.55s and reveals when fonts, the nav brand and the drawn live tree are ready; a progress hairline appears after 1.8s, 8s cap. Only transform/opacity animate.
 - The inline script sets the sky before the homepage gate. The vite openingPreloads plugin writes the page and tree chunk lists into it at build time; tree chunks, model, Draco and logos preload only when WebGL works (window.__cdWebGL), which also gates main.tsx's early Tree3DScene import.
 - Keep the index.html opening block under 12KiB. Canvas uses offsetSize, never scales.
+
+## Homepage motion, reveals and sections
+- Shared reveals decide via `revealMode` (pre-trigger 20% below viewport, late on-screen mounts still animate, time-based fling detection) so busy frames never skip motion.
+- Editorial line reveals use removable aria-hidden overlays without replacing React-owned nodes; font/initial-frame settlement and the shared observer protect startup. Headings split only after their own faces load (italic runs included), and the painted lines stack in normal flow so they never drift off the real ones.
+- Cursor uses a settling rAF loop timed by the rAF timestamp, falling back to the clock past 6ms (frameDt); event targets for moves, cached DOM colours; CSS owns colour/hover; lazy-tree read-only probe.
+- Lazy section short states fill reservations to preserve scroll; shared count/retry logic prevents false zeros and early failures.
+- Homepage section code prefetches one module per idle period after the opening (src/lib/idlePrefetch.ts, skipped on Save-Data); sections still mount on view. Scroll handlers never read layout per frame (use IntersectionObserver).
+- Homepage "Give what people need." steps: laptops (lg+) deal four cards alternating logo green and logo blue (founder-chosen), animating transform only via element.animate with px values and IntersectionObserver triggers, re-stacking only after the row leaves below the viewport; phones keep the compact animated list unchanged.

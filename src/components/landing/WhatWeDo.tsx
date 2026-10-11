@@ -7,7 +7,7 @@ import {
   type MotionValue,
 } from 'motion/react';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { LineReveal, Reveal, useEarlyReveal } from '@/components/ui/editorial-motion';
@@ -306,102 +306,157 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
   );
 }
 
-// Laptops and wide screens: the four stories play one after another and hand a baton along
-// the connector (step 1's coins fly out toward step 2, which takes them in from the left),
-// then each rests in its finished picture. The run repeats only while the row is on screen.
-// It used to scrub every illustration from the scroll position and also loop them all on a
-// shared 12s clock: the two fought (jumps), stopping mid-scroll froze half-drawn pictures,
-// and the loop kept running off screen.
-const STORY_STEP_GAP = 1.9; // seconds between one step starting and the next
-const STORY_LOOP = 12.5; // seconds from one run to the next
-const STORY_END = [0.6, 0.84, 0.84, 0.84]; // storyboard point where each picture is complete
-const STORY_LENGTH = [1.6, 2.3, 2.3, 2.3]; // seconds each picture takes to get there
+// Laptops and wide screens: the four steps arrive as a dealt hand of cards, alternating logo
+// green and logo blue. They wait face down in a small deck in the middle of the row and, once
+// the row is properly on screen, deal out to their places one by one, flipping face up as they
+// land. Only `transform` animates, through the Web Animations API with pixel values, so the
+// browser runs it on the compositor and page scrolling stays smooth while cards are in flight.
+// Nothing listens to scroll: IntersectionObservers decide when to deal, when to finish a deal
+// that was scrolled past, and when to quietly re-stack (only once the row is off screen below,
+// so it never re-deals in view or while you scroll back up past it).
+// It replaced illustrations scrubbed from the scroll position and looped on a shared clock,
+// which jumped, froze half drawn and kept animating off screen.
+const DEAL_TONES = ['123 46% 34%', '212 80% 42%', '123 46% 34%', '212 80% 42%']; // logo green / logo blue
+const DEAL_TILT = [-5, 4, -3, 6]; // degrees each card leans in the waiting deck
+const DEAL_DROP = 28; // px the deck sits below the row
+const DEAL_DURATION = 1000;
+const DEAL_STAGGER = 300;
+const DEAL_DELAY = 120;
+const DEAL_EASE = 'cubic-bezier(.2,.85,.25,1)';
 
-function StoryConnector({ progress, show, still }: { progress: MotionValue<number>; show: MotionValue<number>; still: boolean }) {
-  const x = useTransform(progress, (value) => `${value * 100}%`);
-  const dotOpacity = mapValue(progress, [0, 0.05, 0.95, 1], [0, 1, 1, 0]);
-  return (
-    <motion.div aria-hidden="true" data-giving-connector className="pointer-events-none absolute left-[170px] right-[-12px] top-[74px] h-[2px]" style={{ opacity: show }}>
-      <div className="absolute inset-0 rounded-full bg-border" />
-      <motion.div className="absolute inset-0 origin-left rounded-full bg-primary/55" style={{ scaleX: still ? 1 : progress }} />
-      {!still && (
-        <motion.div className="absolute inset-0" style={{ x }}>
-          <motion.span className="absolute -left-1 -top-[3px] h-2 w-2 rounded-full bg-primary" style={{ opacity: dotOpacity }} />
-        </motion.div>
-      )}
-    </motion.div>
-  );
+// The pictures are drawn in white on the coloured cards by pointing their colour tokens at white
+// and at the card's own tone; the illustration components themselves are shared with phones.
+const dealArtTokens = {
+  '--primary': '0 0% 100%',
+  '--verify': '0 0% 100%',
+  '--muted-foreground': '0 0% 100%',
+  '--border': '0 0% 100% / 0.7',
+  '--card': 'var(--deal-tone)',
+  '--background': 'var(--deal-tone)',
+  '--verify-foreground': 'var(--deal-tone)',
+} as React.CSSProperties;
+
+// Each card is two flat sides that turn together: the back from facing you to edge-on and away,
+// the face from turned away to facing you. Every pose uses the same list of functions so the
+// browser interpolates each one directly, and nothing needs a shared 3D scene.
+function dealPose(dx: number, index: number, side: 'face' | 'back', landed: boolean) {
+  const turn = side === 'back' ? (landed ? 180 : 0) : (landed ? 0 : -180);
+  return landed
+    ? `perspective(1600px) translate3d(0px, 0px, 0px) rotate(0deg) rotateY(${turn}deg)`
+    : `perspective(1600px) translate3d(${dx}px, ${DEAL_DROP}px, 0px) rotate(${DEAL_TILT[index]}deg) rotateY(${turn}deg)`;
 }
 
-function DesktopStory({ still }: { still: boolean }) {
+function DesktopDeal({ still }: { still: boolean }) {
   const listRef = useRef<HTMLOListElement>(null);
-  const phase0 = useMotionValue(0), phase1 = useMotionValue(0), phase2 = useMotionValue(0), phase3 = useMotionValue(0);
-  const link0 = useMotionValue(0), link1 = useMotionValue(0), link2 = useMotionValue(0);
-  const show = useMotionValue(0);
-  const phases = useMemo(() => [phase0, phase1, phase2, phase3], [phase0, phase1, phase2, phase3]);
-  const links = useMemo(() => [link0, link1, link2], [link0, link1, link2]);
+  const rest = useMotionValue(0);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const list = listRef.current;
     if (!list) return;
-    if (still) {
-      phases.forEach((phase, index) => phase.set(STORY_END[index]));
-      links.forEach((link) => link.set(1));
-      show.set(1);
-      return;
-    }
-    let timers: number[] = [];
-    let running: Array<{ stop: () => void }> = [];
-    const clear = () => {
-      timers.forEach((timer) => window.clearTimeout(timer));
-      running.forEach((animation) => animation.stop());
-      timers = [];
-      running = [];
+    const cards = Array.from(list.querySelectorAll<HTMLElement>('[data-deal-card]'));
+    const sides = cards.map((card) => ({
+      face: card.querySelector<HTMLElement>('[data-deal-face]')!,
+      back: card.querySelector<HTMLElement>('[data-deal-back]')!,
+    }));
+    let state: 'stacked' | 'dealing' | 'dealt' = 'dealt';
+    let running: Animation[] = [];
+
+    // One layout read per deal or resize: how far each card sits from the middle of the row.
+    const offsets = () => {
+      const step = (cards[0]?.offsetWidth ?? 0) + (parseFloat(getComputedStyle(list).columnGap) || 0);
+      return cards.map((_, index) => (1.5 - index) * step);
     };
-    const later = (seconds: number, run: () => void) => { timers.push(window.setTimeout(run, seconds * 1000)); };
-    // One run: fade in from the empty pictures, play the steps in turn, rest, fade out, repeat.
-    const play = () => {
-      clear();
-      phases.forEach((phase) => phase.set(0));
-      links.forEach((link) => link.set(0));
-      running.push(animate(show, 1, { duration: 0.45, ease: 'easeOut' }));
-      phases.forEach((phase, index) => later(0.2 + index * STORY_STEP_GAP, () => {
-        running.push(animate(phase, STORY_END[index], { duration: STORY_LENGTH[index], ease: 'linear' }));
-      }));
-      links.forEach((link, index) => later(0.2 + index * STORY_STEP_GAP + 1.2, () => {
-        running.push(animate(link, 1, { duration: 0.8, ease: [0.65, 0, 0.35, 1] }));
-      }));
-      later(STORY_LOOP, () => { running.push(animate(show, 0, { duration: 0.45, ease: 'easeIn', onComplete: play })); });
+    const stop = () => { running.forEach((animation) => animation.cancel()); running = []; };
+    const showDealt = () => {
+      stop();
+      sides.forEach(({ face, back }) => { face.style.transform = ''; back.style.transform = ''; });
+      list.dataset.deal = 'dealt';
+      state = 'dealt';
     };
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) { if (!timers.length && !running.length) { show.set(0); play(); } }
-      else clear(); // nothing animates off screen
-    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.25 });
-    observer.observe(list);
-    return () => { observer.disconnect(); clear(); };
-  }, [still, phases, links, show]);
+    const showStacked = () => {
+      stop();
+      const dx = offsets();
+      sides.forEach(({ face, back }, index) => {
+        face.style.transform = dealPose(dx[index], index, 'face', false);
+        back.style.transform = dealPose(dx[index], index, 'back', false);
+      });
+      list.dataset.deal = 'stacked';
+      state = 'stacked';
+    };
+    const deal = () => {
+      const dx = offsets();
+      list.dataset.deal = 'dealing';
+      state = 'dealing';
+      running = sides.flatMap((card, index) => (['face', 'back'] as const).map((side) => {
+        const element = card[side];
+        // What each side rests on once its own animation ends: the face flat, the back turned away.
+        element.style.transform = side === 'back' ? dealPose(0, index, 'back', true) : '';
+        return element.animate(
+          [{ transform: dealPose(dx[index], index, side, false) }, { transform: dealPose(0, index, side, true) }],
+          { duration: DEAL_DURATION, delay: DEAL_DELAY + index * DEAL_STAGGER, easing: DEAL_EASE, fill: 'backwards' },
+        );
+      }));
+      const batch = running;
+      Promise.all(batch.map((animation) => animation.finished))
+        .then(() => { if (running === batch) { running = []; list.dataset.deal = 'dealt'; state = 'dealt'; } })
+        .catch(() => {});
+    };
+
+    if (still) { showDealt(); return; }
+    showStacked();
+
+    // Deal once the row's top is a little above the bottom fifth of the screen.
+    const trigger = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && state === 'stacked') deal();
+    }, { rootMargin: '0px 0px -20% 0px' });
+    // Settle the cards whenever the row is fully off screen: re-stacked below the screen (ready to
+    // deal again on the way down), dealt above it (scrolled past, deep link or restored scroll).
+    const settleOffScreen = (entry: IntersectionObserverEntry) => {
+      const box = entry.boundingClientRect;
+      if (box.height === 0) { if (state === 'dealing') running.forEach((animation) => animation.finish()); return; }
+      if (box.top >= window.innerHeight) { if (state !== 'stacked') showStacked(); }
+      else if (box.bottom <= 0) {
+        if (state === 'dealing') running.forEach((animation) => animation.finish());
+        else if (state === 'stacked') showDealt();
+      }
+    };
+    // `presence` sees the row leave the screen; `approach` (a band a third of a screen above and
+    // below) catches jumps such as Home/End, where the row skips from one side to the other.
+    const presence = new IntersectionObserver(([entry]) => { if (!entry.isIntersecting) settleOffScreen(entry); });
+    const approach = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) settleOffScreen(entry); }, { rootMargin: '33% 0px 33% 0px' });
+    const resize = new ResizeObserver(() => {
+      if (state === 'stacked') showStacked();
+      else if (state === 'dealing') running.forEach((animation) => animation.finish());
+    });
+    trigger.observe(list);
+    presence.observe(list);
+    approach.observe(list);
+    resize.observe(list);
+    return () => { trigger.disconnect(); presence.disconnect(); approach.disconnect(); resize.disconnect(); stop(); };
+  }, [still]);
 
   return (
     <div className="relative mt-16 hidden lg:block">
-      <ol ref={listRef} className="relative grid grid-cols-4 gap-x-8" data-giving-steps="story">
+      <ol ref={listRef} className="giving-deal relative grid grid-cols-4 gap-x-8" data-giving-steps="deal">
         {steps.map((step, index) => {
           const Art = step.Art;
           return (
-            <li key={step.title} className="relative" data-desktop-step={index + 1}>
-              <motion.div
-                className="relative h-[150px] w-[150px] [&_svg]:overflow-visible"
-                style={{ opacity: show }}
-                whileHover={still ? undefined : { y: -4 }}
-                transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-              >
-                <Art progress={phases[index]} still={still} offset={0} />
-              </motion.div>
-              {index < steps.length - 1 && <StoryConnector progress={links[index]} show={show} still={still} />}
-              <div className="mt-4 flex items-baseline gap-2">
-                <span className="text-sm font-medium tabular-nums text-muted-foreground">0{index + 1}</span>
-                <h3 className="font-display text-[1.375rem] font-normal leading-tight text-foreground xl:text-2xl">{step.title}</h3>
+            <li key={step.title} className="relative" data-desktop-step={index + 1} style={{ zIndex: index + 1, '--deal-tone': DEAL_TONES[index] } as React.CSSProperties}>
+              <div data-deal-card className="relative h-full">
+                <div aria-hidden="true" data-deal-back className="giving-deal-back items-center justify-center rounded-2xl bg-[hsl(var(--deal-tone))] text-white">
+                  <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg>
+                </div>
+                <div data-deal-face className="giving-deal-face flex h-full flex-col rounded-2xl bg-[hsl(var(--deal-tone))] p-6 text-white xl:p-7">
+                  <div className="h-28 w-28 xl:h-32 xl:w-32" style={dealArtTokens}>
+                    <Art progress={rest} still offset={0} />
+                  </div>
+                  <div className="mt-6 flex items-baseline gap-2">
+                    <span className="text-sm font-medium tabular-nums text-white/80">0{index + 1}</span>
+                    <h3 className="font-display text-[1.375rem] font-normal leading-tight xl:text-2xl">{step.title}</h3>
+                  </div>
+                  <p className="mt-2 text-[15px] leading-relaxed text-white/90 xl:text-base">{step.body}</p>
+                </div>
               </div>
-              <p className="mt-2 text-base leading-relaxed text-muted-foreground">{step.body}</p>
             </li>
           );
         })}
@@ -465,7 +520,7 @@ export function WhatWeDo() {
           </ol>
         </div>
 
-        <DesktopStory still={still} />
+        <DesktopDeal still={still} />
 
         <Reveal className="mt-8 overflow-hidden border-y border-primary/20 bg-primary/[0.03] px-0 py-6 lg:mt-20 lg:px-10 lg:py-12">
           <div className="grid items-center gap-5 sm:grid-cols-[minmax(0,1fr)_220px] lg:gap-12">
