@@ -95,12 +95,14 @@ Deno.test('device-safe interfaces retain dynamic viewport and touch equivalents'
   assert(dashboard.includes('overflow-x-auto') && dashboard.includes('min-h-12'));
   assert(!story.includes("matchMedia('(pointer: fine)').matches"));
 });
-Deno.test('the transparency section keeps its ring, allocation bars and journey motion', async () => {
+Deno.test('the dollar section promises 100%, fills its number and keeps the journey motion', async () => {
   const transparency = await Deno.readTextFile('src/components/landing/TrustTransparency.tsx');
-  assert(transparency.includes('data-allocation-ring'));
-  assert(transparency.includes('<MotionBar value={percent}'));
+  // Founder-chosen: "The promise" heading and colours, "The big number" layout and filling 100%.
+  assert(transparency.includes('data-fill-number') && transparency.includes("initial={{ clipPath: 'inset(100% 0 0 0)' }}"));
+  assert(transparency.includes('Every dollar you give reaches a family.') && transparency.includes('data-promise-underline') && transparency.includes('All of it.'));
+  assert(transparency.includes('const FILL = 1.6;') && transparency.includes('bg-background'));
+  assert(!/95¢|95%|Platform operations|3¢/.test(transparency));
   assert(transparency.includes('data-journey-line'));
-  assert(transparency.includes('duration: 1.6'));
 });
 Deno.test('homepage sections retain their approved motion entry points', async () => {
   const story = await Deno.readTextFile('src/components/landing/WhatWeDo.tsx');

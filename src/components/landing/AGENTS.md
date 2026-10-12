@@ -37,3 +37,6 @@
 - No suggested amount: step 1 is full width with no gift panel; the panel slides open beside (phones: above) the steps once the donor picks an amount on step 2.
 - No coupon counts, no coupon sizes, no fake payment icons: Review explains that the team sizes each store's coupons, and shows real Visa/Mastercard/Amex marks.
 
+
+## "Every dollar" section (TrustTransparency)
+- Founder-chosen (Oct 2026): light band, "Every dollar you give reaches a family. All of it." with the hand-drawn underline (from the Promise concept), beside an outlined 100% that fills with green from the bottom (from The big number), then three promise columns (gift, optional tip ~10%, card fee covered by donor or tips) and the journey row. Motion plays once on view. Never show 95%/platform-fee splits.
