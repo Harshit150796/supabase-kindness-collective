@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { journeyScrollPoint, journeyScrollProgress, journeyScrollRange, type JourneyPoint } from '@/lib/journeyScrollTiming';
+import { JOURNEY_GESTURE_GAP, journeyScrollStop, journeyScrollProgress, journeyScrollRange, journeyWheelStop, type JourneyPoint } from '@/lib/journeyScrollTiming';
 
 export function CouponScrollPath() {
   const svg = useRef<SVGSVGElement>(null);
@@ -10,15 +10,37 @@ export function CouponScrollPath() {
     const section = node?.parentElement;
     if (!node || !curve || !ticket || !section) return;
     let frame = 0, visible = false, start = 0, end = 1;
+    let stop = 0, wheelDriven = false, lastWheel = -Infinity, lastScroll = window.scrollY;
     let points: JourneyPoint[] = [];
     const update = () => {
       frame = 0;
       if (!visible || document.hidden) return;
-      const point = journeyScrollPoint(points, journeyScrollProgress(window.scrollY, start, end));
+      const point = points[stop];
       if (!point) return;
       ticket.style.transform = `translate(${point[0]}px, ${point[1]}px)`;
+      node.dataset.journeyStop = String(stop + 1);
     };
-    const scroll = () => { if (visible && !document.hidden && !frame) frame = requestAnimationFrame(update); };
+    const schedule = () => { if (visible && !document.hidden && !frame) frame = requestAnimationFrame(update); };
+    const scroll = () => {
+      const y = window.scrollY;
+      if (visible && (!wheelDriven || performance.now() - lastWheel > JOURNEY_GESTURE_GAP * 2)) {
+        wheelDriven = false;
+        stop = journeyScrollStop(journeyScrollProgress(y, start, end));
+      }
+      lastScroll = y;
+      schedule();
+    };
+    const wheel = (event: WheelEvent) => {
+      if (event.ctrlKey || Math.abs(event.deltaX) > Math.abs(event.deltaY) || !event.deltaY) return;
+      const now = performance.now();
+      if (visible && !document.hidden) {
+        stop = journeyWheelStop(stop, event.deltaY, now, lastWheel);
+        wheelDriven = true;
+        schedule();
+      }
+      lastWheel = now;
+    };
+    const otherInput = () => { wheelDriven = false; };
     const size = () => {
       const items = Array.from(section.querySelectorAll<HTMLElement>('[data-journey-step]'));
       points = items.map(item => {
@@ -37,13 +59,14 @@ export function CouponScrollPath() {
       const rect = section.getBoundingClientRect();
       const pageTop = rect.top + window.scrollY;
       ({ start, end } = journeyScrollRange(pageTop + first[1], pageTop + last[1], innerHeight));
-      scroll();
+      schedule();
     };
     const visibility = () => {
       if (document.hidden) { cancelAnimationFrame(frame); frame = 0; }
       else if (visible) size();
     };
     const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !visible) stop = window.scrollY < lastScroll ? 3 : 0;
       visible = entry.isIntersecting;
       if (visible) size();
       else { cancelAnimationFrame(frame); frame = 0; }
@@ -55,9 +78,13 @@ export function CouponScrollPath() {
     section.closest('main')?.querySelectorAll(':scope > *').forEach(element => resize.observe(element));
     size();
     addEventListener('scroll', scroll, { passive: true });
+    addEventListener('wheel', wheel, { passive: true });
+    addEventListener('touchstart', otherInput, { passive: true });
+    addEventListener('keydown', otherInput);
+    addEventListener('pointerdown', otherInput, { passive: true });
     addEventListener('resize', size, { passive: true });
     document.addEventListener('visibilitychange', visibility);
-    return () => { observer.disconnect(); resize.disconnect(); removeEventListener('scroll', scroll); removeEventListener('resize', size); document.removeEventListener('visibilitychange', visibility); cancelAnimationFrame(frame); };
+    return () => { observer.disconnect(); resize.disconnect(); removeEventListener('scroll', scroll); removeEventListener('wheel', wheel); removeEventListener('touchstart', otherInput); removeEventListener('keydown', otherInput); removeEventListener('pointerdown', otherInput); removeEventListener('resize', size); document.removeEventListener('visibilitychange', visibility); cancelAnimationFrame(frame); };
   }, []);
   return <svg ref={svg} aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
     <path ref={path} fill="none" stroke="hsl(var(--foreground) / .45)" strokeWidth="1" strokeDasharray="2 5" />
