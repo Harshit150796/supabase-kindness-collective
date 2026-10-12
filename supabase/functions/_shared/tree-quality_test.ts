@@ -103,9 +103,19 @@ Deno.test('the dollar section promises 100%, fills its number and keeps the jour
   // The Promise headline sits above the number, and its underline redraws like the concept.
   assert(transparency.indexOf('data-promise-underline') < transparency.indexOf('<FillingNumber />'));
   assert(transparency.includes('Every dollar you give reaches a family.') && transparency.includes('All of it.') && transparency.includes('repeat: Infinity'));
-  assert(transparency.includes('bg-background'));
+  assert(transparency.includes('transparency-band') && transparency.includes('tracking-normal'));
+  assert(!transparency.includes('text-[clamp('));
+  assert(transparency.includes("document.addEventListener('visibilitychange', sync)") && transparency.includes('underline.stop()'));
   assert(!/95¢|95%|Platform operations|3¢/.test(transparency));
   assert(transparency.includes('data-journey-line'));
+});
+Deno.test('journey scroll frames interpolate cached geometry without layout or SVG readback', async () => {
+  const journey = await Deno.readTextFile('src/components/landing/CouponScrollPath.tsx');
+  const frame = journey.slice(journey.indexOf('const update ='), journey.indexOf('const size ='));
+  assert(!/getBoundingClientRect|getTotalLength|getPointAtLength|offsetWidth|offsetTop/.test(frame));
+  assert(frame.includes('ticket.style.transform') && frame.includes('document.hidden'));
+  assert(journey.includes('new IntersectionObserver') && journey.includes('new ResizeObserver'));
+  assert(journey.includes("querySelectorAll(':scope > *')"));
 });
 Deno.test('homepage sections retain their approved motion entry points', async () => {
   const story = await Deno.readTextFile('src/components/landing/WhatWeDo.tsx');
