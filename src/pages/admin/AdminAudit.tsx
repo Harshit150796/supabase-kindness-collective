@@ -15,7 +15,7 @@ export default function AdminAudit() {
   const [action, setAction] = useState('');
   const [open, setOpen] = useState<any>(null);
   const team = useQuery({ queryKey: ['adm-team'], queryFn: () => rpc<any[]>('admin_list_team') });
-  const who = (u: string) => team.data?.find((t) => t.user_id === u)?.full_name || team.data?.find((t) => t.user_id === u)?.email ?? (u ? u.slice(0, 8) : 'system');
+  const who = (u: string) => team.data?.find((t) => t.user_id === u)?.full_name || team.data?.find((t) => t.user_id === u)?.email || (u ? u.slice(0, 8) : 'system');
   const q = useQuery({
     queryKey: ['adm-audit', page, action],
     queryFn: async () => {
@@ -45,7 +45,7 @@ export default function AdminAudit() {
             {open.table_name === 'fundraisers' && <Link className="mt-3 inline-block text-sm text-primary" to={`/admin/fundraisers?id=${open.record_id}`}>Open fundraiser</Link>}
             <details className="mt-4"><summary className="cursor-pointer text-sm font-medium">Raw before and after</summary><div className="mt-4 grid gap-3 md:grid-cols-2">
               {(['before', 'after'] as const).map((k) => <div key={k}><p className="mb-1 text-xs font-medium capitalize">{k}</p><pre className="max-h-[60vh] overflow-auto rounded bg-muted p-2 text-[11px]">{open[k] ? JSON.stringify(open[k], null, 2) : '—'}</pre></div>)}
-            </div></>}
+            </div></details></>}
         </SheetContent>
       </Sheet>
     </DashboardLayout>
