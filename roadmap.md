@@ -1,5 +1,9 @@
 # Roadmap
 
+## Visible journey travel (Oct 12)
+- [x] Add visible line travel between selected icon stops, preserving gesture grouping and exact landing.
+- [x] Verified visible intermediate travel and exact forward/reverse landing at 899×514, 390×844 and 1280×1800; momentum holds, quick retargeting and long pauses pass, alignment error ≤0.5px, no page errors. 137 Deno + 3 Bun tests pass; automatic build OK. Nothing published or deployed.
+
 ## Four-stop green coupon journey (Oct 12)
 - [x] Replace interpolation with discrete icon stops and one advance per wheel gesture; keep normal page scrolling and other-input checkpoints.
 - [x] Verified real wheel arrival and forward stops 1→2→3→4, reverse 4→3→2→1, momentum hold, resize alignment and keyboard checkpoints in Chromium; icon alignment within 0.25px, no page errors, 135 tests pass and automatic build OK. Nothing published or deployed.

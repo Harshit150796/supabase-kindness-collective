@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { JOURNEY_GESTURE_GAP, journeyScrollStop, journeyScrollProgress, journeyScrollRange, journeyWheelStop, type JourneyPoint } from '@/lib/journeyScrollTiming';
+import { journeyTravelPoint, journeyTravelPosition, journeyScrollStop, journeyScrollProgress, journeyScrollRange, journeyWheelStop, type JourneyPoint } from '@/lib/journeyScrollTiming';
 
 export function CouponScrollPath() {
   const svg = useRef<SVGSVGElement>(null);
@@ -11,20 +11,29 @@ export function CouponScrollPath() {
     if (!node || !curve || !ticket || !section) return;
     let frame = 0, visible = false, start = 0, end = 1;
     let stop = 0, wheelDriven = false, lastWheel = -Infinity, lastScroll = window.scrollY;
+    let position = 0, travelFrom = 0, travelTo = 0, travelStarted = 0;
     let points: JourneyPoint[] = [];
-    const update = () => {
+    const update = (now: number) => {
       frame = 0;
       if (!visible || document.hidden) return;
-      const point = points[stop];
+      if (stop !== travelTo) {
+        position = journeyTravelPosition(travelFrom, travelTo, now - travelStarted);
+        travelFrom = position;
+        travelTo = stop;
+        travelStarted = now;
+      }
+      position = journeyTravelPosition(travelFrom, travelTo, now - travelStarted);
+      const point = journeyTravelPoint(points, position);
       if (!point) return;
       ticket.style.transform = `translate(${point[0]}px, ${point[1]}px)`;
       node.dataset.journeyStop = String(stop + 1);
+      if (position !== travelTo) frame = requestAnimationFrame(update);
     };
+    const settle = () => { position = travelFrom = travelTo = stop; };
     const schedule = () => { if (visible && !document.hidden && !frame) frame = requestAnimationFrame(update); };
     const scroll = () => {
       const y = window.scrollY;
-      if (visible && (!wheelDriven || performance.now() - lastWheel > JOURNEY_GESTURE_GAP * 2)) {
-        wheelDriven = false;
+      if (visible && !wheelDriven) {
         stop = journeyScrollStop(journeyScrollProgress(y, start, end));
       }
       lastScroll = y;
@@ -59,17 +68,18 @@ export function CouponScrollPath() {
       const rect = section.getBoundingClientRect();
       const pageTop = rect.top + window.scrollY;
       ({ start, end } = journeyScrollRange(pageTop + first[1], pageTop + last[1], innerHeight));
+      settle();
       schedule();
     };
     const visibility = () => {
-      if (document.hidden) { cancelAnimationFrame(frame); frame = 0; }
+      if (document.hidden) { cancelAnimationFrame(frame); frame = 0; settle(); }
       else if (visible) size();
     };
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !visible) stop = window.scrollY < lastScroll ? 3 : 0;
+      if (entry.isIntersecting && !visible) { stop = window.scrollY < lastScroll ? 3 : 0; wheelDriven = false; settle(); }
       visible = entry.isIntersecting;
       if (visible) size();
-      else { cancelAnimationFrame(frame); frame = 0; }
+      else { cancelAnimationFrame(frame); frame = 0; settle(); }
     });
     observer.observe(section);
     const resize = new ResizeObserver(size);
