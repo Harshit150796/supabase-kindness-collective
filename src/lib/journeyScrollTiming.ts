@@ -11,9 +11,16 @@ export function journeyScrollProgress(scrollY: number, start: number, end: numbe
 export function journeyScrollPoint(points: readonly JourneyPoint[], progress: number): JourneyPoint | undefined {
   if (!points.length) return;
   if (points.length === 1) return points[0];
-  const position = Math.max(0, Math.min(1, progress)) * (points.length - 1);
-  const index = Math.min(points.length - 2, Math.floor(position));
-  const from = points[index], to = points[index + 1];
-  const fraction = position - index;
-  return [from[0] + (to[0] - from[0]) * fraction, from[1] + (to[1] - from[1]) * fraction];
+  return points[journeyScrollStop(progress, points.length)];
+}
+
+export function journeyScrollStop(progress: number, count = 4) {
+  return Math.min(count - 1, Math.floor(Math.max(0, Math.min(1, progress)) * count));
+}
+
+export const JOURNEY_GESTURE_GAP = 180;
+
+export function journeyWheelStop(stop: number, delta: number, now: number, previousEvent: number) {
+  if (now - previousEvent < JOURNEY_GESTURE_GAP || delta === 0) return stop;
+  return Math.max(0, Math.min(3, stop + Math.sign(delta)));
 }
