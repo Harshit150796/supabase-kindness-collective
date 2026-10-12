@@ -17,7 +17,7 @@ function RecordDetails({ type, record }: { type: 'donor' | 'user'; record: any }
   const title = record.full_name || record.display_name || 'Guest donor';
   const [kind, setKind] = useState('donations');
   const [page, setPage] = useState(0);
-  const q = useQuery({ queryKey: ['adm-record-history', user?.id, type, key, kind, page], queryFn: () => rpc<{ rows: any[]; total: number }>('admin_record_history', { _type: type, _key: key, _kind: kind, _limit: 25, _offset: page * 25 }) });
+  const q = useQuery({ queryKey: ['adm-record-history', user?.id, type, key, kind, page], enabled: kind !== 'work', queryFn: () => rpc<{ rows: any[]; total: number }>('admin_record_history', { _type: type, _key: key, _kind: kind, _limit: 25, _offset: page * 25 }) });
   return <><SheetHeader><SheetTitle className="pr-6 text-left font-serif text-2xl font-normal">{title}</SheetTitle><p className="break-words text-left text-sm text-muted-foreground">{record.email ?? 'No email recorded'}</p></SheetHeader>
     <div className="my-4 flex flex-wrap gap-3 text-sm"><span>{type === 'donor' ? `${usd(record.total)} given` : `Joined ${fmtDate(record.created_at)}`}</span><span className="text-muted-foreground">{record.donor_id || type === 'user' ? 'Registered account' : 'Guest · no account'}</span></div>
     <Tabs value={kind} onValueChange={(v) => { setKind(v); setPage(0); }}><TabsList className="h-auto flex-wrap"><TabsTrigger value="donations">Donations</TabsTrigger><TabsTrigger value="sources">Outside coupons</TabsTrigger>{type === 'user' && <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>}<TabsTrigger value="work">Notes & follow-ups</TabsTrigger></TabsList></Tabs>

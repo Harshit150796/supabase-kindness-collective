@@ -36,7 +36,7 @@ export default function AdminUsers() {
         <div className="relative w-full max-w-sm"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input className="h-9 pl-8" placeholder="Search email or name" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
         <Select value={role} onValueChange={(v) => { setRole(v); setPage(0); }}><SelectTrigger className="h-9 w-40"><SelectValue /></SelectTrigger><SelectContent>{['all', 'donor', 'recipient', 'admin', 'staff', 'viewer'].map((x) => <SelectItem key={x} value={x} className="capitalize">{x === 'all' ? 'All roles' : x}</SelectItem>)}</SelectContent></Select>
       </div>
-      <DataTable columns={cols} rows={q.data} total={Number(q.data?.[0]?.total_count ?? 0)} loading={q.isLoading} error={q.error ? (q.error as Error).message : null} onRetry={() => q.refetch()} page={page} pageSize={PAGE} onPage={setPage} onRowClick={setSelected} rowKey={(r) => r.user_id} empty="No users match." />
+      <DataTable columns={cols} rows={q.data} total={Number(q.data?.[0]?.total_count ?? 0)} loading={q.isLoading} error={q.error ? (q.error as Error).message : null} onRetry={() => q.refetch()} page={page} pageSize={PAGE} onPage={setPage} onRowClick={(r: Row) => setSelected(r)} rowKey={(r) => r.user_id} empty="No users match." />
       <AdminRecordDrawer type="user" record={selected} onClose={() => setSelected(null)} />
     </DashboardLayout>
   );

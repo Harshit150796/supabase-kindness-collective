@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -21,7 +21,7 @@ const PRIORITIES = ['urgent', 'high', 'medium', 'low'] as const;
 const PAGE = 50;
 const LINKS: Record<string, (id: string) => string> = {
   fundraiser: (id) => `/admin/fundraisers?id=${id}`, donation: (id) => `/admin/donations?id=${id}`, report: () => '/admin/moderation',
-  application: () => '/admin/verifications', verification: () => '/admin/verifications', donor: (id) => `/admin/donors?q=${id}`,
+  application: () => '/admin/verifications', verification: () => '/admin/verifications', donor: (id) => `/admin/donors?record=${encodeURIComponent(id)}`, user: (id) => `/admin/users?id=${id}`, contact: (id) => `/admin/contact?id=${id}`, partner: (id) => `/admin/partners?id=${id}`,
 };
 const today = () => new Date().toISOString().slice(0, 10);
 const isOverdue = (t: any) => t.status !== 'done' && t.due_date && t.due_date < today();
@@ -31,23 +31,27 @@ export default function AdminTasks() {
   const { canWrite } = useTeamRole();
   const qc = useQueryClient();
   const [params, setParams] = useSearchParams();
-  const [view, setView] = useState<'list' | 'board'>('list');
-  const [scope, setScope] = useState<'open' | 'mine' | 'overdue' | 'all'>('open');
+  const [view, setView] = useState<'list' | 'board'>(params.get('view') === 'board' ? 'board' : 'list');
+  const [scope, setScope] = useState<'open' | 'mine' | 'overdue' | 'all'>((['open', 'mine', 'overdue', 'all'].includes(params.get('scope') ?? '') ? params.get('scope') : 'open') as 'open' | 'mine' | 'overdue' | 'all');
   const [page, setPage] = useState(0);
   const [editing, setEditing] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { setEditing(null); }, [user?.id]);
+  useEffect(() => { setParams((p) => { p.set('scope', scope); p.set('view', view); return p; }, { replace: true }); }, [scope, view]);
+  useEffect(() => { const id = params.get('id'); if (!id) return; let active = true; sb.from('admin_tasks').select('*').eq('id', id).maybeSingle().then(({ data }: any) => { if (active) setEditing(data); }); return () => { active = false; }; }, [params.get('id'), user?.id]);
 
   const team = useQuery({ queryKey: ['adm-team'], queryFn: () => rpc<any[]>('admin_list_team') });
   const name = (uid?: string | null) => { const m = team.data?.find((t) => t.user_id === uid); return m ? (m.full_name || m.email) : uid ? 'Unknown' : 'Unassigned'; };
 
   const q = useQuery({
-    queryKey: ['adm-tasks', scope, page, view],
+    queryKey: ['adm-tasks', user?.id, scope, page, view],
     queryFn: async () => {
       let b = sb.from('admin_tasks').select('*', { count: 'exact' });
       if (scope === 'open') b = b.neq('status', 'done');
-      if (scope === 'mine') b = b.eq('assignee_id', user!.id).neq('status', 'done');
+      if (scope === 'mine') b = b.eq('assignee_id', user?.id).neq('status', 'done');
       if (scope === 'overdue') b = b.neq('status', 'done').lt('due_date', today());
       const { data, error, count } = await b.order('due_date', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false })
-        .range(view === 'board' ? 0 : page * PAGE, view === 'board' ? 299 : page * PAGE + PAGE - 1);
+        .range(page * PAGE, page * PAGE + PAGE - 1);
       if (error) throw error;
       const rank = (p: string) => PRIORITIES.indexOf(p as any);
       return { rows: (data ?? []).sort((a: any, b: any) => rank(a.priority) - rank(b.priority)), total: count ?? 0 };
@@ -60,13 +64,14 @@ export default function AdminTasks() {
     if (!t.title?.trim()) return toast({ title: 'Title is required', variant: 'destructive' });
     const row = { title: t.title.trim().slice(0, 200), description: t.description || null, priority: t.priority, status: t.status, due_date: t.due_date || null, assignee_id: t.assignee_id || null,
       linked_type: t.linked_type || null, linked_id: t.linked_id || null, completed_at: t.status === 'done' ? (t.completed_at ?? new Date().toISOString()) : null };
-    const { error } = t.id ? await sb.from('admin_tasks').update(row).eq('id', t.id) : await sb.from('admin_tasks').insert({ ...row, created_by: user!.id });
-    if (error) return toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
-    toast({ title: t.id ? 'Task updated' : 'Task created' }); setEditing(null); refresh();
+    setSaving(true);
+    try { await rpc('admin_task_save', { _id: t.id ?? null, _patch: row }); toast({ title: t.id ? 'Task updated' : 'Task created' }); setEditing(null); refresh(); }
+    catch (e) { toast({ title: 'Save failed', description: (e as Error).message, variant: 'destructive' }); }
+    finally { setSaving(false); }
   };
   const move = async (t: any, status: string) => {
-    const { error } = await sb.from('admin_tasks').update({ status, completed_at: status === 'done' ? new Date().toISOString() : null }).eq('id', t.id);
-    if (error) toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); else refresh();
+    try { await rpc('admin_task_save', { _id: t.id, _patch: { status } }); refresh(); }
+    catch (e) { toast({ title: 'Update failed', description: (e as Error).message, variant: 'destructive' }); }
   };
 
   const cols: Column<any>[] = [
@@ -97,7 +102,7 @@ export default function AdminTasks() {
         <DataTable columns={cols} rows={q.data?.rows} total={q.data?.total} loading={q.isLoading} error={q.error ? (q.error as Error).message : null} onRetry={() => q.refetch()}
           page={page} pageSize={PAGE} onPage={setPage} rowKey={(r) => r.id} onRowClick={openTask} empty="No tasks here." rowClassName={(r) => isOverdue(r) ? 'bg-destructive/5' : undefined} />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="space-y-3"><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {STATUSES.map((s) => {
             const items = (q.data?.rows ?? []).filter((t: any) => t.status === s);
             return (
@@ -115,7 +120,7 @@ export default function AdminTasks() {
               </div>
             );
           })}
-        </div>
+        </div><div className="flex items-center justify-end gap-2 text-xs text-muted-foreground"><span>Page {page + 1} of {Math.max(1, Math.ceil((q.data?.total ?? 0) / PAGE))}</span><Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={(page + 1) * PAGE >= (q.data?.total ?? 0)} onClick={() => setPage(page + 1)}>Next</Button></div></div>
       )}
 
       <Sheet open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
@@ -134,7 +139,7 @@ export default function AdminTasks() {
                 <div><Label className="text-xs">Record ID / email</Label><Input disabled={!canWrite || !editing.linked_type} value={editing.linked_id ?? ''} onChange={(e) => setEditing({ ...editing, linked_id: e.target.value })} /></div>
               </div>
               {editing.linked_type && editing.linked_id && <a className="text-sm text-primary" href={LINKS[editing.linked_type]?.(editing.linked_id)}>Open linked record</a>}
-              {canWrite && <div className="flex gap-2"><Button size="sm" onClick={save}>Save</Button><Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancel</Button></div>}
+              {canWrite && <div className="flex gap-2"><Button size="sm" disabled={saving} onClick={save}>{saving ? 'Saving…' : 'Save'}</Button><Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancel</Button></div>}
               {editing.id && <TaskComments taskId={editing.id} canWrite={canWrite} name={name} />}
               {editing.created_at && <p className="text-xs text-muted-foreground">Created {fmtDate(editing.created_at)}{editing.source_key ? ' automatically' : ''}</p>}
             </div>
@@ -151,9 +156,8 @@ function TaskComments({ taskId, canWrite, name }: { taskId: string; canWrite: bo
   const q = useQuery({ queryKey: ['adm-task-c', taskId], queryFn: async () => (await sb.from('admin_task_comments').select('*').eq('task_id', taskId).order('created_at')).data ?? [] });
   const add = async () => {
     if (!body.trim()) return;
-    const { error } = await sb.from('admin_task_comments').insert({ task_id: taskId, author_id: user!.id, body: body.trim().slice(0, 4000) });
-    if (error) return toast({ title: 'Comment failed', description: error.message, variant: 'destructive' });
-    setBody(''); q.refetch();
+    try { await rpc('admin_task_comment', { _id: taskId, _body: body.trim() }); setBody(''); q.refetch(); }
+    catch (e) { toast({ title: 'Comment failed', description: (e as Error).message, variant: 'destructive' }); }
   };
   return (
     <div className="border-t border-border pt-3">

@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState }
+ from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -15,6 +16,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from '@/hooks/use-toast';
 import { Download, ExternalLink, Search, Images } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { RecordWork } from '@/components/admin/RecordWork';
+import { useAuth } from '@/hooks/useAuth';
 import { FundraiserImagesTab } from '@/components/admin/FundraiserImagesTab';
 import { FundraiserCouponsTab } from '@/components/admin/FundraiserCouponsTab';
 
@@ -24,11 +27,13 @@ const PAGE = 25;
 export default function AdminFundraisers() {
   const [params, setParams] = useSearchParams();
   const [status, setStatus] = useState<string>(params.get('status') ?? 'all');
-  const [q, setQ] = useState('');
+  const [q, setQ] = useState(params.get('q') ?? '');
   const [dq, setDq] = useState('');
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(Number(params.get('page')) || 0);
   const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: 'created_at', dir: 'desc' });
   const openId = params.get('id');
+  useEffect(() => { setStatus(params.get('status') ?? 'all'); }, [params.get('status')]);
+  useEffect(() => { setParams((p) => { p.set('status', status); p.set('page', String(page)); return p; }, { replace: true }); }, [status, page]);
   useEffect(() => { const t = setTimeout(() => { setDq(q); setPage(0); }, 300); return () => clearTimeout(t); }, [q]);
 
   const query = useQuery({
@@ -61,7 +66,6 @@ export default function AdminFundraisers() {
     <DashboardLayout>
       <PageHeader title="Fundraisers" description="Approve, edit, pause, feature and archive campaigns. Totals shown are computed from completed donations."
         actions={<>
-          <Button variant="outline" size="sm" asChild><Link to="/admin/fundraisers/manage"><Images className="mr-1.5 h-4 w-4" />Images & legacy editor</Link></Button>
           <Button variant="outline" size="sm" onClick={exportCsv}><Download className="mr-1.5 h-4 w-4" />CSV</Button>
         </>} />
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -88,11 +92,18 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
   const [typed, setTyped] = useState('');
   const [edit, setEdit] = useState<any>(null);
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState('overview');
-  useEffect(() => { setTab('overview'); }, [id]);
+  const { user } = useAuth();
+  const [params, setParams] = useSearchParams();
+  const [tab, setTab] = useState(params.get('tab') ?? 'overview');
+  const [featureOrder, setFeatureOrder] = useState('');
+  const couponDirty = useRef(false);
+  const changeTab = (t: string) => { if (couponDirty.current && !window.confirm('Discard unsaved coupon changes?')) return; couponDirty.current = false; setTab(t); setParams((p) => { p.set('tab', t); return p; }, { replace: true }); };
+  const close = () => { if ((edit || couponDirty.current) && !window.confirm('Discard unsaved changes?')) return; setEdit(null); couponDirty.current = false; onClose(); };
+  useEffect(() => { setEdit(null); setConfirm(null); setReason(''); couponDirty.current = false; }, [id, user?.id]);
+  useEffect(() => { const guard = (e: BeforeUnloadEvent) => { if (edit || couponDirty.current) { e.preventDefault(); e.returnValue = ''; } }; window.addEventListener('beforeunload', guard); return () => window.removeEventListener('beforeunload', guard); }, [edit]);
 
   const d = useQuery({
-    queryKey: ['adm-fr-detail', id], enabled: !!id,
+    queryKey: ['adm-fr-detail', id, user?.id, isAdmin], enabled: !!id,
     queryFn: async () => {
       const [f, totals, dons, upd, com, team, conv, rep, audit] = await Promise.all([
         sb.from('fundraisers').select('*').eq('id', id).single(),
@@ -110,8 +121,11 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
     },
   });
   const f = d.data?.f;
+  useEffect(() => { setFeatureOrder(f?.featured_order == null ? '' : String(f.featured_order)); }, [f?.id, f?.featured_order]);
+  const organizer = useQuery({ queryKey: ['adm-fr-organizer', id, user?.id], enabled: !!f?.user_id, queryFn: async () => { const { data, error } = await sb.from('profiles').select('full_name,email').eq('user_id', f?.user_id).maybeSingle(); if (error) throw error; return data; } });
 
   const act = async (action: string, extra: Record<string, unknown> = {}) => {
+    if (['approve', 'pause', 'resume', 'restore'].includes(action) && !window.confirm(`${action === 'approve' || action === 'resume' ? 'Make this fundraiser active' : action === 'pause' ? 'Pause this fundraiser' : 'Restore this fundraiser as paused'}?`)) return;
     setBusy(true);
     try {
       await rpc('admin_fundraiser_action', { _id: id, _action: action, ...extra });
@@ -119,7 +133,7 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
         await sb.functions.invoke('fundraiser-actions', { body: { action: 'admin_notify_rejection', fundraiser_id: id, reason: extra._reason } }).catch(() => null);
       }
       toast({ title: `Fundraiser ${action === 'feature' ? 'feature order saved' : action + 'd'}` });
-      qc.invalidateQueries({ queryKey: ['adm-fr'] }); qc.invalidateQueries({ queryKey: ['adm-fr-detail', id] });
+      qc.invalidateQueries({ queryKey: ['adm-fr'] }); qc.invalidateQueries({ queryKey: ['adm-fr-detail', id, user?.id, isAdmin] });
       setConfirm(null); setReason('');
     } catch (e) { toast({ title: 'Action failed', description: (e as Error).message, variant: 'destructive' }); }
     setBusy(false);
@@ -127,7 +141,7 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
 
   const saveEdit = async () => {
     setBusy(true);
-    try { await rpc('admin_update_fundraiser', { _id: id, _patch: edit }); toast({ title: 'Saved' }); setEdit(null); qc.invalidateQueries({ queryKey: ['adm-fr-detail', id] }); qc.invalidateQueries({ queryKey: ['adm-fr'] }); }
+    try { await rpc('admin_update_fundraiser', { _id: id, _patch: edit }); toast({ title: 'Saved' }); setEdit(null); qc.invalidateQueries({ queryKey: ['adm-fr-detail', id, user?.id, isAdmin] }); qc.invalidateQueries({ queryKey: ['adm-fr'] }); }
     catch (e) { toast({ title: 'Save failed', description: (e as Error).message, variant: 'destructive' }); }
     setBusy(false);
   };
@@ -143,14 +157,15 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
     rows.length ? <ul className="divide-y divide-border text-sm">{rows.map((r) => <li key={r.id} className="py-2">{render(r)}</li>)}</ul> : <p className="py-6 text-center text-sm text-muted-foreground">{empty}</p>;
 
   return (
-    <Sheet open={!!id} onOpenChange={(o) => !o && onClose()}>
+    <Sheet open={!!id} onOpenChange={(o) => !o && close()}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
         {!f ? <p className="p-6 text-sm text-muted-foreground">{d.error ? (d.error as Error).message : 'Loading…'}</p> : (
           <>
-            <SheetHeader>
+            <SheetHeader className="sticky top-0 z-10 bg-background pb-3">
               <SheetTitle className="pr-6 text-left font-serif text-2xl font-normal">{f.title}</SheetTitle>
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><StatusBadge value={f.status} /><span>Created {fmtDate(f.created_at)}</span>
                 {f.unique_slug && <a href={`/f/${f.unique_slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary">Public page <ExternalLink className="h-3 w-3" /></a>}</div>
+              <p className="break-words text-left text-xs text-muted-foreground">Organizer: {organizer.data?.full_name || organizer.data?.email || 'Loading…'}</p>
             </SheetHeader>
 
             {canWrite && (
@@ -161,19 +176,20 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
                 {['paused', 'rejected'].includes(f.status) && <Button size="sm" variant="outline" disabled={busy} onClick={() => act('resume')}>Make active</Button>}
                 {f.status !== 'archived' ? <Button size="sm" variant="outline" disabled={busy} onClick={() => setConfirm('archive')}>Archive</Button> : <Button size="sm" variant="outline" disabled={busy} onClick={() => act('restore')}>Restore (as paused)</Button>}
                 <Button size="sm" variant="outline" onClick={() => setEdit({ title: f.title, story: f.story, category: f.category, monthly_goal: f.monthly_goal, country: f.country ?? '', zip_code: f.zip_code ?? '' })}>Edit</Button>
-                <Button size="sm" variant="outline" onClick={() => setTab('images')}><Images className="mr-1.5 h-4 w-4" />Photos</Button>
+                <Button size="sm" variant="outline" onClick={() => changeTab('images')}><Images className="mr-1.5 h-4 w-4" />Photos</Button>
                 {isAdmin && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => { setTyped(''); setConfirm('delete'); }}>Delete permanently…</Button>}
               </div>
             )}
 
-            <Tabs value={tab} onValueChange={setTab} className="mt-5">
+            <Tabs value={tab} onValueChange={changeTab} className="mt-5">
               <TabsList className="flex h-auto flex-wrap justify-start">
-                {['overview', 'coupons', 'images', 'donations', 'updates', 'comments', 'team', 'conversations', 'reports', ...(isAdmin ? ['history'] : [])].map((t) => <TabsTrigger key={t} value={t} className="capitalize">{t}</TabsTrigger>)}
+                {['overview', 'work', 'coupons', 'images', 'donations', 'updates', 'comments', 'team', 'conversations', 'reports', ...(isAdmin ? ['history'] : [])].map((t) => <TabsTrigger key={t} value={t} className="capitalize">{t === 'work' ? 'Notes & follow-ups' : t}</TabsTrigger>)}
               </TabsList>
-              <TabsContent value="coupons"><FundraiserCouponsTab fundraiserId={f.id} canWrite={canWrite} /></TabsContent>
+              <TabsContent value="work"><RecordWork key={f.id} type="fundraiser" recordKey={f.id} title={f.title} /></TabsContent>
+              <TabsContent value="coupons"><FundraiserCouponsTab fundraiserId={f.id} canWrite={canWrite} onDirtyChange={(v) => { couponDirty.current = v; }} /></TabsContent>
               <TabsContent value="images"><FundraiserImagesTab fundraiser={f} canWrite={canWrite} /></TabsContent>
               <TabsContent value="overview" className="space-y-4">
-                <div className="grid grid-cols-3 gap-3 tabular-nums">
+                <div className="grid grid-cols-1 gap-3 tabular-nums sm:grid-cols-3">
                   {[['Raised (completed)', usd(d.data?.totals?.total_raised)], ['Donations', d.data?.totals?.donations_count ?? 0], ['Goal', usd(f.monthly_goal)]].map(([l, v]) => (
                     <div key={l as string} className="rounded-md bg-muted/50 p-3"><p className="text-xs text-muted-foreground">{l}</p><p className="text-lg font-semibold">{v}</p></div>))}
                 </div>
@@ -182,22 +198,22 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
                 {canWrite && (
                   <div className="flex items-end gap-2">
                     <div><Label className="text-xs">Feature order (blank = not featured)</Label>
-                      <Input type="number" min={1} className="h-9 w-40" defaultValue={f.featured_order ?? ''} id="feat" /></div>
-                    <Button size="sm" variant="outline" onClick={() => { const v = (document.getElementById('feat') as HTMLInputElement).value; act('feature', { _order: v ? Number(v) : null }); }}>Save</Button>
+                      <Input type="number" min={1} className="h-9 w-40" value={featureOrder} onChange={(e) => setFeatureOrder(e.target.value)} /></div>
+                    <Button size="sm" variant="outline" disabled={busy || (!!featureOrder && (!Number.isInteger(Number(featureOrder)) || Number(featureOrder) < 1))} onClick={() => act('feature', { _order: featureOrder ? Number(featureOrder) : null })}>Save</Button>
                   </div>
                 )}
                 <p className="whitespace-pre-wrap text-sm text-foreground/80">{f.story?.slice(0, 1500)}</p>
               </TabsContent>
-              <TabsContent value="donations"><List rows={d.data!.dons} empty="No donations linked to this fundraiser." render={(r) => <div><div className="flex justify-between gap-2"><span>{r.is_anonymous ? 'Anonymous' : r.donor_name || 'Guest'} · <StatusBadge value={r.status} /></span><span className="tabular-nums">{usd(r.amount)} · {fmtDate(r.created_at)}</span></div>{['completed', 'succeeded'].includes(r.status) && <div className="mt-2"><FundraiserCouponsTab fundraiserId={f.id} canWrite={canWrite} donationId={r.id} /></div>}</div>} /></TabsContent>
-              <TabsContent value="updates"><List rows={d.data!.upd} empty="No updates posted." render={(r) => <div className="flex justify-between"><span>{r.title}</span><span className="text-xs text-muted-foreground">{fmtDate(r.created_at)}</span></div>} /></TabsContent>
-              <TabsContent value="comments"><List rows={d.data!.com} empty="No comments." render={(r) => <div><p className="text-xs text-muted-foreground">{r.display_name} · {fmtDate(r.created_at)} {r.is_hidden && '· hidden'}</p><p>{r.body}</p></div>} /></TabsContent>
-              <TabsContent value="team"><List rows={d.data!.team} empty="No team members." render={(r) => <div className="flex justify-between"><span className="capitalize">{r.role}{r.invite_email ? ` · invited` : ''}</span><StatusBadge value={r.status} /></div>} /></TabsContent>
+              <TabsContent value="donations"><List rows={d.data?.dons ?? []} empty="No donations linked to this fundraiser." render={(r) => <div><div className="flex justify-between gap-2"><span>{r.is_anonymous ? 'Anonymous' : r.donor_name || 'Guest'} · <StatusBadge value={r.status} /></span><span className="tabular-nums">{usd(r.amount)} · {fmtDate(r.created_at)}</span></div>{['completed', 'succeeded'].includes(r.status) && <div className="mt-2"><FundraiserCouponsTab fundraiserId={f.id} canWrite={canWrite} donationId={r.id} /></div>}</div>} /></TabsContent>
+              <TabsContent value="updates"><List rows={d.data?.upd ?? []} empty="No updates posted." render={(r) => <div className="flex justify-between"><span>{r.title}</span><span className="text-xs text-muted-foreground">{fmtDate(r.created_at)}</span></div>} /></TabsContent>
+              <TabsContent value="comments"><List rows={d.data?.com ?? []} empty="No comments." render={(r) => <div><p className="text-xs text-muted-foreground">{r.display_name} · {fmtDate(r.created_at)} {r.is_hidden && '· hidden'}</p><p>{r.body}</p></div>} /></TabsContent>
+              <TabsContent value="team"><List rows={d.data?.team ?? []} empty="No team members." render={(r) => <div className="flex justify-between"><span className="capitalize">{r.role}{r.invite_email ? ` · invited` : ''}</span><StatusBadge value={r.status} /></div>} /></TabsContent>
               <TabsContent value="conversations">
                 <p className="mb-2 text-xs text-muted-foreground">Metadata only. Message bodies are admin-only and every view is recorded in the audit log.</p>
-                <List rows={d.data!.conv} empty="No conversations." render={(r) => <ConversationRow c={r} canView={isAdmin} />} />
+                <List rows={d.data?.conv ?? []} empty="No conversations." render={(r) => <ConversationRow c={r} canView={isAdmin} />} />
               </TabsContent>
-              <TabsContent value="reports"><List rows={d.data!.rep} empty="No reports." render={(r) => <div className="flex justify-between"><span>{r.reason} · {r.target_type}</span><StatusBadge value={r.status} /></div>} /></TabsContent>
-              <TabsContent value="history"><List rows={d.data!.audit} empty="No admin changes recorded yet." render={(r) => <div className="flex justify-between"><span>{r.action}</span><span className="text-xs text-muted-foreground">{fmtDate(r.created_at)}</span></div>} /></TabsContent>
+              <TabsContent value="reports">{isAdmin && <Button size="sm" variant="outline" asChild><Link to={`/admin/moderation?fundraiser=${f.id}`}>Review reports</Link></Button>}<List rows={d.data?.rep ?? []} empty="No reports." render={(r) => <div className="flex justify-between"><span>{r.reason} · {r.target_type}</span><StatusBadge value={r.status} /></div>} /></TabsContent>
+              <TabsContent value="history"><List rows={d.data?.audit ?? []} empty="No admin changes recorded yet." render={(r) => <div className="flex justify-between"><span>{r.action}</span><span className="text-xs text-muted-foreground">{fmtDate(r.created_at)}</span></div>} /></TabsContent>
             </Tabs>
 
             {edit && (
