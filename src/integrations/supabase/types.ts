@@ -214,6 +214,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_record_notes: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          record_key: string
+          record_type: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string
+          body: string
+          created_at?: string
+          id?: string
+          record_key: string
+          record_type: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          record_key?: string
+          record_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       admin_saved_views: {
         Row: {
           created_at: string
@@ -2919,6 +2949,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_add_record_note: {
+        Args: { _body: string; _key: string; _type: string }
+        Returns: string
+      }
       admin_add_stock_codes: {
         Args: {
           _batch?: Json
@@ -3090,6 +3124,25 @@ export type Database = {
         Args: { _id: string; _used: boolean }
         Returns: undefined
       }
+      admin_moderation_action: {
+        Args: { _id: string; _kind: string; _status: string }
+        Returns: undefined
+      }
+      admin_moderation_list: {
+        Args: {
+          _fundraiser?: string
+          _kind: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _status?: string
+        }
+        Returns: Json
+      }
+      admin_notification_state: {
+        Args: { _ids?: string[]; _mark?: string }
+        Returns: Json
+      }
       admin_outside_coupons: {
         Args: { _fundraiser_id: string }
         Returns: {
@@ -3111,6 +3164,16 @@ export type Database = {
         }[]
       }
       admin_overview_kpis: { Args: never; Returns: Json }
+      admin_personal_view: {
+        Args: {
+          _id?: string
+          _module: string
+          _name?: string
+          _op: string
+          _state?: Json
+        }
+        Returns: Json
+      }
       admin_procurement_groups: {
         Args: never
         Returns: {
@@ -3119,6 +3182,16 @@ export type Database = {
           store_name: string
           value: number
         }[]
+      }
+      admin_record_history: {
+        Args: {
+          _key: string
+          _kind?: string
+          _limit?: number
+          _offset?: number
+          _type: string
+        }
+        Returns: Json
       }
       admin_resplit_coupons: {
         Args: { _brand: string; _donation_id: string; _values: number[] }
@@ -3168,6 +3241,32 @@ export type Database = {
           _user: string
         }
         Returns: undefined
+      }
+      admin_source_donors: {
+        Args: {
+          _fundraiser: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+        }
+        Returns: Json
+      }
+      admin_stock_picker: {
+        Args: {
+          _brand?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+        }
+        Returns: Json
+      }
+      admin_task_comment: {
+        Args: { _body: string; _id: string }
+        Returns: undefined
+      }
+      admin_task_save: {
+        Args: { _id?: string; _patch?: Json }
+        Returns: string
       }
       admin_update_fundraiser: {
         Args: { _id: string; _patch: Json }
