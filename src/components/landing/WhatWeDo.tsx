@@ -11,6 +11,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { Button } from '@/components/ui/button';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { LineReveal, Reveal, useEarlyReveal } from '@/components/ui/editorial-motion';
+import { CARD_DEAL_TIMING, cardDealEligible, cardDealThreshold } from '@/lib/cardDealTiming';
 
 const BLUE = 'hsl(var(--verify))';
 const EMERALD = 'hsl(var(--primary))';
@@ -319,9 +320,8 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
 const DEAL_TONES = ['123 46% 34%', '212 80% 42%', '123 46% 34%', '212 80% 42%']; // logo green / logo blue
 const DEAL_TILT = [-5, 4, -3, 6]; // degrees each card leans in the waiting deck
 const DEAL_DROP = 28; // px the deck sits below the row
-const DEAL_DURATION = 1000;
-const DEAL_STAGGER = 300;
-const DEAL_DELAY = 120;
+const DEAL_DURATION = CARD_DEAL_TIMING.duration;
+const DEAL_STAGGER = CARD_DEAL_TIMING.stagger;
 const DEAL_EASE = 'cubic-bezier(.2,.85,.25,1)';
 
 // The pictures are drawn in white on the coloured cards by pointing their colour tokens at white
@@ -354,19 +354,25 @@ function DesktopDeal({ still }: { still: boolean }) {
     const list = listRef.current;
     if (!list) return;
     const cards = Array.from(list.querySelectorAll<HTMLElement>('[data-deal-card]'));
-    const sides = cards.map((card) => ({
-      face: card.querySelector<HTMLElement>('[data-deal-face]')!,
-      back: card.querySelector<HTMLElement>('[data-deal-back]')!,
-    }));
+    const sides = cards.flatMap((card) => {
+      const face = card.querySelector<HTMLElement>('[data-deal-face]');
+      const back = card.querySelector<HTMLElement>('[data-deal-back]');
+      return face && back ? [{ face, back }] : [];
+    });
+    if (sides.length !== cards.length) return;
     let state: 'stacked' | 'dealing' | 'dealt' = 'dealt';
     let running: Animation[] = [];
+    let hold: ReturnType<typeof setTimeout> | undefined;
+    let eligible = false;
+    let onScreen = false;
+    const clearHold = () => { clearTimeout(hold); hold = undefined; };
 
     // One layout read per deal or resize: how far each card sits from the middle of the row.
     const offsets = () => {
       const step = (cards[0]?.offsetWidth ?? 0) + (parseFloat(getComputedStyle(list).columnGap) || 0);
       return cards.map((_, index) => (1.5 - index) * step);
     };
-    const stop = () => { running.forEach((animation) => animation.cancel()); running = []; };
+    const stop = () => { clearHold(); running.forEach((animation) => animation.cancel()); running = []; };
     const showDealt = () => {
       stop();
       sides.forEach(({ face, back }) => { face.style.transform = ''; back.style.transform = ''; });
@@ -393,7 +399,7 @@ function DesktopDeal({ still }: { still: boolean }) {
         element.style.transform = side === 'back' ? dealPose(0, index, 'back', true) : '';
         return element.animate(
           [{ transform: dealPose(dx[index], index, side, false) }, { transform: dealPose(0, index, side, true) }],
-          { duration: DEAL_DURATION, delay: DEAL_DELAY + index * DEAL_STAGGER, easing: DEAL_EASE, fill: 'backwards' },
+          { duration: DEAL_DURATION, delay: index * DEAL_STAGGER, easing: DEAL_EASE, fill: 'backwards' },
         );
       }));
       const batch = running;
@@ -405,34 +411,50 @@ function DesktopDeal({ still }: { still: boolean }) {
     if (still) { showDealt(); return; }
     showStacked();
 
-    // Deal once the row's top is a little above the bottom fifth of the screen.
-    const trigger = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && state === 'stacked') deal();
-    }, { rootMargin: '0px 0px -20% 0px' });
-    // Settle the cards whenever the row is fully off screen: re-stacked below the screen (ready to
-    // deal again on the way down), dealt above it (scrolled past, deep link or restored scroll).
-    const settleOffScreen = (entry: IntersectionObserverEntry) => {
-      const box = entry.boundingClientRect;
-      if (box.height === 0) { if (state === 'dealing') running.forEach((animation) => animation.finish()); return; }
-      if (box.top >= window.innerHeight) { if (state !== 'stacked') showStacked(); }
-      else if (box.bottom <= 0) {
-        if (state === 'dealing') running.forEach((animation) => animation.finish());
-        else if (state === 'stacked') showDealt();
+    const sync = () => {
+      if (state === 'dealing') {
+        running.forEach((animation) => {
+          if (animation.playState === 'finished') return;
+          if (!onScreen || document.hidden) animation.pause();
+          else if (animation.playState === 'paused') animation.play();
+        });
       }
+      if (state !== 'stacked' || !eligible || document.hidden) { clearHold(); return; }
+      if (hold === undefined) hold = setTimeout(() => {
+        hold = undefined;
+        if (state === 'stacked' && eligible && !document.hidden) deal();
+      }, CARD_DEAL_TIMING.hold);
     };
-    // `presence` sees the row leave the screen; `approach` (a band a third of a screen above and
-    // below) catches jumps such as Home/End, where the row skips from one side to the other.
-    const presence = new IntersectionObserver(([entry]) => { if (!entry.isIntersecting) settleOffScreen(entry); });
-    const approach = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) settleOffScreen(entry); }, { rootMargin: '33% 0px 33% 0px' });
+    let trigger: IntersectionObserver | undefined;
+    const observe = () => {
+      trigger?.disconnect();
+      clearHold();
+      eligible = false;
+      trigger = new IntersectionObserver(([entry]) => {
+        const box = entry.boundingClientRect;
+        onScreen = entry.isIntersecting && entry.intersectionRect.height > 0;
+        eligible = onScreen && cardDealEligible(entry.intersectionRect.height, box.height, window.innerHeight);
+        if (!onScreen && box.height > 0) {
+          if (box.top >= window.innerHeight && state !== 'stacked') showStacked();
+          else if (box.bottom <= 0 && state === 'stacked') showDealt();
+        }
+        sync();
+      }, { threshold: [0, cardDealThreshold(list.offsetHeight, window.innerHeight), 1] });
+      trigger.observe(list);
+    };
     const resize = new ResizeObserver(() => {
       if (state === 'stacked') showStacked();
-      else if (state === 'dealing') running.forEach((animation) => animation.finish());
+      observe();
     });
-    trigger.observe(list);
-    presence.observe(list);
-    approach.observe(list);
+    observe();
     resize.observe(list);
-    return () => { trigger.disconnect(); presence.disconnect(); approach.disconnect(); resize.disconnect(); stop(); };
+    window.addEventListener('resize', observe);
+    document.addEventListener('visibilitychange', sync);
+    return () => {
+      trigger?.disconnect(); resize.disconnect(); stop();
+      window.removeEventListener('resize', observe);
+      document.removeEventListener('visibilitychange', sync);
+    };
   }, [still]);
 
   return (
