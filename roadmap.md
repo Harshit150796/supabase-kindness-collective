@@ -2,7 +2,7 @@
 
 ## Four-stop green coupon journey (Oct 12)
 - [x] Replace interpolation with discrete icon stops and one advance per wheel gesture; keep normal page scrolling and other-input checkpoints.
-- [ ] Verify forward/reverse gestures, momentum, alignment, resizing and focused tests; check automatic build. Do not publish or deploy.
+- [x] Verified real wheel arrival and forward stops 1→2→3→4, reverse 4→3→2→1, momentum hold, resize alignment and keyboard checkpoints in Chromium; icon alignment within 0.25px, no page errors, 135 tests pass and automatic build OK. Nothing published or deployed.
 
 ## Scroll-timed coupon journey (Oct 12)
 - [x] Anchor travel to first/last icons and give each of three transitions equal scroll progress; preserve design and direct reverse movement.
