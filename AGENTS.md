@@ -1,4 +1,4 @@
-# Project Architecture Rules
+# Architecture Rules
 - Scoped rules: tree/opening/motion in src/components/landing/AGENTS.md, admin portal in src/pages/admin/AGENTS.md, navigation/auth in src/components/navigation/AGENTS.md. Read the matching file before changing that area.
 
 ## Design System Rules
