@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
@@ -26,6 +26,7 @@ export function RecordWork({ type, recordKey, title }: { type: string; recordKey
   const [assignee, setAssignee] = useState('none');
   const [due, setDue] = useState('');
   const [busy, setBusy] = useState(false);
+  useEffect(() => { setBody(''); setPage(0); setTaskPage(0); setOpen(false); setTaskTitle(''); setDue(''); setAssignee('none'); }, [user?.id, type, recordKey]);
   const team = useQuery({ queryKey: ['adm-team', user?.id], queryFn: () => rpc<any[]>('admin_list_team') });
   const author = (id: string) => team.data?.find((t) => t.user_id === id)?.full_name || 'Team member';
   const notes = useQuery({ queryKey: ['adm-notes', user?.id, type, recordKey, page], queryFn: async () => {

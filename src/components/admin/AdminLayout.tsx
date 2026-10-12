@@ -111,10 +111,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     enabled: !!user,
     refetchInterval: 60_000,
     queryFn: async () => {
-      const [{ data: n }, { data: r }] = await Promise.all([
-        sb.from('admin_notifications').select('id,title,link,created_at').order('created_at', { ascending: false }).limit(15),
-        sb.from('admin_notification_reads').select('notification_id').eq('user_id', user?.id).in('notification_id', (await sb.from('admin_notifications').select('id').order('created_at', { ascending: false }).limit(15)).data?.map((x: any) => x.id) ?? []),
-      ]);
+      const { data: n, error: notificationError } = await sb.from('admin_notifications').select('id,title,link,created_at').order('created_at', { ascending: false }).limit(15);
+      if (notificationError) throw notificationError;
+      const { data: r, error: readError } = await sb.from('admin_notification_reads').select('notification_id').eq('user_id', user?.id).in('notification_id', (n ?? []).map((x: any) => x.id));
+      if (readError) throw readError;
       const read = new Set((r ?? []).map((x: any) => x.notification_id));
       return (n ?? []).map((x: any) => ({ ...x, unread: !read.has(x.id) }));
     },

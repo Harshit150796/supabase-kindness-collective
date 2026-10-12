@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useAdminDirtyGuard } from '@/hooks/useAdminDirtyGuard';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, Mail, Plus } from 'lucide-react';
 import { sb, rpc, fmtDate, usd } from '@/lib/adminApi';
@@ -19,7 +21,8 @@ type Outside = {
 type DonorMode = 'existing' | 'new' | 'none';
 
 export function OutsideCoupons({ fundraiserId, canWrite }: { fundraiserId: string; canWrite: boolean }) {
-  const q = useQuery({ queryKey: ['adm-outside', fundraiserId], queryFn: () => rpc<Outside[]>('admin_outside_coupons', { _fundraiser_id: fundraiserId }) });
+  const { user } = useAuth();
+  const q = useQuery({ queryKey: ['adm-outside', user?.id, fundraiserId], queryFn: () => rpc<Outside[]>('admin_outside_coupons', { _fundraiser_id: fundraiserId }) });
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -65,12 +68,13 @@ export function OutsideCoupons({ fundraiserId, canWrite }: { fundraiserId: strin
           ))}
         </ul>
       )}
-      {open && <AddOutsideDialog fundraiserId={fundraiserId} onClose={() => setOpen(false)} onDone={() => { setOpen(false); q.refetch(); }} />}
+      {open && <AddOutsideDialog key={user?.id + fundraiserId} fundraiserId={fundraiserId} onClose={() => setOpen(false)} onDone={() => { setOpen(false); q.refetch(); }} />}
     </div>
   );
 }
 
 function AddOutsideDialog({ fundraiserId, onClose, onDone }: { fundraiserId: string; onClose: () => void; onDone: () => void }) {
+  const { user } = useAuth();
   const [brand, setBrand] = useState('');
   const [fromStock, setFromStock] = useState(false);
   const [stockId, setStockId] = useState('');
@@ -95,17 +99,19 @@ function AddOutsideDialog({ fundraiserId, onClose, onDone }: { fundraiserId: str
   const [stockPage, setStockPage] = useState(0);
   const [selectedDonor, setSelectedDonor] = useState<any>(null);
   const [selectedStock, setSelectedStock] = useState<any>(null);
-  const close = () => { if (!saving && (brand || code || link || source || name || email || stockId) && !window.confirm('Discard this unsaved coupon?')) return; if (!saving) onClose(); };
+  useAdminDirtyGuard(!!(brand || code || pin || link || value || source || name || email || stockId));
+  const close = () => { if (!saving && (brand || code || pin || link || value || source || name || email || stockId) && !window.confirm('Discard this unsaved coupon?')) return; if (!saving) onClose(); };
   useEffect(() => { setStockPage(0); setStockId(''); setSelectedStock(null); }, [brand]);
 
-  const donors = useQuery({ queryKey: ['adm-outside-donors', fundraiserId, donorSearch, donorPage], enabled: mode === 'existing',
+  const donors = useQuery({ queryKey: ['adm-outside-donors', user?.id, fundraiserId, donorSearch, donorPage], enabled: mode === 'existing',
     queryFn: () => rpc<{ rows: any[]; total: number }>('admin_source_donors', { _fundraiser: fundraiserId, _search: donorSearch, _limit: 10, _offset: donorPage * 10 }) });
-  const stock = useQuery({ queryKey: ['adm-outside-stock', brand, stockPage], enabled: fromStock,
+  const stock = useQuery({ queryKey: ['adm-outside-stock', user?.id, brand, stockPage], enabled: fromStock,
     queryFn: () => rpc<{ rows: any[]; total: number }>('admin_stock_picker', { _brand: brand.trim(), _limit: 10, _offset: stockPage * 10 }) });
   const picked = selectedDonor;
   const donorEmail = mode === 'new' ? email.trim() : mode === 'existing' ? picked?.email ?? '' : '';
 
   const save = async () => {
+    if (saving) return;
     setErr(null);
     if (!fromStock && !brand.trim()) return setErr('Choose or type a brand.');
     if (fromStock && !stockId) return setErr('Pick a stock code.');
