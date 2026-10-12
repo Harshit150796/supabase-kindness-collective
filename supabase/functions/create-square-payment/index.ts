@@ -1,9 +1,9 @@
+import { SplitError, describeSplit, encodeSplit, normalizeSplit } from '../_shared/brand-split.ts';
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-interface BrandAllocation { brand: string; brandId: string; percent: number; amount: number }
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -38,11 +38,15 @@ Deno.serve(async (req) => {
     if (typeof sourceId !== "string" || !sourceId || sourceId.length > 500) return json({ error: "Missing payment details." }, 400);
     if (!amt || amt < 5 || amt > 10000) return json({ error: "Invalid donation amount. Must be between $5 and $10,000." }, 400);
 
-    const allocations: BrandAllocation[] = Array.isArray(brandAllocations) && brandAllocations.length > 0
-      ? brandAllocations
-      : brandName ? [{ brand: brandName, brandId: brandId || "", percent: 100, amount: amt }] : [];
-    const isMultiBrand = allocations.length > 1;
-    const brandNames = allocations.map((a) => a.brand).join(", ");
+    // The donor's dollar split, checked again here (each retailer's share becomes one coupon slot).
+    let shares;
+    try {
+      shares = normalizeSplit(amt, brandAllocations, { brand: brandName, brandId });
+    } catch (e) {
+      if (e instanceof SplitError) return json({ error: e.message }, 400);
+      throw e;
+    }
+    const isMultiBrand = shares.length > 1;
 
     const token = (Deno.env.get("SQUARE_ACCESS_TOKEN") ?? "").trim();
     const locationId = (Deno.env.get("SQUARE_LOCATION_ID") ?? "").trim();
@@ -55,10 +59,9 @@ Deno.serve(async (req) => {
       meals_provided: (amt * 2).toString(),
       is_multi_brand: isMultiBrand.toString(),
     };
-    if (allocations[0]?.brand) metadata.brand_name = allocations[0].brand;
-    if (allocations[0]?.brandId) metadata.brand_id = allocations[0].brandId;
-    const allocJson = JSON.stringify(allocations);
-    if (allocations.length > 0 && allocJson.length <= 255) metadata.brand_allocations = allocJson;
+    if (shares[0]?.brand) metadata.brand_name = shares[0].brand;
+    if (shares[0]?.brandId) metadata.brand_id = shares[0].brandId;
+    if (shares.length > 0) metadata.brand_allocations = encodeSplit(shares);
     if (userId) metadata.donor_id = String(userId);
     if (userEmail) metadata.donor_email = String(userEmail);
     if (fundraiserId) metadata.fundraiser_id = String(fundraiserId);
@@ -72,10 +75,10 @@ Deno.serve(async (req) => {
           location_id: locationId,
           reference_id: `donation_${Date.now()}`,
           line_items: [{
-            name: isMultiBrand ? `Multi-Brand Donation (${allocations.length} brands)` : "Donation to Help Families",
+            name: isMultiBrand ? `Donation for families (${shares.length} retailers)` : "Donation to Help Families",
             quantity: "1",
             base_price_money: { amount: Math.round(amt * 100), currency: "USD" },
-            ...(brandNames ? { note: `Via ${brandNames}`.slice(0, 500) } : {}),
+            ...(shares.length ? { note: (isMultiBrand ? `Shared between ${describeSplit(shares)}` : `Gift cards for families, via ${shares[0].brand}`).slice(0, 500) } : {}),
           }],
           metadata,
         },

@@ -1,16 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { SplitError, describeSplit, encodeSplit, normalizeSplit } from '../_shared/brand-split.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface BrandAllocation {
-  brand: string;
-  brandId: string;
-  percent: number;
-  amount: number;
-}
 
 // Square API base URL — sandbox tokens only work against the sandbox host.
 function squareBaseUrl(): string {
@@ -28,29 +23,33 @@ serve(async (req) => {
   try {
     const { amount, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = await req.json();
 
-    // Process brand allocations (multi-brand support)
-    const allocations: BrandAllocation[] = brandAllocations && Array.isArray(brandAllocations) && brandAllocations.length > 0
-      ? brandAllocations
-      : brandName
-        ? [{ brand: brandName, brandId: brandId || '', percent: 100, amount }]
-        : [];
-
-    const brandNames = allocations.map(a => a.brand).join(', ');
-    const isMultiBrand = allocations.length > 1;
-
-    console.log("Creating Square donation checkout:", {
-      amount,
-      brandCount: allocations.length,
-      brandNames,
-      isMultiBrand,
-      userId: userId || 'anonymous',
-      userEmail: userEmail || 'guest',
-    });
-
     // Validate amount
     if (!amount || amount < 5 || amount > 10000) {
       throw new Error("Invalid donation amount. Must be between $5 and $10,000.");
     }
+
+    // The donor's dollar split, checked again here (each retailer's share becomes one coupon slot).
+    let shares;
+    try {
+      shares = normalizeSplit(amount, brandAllocations, { brand: brandName, brandId });
+    } catch (e) {
+      if (e instanceof SplitError) {
+        return new Response(JSON.stringify({ error: e.message }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        });
+      }
+      throw e;
+    }
+    const isMultiBrand = shares.length > 1;
+
+    console.log("Creating Square donation checkout:", {
+      amount,
+      brandCount: shares.length,
+      split: describeSplit(shares),
+      userId: userId || 'anonymous',
+      userEmail: userEmail ? 'provided' : 'guest',
+    });
 
     // Respect the admin on/off switch
     const settingsRes = await fetch(
@@ -88,9 +87,9 @@ serve(async (req) => {
       meals_provided: mealsProvided.toString(),
       is_multi_brand: isMultiBrand.toString(),
     };
-    if (allocations[0]?.brand) metadata.brand_name = allocations[0].brand;
-    if (allocations[0]?.brandId) metadata.brand_id = allocations[0].brandId;
-    if (allocations.length > 0) metadata.brand_allocations = JSON.stringify(allocations);
+    if (shares[0]?.brand) metadata.brand_name = shares[0].brand;
+    if (shares[0]?.brandId) metadata.brand_id = shares[0].brandId;
+    if (shares.length > 0) metadata.brand_allocations = encodeSplit(shares);
     if (userId) metadata.donor_id = userId;
     if (userEmail) metadata.donor_email = userEmail;
     if (fundraiserId) metadata.fundraiser_id = fundraiserId;
@@ -105,16 +104,16 @@ serve(async (req) => {
         line_items: [
           {
             name: isMultiBrand
-              ? `Multi-Brand Donation (${allocations.length} brands)`
+              ? `Donation for families (${shares.length} retailers)`
               : `Donation to Help Families`,
             quantity: "1",
             base_price_money: {
               amount: Math.round(amount * 100), // cents
               currency: "USD",
             },
-            note: isMultiBrand
-              ? `Split across ${allocations.length} brands: ${brandNames}`
-              : `Provides ${mealsProvided} meals for families in need${brandName ? ` via ${brandName}` : ""}`,
+            note: (isMultiBrand
+              ? `Shared between ${describeSplit(shares)}`
+              : shares.length ? `Gift cards for families, via ${shares[0].brand}` : "Gift cards for families in need").slice(0, 500),
           },
         ],
         metadata,

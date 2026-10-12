@@ -115,7 +115,7 @@ Deno.test('homepage sections retain their approved motion entry points', async (
   assert(!story.includes('useScroll') && !story.includes('startIdleMotion'));
   assert(security.includes('initial={{opacity:0,scale:.92,rotate:-4}}'));
   assert(impact.includes('formatter={item.currency ? formatUSD : undefined}'));
-  assert(donation.includes('<Reveal className="mx-auto max-w-3xl"><Card'));
+  assert(donation.includes('<Reveal className="mx-auto max-w-5xl"><div ref={cardRef} data-donate-card'));
   assert(footer.includes('<Reveal className="grid grid-cols-2'));
 });
 Deno.test('all four compact giving stories keep a visible animation loop', async () => {
