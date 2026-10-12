@@ -1,5 +1,10 @@
 # Roadmap
 
+## Every dollar blue-band and neighboring presentation (Oct 12)
+- [ ] Refine section contrast, breakpoint typography and neighboring statement spacing.
+- [ ] Cache journey geometry and suspend invisible recurring work; recalibrate height reservations.
+- [ ] Verify slower-load arrival, smooth scrolling, responsive fit, donation/filter controls, tests and automatic build; do not publish.
+
 ## Harshit's cinematic every-load opening (Oct 9)
 - [ ] Replace visit/skip gates with every-full-homepage opening and cinematic time-of-day artwork.
 - [ ] Start tree assets/module concurrently; suppress poster until fallback; match direct live palette.
