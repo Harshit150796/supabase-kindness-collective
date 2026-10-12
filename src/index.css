@@ -693,13 +693,12 @@ html[data-sky=night] .hero-stage:not([data-scene]) .hero-kicker-word{color:hsl(v
 :root{--site-header-h:4.5rem}
 @media (max-height:500px){:root{--site-header-h:52px}}
 
-/* "Voices in motion" testimonials (TestimonialsSection): two rows of real lines drift in opposite
-   directions, transform only, so the compositor runs them. A hover, focus or press pauses a row; the
-   Pause button and leaving the screen stop both. Loop time comes from each row's measured width. */
+/* "Voices in motion" testimonials (TestimonialsSection): two rows of real lines drift continuously
+   in opposite directions, transform only, so the compositor runs them. Loop time comes from each
+   row's measured width. */
 .voices-row{position:relative;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
 .voices-track{display:flex;width:max-content;will-change:transform;animation:voices-forward var(--voices-loop,60s) linear infinite}
 .voices-row[data-direction="back"] .voices-track{animation-name:voices-back}
-.voices[data-moving="false"] .voices-track,.voices-row:hover .voices-track,.voices-row:focus-within .voices-track,.voices-row:active .voices-track{animation-play-state:paused}
 @keyframes voices-forward{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
 @keyframes voices-back{from{transform:translate3d(-50%,0,0)}to{transform:translate3d(0,0,0)}}
 .voices-cell{display:flex;flex:none;align-items:center}
