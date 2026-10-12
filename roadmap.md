@@ -1,5 +1,9 @@
 # Roadmap
 
+## Scroll-timed coupon journey (Oct 12)
+- [x] Anchor travel to first/last icons and give each of three transitions equal scroll progress; preserve design and direct reverse movement.
+- [x] Verified all four forward/reverse checkpoints and stationary holds after resizing across 899×514, 1280×800, 1920×1080, 390×844 and 768×1024; marker alignment within 5px, no browser page errors. All 132 tests and automatic build pass. Nothing published or deployed.
+
 ## Dealt-card arrival timing (Oct 12)
 - [x] Replace early edge trigger with sustained actual visibility and clearer card beats; preserve artwork and compact layout.
 - [x] Verified sustained visible entry, cancelled brief crossings, off-screen/tab-hidden pause and resume, replay below viewport and mid-deal resize at 1024/1280/1920; compact phone layout unchanged. 129 tests pass, automatic build OK, no browser page errors. Nothing published or deployed.

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { journeyScrollPoint, journeyScrollProgress, journeyScrollRange, type JourneyPoint } from '@/lib/journeyScrollTiming';
 
 export function CouponScrollPath() {
   const svg = useRef<SVGSVGElement>(null);
@@ -8,20 +9,14 @@ export function CouponScrollPath() {
     const node = svg.current, curve = path.current, ticket = marker.current;
     const section = node?.parentElement;
     if (!node || !curve || !ticket || !section) return;
-    let frame = 0, visible = false, midpoint = 0, viewportHeight = innerHeight;
-    let points: number[][] = [], lengths: number[] = [], total = 0;
+    let frame = 0, visible = false, start = 0, end = 1;
+    let points: JourneyPoint[] = [];
     const update = () => {
       frame = 0;
-      if (!visible || document.hidden || !total) return;
-      const progress = Math.max(0, Math.min(1, (viewportHeight * .85 - (midpoint - window.scrollY)) / (viewportHeight * .5)));
-      const distance = total * progress;
-      let i = 1;
-      while (i < lengths.length - 1 && lengths[i] < distance) i++;
-      const from = points[i - 1], to = points[i];
-      if (!from || !to) return;
-      const segment = lengths[i] - lengths[i - 1];
-      const fraction = segment ? (distance - lengths[i - 1]) / segment : 0;
-      ticket.style.transform = `translate(${from[0] + (to[0] - from[0]) * fraction}px, ${from[1] + (to[1] - from[1]) * fraction}px)`;
+      if (!visible || document.hidden) return;
+      const point = journeyScrollPoint(points, journeyScrollProgress(window.scrollY, start, end));
+      if (!point) return;
+      ticket.style.transform = `translate(${point[0]}px, ${point[1]}px)`;
     };
     const scroll = () => { if (visible && !document.hidden && !frame) frame = requestAnimationFrame(update); };
     const size = () => {
@@ -37,14 +32,11 @@ export function CouponScrollPath() {
       });
       node.setAttribute('viewBox', `0 0 ${section.clientWidth} ${section.clientHeight}`);
       curve.setAttribute('d', points.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join(' '));
-      lengths = [0]; total = 0;
-      for (let i = 1; i < points.length; i++) {
-        total += Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
-        lengths.push(total);
-      }
+      const first = points[0], last = points[points.length - 1];
+      if (!first || !last) return;
       const rect = section.getBoundingClientRect();
-      midpoint = rect.top + window.scrollY + rect.height / 2;
-      viewportHeight = innerHeight;
+      const pageTop = rect.top + window.scrollY;
+      ({ start, end } = journeyScrollRange(pageTop + first[1], pageTop + last[1], innerHeight));
       scroll();
     };
     const visibility = () => {
