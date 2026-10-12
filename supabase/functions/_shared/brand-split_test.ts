@@ -7,19 +7,19 @@ import { evenSplit, percentages } from '../../../src/lib/donationSplit.ts';
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 
 Deno.test('the page\'s dollar split is kept exactly, and percentages always add up to 100', () => {
-  const shares = normalizeSplit(25, [
-    { brand: 'Walmart', brandId: 'walmart', percent: 36, amount: 9 },
-    { brand: 'Target', brandId: 'target', percent: 32, amount: 8 },
-    { brand: 'Kroger', brandId: 'kroger', percent: 32, amount: 8 },
+  const shares = normalizeSplit(40, [
+    { brand: 'Walmart', brandId: 'walmart', percent: 35, amount: 14 },
+    { brand: 'Target', brandId: 'target', percent: 33, amount: 13 },
+    { brand: 'Kroger', brandId: 'kroger', percent: 32, amount: 13 },
   ]);
-  assertEquals(shares.map((s) => s.amount), [9, 8, 8]);
-  assertEquals(shares.map((s) => s.percent), [36, 32, 32]);
-  assertEquals(sum(shares.map((s) => s.cents)), 2500);
+  assertEquals(shares.map((s) => s.amount), [14, 13, 13]);
+  assertEquals(sum(shares.map((s) => s.percent)), 100);
+  assertEquals(sum(shares.map((s) => s.cents)), 4000);
 });
 
 Deno.test('every split the donate page can make passes the server check unchanged', () => {
-  for (let total = 5; total <= 500; total += 1) {
-    for (let n = 1; n <= 5 && n * 5 <= total; n++) {
+  for (let total = 10; total <= 500; total += 1) {
+    for (let n = 1; n <= 5 && n * 10 <= total; n++) {
       const dollars = evenSplit(total, n);
       const pct = percentages(dollars);
       const sent = dollars.map((a, i) => ({ brand: `Brand ${i}`, brandId: `brand${i}`, percent: pct[i], amount: a }));
@@ -36,15 +36,16 @@ Deno.test('amounts a few cents off are settled on the largest share; otherwise t
   // Paid $60 but the page said $30/$20: keep the 3:2 proportion of what was actually paid.
   assertEquals(normalizeSplit(60, [{ brand: 'A', amount: 30 }, { brand: 'B', amount: 20 }]).map((s) => s.amount), [36, 24]);
   // Only percentages (older pages): shares come from them, to the cent.
-  assertEquals(normalizeSplit(17.5, [{ brand: 'A', percent: 50 }, { brand: 'B', percent: 50 }]).map((s) => s.amount), [8.75, 8.75]);
+  assertEquals(normalizeSplit(25, [{ brand: 'A', percent: 50 }, { brand: 'B', percent: 50 }]).map((s) => s.amount), [12.5, 12.5]);
   // Nothing usable: an even split.
-  assertEquals(normalizeSplit(10, [{ brand: 'A' }, { brand: 'B' }, { brand: 'C' }]).map((s) => s.cents), [334, 333, 333]);
+  assertEquals(normalizeSplit(40, [{ brand: 'A' }, { brand: 'B' }, { brand: 'C' }]).map((s) => s.cents), [1334, 1333, 1333]);
 });
 
 Deno.test('the checkout refuses splits the page would never send', () => {
   const six = Array.from({ length: 6 }, (_, i) => ({ brand: `B${i}`, amount: 10 }));
   assertThrows(() => normalizeSplit(60, six), SplitError, 'up to 5');
-  assertThrows(() => normalizeSplit(100, [{ brand: 'A', amount: 99.5 }, { brand: 'B', amount: 0.5 }]), SplitError, 'at least $1');
+  assertThrows(() => normalizeSplit(100, [{ brand: 'A', amount: 99.5 }, { brand: 'B', amount: 0.5 }]), SplitError, 'at least $10');
+  assertThrows(() => normalizeSplit(25, [{ brand: 'A', amount: 16 }, { brand: 'B', amount: 9 }]), SplitError, 'at least $10');
   assertThrows(() => normalizeSplit(0, [{ brand: 'A', amount: 0 }]), SplitError);
 });
 
@@ -93,7 +94,7 @@ Deno.test('each retailer gets one coupon slot for its whole share, nothing lost 
 });
 
 Deno.test('a tiny share still gets a percentage of at least 1', () => {
-  const shares = normalizeSplit(500, [{ brand: 'A', amount: 496 }, { brand: 'B', amount: 1 }, { brand: 'C', amount: 1 }, { brand: 'D', amount: 1 }, { brand: 'E', amount: 1 }]);
+  const shares = normalizeSplit(500, [{ brand: 'A', amount: 496 }, { brand: 'B', amount: 1 }, { brand: 'C', amount: 1 }, { brand: 'D', amount: 1 }, { brand: 'E', amount: 1 }], {}, false);
   assertEquals(shares.map((s) => s.percent), [96, 1, 1, 1, 1]);
 });
 

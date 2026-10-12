@@ -4,7 +4,7 @@
  * proportion, so there is never a "must add up to 100%" state to get stuck in. The server checks the
  * same rules again (supabase/functions/_shared/brand-split.ts).
  */
-export const MIN_SHARE = 5;
+export const MIN_SHARE = 10;
 export const MAX_RETAILERS = 5;
 
 /** The smallest donation that still gives every retailer its minimum share. */

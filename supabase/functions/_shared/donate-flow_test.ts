@@ -49,3 +49,13 @@ Deno.test('the donate card follows the design rules', async () => {
   const ledger = await read('src/components/landing/donate/GiftLedger.tsx');
   assert(ledger.includes('bg-primary-20'));
 });
+
+Deno.test('no amount is suggested and the gift panel waits for one', async () => {
+  const flow = await read('src/components/landing/DonationFlow.tsx');
+  assert(flow.includes('useState(0); // 0 until the donor chooses') && !flow.includes('DEFAULT_AMOUNT'));
+  assert(flow.includes('const ledgerOpen = step >= 2 && amount > 0 && count > 0;') && flow.includes('{ledgerOpen && ('));
+  const split = await read('src/lib/donationSplit.ts');
+  assert(split.includes('export const MIN_SHARE = 10;'));
+  const server = await read('supabase/functions/_shared/brand-split.ts');
+  assert(server.includes('export const MIN_SHARE_CENTS = 1000;'));
+});

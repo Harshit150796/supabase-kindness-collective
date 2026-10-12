@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
-import { MAX_RETAILERS, evenSplit, minTotal, percentages, resizeShares, setShare } from '@/lib/donationSplit';
+import { MAX_RETAILERS, MIN_SHARE, evenSplit, minTotal, percentages, resizeShares, setShare } from '@/lib/donationSplit';
 import { BrandSelectorModal } from './BrandSelectorModal';
 import { GiftLedger, StepTrack } from './donate/GiftLedger';
 import { RetailerStep } from './donate/RetailerStep';
@@ -15,9 +15,23 @@ import { AnimatedHeight } from './donate/motion';
 import { PRESET_AMOUNTS, SPRING, amountProblem, type SplitMode } from './donate/tokens';
 import { findRetailer, usd } from './donate/retailers';
 
-const DEFAULT_AMOUNT = 50;
 const MAX_RETRIES = 2;
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
+const LEDGER_WIDTH = 400;
+
+/** True from the laptop breakpoint (lg), where the gift panel sits beside the steps. */
+function useWide() {
+  const query = '(min-width: 1024px)';
+  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const update = () => setWide(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  return wide;
+}
 
 /** The message an edge function sent back with a non-2xx status, when there is one. */
 async function functionError(error: unknown): Promise<string> {
@@ -39,6 +53,7 @@ const stepMotion = {
 
 /**
  * Three steps: retailers, amount (with a dollar split that always adds up), review and pay.
+ * No amount is suggested: the gift panel opens only once the donor has chosen one on step 2.
  * Donors only ever see dollars per retailer; each retailer's share reaches the server as one coupon
  * slot, and the team sizes the real coupons by hand (supabase/functions/_shared/brand-split.ts).
  */
@@ -47,7 +62,7 @@ export function DonationFlow() {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
   const [ids, setIds] = useState<string[]>([]);
-  const [amount, setAmount] = useState(DEFAULT_AMOUNT);
+  const [amount, setAmount] = useState(0); // 0 until the donor chooses
   const [other, setOther] = useState(false);
   const [otherText, setOtherText] = useState('');
   const [raisedNote, setRaisedNote] = useState<string | null>(null);
@@ -59,6 +74,7 @@ export function DonationFlow() {
   const [payError, setPayError] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const wide = useWide();
 
   useEffect(() => {
     supabase
@@ -81,6 +97,7 @@ export function DonationFlow() {
     return sum(custom) === amount ? custom : resizeShares(custom, amount);
   }, [amount, count, custom, mode]);
   const problem = amountProblem(amount, minimum, count);
+  const ledgerOpen = step >= 2 && amount > 0 && count > 0;
 
   // A new set of retailers starts from an even split, and the amount rises if it can no longer
   // give every retailer its minimum.
@@ -89,10 +106,10 @@ export function DonationFlow() {
     setMode('even');
     setCustom([]);
     const min = minTotal(next.length);
-    if (!other && amount < min) {
+    if (!other && amount > 0 && amount < min) {
       const raised = PRESET_AMOUNTS.find((p) => p >= min) ?? min;
       setAmount(raised);
-      setRaisedNote(`Raised to ${usd.format(raised)} so each retailer gets at least $5.`);
+      setRaisedNote(`Raised to ${usd.format(raised)} so each retailer gets at least ${usd.format(MIN_SHARE)}.`);
     } else {
       setRaisedNote(null);
     }
@@ -161,8 +178,8 @@ export function DonationFlow() {
           <Reveal delay={0.1} className="mt-5"><p className="text-lg leading-relaxed text-muted-foreground">Pick retailers, choose an amount, and see exactly where every dollar goes.</p></Reveal>
         </div>
 
-        <Reveal className="mx-auto max-w-5xl"><div ref={cardRef} data-donate-card className="grid scroll-mt-24 overflow-hidden rounded-[1.75rem] bg-card shadow-card-hover lg:grid-cols-[minmax(0,1fr)_minmax(0,25rem)]">
-          <div className="order-2 flex flex-col p-5 sm:p-8 lg:order-1 lg:p-10">
+        <Reveal className="mx-auto max-w-5xl"><div ref={cardRef} data-donate-card className="flex scroll-mt-24 flex-col overflow-hidden rounded-[1.75rem] bg-card shadow-card-hover lg:flex-row">
+          <div className="flex min-w-0 flex-1 flex-col p-5 sm:p-8 lg:p-10">
             <StepTrack step={step} reachable={reachable} onGo={go} />
 
             <AnimatedHeight className="mt-8">
@@ -178,7 +195,7 @@ export function DonationFlow() {
                       otherText={otherText}
                       raisedNote={raisedNote}
                       onPreset={(value) => { setOther(false); setOtherText(''); setAmount(value); setRaisedNote(null); }}
-                      onOther={() => { setOther(true); setOtherText(String(amount)); setRaisedNote(null); }}
+                      onOther={() => { setOther(true); setOtherText(amount ? String(amount) : ''); setRaisedNote(null); }}
                       onOtherText={(text) => { setOtherText(text); setAmount(parseInt(text, 10) || 0); }}
                       shares={shares}
                       mode={mode}
@@ -221,9 +238,29 @@ export function DonationFlow() {
             </div>
           </div>
 
-          <div className="order-1 lg:order-2 lg:flex">
-            <GiftLedger amount={amount} retailers={retailers} shares={shares} step={step} />
-          </div>
+          {/* The gift panel stays closed on step 1 and opens once an amount is chosen. */}
+          <AnimatePresence initial={false}>
+            {ledgerOpen && (
+              <motion.div
+                key="ledger"
+                data-ledger-panel
+                className="order-first shrink-0 overflow-hidden lg:order-last"
+                initial={wide ? { width: 0 } : { height: 0 }}
+                animate={wide ? { width: LEDGER_WIDTH } : { height: 'auto' }}
+                exit={wide ? { width: 0 } : { height: 0 }}
+                transition={SPRING}
+              >
+                <motion.div
+                  className="flex h-full lg:w-[400px]"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1, transition: { duration: 0.35, delay: 0.12 } }}
+                  exit={{ opacity: 0, transition: { duration: 0.12 } }}
+                >
+                  <GiftLedger amount={amount} retailers={retailers} shares={shares} step={step} />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div></Reveal>
 
         <BrandSelectorModal

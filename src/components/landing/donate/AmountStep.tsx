@@ -199,7 +199,7 @@ export function AmountStep(props: AmountStepProps) {
         {problem && otherText ? problem : raisedNote ?? (retailers.length > 1 ? `At least ${usd.format(MIN_SHARE)} for each retailer, so ${usd.format(minimum)} or more.` : `From ${usd.format(minimum)} up to ${usd.format(MAX_AMOUNT)}.`)}
       </p>
 
-      {retailers.length > 1 && <SplitEditor {...props} />}
+      {retailers.length > 1 && amount > 0 && <SplitEditor {...props} />}
     </div>
   );
 }
