@@ -1,17 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { brandRows, couponSlots, describeSplit, parseSplit, type Share } from '../_shared/brand-split.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-square-hmacsha256-signature",
 };
-
-interface BrandAllocation {
-  brand: string;
-  brandId: string;
-  percent: number;
-  amount: number;
-}
 
 function squareBaseUrl(): string {
   const env = (Deno.env.get("SQUARE_ENVIRONMENT") || "production").toLowerCase();
@@ -42,32 +36,6 @@ async function verifySquareSignature(
   );
   const expected = btoa(String.fromCharCode(...new Uint8Array(signed)));
   return expected === signature;
-}
-
-function parseBrandAllocations(metadata: Record<string, string | undefined>): BrandAllocation[] {
-  try {
-    const allocationsJson = metadata.brand_allocations;
-    if (allocationsJson) {
-      const parsed = JSON.parse(allocationsJson);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    }
-  } catch (e) {
-    console.error("Failed to parse brand_allocations:", e);
-  }
-
-  const brandName = metadata.brand_name;
-  if (brandName) {
-    return [{
-      brand: brandName,
-      brandId: metadata.brand_id || '',
-      percent: 100,
-      amount: parseFloat(metadata.amount || '0'),
-    }];
-  }
-
-  return [];
 }
 
 serve(async (req) => {
@@ -208,11 +176,11 @@ async function handleCompletedPayment(supabase: any, accessToken: string, paymen
   const rawDonorId = metadata.donor_id || null;
   const donorId = (rawDonorId && rawDonorId.trim() !== "") ? rawDonorId : null;
 
-  const brandAllocations = parseBrandAllocations(metadata);
-  const isMultiBrand = brandAllocations.length > 1;
+  const shares = parseSplit(metadata, amount);
+  const isMultiBrand = shares.length > 1;
   const brandPartner = isMultiBrand
-    ? brandAllocations.map(a => a.brand).join(', ')
-    : (brandAllocations[0]?.brand || null);
+    ? shares.map(s => s.brand).join(', ')
+    : (shares[0]?.brand || null);
 
   const donorEmail = (metadata.donor_email && metadata.donor_email.trim() !== "")
     ? metadata.donor_email
@@ -221,7 +189,7 @@ async function handleCompletedPayment(supabase: any, accessToken: string, paymen
   const rawFundraiserId = metadata.fundraiser_id || null;
   const fundraiserId = (rawFundraiserId && rawFundraiserId.trim() !== "") ? rawFundraiserId : null;
 
-  console.log(`Processing ${isMultiBrand ? 'multi-brand' : 'single-brand'} Square donation: $${amount}, ${brandAllocations.length} brand(s)`);
+  console.log(`Processing ${isMultiBrand ? 'multi-brand' : 'single-brand'} Square donation: $${amount}, ${shares.length} brand(s)`);
 
   const donationData: Record<string, unknown> = {
     amount,
@@ -270,95 +238,63 @@ async function handleCompletedPayment(supabase: any, accessToken: string, paymen
     }
   }
 
-  if (donationId && brandAllocations.length > 0) {
-    await createCouponsFromMultiBrandDonation(supabase, donationId, donorId, amount, brandAllocations);
+  if (donationId && shares.length > 0) {
+    await createCouponSlots(supabase, donationId, donorId, shares);
   } else if (donationId) {
     console.log(`Skipping coupon creation - no brand allocations for donation ${donationId}`);
   }
 }
 
-// Coupons are created as `pending_procurement` with code = NULL.
-// Admin attaches real gift card codes later via `attach_procured_codes`.
+// Each retailer's share becomes ONE coupon slot holding its whole amount, `pending_procurement`
+// with `code = NULL`. The team turns each slot into real coupons sized for what families need
+// (admin coupon tools); nothing here picks coupon sizes, and no cents are lost to rounding.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function createCouponsFromMultiBrandDonation(
+async function createCouponSlots(
   supabase: any,
   donationId: string,
   donorId: string | null,
-  totalAmount: number,
-  brandAllocations: BrandAllocation[]
+  shares: Share[]
 ) {
-  console.log(`Creating coupons for donation ${donationId}: $${totalAmount} across ${brandAllocations.length} brand(s)`);
+  console.log(`Creating coupon slots for donation ${donationId}: ${describeSplit(shares)}`);
 
+  // Calculate expiry date (6 months from now)
   const expiryDate = new Date();
   expiryDate.setMonth(expiryDate.getMonth() + 6);
-  const expiryDateStr = expiryDate.toISOString().split('T')[0];
+  const expiryDateStr = expiryDate.toISOString().split('T')[0]; // YYYY-MM-DD format
 
-  const allCoupons: Record<string, unknown>[] = [];
-  const brandRecords: Record<string, unknown>[] = [];
-
-  for (const allocation of brandAllocations) {
-    const allocatedAmount = (totalAmount * allocation.percent) / 100;
-    const couponValue = allocatedAmount >= 50 ? 10 : 5;
-    const couponCount = Math.floor(allocatedAmount / couponValue);
-
-    console.log(`Brand ${allocation.brand}: $${allocatedAmount.toFixed(2)} (${allocation.percent}%) → ${couponCount} x $${couponValue} coupon slot(s)`);
-
-    for (let i = 0; i < couponCount; i++) {
-      allCoupons.push({
-        donation_id: donationId,
-        donor_id: donorId,
-        title: `${allocation.brand} Gift`,
-        store_name: allocation.brand,
-        value: couponValue,
-        expected_value: couponValue,
-        code: null,
-        status: 'pending_procurement',
-        expiry_date: expiryDateStr,
-      });
-    }
-
-    brandRecords.push({
-      donation_id: donationId,
-      brand_name: allocation.brand,
-      allocation_percent: allocation.percent,
-      allocated_amount: allocatedAmount,
-    });
-  }
-
-  if (allCoupons.length > 0) {
-    const { error: couponError } = await supabase.from("coupons").insert(allCoupons);
-    if (couponError) {
-      console.error(`Error creating coupons: ${couponError.message}`);
-    } else {
-      console.log(`Created ${allCoupons.length} total coupons across ${brandAllocations.length} brand(s)`);
-
-      // Fire-and-forget: kick off auto-procurement
-      try {
-        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        fetch(`${supabaseUrl}/functions/v1/procure-coupons`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${serviceKey}`,
-          },
-          body: JSON.stringify({ donation_id: donationId }),
-        }).catch((e) => console.error("procure-coupons kickoff failed:", e));
-      } catch (e) {
-        console.error("Could not kick off procure-coupons:", e);
-      }
-    }
+  const slots = couponSlots(shares, donationId, donorId, expiryDateStr);
+  const { error: couponError } = await supabase.from("coupons").insert(slots);
+  if (couponError) {
+    console.error(`Error creating coupons: ${couponError.message}`);
+    // Don't throw - donation is already recorded, this is non-critical
   } else {
-    console.log(`No coupons created - allocated amounts too small`);
+    console.log(`Created ${slots.length} coupon slot(s)`);
+
+    // Fire-and-forget: kick off auto-procurement.
+    // Non-blocking so the webhook responds fast.
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      fetch(`${supabaseUrl}/functions/v1/procure-coupons`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({ donation_id: donationId }),
+      }).catch((e) => console.error("procure-coupons kickoff failed:", e));
+    } catch (e) {
+      console.error("Could not kick off procure-coupons:", e);
+    }
   }
 
-  if (brandRecords.length > 0) {
-    const { error: brandError } = await supabase.from("donation_brands").insert(brandRecords);
-    if (brandError) {
-      console.error(`Error creating donation_brands records: ${brandError.message}`);
-    } else {
-      console.log(`Created ${brandRecords.length} donation_brands record(s)`);
-    }
+  // The exact amount each retailer was given; admin coupon tools split against this total.
+  const { error: brandError } = await supabase.from("donation_brands").insert(brandRows(shares, donationId));
+  if (brandError) {
+    console.error(`Error creating donation_brands records: ${brandError.message}`);
+    // Don't throw - non-critical for tracking
+  } else {
+    console.log(`Created ${shares.length} donation_brands record(s)`);
   }
 }
 

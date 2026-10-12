@@ -30,3 +30,9 @@
 - Homepage section code prefetches one module per idle period after the opening (src/lib/idlePrefetch.ts, skipped on Save-Data); sections still mount on view. Scroll handlers never read layout per frame (use IntersectionObserver).
 - Homepage "Give what people need." steps: laptops (lg+) deal four cards alternating logo green and logo blue (founder-chosen), animating transform only via element.animate with px values and IntersectionObserver triggers, re-stacking only after the row leaves below the viewport; phones keep the compact animated list unchanged.
 - Testimonials are "Voices in motion" (founder-chosen): two rows of lines lifted word for word from each published account (testimonialLines.ts: whole sentences, or a clause or ending marked with an ellipsis, never reworded) drift in opposite directions as compositor-only CSS animations; hover, focus or a press pauses a row, a visible Pause button and leaving the screen stop both; choosing a line shows the full account in a panel sized to the longest one, so nothing below shifts.
+
+## Donate card (DonationFlow + donate/)
+- Three steps (Retailers, Amount, Review) beside a deep-green "Your gift" ledger: the amount, a split bar and each retailer's dollars; on phones the ledger is a strip above the steps that lists retailers only on Review.
+- The split is dollars, never percentages: "Evenly" or "I'll choose" (steppers and typed amounts via setShare, so it always adds up). Presets below $5 x retailers are disabled; changing retailers resets to even.
+- No coupon counts, no coupon sizes, no fake payment icons: Review explains that the team sizes each store's coupons, and shows real Visa/Mastercard/Amex marks.
+

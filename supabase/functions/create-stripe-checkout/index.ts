@@ -1,12 +1,11 @@
 import Stripe from "npm:stripe@14.21.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { SplitError, describeSplit, encodeSplit, normalizeSplit } from '../_shared/brand-split.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-interface BrandAllocation { brand: string; brandId: string; percent: number; amount: number }
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -25,11 +24,15 @@ Deno.serve(async (req) => {
     const amt = Number(amount);
     if (!amt || amt < 5 || amt > 10000) return json({ error: "Invalid donation amount. Must be between $5 and $10,000." }, 400);
 
-    const allocations: BrandAllocation[] = Array.isArray(brandAllocations) && brandAllocations.length > 0
-      ? brandAllocations
-      : brandName ? [{ brand: brandName, brandId: brandId || "", percent: 100, amount: amt }] : [];
-    const isMultiBrand = allocations.length > 1;
-    const brandNames = allocations.map((a) => a.brand).join(", ");
+    // The donor's dollar split, checked again here (each retailer's share becomes one coupon slot).
+    let shares;
+    try {
+      shares = normalizeSplit(amt, brandAllocations, { brand: brandName, brandId });
+    } catch (e) {
+      if (e instanceof SplitError) return json({ error: e.message }, 400);
+      throw e;
+    }
+    const isMultiBrand = shares.length > 1;
 
     const key = Deno.env.get("STRIPE_SECRET_KEY");
     if (!key) return json({ error: "Missing STRIPE_SECRET_KEY." }, 500);
@@ -47,8 +50,8 @@ Deno.serve(async (req) => {
           currency: "usd",
           unit_amount: Math.round(amt * 100),
           product_data: {
-            name: isMultiBrand ? `Multi-Brand Donation (${allocations.length} brands)` : "Donation to Help Families",
-            description: isMultiBrand ? `Split across: ${brandNames}` : (brandName ? `Via ${brandName}` : undefined),
+            name: isMultiBrand ? `Donation for families (${shares.length} retailers)` : "Donation to Help Families",
+            description: isMultiBrand ? `Shared between ${describeSplit(shares)}` : (shares[0] ? `Gift cards for families, via ${shares[0].brand}` : undefined),
           },
         },
       }],
@@ -57,9 +60,9 @@ Deno.serve(async (req) => {
         amount: amt.toString(),
         meals_provided: mealsProvided.toString(),
         is_multi_brand: isMultiBrand.toString(),
-        brand_name: allocations[0]?.brand || "",
-        brand_id: allocations[0]?.brandId || "",
-        brand_allocations: JSON.stringify(allocations).slice(0, 500),
+        brand_name: shares[0]?.brand || "",
+        brand_id: shares[0]?.brandId || "",
+        brand_allocations: shares.length ? encodeSplit(shares) : "",
         donor_id: userId || "",
         donor_email: userEmail || "",
         fundraiser_id: fundraiserId || "",

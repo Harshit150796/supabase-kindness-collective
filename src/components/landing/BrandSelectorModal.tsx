@@ -1,260 +1,157 @@
-import { useState, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { Check, Search } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Check, X } from 'lucide-react';
-import { brandList, categories, type BrandCategory, type BrandInfo } from '@/data/brandLogos';
+import { cn } from '@/lib/utils';
+import { brandList, categories, type BrandCategory } from '@/data/brandLogos';
+import { RetailerLogo } from './donate/GiftLedger';
+import { SPRING } from './donate/tokens';
+import { CATEGORY_LABEL, findRetailer, retailerId } from './donate/retailers';
 
 interface BrandSelectorModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  // Single select mode (legacy)
-  selectedBrand?: string | null;
-  onSelectBrand?: (brandId: string) => void;
-  // Multi-select mode
   selectedBrands?: string[];
   onSelectBrands?: (brandIds: string[]) => void;
   maxBrands?: number;
+  /** Kept for callers; the picker always chooses several. */
   multiSelect?: boolean;
 }
 
-const categoryLabels: Record<BrandCategory, string> = {
+const FILTERS: Record<BrandCategory, string> = {
   all: 'All',
-  grocery: 'Grocery',
-  'food-delivery': 'Food Delivery',
-  retail: 'Retail',
+  grocery: 'Groceries',
+  'food-delivery': 'Meal delivery',
+  retail: 'Essentials',
   coffee: 'Coffee',
   pharmacy: 'Pharmacy',
-  restaurant: 'Restaurant',
+  restaurant: 'Meals out',
 };
 
-export function BrandSelectorModal({ 
-  open, 
-  onOpenChange, 
-  selectedBrand,
-  onSelectBrand,
-  selectedBrands = [],
-  onSelectBrands,
-  maxBrands = 5,
-  multiSelect = false,
-}: BrandSelectorModalProps) {
+const RETAILERS = brandList.map((b) => findRetailer(retailerId(b.name)));
+
+/** Every retailer, searchable and filterable; choices are applied together with the confirm button. */
+export function BrandSelectorModal({ open, onOpenChange, selectedBrands = [], onSelectBrands, maxBrands = 5 }: BrandSelectorModalProps) {
   const [search, setSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState<BrandCategory>('all');
-  // Local state for multi-select before confirming
-  const [localSelected, setLocalSelected] = useState<string[]>(selectedBrands);
+  const [filter, setFilter] = useState<BrandCategory>('all');
+  const [picked, setPicked] = useState<string[]>(selectedBrands);
 
-  // Sync local state when modal opens
-  const handleOpenChange = (isOpen: boolean) => {
-    if (isOpen) {
-      setLocalSelected(selectedBrands);
-    }
-    onOpenChange(isOpen);
-  };
+  // Start from the page's current choices every time the picker opens.
+  useEffect(() => {
+    if (open) { setPicked(selectedBrands); setSearch(''); setFilter('all'); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
-  const filteredBrands = useMemo(() => {
-    return brandList.filter((brand) => {
-      const matchesSearch = brand.name.toLowerCase().includes(search.toLowerCase());
-      const matchesCategory = activeCategory === 'all' || brand.category === activeCategory;
-      return matchesSearch && matchesCategory;
-    });
-  }, [search, activeCategory]);
+  const shown = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return RETAILERS.filter((r) => (filter === 'all' || r.category === filter) && (!q || r.name.toLowerCase().includes(q)));
+  }, [search, filter]);
 
-  const handleSelectBrand = (brand: BrandInfo) => {
-    const brandId = brand.name.toLowerCase().replace(/\s+/g, '');
-    
-    if (multiSelect) {
-      // Multi-select mode
-      const isSelected = localSelected.includes(brandId);
-      if (isSelected) {
-        setLocalSelected(prev => prev.filter(id => id !== brandId));
-      } else if (localSelected.length < maxBrands) {
-        setLocalSelected(prev => [...prev, brandId]);
-      }
-    } else {
-      // Single-select mode (legacy)
-      if (onSelectBrand) {
-        onSelectBrand(brandId);
-      }
-      onOpenChange(false);
-    }
-  };
-
-  const handleConfirmSelection = () => {
-    if (onSelectBrands) {
-      onSelectBrands(localSelected);
-    }
-    onOpenChange(false);
-  };
-
-  const removeBrand = (brandId: string) => {
-    setLocalSelected(prev => prev.filter(id => id !== brandId));
-  };
-
-  // For display purposes
-  const selectedBrandData = !multiSelect 
-    ? brandList.find(b => b.name.toLowerCase().replace(/\s+/g, '') === selectedBrand)
-    : null;
-
-  const localSelectedBrands = brandList.filter(
-    b => localSelected.includes(b.name.toLowerCase().replace(/\s+/g, ''))
-  );
+  const toggle = (id: string) =>
+    setPicked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < maxBrands ? [...prev, id] : prev));
+  const full = picked.length >= maxBrands;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] sm:max-h-[85vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            {multiSelect ? 'Select Brands' : 'Select a Brand'}
-          </DialogTitle>
-          {multiSelect && (
-            <p className="text-sm text-muted-foreground">
-              Choose up to {maxBrands} brands for your donation
-            </p>
-          )}
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[90vh] flex-col gap-5 sm:max-h-[85vh] sm:max-w-2xl sm:rounded-[1.5rem]">
+        <DialogHeader className="shrink-0 text-left">
+          <DialogTitle className="font-display text-3xl font-normal leading-tight">All retailers</DialogTitle>
+          <DialogDescription className="tabular-nums">
+            Choose up to {maxBrands}. {picked.length} of {maxBrands} chosen.
+          </DialogDescription>
         </DialogHeader>
 
-        {/* Selected brands chips (multi-select only) */}
-        {multiSelect && localSelected.length > 0 && (
-          <div className="flex flex-wrap gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
-            {localSelectedBrands.map((brand) => (
-              <div
-                key={brand.name}
-                className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-full border border-border"
-              >
-                <div className="w-5 h-5 rounded bg-white p-0.5 flex items-center justify-center">
-                  <img src={brand.logo} alt={brand.name} className="w-full h-full object-contain" />
-                </div>
-                <span className="text-sm font-medium text-foreground">{brand.name}</span>
-                <button
-                  onClick={() => removeBrand(brand.name.toLowerCase().replace(/\s+/g, ''))}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-            <span className="text-xs text-muted-foreground self-center ml-2">
-              {localSelected.length} of {maxBrands} max
-            </span>
-          </div>
-        )}
-
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search brands..."
+        <label className="flex h-11 shrink-0 items-center gap-2 rounded-xl bg-muted/70 px-3 focus-within:ring-2 focus-within:ring-ring">
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
+            placeholder="Search retailers"
+            aria-label="Search retailers"
+            className="w-full min-w-0 bg-transparent text-[15px] text-foreground outline-none placeholder:text-muted-foreground"
           />
-        </div>
+        </label>
 
-        {/* Category Tabs */}
-        <div className="flex flex-wrap gap-2">
-          {categories.map((category) => (
+        <div role="radiogroup" aria-label="Kind of store" className="-mx-1 flex shrink-0 gap-1.5 overflow-x-auto px-1 pb-1">
+          {categories.map((c) => (
             <button
-              key={category}
-              onClick={() => setActiveCategory(category)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                activeCategory === category
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
+              key={c}
+              type="button"
+              role="radio"
+              aria-checked={filter === c}
+              onClick={() => setFilter(c)}
+              className={cn(
+                'relative shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                filter === c ? 'text-primary-foreground' : 'bg-muted/70 text-muted-foreground hover:text-foreground',
+              )}
             >
-              {categoryLabels[category]}
+              {filter === c && <motion.span layoutId="retailer-filter" className="absolute inset-0 rounded-lg bg-primary" transition={SPRING} />}
+              <span className="relative">{FILTERS[c]}</span>
             </button>
           ))}
         </div>
 
-        {/* Brand Grid */}
-        <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 py-2">
-            {filteredBrands.map((brand) => {
-              const brandId = brand.name.toLowerCase().replace(/\s+/g, '');
-              const isSelected = multiSelect 
-                ? localSelected.includes(brandId)
-                : selectedBrand === brandId;
-              const isDisabled = multiSelect && !isSelected && localSelected.length >= maxBrands;
-              
+        <ScrollArea className="-mx-6 min-h-0 flex-1 px-6">
+          <div className="grid grid-cols-2 gap-2.5 py-1 sm:grid-cols-3">
+            {shown.map((r) => {
+              const selected = picked.includes(r.id);
+              const disabled = full && !selected;
               return (
                 <button
-                  key={brand.name}
-                  onClick={() => handleSelectBrand(brand)}
-                  disabled={isDisabled}
-                  className={`relative p-3 rounded-xl border-2 transition-all hover:shadow-md flex flex-col items-center gap-2 ${
-                    isSelected
-                      ? 'border-primary bg-primary/5'
-                      : isDisabled
-                        ? 'border-border bg-muted/50 opacity-50 cursor-not-allowed'
-                        : 'border-border hover:border-primary/50'
-                  }`}
-                >
-                  {isSelected && (
-                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                      <Check className="w-3 h-3 text-primary-foreground" />
-                    </div>
+                  key={r.id}
+                  type="button"
+                  aria-pressed={selected}
+                  disabled={disabled}
+                  onClick={() => toggle(r.id)}
+                  className={cn(
+                    'relative flex items-center gap-3 rounded-xl p-3 text-left outline-none transition-[background-color,box-shadow,opacity] focus-visible:ring-2 focus-visible:ring-ring active:scale-[.98]',
+                    selected ? 'bg-[hsl(var(--primary-97))] shadow-[inset_0_0_0_2px_hsl(var(--primary))] dark:bg-primary/15' : 'bg-muted/70 hover:bg-muted',
+                    disabled && 'cursor-not-allowed opacity-40',
                   )}
-                  <div className="w-10 h-10 rounded-lg bg-background border border-border/50 flex items-center justify-center p-1.5">
-                    <img
-                      src={brand.logo}
-                      alt={brand.name}
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        const target = e.currentTarget;
-                        target.style.display = 'none';
-                        const fallback = document.createElement('div');
-                        fallback.className = 'w-full h-full rounded flex items-center justify-center text-white font-bold text-sm';
-                        fallback.style.backgroundColor = brand.color;
-                        fallback.textContent = brand.name.charAt(0);
-                        target.parentElement?.appendChild(fallback);
-                      }}
-                    />
-                  </div>
-                  <div className="font-medium text-foreground text-xs text-center leading-tight">
-                    {brand.name}
-                  </div>
+                >
+                  <RetailerLogo retailer={r} className="h-9 w-9 p-1" />
+                  <span className="min-w-0 pr-5">
+                    <span className="block text-sm font-medium leading-snug text-foreground">{r.name}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{CATEGORY_LABEL[r.category]}</span>
+                  </span>
+                  <AnimatePresence>
+                    {selected && (
+                      <motion.span
+                        aria-hidden="true"
+                        className="absolute right-2.5 top-2.5 grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-foreground"
+                        initial={{ scale: 0.3, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.3, opacity: 0, transition: { duration: 0.12 } }}
+                        transition={{ type: 'spring', stiffness: 640, damping: 30 }}
+                      >
+                        <Check className="h-3 w-3" strokeWidth={3} />
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </button>
               );
             })}
           </div>
-          
-          {filteredBrands.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No brands found matching "{search}"
-            </div>
-          )}
+          {shown.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">No retailer matches "{search}". Try another name or the All filter.</p>}
         </ScrollArea>
 
-        {/* Footer */}
-        <div className="pt-4 border-t border-border">
-          {multiSelect ? (
-            <div className="flex gap-3">
-              <Button 
-                variant="outline" 
-                className="flex-1" 
-                onClick={() => onOpenChange(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                className="flex-1" 
-                onClick={handleConfirmSelection}
-                disabled={localSelected.length === 0}
-              >
-                Select {localSelected.length} Brand{localSelected.length !== 1 ? 's' : ''}
-              </Button>
-            </div>
-          ) : selectedBrandData ? (
-            <Button className="w-full" onClick={() => onOpenChange(false)}>
-              Select {selectedBrandData.name}
-            </Button>
-          ) : (
-            <p className="text-center text-sm text-muted-foreground">
-              Choose a brand from the list above
-            </p>
-          )}
+        <div className="flex shrink-0 gap-2.5">
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="h-12 flex-1 rounded-xl bg-muted/70 text-[15px] font-medium text-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => { onSelectBrands?.(picked); onOpenChange(false); }}
+            disabled={picked.length === 0}
+            className="h-12 flex-1 rounded-xl bg-primary text-[15px] font-medium text-primary-foreground outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-40"
+          >
+            {picked.length === 0 ? 'Choose a retailer' : `Use ${picked.length} retailer${picked.length === 1 ? '' : 's'}`}
+          </button>
         </div>
       </DialogContent>
     </Dialog>
