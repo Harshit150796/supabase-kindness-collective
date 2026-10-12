@@ -6,6 +6,7 @@ import { Archive, Check, Copy, Mail, RotateCcw, Search } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
 import { DataTable, StatusBadge, type Column } from '@/components/admin/DataTable';
+import { RecordWork } from '@/components/admin/RecordWork';
 import { useAdminPaged } from '@/hooks/useAdminPaged';
 import { rpc, sb } from '@/lib/adminApi';
 import { contactTopicLabel } from '@/lib/contactForm';
@@ -167,6 +168,7 @@ export default function AdminContactMessages() {
             ) : (
               <p className="border-t border-border pt-4 text-xs text-muted-foreground">Viewers can read messages. Staff and admins can change their status.</p>
             )}
+            <RecordWork key={open.id} type="contact" recordKey={open.id} title={open.name} />
           </div>}
         </SheetContent>
       </Sheet>

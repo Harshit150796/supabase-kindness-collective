@@ -30,6 +30,7 @@ export default function AdminProcurement() {
     queryKey: ['adm-usage', state, search, page],
     queryFn: () => rpc<Usage[]>('admin_code_usage', { _state: state, _search: search.trim() || null, _limit: PAGE, _offset: page * PAGE }),
   });
+  const [result, setResult] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const reload = () => { sum.refetch(); u.refetch(); };
   const rows = sum.data ?? [];
@@ -47,6 +48,7 @@ export default function AdminProcurement() {
         const { data, error } = await sb.functions.invoke('fundraiser-actions', { body: { action: 'notify_coupon_ready', fundraiser_id: x.fundraiser_id, coupon_ids: x.coupon_ids.slice(0, 50) } });
         if (error || !(data as any)?.sent) failed++;
       }
+      setResult(`${n} codes assigned to ${res.length} fundraisers. ${failed ? `${failed} organizer alerts remain queued.` : 'Organizer alerts processed.'}`);
       toast({ title: n ? `Gave ${n} code(s) from stock` : 'Nothing filled', description: n ? `${res.length} organizer email(s)${failed ? `, ${failed} could not be sent` : ' sent'}.` : 'No matching unexpired stock.' });
       reload();
     } catch (e) { toast({ title: 'Fill failed', description: (e as Error).message, variant: 'destructive' }); }
@@ -63,8 +65,9 @@ export default function AdminProcurement() {
     try {
       const { data, error } = await supabase.functions.invoke('procure-coupons', { body: { limit: 100 } });
       if (error) throw error; const d = data as any; if (d?.error) throw new Error(d.error);
+      setResult(`Vendor run: ${d?.processed ?? 0} processed, ${d?.success ?? 0} succeeded, ${d?.failed ?? 0} failed.`);
       toast({ title: 'Vendor run complete', description: `Processed ${d?.processed ?? 0}, succeeded ${d?.success ?? 0}, failed ${d?.failed ?? 0}.` }); reload();
-    } catch (e) { toast({ title: 'Vendor run failed', description: (e as Error).message, variant: 'destructive' }); }
+    } catch (e) { setResult(`Vendor run failed: ${(e as Error).message}`); toast({ title: 'Vendor run failed', description: (e as Error).message, variant: 'destructive' }); }
     setBusy(null);
   };
 
@@ -81,7 +84,7 @@ export default function AdminProcurement() {
   const useCols: Column<Usage>[] = [
     { key: 'store_name', header: 'Coupon', cell: (r) => <div><p className="font-medium text-foreground">{usd(r.value)} {r.store_name}</p><p className="font-mono text-xs text-muted-foreground">{r.code_hint ?? '—'}</p></div> },
     { key: 'state', header: 'Status', cell: (r) => <StatusBadge value={LABEL[r.state] ?? r.state} /> },
-    { key: 'f', header: 'Fundraiser', cell: (r) => r.fundraiser_title ? <span className="line-clamp-1 max-w-[220px]">{r.fundraiser_title}</span> : <span className="text-muted-foreground">—</span> },
+    { key: 'f', header: 'Fundraiser', cell: (r) => r.fundraiser_title ? <Link className="line-clamp-1 max-w-[220px] text-primary" to={`/admin/fundraisers?id=${r.fundraiser_id}&tab=coupons`}>{r.fundraiser_title}</Link> : <span className="text-muted-foreground">—</span> },
     { key: 'batch', header: 'Bundle', cell: (r) => <span className="text-xs text-muted-foreground">{r.batch_name ?? '—'}</span> },
     { key: 'given', header: 'Given', cell: (r) => r.given_at && r.state !== 'in_stock' && r.state !== 'waiting' ? fmtDate(r.given_at) : '—' },
     { key: 'used', header: 'Used', cell: (r) => r.used_at ? fmtDate(r.used_at) : '—' },
@@ -100,6 +103,7 @@ export default function AdminProcurement() {
     <DashboardLayout>
       <PageHeader title="Procurement" description="See which donation coupons still need a code, fill them from your stock, and track whether each code has been used."
         actions={isAdmin && <Button size="sm" variant="outline" onClick={autoProcure} disabled={!!busy}><Sparkles className="mr-1.5 h-4 w-4" />Buy from vendor</Button>} />
+      {result && <div role="status" className="mb-4 flex items-start justify-between gap-3 rounded-md bg-muted p-3 text-sm"><p>{result}</p><Button size="sm" variant="ghost" onClick={() => setResult(null)}>Dismiss</Button></div>}
       <div className="mb-6 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-4 tabular-nums">
         {figures.map(([k, n, v]) => <div key={k} className="bg-background p-4"><p className="text-xs text-muted-foreground">{k}</p><p className="text-2xl font-semibold text-foreground">{sum.data ? n : '—'}</p><p className="text-xs text-muted-foreground">{sum.data ? v : ''}</p></div>)}
       </div>

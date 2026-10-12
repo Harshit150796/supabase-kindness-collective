@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/admin/AdminLayout';
-import { rpc, usd, fmtDate } from '@/lib/adminApi';
+import { Link } from 'react-router-dom';
+import { rpc, usd, fmtDate, downloadCsv } from '@/lib/adminApi';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
@@ -20,7 +21,8 @@ export default function AdminAnalytics() {
   return (
     <DashboardLayout>
       <PageHeader title="Analytics" description="Calculated on the server from live records; totals count completed donations only."
-        actions={<div className="flex gap-1">{RANGES.map(([v, l]) => <Button key={v} size="sm" variant={days === v ? 'default' : 'outline'} onClick={() => setDays(v)}>{l}</Button>)}</div>} />
+        actions={<div className="flex flex-wrap gap-1"><Button size="sm" variant="outline" disabled={!d} onClick={() => downloadCsv('analytics', (d?.donations ?? []).map((r: any) => ({ date: r.d, amount: r.amount, period_days: Number(days) })))}>Export daily donations</Button>{RANGES.map(([v, l]) => <Button key={v} size="sm" variant={days === v ? 'default' : 'outline'} onClick={() => setDays(v)}>{l}</Button>)}</div>} />
+      <div className="mb-4 flex flex-wrap gap-4 text-sm"><Link className="text-primary" to="/admin/donations">Donation records</Link><Link className="text-primary" to="/admin/procurement">Coupon operations</Link><Link className="text-primary" to="/admin/users">Account records</Link></div>
       {q.error ? (
         <div className="rounded-lg border border-border py-12 text-center"><AlertCircle className="mx-auto mb-2 h-6 w-6 text-destructive" /><p className="text-sm">Couldn't load analytics.</p><p className="mb-3 text-xs text-muted-foreground">{(q.error as Error).message}</p><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></div>
       ) : (
