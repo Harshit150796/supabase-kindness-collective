@@ -22,7 +22,17 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, tipAmount, coverFee, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = await req.json();
+    const body = await req.json();
+    // Warm-up ping from the review step, so the donor's real click doesn't wait for a cold start.
+    if (body?.warm === true) {
+      return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    // Read the admin on/off switch alongside validation instead of before it.
+    const settingsPromise = fetch(
+      `${Deno.env.get("SUPABASE_URL")}/rest/v1/payment_settings?id=eq.1&select=square_enabled`,
+      { headers: { apikey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` } },
+    ).catch(() => null);
+    const { amount, tipAmount, coverFee, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = body;
 
     // Validate amount
     if (!amount || amount < 5 || amount > 10000) {
@@ -57,11 +67,8 @@ serve(async (req) => {
     });
 
     // Respect the admin on/off switch
-    const settingsRes = await fetch(
-      `${Deno.env.get("SUPABASE_URL")}/rest/v1/payment_settings?id=eq.1&select=square_enabled`,
-      { headers: { apikey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` } },
-    );
-    const settings = settingsRes.ok ? (await settingsRes.json())?.[0] : null;
+    const settingsRes = await settingsPromise;
+    const settings = settingsRes?.ok ? (await settingsRes.json())?.[0] : null;
     if (settings && settings.square_enabled === false) {
       return new Response(JSON.stringify({ error: "Square payments are currently turned off." }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
