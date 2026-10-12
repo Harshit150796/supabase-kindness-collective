@@ -8,8 +8,8 @@
  * Nothing here decides coupon sizes.
  */
 export const MAX_RETAILERS = 5;
-/** The server's floor. The donate page asks for $5 per retailer; this only stops nonsense. */
-export const MIN_SHARE_CENTS = 100;
+/** Every retailer gets at least $10, the same floor the donate page uses. */
+export const MIN_SHARE_CENTS = 1000;
 export const SQUARE_METADATA_LIMIT = 255;
 const MAX_NAME = 28; // five names of this length, with cents, still fit Square's 255 characters
 const USD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -90,7 +90,7 @@ function percentsOf(cents: number[]): number[] {
  * Turns what the page sent into exact shares of `total` dollars.
  * Amounts that add up to the total (within 5 cents, settled on the largest share) are kept as sent;
  * otherwise the amounts, then the percentages, are used as weights; with neither the split is even.
- * strict (checkouts): too many retailers or a share under $1 throws SplitError.
+ * strict (checkouts): too many retailers or a share under $10 throws SplitError.
  * lenient (webhooks, after the money has moved): never throws, keeps the first five, drops empty shares.
  */
 export function normalizeSplit(
@@ -129,7 +129,7 @@ export function normalizeSplit(
     cents = apportion(totalCents, list.map(() => 1));
   }
 
-  if (strict && cents.some((c) => c < MIN_SHARE_CENTS)) throw new SplitError('Each retailer needs at least $1 of the donation.');
+  if (strict && cents.some((c) => c < MIN_SHARE_CENTS)) throw new SplitError('Each retailer needs at least $10 of the donation.');
   const kept = list.map((e, i) => ({ e, c: cents[i] })).filter((x) => x.c > 0);
   const percent = percentsOf(kept.map((x) => x.c));
   return kept.map(({ e, c }, i) => ({ brand: e.brand, brandId: e.brandId, cents: c, amount: c / 100, percent: percent[i] }));

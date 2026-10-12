@@ -12,9 +12,9 @@ Deno.test('an even split always adds up, spare dollars go to the first retailers
 });
 
 Deno.test('the smallest donation still gives each retailer its minimum', () => {
-  assertEquals(minTotal(1), 5);
-  assertEquals(minTotal(3), 15);
-  assertEquals(minTotal(0), 5);
+  assertEquals(minTotal(1), 10);
+  assertEquals(minTotal(3), 30);
+  assertEquals(minTotal(0), 10);
 });
 
 Deno.test('distribute splits by weight and keeps the exact sum', () => {
@@ -33,7 +33,7 @@ Deno.test('moving one share rebalances the rest so the total never changes', () 
 
   // No share can push the others below the minimum.
   const max = setShare(start, 1, 1000);
-  assertEquals(max, [5, 90, 5]);
+  assertEquals(max, [10, 80, 10]);
   const min = setShare(start, 2, 0);
   assertEquals(min[2], MIN_SHARE);
   assertEquals(sum(min), 100);
@@ -43,7 +43,7 @@ Deno.test('moving one share rebalances the rest so the total never changes', () 
   assertEquals(down, [40, 30, 30]);
 
   // Exhaustive: every value on every row of several splits keeps the total and the minimum.
-  for (const shares of [[25, 25], [9, 8, 8], [40, 30, 20, 5, 5], [5, 5, 5, 5, 80]]) {
+  for (const shares of [[25, 25], [10, 10, 10], [17, 17, 16], [40, 30, 20, 10, 10], [10, 10, 10, 10, 60]]) {
     const total = sum(shares);
     for (let i = 0; i < shares.length; i++) {
       for (let v = -5; v <= total + 5; v++) {
@@ -63,8 +63,9 @@ Deno.test('a single retailer always takes the whole donation', () => {
 Deno.test('changing the amount keeps the chosen proportions', () => {
   assertEquals(resizeShares([60, 20, 20], 100), [60, 20, 20]);
   assertEquals(resizeShares([60, 20, 20], 50), [30, 10, 10]);
-  assertEquals(resizeShares([60, 20, 20], 15), [5, 5, 5]);
-  for (let total = 15; total <= 500; total += 7) {
+  assertEquals(resizeShares([60, 20, 20], 30), [10, 10, 10]);
+  assertEquals(resizeShares([60, 20, 20], 40), [20, 10, 10]);
+  for (let total = 30; total <= 500; total += 7) {
     const next = resizeShares([70, 20, 10], total);
     assertEquals(sum(next), total);
     assert(next.every((s) => s >= MIN_SHARE));
