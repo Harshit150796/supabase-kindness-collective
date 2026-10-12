@@ -39,7 +39,7 @@ export function CouponScrollPath() {
     return () => { resize.disconnect(); removeEventListener('scroll', scroll); cancelAnimationFrame(frame); };
   }, []);
   return <svg ref={svg} aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
-    <path ref={path} fill="none" stroke="hsl(var(--primary-foreground) / .45)" strokeWidth="1" strokeDasharray="2 5" />
-    <g ref={marker}><rect x="-9" y="-6" width="18" height="12" rx="2" fill="hsl(var(--brand-donation))" stroke="hsl(var(--primary-foreground))" /><path d="M2 -4V4" stroke="hsl(var(--primary-foreground))" strokeDasharray="1 2" /></g>
+    <path ref={path} fill="none" stroke="hsl(var(--primary) / .45)" strokeWidth="1" strokeDasharray="2 5" />
+    <g ref={marker}><rect x="-9" y="-6" width="18" height="12" rx="2" fill="hsl(var(--brand-donation))" stroke="hsl(var(--background))" /><path d="M2 -4V4" stroke="hsl(var(--background))" strokeDasharray="1 2" /></g>
   </svg>;
 }
