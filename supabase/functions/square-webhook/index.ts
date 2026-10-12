@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { brandRows, couponSlots, describeSplit, parseSplit, type Share } from '../_shared/brand-split.ts';
+import { readPayment } from '../_shared/checkout-total.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -151,7 +152,11 @@ async function handleCompletedPayment(supabase: any, accessToken: string, paymen
     return;
   }
 
-  const amount = (payment.total_money?.amount || 0) / 100; // cents → dollars
+  const paidCents = payment.total_money?.amount || 0;
+  const paid = paidCents / 100; // everything charged: gift + tip + covered fee
+  // The gift (100% to families) apart from the optional tip and the card fee the donor covered.
+  const split = readPayment(metadata, paidCents);
+  const amount = split.giftCents / 100;
   const currency = (payment.total_money?.currency || "USD").toLowerCase();
 
   // Card details + actual Square processing fee
@@ -169,9 +174,9 @@ async function handleCompletedPayment(supabase: any, accessToken: string, paymen
     );
     if (feeCents > 0) squareFee = feeCents / 100;
   }
-  // Fallback estimate: 2.9% + $0.30
-  const fee = squareFee ?? Number((amount * 0.029 + 0.30).toFixed(2));
-  const netAmount = Number((amount - fee).toFixed(2));
+  // Fallback estimate: Square online rate, 3.3% + $0.30
+  const fee = squareFee ?? Number((paid * 0.033 + 0.30).toFixed(2));
+  const netAmount = Number((paid - fee).toFixed(2));
 
   const rawDonorId = metadata.donor_id || null;
   const donorId = (rawDonorId && rawDonorId.trim() !== "") ? rawDonorId : null;
@@ -193,6 +198,9 @@ async function handleCompletedPayment(supabase: any, accessToken: string, paymen
 
   const donationData: Record<string, unknown> = {
     amount,
+    amount_paid: paid,
+    tip_amount: split.tipCents / 100,
+    fee_covered_amount: split.feeCents / 100,
     payment_provider: "square",
     stripe_session_id: orderId,          // reused column: holds the Square order id
     stripe_payment_intent_id: payment.id, // reused column: holds the Square payment id
@@ -304,7 +312,7 @@ async function handleRefund(supabase: any, refund: any) {
 
   const { data: donation } = await supabase
     .from("donations")
-    .select("id, amount")
+    .select("id, amount, amount_paid")
     .eq("stripe_payment_intent_id", refund.payment_id)
     .single();
 
@@ -314,7 +322,7 @@ async function handleRefund(supabase: any, refund: any) {
   }
 
   const refundedAmount = (refund.amount_money?.amount || 0) / 100;
-  const status = refundedAmount >= donation.amount ? "refunded" : "partially_refunded";
+  const status = refundedAmount >= Number(donation.amount_paid ?? donation.amount) ? "refunded" : "partially_refunded";
 
   await supabase
     .from("donations")

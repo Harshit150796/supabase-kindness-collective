@@ -10,7 +10,8 @@ import { BrandSelectorModal } from './BrandSelectorModal';
 import { GiftLedger, StepTrack } from './donate/GiftLedger';
 import { RetailerStep } from './donate/RetailerStep';
 import { AmountStep } from './donate/AmountStep';
-import { ReviewStep, type Provider } from './donate/ReviewStep';
+import { ReviewStep, type Provider, type TipChoice } from './donate/ReviewStep';
+import { MAX_TIP_CENTS, computeCharge, coveredFeeCents, tipCentsFor } from '../../../supabase/functions/_shared/checkout-total.ts';
 import { AnimatedHeight } from './donate/motion';
 import { PRESET_AMOUNTS, SPRING, amountProblem, type SplitMode } from './donate/tokens';
 import { findRetailer, usd } from './donate/retailers';
@@ -70,7 +71,11 @@ export function DonationFlow() {
   const [custom, setCustom] = useState<number[]>([]);
   const [browse, setBrowse] = useState(false);
   const [providers, setProviders] = useState<Provider[]>(['square', 'stripe']);
-  const [busy, setBusy] = useState<Provider | null>(null);
+  const [provider, setProvider] = useState<Provider>('square');
+  const [tip, setTip] = useState<TipChoice>(null); // no tip preselected
+  const [otherTip, setOtherTip] = useState('');
+  const [coverFee, setCoverFee] = useState(true); // ticked by default
+  const [busy, setBusy] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -84,7 +89,10 @@ export function DonationFlow() {
       .maybeSingle()
       .then(({ data }) => {
         const d = data as { square_enabled: boolean; stripe_enabled: boolean } | null;
-        if (d) setProviders([d.square_enabled && 'square', d.stripe_enabled && 'stripe'].filter(Boolean) as Provider[]);
+        if (!d) return;
+        const on = [d.square_enabled && 'square', d.stripe_enabled && 'stripe'].filter(Boolean) as Provider[];
+        setProviders(on);
+        if (on.length) setProvider((p) => (on.includes(p) ? p : on[0]));
       });
   }, []);
 
@@ -131,8 +139,14 @@ export function DonationFlow() {
     if (top < 0) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const pay = async (provider: Provider, attempt = 0): Promise<void> => {
-    setBusy(provider);
+  // What the donor pays: the gift in full, plus an optional tip and (if ticked) the card fee.
+  const giftCents = Math.round(amount * 100);
+  const tipCents = Math.min(MAX_TIP_CENTS, tip === 'other' ? Math.max(0, Math.round((parseFloat(otherTip) || 0) * 100)) : tip ? tipCentsFor(giftCents, tip) : 0);
+  const charge = useMemo(() => computeCharge({ gift: amount || 0.01, tip: tipCents / 100, coverFee, provider }), [amount, tipCents, coverFee, provider]);
+  const feeIfCovered = coveredFeeCents(giftCents + tipCents, provider);
+
+  const pay = async (attempt = 0): Promise<void> => {
+    setBusy(true);
     setPayError(null);
     setCheckoutUrl(null);
     try {
@@ -142,6 +156,8 @@ export function DonationFlow() {
       const { data, error } = await supabase.functions.invoke(provider === 'stripe' ? 'create-stripe-checkout' : 'create-donation-checkout', {
         body: {
           amount,
+          tipAmount: tipCents / 100,
+          coverFee,
           brandName: brandAllocations[0]?.brand ?? '',
           brandId: brandAllocations[0]?.brandId ?? '',
           brandAllocations,
@@ -160,13 +176,13 @@ export function DonationFlow() {
       if (attempt < MAX_RETRIES && /network|timeout|fetch/i.test(message)) {
         toast({ title: 'Connection issue', description: 'Trying again…' });
         await new Promise((resolve) => setTimeout(resolve, 1000));
-        return pay(provider, attempt + 1);
+        return pay(attempt + 1);
       }
       const unavailable = /payments are temporarily unavailable|payments_unavailable|cannot currently make live charges|currently turned off/i.test(message);
       setPayError(unavailable
         ? "We can't take donations through this checkout right now. Please try the other option or come back a little later."
         : message || 'Checkout did not open. Please try again.');
-      setBusy(null);
+      setBusy(false);
     }
   };
 
@@ -204,7 +220,25 @@ export function DonationFlow() {
                     />
                   )}
                   {step === 3 && (
-                    <ReviewStep amount={amount} retailers={retailers} providers={providers} busy={busy} error={payError} checkoutUrl={checkoutUrl} onPay={(p) => void pay(p)} />
+                    <ReviewStep
+                      amount={amount}
+                      retailers={retailers}
+                      providers={providers}
+                      provider={provider}
+                      onProvider={setProvider}
+                      tip={tip}
+                      otherTip={otherTip}
+                      onTip={setTip}
+                      onOtherTip={setOtherTip}
+                      coverFee={coverFee}
+                      onCoverFee={setCoverFee}
+                      feeIfCovered={feeIfCovered}
+                      charge={charge}
+                      busy={busy}
+                      error={payError}
+                      checkoutUrl={checkoutUrl}
+                      onPay={() => void pay()}
+                    />
                   )}
                 </motion.div>
               </AnimatePresence>
@@ -215,7 +249,7 @@ export function DonationFlow() {
                 <button
                   type="button"
                   onClick={() => go(step - 1)}
-                  disabled={busy !== null}
+                  disabled={busy}
                   className="inline-flex h-12 items-center gap-2 rounded-xl px-3 text-[15px] font-medium text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 sm:-ml-3"
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" />

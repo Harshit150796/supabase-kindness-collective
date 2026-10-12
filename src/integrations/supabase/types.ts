@@ -1394,6 +1394,7 @@ export type Database = {
       donations: {
         Row: {
           amount: number
+          amount_paid: number | null
           brand_partner: string | null
           category_id: string | null
           created_at: string
@@ -1402,6 +1403,7 @@ export type Database = {
           donor_email: string | null
           donor_id: string | null
           donor_name: string | null
+          fee_covered_amount: number
           fundraiser_id: string | null
           id: string
           is_anonymous: boolean | null
@@ -1415,9 +1417,11 @@ export type Database = {
           stripe_fee: number | null
           stripe_payment_intent_id: string | null
           stripe_session_id: string | null
+          tip_amount: number
         }
         Insert: {
           amount: number
+          amount_paid?: number | null
           brand_partner?: string | null
           category_id?: string | null
           created_at?: string
@@ -1426,6 +1430,7 @@ export type Database = {
           donor_email?: string | null
           donor_id?: string | null
           donor_name?: string | null
+          fee_covered_amount?: number
           fundraiser_id?: string | null
           id?: string
           is_anonymous?: boolean | null
@@ -1439,9 +1444,11 @@ export type Database = {
           stripe_fee?: number | null
           stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
+          tip_amount?: number
         }
         Update: {
           amount?: number
+          amount_paid?: number | null
           brand_partner?: string | null
           category_id?: string | null
           created_at?: string
@@ -1450,6 +1457,7 @@ export type Database = {
           donor_email?: string | null
           donor_id?: string | null
           donor_name?: string | null
+          fee_covered_amount?: number
           fundraiser_id?: string | null
           id?: string
           is_anonymous?: boolean | null
@@ -1463,6 +1471,7 @@ export type Database = {
           stripe_fee?: number | null
           stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
+          tip_amount?: number
         }
         Relationships: [
           {

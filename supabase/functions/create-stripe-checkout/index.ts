@@ -1,6 +1,7 @@
 import Stripe from "npm:stripe@14.21.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { SplitError, describeSplit, encodeSplit, normalizeSplit } from '../_shared/brand-split.ts';
+import { ChargeError, chargeMetadata, computeCharge } from '../_shared/checkout-total.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,16 +21,18 @@ Deno.serve(async (req) => {
       return json({ error: "Stripe payments are currently turned off." }, 403);
     }
 
-    const { amount, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId, embedded } = await req.json();
+    const { amount, tipAmount, coverFee, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId, embedded } = await req.json();
     const amt = Number(amount);
     if (!amt || amt < 5 || amt > 10000) return json({ error: "Invalid donation amount. Must be between $5 and $10,000." }, 400);
 
     // The donor's dollar split, checked again here (each retailer's share becomes one coupon slot).
-    let shares;
+    // The gift goes to families in full; an optional tip and the covered card fee are added on top.
+    let shares, charge;
     try {
       shares = normalizeSplit(amt, brandAllocations, { brand: brandName, brandId });
+      charge = computeCharge({ gift: amt, tip: tipAmount, coverFee, provider: "stripe" });
     } catch (e) {
-      if (e instanceof SplitError) return json({ error: e.message }, 400);
+      if (e instanceof SplitError || e instanceof ChargeError) return json({ error: e.message }, 400);
       throw e;
     }
     const isMultiBrand = shares.length > 1;
@@ -48,16 +51,24 @@ Deno.serve(async (req) => {
         quantity: 1,
         price_data: {
           currency: "usd",
-          unit_amount: Math.round(amt * 100),
+          unit_amount: charge.giftCents,
           product_data: {
             name: isMultiBrand ? `Donation for families (${shares.length} retailers)` : "Donation to Help Families",
-            description: isMultiBrand ? `Shared between ${describeSplit(shares)}` : (shares[0] ? `Gift cards for families, via ${shares[0].brand}` : undefined),
+            description: isMultiBrand ? `100% to families, shared between ${describeSplit(shares)}` : (shares[0] ? `100% to families, via ${shares[0].brand}` : "100% to families"),
           },
         },
-      }],
+      },
+      ...(charge.tipCents > 0 ? [{
+        quantity: 1,
+        price_data: { currency: "usd", unit_amount: charge.tipCents, product_data: { name: "Tip to CouponDonation", description: "Optional. Keeps the platform running." } },
+      }] : []),
+      ...(charge.feeCents > 0 ? [{
+        quantity: 1,
+        price_data: { currency: "usd", unit_amount: charge.feeCents, product_data: { name: "Card processing fee (you covered it)" } },
+      }] : [])],
       metadata: {
         type: "donation",
-        amount: amt.toString(),
+        ...chargeMetadata(charge),
         meals_provided: mealsProvided.toString(),
         is_multi_brand: isMultiBrand.toString(),
         brand_name: shares[0]?.brand || "",

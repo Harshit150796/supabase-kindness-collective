@@ -79,7 +79,7 @@ export default function Terms() {
             <section>
               <h2 className="text-2xl font-semibold mb-4">6. Fees and Payments</h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                CouponDonation may charge platform fees on donations. All payment processing is handled by Stripe, and transactions are subject to Stripe's terms of service. Fees will be clearly disclosed before any transaction is completed.
+                CouponDonation does not take a platform fee out of donations: the full donation goes to recipients. At checkout, donors may add an optional tip to support CouponDonation's operating costs and may choose to cover the card processing fee; when a donor does not cover it, CouponDonation pays that fee. Payments are processed by Square or Stripe and are subject to their terms of service. Any tip or fee is shown before the payment is completed.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 The core platform is free for verified causes. Donors are presented with an optional choice at checkout to cover standard payment processing fees and/or leave a voluntary tip (top-up) to support CouponDonation's open-source infrastructure and operational costs.

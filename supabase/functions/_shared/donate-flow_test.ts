@@ -34,7 +34,12 @@ Deno.test('the review explains what happens next and shows real payment marks', 
   const review = await read('src/components/landing/donate/ReviewStep.tsx');
   assert(review.includes("Our team turns each store's share into coupons sized for what families need"));
   assert(review.includes('`/brand-logos/${card}.svg`') && !review.includes('fontFamily="Arial"'));
-  assert(review.includes('Donate ${usd.format(amount)} with ${p.name}'));
+  assert(review.includes('Donate {money(charge.totalCents)}'));
+  // Optional tip with nothing preselected, and the card fee box ticked by default.
+  const flow0 = await read('src/components/landing/DonationFlow.tsx');
+  assert(flow0.includes('useState<TipChoice>(null); // no tip preselected') && flow0.includes('useState(true); // ticked by default'));
+  assert(review.includes('Most donors leave about {TYPICAL_TIP_PERCENT}%') && review.includes('We pay the fee from tips instead, so families still get the full gift.'));
+  assert(flow0.includes('tipAmount: tipCents / 100,') && flow0.includes('coverFee,'));
   // Same-tab checkout only.
   const flow = await read('src/components/landing/DonationFlow.tsx');
   assert(flow.includes('window.location.assign(data.url)') && !flow.includes('window.open('));
