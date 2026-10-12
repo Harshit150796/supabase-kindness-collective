@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
 import { DataTable, StatusBadge, Column } from '@/components/admin/DataTable';
+import { useAdminDirtyGuard } from '@/hooks/useAdminDirtyGuard';
 import { useAdminPaged } from '@/hooks/useAdminPaged';
 import { sb, rpc, adminWrite, fmtDate } from '@/lib/adminApi';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -55,6 +56,8 @@ export default function AdminNewsletters() {
   const [importing, setImporting] = useState(false);
 
   const [form, setForm] = useState({ ...DEFAULT_FORM });
+  useAdminDirtyGuard(showCompose && (!!form.subject || !!form.html_content));
+  const closeCompose = () => { if (sending) return; if ((form.subject || form.html_content) && !window.confirm('Discard unsaved campaign changes?')) return; setShowCompose(false); };
   const [editId, setEditId] = useState<string | null>(null);
   const [testEmail, setTestEmail] = useState('');
   const [newSubEmail, setNewSubEmail] = useState('');
@@ -405,7 +408,7 @@ export default function AdminNewsletters() {
       </div>
 
       {/* Compose */}
-      <Dialog open={showCompose} onOpenChange={setShowCompose}>
+      <Dialog open={showCompose} onOpenChange={(v) => v ? setShowCompose(true) : closeCompose()}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editId ? 'Edit Campaign' : 'New Campaign'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
@@ -474,7 +477,7 @@ export default function AdminNewsletters() {
               </div>
             </div>
             <div className="flex gap-2 justify-end pt-2">
-              <Button variant="outline" onClick={() => setShowCompose(false)}>Cancel</Button>
+              <Button variant="outline" onClick={closeCompose}>Cancel</Button>
               <Button variant="outline" onClick={() => handleSaveCampaign('draft')}>Save draft</Button>
               <Button onClick={() => handleSaveCampaign('scheduled')} disabled={!form.scheduled_for}>
                 <Calendar className="w-4 h-4 mr-1" /> Schedule

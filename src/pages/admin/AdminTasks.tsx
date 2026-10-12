@@ -5,6 +5,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
 import { DataTable, StatusBadge, Column } from '@/components/admin/DataTable';
 import { sb, rpc, fmtDate } from '@/lib/adminApi';
+import { useAdminDirtyGuard } from '@/hooks/useAdminDirtyGuard';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,9 +37,13 @@ export default function AdminTasks() {
   const [page, setPage] = useState(0);
   const [editing, setEditing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
+  const [original, setOriginal] = useState('');
+  const dirty = !!editing && JSON.stringify(editing) !== original;
+  useAdminDirtyGuard(dirty);
+  const close = () => { if (saving || (dirty && !window.confirm('Discard unsaved task changes?'))) return; setEditing(null); setParams((p) => { p.delete('id'); return p; }, { replace: true }); };
   useEffect(() => { setEditing(null); }, [user?.id]);
   useEffect(() => { setParams((p) => { p.set('scope', scope); p.set('view', view); return p; }, { replace: true }); }, [scope, view]);
-  useEffect(() => { const id = params.get('id'); if (!id) return; let active = true; sb.from('admin_tasks').select('*').eq('id', id).maybeSingle().then(({ data }: any) => { if (active) setEditing(data); }); return () => { active = false; }; }, [params.get('id'), user?.id]);
+  useEffect(() => { const id = params.get('id'); if (!id) return; let active = true; sb.from('admin_tasks').select('*').eq('id', id).maybeSingle().then(({ data }: any) => { if (active) { setOriginal(JSON.stringify(data)); setEditing(data); } }); return () => { active = false; }; }, [params.get('id'), user?.id]);
 
   const team = useQuery({ queryKey: ['adm-team'], queryFn: () => rpc<any[]>('admin_list_team') });
   const name = (uid?: string | null) => { const m = team.data?.find((t) => t.user_id === uid); return m ? (m.full_name || m.email) : uid ? 'Unknown' : 'Unassigned'; };
@@ -61,11 +66,12 @@ export default function AdminTasks() {
 
   const save = async () => {
     const t = editing;
+    if (!t) return;
     if (!t.title?.trim()) return toast({ title: 'Title is required', variant: 'destructive' });
     const row = { title: t.title.trim().slice(0, 200), description: t.description || null, priority: t.priority, status: t.status, due_date: t.due_date || null, assignee_id: t.assignee_id || null,
       linked_type: t.linked_type || null, linked_id: t.linked_id || null, completed_at: t.status === 'done' ? (t.completed_at ?? new Date().toISOString()) : null };
     setSaving(true);
-    try { await rpc('admin_task_save', { _id: t.id ?? null, _patch: row }); toast({ title: t.id ? 'Task updated' : 'Task created' }); setEditing(null); refresh(); }
+    try { await rpc('admin_task_save', { _id: t.id ?? null, _patch: row }); toast({ title: t.id ? 'Task updated' : 'Task created' }); setEditing(null); setParams((p) => { p.delete('id'); return p; }, { replace: true }); refresh(); }
     catch (e) { toast({ title: 'Save failed', description: (e as Error).message, variant: 'destructive' }); }
     finally { setSaving(false); }
   };
@@ -82,20 +88,20 @@ export default function AdminTasks() {
     { key: 'due', header: 'Due', cell: (r) => <span className={cn(isOverdue(r) && 'font-medium text-destructive')}>{r.due_date ?? '—'}{isOverdue(r) && ' · overdue'}</span> },
   ];
 
-  const openTask = (t: any) => setEditing({ ...t });
+  const openTask = (t: any) => { setOriginal(JSON.stringify(t)); setEditing({ ...t }); setParams((p) => { p.set('id', t.id); return p; }, { replace: true }); };
 
   return (
     <DashboardLayout>
       <PageHeader title="Tasks" description="Assign and track operational work. Reports, applications and fundraisers awaiting approval create tasks automatically."
         actions={<>
           <div className="flex rounded-md bg-muted p-1">
-            <button aria-label="List view" onClick={() => setView('list')} className={cn('rounded px-2 py-1', view === 'list' && 'bg-background shadow-sm')}><LayoutList className="h-4 w-4" /></button>
-            <button aria-label="Board view" onClick={() => setView('board')} className={cn('rounded px-2 py-1', view === 'board' && 'bg-background shadow-sm')}><Columns3 className="h-4 w-4" /></button>
+            <Button size="icon" variant="ghost" title="List view" aria-label="List view" onClick={() => setView('list')} className={cn('rounded px-2 py-1', view === 'list' && 'bg-background shadow-sm')}><LayoutList className="h-4 w-4" /></Button>
+            <Button size="icon" variant="ghost" title="Board view" aria-label="Board view" onClick={() => setView('board')} className={cn('rounded px-2 py-1', view === 'board' && 'bg-background shadow-sm')}><Columns3 className="h-4 w-4" /></Button>
           </div>
-          {canWrite && <Button size="sm" onClick={() => setEditing({ title: '', priority: 'medium', status: 'todo' })}><Plus className="mr-1.5 h-4 w-4" />New task</Button>}
+          {canWrite && <Button size="sm" onClick={() => { setOriginal(''); setEditing({ title: '', priority: 'medium', status: 'todo' }); }}><Plus className="mr-1.5 h-4 w-4" />New task</Button>}
         </>} />
       <div className="mb-3 flex gap-1 rounded-md bg-muted p-1 text-xs w-fit">
-        {(['open', 'mine', 'overdue', 'all'] as const).map((s) => <button key={s} onClick={() => { setScope(s); setPage(0); }} className={cn('rounded px-2.5 py-1 capitalize', scope === s ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground')}>{s === 'mine' ? 'My tasks' : s}</button>)}
+        {(['open', 'mine', 'overdue', 'all'] as const).map((s) => <Button size="sm" variant="ghost" key={s} onClick={() => { setScope(s); setPage(0); }} className={cn('rounded px-2.5 py-1 capitalize', scope === s ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground')}>{s === 'mine' ? 'My tasks' : s}</Button>)}
       </div>
 
       {view === 'list' ? (
@@ -110,11 +116,11 @@ export default function AdminTasks() {
                 <p className="mb-2 flex justify-between px-1 text-xs font-medium capitalize text-muted-foreground">{s.replace('_', ' ')}<span>{items.length}</span></p>
                 <div className="space-y-2">
                   {items.map((t: any) => (
-                    <button key={t.id} draggable={canWrite} onDragStart={(e) => e.dataTransfer.setData('text', t.id)} onClick={() => openTask(t)}
+                    <Button variant="ghost" key={t.id} draggable={canWrite} onDragStart={(e) => e.dataTransfer.setData('text', t.id)} onClick={() => openTask(t)}
                       className={cn('block w-full rounded-md bg-background p-2.5 text-left text-sm shadow-sm', isOverdue(t) && 'ring-1 ring-destructive/40')}>
                       <p className="font-medium text-foreground">{t.title}</p>
                       <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground"><StatusBadge value={t.priority} /><span className="truncate">{name(t.assignee_id)}</span>{t.due_date && <span className={cn('ml-auto', isOverdue(t) && 'text-destructive')}>{t.due_date}</span>}</div>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -123,7 +129,7 @@ export default function AdminTasks() {
         </div><div className="flex items-center justify-end gap-2 text-xs text-muted-foreground"><span>Page {page + 1} of {Math.max(1, Math.ceil((q.data?.total ?? 0) / PAGE))}</span><Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={(page + 1) * PAGE >= (q.data?.total ?? 0)} onClick={() => setPage(page + 1)}>Next</Button></div></div>
       )}
 
-      <Sheet open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+      <Sheet open={!!editing} onOpenChange={(o) => !o && close()}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
           {editing && (
             <div className="space-y-3">
@@ -139,7 +145,7 @@ export default function AdminTasks() {
                 <div><Label className="text-xs">Record ID / email</Label><Input disabled={!canWrite || !editing.linked_type} value={editing.linked_id ?? ''} onChange={(e) => setEditing({ ...editing, linked_id: e.target.value })} /></div>
               </div>
               {editing.linked_type && editing.linked_id && <a className="text-sm text-primary" href={LINKS[editing.linked_type]?.(editing.linked_id)}>Open linked record</a>}
-              {canWrite && <div className="flex gap-2"><Button size="sm" disabled={saving} onClick={save}>{saving ? 'Saving…' : 'Save'}</Button><Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancel</Button></div>}
+              {canWrite && <div className="flex gap-2"><Button size="sm" disabled={saving} onClick={save}>{saving ? 'Saving…' : 'Save'}</Button><Button size="sm" variant="ghost" disabled={saving} onClick={close}>Cancel</Button></div>}
               {editing.id && <TaskComments taskId={editing.id} canWrite={canWrite} name={name} />}
               {editing.created_at && <p className="text-xs text-muted-foreground">Created {fmtDate(editing.created_at)}{editing.source_key ? ' automatically' : ''}</p>}
             </div>
@@ -153,17 +159,20 @@ export default function AdminTasks() {
 function TaskComments({ taskId, canWrite, name }: { taskId: string; canWrite: boolean; name: (u?: string) => string }) {
   const { user } = useAuth();
   const [body, setBody] = useState('');
-  const q = useQuery({ queryKey: ['adm-task-c', taskId], queryFn: async () => (await sb.from('admin_task_comments').select('*').eq('task_id', taskId).order('created_at')).data ?? [] });
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { setBody(''); }, [taskId, user?.id]);
+  const q = useQuery({ queryKey: ['adm-task-c', user?.id, taskId], queryFn: async () => { const { data, error } = await sb.from('admin_task_comments').select('*').eq('task_id', taskId).order('created_at'); if (error) throw error; return data ?? []; } });
   const add = async () => {
-    if (!body.trim()) return;
+    if (!body.trim() || busy) return;
+    setBusy(true);
     try { await rpc('admin_task_comment', { _id: taskId, _body: body.trim() }); setBody(''); q.refetch(); }
-    catch (e) { toast({ title: 'Comment failed', description: (e as Error).message, variant: 'destructive' }); }
+    catch (e) { toast({ title: 'Comment failed', description: (e as Error).message, variant: 'destructive' }); } finally { setBusy(false); }
   };
   return (
     <div className="border-t border-border pt-3">
       <p className="mb-2 text-sm font-medium">Comments</p>
       <ul className="mb-2 space-y-2 text-sm">{(q.data ?? []).map((c: any) => <li key={c.id}><p className="text-xs text-muted-foreground">{name(c.author_id)} · {fmtDate(c.created_at)}</p><p className="whitespace-pre-wrap">{c.body}</p></li>)}</ul>
-      {canWrite && <div className="flex gap-2"><Input value={body} onChange={(e) => setBody(e.target.value)} placeholder="Add a comment" onKeyDown={(e) => e.key === 'Enter' && add()} /><Button size="sm" variant="outline" onClick={add}>Add</Button></div>}
+      {canWrite && <div className="flex gap-2"><Input value={body} onChange={(e) => setBody(e.target.value)} placeholder="Add a comment" onKeyDown={(e) => e.key === 'Enter' && add()} /><Button size="sm" variant="outline" disabled={busy || !body.trim()} onClick={add}>Add</Button></div>}
     </div>
   );
 }

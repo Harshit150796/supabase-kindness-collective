@@ -2,10 +2,9 @@
 export const VIEW_KEYS = ['q', 'status', 'sort', 'dir', 'page', 'role', 'scope', 'view', 'tab', 'kind', 'period'] as const;
 export function safeViewParams(params: URLSearchParams) {
   const safe = new URLSearchParams();
-  for (const key of VIEW_KEYS) {
-    const value = params.get(key);
-    // Search text can contain donor emails; never persist it.
-    if (value && key !== 'q') safe.set(key, value.slice(0, 100));
+  for (const [key, value] of params) {
+    const field = key.includes('-') ? key.slice(key.lastIndexOf('-') + 1) : key;
+    if (VIEW_KEYS.some((allowed) => allowed === field) && field !== 'q' && value) safe.set(key, value.slice(0, 100));
   }
   return safe.toString();
 }

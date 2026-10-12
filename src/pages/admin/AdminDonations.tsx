@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/admin/AdminLayout';
 import { DataTable, StatusBadge, Column } from '@/components/admin/DataTable';
+import { toast } from '@/hooks/use-toast';
 import { sb, usd, fmtDate, downloadCsv, fetchAllChunks } from '@/lib/adminApi';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -60,8 +61,8 @@ export default function AdminDonations() {
   ];
 
   const exportCsv = async () => {
-    const rows = await fetchAllChunks((a, b) => apply(sb.from('donations').select('id,created_at,amount,net_amount,status,donor_name,is_anonymous,brand_partner,payment_provider,fundraiser_id')).order('created_at', { ascending: false }).range(a, b));
-    downloadCsv('donations', rows);
+    try { const rows = await fetchAllChunks((a, b) => apply(sb.from('donations').select('id,created_at,amount,net_amount,status,donor_name,is_anonymous,brand_partner,payment_provider,fundraiser_id')).order('created_at', { ascending: false }).range(a, b));
+    downloadCsv('donations', rows); toast({ title: `${rows.length} donations exported` }); } catch (e) { toast({ title: 'Export failed', description: (e as Error).message, variant: 'destructive' }); }
   };
 
   return (
@@ -94,7 +95,7 @@ function DonationDrawer({ id, onClose }: { id: string | null; onClose: () => voi
       const [don, brands, coupons] = await Promise.all([
         sb.from('donations').select('*, fundraisers(title, unique_slug)').eq('id', id).single(),
         sb.from('donation_brands').select('id,brand_name,allocation_percent,allocated_amount').eq('donation_id', id),
-        sb.from('coupons').select('id,store_name,value,expected_value,status,created_at,redeemed_at').eq('donation_id', id).order('created_at'),
+        sb.from('coupons').select('id,store_name,value,expected_value,status,created_at,redeemed_at').eq('donation_id', id).not('status', 'in', '(void,returned)').order('created_at'),
       ]);
       if (don.error) throw don.error;
       return { don: don.data, brands: brands.data ?? [], coupons: coupons.data ?? [] };
@@ -113,11 +114,12 @@ function DonationDrawer({ id, onClose }: { id: string | null; onClose: () => voi
                 ['Fundraiser', x.fundraisers?.title ?? 'General fund'], ['Message', x.message || '—']].map(([k, v]) => (
                 <div key={k as string}><dt className="text-xs text-muted-foreground">{k}</dt><dd className="break-words">{v}</dd></div>))}
             </dl>
+            {x.fundraiser_id && <Button size="sm" variant="outline" asChild><Link to={`/admin/fundraisers?id=${x.fundraiser_id}&tab=coupons`}>Open fundraiser coupons</Link></Button>}
             {x.receipt_url && <a className="inline-flex items-center gap-1 text-sm text-primary" href={x.receipt_url} target="_blank" rel="noreferrer">Provider receipt <ExternalLink className="h-3 w-3" /></a>}
             <div><p className="mb-1 text-sm font-medium">Retailer split</p>
-              {d.data!.brands.length ? <ul className="divide-y divide-border text-sm">{d.data!.brands.map((b: any) => <li key={b.id} className="flex justify-between py-1.5"><span>{b.brand_name} · {b.allocation_percent}%</span><span>{usd(b.allocated_amount)}</span></li>)}</ul> : <p className="text-sm text-muted-foreground">{x.brand_partner || 'No split recorded.'}</p>}</div>
+              {d.data?.brands?.length ? <ul className="divide-y divide-border text-sm">{d.data?.brands.map((b: any) => <li key={b.id} className="flex justify-between py-1.5"><span>{b.brand_name} · {b.allocation_percent}%</span><span>{usd(b.allocated_amount)}</span></li>)}</ul> : <p className="text-sm text-muted-foreground">{x.brand_partner || 'No split recorded.'}</p>}</div>
             <div><p className="mb-1 text-sm font-medium">Coupon trail</p>
-              {d.data!.coupons.length ? <ul className="divide-y divide-border text-sm">{d.data!.coupons.map((c: any) => <li key={c.id} className="flex justify-between py-1.5"><span>{c.store_name} · {usd(c.value ?? c.expected_value)}</span><StatusBadge value={c.status} /></li>)}</ul> : <p className="text-sm text-muted-foreground">No coupons linked to this donation.</p>}</div>
+              {d.data?.coupons?.length ? <ul className="divide-y divide-border text-sm">{d.data?.coupons.map((c: any) => <li key={c.id} className="flex justify-between py-1.5"><span>{c.store_name} · {usd(c.value ?? c.expected_value)}</span><StatusBadge value={c.status} /></li>)}</ul> : <p className="text-sm text-muted-foreground">No coupons linked to this donation.</p>}</div>
           </div>
         )}
       </SheetContent>
