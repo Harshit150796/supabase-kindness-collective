@@ -1,5 +1,5 @@
 import { assertEquals, assertAlmostEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { journeyScrollPoint, journeyScrollProgress, journeyScrollRange, journeyScrollStop, journeyWheelStop } from '../../../src/lib/journeyScrollTiming.ts';
+import { journeyTravelPoint, journeyTravelPosition, journeyScrollPoint, journeyScrollProgress, journeyScrollRange, journeyScrollStop, journeyWheelStop } from '../../../src/lib/journeyScrollTiming.ts';
 
 Deno.test('journey reaches all four icons at equal scroll checkpoints', () => {
   const points = [[10, 20], [150, 20], [500, 20], [900, 20]] as const;
@@ -39,4 +39,20 @@ Deno.test('wheel momentum is one gesture and upward gestures return one icon at 
   assertEquals(journeyWheelStop(1, 2, 400, 300), 1);
   assertEquals(journeyWheelStop(3, -100, 600, 400), 2);
   assertEquals(journeyWheelStop(0, -100, 600, 400), 0);
+});
+
+Deno.test('travel visibly crosses the line and lands exactly after 300ms per stop', () => {
+  assertEquals(journeyTravelPosition(0, 1, 150), 0.5);
+  assertEquals(journeyTravelPosition(0, 1, 300), 1);
+  assertEquals(journeyTravelPosition(0, 1, 900), 1);
+  assertEquals(journeyTravelPoint([[10, 20], [150, 20]], 0.5), [80, 20]);
+});
+
+Deno.test('reverse and retargeted travel follow intervening icons on stacked paths', () => {
+  assertEquals(journeyTravelPosition(3, 2, 150), 2.5);
+  const current = journeyTravelPosition(0, 1, 210);
+  assertEquals(journeyTravelPosition(current, 2, 0), current);
+  assertEquals(journeyTravelPosition(current, 2, 390), 2);
+  assertEquals(journeyTravelPoint([[10, 20], [10, 100], [30, 200]], 1), [10, 100]);
+  assertEquals(journeyTravelPoint([[10, 20], [10, 100], [30, 200]], 1.5), [20, 150]);
 });

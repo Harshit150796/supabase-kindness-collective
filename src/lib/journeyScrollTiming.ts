@@ -20,6 +20,24 @@ export function journeyScrollStop(progress: number, count = 4) {
 
 export const JOURNEY_GESTURE_GAP = 180;
 
+export const JOURNEY_TRAVEL_MS = 300;
+
+/** Fractional stop coordinates follow each segment, including stacked layouts. */
+export function journeyTravelPoint(points: readonly JourneyPoint[], position: number): JourneyPoint | undefined {
+  if (!points.length) return;
+  const value = Math.max(0, Math.min(points.length - 1, position));
+  const index = Math.floor(value);
+  const from = points[index], to = points[Math.min(index + 1, points.length - 1)];
+  if (!from || !to) return;
+  const progress = value - index;
+  return [from[0] + (to[0] - from[0]) * progress, from[1] + (to[1] - from[1]) * progress];
+}
+
+export function journeyTravelPosition(from: number, to: number, elapsed: number) {
+  const progress = Math.max(0, Math.min(1, elapsed / Math.max(1, Math.abs(to - from) * JOURNEY_TRAVEL_MS)));
+  return from + (to - from) * progress;
+}
+
 export function journeyWheelStop(stop: number, delta: number, now: number, previousEvent: number) {
   if (now - previousEvent < JOURNEY_GESTURE_GAP || delta === 0) return stop;
   return Math.max(0, Math.min(3, stop + Math.sign(delta)));
