@@ -136,7 +136,7 @@ export function TrustTransparency() {
           <CouponScrollPath />
           {journey.map(({ title, text, Icon }, index) => (
             <Reveal key={title} delay={index * 0.07} className="relative grid grid-cols-[28px_1fr] gap-x-3 md:block">
-              <span data-journey-step className="relative z-10 block h-5 w-5 bg-background outline outline-[3px] outline-background md:mb-6"><Icon className="h-5 w-5 text-foreground" /></span>
+              <span data-journey-step className="relative z-10 block h-5 w-5 md:mb-6"><Icon className="h-5 w-5 text-foreground" /></span>
               <div><span className="text-sm text-muted-foreground">0{index + 1}</span><h3 className="mt-1 font-display text-2xl font-normal">{title}</h3><p className="mt-2 text-base leading-relaxed text-muted-foreground">{text}</p></div>
             </Reveal>
           ))}
