@@ -272,13 +272,13 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
   );
 }
 
-export function FundraiserCouponsTab({ fundraiserId, canWrite, donationId }: { fundraiserId: string; canWrite: boolean; donationId?: string }) {
+export function FundraiserCouponsTab({ fundraiserId, canWrite, donationId, onDirtyChange }: { fundraiserId: string; canWrite: boolean; donationId?: string; onDirtyChange?: (dirty: boolean) => void }) {
   const q = useQuery({ queryKey: ['adm-fr-coupons', fundraiserId], queryFn: () => rpc<Row[]>('admin_fundraiser_coupons', { _fundraiser_id: fundraiserId }) });
   const [openKey, setOpenKey] = useState<string | null>(null);
   const dirty = useRef(false);
   const toggle = (k: string, open: boolean) => {
     if (dirty.current && !confirm('You have unsaved coupon changes. Discard them?')) return;
-    dirty.current = false;
+    dirty.current = false; onDirtyChange?.(false);
     setOpenKey(open ? k : null);
   };
   const rows = (q.data ?? []).filter((r) => !donationId || r.donation_id === donationId);
@@ -305,7 +305,7 @@ export function FundraiserCouponsTab({ fundraiserId, canWrite, donationId }: { f
       )}
       {[...groups.entries()].map(([k, g]) => (
         <CouponGroupEditor key={k} fundraiserId={fundraiserId} donationId={g[0].donation_id} brand={g[0].store_name} donationAt={g[0].donation_at} rows={g}
-          canWrite={canWrite} open={openKey === k} onToggle={(o) => toggle(k, o)} onDirty={(d) => { dirty.current = d; }} onDone={() => q.refetch()} />
+          canWrite={canWrite} open={openKey === k} onToggle={(o) => toggle(k, o)} onDirty={(d) => { dirty.current = d; onDirtyChange?.(d); }} onDone={() => q.refetch()} />
       ))}
     </div>
   );

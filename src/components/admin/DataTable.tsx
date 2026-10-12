@@ -1,3 +1,5 @@
+const countFormatter = new Intl.NumberFormat('en-US');
+
 import { ReactNode } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -71,7 +73,7 @@ export function DataTable<T>({ columns, rows, loading, error, onRetry, total = 0
               </TableCell></TableRow>
             ) : (
               rows.map((r) => (
-                <TableRow key={rowKey(r)} onClick={onRowClick ? () => onRowClick(r) : undefined} className={cn(onRowClick && 'cursor-pointer', rowClassName?.(r))}>
+                <TableRow tabIndex={onRowClick ? 0 : undefined} onKeyDown={onRowClick ? (e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onRowClick(r); } } : undefined} key={rowKey(r)} onClick={onRowClick ? () => onRowClick(r) : undefined} className={cn(onRowClick && 'cursor-pointer', rowClassName?.(r))}>
                   {columns.map((c) => <TableCell key={c.key} className={cn('py-2.5', c.align === 'right' && 'text-right', c.className)}>{c.cell(r)}</TableCell>)}
                 </TableRow>
               ))
@@ -80,7 +82,7 @@ export function DataTable<T>({ columns, rows, loading, error, onRetry, total = 0
         </Table>
       </div>
       <div className="flex items-center justify-between border-t border-border px-3 py-2 text-xs text-muted-foreground">
-        <span>{total.toLocaleString()} record{total === 1 ? '' : 's'}</span>
+        <span>{countFormatter.format(total)} record{total === 1 ? '' : 's'}</span>
         <div className="flex items-center gap-2">
           <span>Page {page + 1} of {pages}</span>
           <Button size="icon" variant="ghost" className="h-7 w-7" disabled={page === 0} onClick={() => onPage(page - 1)} aria-label="Previous page"><ChevronLeft className="h-4 w-4" /></Button>
