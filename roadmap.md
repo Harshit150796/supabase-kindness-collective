@@ -1,5 +1,9 @@
 # Roadmap
 
+## Dealt-card arrival timing (Oct 12)
+- [x] Replace early edge trigger with sustained actual visibility and clearer card beats; preserve artwork and compact layout.
+- [ ] Verify scrolling, pause/resume, replay boundary, resizing, focused tests and automatic build; do not publish.
+
 ## Every dollar blue-band and neighboring presentation (Oct 12)
 - [x] Refine section contrast, breakpoint typography and neighboring statement/donation spacing.
 - [x] Cache journey geometry and suspend invisible recurring work; recalibrate height reservations.
