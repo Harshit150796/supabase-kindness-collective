@@ -1,12 +1,13 @@
 # Roadmap
 
 ## Personalized admin portal (Oct 12)
-- [ ] Personal workspace, saved views, navigation and shared controls.
-- [ ] Fundraiser context, follow-ups, bulk actions and safe outside-coupon review.
-- [ ] Exact donor/user histories and private team notes.
-- [ ] Audited moderation and complete notification counts/actions.
-- [ ] Portal-wide filter/form feedback, exports and contextual links.
-- [ ] Tests and build verification; authenticated browser checks blocked by external unmanaged session.
+- [x] Personal workspace, saved/default views, pinned pages and shared controls.
+- [x] Fundraiser context, follow-ups, confirmed selected pause/archive actions with individual results, and outside-coupon review.
+- [x] Exact donor/user histories and private team notes; record-local drafts reset across identities.
+- [x] Audited moderation and authoritative notification counts/page/all-read actions.
+- [x] Portal-wide form guards, export error feedback, complete donor/analytics exports and contextual links.
+- [x] 140 Deno + 3 Bun tests pass; automatic preview build OK. Migration role proofs completed; fixture notes/views/notifications all absent afterward. No publishing or live test emails.
+- [ ] Authenticated fundraiser/coupon/save/readback, note/task, donor and moderation walkthroughs — blocked by external unmanaged auth and the existing US-only admin access gate. No credentials requested.
 
 ## Visible journey travel (Oct 12)
 - [x] Add visible line travel between selected icon stops, preserving gesture grouping and exact landing.
