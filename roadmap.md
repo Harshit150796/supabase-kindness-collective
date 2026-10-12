@@ -1,5 +1,10 @@
 # Roadmap
 
+## Live-tree cursor parity (Oct 12)
+- [ ] Compare live-tree and non-tree cursor frame timing, follower lag and settling.
+- [ ] Correct measured cursor bottlenecks without changing trail feel or tree appearance/motion.
+- [ ] Run numerical regressions and browser checks; report accelerated-hardware limits. No publishing.
+
 ## Personalized admin portal (Oct 12)
 - [x] Personal workspace, saved/default views, pinned pages and shared controls.
 - [x] Fundraiser context, follow-ups, confirmed selected pause/archive actions with individual results, and outside-coupon review.

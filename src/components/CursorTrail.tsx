@@ -51,6 +51,7 @@ export function CursorTrail() {
       };
       const hide = () => {
         active = false; setNative(false);
+        cancelAnimationFrame(frame); frame = 0; lastTs = 0; lastNow = 0;
         if (html.classList.contains('cd-cursor-active')) html.classList.remove('cd-cursor-active');
         root.classList.remove('cursor-visible', 'cursor-pressed');
       };
@@ -95,16 +96,17 @@ export function CursorTrail() {
         let settled = !hadMove;
         for (let i = 0; i < pos.length; i++) {
           const k = trailFactor(dt, TRAIL_TAU[i]), p = pos[i];
+          const oldX = p.x, oldY = p.y;
           p.x += (x - p.x) * k; p.y += (y - p.y) * k;
           if (Math.abs(x - p.x) < TRAIL_SETTLE_PX && Math.abs(y - p.y) < TRAIL_SETTLE_PX) { p.x = x; p.y = y; } else settled = false;
-          write(i);
+          if ((!native || i !== 0) && (p.x !== oldX || p.y !== oldY || hadMove)) write(i);
         }
         if (settled) lastTs = 0; else frame = requestAnimationFrame(tick);
       };
       const start = () => { if (!frame) frame = requestAnimationFrame(tick); };
       const request = () => { recheck = true; start(); };
       const move = (event: PointerEvent) => {
-        if (event.pointerType !== 'mouse') return;
+        if (event.pointerType !== 'mouse' || document.hidden || !focused || admin()) return;
         const events = event.getCoalescedEvents?.(); const point = events?.[events.length - 1] ?? event;
         hovered = event.target instanceof Element ? event.target : null;
         x = point.clientX; y = point.clientY; inside = true; moved = true; start();
@@ -112,6 +114,7 @@ export function CursorTrail() {
       const leave = () => { inside = false; hide(); };
       const blur = () => { focused = false; hide(); };
       const focus = () => { focused = true; arm(); request(); };
+      const visibility = () => { if (document.hidden) { inside = false; hide(); } else { focused = document.hasFocus(); arm(); } };
       const down = () => { if (active) root.classList.add('cursor-pressed'); };
       const up = () => root.classList.remove('cursor-pressed');
       const introEnd = () => { arm(); request(); };
@@ -119,7 +122,9 @@ export function CursorTrail() {
       const observer = new MutationObserver(() => { backgroundCache = undefined; arm(); if (inside) request(); });
       observer.observe(html, { attributes: true, attributeFilter: ['class'] });
       const scrolled = () => request();
-      window.addEventListener('pointermove', move, { passive: true });
+      // Capture the fresh input before canvas raycasting/interaction listeners run.
+      window.addEventListener('pointermove', move, { passive: true, capture: true });
+      document.addEventListener('visibilitychange', visibility);
       window.addEventListener('scroll', scrolled, { passive: true, capture: true });
       document.addEventListener('mouseleave', leave); window.addEventListener('blur', blur); window.addEventListener('focus', focus);
       window.addEventListener('pointerdown', down); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
@@ -128,7 +133,8 @@ export function CursorTrail() {
       dispose = () => {
         hide(); cancelAnimationFrame(frame); frame = 0; observer.disconnect(); routeChanged.current = () => {};
         if (nativeClass) html.classList.remove(nativeClass);
-        window.removeEventListener('scroll', scrolled, true); window.removeEventListener('pointermove', move);
+        window.removeEventListener('scroll', scrolled, true); window.removeEventListener('pointermove', move, true);
+        document.removeEventListener('visibilitychange', visibility);
         document.removeEventListener('mouseleave', leave); window.removeEventListener('blur', blur); window.removeEventListener('focus', focus);
         window.removeEventListener('pointerdown', down); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
         window.removeEventListener('cd:intro-iris', introEnd); window.removeEventListener('cd:intro-end', introEnd);
