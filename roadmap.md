@@ -1,5 +1,13 @@
 # Roadmap
 
+## Personalized admin portal (Oct 12)
+- [ ] Personal workspace, saved views, navigation and shared controls.
+- [ ] Fundraiser context, follow-ups, bulk actions and safe outside-coupon review.
+- [ ] Exact donor/user histories and private team notes.
+- [ ] Audited moderation and complete notification counts/actions.
+- [ ] Portal-wide filter/form feedback, exports and contextual links.
+- [ ] Tests and build verification; authenticated browser checks blocked by external unmanaged session.
+
 ## Visible journey travel (Oct 12)
 - [x] Add visible line travel between selected icon stops, preserving gesture grouping and exact landing.
 - [x] Verified visible intermediate travel and exact forward/reverse landing at 899×514, 390×844 and 1280×1800; momentum holds, quick retargeting and long pauses pass, alignment error ≤0.5px, no page errors. 137 Deno + 3 Bun tests pass; automatic build OK. Nothing published or deployed.
