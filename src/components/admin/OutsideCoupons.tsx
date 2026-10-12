@@ -121,7 +121,7 @@ function AddOutsideDialog({ fundraiserId, onClose, onDone }: { fundraiserId: str
     if (mode === 'existing' && !picked) return setErr('Choose a donor.');
     if (link.trim() && !/^https:\/\//i.test(link.trim())) return setErr('Redemption links must start with https://.');
     if (!fromStock && code.trim() && code.trim().length < 3) return setErr('Code must contain at least 3 characters.');
-    if (!fromStock && (!Number.isFinite(Number(value)) || Number(value) > 100000)) return setErr('Enter an amount up to $100,000.');
+    if (!fromStock && !Number.isFinite(Number(value))) return setErr('Enter a valid amount.');
     setSaving(true);
     const r = await callFn<{ organizer_emailed: number; donor_emailed: boolean; donor_error?: string }>('coupon-secrets', {
       action: 'admin_add_outside', fundraiser_id: fundraiserId, brand: (fromStock ? selectedStock?.store_name : brand.trim()) || null,

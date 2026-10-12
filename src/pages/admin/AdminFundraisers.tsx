@@ -25,6 +25,7 @@ const STATUSES = ['all', 'pending', 'active', 'paused', 'completed', 'rejected',
 const PAGE = 25;
 
 export default function AdminFundraisers() {
+  const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const [status, setStatus] = useState<string>(params.get('status') ?? 'all');
   const [q, setQ] = useState(params.get('q') ?? '');
@@ -37,7 +38,7 @@ export default function AdminFundraisers() {
   useEffect(() => { const t = setTimeout(() => { setDq(q); setPage(0); }, 300); return () => clearTimeout(t); }, [q]);
 
   const query = useQuery({
-    queryKey: ['adm-fr', status, dq, page, sort],
+    queryKey: ['adm-fr', user?.id, status, dq, page, sort],
     queryFn: async () => {
       let b = sb.from('fundraisers').select('id,title,unique_slug,status,category,country,monthly_goal,featured_order,created_at,user_id', { count: 'exact' });
       if (status !== 'all') b = b.eq('status', status);
@@ -58,8 +59,8 @@ export default function AdminFundraisers() {
   ];
 
   const exportCsv = async () => {
-    const rows = await fetchAllChunks((f, t) => { let b = sb.from('fundraisers').select('id,title,unique_slug,status,category,country,monthly_goal,created_at'); if (status !== 'all') b = b.eq('status', status); return b.order('created_at', { ascending: false }).range(f, t); });
-    downloadCsv('fundraisers', rows);
+    try { const rows = await fetchAllChunks((f, t) => { let b = sb.from('fundraisers').select('id,title,unique_slug,status,category,country,monthly_goal,created_at'); if (status !== 'all') b = b.eq('status', status); const search = dq.trim().replace(/[%,()]/g, ''); if (search) b = b.or(`title.ilike.%${search}%,unique_slug.ilike.%${search}%`); return b.order(sort.key, { ascending: sort.dir === 'asc' }).order('id').range(f, t); });
+    downloadCsv('fundraisers', rows); toast({ title: `${rows.length} fundraisers exported` }); } catch (e) { toast({ title: 'Export failed', description: (e as Error).message, variant: 'destructive' }); }
   };
 
   return (
@@ -97,9 +98,11 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
   const [tab, setTab] = useState(params.get('tab') ?? 'overview');
   const [featureOrder, setFeatureOrder] = useState('');
   const couponDirty = useRef(false);
-  const changeTab = (t: string) => { if (couponDirty.current && !window.confirm('Discard unsaved coupon changes?')) return; couponDirty.current = false; setTab(t); setParams((p) => { p.set('tab', t); return p; }, { replace: true }); };
-  const close = () => { if ((edit || couponDirty.current) && !window.confirm('Discard unsaved changes?')) return; setEdit(null); couponDirty.current = false; onClose(); };
-  useEffect(() => { setEdit(null); setConfirm(null); setReason(''); couponDirty.current = false; }, [id, user?.id]);
+  const dirtyGroups = useRef(new Set<string>());
+  const markCouponDirty = (key: string, dirty: boolean) => { if (dirty) dirtyGroups.current.add(key); else dirtyGroups.current.delete(key); couponDirty.current = dirtyGroups.current.size > 0; };
+  const changeTab = (t: string) => { if (couponDirty.current && !window.confirm('Discard unsaved coupon changes?')) return; couponDirty.current = false; dirtyGroups.current.clear(); setTab(t); setParams((p) => { p.set('tab', t); return p; }, { replace: true }); };
+  const close = () => { if ((edit || couponDirty.current) && !window.confirm('Discard unsaved changes?')) return; setEdit(null); couponDirty.current = false; dirtyGroups.current.clear(); onClose(); };
+  useEffect(() => { setEdit(null); setConfirm(null); setReason(''); couponDirty.current = false; dirtyGroups.current.clear(); setTab(params.get('tab') ?? 'overview'); }, [id, user?.id]);
   useEffect(() => { const guard = (e: BeforeUnloadEvent) => { if (edit || couponDirty.current) { e.preventDefault(); e.returnValue = ''; } }; window.addEventListener('beforeunload', guard); return () => window.removeEventListener('beforeunload', guard); }, [edit]);
 
   const d = useQuery({
@@ -165,7 +168,7 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
               <SheetTitle className="pr-6 text-left font-serif text-2xl font-normal">{f.title}</SheetTitle>
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><StatusBadge value={f.status} /><span>Created {fmtDate(f.created_at)}</span>
                 {f.unique_slug && <a href={`/f/${f.unique_slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary">Public page <ExternalLink className="h-3 w-3" /></a>}</div>
-              <p className="break-words text-left text-xs text-muted-foreground">Organizer: {organizer.data?.full_name || organizer.data?.email || 'Loading…'}</p>
+              <p className="break-words text-left text-xs text-muted-foreground">Organizer: {organizer.data?.full_name || organizer.data?.email || (organizer.isLoading ? 'Loading…' : organizer.error ? 'Could not load organizer' : 'Not recorded')}</p>
             </SheetHeader>
 
             {canWrite && (
@@ -186,7 +189,7 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
                 {['overview', 'work', 'coupons', 'images', 'donations', 'updates', 'comments', 'team', 'conversations', 'reports', ...(isAdmin ? ['history'] : [])].map((t) => <TabsTrigger key={t} value={t} className="capitalize">{t === 'work' ? 'Notes & follow-ups' : t}</TabsTrigger>)}
               </TabsList>
               <TabsContent value="work"><RecordWork key={f.id} type="fundraiser" recordKey={f.id} title={f.title} /></TabsContent>
-              <TabsContent value="coupons"><FundraiserCouponsTab fundraiserId={f.id} canWrite={canWrite} onDirtyChange={(v) => { couponDirty.current = v; }} /></TabsContent>
+              <TabsContent value="coupons"><FundraiserCouponsTab fundraiserId={f.id} canWrite={canWrite} onDirtyChange={(v) => markCouponDirty('all', v)} /></TabsContent>
               <TabsContent value="images"><FundraiserImagesTab fundraiser={f} canWrite={canWrite} /></TabsContent>
               <TabsContent value="overview" className="space-y-4">
                 <div className="grid grid-cols-1 gap-3 tabular-nums sm:grid-cols-3">
@@ -204,7 +207,7 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
                 )}
                 <p className="whitespace-pre-wrap text-sm text-foreground/80">{f.story?.slice(0, 1500)}</p>
               </TabsContent>
-              <TabsContent value="donations"><List rows={d.data?.dons ?? []} empty="No donations linked to this fundraiser." render={(r) => <div><div className="flex justify-between gap-2"><span>{r.is_anonymous ? 'Anonymous' : r.donor_name || 'Guest'} · <StatusBadge value={r.status} /></span><span className="tabular-nums">{usd(r.amount)} · {fmtDate(r.created_at)}</span></div>{['completed', 'succeeded'].includes(r.status) && <div className="mt-2"><FundraiserCouponsTab fundraiserId={f.id} canWrite={canWrite} donationId={r.id} /></div>}</div>} /></TabsContent>
+              <TabsContent value="donations"><List rows={d.data?.dons ?? []} empty="No donations linked to this fundraiser." render={(r) => <div><div className="flex justify-between gap-2"><span>{r.is_anonymous ? 'Anonymous' : r.donor_name || 'Guest'} · <StatusBadge value={r.status} /></span><span className="tabular-nums">{usd(r.amount)} · {fmtDate(r.created_at)}</span></div>{['completed', 'succeeded'].includes(r.status) && <div className="mt-2"><FundraiserCouponsTab fundraiserId={f.id} canWrite={canWrite} donationId={r.id} onDirtyChange={(v) => markCouponDirty(r.id, v)} /></div>}</div>} /></TabsContent>
               <TabsContent value="updates"><List rows={d.data?.upd ?? []} empty="No updates posted." render={(r) => <div className="flex justify-between"><span>{r.title}</span><span className="text-xs text-muted-foreground">{fmtDate(r.created_at)}</span></div>} /></TabsContent>
               <TabsContent value="comments"><List rows={d.data?.com ?? []} empty="No comments." render={(r) => <div><p className="text-xs text-muted-foreground">{r.display_name} · {fmtDate(r.created_at)} {r.is_hidden && '· hidden'}</p><p>{r.body}</p></div>} /></TabsContent>
               <TabsContent value="team"><List rows={d.data?.team ?? []} empty="No team members." render={(r) => <div className="flex justify-between"><span className="capitalize">{r.role}{r.invite_email ? ` · invited` : ''}</span><StatusBadge value={r.status} /></div>} /></TabsContent>

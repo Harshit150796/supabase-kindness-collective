@@ -1,4 +1,4 @@
-import { useEffect, useState }
+import { useEffect, useRef, useState }
  from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,11 +23,13 @@ export function useAdminPaged<T = any>({ table, select = '*', searchCols = [], d
   const prefix = table + '-';
   const [page, setPage] = useState(Number(params.get(prefix + 'page')) || 0);
   const [search, setSearch] = useState(params.get(prefix + 'q') ?? '');
-  const [dq, setDq] = useState('');
+  const [dq, setDq] = useState(search);
+  const initialSearch = useRef(true);
+  const initialDeps = useRef(true);
   const [sort, setSort] = useState({ key: params.get(prefix + 'sort') || defaultSort.key, dir: (params.get(prefix + 'dir') === 'asc' ? 'asc' : params.get(prefix + 'dir') === 'desc' ? 'desc' : defaultSort.dir) as 'asc' | 'desc' });
   useEffect(() => { setParams((p) => { p.set(prefix + 'page', String(page)); p.set(prefix + 'sort', sort.key); p.set(prefix + 'dir', sort.dir); if (search) p.set(prefix + 'q', search); else p.delete(prefix + 'q'); return p; }, { replace: true }); }, [page, sort.key, sort.dir, search]);
-  useEffect(() => { const t = setTimeout(() => { setDq(search); setPage(0); }, 300); return () => clearTimeout(t); }, [search]);
-  useEffect(() => { setPage(0); }, deps); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (initialSearch.current) { initialSearch.current = false; return; } const t = setTimeout(() => { setDq(search); setPage(0); }, 300); return () => clearTimeout(t); }, [search]);
+  useEffect(() => { if (initialDeps.current) { initialDeps.current = false; return; } setPage(0); }, deps); // eslint-disable-line react-hooks/exhaustive-deps
   const q = useQuery({
     queryKey: ['adm-paged', table, user?.id, select, dq, page, sort, pageSize, ...deps],
     queryFn: async () => {
