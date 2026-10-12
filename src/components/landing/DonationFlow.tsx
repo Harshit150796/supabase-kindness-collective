@@ -115,8 +115,8 @@ export function DonationFlow() {
 
   // Wake the checkout service when the donor reaches the review step, so the click is quick.
   useEffect(() => {
-    if (step !== 3) return;
-    supabase.functions.invoke(provider === 'stripe' ? 'create-stripe-checkout' : 'create-donation-checkout', { body: { warm: true } }).catch(() => {});
+    if (step !== 3 || provider !== 'square') return;
+    supabase.functions.invoke('create-donation-checkout', { body: { warm: true } }).catch(() => {});
   }, [step, provider]);
 
   const retailers = useMemo(() => ids.map(findRetailer), [ids]);
