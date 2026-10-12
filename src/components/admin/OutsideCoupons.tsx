@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, Mail, Plus } from 'lucide-react';
 import { sb, rpc, fmtDate, usd } from '@/lib/adminApi';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { StatusBadge } from '@/components/admin/DataTable';
+import { DataTable, StatusBadge } from '@/components/admin/DataTable';
 import { toast } from '@/hooks/use-toast';
 import { issuableBrandNames } from '@/data/brandLogos';
 
@@ -33,7 +33,7 @@ export function OutsideCoupons({ fundraiserId, canWrite }: { fundraiserId: strin
   };
 
   return (
-    <div className="space-y-2 rounded-lg border border-border p-3">
+    <div className="space-y-3 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-semibold">From other sources</h3>
@@ -41,6 +41,7 @@ export function OutsideCoupons({ fundraiserId, canWrite }: { fundraiserId: strin
         </div>
         {canWrite && <Button size="sm" onClick={() => setOpen(true)}><Plus className="mr-1 h-4 w-4" />Add outside coupon</Button>}
       </div>
+      {q.error && <div className="text-sm text-destructive">{(q.error as Error).message}<Button size="sm" variant="outline" onClick={() => q.refetch()}>Retry</Button></div>}
       {q.isLoading ? <p className="text-xs text-muted-foreground">Loading…</p> : !q.data?.length ? <p className="text-xs text-muted-foreground">None yet.</p> : (
         <ul className="divide-y divide-border text-sm">
           {q.data.map((r) => (
@@ -88,31 +89,20 @@ function AddOutsideDialog({ fundraiserId, onClose, onDone }: { fundraiserId: str
   const [emailOrg, setEmailOrg] = useState(true);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [step, setStep] = useState(0);
+  const [donorSearch, setDonorSearch] = useState('');
+  const [donorPage, setDonorPage] = useState(0);
+  const [stockPage, setStockPage] = useState(0);
+  const [selectedDonor, setSelectedDonor] = useState<any>(null);
+  const [selectedStock, setSelectedStock] = useState<any>(null);
+  const close = () => { if (!saving && (brand || code || link || source || name || email || stockId) && !window.confirm('Discard this unsaved coupon?')) return; if (!saving) onClose(); };
+  useEffect(() => { setStockPage(0); setStockId(''); setSelectedStock(null); }, [brand]);
 
-  const donors = useQuery({
-    queryKey: ['adm-outside-donors', fundraiserId],
-    queryFn: async () => {
-      const { data, error } = await sb.from('donations').select('donor_id, donor_name, donor_email').eq('fundraiser_id', fundraiserId).eq('status', 'completed').limit(500);
-      if (error) throw new Error(error.message);
-      const m = new Map<string, { key: string; name: string; email: string | null; user_id: string | null }>();
-      for (const d of data ?? []) {
-        const k = d.donor_id ?? d.donor_email?.toLowerCase();
-        if (k && !m.has(k)) m.set(k, { key: k, name: d.donor_name || d.donor_email || 'Donor', email: d.donor_email, user_id: d.donor_id });
-      }
-      return [...m.values()];
-    },
-  });
-  const stock = useQuery({
-    queryKey: ['adm-outside-stock', brand], enabled: fromStock,
-    queryFn: async () => {
-      let qq = sb.from('coupons').select('id, store_name, value, code_hint, value_expires_on').eq('status', 'in_stock').is('donation_id', null).order('created_at').limit(100);
-      if (brand.trim()) qq = qq.ilike('store_name', brand.trim());
-      const { data, error } = await qq;
-      if (error) throw new Error(error.message);
-      return data as { id: string; store_name: string; value: number; code_hint: string | null }[];
-    },
-  });
-  const picked = useMemo(() => donors.data?.find((d) => d.key === existing), [donors.data, existing]);
+  const donors = useQuery({ queryKey: ['adm-outside-donors', fundraiserId, donorSearch, donorPage], enabled: mode === 'existing',
+    queryFn: () => rpc<{ rows: any[]; total: number }>('admin_source_donors', { _fundraiser: fundraiserId, _search: donorSearch, _limit: 10, _offset: donorPage * 10 }) });
+  const stock = useQuery({ queryKey: ['adm-outside-stock', brand, stockPage], enabled: fromStock,
+    queryFn: () => rpc<{ rows: any[]; total: number }>('admin_stock_picker', { _brand: brand.trim(), _limit: 10, _offset: stockPage * 10 }) });
+  const picked = selectedDonor;
   const donorEmail = mode === 'new' ? email.trim() : mode === 'existing' ? picked?.email ?? '' : '';
 
   const save = async () => {
@@ -123,13 +113,16 @@ function AddOutsideDialog({ fundraiserId, onClose, onDone }: { fundraiserId: str
     if (!fromStock && !code.trim() && !link.trim()) return setErr('Enter a code or a redemption link.');
     if (mode === 'new' && email.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) return setErr('Enter a valid donor email.');
     if (mode === 'existing' && !picked) return setErr('Choose a donor.');
+    if (link.trim() && !/^https:\/\//i.test(link.trim())) return setErr('Redemption links must start with https://.');
+    if (!fromStock && code.trim() && code.trim().length < 3) return setErr('Code must contain at least 3 characters.');
+    if (!fromStock && (!Number.isFinite(Number(value)) || Number(value) > 100000)) return setErr('Enter an amount up to $100,000.');
     setSaving(true);
     const r = await callFn<{ organizer_emailed: number; donor_emailed: boolean; donor_error?: string }>('coupon-secrets', {
-      action: 'admin_add_outside', fundraiser_id: fundraiserId, brand: brand.trim() || null,
+      action: 'admin_add_outside', fundraiser_id: fundraiserId, brand: (fromStock ? selectedStock?.store_name : brand.trim()) || null,
       stock_id: fromStock ? stockId : null, value: fromStock ? null : Math.round(Number(value) * 100) / 100,
       code: fromStock ? null : code.trim() || null, pin: fromStock ? null : pin.trim() || null, redemption_url: fromStock ? null : link.trim() || null,
       value_expires_on: fromStock ? null : expiry || null, source_label: source.trim() || null,
-      donor: mode === 'none' ? {} : mode === 'new' ? { name: name.trim() || null, email: email.trim() || null, anonymous: anon } : { name: picked!.name, email: picked!.email, user_id: picked!.user_id, anonymous: anon },
+      donor: mode === 'none' ? {} : mode === 'new' ? { name: name.trim() || null, email: email.trim() || null, anonymous: anon } : { name: picked?.name, email: picked?.email, user_id: picked?.user_id, anonymous: anon },
       email_donor: emailDonor && !!donorEmail, email_organizer: emailOrg,
     });
     setSaving(false);
@@ -139,13 +132,15 @@ function AddOutsideDialog({ fundraiserId, onClose, onDone }: { fundraiserId: str
   };
 
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
+    <Dialog open onOpenChange={(o) => !o && close()}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Add outside coupon</DialogTitle>
-          <DialogDescription>For coupons received from somewhere other than a site donation. Any brand, any donor.</DialogDescription>
+          <DialogDescription>{['Coupon details', 'Donor and source', 'Review and confirm'][step]}</DialogDescription>
         </DialogHeader>
+        <ol className="flex gap-4 text-xs text-muted-foreground">{['Coupon', 'Donor/source', 'Review'].map((label, i) => <li key={label} className={step === i ? 'font-medium text-primary' : ''}>{i + 1}. {label}</li>)}</ol>
         <div className="space-y-4 text-sm">
+          {step === 0 && <>
           <div>
             <Label>Brand</Label>
             <Input className="mt-1" list="outside-brands" value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Pick from the list or type any brand" maxLength={80} />
@@ -158,10 +153,8 @@ function AddOutsideDialog({ fundraiserId, onClose, onDone }: { fundraiserId: str
           {fromStock ? (
             <div>
               <Label>Stock code {brand.trim() ? `(${brand.trim()})` : '(all brands)'}</Label>
-              <select className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2" value={stockId} onChange={(e) => setStockId(e.target.value)}>
-                <option value="">{stock.isLoading ? 'Loading…' : stock.data?.length ? 'Choose a code' : 'No matching stock'}</option>
-                {stock.data?.map((s) => <option key={s.id} value={s.id}>{s.store_name} · {usd(s.value)} · {s.code_hint}</option>)}
-              </select>
+              <DataTable columns={[{ key: 'stock', header: 'Available stock', cell: (r: any) => <span>{r.store_name} · {usd(r.value)} · {r.code_hint || '••••'}</span> }, { key: 'pick', header: '', cell: (r: any) => <Button size="sm" variant={stockId === r.id ? 'default' : 'outline'} onClick={() => { setStockId(r.id); setSelectedStock(r); }}>{stockId === r.id ? 'Selected' : 'Select'}</Button> }]} rows={stock.data?.rows} total={stock.data?.total} loading={stock.isLoading} error={stock.error ? (stock.error as Error).message : null} onRetry={() => stock.refetch()} page={stockPage} pageSize={10} onPage={setStockPage} rowKey={(r: any) => r.id} empty="No matching stock." />
+              {selectedStock && <p className="mt-2 text-xs text-primary">Selected: {selectedStock.store_name} · {usd(selectedStock.value)}</p>}
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
@@ -172,6 +165,8 @@ function AddOutsideDialog({ fundraiserId, onClose, onDone }: { fundraiserId: str
               <div className="sm:col-span-2"><Label>Redemption link (optional)</Label><Input className="mt-1" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://" /></div>
             </div>
           )}
+          </>}
+          {step === 1 && <>
           <div><Label>Where it came from (optional, staff only)</Label><Input className="mt-1" value={source} onChange={(e) => setSource(e.target.value)} placeholder="e.g. Church drive, local store" maxLength={120} /></div>
 
           <div className="space-y-2">
@@ -188,24 +183,25 @@ function AddOutsideDialog({ fundraiserId, onClose, onDone }: { fundraiserId: str
               </div>
             )}
             {mode === 'existing' && (
-              <select className="w-full rounded-md border border-input bg-background px-3 py-2" value={existing} onChange={(e) => setExisting(e.target.value)}>
-                <option value="">{donors.isLoading ? 'Loading…' : donors.data?.length ? 'Choose a donor of this fundraiser' : 'No donors yet'}</option>
-                {donors.data?.map((d) => <option key={d.key} value={d.key}>{d.name}{d.email && d.email !== d.name ? ` <${d.email}>` : ''}</option>)}
-              </select>
+              <div className="space-y-2"><Input aria-label="Search existing donors" placeholder="Search donor name or email" value={donorSearch} onChange={(e) => { setDonorSearch(e.target.value); setDonorPage(0); }} />
+              <DataTable columns={[{ key: 'donor', header: 'Donor', cell: (r: any) => <div>{r.name || 'Guest'}<p className="text-xs text-muted-foreground">{r.email || 'No email'}</p></div> }, { key: 'pick', header: '', cell: (r: any) => <Button size="sm" variant={existing === r.key ? 'default' : 'outline'} onClick={() => { setExisting(r.key); setSelectedDonor(r); }}>{existing === r.key ? 'Selected' : 'Select'}</Button> }]} rows={donors.data?.rows} total={donors.data?.total} loading={donors.isLoading} error={donors.error ? (donors.error as Error).message : null} onRetry={() => donors.refetch()} page={donorPage} pageSize={10} onPage={setDonorPage} rowKey={(r: any) => r.key} empty="No donors match." />
+              {picked && <p className="text-xs text-primary">Selected: {picked.name || picked.email || 'Guest'}</p>}</div>
             )}
             {mode !== 'none' && <label className="flex items-center gap-2"><Checkbox checked={anon} onCheckedChange={(v) => setAnon(!!v)} />Keep this donor anonymous</label>}
           </div>
 
-          <div className="space-y-2 rounded-md bg-muted/50 p-3">
+          </>}
+          {step === 2 && <dl className="grid grid-cols-[6rem_minmax(0,1fr)] gap-2"><dt className="text-muted-foreground">Brand</dt><dd>{fromStock ? selectedStock?.store_name : brand}</dd><dt className="text-muted-foreground">Value</dt><dd>{usd(fromStock ? selectedStock?.value : Number(value))}</dd><dt className="text-muted-foreground">Credential</dt><dd>{fromStock ? 'Stock · ••••' : code ? 'Code · ••••' : 'Hosted link · hidden'}</dd><dt className="text-muted-foreground">Source</dt><dd>{source || 'Not recorded'}</dd><dt className="text-muted-foreground">Donor</dt><dd className="break-words">{mode === 'none' ? 'No donor' : mode === 'new' ? name || email || 'Unnamed donor' : picked?.name || picked?.email}{anon && ' · anonymous'}</dd></dl>}
+          {step > 0 && <div className="space-y-2 rounded-md bg-muted/50 p-3">
             <label className="flex items-center gap-2"><Checkbox checked={emailDonor && !!donorEmail} disabled={!donorEmail} onCheckedChange={(v) => setEmailDonor(!!v)} />Email the donor a confirmation{donorEmail ? ` (${donorEmail})` : ' — needs an email address'}</label>
             <label className="flex items-center gap-2"><Checkbox checked={emailOrg} onCheckedChange={(v) => setEmailOrg(!!v)} />Email the organizer that a coupon is ready</label>
-            <p className="text-xs text-muted-foreground">Emails never include the code. The donor gets a short thank-you with a link to the fundraiser page.</p>
-          </div>
+          </div>}
           {err && <p className="text-destructive">{err}</p>}
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button onClick={save} disabled={saving}>{saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Add coupon</Button>
+          <Button variant="ghost" onClick={close} disabled={saving}>Cancel</Button>
+          {step > 0 && <Button variant="outline" onClick={() => { setStep(step - 1); setErr(null); }} disabled={saving}>Back</Button>}
+          {step < 2 ? <Button onClick={() => { setErr(null); if (step === 0 && ((!fromStock && (!brand.trim() || !(Number(value) > 0) || (!code.trim() && !link.trim()))) || (fromStock && !stockId))) { setErr('Complete the brand, value and credential or choose stock.'); return; } if (step === 1 && mode === 'existing' && !picked) { setErr('Choose an existing donor.'); return; } if (step === 1 && mode === 'new' && email.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) { setErr('Enter a valid email.'); return; } setStep(step + 1); }}>Continue</Button> : <Button onClick={save} disabled={saving}>{saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Confirm and add coupon</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>
