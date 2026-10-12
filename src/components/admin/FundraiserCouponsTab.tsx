@@ -1,4 +1,5 @@
 import { FundraiserReceiptsAdmin } from '@/components/admin/FundraiserReceiptsAdmin';
+import { OutsideCoupons } from '@/components/admin/OutsideCoupons';
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronRight, Eye, EyeOff, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -284,7 +285,9 @@ export function FundraiserCouponsTab({ fundraiserId, canWrite, donationId }: { f
 
   if (q.isLoading) return <p className="py-6 text-center text-sm text-muted-foreground">Loading coupons…</p>;
   if (q.error) return <div className="py-6 text-center text-sm text-destructive">{(q.error as Error).message} <button className="ml-2 text-primary" onClick={() => q.refetch()}>Retry</button></div>;
-  if (!rows.length) return <p className={donationId ? 'mt-1 text-xs text-muted-foreground' : 'py-6 text-center text-sm text-muted-foreground'}>{donationId ? 'No coupons for this donation yet.' : 'No coupons yet. Coupons appear here once a donation to this fundraiser is completed.'}</p>;
+  if (!rows.length) return donationId ? <p className="mt-1 text-xs text-muted-foreground">No coupons for this donation yet.</p> : (
+    <div className="space-y-3"><OutsideCoupons fundraiserId={fundraiserId} canWrite={canWrite} /><p className="py-6 text-center text-sm text-muted-foreground">No donation coupons yet. They appear here once a donation to this fundraiser is completed.</p></div>
+  );
 
   const groups = new Map<string, Row[]>();
   for (const r of rows) { const k = `${r.donation_id}|${r.store_name}`; groups.set(k, [...(groups.get(k) ?? []), r]); }
@@ -292,6 +295,7 @@ export function FundraiserCouponsTab({ fundraiserId, canWrite, donationId }: { f
 
   return (
     <div className="space-y-3">
+      {!donationId && <OutsideCoupons fundraiserId={fundraiserId} canWrite={canWrite} />}
       {!donationId && <FundraiserReceiptsAdmin fundraiserId={fundraiserId} canWrite={canWrite} />}
       {!donationId && (
         <p className="text-xs text-muted-foreground">
