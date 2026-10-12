@@ -98,9 +98,12 @@ Deno.test('device-safe interfaces retain dynamic viewport and touch equivalents'
 Deno.test('the dollar section promises 100%, fills its number and keeps the journey motion', async () => {
   const transparency = await Deno.readTextFile('src/components/landing/TrustTransparency.tsx');
   // Founder-chosen: "The promise" heading and colours, "The big number" layout and filling 100%.
-  assert(transparency.includes('data-fill-number') && transparency.includes("initial={{ clipPath: 'inset(100% 0 0 0)' }}"));
-  assert(transparency.includes('Every dollar you give reaches a family.') && transparency.includes('data-promise-underline') && transparency.includes('All of it.'));
-  assert(transparency.includes('const FILL = 1.6;') && transparency.includes('bg-background'));
+  // The 100% follows the scroll both ways, slowly (spring), so it is always in motion with the page.
+  assert(transparency.includes('data-fill-number') && transparency.includes("useScroll({ target: ref, offset: ['start end', 'end start'] })") && transparency.includes('useSpring('));
+  // The Promise headline sits above the number, and its underline redraws like the concept.
+  assert(transparency.indexOf('data-promise-underline') < transparency.indexOf('<FillingNumber />'));
+  assert(transparency.includes('Every dollar you give reaches a family.') && transparency.includes('All of it.') && transparency.includes('repeat: Infinity'));
+  assert(transparency.includes('bg-background'));
   assert(!/95¢|95%|Platform operations|3¢/.test(transparency));
   assert(transparency.includes('data-journey-line'));
 });
