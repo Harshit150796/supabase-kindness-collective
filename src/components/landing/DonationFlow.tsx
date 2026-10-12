@@ -96,6 +96,29 @@ export function DonationFlow() {
       });
   }, []);
 
+  // Back from the payment page without paying: the browser may restore this page as it was left,
+  // with the button still spinning. Reset it so the donor can pay again (a fresh link is made).
+  useEffect(() => {
+    const reset = (e?: PageTransitionEvent) => {
+      if (e && !e.persisted) return;
+      setBusy(false);
+      setCheckoutUrl(null);
+    };
+    const onVisible = () => { if (document.visibilityState === 'visible') reset(); };
+    window.addEventListener('pageshow', reset);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener('pageshow', reset);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
+
+  // Wake the checkout service when the donor reaches the review step, so the click is quick.
+  useEffect(() => {
+    if (step !== 3 || provider !== 'square') return;
+    supabase.functions.invoke('create-donation-checkout', { body: { warm: true } }).catch(() => {});
+  }, [step, provider]);
+
   const retailers = useMemo(() => ids.map(findRetailer), [ids]);
   const count = retailers.length;
   const minimum = minTotal(count);

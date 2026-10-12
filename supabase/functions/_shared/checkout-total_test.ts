@@ -61,3 +61,11 @@ Deno.test('checkouts charge through the shared calculation and webhooks record g
   const square = await Deno.readTextFile('supabase/functions/create-donation-checkout/index.ts');
   assert(!square.includes('meals_provided: mealsProvided') && !square.includes('metadata.brand_id'));
 });
+
+Deno.test('Square hosted checkout fee (3.3% + 30c) for common gifts, to the cent', () => {
+  assertEquals(coveredFeeCents(1000, 'square'), 66); // $10 -> $0.66
+  assertEquals(coveredFeeCents(2500, 'square'), 117); // $25 -> $1.17
+  assertEquals(coveredFeeCents(10000, 'square'), 373); // $100 -> $3.73
+  assertEquals(computeCharge({ gift: 25, tip: 2.5, coverFee: true, provider: 'square' }).totalCents, 2750 + coveredFeeCents(2750, 'square'));
+  assertEquals(computeCharge({ gift: 25, coverFee: false, provider: 'square' }).feeCents, 0);
+});
