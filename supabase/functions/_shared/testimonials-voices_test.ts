@@ -36,14 +36,14 @@ Deno.test('CMS spacing is tidied for display', () => {
   assertEquals(tidy("I've"), 'I’ve');
 });
 
-Deno.test('the section moves on the compositor, pauses, and keeps one accessible copy of each line', async () => {
+Deno.test('the section moves continuously on the compositor and keeps one accessible copy of each line', async () => {
   const section = await Deno.readTextFile('src/components/landing/TestimonialsSection.tsx');
   const css = await Deno.readTextFile('src/index.css');
-  assert(section.includes('aria-pressed={paused}'));
+  assert(!section.includes('paused') && !section.includes('Pause the moving lines'));
   assert(section.includes("aria-hidden={echo || undefined}") && section.includes('tabIndex={echo ? -1 : undefined}'));
-  assert(section.includes("data-moving={onScreen && !paused ? 'true' : 'false'}"));
+  assert(!section.includes('data-moving=') && section.includes('window.setInterval'));
   assert(section.includes('[grid-area:1/1]'));
   assert(css.includes('@keyframes voices-forward{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}'));
-  assert(css.includes('.voices-row:hover .voices-track,.voices-row:focus-within .voices-track,.voices-row:active .voices-track{animation-play-state:paused}'));
+  assert(!css.includes('animation-play-state:paused'));
   assert(!section.includes('CheckCircle2'));
 });

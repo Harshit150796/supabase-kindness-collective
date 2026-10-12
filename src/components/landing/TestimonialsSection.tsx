@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { Pause, Play } from 'lucide-react';
 import { useCMSTestimonials } from '@/hooks/useCMSContent';
 import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
 import { ReservedSectionState } from './ReservedSectionState';
@@ -80,12 +79,8 @@ function VoiceRow({ lines, voices, active, reverse, onPick }: {
 
 export function TestimonialsSection() {
   const { data: cmsTestimonials, isLoading, isError, refetch } = useCMSTestimonials(true);
-  const sectionRef = useRef<HTMLElement>(null);
   const featureRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const [chosen, setChosen] = useState(false);
-  const [onScreen, setOnScreen] = useState(false);
 
   const voices = useMemo<Voice[]>(() => ((cmsTestimonials || []) as CmsTestimonial[]).map((t) => ({
     id: t.id,
@@ -97,24 +92,15 @@ export function TestimonialsSection() {
   })).filter((voice) => voice.quote && voice.name), [cmsTestimonials]);
   const rows = useMemo(() => voiceRows(voices.map((voice) => voice.quote)), [voices]);
 
-  // Rows only move while the section is on screen, and the featured account turns over gently
-  // until someone picks one; the pause button stops both.
+  // The featured account keeps turning over while both rows drift continuously.
   useEffect(() => {
-    const section = sectionRef.current;
-    if (!section || typeof IntersectionObserver === 'undefined') { setOnScreen(true); return; }
-    const observer = new IntersectionObserver(([entry]) => setOnScreen(entry.isIntersecting), { rootMargin: '120px 0px' });
-    observer.observe(section);
-    return () => observer.disconnect();
-  }, [voices.length]);
-  useEffect(() => {
-    if (paused || chosen || !onScreen || voices.length < 2) return;
+    if (voices.length < 2) return;
     const timer = window.setInterval(() => setActive((current) => (current + 1) % voices.length), FEATURE_EVERY_MS);
     return () => window.clearInterval(timer);
-  }, [paused, chosen, onScreen, voices.length]);
+  }, [voices.length]);
 
   const pick = useCallback((person: number, event: MouseEvent<HTMLButtonElement>) => {
     setActive(person);
-    setChosen(true);
     const feature = featureRef.current;
     if (!feature) return;
     // Keyboard users land on the account they chose; on small screens it is brought into view.
@@ -132,20 +118,15 @@ export function TestimonialsSection() {
   const current = Math.min(active, voices.length - 1);
 
   return (
-    <section ref={sectionRef} data-voices data-moving={onScreen && !paused ? 'true' : 'false'} className="voices min-h-[var(--lazy-reserved-height,0px)] overflow-hidden bg-secondary/45 py-14 lg:py-24">
-      <div className="container mx-auto flex flex-col gap-5 px-4 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
+    <section data-voices className="voices min-h-[var(--lazy-reserved-height,0px)] overflow-hidden bg-secondary/45 py-14 lg:py-24">
+      <div className="container mx-auto grid gap-5 px-4 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,28rem)] lg:items-center lg:gap-12">
         <LineReveal><h2 className="font-display text-5xl font-normal leading-none text-foreground md:text-6xl">In their own words.</h2></LineReveal>
-        <Reveal delay={0.08} className="flex max-w-md flex-col items-start gap-3">
+        <Reveal delay={0.08} className="max-w-md lg:justify-self-end">
           <p className="text-base leading-relaxed text-muted-foreground md:text-lg">Published accounts from people who have used or supported CouponDonation. Choose a line to read it in full.</p>
-          <button type="button" onClick={() => setPaused((value) => !value)} aria-pressed={paused}
-            className="-ml-2 inline-flex min-h-11 items-center gap-2 rounded-md px-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            {paused ? <Play className="h-4 w-4" aria-hidden="true" /> : <Pause className="h-4 w-4" aria-hidden="true" />}
-            {paused ? 'Play the moving lines' : 'Pause the moving lines'}
-          </button>
         </Reveal>
       </div>
 
-      <div className="mt-9 flex flex-col gap-1 md:mt-12 md:gap-2.5">
+      <div className="mt-7 flex flex-col gap-1 md:mt-10 md:gap-2.5">
         <VoiceRow lines={rows[0]} voices={voices} active={current} onPick={pick} />
         <VoiceRow lines={rows[1]} voices={voices} active={current} onPick={pick} reverse />
       </div>
