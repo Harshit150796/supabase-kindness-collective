@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { brandRows, couponSlots, describeSplit, parseSplit, type Share } from '../_shared/brand-split.ts';
+import { readPayment } from '../_shared/checkout-total.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -140,7 +141,7 @@ async function handleSuccessfulPayment(
   }
 
   // Get payment details
-  const amount = (session.amount_total || 0) / 100; // Convert from cents
+  const paid = (session.amount_total || 0) / 100; // everything charged: gift + tip + covered fee
   const currency = session.currency || "usd";
 
   // Get payment method details and ACTUAL Stripe fee from balance transaction
@@ -187,8 +188,8 @@ async function handleSuccessfulPayment(
   }
 
   // Fallback to estimated fee if we couldn't get actual (2.9% + $0.30 for US cards)
-  const stripeFee = actualStripeFee ?? Number((amount * 0.029 + 0.30).toFixed(2));
-  const netAmount = Number((amount - stripeFee).toFixed(2));
+  const stripeFee = actualStripeFee ?? Number((paid * 0.029 + 0.30).toFixed(2));
+  const netAmount = Number((paid - stripeFee).toFixed(2));
 
   // Extract metadata
   const metadata = session.metadata || {};
@@ -196,6 +197,10 @@ async function handleSuccessfulPayment(
   // Treat empty string as null
   const donorId = (rawDonorId && rawDonorId.trim() !== "") ? rawDonorId : null;
   
+  // The gift (100% to families) apart from the optional tip and the card fee the donor covered.
+  const payment = readPayment(metadata, session.amount_total || 0);
+  const amount = payment.giftCents / 100;
+
   // Parse brand allocations (multi-brand support)
   const shares = parseSplit(metadata, amount);
   const isMultiBrand = shares.length > 1;
@@ -222,6 +227,9 @@ async function handleSuccessfulPayment(
   // Insert donation record
   const donationData: Record<string, unknown> = {
     amount,
+    amount_paid: paid,
+    tip_amount: payment.tipCents / 100,
+    fee_covered_amount: payment.feeCents / 100,
     payment_provider: "stripe",
     stripe_session_id: session.id,
     stripe_payment_intent_id: session.payment_intent as string,
@@ -369,7 +377,7 @@ async function handleRefund(supabase: any, charge: Stripe.Charge) {
   // Find donation by payment intent
   const { data: donation } = await supabase
     .from("donations")
-    .select("id, amount")
+    .select("id, amount, amount_paid")
     .eq("stripe_payment_intent_id", charge.payment_intent)
     .single();
 
@@ -380,7 +388,7 @@ async function handleRefund(supabase: any, charge: Stripe.Charge) {
 
   // Check if fully or partially refunded
   const refundedAmount = (charge.amount_refunded || 0) / 100;
-  const status = refundedAmount >= donation.amount ? "refunded" : "partially_refunded";
+  const status = refundedAmount >= Number(donation.amount_paid ?? donation.amount) ? "refunded" : "partially_refunded";
 
   await supabase
     .from("donations")

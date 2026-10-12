@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { X, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+// The whole gift reaches families; running costs come from optional tips, and the card fee is
+// covered by the donor at checkout or paid from tips. Logo green and blue only.
 const ROWS = [
-  { label: 'Direct to recipients', pct: 95, color: 'bg-emerald-500', text: 'text-emerald-600' },
-  { label: 'Platform operations', pct: 3, color: 'bg-amber-500', text: 'text-amber-600' },
-  { label: 'Payment processing', pct: 2, color: 'bg-sky-500', text: 'text-sky-600' },
+  { label: 'Your gift, to families', pct: 100, note: '100%', color: 'bg-primary', text: 'text-primary' },
+  { label: 'Taken from your gift', pct: 0, note: '0%', color: 'bg-verify', text: 'text-verify' },
 ];
 
 export function TransparencyPopover() {
@@ -46,7 +47,7 @@ export function TransparencyPopover() {
             <div key={r.label}>
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-foreground">{r.label}</span>
-                <span className={`font-bold ${r.text}`}>{r.pct}%</span>
+                <span className={`font-bold ${r.text}`}>{r.note}</span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
@@ -57,6 +58,10 @@ export function TransparencyPopover() {
             </div>
           ))}
         </div>
+
+        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+          An optional tip at checkout keeps the platform running (most donors leave about 10%). You can cover the card fee; if you don't, tips pay it.
+        </p>
 
         <Button asChild size="sm" className="w-full mt-4">
           <Link to="/about" onClick={closeTransparency}>

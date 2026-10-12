@@ -1,4 +1,5 @@
 import { SplitError, describeSplit, encodeSplit, normalizeSplit } from '../_shared/brand-split.ts';
+import { ChargeError, chargeMetadata, computeCharge } from '../_shared/checkout-total.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,17 +34,18 @@ Deno.serve(async (req) => {
     const settings = settingsRes.ok ? (await settingsRes.json())?.[0] : null;
     if (settings && settings.square_enabled === false) return json({ error: "Square payments are currently turned off." }, 403);
 
-    const { sourceId, verificationToken, amount, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = await req.json();
+    const { sourceId, verificationToken, amount, tipAmount, coverFee, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = await req.json();
     const amt = Number(amount);
     if (typeof sourceId !== "string" || !sourceId || sourceId.length > 500) return json({ error: "Missing payment details." }, 400);
     if (!amt || amt < 5 || amt > 10000) return json({ error: "Invalid donation amount. Must be between $5 and $10,000." }, 400);
 
     // The donor's dollar split, checked again here (each retailer's share becomes one coupon slot).
-    let shares;
+    let shares, charge;
     try {
       shares = normalizeSplit(amt, brandAllocations, { brand: brandName, brandId });
+      charge = computeCharge({ gift: amt, tip: tipAmount, coverFee, provider: "square" });
     } catch (e) {
-      if (e instanceof SplitError) return json({ error: e.message }, 400);
+      if (e instanceof SplitError || e instanceof ChargeError) return json({ error: e.message }, 400);
       throw e;
     }
     const isMultiBrand = shares.length > 1;
@@ -53,14 +55,9 @@ Deno.serve(async (req) => {
     if (!token || !locationId) return json({ error: "Square is not configured." }, 500);
     const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "Square-Version": "2025-01-23" };
 
-    const metadata: Record<string, string> = {
-      type: "donation",
-      amount: amt.toString(),
-      meals_provided: (amt * 2).toString(),
-      is_multi_brand: isMultiBrand.toString(),
-    };
+    // Square allows ten metadata keys; these are nine at most.
+    const metadata: Record<string, string> = { type: "donation", ...chargeMetadata(charge) };
     if (shares[0]?.brand) metadata.brand_name = shares[0].brand;
-    if (shares[0]?.brandId) metadata.brand_id = shares[0].brandId;
     if (shares.length > 0) metadata.brand_allocations = encodeSplit(shares);
     if (userId) metadata.donor_id = String(userId);
     if (userEmail) metadata.donor_email = String(userEmail);
@@ -77,9 +74,12 @@ Deno.serve(async (req) => {
           line_items: [{
             name: isMultiBrand ? `Donation for families (${shares.length} retailers)` : "Donation to Help Families",
             quantity: "1",
-            base_price_money: { amount: Math.round(amt * 100), currency: "USD" },
-            ...(shares.length ? { note: (isMultiBrand ? `Shared between ${describeSplit(shares)}` : `Gift cards for families, via ${shares[0].brand}`).slice(0, 500) } : {}),
-          }],
+            base_price_money: { amount: charge.giftCents, currency: "USD" },
+            ...(shares.length ? { note: (isMultiBrand ? `100% to families, shared between ${describeSplit(shares)}` : `100% to families, via ${shares[0].brand}`).slice(0, 500) } : {}),
+          },
+          // The order total must match the charge, so the tip and covered fee are their own lines.
+          ...(charge.tipCents > 0 ? [{ name: "Tip to CouponDonation", quantity: "1", base_price_money: { amount: charge.tipCents, currency: "USD" } }] : []),
+          ...(charge.feeCents > 0 ? [{ name: "Card processing fee (you covered it)", quantity: "1", base_price_money: { amount: charge.feeCents, currency: "USD" } }] : [])],
           metadata,
         },
       }),
@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
         idempotency_key: crypto.randomUUID(),
         source_id: sourceId,
         ...(verificationToken ? { verification_token: verificationToken } : {}),
-        amount_money: { amount: Math.round(amt * 100), currency: "USD" },
+        amount_money: { amount: charge.totalCents, currency: "USD" },
         order_id: orderId,
         location_id: locationId,
         autocomplete: true,

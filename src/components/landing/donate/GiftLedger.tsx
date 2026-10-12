@@ -87,7 +87,7 @@ export function GiftLedger({ amount, retailers, shares, step }: { amount: number
       </div>
 
       <p className="mt-auto hidden pt-10 text-sm leading-relaxed text-white/65 lg:block">
-        Families get coupons for these stores. Our team sizes each one for what is needed, from a single grocery card to a few meal coupons.
+        All of it reaches families as coupons for these stores, sized by our team for what is needed. Nothing is taken out for fees.
       </p>
     </aside>
   );

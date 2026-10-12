@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { SplitError, describeSplit, encodeSplit, normalizeSplit } from '../_shared/brand-split.ts';
+import { ChargeError, chargeMetadata, computeCharge } from '../_shared/checkout-total.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,7 +22,7 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = await req.json();
+    const { amount, tipAmount, coverFee, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = await req.json();
 
     // Validate amount
     if (!amount || amount < 5 || amount > 10000) {
@@ -29,11 +30,13 @@ serve(async (req) => {
     }
 
     // The donor's dollar split, checked again here (each retailer's share becomes one coupon slot).
-    let shares;
+    // The gift goes to families in full; an optional tip and the covered card fee are added on top.
+    let shares, charge;
     try {
       shares = normalizeSplit(amount, brandAllocations, { brand: brandName, brandId });
+      charge = computeCharge({ gift: amount, tip: tipAmount, coverFee, provider: "square" });
     } catch (e) {
-      if (e instanceof SplitError) {
+      if (e instanceof SplitError || e instanceof ChargeError) {
         return new Response(JSON.stringify({ error: e.message }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 400,
@@ -45,6 +48,8 @@ serve(async (req) => {
 
     console.log("Creating Square donation checkout:", {
       amount,
+      tipCents: charge.tipCents,
+      feeCents: charge.feeCents,
       brandCount: shares.length,
       split: describeSplit(shares),
       userId: userId || 'anonymous',
@@ -81,14 +86,9 @@ serve(async (req) => {
     // it back to record the donation and create coupons.
     // NOTE: Square rejects empty-string metadata values, so only include
     // keys that actually have a value.
-    const metadata: Record<string, string> = {
-      type: "donation",
-      amount: amount.toString(),
-      meals_provided: mealsProvided.toString(),
-      is_multi_brand: isMultiBrand.toString(),
-    };
+    // Square allows ten metadata keys; these are nine at most.
+    const metadata: Record<string, string> = { type: "donation", ...chargeMetadata(charge) };
     if (shares[0]?.brand) metadata.brand_name = shares[0].brand;
-    if (shares[0]?.brandId) metadata.brand_id = shares[0].brandId;
     if (shares.length > 0) metadata.brand_allocations = encodeSplit(shares);
     if (userId) metadata.donor_id = userId;
     if (userEmail) metadata.donor_email = userEmail;
@@ -108,13 +108,24 @@ serve(async (req) => {
               : `Donation to Help Families`,
             quantity: "1",
             base_price_money: {
-              amount: Math.round(amount * 100), // cents
+              amount: charge.giftCents,
               currency: "USD",
             },
             note: (isMultiBrand
-              ? `Shared between ${describeSplit(shares)}`
-              : shares.length ? `Gift cards for families, via ${shares[0].brand}` : "Gift cards for families in need").slice(0, 500),
+              ? `100% to families, shared between ${describeSplit(shares)}`
+              : shares.length ? `100% to families, via ${shares[0].brand}` : "100% to families").slice(0, 500),
           },
+          ...(charge.tipCents > 0 ? [{
+            name: "Tip to CouponDonation",
+            quantity: "1",
+            base_price_money: { amount: charge.tipCents, currency: "USD" },
+            note: "Optional. Keeps the platform running.",
+          }] : []),
+          ...(charge.feeCents > 0 ? [{
+            name: "Card processing fee (you covered it)",
+            quantity: "1",
+            base_price_money: { amount: charge.feeCents, currency: "USD" },
+          }] : []),
         ],
         metadata,
       },

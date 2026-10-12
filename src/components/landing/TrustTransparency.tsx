@@ -4,10 +4,15 @@ import { motion, useInView } from 'motion/react';
 import { LineReveal, MotionBar, Reveal } from '@/components/ui/editorial-motion';
 import { CouponScrollPath } from './CouponScrollPath';
 
+// The whole gift reaches families. Running costs come from optional tips; the card fee is covered by
+// the donor at checkout or paid from tips. (Interim copy until the redesign is chosen.)
 const breakdown = [
-  { label: 'Recipient purchases', percent: 95, Icon: Heart },
-  { label: 'Platform operations', percent: 3, Icon: PieChart },
-  { label: 'Payment processing', percent: 2, Icon: CheckCircle },
+  { label: 'Your gift, to families as coupons', percent: 100, Icon: Heart },
+  { label: 'Taken from your gift for fees or operations', percent: 0, Icon: PieChart },
+];
+const extras = [
+  { label: 'Tip at checkout', text: 'Optional. It pays for running CouponDonation; most donors leave about 10%.', Icon: CheckCircle },
+  { label: 'Card processing fee', text: 'You can cover it at checkout. If you don\'t, we pay it from tips.', Icon: CheckCircle },
 ];
 
 const journey = [
@@ -35,13 +40,13 @@ function AllocationRing() {
           strokeLinecap="round"
           strokeDasharray={circumference}
           initial={{ strokeDashoffset: circumference }}
-          animate={visible ? { strokeDashoffset: circumference * 0.05 } : undefined}
+          animate={visible ? { strokeDashoffset: 0 } : undefined}
           transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1] }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <strong className="font-display text-7xl font-normal text-primary-foreground">95¢</strong>
-        <span className="mt-1 text-sm text-primary-foreground/70">of each $1</span>
+        <strong className="font-display text-7xl font-normal text-primary-foreground">100¢</strong>
+        <span className="mt-1 text-sm text-primary-foreground/70">of each $1 you give</span>
       </div>
     </div>
   );
@@ -55,7 +60,7 @@ export function TrustTransparency() {
           <Reveal><AllocationRing /></Reveal>
           <div>
             <LineReveal><h2 className="font-display text-4xl md:text-6xl">See where every dollar goes.</h2></LineReveal>
-            <Reveal delay={0.05}><p className="mt-5 text-primary-foreground/75">Our allocation model sets aside the rest for platform operations (3¢) and payment processing (2¢). These are allocation proportions, not live spending totals.</p></Reveal>
+            <Reveal delay={0.05}><p className="mt-5 text-primary-foreground/75">Every dollar you give becomes coupons for families, with a receipt when each one is used. Nothing is taken out of the gift.</p></Reveal>
             <div className="mt-8 space-y-5">
               {breakdown.map(({ label, percent, Icon }, index) => (
                 <Reveal key={label} delay={index * 0.07}>
@@ -65,6 +70,14 @@ export function TrustTransparency() {
                   </div>
                   <div className="mt-2 h-1.5 overflow-hidden bg-primary-foreground/15">
                     <MotionBar value={percent} className="h-full w-full bg-primary-foreground" />
+                  </div>
+                </Reveal>
+              ))}
+              {extras.map(({ label, text, Icon }, index) => (
+                <Reveal key={label} delay={(index + 2) * 0.07}>
+                  <div className="flex items-start gap-2 text-sm">
+                    <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span><span className="font-medium">{label}.</span> <span className="text-primary-foreground/75">{text}</span></span>
                   </div>
                 </Reveal>
               ))}

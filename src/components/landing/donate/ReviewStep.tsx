@@ -1,18 +1,23 @@
-import { motion } from 'motion/react';
-import { Coins, Loader2, Lock } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { Check, Coins, Loader2, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { EASE_OUT } from './tokens';
+import { TIP_PERCENTS, TYPICAL_TIP_PERCENT, tipCentsFor, type Charge, type Provider } from '../../../../supabase/functions/_shared/checkout-total.ts';
+import { EASE_OUT, SPRING } from './tokens';
 import { plainNumber, usd, type Retailer } from './retailers';
 
-export type Provider = 'square' | 'stripe';
+export type { Provider };
+/** null = nothing chosen yet (no tip), a number = that percent, 'other' = a typed dollar amount. */
+export type TipChoice = null | 0 | (typeof TIP_PERCENTS)[number] | 'other';
 
 const PROVIDERS: Record<Provider, { name: string; hint: string }> = {
   square: { name: 'Square', hint: 'Card, Apple Pay or Google Pay' },
   stripe: { name: 'Stripe', hint: 'Card, Link or wallet' },
 };
 
+const cents = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+const money = (c: number) => (c % 100 ? cents : usd).format(c / 100);
+
 const NEXT = [
-  'You pay on the secure Square or Stripe checkout.',
   "Our team turns each store's share into coupons sized for what families need: one full grocery card, or a few smaller meal coupons.",
   'We email you as your coupons are given out and used, with receipts.',
 ];
@@ -27,77 +32,174 @@ interface ReviewStepProps {
   amount: number;
   retailers: Retailer[];
   providers: Provider[];
-  busy: Provider | null;
+  provider: Provider;
+  onProvider: (p: Provider) => void;
+  tip: TipChoice;
+  otherTip: string;
+  onTip: (choice: TipChoice) => void;
+  onOtherTip: (text: string) => void;
+  coverFee: boolean;
+  onCoverFee: (on: boolean) => void;
+  /** The fee that would be added if covered, for the chosen processor. */
+  feeIfCovered: number;
+  charge: Charge;
+  busy: boolean;
   error: string | null;
   checkoutUrl: string | null;
-  onPay: (provider: Provider) => void;
+  onPay: () => void;
 }
 
-export function ReviewStep({ amount, retailers, providers, busy, error, checkoutUrl, onPay }: ReviewStepProps) {
-  const single = providers.length === 1;
+function Row({ label, value, strong }: { label: string; value: number; strong?: boolean }) {
+  return (
+    <div className={cn('flex items-baseline justify-between gap-4', strong ? 'pt-3 text-foreground' : 'text-muted-foreground')}>
+      <span className={strong ? 'text-[15px] font-medium' : 'text-sm'}>{label}</span>
+      <span className={cn('tabular-nums', strong ? 'font-display text-[1.9rem] leading-none text-foreground' : 'text-sm')}>{money(value)}</span>
+    </div>
+  );
+}
+
+export function ReviewStep(props: ReviewStepProps) {
+  const { amount, retailers, providers, provider, onProvider, tip, otherTip, onTip, onOtherTip, coverFee, onCoverFee, feeIfCovered, charge, busy, error, checkoutUrl, onPay } = props;
+  const giftCents = Math.round(amount * 100);
+  const choices: { id: TipChoice; label: string; sub?: string }[] = [
+    { id: 0, label: 'No tip' },
+    ...TIP_PERCENTS.map((p) => ({ id: p, label: `${p}%`, sub: money(tipCentsFor(giftCents, p)) })),
+    { id: 'other', label: 'Other' },
+  ];
   return (
     <div>
       <h3 className="font-display text-[2rem] leading-[1.05] text-foreground sm:text-[2.5rem]">Review and donate</h3>
       <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">
-        {usd.format(amount)} for families, used at {listNames(retailers)}.
+        All {usd.format(amount)} goes to families, used at {listNames(retailers)}.
       </p>
 
-      <h4 className="mt-7 text-[15px] font-medium text-foreground">What happens next</h4>
-      <ol className="mt-3 space-y-3">
+      <ol className="mt-5 space-y-2.5">
         {NEXT.map((line, i) => (
-          <motion.li
-            key={line}
-            className="flex gap-3.5"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.08 + i * 0.07, ease: EASE_OUT }}
-          >
+          <motion.li key={line} className="flex gap-3.5" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.08 + i * 0.07, ease: EASE_OUT }}>
             <span className="w-4 shrink-0 font-display text-xl leading-6 text-primary tabular-nums">{i + 1}</span>
             <span className="text-[15px] leading-6 text-foreground/85">{line}</span>
           </motion.li>
         ))}
       </ol>
 
-      <p className="mt-5 flex items-center gap-2 text-sm text-muted-foreground">
+      {/* Optional tip: nothing preselected. */}
+      <div className="mt-7" data-tip-picker>
+        <h4 className="text-[15px] font-medium text-foreground">Add a tip for CouponDonation (optional)</h4>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          Your gift goes to families in full, so tips are how we pay for running the platform. Most donors leave about {TYPICAL_TIP_PERCENT}%.
+        </p>
+        <div role="radiogroup" aria-label="Tip" className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
+          {choices.map((c) => {
+            const on = tip === c.id;
+            return (
+              <button
+                key={String(c.id)}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => onTip(c.id)}
+                data-tip-choice={String(c.id)}
+                className={cn('relative flex h-14 flex-col items-center justify-center rounded-xl text-sm font-medium tabular-nums outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[.98]', on ? 'text-primary-foreground' : 'bg-muted/70 text-foreground hover:bg-muted')}
+              >
+                {on && <motion.span layoutId="donate-tip-choice" className="absolute inset-0 rounded-xl bg-primary" transition={SPRING} />}
+                <span className="relative">{c.label}</span>
+                {c.sub && <span className={cn('relative text-xs font-normal', on ? 'opacity-80' : 'text-muted-foreground')}>{c.sub}</span>}
+              </button>
+            );
+          })}
+        </div>
+        <AnimatePresence initial={false}>
+          {tip === 'other' && (
+            <motion.label key="other-tip" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={SPRING} className="block overflow-hidden">
+              <span className="mt-3 flex h-12 items-center gap-1 rounded-xl bg-muted/70 px-3 focus-within:ring-2 focus-within:ring-ring">
+                <span className="text-muted-foreground" aria-hidden="true">$</span>
+                <input
+                  autoFocus
+                  inputMode="decimal"
+                  aria-label="Tip in dollars"
+                  placeholder="0"
+                  value={otherTip}
+                  onChange={(e) => onOtherTip(e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').slice(0, 7))}
+                  className="w-full min-w-0 bg-transparent text-[15px] tabular-nums text-foreground outline-none"
+                />
+              </span>
+            </motion.label>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Card fee: ticked by default. */}
+      <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl bg-muted/50 p-4" data-cover-fee>
+        <span className="relative mt-0.5 grid h-5 w-5 shrink-0 place-items-center">
+          <input type="checkbox" checked={coverFee} onChange={(e) => onCoverFee(e.target.checked)} className="peer absolute inset-0 m-0 cursor-pointer appearance-none rounded-md border-2 border-primary bg-background checked:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+          <Check className="pointer-events-none relative h-3.5 w-3.5 text-primary-foreground opacity-0 peer-checked:opacity-100" strokeWidth={3} aria-hidden="true" />
+        </span>
+        <span className="text-[15px] leading-relaxed">
+          <span className="font-medium text-foreground">Cover the card processing fee ({money(feeIfCovered)})</span>
+          <span className="block text-sm text-muted-foreground">
+            {coverFee ? `${PROVIDERS[provider].name}'s fee is added on top, so nothing comes out of the gift.` : 'We pay the fee from tips instead, so families still get the full gift.'}
+          </span>
+        </span>
+      </label>
+
+      {providers.length > 1 && (
+        <div className="mt-5">
+          <h4 className="text-[15px] font-medium text-foreground">Pay with</h4>
+          <div role="radiogroup" aria-label="Payment" className="mt-2 grid gap-2 sm:grid-cols-2">
+            {providers.map((id) => {
+              const on = provider === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => onProvider(id)}
+                  data-provider={id}
+                  className={cn('flex flex-col items-start rounded-xl px-4 py-3 text-left outline-none transition-[background-color,box-shadow] focus-visible:ring-2 focus-visible:ring-ring', on ? 'bg-[hsl(var(--primary-97))] shadow-[inset_0_0_0_2px_hsl(var(--primary))] dark:bg-primary/15' : 'bg-muted/70 hover:bg-muted')}
+                >
+                  <span className="text-[15px] font-medium text-foreground">{PROVIDERS[id].name}</span>
+                  <span className="text-xs text-muted-foreground">{PROVIDERS[id].hint}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-6 space-y-1.5 border-t border-border pt-4" data-charge-summary>
+        <Row label="Gift for families (100%)" value={charge.giftCents} />
+        <Row label="Tip to CouponDonation" value={charge.tipCents} />
+        <Row label={coverFee ? 'Card processing fee you cover' : 'Card processing fee (paid from tips)'} value={charge.feeCents} />
+        <Row label="Total today" value={charge.totalCents} strong />
+      </div>
+
+      <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
         <Coins className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
         This gift earns {plainNumber.format(Math.floor(amount * 10))} Gold Coins.
       </p>
 
-      <div className="mt-7">
+      <div className="mt-5">
         {providers.length === 0 ? (
           <p className="rounded-xl bg-muted/70 p-4 text-sm text-muted-foreground">Online payments are paused for a moment. Please check back soon.</p>
         ) : (
-          <div className={cn('grid gap-2.5', providers.length > 1 && 'sm:grid-cols-2')}>
-            {providers.map((id, i) => {
-              const p = PROVIDERS[id];
-              const loading = busy === id;
-              return (
-                <motion.button
-                  key={id}
-                  type="button"
-                  data-pay-with={id}
-                  onClick={() => onPay(id)}
-                  disabled={busy !== null}
-                  whileTap={{ scale: 0.98 }}
-                  className={cn(
-                    'flex min-h-[3.75rem] flex-col items-center justify-center rounded-xl px-4 py-2.5 outline-none transition-colors',
-                    'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-wait',
-                    i === 0 ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-muted/70 text-foreground hover:bg-muted',
-                    busy && !loading && 'opacity-50',
-                  )}
-                >
-                  {loading ? (
-                    <span className="flex items-center gap-2 text-[15px] font-medium"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Opening {p.name}…</span>
-                  ) : (
-                    <>
-                      <span className="text-[15px] font-medium">{single ? `Donate ${usd.format(amount)}` : `Donate ${usd.format(amount)} with ${p.name}`}</span>
-                      <span className="text-xs opacity-75">{single ? `${p.name} · ${p.hint}` : p.hint}</span>
-                    </>
-                  )}
-                </motion.button>
-              );
-            })}
-          </div>
+          <motion.button
+            type="button"
+            data-pay-with={provider}
+            onClick={onPay}
+            disabled={busy}
+            whileTap={{ scale: 0.98 }}
+            className="flex min-h-[3.75rem] w-full flex-col items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-primary-foreground outline-none transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-wait"
+          >
+            {busy ? (
+              <span className="flex items-center gap-2 text-[15px] font-medium"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Opening {PROVIDERS[provider].name}…</span>
+            ) : (
+              <>
+                <span className="text-[15px] font-medium tabular-nums">Donate {money(charge.totalCents)}</span>
+                <span className="text-xs opacity-75">with {PROVIDERS[provider].name} · {PROVIDERS[provider].hint}</span>
+              </>
+            )}
+          </motion.button>
         )}
 
         {error && (
@@ -117,7 +219,7 @@ export function ReviewStep({ amount, retailers, providers, busy, error, checkout
         </div>
         <p className="mt-2.5 flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span>You finish on {single ? `${PROVIDERS[providers[0]].name}'s` : "Square's or Stripe's"} secure page, so we never see your card. Cards from outside the US work too; your bank handles any currency conversion.</span>
+          <span>You finish on {PROVIDERS[provider].name}'s secure page, so we never see your card. Your receipt lists the gift, tip and fee separately.</span>
         </p>
       </div>
     </div>
