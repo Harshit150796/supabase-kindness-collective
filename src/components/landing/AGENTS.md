@@ -39,4 +39,4 @@
 
 
 ## "Every dollar" section (TrustTransparency)
-- Founder-chosen (Oct 2026): light band, "Every dollar you give reaches a family. All of it." with the hand-drawn underline (from the Promise concept), beside an outlined 100% that fills with green from the bottom (from The big number), then three promise columns (gift, optional tip ~10%, card fee covered by donor or tips) and the journey row. Motion plays once on view. Never show 95%/platform-fee splits.
+- Founder-chosen (Oct 2026): light band; the headline is "Every dollar you give reaches a family. All of it." set large on top, its hand-drawn underline redrawing every 7s like the Promise concept. Below it the outlined 100% (from The big number) fills with green as it scrolls up and drains as it scrolls back (useScroll + slow spring, always moving with the page), then three promise columns (gift, optional tip ~10%, card fee covered by donor or tips) and the journey row. Never show 95%/platform-fee splits.

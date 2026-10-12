@@ -59,7 +59,7 @@ const Index = () => {
           </>
         </LazyOnView>
 
-        <LazyOnView minHeight={1040} intrinsicSize={{ mobile: 1680, tablet: 1050, desktop: 1010 }} rootMargin="900px" contentVisibilityAuto>
+        <LazyOnView minHeight={1040} intrinsicSize={{ mobile: 1770, tablet: 1160, desktop: 1270 }} rootMargin="900px" contentVisibilityAuto>
           <>
             <TrustTransparency />
           </>
