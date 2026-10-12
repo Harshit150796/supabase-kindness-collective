@@ -2,7 +2,7 @@
 
 ## Dealt-card arrival timing (Oct 12)
 - [x] Replace early edge trigger with sustained actual visibility and clearer card beats; preserve artwork and compact layout.
-- [ ] Verify scrolling, pause/resume, replay boundary, resizing, focused tests and automatic build; do not publish.
+- [x] Verified sustained visible entry, cancelled brief crossings, off-screen/tab-hidden pause and resume, replay below viewport and mid-deal resize at 1024/1280/1920; compact phone layout unchanged. 129 tests pass, automatic build OK, no browser page errors. Nothing published or deployed.
 
 ## Every dollar blue-band and neighboring presentation (Oct 12)
 - [x] Refine section contrast, breakpoint typography and neighboring statement/donation spacing.
