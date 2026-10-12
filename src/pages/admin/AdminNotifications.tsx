@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
 import { DataTable, Column } from '@/components/admin/DataTable';
+import { useAdminNotifications } from '@/hooks/useAdminNotifications';
 import { sb, fmtDate } from '@/lib/adminApi';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -15,16 +16,16 @@ export default function AdminNotifications() {
   const { user } = useAuth();
   const { isAdmin } = useTeamRole();
   const navigate = useNavigate();
-  const qc = useQueryClient();
+  const { unread, mark } = useAdminNotifications();
   const [page, setPage] = useState(0);
 
   const q = useQuery({
-    queryKey: ['adm-notifs', page],
+    queryKey: ['adm-notifs', user?.id, page], enabled: !!user,
     queryFn: async () => {
       const { data, error, count } = await sb.from('admin_notifications').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(page * PAGE, page * PAGE + PAGE - 1);
       if (error) throw error;
       const ids = (data ?? []).map((n: any) => n.id);
-      const { data: reads } = ids.length ? await sb.from('admin_notification_reads').select('notification_id').eq('user_id', user!.id).in('notification_id', ids) : { data: [] };
+      const { data: reads } = ids.length ? await sb.from('admin_notification_reads').select('notification_id').eq('user_id', user?.id).in('notification_id', ids) : { data: [] };
       const r = new Set((reads ?? []).map((x: any) => x.notification_id));
       return { rows: (data ?? []).map((n: any) => ({ ...n, unread: !r.has(n.id) })), total: count ?? 0 };
     },
@@ -34,11 +35,6 @@ export default function AdminNotifications() {
     queryFn: async () => (await sb.from('admin_email_events').select('id,kind,source_id,created_at,sent_at,resend_id,last_error').order('created_at', { ascending: false }).limit(20)).data ?? [],
   });
 
-  const markAll = async () => {
-    const ids = (q.data?.rows ?? []).filter((n: any) => n.unread).map((n: any) => n.id);
-    if (ids.length) await sb.from('admin_notification_reads').upsert(ids.map((id: string) => ({ notification_id: id, user_id: user!.id })), { onConflict: 'notification_id,user_id', ignoreDuplicates: true });
-    qc.invalidateQueries({ queryKey: ['adm-notifs'] }); qc.invalidateQueries({ queryKey: ['admin-notifs-bell'] });
-  };
 
   const cols: Column<any>[] = [
     { key: 'title', header: 'Event', cell: (r) => <span className={cn(r.unread ? 'font-medium text-foreground' : 'text-muted-foreground')}>{r.unread && <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-primary align-middle" />}{r.title}</span> },
@@ -49,11 +45,10 @@ export default function AdminNotifications() {
   return (
     <DashboardLayout>
       <PageHeader title="Notifications" description="New fundraisers, donations, reports and applications. Email recipients are managed in Settings."
-        actions={<Button size="sm" variant="outline" onClick={markAll}>Mark page read</Button>} />
+        actions={<><span className="text-sm text-muted-foreground">{unread} unread</span><Button size="sm" variant="outline" onClick={() => mark('page', (q.data?.rows ?? []).map((r: any) => r.id))}>Mark page read</Button><Button size="sm" variant="outline" disabled={!unread} onClick={() => mark('all')}>Mark all read</Button></>} />
       <DataTable columns={cols} rows={q.data?.rows} total={q.data?.total} loading={q.isLoading} error={q.error ? (q.error as Error).message : null} onRetry={() => q.refetch()}
         page={page} pageSize={PAGE} onPage={setPage} rowKey={(r) => r.id} onRowClick={async (r) => {
-          await sb.from('admin_notification_reads').upsert({ notification_id: r.id, user_id: user!.id }, { onConflict: 'notification_id,user_id', ignoreDuplicates: true });
-          qc.invalidateQueries({ queryKey: ['admin-notifs-bell'] });
+          if (!await mark('page', [r.id])) return;
           if (r.link) navigate(r.link);
         }} empty="No notifications yet." />
       {isAdmin && (

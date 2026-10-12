@@ -9,10 +9,11 @@ export async function rpc<T = any>(fn: string, args?: Record<string, unknown>): 
   return data as T;
 }
 
-export const usd = (n: number | null | undefined) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(n ?? 0));
+const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+export const usd = (n: number | null | undefined) => currencyFormatter.format(Number(n ?? 0));
 
-export const fmtDate = (s?: string | null) => (s ? new Date(s).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : '—');
+export const fmtDate = (s?: string | null) => (s ? dateFormatter.format(new Date(s)) : '—');
 
 export function downloadCsv(name: string, rows: Record<string, unknown>[]) {
   if (!rows.length) return;

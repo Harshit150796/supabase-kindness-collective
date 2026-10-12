@@ -15,6 +15,8 @@ import {
   PanelLeftClose, PanelLeftOpen, Menu, LogOut, Home, Contact, Inbox,
 } from 'lucide-react';
 import logo from '@/assets/logo.png';
+import { SavedAdminViews } from '@/components/admin/SavedAdminViews';
+import { useAdminNotifications } from '@/hooks/useAdminNotifications';
 import { useNewContactCount } from '@/hooks/useNewContactCount';
 
 type Item = { label: string; path: string; icon: any; adminOnly?: boolean; countsNew?: boolean };
@@ -66,7 +68,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const { isAdmin, label } = useTeamRole();
   const location = useLocation();
   const navigate = useNavigate();
-  const qc = useQueryClient();
+  const { unread, mark } = useAdminNotifications();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('admin-sidebar') === '1');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -76,6 +78,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   useEffect(() => { localStorage.setItem('admin-sidebar', collapsed ? '1' : '0'); }, [collapsed]);
   useEffect(() => { const t = setTimeout(() => setDebounced(q), 250); return () => clearTimeout(t); }, [q]);
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+  useEffect(() => { setQ(''); setDebounced(''); setPaletteOpen(false); }, [user?.id]);
 
   // Keyboard: Cmd/Ctrl+K palette, "/" search, g+letter navigation
   useEffect(() => {
@@ -87,7 +90,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       if (typing) return;
       if (e.key === '/') { e.preventDefault(); setPaletteOpen(true); return; }
       if (g) {
-        const map: Record<string, string> = { o: '/admin', f: '/admin/fundraisers', d: '/admin/donations', c: '/admin/donors', t: '/admin/tasks', n: '/admin/notifications' };
+        const map: Record<string, string> = { o: '/admin', f: '/admin/fundraisers', d: '/admin/donations', c: '/admin/donors', t: '/admin/tasks', n: '/admin/notifications', a: '/admin/analytics', p: '/admin/procurement', m: '/admin/moderation', u: '/admin/users', s: '/admin/settings', h: '/admin/audit', b: '/admin/blog', e: '/admin/newsletters', i: '/admin/contact' };
         if (map[e.key]) navigate(map[e.key]);
         g = false; return;
       }
@@ -98,7 +101,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   }, [navigate]);
 
   const { data: results } = useQuery({
-    queryKey: ['admin-search', debounced],
+    queryKey: ['admin-search', user?.id, debounced],
     enabled: paletteOpen && debounced.trim().length >= 2,
     queryFn: () => rpc<any[]>('admin_search', { _q: debounced.trim() }),
   });
@@ -110,18 +113,13 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     queryFn: async () => {
       const [{ data: n }, { data: r }] = await Promise.all([
         sb.from('admin_notifications').select('id,title,link,created_at').order('created_at', { ascending: false }).limit(15),
-        sb.from('admin_notification_reads').select('notification_id').eq('user_id', user!.id),
+        sb.from('admin_notification_reads').select('notification_id').eq('user_id', user?.id).in('notification_id', (await sb.from('admin_notifications').select('id').order('created_at', { ascending: false }).limit(15)).data?.map((x: any) => x.id) ?? []),
       ]);
       const read = new Set((r ?? []).map((x: any) => x.notification_id));
       return (n ?? []).map((x: any) => ({ ...x, unread: !read.has(x.id) }));
     },
   });
-  const unread = notifs?.filter((n: any) => n.unread).length ?? 0;
-  const markRead = async (ids: string[]) => {
-    if (!ids.length) return;
-    await sb.from('admin_notification_reads').upsert(ids.map((id) => ({ notification_id: id, user_id: user!.id })), { onConflict: 'notification_id,user_id', ignoreDuplicates: true });
-    qc.invalidateQueries({ queryKey: ['admin-notifs-bell'] });
-  };
+  const markRead = (ids: string[]) => mark('page', ids);
 
   const crumbs = useMemo(() => {
     const cur = ALL.filter((i) => i.path === '/admin' ? location.pathname === '/admin' : location.pathname.startsWith(i.path)).sort((a, b) => b.path.length - a.path.length)[0];
@@ -191,6 +189,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           <button onClick={() => setPaletteOpen(true)} className="ml-auto flex h-9 w-full max-w-xs items-center gap-2 rounded-md border border-border bg-muted/40 px-3 text-sm text-muted-foreground hover:bg-muted">
             <Search className="h-4 w-4" /><span className="flex-1 text-left">Search…</span><kbd className="hidden rounded border border-border px-1.5 text-[10px] sm:inline">⌘K</kbd>
           </button>
+          <SavedAdminViews />
           <Popover>
             <PopoverTrigger asChild>
               <Button size="icon" variant="ghost" className="relative" aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}>
@@ -201,7 +200,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             <PopoverContent align="end" className="w-80 p-0">
               <div className="flex items-center justify-between border-b border-border px-3 py-2">
                 <p className="text-sm font-medium">Notifications</p>
-                <button className="text-xs text-primary" onClick={() => markRead((notifs ?? []).filter((n: any) => n.unread).map((n: any) => n.id))}>Mark all read</button>
+                <button className="text-xs text-primary" onClick={() => mark('all')}>Mark all read</button>
               </div>
               <div className="max-h-80 overflow-y-auto">
                 {!notifs?.length ? <p className="p-4 text-center text-sm text-muted-foreground">No notifications yet.</p> :
