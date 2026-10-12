@@ -1,9 +1,9 @@
 # Roadmap
 
 ## Every dollar blue-band and neighboring presentation (Oct 12)
-- [ ] Refine section contrast, breakpoint typography and neighboring statement spacing.
-- [ ] Cache journey geometry and suspend invisible recurring work; recalibrate height reservations.
-- [ ] Verify slower-load arrival, smooth scrolling, responsive fit, donation/filter controls, tests and automatic build; do not publish.
+- [x] Refine section contrast, breakpoint typography and neighboring statement/donation spacing.
+- [x] Cache journey geometry and suspend invisible recurring work; recalibrate height reservations.
+- [x] Verify 15 screen sizes, fill/drain, off-screen/resumed underline, zero journey scroll geometry reads, fundraiser sorting and donation review without paying; 126 tests and automatic build pass. Slower CPU/network sample: arrival 5.68s before / 4.98s after, p95 frame interval unchanged at 33.4ms, no long tasks or CLS in final sample. Preview-only, WebGL disabled; physical-device/production speed not established. Nothing published or deployed.
 
 ## Harshit's cinematic every-load opening (Oct 9)
 - [ ] Replace visit/skip gates with every-full-homepage opening and cinematic time-of-day artwork.
