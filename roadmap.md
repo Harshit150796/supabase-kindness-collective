@@ -2,7 +2,7 @@
 
 ## Scroll-timed coupon journey (Oct 12)
 - [x] Anchor travel to first/last icons and give each of three transitions equal scroll progress; preserve design and direct reverse movement.
-- [ ] Verify checkpoints, reversing/stopping, short and stacked layouts, resizing, regression tests and automatic build; do not publish.
+- [x] Verified all four forward/reverse checkpoints and stationary holds after resizing across 899×514, 1280×800, 1920×1080, 390×844 and 768×1024; marker alignment within 5px, no browser page errors. All 132 tests and automatic build pass. Nothing published or deployed.
 
 ## Dealt-card arrival timing (Oct 12)
 - [x] Replace early edge trigger with sustained actual visibility and clearer card beats; preserve artwork and compact layout.
