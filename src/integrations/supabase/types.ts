@@ -1083,6 +1083,56 @@ export type Database = {
           },
         ]
       }
+      coupon_sources: {
+        Row: {
+          confirmation_count: number
+          confirmation_sent_at: string | null
+          created_at: string
+          created_by: string | null
+          donor_email: string | null
+          donor_name: string | null
+          donor_user_id: string | null
+          fundraiser_id: string
+          id: string
+          is_anonymous: boolean
+          source_label: string | null
+        }
+        Insert: {
+          confirmation_count?: number
+          confirmation_sent_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          donor_email?: string | null
+          donor_name?: string | null
+          donor_user_id?: string | null
+          fundraiser_id: string
+          id?: string
+          is_anonymous?: boolean
+          source_label?: string | null
+        }
+        Update: {
+          confirmation_count?: number
+          confirmation_sent_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          donor_email?: string | null
+          donor_name?: string | null
+          donor_user_id?: string | null
+          fundraiser_id?: string
+          id?: string
+          is_anonymous?: boolean
+          source_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_sources_fundraiser_id_fkey"
+            columns: ["fundraiser_id"]
+            isOneToOne: false
+            referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupons: {
         Row: {
           batch_id: string | null
@@ -1126,6 +1176,7 @@ export type Database = {
           revealed_at: string | null
           revealed_by: string | null
           secret_cipher: Json | null
+          source_id: string | null
           status: Database["public"]["Enums"]["coupon_status"]
           store_name: string
           title: string
@@ -1183,6 +1234,7 @@ export type Database = {
           revealed_at?: string | null
           revealed_by?: string | null
           secret_cipher?: Json | null
+          source_id?: string | null
           status?: Database["public"]["Enums"]["coupon_status"]
           store_name: string
           title: string
@@ -1240,6 +1292,7 @@ export type Database = {
           revealed_at?: string | null
           revealed_by?: string | null
           secret_cipher?: Json | null
+          source_id?: string | null
           status?: Database["public"]["Enums"]["coupon_status"]
           store_name?: string
           title?: string
@@ -1282,6 +1335,13 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupons_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "coupon_sources"
             referencedColumns: ["id"]
           },
         ]
@@ -2839,6 +2899,26 @@ export type Database = {
         Returns: string
       }
       _svc_as: { Args: { _actor: string }; Returns: undefined }
+      admin_add_outside_coupon: {
+        Args: {
+          _actor: string
+          _anon: boolean
+          _brand: string
+          _code: string
+          _donor_email: string
+          _donor_name: string
+          _donor_user: string
+          _expiry: string
+          _fundraiser: string
+          _instructions: string
+          _pin: string
+          _source_label: string
+          _stock: string
+          _url: string
+          _value: number
+        }
+        Returns: Json
+      }
       admin_add_stock_codes: {
         Args: {
           _batch?: Json
@@ -3009,6 +3089,26 @@ export type Database = {
       admin_mark_coupon_used: {
         Args: { _id: string; _used: boolean }
         Returns: undefined
+      }
+      admin_outside_coupons: {
+        Args: { _fundraiser_id: string }
+        Returns: {
+          code_hint: string
+          confirmation_count: number
+          confirmation_sent_at: string
+          created_at: string
+          donor_email: string
+          donor_name: string
+          id: string
+          is_anonymous: boolean
+          revealed_at: string
+          source_id: string
+          source_label: string
+          status: string
+          store_name: string
+          used_at: string
+          value: number
+        }[]
       }
       admin_overview_kpis: { Args: never; Returns: Json }
       admin_procurement_groups: {
