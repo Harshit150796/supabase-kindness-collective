@@ -6,6 +6,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
 import { DataTable, StatusBadge, Column } from '@/components/admin/DataTable';
 import { sb, rpc, usd, fmtDate, downloadCsv, fetchAllChunks } from '@/lib/adminApi';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,6 +27,12 @@ const PAGE = 25;
 
 export default function AdminFundraisers() {
   const { user } = useAuth();
+  const { canWrite } = useTeamRole();
+  const [selected, setSelected] = useState<Record<string, string>>({});
+  const [bulk, setBulk] = useState<'pause' | 'archive' | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkResults, setBulkResults] = useState<string[]>([]);
+  useEffect(() => { setSelected({}); setBulkResults([]); }, [user?.id]);
   const [params, setParams] = useSearchParams();
   const [status, setStatus] = useState<string>(params.get('status') ?? 'all');
   const [q, setQ] = useState(params.get('q') ?? '');
@@ -50,6 +57,7 @@ export default function AdminFundraisers() {
   });
 
   const cols: Column<any>[] = [
+    ...(canWrite ? [{ key: 'select', header: 'Select', cell: (r: any) => <span onClick={(e) => e.stopPropagation()}><Checkbox aria-label={`Select ${r.title}`} checked={!!selected[r.id]} onCheckedChange={(v) => setSelected((old) => { const next = { ...old }; if (v) next[r.id] = r.title; else delete next[r.id]; return next; })} /></span> }] : []),
     { key: 'title', header: 'Fundraiser', sortable: true, cell: (r) => <div className="max-w-[320px]"><p className="truncate font-medium text-foreground">{r.title}</p><p className="truncate text-xs text-muted-foreground">/{r.unique_slug}</p></div> },
     { key: 'status', header: 'Status', sortable: true, cell: (r) => <StatusBadge value={r.status} /> },
     { key: 'featured_order', header: 'Featured', sortable: true, cell: (r) => r.featured_order != null ? `#${r.featured_order}` : '—' },
@@ -77,6 +85,9 @@ export default function AdminFundraisers() {
         </div>
         <div className="relative ml-auto w-full max-w-xs"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title or slug" className="h-9 pl-8" /></div>
       </div>
+      {canWrite && Object.keys(selected).length > 0 && <div className="mb-3 flex flex-wrap items-center gap-2"><span className="text-sm">{Object.keys(selected).length} selected</span><Button size="sm" variant="outline" onClick={() => setBulk('pause')}>Pause selected</Button><Button size="sm" variant="outline" onClick={() => setBulk('archive')}>Archive selected</Button><Button size="sm" variant="ghost" onClick={() => setSelected({})}>Clear selection</Button></div>}
+      {bulkResults.length > 0 && <ul aria-live="polite" className="mb-3 space-y-1 bg-muted p-3 text-sm">{bulkResults.map((result, i) => <li key={i}>{result}</li>)}</ul>}
+      <AlertDialog open={!!bulk} onOpenChange={(v) => { if (!v && !bulkBusy) setBulk(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{bulk === 'pause' ? 'Pause' : 'Archive'} {Object.keys(selected).length} selected fundraisers?</AlertDialogTitle><AlertDialogDescription>Each fundraiser is checked and audited separately. Donations and coupons are preserved. Any refused action appears in the results.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel><Button disabled={bulkBusy} onClick={async () => { if (!bulk) return; setBulkBusy(true); const results: string[] = []; for (const [id, title] of Object.entries(selected)) { try { await rpc('admin_fundraiser_action', { _id: id, _action: bulk }); results.push(`${title}: ${bulk === 'pause' ? 'paused' : 'archived'}`); } catch (e) { results.push(`${title}: ${(e as Error).message}`); } } setBulkResults(results); setSelected({}); setBulk(null); setBulkBusy(false); await query.refetch(); }}>{bulkBusy ? 'Working…' : 'Confirm'}</Button></AlertDialogFooter></AlertDialogContent></AlertDialog>
       <DataTable columns={cols} rows={query.data?.rows} total={query.data?.total} loading={query.isLoading} error={query.error ? String((query.error as Error).message) : null} onRetry={() => query.refetch()}
         page={page} pageSize={PAGE} onPage={setPage} sort={sort} onSort={(k) => setSort((s) => ({ key: k, dir: s.key === k && s.dir === 'desc' ? 'asc' : 'desc' }))}
         rowKey={(r) => r.id} onRowClick={(r) => setParams((p) => { p.set('id', r.id); return p; })} empty="No fundraisers match these filters." />

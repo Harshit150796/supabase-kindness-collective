@@ -2,18 +2,21 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/admin/AdminLayout';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { rpc, usd, fmtDate, downloadCsv } from '@/lib/adminApi';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
+const countFormat = new Intl.NumberFormat('en-US');
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--verify))', 'hsl(var(--muted-foreground))', 'hsl(var(--destructive))', 'hsl(var(--ink))'];
 const RANGES = [['7', '7 days'], ['30', '30 days'], ['90', '90 days'], ['0', 'All time']] as const;
 
 export default function AdminAnalytics() {
-  const [days, setDays] = useState('30');
+  const [params, setParams] = useSearchParams();
+  const days = ['7', '30', '90', '0'].includes(params.get('period') ?? '') ? params.get('period') ?? '30' : '30';
+  const setDays = (value: string) => setParams((p) => { p.set('period', value); return p; }, { replace: true });
   const q = useQuery({ queryKey: ['adm-analytics', days], queryFn: () => rpc<any>('admin_analytics', { _days: Number(days) }) });
   const d = q.data;
   const conv = d?.coupons_total ? Math.round((d.coupons_redeemed / d.coupons_total) * 100) : 0;
@@ -21,15 +24,15 @@ export default function AdminAnalytics() {
   return (
     <DashboardLayout>
       <PageHeader title="Analytics" description="Calculated on the server from live records; totals count completed donations only."
-        actions={<div className="flex flex-wrap gap-1"><Button size="sm" variant="outline" disabled={!d} onClick={() => downloadCsv('analytics', (d?.donations ?? []).map((r: any) => ({ date: r.d, amount: r.amount, period_days: Number(days) })))}>Export daily donations</Button>{RANGES.map(([v, l]) => <Button key={v} size="sm" variant={days === v ? 'default' : 'outline'} onClick={() => setDays(v)}>{l}</Button>)}</div>} />
+        actions={<div className="flex flex-wrap gap-1"><Button size="sm" variant="outline" disabled={!d} onClick={() => downloadCsv('analytics', ['donations', 'signups', 'roles', 'coupon_status', 'brands'].flatMap((section) => (d?.[section] ?? []).map((r: any) => ({ section, date: r.d ?? '', name: r.name ?? '', value: r.amount ?? r.n ?? r.value ?? 0, period_days: Number(days) }))))}>Export report</Button>{RANGES.map(([v, l]) => <Button key={v} size="sm" variant={days === v ? 'default' : 'outline'} onClick={() => setDays(v)}>{l}</Button>)}</div>} />
       <div className="mb-4 flex flex-wrap gap-4 text-sm"><Link className="text-primary" to="/admin/donations">Donation records</Link><Link className="text-primary" to="/admin/procurement">Coupon operations</Link><Link className="text-primary" to="/admin/users">Account records</Link></div>
       {q.error ? (
         <div className="rounded-lg border border-border py-12 text-center"><AlertCircle className="mx-auto mb-2 h-6 w-6 text-destructive" /><p className="text-sm">Couldn't load analytics.</p><p className="mb-3 text-xs text-muted-foreground">{(q.error as Error).message}</p><Button size="sm" variant="outline" onClick={() => q.refetch()}>Try again</Button></div>
       ) : (
         <div className="space-y-6 tabular-nums">
           <div className="grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
-            {[['Total users', d?.users_total?.toLocaleString(), `${d?.users_in_range ?? 0} new in range`], ['Raised (completed)', d && usd(d.raised_in_range), `${d?.donations_in_range ?? 0} donations`],
-              ['Coupons created', d?.coupons_total?.toLocaleString(), 'All time'], ['Redemption rate', d && `${conv}%`, `${d?.coupons_redeemed ?? 0} redeemed`]].map(([k, v, s]) => (
+            {[['Total users', countFormat.format(d?.users_total ?? 0), `${d?.users_in_range ?? 0} new in range`], ['Raised (completed)', d && usd(d.raised_in_range), `${d?.donations_in_range ?? 0} donations`],
+              ['Coupons created', countFormat.format(d?.coupons_total ?? 0), 'All time'], ['Redemption rate', d && `${conv}%`, `${d?.coupons_redeemed ?? 0} redeemed`]].map(([k, v, s]) => (
               <div key={k} className="bg-background p-4"><p className="text-xs text-muted-foreground">{k}</p>{q.isLoading ? <Skeleton className="mt-1 h-7 w-24" /> : <p className="text-2xl font-semibold text-foreground">{v}</p>}<p className="text-xs text-muted-foreground">{s}</p></div>))}
           </div>
           <div className="grid gap-6 lg:grid-cols-2">

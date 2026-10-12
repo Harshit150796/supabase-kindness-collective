@@ -1,5 +1,5 @@
 # Project Architecture Rules
-- Directory rules: 3D tree + homepage opening/motion/reveals in src/components/landing/AGENTS.md, admin portal in src/pages/admin/AGENTS.md, site menu and sign-in/sign-out in src/components/navigation/AGENTS.md. Read the matching file before changing that area.
+- Scoped rules: tree/opening/motion in src/components/landing/AGENTS.md, admin portal in src/pages/admin/AGENTS.md, navigation/auth in src/components/navigation/AGENTS.md. Read the matching file before changing that area.
 
 ## Design System Rules
 - CouponDonation UI uses logo green `hsl(123 46% 34%)` as primary and logo blue `hsl(212 80% 42%)` as its only secondary accent; warm UI colors are forbidden outside protected third-party and 3D artwork.
@@ -9,16 +9,16 @@
 - Shared organizer primitives own titles/numerals, surfaces, labels, stats, status, progress and states to prevent page drift; controls use sans.
 - Motion is full on every device; the OS reduced-motion setting is not consulted (founder decision lives in memory).
 - Public photos stay local; without verified people-photo consent use coupon/receipt/trace visuals. Responsive photos use proportional contain transforms on managed Supabase hosts or generated local variants — never append transformation parameters to unknown hosts or crop at delivery, because framing belongs to the image container.
-- Format numbers and dates with module-level Intl formatters; per-call toLocale* in render paths costs tens of ms per card.
+- Use module-level Intl formatters for numbers/dates; per-render toLocale* is slow.
 
 ## Data, Privacy & Dispatch Rules
 - Messages, comments, updates, invites and blocks are written only by the `send-message` and `fundraiser-actions` edge functions after server moderation (`_shared/moderation.ts`); clients have read-only access, so safety rules hold server-side.
-- Public fundraiser pages read donors, organizers and coupon totals through security-definer read functions only, and totals come from `get_fundraiser_totals` (completed donations), never stored counters, because stored counters drifted. Donations/profiles stay private under RLS.
+- Public fundraiser pages read donors, organizers and coupon totals through security-definer read functions only, and totals come from `get_fundraiser_totals` (completed donations), never stored counters, to avoid drift; donations/profiles remain private under RLS.
 - Donation INSERT/relevant UPDATE triggers recompute distinct completed-donor totals; the legacy payment RPC recomputes idempotently. No checkout/coupon triggers or realtime.
 - Shared public links use branded /f/ URLs, never organizer/backend URLs.
 - Resolve fundraiser imagery everywhere as primary gallery, then ordered gallery, then legacy cover, then branded category fallback; card delivery uses Supabase transforms and uploads create one bounded WebP.
 - Gold Coins are credited only by credit_gold_coins() from the scheduled dispatcher into the append-only gold_coin_ledger (unique per donation and entry type); payment tables stay read-only.
-- Anonymous public submissions (partner inquiries, contact messages, testimonials) go through the public-submit edge function, never direct table inserts. Contact messages (footer form, US only) are stored in contact_messages, emailed to support@coupondonation.com with the sender as Reply-To, and read by the team at /admin/contact.
+- Anonymous public submissions (partner inquiries, contact messages, testimonials) go through the public-submit edge function, never direct table inserts. US footer contacts use contact_messages, email support@coupondonation.com with the sender as Reply-To, and read by the team at /admin/contact.
 - Production is Lovable hosting; vercel.json and api/share are inert.
 
 ## Coupon System Rules
