@@ -187,10 +187,10 @@ export function DonationFlow() {
   };
 
   return (
-    <section id="donation-flow" className="relative overflow-hidden py-24 md:py-36" style={{ backgroundColor: 'hsl(var(--primary-93))' }}>
+    <section id="donation-flow" className="relative overflow-hidden py-16 lg:py-20" style={{ backgroundColor: 'hsl(var(--primary-93))' }}>
       <div className="container relative mx-auto px-4">
         <div className="mx-auto mb-10 max-w-3xl text-center md:mb-14">
-          <LineReveal><h2 className="font-display text-5xl font-normal leading-none text-foreground md:text-6xl">Choose where your help can be used.</h2></LineReveal>
+          <LineReveal><h2 className="font-display text-[2.5rem] font-normal leading-[1.06] tracking-normal text-foreground md:text-[3.5rem] lg:text-[4.5rem]">Choose where your help can be used.</h2></LineReveal>
           <Reveal delay={0.1} className="mt-5"><p className="text-lg leading-relaxed text-muted-foreground">Pick retailers, choose an amount, and see exactly where every dollar goes.</p></Reveal>
         </div>
 
