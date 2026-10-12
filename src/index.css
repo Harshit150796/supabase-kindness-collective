@@ -645,6 +645,13 @@
 }
 
 .lazy-responsive-region { --lazy-reserved-height: var(--lazy-mobile); }
+.transparency-band {
+  --background: var(--verify);
+  --foreground: var(--verify-foreground);
+  --muted-foreground: var(--verify-foreground);
+  --border: 212 65% 66%;
+}
+.transparency-band .text-muted-foreground { opacity: .88; }
 @media (min-width: 768px) { .lazy-responsive-region { --lazy-reserved-height: var(--lazy-tablet); } }
 @media (min-width: 1024px) { .lazy-responsive-region { --lazy-reserved-height: var(--lazy-desktop); } }
 

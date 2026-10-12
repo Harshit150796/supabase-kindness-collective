@@ -39,4 +39,4 @@
 
 
 ## "Every dollar" section (TrustTransparency)
-- Founder-chosen (Oct 2026): light band; the headline is "Every dollar you give reaches a family. All of it." set large on top, its hand-drawn underline redrawing every 7s like the Promise concept. Below it the outlined 100% (from The big number) fills with green as it scrolls up and drains as it scrolls back (useScroll + slow spring, always moving with the page), then three promise columns (gift, optional tip ~10%, card fee covered by donor or tips) and the journey row. Never show 95%/platform-fee splits.
+- The Every dollar band uses scoped semantic surface/ink tokens and breakpoint-sized serif typography, so its contrasting treatment stays readable without changing other sections. Preserve the promise headline, seven-second underline, scroll-filled/draining 100%, three promises and journey; never show 95%/platform-fee splits. Recurring underline work stops off-screen/tab-hidden; journey geometry is cached on resize/layout changes and interpolated without layout or SVG geometry reads in scroll frames.
