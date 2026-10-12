@@ -1,5 +1,11 @@
 # Roadmap
 
+## Live-tree cursor parity (Oct 12)
+- [x] Measure live-tree and controlled non-tree cursor timing; isolate discarded elapsed time above 64ms.
+- [x] Preserve normal trail feel while correcting delayed-frame catch-up, capture input before canvas handlers, skip unnecessary transforms and reset hidden-tab motion. Tree appearance/motion unchanged.
+- [x] 24 checked numerical/tree regressions pass; live day-tree catch-up, settlement, menu layering, text entry and touch exclusion checked; automatic build OK. See docs/verification/cursor-parity-oct12.md. No publishing.
+- [ ] Accelerated hardware/high-refresh smoothness parity — unavailable in the sandbox; software tree has multi-second frame gaps, not representative performance.
+
 ## Personalized admin portal (Oct 12)
 - [x] Personal workspace, saved/default views, pinned pages and shared controls.
 - [x] Fundraiser context, follow-ups, confirmed selected pause/archive actions with individual results, and outside-coupon review.

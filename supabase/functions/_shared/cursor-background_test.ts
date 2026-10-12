@@ -24,7 +24,8 @@ Deno.test('the cursor stays blue over the live tree and its sky, with no pixel r
   // Reading WebGL pixels back makes the page wait for the GPU to finish the frame.
   const stack = ['src'];
   while (stack.length) {
-    const dir = stack.pop()!;
+    const dir = stack.pop();
+    if (!dir) break;
     for await (const entry of Deno.readDir(dir)) {
       const path = `${dir}/${entry.name}`;
       if (entry.isDirectory) stack.push(path);
@@ -46,13 +47,13 @@ Deno.test('over the live tree the lead dot is a system pointer image of the same
   assert(trail.includes('if (!on) { pos[0].x = x; pos[0].y = y; write(0); }'));
 });
 import { trailFactor, TRAIL_TAU, TRAIL_MAX_DT } from '../../../src/lib/cursorBackground.ts';
-Deno.test('all dots use exponential smoothing with 20/170/340ms and dt clamped to 0–64ms', () => {
+Deno.test('all dots retain 20/170/340ms smoothing with full delayed-frame catch-up', () => {
   assertEquals(TRAIL_TAU, [20, 170, 340]);
-  assertEquals(TRAIL_MAX_DT, 64);
+  assertEquals(TRAIL_MAX_DT, 1000);
   assertEquals(trailFactor(-1, 20), 0);
   assertEquals(trailFactor(0, 20), 0);
   assert(Math.abs(trailFactor(25, TRAIL_TAU[0]) - (1 - Math.exp(-25 / 20))) < 1e-12);
-  assertEquals(trailFactor(170, 170), trailFactor(64, 170));
+  assert(Math.abs(trailFactor(170, 170) - (1 - Math.exp(-1))) < 1e-12);
   assert(Math.abs(trailFactor(16, 170) - (1 - Math.exp(-16 / 170))) < 1e-12);
   assert(trailFactor(16, 340) < trailFactor(16, 170));
 });
@@ -76,6 +77,32 @@ import { frameDt } from '../../../src/lib/cursorBackground.ts';
 Deno.test('frameDt trusts rAF unless it disagrees with the clock by more than 6ms', () => {
   assertEquals(frameDt(16.67, 18.2), 16.67);
   assertEquals(frameDt(33.3, 25), 25);
-  assertEquals(frameDt(400, 400), 64);
+  assertEquals(frameDt(400, 400), 400);
   assertEquals(frameDt(-5, -4), 0);
+});
+Deno.test('following dots settle in the same real time at 60fps and delayed 90ms frames', () => {
+  for (const tau of TRAIL_TAU) {
+    let smooth = 0, delayed = 0;
+    for (let i = 0; i < 54; i++) smooth += (600 - smooth) * trailFactor(900 / 54, tau);
+    for (let i = 0; i < 10; i++) delayed += (600 - delayed) * trailFactor(90, tau);
+    assert(Math.abs(smooth - delayed) < 1e-9);
+    assert(Math.abs(delayed - 600 * (1 - Math.exp(-900 / tau))) < 1e-9);
+  }
+});
+Deno.test('reversals catch up without overshoot after a delayed frame', () => {
+  for (const tau of TRAIL_TAU) {
+    const outward = 600 * trailFactor(90, tau);
+    const reversed = outward + (-200 - outward) * trailFactor(180, tau);
+    assert(reversed > -200 && reversed < outward);
+    assert(Math.abs(reversed - (-200 + (outward + 200) * Math.exp(-180 / tau))) < 1e-9);
+  }
+});
+Deno.test('long interruptions reset at one second and invalid timing cannot corrupt positions', () => {
+  for (const tau of TRAIL_TAU) {
+    assertEquals(trailFactor(1000, tau), 1);
+    assertEquals(trailFactor(5000, tau), 1);
+    assertEquals(trailFactor(NaN, tau), 0);
+  }
+  assertEquals(frameDt(5000, 5000), 1000);
+  assertEquals(frameDt(NaN, NaN), 0);
 });

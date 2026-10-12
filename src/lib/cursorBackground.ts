@@ -30,15 +30,20 @@ export function elementBackground(target: Element): { rgb: CursorRGB; photo: boo
   return { rgb: { r: 255, g: 255, b: 255 }, photo };
 }
 export const TRAIL_TAU = [20, 170, 340] as const;
-export const TRAIL_MAX_DT = 64;
+// Preserve elapsed time through busy tree frames. A one-second interruption is a reset,
+// not a slower animation: replaying stale positions after a tab/driver stall feels broken.
+export const TRAIL_MAX_DT = 1000;
 export const TRAIL_SETTLE_PX = 0.3;
 // Time-based exponential smoothing factor, frame-rate independent.
 export function trailFactor(dt: number, tau: number) {
-  return 1 - Math.exp(-Math.min(Math.max(dt, 0), TRAIL_MAX_DT) / tau);
+  if (!Number.isFinite(dt) || dt <= 0) return 0;
+  if (dt >= TRAIL_MAX_DT) return 1;
+  return 1 - Math.exp(-dt / tau);
 }
 // rAF timestamps are steadier than callback time unless the two disagree by >6ms (overload).
 export function frameDt(rafDelta: number, nowDelta: number) {
   const dt = Math.abs(rafDelta - nowDelta) > 6 ? nowDelta : rafDelta;
+  if (!Number.isFinite(dt)) return 0;
   return Math.min(Math.max(dt, 0), TRAIL_MAX_DT);
 }
 export function opaqueBackground(node: Element) {
