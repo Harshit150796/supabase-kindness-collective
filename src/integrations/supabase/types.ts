@@ -3467,6 +3467,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_followup_set_ai: { Args: { _on: boolean }; Returns: undefined }
       admin_followup_set_live: { Args: { _on: boolean }; Returns: undefined }
       admin_fundraiser_action: {
         Args: {
