@@ -139,6 +139,7 @@ serve(async (req) => {
       checkout_options: {
         redirect_url: `${origin}/donation-success?amount=${amount}&meals=${mealsProvided}`,
         ask_for_shipping_address: false,
+        accepted_payment_methods: SQUARE_PAYMENT_METHODS,
       },
       ...(userEmail && {
         pre_populated_data: { buyer_email: userEmail },
