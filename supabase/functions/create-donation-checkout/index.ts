@@ -107,14 +107,14 @@ serve(async (req) => {
     const idempotencyKey = crypto.randomUUID();
     const squareHeaders = { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json", "Square-Version": "2025-01-23" };
 
-    // Monthly gift: only when the donor ticked the box themselves, and only signed in (so they can cancel).
+    // Monthly gift: only when the donor ticked the box themselves. Guests are allowed; the gift is
+    // linked to an account later by the email they pay with (the webhook does this).
     if (body.recurring === true) {
       const jwt = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
       const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-      const { data: who } = await admin.auth.getUser(jwt);
-      if (!who?.user) {
-        return new Response(JSON.stringify({ error: "Please sign in to set up a monthly gift." }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 });
-      }
+      const { data: who } = await admin.auth.getUser(jwt).catch(() => ({ data: null }));
+      const signedUser = who?.user ?? null; // the anon key is not a user, so guests land here as null
+      const email = signedUser?.email ?? (typeof userEmail === "string" && userEmail.includes("@") ? userEmail : null);
       const planRes = await fetch(`${squareBaseUrl()}/v2/catalog/object`, { method: "POST", headers: squareHeaders, body: JSON.stringify(monthlyPlanBody(charge, crypto.randomUUID())) });
       const plan = await planRes.json();
       const variationId = plan?.id_mappings?.find((m: { client_object_id: string }) => m.client_object_id === "#variation")?.object_id;
@@ -123,19 +123,20 @@ serve(async (req) => {
         throw new Error("Could not set up the monthly gift. Please try again or give once.");
       }
       const { error: rowErr } = await admin.from("recurring_donations").insert({
-        user_id: who.user.id, donor_email: who.user.email ?? null, square_plan_variation_id: variationId,
+        user_id: signedUser?.id ?? null, donor_email: email, square_plan_variation_id: variationId,
         gift_cents: charge.giftCents, tip_cents: charge.tipCents, fee_cents: charge.feeCents,
         brand_allocations: shares.length ? encodeSplit(shares) : null, brand_name: shares[0]?.brand ?? null,
         fundraiser_id: fundraiserId || null, consent_text: MONTHLY_CONSENT,
       });
-      if (rowErr) throw new Error("Could not save the monthly gift.");
+      if (rowErr) { console.error("Monthly row error:", rowErr.message); throw new Error("Could not save the monthly gift."); }
+      const who2 = { user: { email } };
       const linkRes = await fetch(`${squareBaseUrl()}/v2/online-checkout/payment-links`, {
         method: "POST", headers: squareHeaders,
         body: JSON.stringify({
           idempotency_key: idempotencyKey,
           quick_pay: { name: "Monthly gift for families", price_money: { amount: charge.totalCents, currency: "USD" }, location_id: locationId },
           checkout_options: { subscription_plan_id: variationId, redirect_url: `${origin}/donation-success?amount=${amount}&monthly=1`, ask_for_shipping_address: false, accepted_payment_methods: SQUARE_PAYMENT_METHODS },
-          ...(who.user.email && { pre_populated_data: { buyer_email: who.user.email } }),
+          ...(who2.user.email && { pre_populated_data: { buyer_email: who2.user.email } }),
         }),
       });
       const link = await linkRes.json();

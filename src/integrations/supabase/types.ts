@@ -2836,63 +2836,128 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_charges: {
+        Row: {
+          amount_cents: number
+          charged_at: string
+          created_at: string
+          donation_id: string | null
+          id: string
+          recurring_id: string
+          square_invoice_id: string | null
+          square_order_id: string | null
+          status: string
+        }
+        Insert: {
+          amount_cents?: number
+          charged_at?: string
+          created_at?: string
+          donation_id?: string | null
+          id?: string
+          recurring_id: string
+          square_invoice_id?: string | null
+          square_order_id?: string | null
+          status?: string
+        }
+        Update: {
+          amount_cents?: number
+          charged_at?: string
+          created_at?: string
+          donation_id?: string | null
+          id?: string
+          recurring_id?: string
+          square_invoice_id?: string | null
+          square_order_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_charges_recurring_id_fkey"
+            columns: ["recurring_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_donations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recurring_donations: {
         Row: {
           brand_allocations: string | null
           brand_name: string | null
           canceled_at: string | null
+          charges_count: number
           consent_at: string
           consent_text: string
           created_at: string
           donor_email: string | null
+          failure_reason: string | null
           fee_cents: number
           fundraiser_id: string | null
           gift_cents: number
           id: string
+          last_charge_at: string | null
+          next_charge_on: string | null
+          paused_at: string | null
+          square_customer_id: string | null
           square_plan_variation_id: string | null
           square_subscription_id: string | null
           status: string
           tip_cents: number
+          total_charged_cents: number
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           brand_allocations?: string | null
           brand_name?: string | null
           canceled_at?: string | null
+          charges_count?: number
           consent_at?: string
           consent_text: string
           created_at?: string
           donor_email?: string | null
+          failure_reason?: string | null
           fee_cents?: number
           fundraiser_id?: string | null
           gift_cents: number
           id?: string
+          last_charge_at?: string | null
+          next_charge_on?: string | null
+          paused_at?: string | null
+          square_customer_id?: string | null
           square_plan_variation_id?: string | null
           square_subscription_id?: string | null
           status?: string
           tip_cents?: number
+          total_charged_cents?: number
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           brand_allocations?: string | null
           brand_name?: string | null
           canceled_at?: string | null
+          charges_count?: number
           consent_at?: string
           consent_text?: string
           created_at?: string
           donor_email?: string | null
+          failure_reason?: string | null
           fee_cents?: number
           fundraiser_id?: string | null
           gift_cents?: number
           id?: string
+          last_charge_at?: string | null
+          next_charge_on?: string | null
+          paused_at?: string | null
+          square_customer_id?: string | null
           square_plan_variation_id?: string | null
           square_subscription_id?: string | null
           status?: string
           tip_cents?: number
+          total_charged_cents?: number
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -3288,6 +3353,36 @@ export type Database = {
           _type: string
         }
         Returns: Json
+      }
+      admin_recurring_list: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _status?: string
+        }
+        Returns: {
+          brand_allocations: string
+          brand_name: string
+          charges_count: number
+          created_at: string
+          donor_email: string
+          donor_name: string
+          failure_reason: string
+          fee_cents: number
+          fundraiser_id: string
+          fundraiser_title: string
+          gift_cents: number
+          id: string
+          last_charge_at: string
+          next_charge_on: string
+          square_subscription_id: string
+          status: string
+          tip_cents: number
+          total_charged_cents: number
+          total_count: number
+          user_id: string
+        }[]
       }
       admin_resplit_coupons: {
         Args: { _brand: string; _donation_id: string; _values: number[] }

@@ -38,15 +38,15 @@ export function monthlyPlanBody(charge: MonthlyCharge, idempotencyKey: string) {
 /** Metadata the webhook reads for every monthly charge: the same split as the first month. */
 export function monthlyMetadata(row: {
   gift_cents: number; tip_cents: number; fee_cents: number;
-  brand_allocations: string | null; brand_name: string | null; user_id: string; donor_email: string | null; fundraiser_id: string | null;
+  brand_allocations: string | null; brand_name: string | null; user_id: string | null; donor_email: string | null; fundraiser_id: string | null;
 }): Record<string, string> {
   const m: Record<string, string> = {
     type: 'donation',
     amount: (row.gift_cents / 100).toString(),
     tip_amount: (row.tip_cents / 100).toString(),
     fee_covered: (row.fee_cents / 100).toString(),
-    donor_id: row.user_id,
   };
+  if (row.user_id) m.donor_id = row.user_id;
   if (row.brand_allocations) m.brand_allocations = row.brand_allocations;
   if (row.brand_name) m.brand_name = row.brand_name;
   if (row.donor_email) m.donor_email = row.donor_email;

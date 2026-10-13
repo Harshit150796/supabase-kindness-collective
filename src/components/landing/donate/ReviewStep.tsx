@@ -192,7 +192,7 @@ export function ReviewStep(props: ReviewStepProps) {
           <span className="font-medium text-foreground">Yes, give {money(charge.totalCents)} every month</span>
           <span className="block text-sm text-muted-foreground">
             {monthly
-              ? signedIn ? 'This same amount is charged each month until you cancel. Cancel any time from your dashboard.' : 'Please sign in first so you can manage or cancel your monthly gift.'
+              ? `Square saves your card and charges this same amount each month until you cancel. Cancel any time from your dashboard${signedIn ? '' : ' (sign up with the email you pay with)'} or from Square's monthly receipt.`
               : 'Optional. Leave unticked to give once.'}
           </span>
         </span>
@@ -206,7 +206,7 @@ export function ReviewStep(props: ReviewStepProps) {
             type="button"
             data-pay-with={provider}
             onClick={onPay}
-            disabled={busy || (monthly && !signedIn)}
+            disabled={busy}
             whileTap={{ scale: 0.98 }}
             className="flex min-h-[3.75rem] w-full flex-col items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-primary-foreground outline-none transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-wait"
           >

@@ -95,11 +95,14 @@ serve(async (req) => {
     } else if (event.type === "invoice.payment_made") {
       const invoice = event.data?.object?.invoice;
       if (invoice?.subscription_id && invoice?.order_id) await handleMonthlyInvoice(supabase, accessToken, invoice);
-    } else if (event.type === "subscription.updated") {
-      const sub = event.data?.object?.subscription;
-      if (sub?.id && (sub.status === "CANCELED" || sub.status === "DEACTIVATED")) {
-        await supabase.from("recurring_donations").update({ status: "canceled", canceled_at: new Date().toISOString() }).eq("square_subscription_id", sub.id);
+    } else if (event.type === "invoice.scheduled_charge_failed") {
+      const invoice = event.data?.object?.invoice;
+      if (invoice?.subscription_id) {
+        await supabase.from("recurring_donations").update({ status: "payment_problem", failure_reason: "Square could not charge the saved card" }).eq("square_subscription_id", invoice.subscription_id);
       }
+    } else if (event.type === "subscription.created" || event.type === "subscription.updated") {
+      const sub = event.data?.object?.subscription;
+      if (sub?.id) await syncSubscription(supabase, accessToken, sub);
     } else {
       console.log(`Unhandled Square event type: ${event.type}`);
     }
@@ -178,12 +181,27 @@ async function handleMonthlyInvoice(supabase: any, accessToken: string, invoice:
   }
   const { data: existing } = await supabase.from("donations").select("id").eq("stripe_session_id", invoice.order_id).maybeSingle();
   if (existing) return;
+  if (!row.user_id && row.donor_email) {
+    const { data: p } = await supabase.from("profiles").select("user_id").ilike("email", row.donor_email).maybeSingle();
+    if (p?.user_id) { row.user_id = p.user_id; await supabase.from("recurring_donations").update({ user_id: p.user_id }).eq("id", row.id); }
+  }
   const order = (await (await fetch(`${squareBaseUrl()}/v2/orders/${invoice.order_id}`, { headers })).json())?.order;
   const paymentId = order?.tenders?.[0]?.payment_id;
   if (!paymentId) { console.error("Monthly invoice: no payment on order", invoice.order_id); return; }
   const payment = (await (await fetch(`${squareBaseUrl()}/v2/payments/${paymentId}`, { headers })).json())?.payment;
   if (!payment || payment.status !== "COMPLETED") return;
   await recordDonation(supabase, payment, invoice.order_id, monthlyMetadata(row));
+  // Charge history and running totals for the admin Monthly gifts page (unique per invoice).
+  const cents = payment.total_money?.amount || 0;
+  const { data: don } = await supabase.from("donations").select("id").eq("stripe_session_id", invoice.order_id).maybeSingle();
+  const { error: chErr } = await supabase.from("recurring_charges").insert({ recurring_id: row.id, square_invoice_id: invoice.id ?? invoice.order_id, square_order_id: invoice.order_id, donation_id: don?.id ?? null, amount_cents: cents });
+  if (!chErr) {
+    await supabase.from("recurring_donations").update({
+      status: "active", failure_reason: null, last_charge_at: new Date().toISOString(),
+      charges_count: (row.charges_count ?? 0) + 1, total_charged_cents: (row.total_charged_cents ?? 0) + cents,
+      ...(sub.charged_through_date && { next_charge_on: sub.charged_through_date }),
+    }).eq("id", row.id);
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -13,6 +13,7 @@ import {
   LayoutDashboard, Megaphone, DollarSign, Users, ShieldCheck, Gift, Package, Flag, ListTodo, Bell, FileText,
   BookOpen, MessageSquare, Newspaper, HelpCircle, Mail, UserCog, History, Settings, BarChart3, Search,
   PanelLeftClose, PanelLeftOpen, Menu, LogOut, Home, Contact, Inbox,
+  Repeat,
 } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { SavedAdminViews } from '@/components/admin/SavedAdminViews';
@@ -26,6 +27,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     { label: 'Fundraisers', path: '/admin/fundraisers', icon: Megaphone },
     { label: 'Donations', path: '/admin/donations', icon: DollarSign },
     { label: 'Donors', path: '/admin/donors', icon: Contact },
+    { label: 'Monthly gifts', path: '/admin/monthly', icon: Repeat },
     { label: 'Recipients', path: '/admin/verifications', icon: ShieldCheck },
     { label: 'Coupons', path: '/admin/coupons', icon: Gift },
     { label: 'Procurement', path: '/admin/procurement', icon: Package },
