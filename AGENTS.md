@@ -15,7 +15,7 @@
 - Messages, comments, updates, invites and blocks are written only by the `send-message` and `fundraiser-actions` edge functions after server moderation (`_shared/moderation.ts`); clients have read-only access, so safety rules hold server-side.
 - Public fundraiser pages read donors, organizers and coupon totals through security-definer read functions only, and totals come from `get_fundraiser_totals` (completed donations), never stored counters, to avoid drift; donations/profiles remain private under RLS.
 - Donation INSERT/relevant UPDATE triggers recompute distinct completed-donor totals; the legacy payment RPC recomputes idempotently. No checkout/coupon triggers or realtime.
-- Shared public links use branded /f/ URLs, never organizer/backend URLs.
+- Shared public links use branded /f/ URLs only.
 - Resolve fundraiser imagery everywhere as primary gallery, then ordered gallery, then legacy cover, then branded category fallback; card delivery uses Supabase transforms and uploads create one bounded WebP.
 - Gold Coins are credited only by credit_gold_coins() from the scheduled dispatcher into the append-only gold_coin_ledger (unique per donation and entry type); payment tables stay read-only.
 - Anonymous public submissions (partner inquiries, contact messages, testimonials) go through the public-submit edge function, never direct table inserts. US footer contacts use contact_messages, email support@coupondonation.com with the sender as Reply-To, and read by the team at /admin/contact.
@@ -23,7 +23,7 @@
 
 ## Coupon System Rules
 - Coupon writes go only through security-definer RPCs; no client writes. Codes/PINs are stored plainly but column-locked: owners reveal via owner_reveal_coupon, staff only through an audited reveal, and prepaid is a hosted link only.
-- Codes are never hard-deleted: removed codes become 'returned' (never auto-filled) and unused stock is voided. Donation-linked coupons are never deleted: re-splits void rows, keep the non-void total per donation+brand to the cent, and reads/sums exclude 'void'.
+- Codes are never hard-deleted: removed codes become 'returned' (never auto-filled); unused stock is voided. Donation-linked coupons are never deleted: re-splits void rows, keep the non-void total per donation+brand to the cent, and reads/sums exclude 'void'.
 - Impact emails queue in donor_impact_events and are sent by impact-dispatch; receipts use a private bucket with signed URLs. Donor confirmations and live-fundraiser emails send once via claim_account_email, from confirm-donation or admin-dispatch polling.
 - Fundraiser home uses one owner-scoped invoker RPC under RLS; summaries omit donor identities and credentials to preserve privacy.
 - Donors choose retailers and whole-dollar shares only (src/lib/donationSplit.ts: $10 minimum each, always adds up; no amount is suggested); the site never promises coupon counts or sizes. Checkouts re-check the split and send it compact (`_shared/brand-split.ts`); webhooks create ONE pending coupon slot per retailer holding its exact share, and the team sizes real coupons by hand.
