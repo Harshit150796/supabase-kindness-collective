@@ -26,6 +26,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     { label: 'Fundraisers', path: '/admin/fundraisers', icon: Megaphone },
     { label: 'Donations', path: '/admin/donations', icon: DollarSign },
     { label: 'Donors', path: '/admin/donors', icon: Contact },
+    { label: 'Monthly gifts', path: '/admin/monthly', icon: Repeat },
     { label: 'Recipients', path: '/admin/verifications', icon: ShieldCheck },
     { label: 'Coupons', path: '/admin/coupons', icon: Gift },
     { label: 'Procurement', path: '/admin/procurement', icon: Package },

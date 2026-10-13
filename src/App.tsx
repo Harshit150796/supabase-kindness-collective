@@ -73,6 +73,7 @@ const AdminFAQ = lazy(() => import("./pages/admin/AdminFAQ"));
 const AdminFundraisers = lazy(() => import("./pages/admin/AdminFundraisers"));
 const AdminNewsletters = lazy(() => import("./pages/admin/AdminNewsletters"));
 const AdminDonations = lazy(() => import("./pages/admin/AdminDonations"));
+const AdminMonthly = lazy(() => import("./pages/admin/AdminMonthly"));
 const AdminProcurement = lazy(() => import("./pages/admin/AdminProcurement"));
 const AdminDonors = lazy(() => import("./pages/admin/AdminDonors"));
 const AdminTasks = lazy(() => import("./pages/admin/AdminTasks"));
@@ -199,6 +200,7 @@ const AppRoutes = () => (
       <Route path="/admin/fundraisers" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin', 'staff', 'viewer']}><AdminFundraisers /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/newsletters" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminNewsletters /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/donations" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin', 'staff', 'viewer']}><AdminDonations /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin/monthly" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin', 'staff', 'viewer']}><AdminMonthly /></ProtectedRoute></GeoGuard>} />
       <Route path="/admin/procurement" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminProcurement /></ProtectedRoute></GeoGuard>} />
 
       {/* Blog Routes */}

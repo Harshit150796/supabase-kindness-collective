@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
     : action === 'pause' ? { status: 'paused', paused_at: now } : { status: 'active', paused_at: null };
   await admin.from('recurring_donations').update(patch).eq('id', row.id);
   if (isAdmin && row.user_id !== u.user.id) {
-    await admin.from('admin_audit_log').insert({ admin_id: u.user.id, action: `monthly_gift_${action}`, target_type: 'recurring_donation', target_id: row.id, details: { previous_status: row.status } });
+    await admin.from('admin_audit_log').insert({ actor_id: u.user.id, action: `monthly_gift_${action}`, table_name: 'recurring_donations', record_id: row.id, before: { status: row.status }, after: patch });
   }
   return json({ ok: true });
 });
