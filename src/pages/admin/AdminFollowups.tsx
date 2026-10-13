@@ -46,7 +46,7 @@ function PersonaCard({ p, canEdit, onSaved }: { p: Persona; canEdit: boolean; on
 
 export default function AdminFollowups() {
   const { isAdmin, isStaff: canEdit } = useTeamRole();
-  const settings = useQuery({ queryKey: ['fu-settings'], queryFn: async () => { const { data, error } = await sb.from('admin_settings').select('followup_live_sending, followup_last_run_at').eq('id', 1).single(); if (error) throw error; return data; } });
+  const settings = useQuery({ queryKey: ['fu-settings'], queryFn: async () => { const { data, error } = await sb.from('admin_settings').select('followup_live_sending, followup_last_run_at, followup_ai_writing').eq('id', 1).single(); if (error) throw error; return data; } });
   const personas = useQuery({ queryKey: ['fu-personas'], queryFn: async () => { const { data, error } = await sb.from('followup_personas').select('*').order('created_at'); if (error) throw error; return data as Persona[]; } });
   const sends = useQuery({ queryKey: ['fu-sends'], queryFn: async () => { const { data, error } = await sb.from('followup_sends').select('id, status, reason, pages, sent_at, updated_at, persona_version, sent_subject, sent_body, ai_written, visitor_consents(email), followup_personas(label)').order('updated_at', { ascending: false }).limit(200); if (error) throw error; return data as any[]; } });
   const optedIn = useQuery({ queryKey: ['fu-optin'], queryFn: async () => { const { count } = await sb.from('visitor_consents').select('id', { count: 'exact', head: true }).eq('consent_status', 'opted_in'); return count ?? 0; } });
@@ -55,13 +55,17 @@ export default function AdminFollowups() {
     try { await rpc('admin_followup_set_live', { _on: on }); toast({ title: on ? 'Live sending on' : 'Live sending off' }); settings.refetch(); }
     catch (e) { toast({ title: 'Not changed', description: (e as Error).message, variant: 'destructive' }); }
   };
+  const setAi = async (on: boolean) => {
+    try { await rpc('admin_followup_set_ai', { _on: on }); toast({ title: on ? 'AI writing on' : 'Approved text sent unchanged' }); settings.refetch(); }
+    catch (e) { toast({ title: 'Not changed', description: (e as Error).message, variant: 'destructive' }); }
+  };
   const sent = (sends.data ?? []).filter((s) => s.status === 'sent');
   const skipped = (sends.data ?? []).filter((s) => s.status !== 'sent');
   const Row = (s: any) => (
     <tr key={s.id} className="border-b border-border/60 align-top">
       <td className="py-2 pr-4">{s.visitor_consents?.email}</td>
       <td className="py-2 pr-4">{s.followup_personas?.label}</td>
-      <td className="py-2 pr-4">{s.status === 'sent' ? fmtDate(s.sent_at) : s.reason}</td>
+      <td className="py-2 pr-4">{s.status === 'sent' ? fmtDate(s.sent_at) : `${s.status}${s.reason ? ` · ${s.reason}` : ''}`}</td>
       <td className="py-2 text-muted-foreground">{(s.pages ?? []).slice(0, 6).join(', ')}{s.sent_body && <details className="mt-1"><summary className="cursor-pointer text-foreground">{s.ai_written ? 'AI-written email' : 'Base email'}: {s.sent_subject}</summary><p className="mt-1 whitespace-pre-line">{s.sent_body}</p></details>}</td>
     </tr>
   );
@@ -79,8 +83,15 @@ export default function AdminFollowups() {
         </div>
         <Switch disabled={!isAdmin || !settings.data} checked={!!settings.data?.followup_live_sending} onCheckedChange={setLive} aria-label="Live sending" />
       </div>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-lg bg-muted/40 p-5">
+        <div>
+          <p className="font-medium text-foreground">AI writes each email</p>
+          <p className="text-sm text-muted-foreground">On: AI personalizes the approved email within strict rules. Off: the approved text is sent word for word. Every email waits 30 quiet minutes and is checked again before it goes out.</p>
+        </div>
+        <Switch disabled={!isAdmin || !settings.data} checked={settings.data?.followup_ai_writing !== false} onCheckedChange={setAi} aria-label="AI writing" />
+      </div>
       <Tabs defaultValue="types">
-        <TabsList><TabsTrigger value="types">Visitor types</TabsTrigger><TabsTrigger value="log">Send log ({sent.length})</TabsTrigger><TabsTrigger value="skipped">Skipped ({skipped.length})</TabsTrigger></TabsList>
+        <TabsList><TabsTrigger value="types">Visitor types</TabsTrigger><TabsTrigger value="log">Send log ({sent.length})</TabsTrigger><TabsTrigger value="skipped">Waiting & skipped ({skipped.length})</TabsTrigger></TabsList>
         <TabsContent value="types" className="space-y-4 pt-4">
           {personas.data?.length
             ? personas.data.map((p) => <PersonaCard key={`${p.id}:${p.version}`} p={p} canEdit={canEdit} onSaved={() => personas.refetch()} />)
