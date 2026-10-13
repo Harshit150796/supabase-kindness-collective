@@ -17,7 +17,7 @@ export function MonthlyGifts() {
   useEffect(() => {
     if (!user) { setRows([]); return; }
     supabase.from('recurring_donations' as never).select('id, gift_cents, tip_cents, fee_cents, brand_name, status, created_at')
-      .neq('status', 'canceled').order('created_at', { ascending: false })
+      .eq('status', 'active').order('created_at', { ascending: false })
       .then(({ data }) => setRows((data as Row[] | null) ?? []));
   }, [user]);
 
@@ -41,7 +41,7 @@ export function MonthlyGifts() {
             <div>
               <p className="font-medium tabular-nums">{usd.format((r.gift_cents + r.tip_cents + r.fee_cents) / 100)} every month</p>
               <p className="text-sm text-muted-foreground">
-                {usd.format(r.gift_cents / 100)} to families{r.brand_name ? ` via ${r.brand_name}` : ''}{r.status === 'pending' ? ' · starting after first payment' : ''}
+                {usd.format(r.gift_cents / 100)} to families{r.brand_name ? ` via ${r.brand_name}` : ''}
               </p>
             </div>
             <Button variant="outline" size="sm" disabled={busy === r.id} onClick={() => cancel(r.id)}>Cancel</Button>
