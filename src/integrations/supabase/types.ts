@@ -276,6 +276,7 @@ export type Database = {
           allow_manual_prepaid: boolean
           email_new_donation: boolean
           email_new_fundraiser: boolean
+          followup_last_run_at: string | null
           followup_live_sending: boolean
           id: number
           include_trial_stats: boolean
@@ -288,6 +289,7 @@ export type Database = {
           allow_manual_prepaid?: boolean
           email_new_donation?: boolean
           email_new_fundraiser?: boolean
+          followup_last_run_at?: string | null
           followup_live_sending?: boolean
           id?: number
           include_trial_stats?: boolean
@@ -300,6 +302,7 @@ export type Database = {
           allow_manual_prepaid?: boolean
           email_new_donation?: boolean
           email_new_fundraiser?: boolean
+          followup_last_run_at?: string | null
           followup_live_sending?: boolean
           id?: number
           include_trial_stats?: boolean
@@ -2001,32 +2004,41 @@ export type Database = {
         Row: {
           consent_id: string
           created_at: string
+          hubspot_note_id: string | null
           id: string
+          pages: Json
           persona_id: string
           persona_version: number
           reason: string | null
           sent_at: string | null
           status: string
+          updated_at: string
         }
         Insert: {
           consent_id: string
           created_at?: string
+          hubspot_note_id?: string | null
           id?: string
+          pages?: Json
           persona_id: string
           persona_version: number
           reason?: string | null
           sent_at?: string | null
           status?: string
+          updated_at?: string
         }
         Update: {
           consent_id?: string
           created_at?: string
+          hubspot_note_id?: string | null
           id?: string
+          pages?: Json
           persona_id?: string
           persona_version?: number
           reason?: string | null
           sent_at?: string | null
           status?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -3215,7 +3227,10 @@ export type Database = {
           email_source: string
           hubspot_contact_id: string | null
           id: string
+          last_emailed_at: string | null
+          opted_out_at: string | null
           posthog_distinct_id: string | null
+          unsubscribe_token: string
           updated_at: string
           user_id: string | null
         }
@@ -3227,7 +3242,10 @@ export type Database = {
           email_source: string
           hubspot_contact_id?: string | null
           id?: string
+          last_emailed_at?: string | null
+          opted_out_at?: string | null
           posthog_distinct_id?: string | null
+          unsubscribe_token?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -3239,7 +3257,10 @@ export type Database = {
           email_source?: string
           hubspot_contact_id?: string | null
           id?: string
+          last_emailed_at?: string | null
+          opted_out_at?: string | null
           posthog_distinct_id?: string | null
+          unsubscribe_token?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -3374,6 +3395,17 @@ export type Database = {
           fundraiser_id: string
         }[]
       }
+      admin_followup_save_persona: {
+        Args: {
+          _approved: boolean
+          _body: string
+          _id: string
+          _label: string
+          _subject: string
+        }
+        Returns: undefined
+      }
+      admin_followup_set_live: { Args: { _on: boolean }; Returns: undefined }
       admin_fundraiser_action: {
         Args: {
           _action: string
