@@ -64,3 +64,35 @@ export function validateAiEmail(base: string, ai: { subject: string; body: strin
   if (got.some((l) => !/^https:\/\/coupondonation\.com\//.test(l))) return false;
   return b.endsWith('— The CouponDonation team');
 }
+
+export const QUIET_MINUTES = 30;
+export const NONCE_MINUTES = 60;
+
+/** A person is ready only after 30 quiet minutes since their last activity. */
+export function isQuiet(lastActivityAt: string | null, now: Date): boolean {
+  return !!lastActivityAt && now.getTime() - new Date(lastActivityAt).getTime() >= QUIET_MINUTES * 60_000;
+}
+
+/** Renewed activity after the reservation means the job must be cancelled, not sent. */
+export function activityRenewed(reservedActivity: string | null, latestActivity: string | null): boolean {
+  if (!latestActivity) return false;
+  return !reservedActivity || new Date(latestActivity).getTime() > new Date(reservedActivity).getTime();
+}
+
+/** Prior-outreach rule: unknown CRM history stops sending, like any earlier email. */
+export function outreachBlock(h: { readable: boolean; priorEmails: number }): string | null {
+  if (!h.readable) return "couldn't read HubSpot history";
+  if (h.priorEmails > 0) return 'earlier email found in HubSpot';
+  return null;
+}
+
+/** Stable hash binding a nonce to the exact email text. */
+export async function contentHash(email: string, subject: string, body: string): Promise<string> {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${email.toLowerCase()}\n${subject}\n${body}`));
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export function newNonce(): string {
+  const a = new Uint8Array(32); crypto.getRandomValues(a);
+  return [...a].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
