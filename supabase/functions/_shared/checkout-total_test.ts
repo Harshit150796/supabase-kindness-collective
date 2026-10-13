@@ -17,6 +17,13 @@ Deno.test('a covered fee leaves the gift and tip whole after the processor takes
   assertEquals(coveredFeeCents(0, 'stripe'), 0);
 });
 
+Deno.test('the Square rate matches the published online rate of 3.3% + 30¢', () => {
+  // Square dashboard → Pricing & Subscriptions → Processing fees → Online. If Square changes its
+  // online rate, update CARD_RATES and this test together; donors are quoted from these numbers.
+  assertEquals(CARD_RATES.square, { percent: 3.3, fixedCents: 30 });
+  assertEquals(coveredFeeCents(10000, 'square'), 373); // $100 gift -> $3.73 fee, $103.73 charged
+});
+
 Deno.test('the charge is gift + optional tip + optional fee, and the gift is never reduced', () => {
   const none = computeCharge({ gift: 50, provider: 'stripe' });
   assertEquals(none, { giftCents: 5000, tipCents: 0, feeCents: 0, totalCents: 5000 });
