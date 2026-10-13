@@ -15,10 +15,11 @@ export const CARD_RATES: Record<Provider, { percent: number; fixedCents: number 
   stripe: { percent: 2.9, fixedCents: 30 },
 };
 
-/** Tip choices on the donate page; none is preselected. */
+/** Tip choices on the donate page; DEFAULT_TIP_PERCENT starts selected (founder choice). */
 export const TIP_PERCENTS = [5, 10, 15] as const;
 /** What we tell donors is usual. */
-export const TYPICAL_TIP_PERCENT = 10;
+export const TYPICAL_TIP_PERCENT = 15;
+export const DEFAULT_TIP_PERCENT = 15;
 export const MAX_TIP_CENTS = 100_000; // $1,000
 
 export class ChargeError extends Error {}

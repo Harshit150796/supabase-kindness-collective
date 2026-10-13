@@ -2836,6 +2836,66 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_donations: {
+        Row: {
+          brand_allocations: string | null
+          brand_name: string | null
+          canceled_at: string | null
+          consent_at: string
+          consent_text: string
+          created_at: string
+          donor_email: string | null
+          fee_cents: number
+          fundraiser_id: string | null
+          gift_cents: number
+          id: string
+          square_plan_variation_id: string | null
+          square_subscription_id: string | null
+          status: string
+          tip_cents: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_allocations?: string | null
+          brand_name?: string | null
+          canceled_at?: string | null
+          consent_at?: string
+          consent_text: string
+          created_at?: string
+          donor_email?: string | null
+          fee_cents?: number
+          fundraiser_id?: string | null
+          gift_cents: number
+          id?: string
+          square_plan_variation_id?: string | null
+          square_subscription_id?: string | null
+          status?: string
+          tip_cents?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_allocations?: string | null
+          brand_name?: string | null
+          canceled_at?: string | null
+          consent_at?: string
+          consent_text?: string
+          created_at?: string
+          donor_email?: string | null
+          fee_cents?: number
+          fundraiser_id?: string | null
+          gift_cents?: number
+          id?: string
+          square_plan_variation_id?: string | null
+          square_subscription_id?: string | null
+          status?: string
+          tip_cents?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       redemption_history: {
         Row: {
           coupon_id: string | null

@@ -1,5 +1,6 @@
 import { GoldCoinsBalance } from '@/components/engagement/GoldCoinsBalance';
 import { ShareExperienceForm } from '@/components/engagement/ShareExperienceForm';
+import { MonthlyGifts } from '@/components/donor/MonthlyGifts';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -212,6 +213,8 @@ export default function Dashboard() {
           <GoldCoinsBalance />
           <div className="space-y-8 bg-secondary/40 p-6"><ShareExperienceForm /></div>
         </div>
+
+        <MonthlyGifts />
 
         {/* Two surfaces */}
         <div className="grid gap-6 lg:grid-cols-2">
