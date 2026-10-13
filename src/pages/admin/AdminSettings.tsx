@@ -57,6 +57,12 @@ export default function AdminSettings() {
           </div>
           {s.data?.updated_at && <p className="mt-3 text-xs text-muted-foreground">Last changed {fmtDate(s.data.updated_at)}</p>}
         </section>
+        <section className="rounded-lg bg-background p-5">
+          <h2 className="text-base font-medium">Homepage figures</h2>
+          <div className="divide-y divide-border">
+            <Row k="include_trial_stats" title="Include trial coupons on the homepage" desc="Adds the separate trial coupons to the public issued, received and used figures. Turn off before publishing to show real coupons only." />
+          </div>
+        </section>
         {isAdmin && <div className="lg:col-span-2"><PaymentProcessorsCard /></div>}
       </div>
     </DashboardLayout>
