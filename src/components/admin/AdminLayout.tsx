@@ -13,6 +13,7 @@ import {
   LayoutDashboard, Megaphone, DollarSign, Users, ShieldCheck, Gift, Package, Flag, ListTodo, Bell, FileText,
   BookOpen, MessageSquare, Newspaper, HelpCircle, Mail, UserCog, History, Settings, BarChart3, Search,
   PanelLeftClose, PanelLeftOpen, Menu, LogOut, Home, Contact, Inbox,
+  Repeat,
 } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { SavedAdminViews } from '@/components/admin/SavedAdminViews';
