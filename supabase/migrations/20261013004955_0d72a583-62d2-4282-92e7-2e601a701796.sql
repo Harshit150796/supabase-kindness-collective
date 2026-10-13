@@ -1,0 +1,2 @@
+DROP POLICY IF EXISTS "Anyone can submit applications" ON public.recipient_applications;
+CREATE POLICY "Users submit own application" ON public.recipient_applications FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
