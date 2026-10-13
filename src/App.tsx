@@ -10,6 +10,7 @@ import { SessionSecurityProvider } from "@/components/auth/SessionSecurityProvid
 import { GeoGuard } from "@/components/auth/GeoGuard";
 const Index = lazy(() => import("./pages/Index"));
 import { PrivacyConsentBanner } from "./components/PrivacyConsentBanner";
+import { VisitorAnalytics } from "./components/VisitorAnalytics";
 import { CursorTrail } from './components/CursorTrail';
 import { SiteMenuProvider } from './components/navigation/SiteMenuProvider';
 import { signInPath } from './lib/serverActions';
@@ -228,6 +229,7 @@ const App = () => (
                   <CursorTrail />
                   <PageChoreography />
                   <PrivacyConsentBanner />
+                  <VisitorAnalytics />
                 </SiteMenuProvider>
               </SessionSecurityProvider>
             </AuthProvider>
