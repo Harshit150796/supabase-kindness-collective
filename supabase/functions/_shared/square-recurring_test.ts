@@ -16,3 +16,9 @@ Deno.test("each monthly charge records the same gift, tip and fee", () => {
   const md = monthlyMetadata({ gift_cents: 5000, tip_cents: 750, fee_cents: 214, brand_allocations: null, brand_name: "Kroger", user_id: "u", donor_email: null, fundraiser_id: null });
   assertEquals(readPayment(md, 5964), { giftCents: 5000, tipCents: 750, feeCents: 214 });
 });
+
+Deno.test("guest monthly gift carries the email, no donor id", () => {
+  const md = monthlyMetadata({ gift_cents: 2000, tip_cents: 300, fee_cents: 100, brand_allocations: null, brand_name: null, user_id: null, donor_email: "g@x.com", fundraiser_id: null });
+  assertEquals(md.donor_id, undefined);
+  assertEquals(md.donor_email, "g@x.com");
+});
