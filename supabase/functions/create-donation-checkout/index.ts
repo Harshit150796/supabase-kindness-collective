@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { SplitError, describeSplit, encodeSplit, normalizeSplit } from '../_shared/brand-split.ts';
 import { ChargeError, chargeMetadata, computeCharge } from '../_shared/checkout-total.ts';
+import { SQUARE_PAYMENT_METHODS } from '../_shared/square-payment-methods.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -139,6 +140,7 @@ serve(async (req) => {
       checkout_options: {
         redirect_url: `${origin}/donation-success?amount=${amount}&meals=${mealsProvided}`,
         ask_for_shipping_address: false,
+        accepted_payment_methods: SQUARE_PAYMENT_METHODS,
       },
       ...(userEmail && {
         pre_populated_data: { buyer_email: userEmail },
