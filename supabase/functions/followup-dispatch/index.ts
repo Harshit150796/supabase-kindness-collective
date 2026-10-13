@@ -102,12 +102,14 @@ Deno.serve(async (req) => {
   if (!personal || !projectId) return json({ error: 'PostHog reading key missing' }, 500);
 
   const ids = consents.map((c) => c.posthog_distinct_id!.replace(/[^\w$.:@-]/g, ''));
-  // Look up by PERSON, so visits recorded under a newer ID after sign-in still count.
+  // Match by the visitor's own ID (anonymous visitors have no PostHog person profile under
+  // person_profiles 'identified_only') and also by PERSON, so visits under a newer ID after sign-in count.
   const hogql = async (idList: string[]) => {
+    const L = `(${idList.map((i) => `'${i}'`).join(',')})`;
     const q = await fetch(`${app}/api/projects/${projectId}/query/`, {
       method: 'POST', headers: { Authorization: `Bearer ${personal}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: { kind: 'HogQLQuery', query:
-        `SELECT pdi.distinct_id, groupUniqArrayIf(e.properties.$pathname, e.event = '$pageview'), max(e.timestamp) FROM events e JOIN person_distinct_ids pdi ON e.person_id = pdi.person_id WHERE e.timestamp > now() - INTERVAL 7 DAY AND pdi.distinct_id IN (${idList.map((i) => `'${i}'`).join(',')}) GROUP BY pdi.distinct_id` } }),
+        `SELECT if(e.distinct_id IN ${L}, e.distinct_id, pdi.distinct_id) AS vid, groupUniqArrayIf(e.properties.$pathname, e.event = '$pageview'), max(e.timestamp) FROM events e LEFT JOIN person_distinct_ids pdi ON e.person_id = pdi.person_id WHERE e.timestamp > now() - INTERVAL 7 DAY AND (e.distinct_id IN ${L} OR pdi.distinct_id IN ${L}) GROUP BY vid` } }),
     });
     if (!q.ok) throw new Error(`PostHog query [${q.status}]: ${(await q.text()).slice(0, 300)}`);
     return new Map<string, { pages: string[]; last: string | null }>(((await q.json()).results ?? []).map((r: [string, string[], string]) => [r[0], { pages: (r[1] ?? []).filter(Boolean).slice(0, 50), last: r[2] ? new Date(r[2]).toISOString() : null }]));
