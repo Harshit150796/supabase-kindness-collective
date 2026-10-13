@@ -28,4 +28,4 @@
 - Fundraiser home uses one owner-scoped invoker RPC under RLS; summaries omit donor identities and credentials to preserve privacy.
 - Donors choose retailers and whole-dollar shares only (src/lib/donationSplit.ts: $10 minimum each, always adds up; no amount is suggested); the site never promises coupon counts or sizes. Checkouts re-check the split and send it compact (`_shared/brand-split.ts`); webhooks create ONE pending coupon slot per retailer holding its exact share, and the team sizes real coupons by hand.
 - 100% of every gift reaches families; no platform fee is taken from it. Checkout adds a tip (default in checkout-total.ts), an opt-in monthly box (one fixed Square plan per checkout, `recurring_donations`) and a card-fee cover box ticked by default; an uncovered fee is paid from tips. One calculation for page and server: `supabase/functions/_shared/checkout-total.ts`. Webhooks record donations.amount = gift, plus amount_paid, tip_amount and fee_covered_amount.
-- PostHog loads only after cookie consent, identifies by account ID; see docs/workflow-contract.md.
+- PostHog: consent-gated, ID-only; docs/workflow-contract.md.
