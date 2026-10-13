@@ -6,9 +6,9 @@
 - Preserve the two-color wordmark exactly: `#2e7d32` for Coupon, `#1565c0` for Donation. Founder-approved exceptions: the rotating "CouponDonation is …" hero kicker, and retailer colours kept in the Live Donation Tracking bars.
 - Campaign pages use the `ink` token (near-black, green undertone) for Share buttons, strong headings and the dark more-fundraisers band; Donate stays primary green; blue marks verification only.
 - Marketing pages alternate neutral, soft-green and deep-forest bands; tonal panels have no borders or shadows and hairlines are for tables. No eyebrow headings, decorative pills, icon circles, gradient text, glow shadows or card-on-card.
-- Shared organizer primitives own titles/numerals, surfaces, labels, stats, status, progress and states to prevent page drift; controls use sans.
+- Shared organizer primitives own titles/numerals, surfaces, labels, stats, status, progress and states; controls use sans.
 - Motion is full on every device; the OS reduced-motion setting is not consulted (founder decision lives in memory).
-- Public photos stay local; without verified people-photo consent use coupon/receipt/trace visuals. Responsive photos use proportional contain transforms on managed Supabase hosts or generated local variants — never append transformation parameters to unknown hosts or crop at delivery, because framing belongs to the image container.
+- Public photos stay local; without verified people-photo consent use coupon/receipt/trace visuals. Responsive photos use proportional contain transforms on managed Supabase hosts or generated local variants — never append transformation parameters to unknown hosts or crop at delivery (framing belongs to the container).
 - Module-level Intl formatters only (toLocale* per render is slow).
 
 ## Data, Privacy & Dispatch Rules
