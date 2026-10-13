@@ -1,5 +1,6 @@
 import { SplitError, describeSplit, encodeSplit, normalizeSplit } from '../_shared/brand-split.ts';
 import { ChargeError, chargeMetadata, computeCharge } from '../_shared/checkout-total.ts';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -34,8 +35,21 @@ Deno.serve(async (req) => {
     const settings = settingsRes.ok ? (await settingsRes.json())?.[0] : null;
     if (settings && settings.square_enabled === false) return json({ error: "Square payments are currently turned off." }, 403);
 
-    const { sourceId, verificationToken, amount, tipAmount, coverFee, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = await req.json();
+    const { sourceId: rawSource, savedCardId, verificationToken, amount, tipAmount, coverFee, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = await req.json();
     const amt = Number(amount);
+    // Paying with a saved card: only the signed-in owner may use it, with their Square customer.
+    let sourceId = rawSource;
+    let customerId: string | null = null;
+    if (typeof savedCardId === "string" && savedCardId) {
+      const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const jwt = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+      const { data: who } = await db.auth.getUser(jwt).catch(() => ({ data: null }));
+      if (!who?.user) return json({ error: "Please sign in to use a saved card." }, 401);
+      const { data: card } = await db.from("saved_cards").select("square_card_id").eq("user_id", who.user.id).eq("square_card_id", savedCardId).maybeSingle();
+      const { data: prof } = await db.from("donor_payment_profiles").select("square_customer_id").eq("user_id", who.user.id).maybeSingle();
+      if (!card || !prof) return json({ error: "That saved card was not found." }, 404);
+      sourceId = card.square_card_id; customerId = prof.square_customer_id;
+    }
     if (typeof sourceId !== "string" || !sourceId || sourceId.length > 500) return json({ error: "Missing payment details." }, 400);
     if (!amt || amt < 5 || amt > 10000) return json({ error: "Invalid donation amount. Must be between $5 and $10,000." }, 400);
 
@@ -98,6 +112,7 @@ Deno.serve(async (req) => {
         idempotency_key: crypto.randomUUID(),
         source_id: sourceId,
         ...(verificationToken ? { verification_token: verificationToken } : {}),
+        ...(customerId ? { customer_id: customerId } : {}),
         amount_money: { amount: charge.totalCents, currency: "USD" },
         order_id: orderId,
         location_id: locationId,

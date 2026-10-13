@@ -50,6 +50,10 @@ interface ReviewStepProps {
   error: string | null;
   checkoutUrl: string | null;
   onPay: () => void;
+  /** Signed-in donor's saved cards; choosing one pays right here instead of on Square's page. */
+  savedCards?: { square_card_id: string; brand: string | null; last4: string | null }[];
+  savedCard?: string | null;
+  onSavedCard?: (id: string | null) => void;
 }
 
 function Row({ label, value, strong }: { label: string; value: number; strong?: boolean }) {
@@ -62,7 +66,7 @@ function Row({ label, value, strong }: { label: string; value: number; strong?: 
 }
 
 export function ReviewStep(props: ReviewStepProps) {
-  const { amount, retailers, providers, provider, onProvider, tip, otherTip, onTip, onOtherTip, coverFee, onCoverFee, monthly, onMonthly, signedIn, feeIfCovered, charge, busy, error, checkoutUrl, onPay } = props;
+  const { amount, retailers, providers, provider, onProvider, tip, otherTip, onTip, onOtherTip, coverFee, onCoverFee, monthly, onMonthly, signedIn, feeIfCovered, charge, busy, error, checkoutUrl, onPay, savedCards = [], savedCard = null, onSavedCard } = props;
   const giftCents = Math.round(amount * 100);
   const choices: { id: TipChoice; label: string; sub?: string }[] = [
     { id: 0, label: 'No tip' },
@@ -197,6 +201,18 @@ export function ReviewStep(props: ReviewStepProps) {
           </span>
         </span>
       </label>
+
+      {savedCards.length > 0 && !monthly && onSavedCard && (
+        <fieldset className="mt-5 space-y-2" data-saved-cards>
+          <legend className="mb-2 text-sm font-medium text-foreground">Pay with</legend>
+          {[{ square_card_id: '', brand: null, last4: null }, ...savedCards].map((c) => (
+            <label key={c.square_card_id || 'new'} className="flex cursor-pointer items-center gap-3 rounded-xl bg-muted/50 px-4 py-3 text-[15px]">
+              <input type="radio" name="saved-card" className="accent-primary" checked={(savedCard ?? '') === c.square_card_id} onChange={() => onSavedCard(c.square_card_id || null)} />
+              {c.square_card_id ? <span className="tabular-nums">{c.brand ?? 'Card'} •••• {c.last4 ?? '----'}</span> : <span>A new card or wallet (Square's page)</span>}
+            </label>
+          ))}
+        </fieldset>
+      )}
 
       <div className="mt-5">
         {providers.length === 0 ? (

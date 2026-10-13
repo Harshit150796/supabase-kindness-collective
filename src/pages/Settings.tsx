@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { useSignOut } from "@/hooks/useSignOut";
 import { signInPath } from "@/lib/serverActions";
+import { PaymentMethods } from "@/components/donor/PaymentMethods";
 import { Bell, Shield, Trash2, Mail, Heart, LogOut } from "lucide-react";
 
 const Settings = () => {
@@ -127,6 +128,8 @@ const Settings = () => {
               </div>
             </CardContent>
           </Card>
+
+          <PaymentMethods />
 
           {/* Session */}
           <Card className="mb-6 rounded-md shadow-sm">

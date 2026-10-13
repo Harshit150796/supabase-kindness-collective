@@ -10,7 +10,7 @@ const STRIPE_PK = 'pk_live_51Sgpd8J31hV93H57cYNzxS3qIaQRG6hNu0irdovdYksI1zggjevv
 declare global { interface Window { Stripe?: any; Square?: any } }
 
 const scriptCache: Record<string, Promise<void>> = {};
-function loadScript(src: string) {
+export function loadScript(src: string) {
   if (!scriptCache[src]) {
     scriptCache[src] = new Promise((resolve, reject) => {
       const s = document.createElement('script');

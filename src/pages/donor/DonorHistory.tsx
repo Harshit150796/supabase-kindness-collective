@@ -66,6 +66,8 @@ export default function DonorHistory() {
         .in('donation_id', donationIds)
         .neq('status', 'void');
 
+      const { data: monthlyData } = await (supabase as any).from('recurring_charges').select('donation_id').in('donation_id', donationIds);
+      const monthlyIds = new Set<string>((monthlyData ?? []).map((m: { donation_id: string }) => m.donation_id));
       // Count coupons per donation
       const couponCounts: Record<string, number> = {};
       couponsData?.forEach(c => {
@@ -78,6 +80,7 @@ export default function DonorHistory() {
       const donationsWithCounts = donationsData.map(d => ({
         ...d,
         coupon_count: couponCounts[d.id] || 0,
+        monthly: monthlyIds.has(d.id),
       }));
 
       setDonations(donationsWithCounts);
@@ -223,6 +226,14 @@ export default function DonorHistory() {
                             <Calendar className="w-4 h-4" />
                             {format(new Date(donation.created_at), 'MMM d, yyyy h:mm a')}
                           </span>
+                          {(donation as any).monthly && <Badge variant="outline">Monthly</Badge>}
+                          {Number((donation as any).amount_paid) > 0 && (
+                            <span className="tabular-nums">
+                              Paid ${Number((donation as any).amount_paid).toFixed(2)}
+                              {Number((donation as any).tip_amount) > 0 && ` · tip $${Number((donation as any).tip_amount).toFixed(2)}`}
+                              {Number((donation as any).fee_covered_amount) > 0 && ` · fee $${Number((donation as any).fee_covered_amount).toFixed(2)}`}
+                            </span>
+                          )}
                           {donation.payment_method && (
                             <span className="flex items-center gap-1">
                               <CreditCard className="w-4 h-4" />
