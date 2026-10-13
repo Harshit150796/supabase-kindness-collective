@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { SplitError, describeSplit, encodeSplit, normalizeSplit } from '../_shared/brand-split.ts';
 import { ChargeError, chargeMetadata, computeCharge } from '../_shared/checkout-total.ts';
+import { SQUARE_PAYMENT_METHODS } from '../_shared/square-payment-methods.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

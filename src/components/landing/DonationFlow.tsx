@@ -70,7 +70,8 @@ export function DonationFlow() {
   const [mode, setMode] = useState<SplitMode>('even');
   const [custom, setCustom] = useState<number[]>([]);
   const [browse, setBrowse] = useState(false);
-  const [providers, setProviders] = useState<Provider[]>(['square', 'stripe']);
+  // Square handles all payments; Stripe is retired.
+  const [providers, setProviders] = useState<Provider[]>(['square']);
   const [provider, setProvider] = useState<Provider>('square');
   const [tip, setTip] = useState<TipChoice>(null); // no tip preselected
   const [otherTip, setOtherTip] = useState('');
@@ -84,15 +85,14 @@ export function DonationFlow() {
   useEffect(() => {
     supabase
       .from('payment_settings' as never)
-      .select('square_enabled, stripe_enabled')
+      .select('square_enabled')
       .eq('id', 1)
       .maybeSingle()
       .then(({ data }) => {
-        const d = data as { square_enabled: boolean; stripe_enabled: boolean } | null;
+        const d = data as { square_enabled: boolean } | null;
         if (!d) return;
-        const on = [d.square_enabled && 'square', d.stripe_enabled && 'stripe'].filter(Boolean) as Provider[];
-        setProviders(on);
-        if (on.length) setProvider((p) => (on.includes(p) ? p : on[0]));
+        setProviders(d.square_enabled ? ['square'] : []);
+        setProvider('square');
       });
   }, []);
 
