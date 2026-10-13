@@ -29,3 +29,19 @@ Deno.test('runs every 15 minutes', () => {
   assertEquals(shouldRun(new Date(now.getTime() - 5 * 60_000).toISOString(), now), false);
   assertEquals(shouldRun(new Date(now.getTime() - 15 * 60_000).toISOString(), now), true);
 });
+
+import { fillName, validateAiEmail } from './followup-rules.ts';
+const BASE = 'Hi {first_name},\n\nText.\n\nGive here: https://coupondonation.com/donate\n\n— The CouponDonation team';
+Deno.test('fillName uses first word or "there"', () => {
+  if (fillName('Hi {first_name},', 'Maya Lee') !== 'Hi Maya,') throw new Error('name');
+  if (fillName('Hi {first_name},', null) !== 'Hi there,') throw new Error('fallback');
+});
+Deno.test('AI email keeping link and sign-off passes', () => {
+  if (!validateAiEmail(BASE, { subject: 'A note for you', body: 'Hi Maya,\n\nThanks.\n\nGive here: https://coupondonation.com/donate\n\n— The CouponDonation team' })) throw new Error('should pass');
+});
+Deno.test('AI email with amounts, exclamation or a new link fails', () => {
+  const ok = (body: string) => validateAiEmail(BASE, { subject: 'Note', body: body + '\n\n— The CouponDonation team' });
+  if (ok('Give $20 here: https://coupondonation.com/donate')) throw new Error('amount');
+  if (ok('Great! https://coupondonation.com/donate')) throw new Error('bang');
+  if (ok('See https://evil.com/x')) throw new Error('link');
+});

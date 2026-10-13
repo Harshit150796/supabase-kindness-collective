@@ -44,3 +44,23 @@ export function shouldRun(lastRunAt: string | null, now: Date): boolean {
 export function withUnsubscribe(body: string, token: string): string {
   return `${body.trim()}\n\nDon't want these emails? Unsubscribe: https://coupondonation.com/unsubscribe?f=${token}`;
 }
+
+/** Fill {first_name}; unknown names become "there". */
+export function fillName(text: string, firstName: string | null | undefined): string {
+  const n = (firstName ?? '').trim().split(/\s+/)[0];
+  return text.replace(/\{first_name\}/g, n && /^[\p{L}'-]{1,30}$/u.test(n) ? n : 'there');
+}
+
+const LINK_RE = /https?:\/\/[^\s)]+/g;
+
+/** AI rewrite must keep the base's single link, add no amounts/exclamations, keep the sign-off, stay short. */
+export function validateAiEmail(base: string, ai: { subject: string; body: string }): boolean {
+  const s = ai.subject?.trim() ?? '', b = ai.body?.trim() ?? '';
+  if (!s || !b || s.length > 80 || b.split(/\s+/).length > 140) return false;
+  if (/[!$€£]|\d+\s?%|[\u{1F300}-\u{1FAFF}]/u.test(s + b)) return false;
+  if (/\b[A-Z]{4,}\b/.test(s)) return false;
+  const want = base.match(LINK_RE) ?? [], got = b.match(LINK_RE) ?? [];
+  if (got.length !== want.length || got.some((l, i) => l !== want[i])) return false;
+  if (got.some((l) => !/^https:\/\/coupondonation\.com\//.test(l))) return false;
+  return b.endsWith('— The CouponDonation team');
+}
