@@ -44,6 +44,7 @@ export default function AdminNewsletters() {
   const subs = useAdminPaged<Subscriber>({ table: 'email_subscribers', searchCols: ['email', 'name'], defaultSort: { key: 'created_at', dir: 'desc' } });
   const evs = useAdminPaged<EventRow>({ table: 'email_events', select: 'id,campaign_id,event_type,recipient_email,url,created_at', searchCols: ['recipient_email', 'event_type'], defaultSort: { key: 'created_at', dir: 'desc' } });
   const stats = useQuery({ queryKey: ['adm-email-stats'], queryFn: () => rpc<any>('admin_email_stats') });
+  const suppressions = useQuery({ queryKey: ['adm-suppressions'], queryFn: async () => { const { data } = await sb.from('email_suppressions').select('email, created_at'); return new Map<string, string>((data ?? []).map((r: any) => [r.email, r.created_at])); } });
   const [templates, setTemplates] = useState<Template[]>([]);
   const [segments, setSegments] = useState<Segment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -226,7 +227,7 @@ export default function AdminNewsletters() {
     { key: 'source', header: 'Source', sortable: true, cell: (x) => x.source },
     { key: 'subscribed_at', header: 'Added', sortable: true, cell: (x) => x.source === 'excel_import' ? `Imported · ${fmtDate(x.subscribed_at)}` : fmtDate(x.subscribed_at) },
     { key: 'last_open_at', header: 'Last open', sortable: true, cell: (x) => fmtDate(x.last_open_at) },
-    { key: 'subscribed', header: 'Status', sortable: true, cell: (x) => <StatusBadge value={x.subscribed ? 'active' : 'dismissed'} /> },
+    { key: 'subscribed', header: 'Status', sortable: true, cell: (x) => { const un = suppressions.data?.get(x.email); return <div><StatusBadge value={x.subscribed ? 'active' : 'dismissed'} />{un && <p className="text-xs text-muted-foreground mt-1">Unsubscribed {fmtDate(un)} · all optional emails</p>}</div>; } },
     ...(isAdmin ? [{ key: 'a', header: '', align: 'right' as const, cell: (x: Subscriber) => <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleRemoveSubscriber(x.id)} aria-label="Remove"><Trash2 className="h-3.5 w-3.5" /></Button> }] : []),
   ];
   const evCols: Column<EventRow>[] = [

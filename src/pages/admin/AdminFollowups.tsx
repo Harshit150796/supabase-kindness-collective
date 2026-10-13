@@ -50,6 +50,7 @@ export default function AdminFollowups() {
   const personas = useQuery({ queryKey: ['fu-personas'], queryFn: async () => { const { data, error } = await sb.from('followup_personas').select('*').order('created_at'); if (error) throw error; return data as Persona[]; } });
   const sends = useQuery({ queryKey: ['fu-sends'], queryFn: async () => { const { data, error } = await sb.from('followup_sends').select('id, status, reason, pages, sent_at, updated_at, persona_version, sent_subject, sent_body, ai_written, visitor_consents(email), followup_personas(label)').order('updated_at', { ascending: false }).limit(200); if (error) throw error; return data as any[]; } });
   const optedIn = useQuery({ queryKey: ['fu-optin'], queryFn: async () => { const { count } = await sb.from('visitor_consents').select('id', { count: 'exact', head: true }).eq('consent_status', 'opted_in'); return count ?? 0; } });
+  const suppressions = useQuery({ queryKey: ['fu-suppressions'], queryFn: async () => { const { data } = await sb.from('email_suppressions').select('email, created_at'); return new Map<string, string>((data ?? []).map((r: any) => [r.email, r.created_at])); } });
 
   const setLive = async (on: boolean) => {
     try { await rpc('admin_followup_set_live', { _on: on }); toast({ title: on ? 'Live sending on' : 'Live sending off' }); settings.refetch(); }
@@ -63,7 +64,7 @@ export default function AdminFollowups() {
   const skipped = (sends.data ?? []).filter((s) => s.status !== 'sent');
   const Row = (s: any) => (
     <tr key={s.id} className="border-b border-border/60 align-top">
-      <td className="py-2 pr-4">{s.visitor_consents?.email}</td>
+      <td className="py-2 pr-4">{s.visitor_consents?.email}{suppressions.data?.get(s.visitor_consents?.email) && <p className="text-xs text-muted-foreground">Unsubscribed {fmtDate(suppressions.data.get(s.visitor_consents?.email))}</p>}</td>
       <td className="py-2 pr-4">{s.followup_personas?.label}</td>
       <td className="py-2 pr-4">{s.status === 'sent' ? fmtDate(s.sent_at) : `${s.status}${s.reason ? ` · ${s.reason}` : ''}`}</td>
       <td className="py-2 text-muted-foreground">{(s.pages ?? []).slice(0, 6).join(', ')}{s.sent_body && <details className="mt-1"><summary className="cursor-pointer text-foreground">{s.ai_written ? 'AI-written email' : 'Base email'}: {s.sent_subject}</summary><p className="mt-1 whitespace-pre-line">{s.sent_body}</p></details>}</td>
