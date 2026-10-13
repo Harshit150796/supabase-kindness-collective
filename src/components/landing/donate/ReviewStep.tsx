@@ -40,6 +40,9 @@ interface ReviewStepProps {
   onOtherTip: (text: string) => void;
   coverFee: boolean;
   onCoverFee: (on: boolean) => void;
+  monthly: boolean;
+  onMonthly: (on: boolean) => void;
+  signedIn: boolean;
   /** The fee that would be added if covered, for the chosen processor. */
   feeIfCovered: number;
   charge: Charge;
@@ -59,7 +62,7 @@ function Row({ label, value, strong }: { label: string; value: number; strong?: 
 }
 
 export function ReviewStep(props: ReviewStepProps) {
-  const { amount, retailers, providers, provider, onProvider, tip, otherTip, onTip, onOtherTip, coverFee, onCoverFee, feeIfCovered, charge, busy, error, checkoutUrl, onPay } = props;
+  const { amount, retailers, providers, provider, onProvider, tip, otherTip, onTip, onOtherTip, coverFee, onCoverFee, monthly, onMonthly, signedIn, feeIfCovered, charge, busy, error, checkoutUrl, onPay } = props;
   const giftCents = Math.round(amount * 100);
   const choices: { id: TipChoice; label: string; sub?: string }[] = [
     { id: 0, label: 'No tip' },
@@ -82,7 +85,7 @@ export function ReviewStep(props: ReviewStepProps) {
         ))}
       </ol>
 
-      {/* Optional tip: nothing preselected. */}
+      {/* Optional tip: 15% starts selected; donors can change it. */}
       <div className="mt-7" data-tip-picker>
         <h4 className="text-[15px] font-medium text-foreground">Add a tip for CouponDonation (optional)</h4>
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
@@ -171,7 +174,7 @@ export function ReviewStep(props: ReviewStepProps) {
         <Row label="Gift for families (100%)" value={charge.giftCents} />
         <Row label="Tip to CouponDonation" value={charge.tipCents} />
         <Row label={coverFee ? 'Card processing fee you cover' : 'Card processing fee (paid from tips)'} value={charge.feeCents} />
-        <Row label="Total today" value={charge.totalCents} strong />
+        <Row label={monthly ? 'Total today, then every month' : 'Total today'} value={charge.totalCents} strong />
       </div>
 
       <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
@@ -195,7 +198,7 @@ export function ReviewStep(props: ReviewStepProps) {
               <span className="flex items-center gap-2 text-[15px] font-medium"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Opening {PROVIDERS[provider].name}…</span>
             ) : (
               <>
-                <span className="text-[15px] font-medium tabular-nums">Donate {money(charge.totalCents)}</span>
+                <span className="text-[15px] font-medium tabular-nums">Donate {money(charge.totalCents)}{monthly ? ' monthly' : ''}</span>
                 <span className="text-xs opacity-75">with {PROVIDERS[provider].name} · {PROVIDERS[provider].hint}</span>
               </>
             )}

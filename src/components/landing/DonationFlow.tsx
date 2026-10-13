@@ -11,7 +11,7 @@ import { GiftLedger, StepTrack } from './donate/GiftLedger';
 import { RetailerStep } from './donate/RetailerStep';
 import { AmountStep } from './donate/AmountStep';
 import { ReviewStep, type Provider, type TipChoice } from './donate/ReviewStep';
-import { MAX_TIP_CENTS, computeCharge, coveredFeeCents, tipCentsFor } from '../../../supabase/functions/_shared/checkout-total.ts';
+import { DEFAULT_TIP_PERCENT, MAX_TIP_CENTS, computeCharge, coveredFeeCents, tipCentsFor } from '../../../supabase/functions/_shared/checkout-total.ts';
 import { AnimatedHeight } from './donate/motion';
 import { PRESET_AMOUNTS, SPRING, amountProblem, type SplitMode } from './donate/tokens';
 import { findRetailer, usd } from './donate/retailers';
@@ -73,9 +73,10 @@ export function DonationFlow() {
   // Square handles all payments; Stripe is retired.
   const [providers, setProviders] = useState<Provider[]>(['square']);
   const [provider, setProvider] = useState<Provider>('square');
-  const [tip, setTip] = useState<TipChoice>(null); // no tip preselected
+  const [tip, setTip] = useState<TipChoice>(DEFAULT_TIP_PERCENT); // 15% starts selected (founder choice)
   const [otherTip, setOtherTip] = useState('');
   const [coverFee, setCoverFee] = useState(true); // ticked by default
+  const [monthly, setMonthly] = useState(false); // donor must tick it themselves
   const [busy, setBusy] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
@@ -187,6 +188,7 @@ export function DonationFlow() {
           userId: user?.id ?? null,
           userEmail: user?.email ?? null,
           fundraiserId: fundraiserId || null,
+          recurring: monthly,
         },
       });
       if (error) throw error;
@@ -255,6 +257,9 @@ export function DonationFlow() {
                       onOtherTip={setOtherTip}
                       coverFee={coverFee}
                       onCoverFee={setCoverFee}
+                      monthly={monthly}
+                      onMonthly={setMonthly}
+                      signedIn={!!user}
                       feeIfCovered={feeIfCovered}
                       charge={charge}
                       busy={busy}
