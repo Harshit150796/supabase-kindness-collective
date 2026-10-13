@@ -45,8 +45,7 @@ function PersonaCard({ p, canEdit, onSaved }: { p: Persona; canEdit: boolean; on
 }
 
 export default function AdminFollowups() {
-  const { isAdmin, role } = useTeamRole() as any;
-  const canEdit = isAdmin || role === 'staff';
+  const { isAdmin, isStaff: canEdit } = useTeamRole();
   const settings = useQuery({ queryKey: ['fu-settings'], queryFn: async () => { const { data, error } = await sb.from('admin_settings').select('followup_live_sending, followup_last_run_at').eq('id', 1).single(); if (error) throw error; return data; } });
   const personas = useQuery({ queryKey: ['fu-personas'], queryFn: async () => { const { data, error } = await sb.from('followup_personas').select('*').order('created_at'); if (error) throw error; return data as Persona[]; } });
   const sends = useQuery({ queryKey: ['fu-sends'], queryFn: async () => { const { data, error } = await sb.from('followup_sends').select('id, status, reason, pages, sent_at, updated_at, persona_version, visitor_consents(email), followup_personas(label)').order('updated_at', { ascending: false }).limit(200); if (error) throw error; return data as any[]; } });
