@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { brandRows, couponSlots, describeSplit, parseSplit, type Share } from '../_shared/brand-split.ts';
 import { readPayment } from '../_shared/checkout-total.ts';
 import { monthlyMetadata } from '../_shared/square-recurring.ts';
+import { cardRow } from '../_shared/saved-card.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -384,4 +385,42 @@ async function handleRefund(supabase: any, refund: any) {
     .eq("id", donation.id);
 
   console.log(`Updated donation ${donation.id} status to ${status}`);
+}
+
+// Keeps our monthly-gift record in step with Square's subscription, links guests to an account by
+// the email they paid with, and lists the saved card under the donor's payment methods.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function syncSubscription(supabase: any, accessToken: string, sub: any) {
+  const sel = "id, user_id, donor_email, status";
+  let { data: row } = await supabase.from("recurring_donations").select(sel).eq("square_subscription_id", sub.id).maybeSingle();
+  if (!row && sub.plan_variation_id) {
+    ({ data: row } = await supabase.from("recurring_donations").select(sel).eq("square_plan_variation_id", sub.plan_variation_id).maybeSingle());
+  }
+  if (!row) { console.log("Subscription is not a CouponDonation monthly gift — skipping"); return; }
+  const sqHeaders = { "Authorization": `Bearer ${accessToken}`, "Square-Version": "2025-01-23" };
+  const patch: Record<string, unknown> = { square_subscription_id: sub.id };
+  if (sub.customer_id) patch.square_customer_id = sub.customer_id;
+  if (sub.card_id) patch.square_card_id = sub.card_id;
+  if (sub.charged_through_date) patch.next_charge_on = sub.charged_through_date;
+  const status = String(sub.status || "");
+  if (status === "CANCELED" || status === "DEACTIVATED") { patch.status = "canceled"; patch.canceled_at = new Date().toISOString(); }
+  else if (status === "PAUSED") { patch.status = "paused"; patch.paused_at = new Date().toISOString(); }
+  else if (status === "ACTIVE" && row.status !== "payment_problem") { patch.status = "active"; patch.paused_at = null; }
+  let email = row.donor_email as string | null;
+  if (!email && sub.customer_id) {
+    const c = await (await fetch(`${squareBaseUrl()}/v2/customers/${sub.customer_id}`, { headers: sqHeaders })).json().catch(() => null);
+    email = c?.customer?.email_address ?? null;
+    if (email) patch.donor_email = email;
+  }
+  if (!row.user_id && email) {
+    const { data: p } = await supabase.from("profiles").select("user_id").ilike("email", email).maybeSingle();
+    if (p?.user_id) patch.user_id = p.user_id;
+  }
+  await supabase.from("recurring_donations").update(patch).eq("id", row.id);
+  const uid = (patch.user_id ?? row.user_id) as string | null;
+  if (uid && sub.customer_id && sub.card_id) {
+    await supabase.from("donor_payment_profiles").upsert({ user_id: uid, square_customer_id: sub.customer_id }, { onConflict: "user_id", ignoreDuplicates: true });
+    const c = await (await fetch(`${squareBaseUrl()}/v2/cards/${encodeURIComponent(sub.card_id)}`, { headers: sqHeaders })).json().catch(() => null);
+    if (c?.card?.id) await supabase.from("saved_cards").upsert({ user_id: uid, ...cardRow(c.card) }, { onConflict: "square_card_id", ignoreDuplicates: true });
+  }
 }
