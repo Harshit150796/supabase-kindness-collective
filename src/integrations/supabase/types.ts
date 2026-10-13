@@ -276,6 +276,7 @@ export type Database = {
           allow_manual_prepaid: boolean
           email_new_donation: boolean
           email_new_fundraiser: boolean
+          followup_live_sending: boolean
           id: number
           include_trial_stats: boolean
           notification_recipients: string[]
@@ -287,6 +288,7 @@ export type Database = {
           allow_manual_prepaid?: boolean
           email_new_donation?: boolean
           email_new_fundraiser?: boolean
+          followup_live_sending?: boolean
           id?: number
           include_trial_stats?: boolean
           notification_recipients?: string[]
@@ -298,6 +300,7 @@ export type Database = {
           allow_manual_prepaid?: boolean
           email_new_donation?: boolean
           email_new_fundraiser?: boolean
+          followup_live_sending?: boolean
           id?: number
           include_trial_stats?: boolean
           notification_recipients?: string[]
@@ -1943,6 +1946,105 @@ export type Database = {
         }
         Relationships: []
       }
+      followup_personas: {
+        Row: {
+          approved: boolean
+          approved_at: string | null
+          approved_by: string | null
+          body: string | null
+          created_at: string
+          evidence: Json
+          id: string
+          label: string
+          persona_key: string
+          signals: Json
+          subject: string | null
+          updated_at: string
+          version: number
+          visitor_count: number
+        }
+        Insert: {
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          body?: string | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          label: string
+          persona_key: string
+          signals?: Json
+          subject?: string | null
+          updated_at?: string
+          version?: number
+          visitor_count?: number
+        }
+        Update: {
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          body?: string | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          label?: string
+          persona_key?: string
+          signals?: Json
+          subject?: string | null
+          updated_at?: string
+          version?: number
+          visitor_count?: number
+        }
+        Relationships: []
+      }
+      followup_sends: {
+        Row: {
+          consent_id: string
+          created_at: string
+          id: string
+          persona_id: string
+          persona_version: number
+          reason: string | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          consent_id: string
+          created_at?: string
+          id?: string
+          persona_id: string
+          persona_version: number
+          reason?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          consent_id?: string
+          created_at?: string
+          id?: string
+          persona_id?: string
+          persona_version?: number
+          reason?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "followup_sends_consent_id_fkey"
+            columns: ["consent_id"]
+            isOneToOne: false
+            referencedRelation: "visitor_consents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "followup_sends_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "followup_personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fundraiser_comments: {
         Row: {
           body: string
@@ -3101,6 +3203,45 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      visitor_consents: {
+        Row: {
+          consent_status: string
+          consent_time: string | null
+          created_at: string
+          email: string
+          email_source: string
+          hubspot_contact_id: string | null
+          id: string
+          posthog_distinct_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          consent_status?: string
+          consent_time?: string | null
+          created_at?: string
+          email: string
+          email_source: string
+          hubspot_contact_id?: string | null
+          id?: string
+          posthog_distinct_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          consent_status?: string
+          consent_time?: string | null
+          created_at?: string
+          email?: string
+          email_source?: string
+          hubspot_contact_id?: string | null
+          id?: string
+          posthog_distinct_id?: string | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
