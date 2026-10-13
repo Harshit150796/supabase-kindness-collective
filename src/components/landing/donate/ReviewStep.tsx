@@ -234,7 +234,7 @@ export function ReviewStep(props: ReviewStepProps) {
               <img src={`/brand-logos/${card}.svg`} alt={card === 'amex' ? 'American Express' : card === 'visa' ? 'Visa' : 'Mastercard'} width={20} height={20} className="h-5 w-5" loading="lazy" decoding="async" />
             </span>
           ))}
-          <span>Apple Pay and Google Pay at checkout</span>
+          <span>Apple Pay and Google Pay appear automatically on phones and browsers that support them</span>
         </div>
         <p className="mt-2.5 flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
