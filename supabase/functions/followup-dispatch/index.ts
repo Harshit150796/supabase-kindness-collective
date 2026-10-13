@@ -181,7 +181,7 @@ Deno.serve(async (req) => {
     try {
       const r = await fetch(`${ingest}/i/v0/e/`, { method: 'POST', signal: AbortSignal.timeout(15_000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
         api_key: token, event: 'followup_email_requested', distinct_id: c.posthog_distinct_id,
-        properties: { email: c.email, subject: mail.subject, body: fullBody, nonce, persona_key: persona.persona_key, $set: { email: c.email } },
+        properties: { email: c.email, subject: mail.subject, body: fullBody, nonce, persona_key: persona.persona_key, unsubscribe_url: `https://coupondonation.com/unsubscribe?f=${c.unsubscribe_token}`, one_click_unsubscribe_url: `https://vbnbacowuoeeojjdrzzp.supabase.co/functions/v1/email-unsubscribe?f=${c.unsubscribe_token}`, $set: { email: c.email } },
       }) });
       if (!r.ok) throw new Error(`PostHog [${r.status}]: ${(await r.text()).slice(0, 200)}`);
       await r.text();
