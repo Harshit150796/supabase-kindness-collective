@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { UpdatesOptIn, recordUpdatesConsent } from '@/components/UpdatesOptIn';
 import { getUserCountry } from '@/lib/geo';
 import { US_STATES, US_TERRITORIES } from '@/data/usStates';
 import {
@@ -47,6 +48,7 @@ export function ContactClose() {
   const [open, setOpen] = useState(false);
   const [fields, setFields] = useState<ContactFields>(EMPTY);
   const [errors, setErrors] = useState<ContactErrors>({});
+  const [optIn, setOptIn] = useState(false);
   const [sending, setSending] = useState(false);
   const [failure, setFailure] = useState('');
   const [abroad, setAbroad] = useState(false);
@@ -115,6 +117,7 @@ export function ContactClose() {
         return;
       }
       setStageHeight(formRef.current?.offsetHeight);
+      if (optIn) void recordUpdatesConsent(email, 'contact');
       setSent({ firstName: name.split(' ')[0], email, confirmed: data?.confirmed !== false });
       setFields(EMPTY);
     } catch {
@@ -222,6 +225,7 @@ export function ContactClose() {
                       It looks like you may be outside the United States. CouponDonation serves people in the US, so we may not be able to help with requests from elsewhere.
                     </p>
                   )}
+                  <div className="mt-6"><UpdatesOptIn id="contact-updates" checked={optIn} onChange={setOptIn} /></div>
                   {failure && <p role="alert" className="contact-error mt-6 text-[0.95rem]">{failure}</p>}
 
                   <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">

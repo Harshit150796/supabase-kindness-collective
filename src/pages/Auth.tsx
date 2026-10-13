@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Gift, Heart } from 'lucide-react';
 
 import { toast } from 'sonner';
+import { UpdatesOptIn, recordUpdatesConsent } from '@/components/UpdatesOptIn';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { OTPVerification } from '@/components/auth/OTPVerification';
@@ -50,6 +51,7 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [optIn, setOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; fullName?: string }>({});
   const [authStep, setAuthStep] = useState<AuthStep>('form');
@@ -226,6 +228,7 @@ export default function Auth() {
         return;
       }
 
+      if (optIn) void recordUpdatesConsent(signupEmail, 'signup');
       toast.success('Account created successfully!', {
         description: 'Welcome to CouponDonation!',
         duration: 3000,
@@ -430,6 +433,8 @@ export default function Auth() {
                         {mode === 'signup' && <PasswordStrengthIndicator password={password} />}
                         {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                       </div>
+
+                      {mode === 'signup' && <UpdatesOptIn id="signup-updates" checked={optIn} onChange={setOptIn} />}
 
                       <Button type="submit" className="w-full" disabled={loading}>
                         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

@@ -10,6 +10,7 @@ import { BrandSelectorModal } from './BrandSelectorModal';
 import { GiftLedger, StepTrack } from './donate/GiftLedger';
 import { RetailerStep } from './donate/RetailerStep';
 import { AmountStep } from './donate/AmountStep';
+import { UpdatesOptIn, recordUpdatesConsent } from '@/components/UpdatesOptIn';
 import { ReviewStep, type Provider, type TipChoice } from './donate/ReviewStep';
 import { DEFAULT_TIP_PERCENT, MAX_TIP_CENTS, computeCharge, coveredFeeCents, tipCentsFor } from '../../../supabase/functions/_shared/checkout-total.ts';
 import { AnimatedHeight } from './donate/motion';
@@ -76,6 +77,7 @@ export function DonationFlow() {
   const [tip, setTip] = useState<TipChoice>(DEFAULT_TIP_PERCENT); // 15% starts selected (founder choice)
   const [otherTip, setOtherTip] = useState('');
   const [coverFee, setCoverFee] = useState(true); // ticked by default
+  const [optIn, setOptIn] = useState(false);
   const [monthly, setMonthly] = useState(false); // donor must tick it themselves
   const [savedCards, setSavedCards] = useState<{ square_card_id: string; brand: string | null; last4: string | null }[]>([]);
   const [savedCard, setSavedCard] = useState<string | null>(null);
@@ -180,6 +182,7 @@ export function DonationFlow() {
     setBusy(true);
     setPayError(null);
     setCheckoutUrl(null);
+    if (optIn && user?.email && attempt === 0) void recordUpdatesConsent(user.email, 'donate');
     try {
       const pct = percentages(shares);
       const brandAllocations = retailers.map((r, i) => ({ brand: r.name, brandId: r.id, percent: pct[i], amount: shares[i] }));
@@ -286,6 +289,9 @@ export function DonationFlow() {
                       savedCard={savedCard}
                       onSavedCard={setSavedCard}
                     />
+                  )}
+                  {step === 3 && user?.email && (
+                    <div className="mt-4"><UpdatesOptIn id="donate-updates" checked={optIn} onChange={setOptIn} /></div>
                   )}
                 </motion.div>
               </AnimatePresence>
