@@ -276,6 +276,7 @@ export type Database = {
           allow_manual_prepaid: boolean
           email_new_donation: boolean
           email_new_fundraiser: boolean
+          followup_ai_writing: boolean
           followup_last_run_at: string | null
           followup_live_sending: boolean
           id: number
@@ -289,6 +290,7 @@ export type Database = {
           allow_manual_prepaid?: boolean
           email_new_donation?: boolean
           email_new_fundraiser?: boolean
+          followup_ai_writing?: boolean
           followup_last_run_at?: string | null
           followup_live_sending?: boolean
           id?: number
@@ -302,6 +304,7 @@ export type Database = {
           allow_manual_prepaid?: boolean
           email_new_donation?: boolean
           email_new_fundraiser?: boolean
+          followup_ai_writing?: boolean
           followup_last_run_at?: string | null
           followup_live_sending?: boolean
           id?: number
@@ -1949,6 +1952,44 @@ export type Database = {
         }
         Relationships: []
       }
+      followup_nonces: {
+        Row: {
+          content_hash: string
+          created_at: string
+          email: string
+          expires_at: string
+          nonce: string
+          send_id: string
+          used_at: string | null
+        }
+        Insert: {
+          content_hash: string
+          created_at?: string
+          email: string
+          expires_at: string
+          nonce: string
+          send_id: string
+          used_at?: string | null
+        }
+        Update: {
+          content_hash?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          nonce?: string
+          send_id?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "followup_nonces_send_id_fkey"
+            columns: ["send_id"]
+            isOneToOne: false
+            referencedRelation: "followup_sends"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       followup_personas: {
         Row: {
           approved: boolean
@@ -2003,13 +2044,17 @@ export type Database = {
       followup_sends: {
         Row: {
           ai_written: boolean
+          attempt_id: string | null
           consent_id: string
           created_at: string
+          due_at: string | null
           hubspot_note_id: string | null
           id: string
+          last_activity_at: string | null
           pages: Json
           persona_id: string
           persona_version: number
+          provider_receipt: string | null
           reason: string | null
           sent_at: string | null
           sent_body: string | null
@@ -2019,13 +2064,17 @@ export type Database = {
         }
         Insert: {
           ai_written?: boolean
+          attempt_id?: string | null
           consent_id: string
           created_at?: string
+          due_at?: string | null
           hubspot_note_id?: string | null
           id?: string
+          last_activity_at?: string | null
           pages?: Json
           persona_id: string
           persona_version: number
+          provider_receipt?: string | null
           reason?: string | null
           sent_at?: string | null
           sent_body?: string | null
@@ -2035,13 +2084,17 @@ export type Database = {
         }
         Update: {
           ai_written?: boolean
+          attempt_id?: string | null
           consent_id?: string
           created_at?: string
+          due_at?: string | null
           hubspot_note_id?: string | null
           id?: string
+          last_activity_at?: string | null
           pages?: Json
           persona_id?: string
           persona_version?: number
+          provider_receipt?: string | null
           reason?: string | null
           sent_at?: string | null
           sent_body?: string | null
@@ -3759,6 +3812,21 @@ export type Database = {
           kind: string
           source_id: string
         }[]
+      }
+      followup_reserve: {
+        Args: {
+          _attempt: string
+          _consent: string
+          _last_activity: string
+          _pages: Json
+          _persona: string
+          _version: number
+        }
+        Returns: boolean
+      }
+      followup_use_nonce: {
+        Args: { _email: string; _hash: string; _nonce: string }
+        Returns: string
       }
       generate_card_number: { Args: never; Returns: string }
       get_completed_fundraisers: {

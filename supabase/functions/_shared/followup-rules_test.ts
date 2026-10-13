@@ -45,3 +45,24 @@ Deno.test('AI email with amounts, exclamation or a new link fails', () => {
   if (ok('Great! https://coupondonation.com/donate')) throw new Error('bang');
   if (ok('See https://evil.com/x')) throw new Error('link');
 });
+
+import { activityRenewed, contentHash, isQuiet, outreachBlock } from './followup-rules.ts';
+Deno.test('waits 30 quiet minutes after the last visit', () => {
+  assertEquals(isQuiet(new Date(now.getTime() - 29 * 60_000).toISOString(), now), false);
+  assertEquals(isQuiet(new Date(now.getTime() - 30 * 60_000).toISOString(), now), true);
+  assertEquals(isQuiet(null, now), false);
+});
+Deno.test('a new visit after reserving cancels the send', () => {
+  assertEquals(activityRenewed('2026-10-13T11:00:00Z', '2026-10-13T11:20:00Z'), true);
+  assertEquals(activityRenewed('2026-10-13T11:00:00Z', '2026-10-13T11:00:00Z'), false);
+});
+Deno.test('earlier HubSpot email or unreadable history stops sending', () => {
+  assertEquals(outreachBlock({ readable: false, priorEmails: 0 }), "couldn't read HubSpot history");
+  assertEquals(outreachBlock({ readable: true, priorEmails: 1 }), 'earlier email found in HubSpot');
+  assertEquals(outreachBlock({ readable: true, priorEmails: 0 }), null);
+});
+Deno.test('changing the email text changes its fingerprint', async () => {
+  const a = await contentHash('A@x.com', 's', 'b');
+  assertEquals(a, await contentHash('a@x.com', 's', 'b'));
+  if (a === await contentHash('a@x.com', 's', 'b2')) throw new Error('hash must change');
+});
