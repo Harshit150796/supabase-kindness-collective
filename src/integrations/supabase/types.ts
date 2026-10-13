@@ -2002,6 +2002,7 @@ export type Database = {
       }
       followup_sends: {
         Row: {
+          ai_written: boolean
           consent_id: string
           created_at: string
           hubspot_note_id: string | null
@@ -2011,10 +2012,13 @@ export type Database = {
           persona_version: number
           reason: string | null
           sent_at: string | null
+          sent_body: string | null
+          sent_subject: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          ai_written?: boolean
           consent_id: string
           created_at?: string
           hubspot_note_id?: string | null
@@ -2024,10 +2028,13 @@ export type Database = {
           persona_version: number
           reason?: string | null
           sent_at?: string | null
+          sent_body?: string | null
+          sent_subject?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          ai_written?: boolean
           consent_id?: string
           created_at?: string
           hubspot_note_id?: string | null
@@ -2037,6 +2044,8 @@ export type Database = {
           persona_version?: number
           reason?: string | null
           sent_at?: string | null
+          sent_body?: string | null
+          sent_subject?: string | null
           status?: string
           updated_at?: string
         }

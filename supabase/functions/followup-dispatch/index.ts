@@ -3,7 +3,7 @@
 // Workflows to send it (event `followup_email_requested`). Each send is noted on the HubSpot contact.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { decide, matchPersona, shouldRun, withUnsubscribe, type Persona } from '../_shared/followup-rules.ts';
+import { decide, fillName, matchPersona, shouldRun, validateAiEmail, withUnsubscribe, type Persona } from '../_shared/followup-rules.ts';
 
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
@@ -33,6 +33,35 @@ async function hubspotNote(email: string, known: string | null, text: string) {
   return { contactId: id as string, noteId: note.id as string };
 }
 
+// AI rewrites the approved base email for one person. Any failure or rule break returns null (base email is used).
+async function personalize(base: { subject: string; body: string }, firstName: string, pages: string[]): Promise<{ subject: string; body: string } | null> {
+  const key = Deno.env.get('LOVABLE_API_KEY'); if (!key) return null;
+  try {
+    const r = await fetch('https://ai.gateway.lovable.dev/v1/responses', {
+      method: 'POST', headers: { 'Lovable-API-Key': key, Authorization: `Bearer ${key}`, 'X-Lovable-AIG-SDK': 'fetch', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'openai/gpt-6-astra', stream: true, store: false, reasoning: { effort: 'low' }, max_output_tokens: 1500,
+        instructions: 'You lightly personalize a short, warm account email from CouponDonation, a charity that turns gifts into grocery coupons for families. Rewrite the base email for this person using the pages they viewed as gentle context. Rules: start with "Hi NAME," using the given first name; keep it under 110 words; keep exactly the same single link unchanged; end with the exact line "— The CouponDonation team"; never add numbers, amounts, prices, brands, percentages, promises, urgency, exclamation marks, emoji or ALL CAPS; never invent facts; do not mention tracking or that you saw their visits. Subject: short, plain, lowercase except the first letter, no punctuation tricks.',
+        input: JSON.stringify({ first_name: firstName, pages_viewed: pages.slice(0, 15), base_subject: base.subject, base_body: base.body }),
+        text: { format: { type: 'json_schema', name: 'email', strict: true, schema: { type: 'object', additionalProperties: false, required: ['subject', 'body'], properties: { subject: { type: 'string' }, body: { type: 'string' } } } } },
+      }),
+    });
+    if (!r.ok || !r.body) { console.error('AI personalize failed', r.status, (await r.text()).slice(0, 200)); return null; }
+    let out = '', buf = '';
+    const reader = r.body.pipeThrough(new TextDecoderStream()).getReader();
+    for (;;) {
+      const { value, done } = await reader.read(); if (done) break;
+      buf += value; const lines = buf.split('\n'); buf = lines.pop() ?? '';
+      for (const l of lines) {
+        if (!l.startsWith('data:')) continue;
+        try { const e = JSON.parse(l.slice(5)); if (e.type === 'response.output_text.delta') out += e.delta; } catch { /* keepalive */ }
+      }
+    }
+    const ai = JSON.parse(out);
+    return validateAiEmail(base.body, ai) ? { subject: ai.subject.trim(), body: ai.body.trim() } : (console.warn('AI email rejected by rules'), null);
+  } catch (e) { console.error('AI personalize error', String(e)); return null; }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -48,7 +77,7 @@ Deno.serve(async (req) => {
   if (!personas?.length) return json({ skipped: 'no approved visitor types' });
 
   const { data: consents } = await admin.from('visitor_consents')
-    .select('id, email, consent_status, opted_out_at, last_emailed_at, posthog_distinct_id, hubspot_contact_id, unsubscribe_token')
+    .select('id, email, user_id, consent_status, opted_out_at, last_emailed_at, posthog_distinct_id, hubspot_contact_id, unsubscribe_token')
     .not('posthog_distinct_id', 'is', null).limit(500);
   if (!consents?.length) return json({ checked: 0 });
 
@@ -69,6 +98,9 @@ Deno.serve(async (req) => {
 
   const { data: prior } = await admin.from('followup_sends').select('consent_id, persona_id, status').in('consent_id', consents.map((c) => c.id));
   const sentKey = new Set((prior ?? []).filter((p) => p.status === 'sent').map((p) => `${p.consent_id}:${p.persona_id}`));
+  const uids = consents.map((c) => c.user_id).filter(Boolean);
+  const { data: profs } = uids.length ? await admin.from('profiles').select('id, full_name').in('id', uids) : { data: [] };
+  const nameBy = new Map((profs ?? []).map((p) => [p.id, p.full_name as string | null]));
   const report = { checked: 0, sent: 0, skipped: 0, errors: 0 };
   const token = Deno.env.get('POSTHOG_API_KEY');
 
@@ -84,17 +116,21 @@ Deno.serve(async (req) => {
       if (d.reason !== 'already got this one') await admin.from('followup_sends').upsert({ consent_id: c.id, persona_id: persona.id, persona_version: persona.version, status: 'skipped', reason: d.reason, pages, updated_at: now.toISOString() }, { onConflict: 'consent_id,persona_id' });
       continue;
     }
+    const first = fillName('{first_name}', c.user_id ? nameBy.get(c.user_id) : null);
+    const base = { subject: persona.subject!, body: fillName(persona.body!, first === 'there' ? null : first) };
+    const ai = await personalize(base, first, pages);
+    const mail = ai ?? base;
     try {
       const r = await fetch(`${ingest}/i/v0/e/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
         api_key: token, event: 'followup_email_requested', distinct_id: c.posthog_distinct_id,
-        properties: { email: c.email, subject: persona.subject, body: withUnsubscribe(persona.body!, c.unsubscribe_token), persona_key: persona.persona_key, $set: { email: c.email } },
+        properties: { email: c.email, subject: mail.subject, body: withUnsubscribe(mail.body, c.unsubscribe_token), persona_key: persona.persona_key, $set: { email: c.email } },
       }) });
       if (!r.ok) throw new Error(`PostHog [${r.status}]: ${(await r.text()).slice(0, 200)}`);
-      await admin.from('followup_sends').upsert({ consent_id: c.id, persona_id: persona.id, persona_version: persona.version, status: 'sent', reason: null, pages, sent_at: now.toISOString(), updated_at: now.toISOString() }, { onConflict: 'consent_id,persona_id' });
+      await admin.from('followup_sends').upsert({ consent_id: c.id, persona_id: persona.id, persona_version: persona.version, status: 'sent', reason: null, pages, sent_subject: mail.subject, sent_body: mail.body, ai_written: !!ai, sent_at: now.toISOString(), updated_at: now.toISOString() }, { onConflict: 'consent_id,persona_id' });
       await admin.from('visitor_consents').update({ last_emailed_at: now.toISOString() }).eq('id', c.id);
       report.sent++;
       try {
-        const hs = await hubspotNote(c.email, c.hubspot_contact_id, `CouponDonation follow-up sent: "${persona.subject}" (${persona.label}). Pages viewed: ${pages.join(', ')}`);
+        const hs = await hubspotNote(c.email, c.hubspot_contact_id, `CouponDonation follow-up sent: "${mail.subject}" (${persona.label}). Pages viewed: ${pages.join(', ')}`);
         await admin.from('visitor_consents').update({ hubspot_contact_id: hs.contactId }).eq('id', c.id);
         await admin.from('followup_sends').update({ hubspot_note_id: hs.noteId }).eq('consent_id', c.id).eq('persona_id', persona.id);
       } catch (e) { console.error('HubSpot note failed', String(e)); }
