@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -100,7 +100,7 @@ export default function Unsubscribe() {
                 <Mail className="w-12 h-12 text-primary mx-auto" aria-hidden="true" />
                 <h1 className="font-display text-4xl font-normal text-foreground">Check your inbox.</h1>
                 <p className="text-muted-foreground">If <span className="font-medium text-foreground">{email}</span> is on our list, a confirm link is on its way. Open it to stop our emails.</p>
-                <p className="text-sm text-muted-foreground">Nothing arrived? Email <Link to="mailto:support@coupondonation.com" className="underline underline-offset-4">support@coupondonation.com</Link>.</p>
+                <p className="text-sm text-muted-foreground">Nothing arrived? Email <a href="mailto:support@coupondonation.com" className="underline underline-offset-4">support@coupondonation.com</a>.</p>
               </>
             )}
           </CardContent>
