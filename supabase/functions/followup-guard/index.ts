@@ -5,6 +5,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@3';
 import { contentHash } from '../_shared/followup-rules.ts';
+import { isSuppressed, suppress } from '../_shared/suppression.ts';
 
 const Body = z.object({
   action: z.enum(['check', 'stop']).default('check'),
@@ -27,7 +28,7 @@ Deno.serve(async (req) => {
     const { data: n } = await db.from('followup_nonces').select('send_id, email').eq('nonce', input.nonce).not('used_at', 'is', null).maybeSingle();
     if (!n || n.email.toLowerCase() !== input.email.toLowerCase()) return res(403, { error: 'unknown' });
     const { data: s } = await db.from('followup_sends').select('consent_id').eq('id', n.send_id).single();
-    await db.from('visitor_consents').update({ consent_status: 'opted_out', opted_out_at: new Date().toISOString() }).eq('id', s!.consent_id);
+    await suppress(db, n.email, 'bounce_or_complaint');
     return res(204);
   }
 
@@ -39,7 +40,7 @@ Deno.serve(async (req) => {
 
   const { data: s } = await db.from('followup_sends').select('id, status, consent_id').eq('id', sendId).single();
   const { data: c } = await db.from('visitor_consents').select('consent_status, opted_out_at').eq('id', s!.consent_id).single();
-  if (s?.status !== 'queued' || c?.opted_out_at || c?.consent_status !== 'opted_in') {
+  if (s?.status !== 'queued' || c?.opted_out_at || c?.consent_status !== 'opted_in' || await isSuppressed(db, input.email)) {
     await db.from('followup_sends').update({ status: 'skipped', reason: 'stopped at final check', updated_at: new Date().toISOString() }).eq('id', sendId);
     return res(403, { error: 'not allowed' });
   }

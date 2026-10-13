@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
   }
 
   if (b.action === 'consent') {
-    // Explicit tick only. A later opt-out is never overwritten by a new tick from a stale form.
+    // Explicit tick only. A fresh tick is new consent, so it lifts an earlier unsubscribe.
     const email = b.email.toLowerCase();
     const token = req.headers.get('Authorization')?.replace('Bearer ', '');
     const { data: who } = token ? await admin.auth.getUser(token).catch(() => ({ data: { user: null } })) : { data: { user: null } };
@@ -161,13 +161,14 @@ Deno.serve(async (req) => {
       ? await admin.from('visitor_consents').update(patch).eq('id', existing.id)
       : await admin.from('visitor_consents').insert(patch);
     if (error) { console.error('consent save failed', error.message); return json({ error: 'Could not save your choice.' }, 500); }
+    await unsuppress(admin, email);
     return json({ ok: true });
   }
 
   if (b.action === 'followup_unsubscribe') {
-    const { data: row } = await admin.from('visitor_consents').update({ consent_status: 'opted_out', opted_out_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-      .eq('unsubscribe_token', b.token).select('email').maybeSingle();
+    const { data: row } = await admin.from('visitor_consents').select('email').eq('unsubscribe_token', b.token).maybeSingle();
     if (!row) return json({ success: false }, 404);
+    await suppress(admin, row.email, 'followup');
     return json({ success: true, email: row.email });
   }
 
