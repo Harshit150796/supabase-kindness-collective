@@ -3,6 +3,7 @@
 // Workflows to send it (event `followup_email_requested`). Each send is noted on the HubSpot contact.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { isSuppressed, suppressedSet } from '../_shared/suppression.ts';
 import { activityRenewed, contentHash, decide, fillName, isQuiet, matchPersona, newNonce, NONCE_MINUTES, outreachBlock, QUIET_MINUTES, shouldRun, validateAiEmail, withUnsubscribe, type Persona } from '../_shared/followup-rules.ts';
 
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -126,6 +127,7 @@ Deno.serve(async (req) => {
   const uids = consents.map((c) => c.user_id).filter(Boolean);
   const { data: profs } = uids.length ? await admin.from('profiles').select('id, full_name').in('id', uids) : { data: [] };
   const nameBy = new Map((profs ?? []).map((p) => [p.id, p.full_name as string | null]));
+  const blocked = await suppressedSet(admin, consents.map((c) => c.email));
   const report = { checked: 0, waiting: 0, queued: 0, skipped: 0, errors: 0, notes_retried: 0 };
   const token = Deno.env.get('POSTHOG_API_KEY');
   const skip = (consent_id: string, persona: (typeof personas)[number], reason: string, extra: Record<string, unknown> = {}) =>
@@ -137,7 +139,7 @@ Deno.serve(async (req) => {
     const persona = matchPersona(act.pages, personas as Persona[]) as (typeof personas)[number] | null;
     if (!persona) continue; // Unknown: never emailed
     report.checked++;
-    const d = decide({ live: !!settings?.followup_live_sending, consent: c, alreadySent: doneKey.has(`${c.id}:${persona.id}`), now });
+    const d = decide({ live: !!settings?.followup_live_sending, consent: { ...c, suppressed: blocked.has(c.email.toLowerCase()) }, alreadySent: doneKey.has(`${c.id}:${persona.id}`), now });
     if (!d.send) {
       report.skipped++;
       if (d.reason !== 'already got this one') await skip(c.id, persona, d.reason, { pages: act.pages });
@@ -157,7 +159,7 @@ Deno.serve(async (req) => {
     const block = outreachBlock(hist);
     if (block) { report.skipped++; await skip(c.id, persona, block); continue; }
     const { data: fresh } = await admin.from('visitor_consents').select('consent_status, opted_out_at, last_emailed_at').eq('id', c.id).single();
-    const again = fresh ? decide({ live: true, consent: fresh, alreadySent: false, now }) : { send: false as const, reason: 'consent missing' };
+    const again = fresh ? decide({ live: true, consent: { ...fresh, suppressed: await isSuppressed(admin, c.email) }, alreadySent: false, now }) : { send: false as const, reason: 'consent missing' };
     if (!again.send) { report.skipped++; await skip(c.id, persona, again.reason); continue; }
     try {
       const latest = (await hogql([c.posthog_distinct_id!.replace(/[^\w$.:@-]/g, '')])).get(c.posthog_distinct_id!);

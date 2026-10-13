@@ -27,7 +27,7 @@ export type Decision = { send: true } | { send: false; reason: string };
 
 export function decide(opts: { live: boolean; consent: Consent; alreadySent: boolean; now: Date }): Decision {
   const { live, consent, alreadySent, now } = opts;
-  if (consent.opted_out_at || consent.consent_status === 'opted_out') return { send: false, reason: 'unsubscribed' };
+  if (consent.suppressed || consent.opted_out_at || consent.consent_status === 'opted_out') return { send: false, reason: 'unsubscribed' };
   if (consent.consent_status !== 'opted_in') return { send: false, reason: 'not opted in' };
   if (alreadySent) return { send: false, reason: 'already got this one' };
   if (consent.last_emailed_at && now.getTime() - new Date(consent.last_emailed_at).getTime() < COOLDOWN_DAYS * 86400_000) {
