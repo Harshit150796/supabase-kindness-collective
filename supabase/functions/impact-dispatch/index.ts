@@ -21,6 +21,7 @@ async function sha256(s: string) {
 const newToken = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 import { planEmails, type Ev } from '../_shared/impact-plan.ts';
+import { isSuppressed } from '../_shared/suppression.ts';
 type Impact = { donation_id: string; created_at: string; fundraiser_title: string; fundraiser_slug: string | null; organizer: string | null;
   brands?: { brand: string; allocated: number; issued: number; topup: number; topup_reasons: { amount: number; reason: string }[] }[];
   coupons: { id: string; store_name: string; issued_brand?: string; brand_change_reason?: string | null; credential_type?: string | null; value: number; created_at: string; revealed_at: string | null; used_at: string | null; used_category: string | null; used_note: string | null; receipt_count: number }[] };
@@ -82,7 +83,7 @@ Deno.serve(async (req) => {
     if (!email) email = donorProfile?.email ?? null;
     if (!email) { await mark({ emailed_at: new Date().toISOString(), skipped_reason: 'no_email' }); skipped++; continue; }
     const { data: opt } = await admin.from('impact_email_optouts').select('email').eq('email', email.toLowerCase()).maybeSingle();
-    if (opt) { await mark({ emailed_at: new Date().toISOString(), skipped_reason: 'impact_optout' }); skipped++; continue; }
+    if (opt || await isSuppressed(admin, email)) { await mark({ emailed_at: new Date().toISOString(), skipped_reason: 'impact_optout' }); skipped++; continue; }
     if (!key) { report.error = 'Missing Resend key'; break; }
     const { data: impact } = await admin.rpc('_donation_impact', { _donation_id: p.donation_id });
     const imp = impact as Impact | null;

@@ -1856,6 +1856,24 @@ export type Database = {
         }
         Relationships: []
       }
+      email_suppressions: {
+        Row: {
+          created_at: string
+          email: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          source?: string
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           created_at: string
@@ -3256,6 +3274,27 @@ export type Database = {
           received_at?: string | null
           used_at?: string | null
           value?: number
+        }
+        Relationships: []
+      }
+      unsubscribe_requests: {
+        Row: {
+          created_at: string
+          email: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          token?: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          token?: string
+          used_at?: string | null
         }
         Relationships: []
       }

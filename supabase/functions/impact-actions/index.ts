@@ -6,6 +6,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@3';
 import { moderate, maskedExcerpt, BLOCKED_EXPLANATION } from '../_shared/moderation.ts';
 import { inspectImage } from '../_shared/image-meta.ts';
+import { suppress } from '../_shared/suppression.ts';
 
 const SUPA = Deno.env.get('SUPABASE_URL')!;
 const BUCKET = 'coupon-receipts';
@@ -42,9 +43,9 @@ Deno.serve(async (req) => {
       const { data: d } = await admin.from('donations').select('donor_email, donor_id').eq('id', did).maybeSingle();
       let email = d?.donor_email ?? null;
       if (!email && d?.donor_id) email = (await admin.from('profiles').select('email').eq('user_id', d.donor_id).maybeSingle()).data?.email ?? null;
-      if (email) { await admin.from('impact_email_optouts').upsert({ email: email.toLowerCase() }, { onConflict: 'email', ignoreDuplicates: true }); ok = true; }
+      if (email) { await suppress(admin, email, 'impact'); ok = true; }
     }
-    const msg = ok ? 'You won’t receive impact emails from CouponDonation any more. Your impact page still works.' : 'This link has expired. Email connect@coupondonation.com and we’ll stop impact emails for you.';
+    const msg = ok ? 'You won’t receive impact updates, newsletters or follow-ups from CouponDonation any more. Receipts and account emails still arrive. Your impact page still works.' : 'This link has expired. Email connect@coupondonation.com and we’ll stop impact emails for you.';
     return new Response(`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Impact emails</title><body style="font-family:-apple-system,Segoe UI,Arial,sans-serif;max-width:520px;margin:64px auto;padding:0 20px;color:#13201a"><p style="font-weight:700"><span style="color:#2e7d32">Coupon</span><span style="color:#1565c0">Donation</span></p><h1 style="font-family:Georgia,serif;font-weight:400">${ok ? 'Impact emails stopped' : 'Link expired'}</h1><p>${msg}</p></body>`, { headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' } });
   }
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
