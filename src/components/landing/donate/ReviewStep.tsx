@@ -182,6 +182,22 @@ export function ReviewStep(props: ReviewStepProps) {
         This gift earns {plainNumber.format(Math.floor(amount * 10))} Gold Coins.
       </p>
 
+      {/* Monthly: unticked by default; the donor must choose it. */}
+      <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl bg-muted/50 p-4" data-monthly>
+        <span className="relative mt-0.5 grid h-5 w-5 shrink-0 place-items-center">
+          <input type="checkbox" checked={monthly} onChange={(e) => onMonthly(e.target.checked)} className="peer absolute inset-0 m-0 cursor-pointer appearance-none rounded-md border-2 border-primary bg-background checked:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+          <Check className="pointer-events-none relative h-3.5 w-3.5 text-primary-foreground opacity-0 peer-checked:opacity-100" strokeWidth={3} aria-hidden="true" />
+        </span>
+        <span className="text-[15px] leading-relaxed">
+          <span className="font-medium text-foreground">Yes, give {money(charge.totalCents)} every month</span>
+          <span className="block text-sm text-muted-foreground">
+            {monthly
+              ? signedIn ? 'This same amount is charged each month until you cancel. Cancel any time from your dashboard.' : 'Please sign in first so you can manage or cancel your monthly gift.'
+              : 'Optional. Leave unticked to give once.'}
+          </span>
+        </span>
+      </label>
+
       <div className="mt-5">
         {providers.length === 0 ? (
           <p className="rounded-xl bg-muted/70 p-4 text-sm text-muted-foreground">Online payments are paused for a moment. Please check back soon.</p>
@@ -190,7 +206,7 @@ export function ReviewStep(props: ReviewStepProps) {
             type="button"
             data-pay-with={provider}
             onClick={onPay}
-            disabled={busy}
+            disabled={busy || (monthly && !signedIn)}
             whileTap={{ scale: 0.98 }}
             className="flex min-h-[3.75rem] w-full flex-col items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-primary-foreground outline-none transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-wait"
           >
