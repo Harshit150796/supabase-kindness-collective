@@ -136,7 +136,7 @@ serve(async (req) => {
           idempotency_key: idempotencyKey,
           quick_pay: { name: "Monthly gift for families", price_money: { amount: charge.totalCents, currency: "USD" }, location_id: locationId },
           checkout_options: { subscription_plan_id: variationId, redirect_url: `${origin}/donation-success?amount=${amount}&monthly=1`, ask_for_shipping_address: false, accepted_payment_methods: SQUARE_PAYMENT_METHODS },
-          ...(who.user.email && { pre_populated_data: { buyer_email: who.user.email } }),
+          ...(who2.user.email && { pre_populated_data: { buyer_email: who2.user.email } }),
         }),
       });
       const link = await linkRes.json();
