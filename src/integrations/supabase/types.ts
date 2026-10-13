@@ -1634,6 +1634,24 @@ export type Database = {
           },
         ]
       }
+      donor_payment_profiles: {
+        Row: {
+          created_at: string
+          square_customer_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          square_customer_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          square_customer_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_campaigns: {
         Row: {
           audience_type: string
@@ -2898,6 +2916,7 @@ export type Database = {
           last_charge_at: string | null
           next_charge_on: string | null
           paused_at: string | null
+          square_card_id: string | null
           square_customer_id: string | null
           square_plan_variation_id: string | null
           square_subscription_id: string | null
@@ -2924,6 +2943,7 @@ export type Database = {
           last_charge_at?: string | null
           next_charge_on?: string | null
           paused_at?: string | null
+          square_card_id?: string | null
           square_customer_id?: string | null
           square_plan_variation_id?: string | null
           square_subscription_id?: string | null
@@ -2950,6 +2970,7 @@ export type Database = {
           last_charge_at?: string | null
           next_charge_on?: string | null
           paused_at?: string | null
+          square_card_id?: string | null
           square_customer_id?: string | null
           square_plan_variation_id?: string | null
           square_subscription_id?: string | null
@@ -2995,6 +3016,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saved_cards: {
+        Row: {
+          brand: string | null
+          created_at: string
+          exp_month: number | null
+          exp_year: number | null
+          id: string
+          last4: string | null
+          square_card_id: string
+          user_id: string
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          exp_month?: number | null
+          exp_year?: number | null
+          id?: string
+          last4?: string | null
+          square_card_id: string
+          user_id: string
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          exp_month?: number | null
+          exp_year?: number | null
+          id?: string
+          last4?: string | null
+          square_card_id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       trial_coupons: {
         Row: {
