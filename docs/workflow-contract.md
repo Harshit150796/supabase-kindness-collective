@@ -39,6 +39,8 @@ Before queueing: HubSpot email history must be readable and empty, consent reche
 PostHog workflow step order: Trigger -> Webhook (POST https://vbnbacowuoeeojjdrzzp.supabase.co/functions/v1/followup-guard, JSON body `{"nonce":"{{ event.properties.nonce }}","email":"{{ event.properties.email }}","subject":"{{ event.properties.subject }}","body":"{{ event.properties.body }}"}`, on error: abort) -> Email.
 Guard returns 204 only for an unused, unexpired nonce matching that email and exact text; forged or replayed requests get 403. Bounce/complaint: POST `{"action":"stop","nonce","email"}` opts the person out.
 
+Status: guard step installed in the live workflow (Trigger -> Safety check -> Email -> Exit, on error: abort) on 2026-10-13. A forged event was aborted at the check with 403.
+
 ## Open
 - Visitor types are starter hypotheses from page names; rebuild from 30 days of real visits once traffic exists.
-- Live email to the founder test address not yet confirmed.
+- Live email to the founder test address not yet confirmed: that opt-in has no linked PostHog visitor (the cookie bar wasn't accepted when it was made), so it has no visits to match.
