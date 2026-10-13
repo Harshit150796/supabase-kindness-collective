@@ -277,6 +277,7 @@ export type Database = {
           email_new_donation: boolean
           email_new_fundraiser: boolean
           id: number
+          include_trial_stats: boolean
           notification_recipients: string[]
           require_fundraiser_approval: boolean
           updated_at: string
@@ -287,6 +288,7 @@ export type Database = {
           email_new_donation?: boolean
           email_new_fundraiser?: boolean
           id?: number
+          include_trial_stats?: boolean
           notification_recipients?: string[]
           require_fundraiser_approval?: boolean
           updated_at?: string
@@ -297,6 +299,7 @@ export type Database = {
           email_new_donation?: boolean
           email_new_fundraiser?: boolean
           id?: number
+          include_trial_stats?: boolean
           notification_recipients?: string[]
           require_fundraiser_approval?: boolean
           updated_at?: string
@@ -2867,6 +2870,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trial_coupons: {
+        Row: {
+          brand_name: string
+          created_at: string
+          id: string
+          issued_at: string
+          label: string
+          received_at: string | null
+          used_at: string | null
+          value: number
+        }
+        Insert: {
+          brand_name: string
+          created_at?: string
+          id?: string
+          issued_at?: string
+          label?: string
+          received_at?: string | null
+          used_at?: string | null
+          value: number
+        }
+        Update: {
+          brand_name?: string
+          created_at?: string
+          id?: string
+          issued_at?: string
+          label?: string
+          received_at?: string | null
+          used_at?: string | null
+          value?: number
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
