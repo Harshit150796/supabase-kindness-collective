@@ -77,6 +77,13 @@ export function DonationFlow() {
   const [otherTip, setOtherTip] = useState('');
   const [coverFee, setCoverFee] = useState(true); // ticked by default
   const [monthly, setMonthly] = useState(false); // donor must tick it themselves
+  const [savedCards, setSavedCards] = useState<{ square_card_id: string; brand: string | null; last4: string | null }[]>([]);
+  const [savedCard, setSavedCard] = useState<string | null>(null);
+  useEffect(() => {
+    setSavedCards([]); setSavedCard(null);
+    if (!user) return;
+    supabase.from('saved_cards' as never).select('square_card_id, brand, last4').then(({ data }) => setSavedCards((data as typeof savedCards | null) ?? []));
+  }, [user]);
   const [busy, setBusy] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
@@ -177,6 +184,15 @@ export function DonationFlow() {
       const pct = percentages(shares);
       const brandAllocations = retailers.map((r, i) => ({ brand: r.name, brandId: r.id, percent: pct[i], amount: shares[i] }));
       const fundraiserId = new URLSearchParams(window.location.search).get('fundraiser');
+      if (savedCard && !monthly) {
+        const { data, error } = await supabase.functions.invoke('create-square-payment', {
+          body: { amount, tipAmount: tipCents / 100, coverFee, brandName: brandAllocations[0]?.brand ?? '', brandId: brandAllocations[0]?.brandId ?? '', brandAllocations, userId: user?.id ?? null, userEmail: user?.email ?? null, fundraiserId: fundraiserId || null, savedCardId: savedCard },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        window.location.assign(`/donation-success?amount=${amount}`);
+        return;
+      }
       const { data, error } = await supabase.functions.invoke(provider === 'stripe' ? 'create-stripe-checkout' : 'create-donation-checkout', {
         body: {
           amount,
@@ -266,6 +282,9 @@ export function DonationFlow() {
                       error={payError}
                       checkoutUrl={checkoutUrl}
                       onPay={() => void pay()}
+                      savedCards={savedCards}
+                      savedCard={savedCard}
+                      onSavedCard={setSavedCard}
                     />
                   )}
                 </motion.div>
