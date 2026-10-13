@@ -50,6 +50,7 @@ export default function AdminFollowups() {
   const personas = useQuery({ queryKey: ['fu-personas'], queryFn: async () => { const { data, error } = await sb.from('followup_personas').select('*').order('created_at'); if (error) throw error; return data as Persona[]; } });
   const sends = useQuery({ queryKey: ['fu-sends'], queryFn: async () => { const { data, error } = await sb.from('followup_sends').select('id, status, reason, pages, sent_at, updated_at, persona_version, sent_subject, sent_body, ai_written, visitor_consents(email), followup_personas(label)').order('updated_at', { ascending: false }).limit(200); if (error) throw error; return data as any[]; } });
   const optedIn = useQuery({ queryKey: ['fu-optin'], queryFn: async () => { const { count } = await sb.from('visitor_consents').select('id', { count: 'exact', head: true }).eq('consent_status', 'opted_in'); return count ?? 0; } });
+  const suppressions = useQuery({ queryKey: ['fu-suppressions'], queryFn: async () => { const { data } = await sb.from('email_suppressions').select('email, created_at'); return new Map<string, string>((data ?? []).map((r: any) => [r.email, r.created_at])); } });
 
   const setLive = async (on: boolean) => {
     try { await rpc('admin_followup_set_live', { _on: on }); toast({ title: on ? 'Live sending on' : 'Live sending off' }); settings.refetch(); }

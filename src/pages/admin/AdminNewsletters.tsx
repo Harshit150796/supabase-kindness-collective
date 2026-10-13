@@ -44,6 +44,7 @@ export default function AdminNewsletters() {
   const subs = useAdminPaged<Subscriber>({ table: 'email_subscribers', searchCols: ['email', 'name'], defaultSort: { key: 'created_at', dir: 'desc' } });
   const evs = useAdminPaged<EventRow>({ table: 'email_events', select: 'id,campaign_id,event_type,recipient_email,url,created_at', searchCols: ['recipient_email', 'event_type'], defaultSort: { key: 'created_at', dir: 'desc' } });
   const stats = useQuery({ queryKey: ['adm-email-stats'], queryFn: () => rpc<any>('admin_email_stats') });
+  const suppressions = useQuery({ queryKey: ['adm-suppressions'], queryFn: async () => { const { data } = await sb.from('email_suppressions').select('email, created_at'); return new Map<string, string>((data ?? []).map((r: any) => [r.email, r.created_at])); } });
   const [templates, setTemplates] = useState<Template[]>([]);
   const [segments, setSegments] = useState<Segment[]>([]);
   const [loading, setLoading] = useState(true);
