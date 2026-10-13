@@ -78,3 +78,6 @@ verify_jwt = false
 
 [functions.confirm-donation]
 verify_jwt = false
+
+[functions.followup-guard]
+verify_jwt = false
