@@ -95,11 +95,14 @@ serve(async (req) => {
     } else if (event.type === "invoice.payment_made") {
       const invoice = event.data?.object?.invoice;
       if (invoice?.subscription_id && invoice?.order_id) await handleMonthlyInvoice(supabase, accessToken, invoice);
-    } else if (event.type === "subscription.updated") {
-      const sub = event.data?.object?.subscription;
-      if (sub?.id && (sub.status === "CANCELED" || sub.status === "DEACTIVATED")) {
-        await supabase.from("recurring_donations").update({ status: "canceled", canceled_at: new Date().toISOString() }).eq("square_subscription_id", sub.id);
+    } else if (event.type === "invoice.scheduled_charge_failed") {
+      const invoice = event.data?.object?.invoice;
+      if (invoice?.subscription_id) {
+        await supabase.from("recurring_donations").update({ status: "payment_problem", failure_reason: "Square could not charge the saved card" }).eq("square_subscription_id", invoice.subscription_id);
       }
+    } else if (event.type === "subscription.created" || event.type === "subscription.updated") {
+      const sub = event.data?.object?.subscription;
+      if (sub?.id) await syncSubscription(supabase, accessToken, sub);
     } else {
       console.log(`Unhandled Square event type: ${event.type}`);
     }
