@@ -6,6 +6,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@3';
 import { NOTIFY_SENDER, type RenderedEmail } from '../_shared/email-layout.ts';
+import { suppress, unsuppress } from '../_shared/suppression.ts';
 import {
   CONTACT_TOPIC_VALUES, MESSAGE_MAX, MESSAGE_MIN, MIN_FILL_MS, PER_EMAIL_PER_DAY, PER_IP_PER_HOUR, SUPPORT_EMAIL, US_REGIONS,
   cleanLine, cleanMessage, normalizeUsPhone, renderContactConfirmation, renderSupportEmail,
