@@ -39,7 +39,14 @@ const Contact = z.object({
   message: z.string().trim().min(MESSAGE_MIN).max(MESSAGE_MAX),
   page: z.string().max(300).optional().nullable(),
 });
-const Body = z.discriminatedUnion('action', [Partner, Contact, Testimonial]);
+const Consent = z.object({
+  action: z.literal('consent'),
+  email: z.string().trim().email().max(255),
+  source: z.enum(['signup', 'contact', 'donate']),
+  distinct_id: z.string().max(200).optional().nullable(),
+});
+const Unsubscribe = z.object({ action: z.literal('followup_unsubscribe'), token: z.string().uuid() });
+const Body = z.discriminatedUnion('action', [Partner, Contact, Testimonial, Consent, Unsubscribe]);
 
 async function sendEmail(to: string, replyTo: string, email: RenderedEmail): Promise<'sent' | 'failed' | 'skipped'> {
   const key = Deno.env.get('RESEND_API_KEY');
@@ -135,6 +142,33 @@ Deno.serve(async (req) => {
     ]);
     await admin.from('contact_messages').update({ support_email_status: toSupport, confirmation_email_status: toSender }).eq('id', row.id);
     return json({ ok: true, confirmed: toSender === 'sent' });
+  }
+
+  if (b.action === 'consent') {
+    // Explicit tick only. A later opt-out is never overwritten by a new tick from a stale form.
+    const email = b.email.toLowerCase();
+    const token = req.headers.get('Authorization')?.replace('Bearer ', '');
+    const { data: who } = token ? await admin.auth.getUser(token).catch(() => ({ data: { user: null } })) : { data: { user: null } };
+    const userId = who?.user?.email?.toLowerCase() === email ? who.user!.id : null;
+    const { data: existing } = await admin.from('visitor_consents').select('id, user_id, posthog_distinct_id').eq('email', email).maybeSingle();
+    const patch = {
+      email, email_source: b.source, consent_status: 'opted_in', consent_time: new Date().toISOString(), opted_out_at: null,
+      user_id: userId ?? existing?.user_id ?? null,
+      posthog_distinct_id: userId ?? existing?.posthog_distinct_id ?? (b.distinct_id || null),
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = existing
+      ? await admin.from('visitor_consents').update(patch).eq('id', existing.id)
+      : await admin.from('visitor_consents').insert(patch);
+    if (error) { console.error('consent save failed', error.message); return json({ error: 'Could not save your choice.' }, 500); }
+    return json({ ok: true });
+  }
+
+  if (b.action === 'followup_unsubscribe') {
+    const { data: row } = await admin.from('visitor_consents').update({ consent_status: 'opted_out', opted_out_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq('unsubscribe_token', b.token).select('email').maybeSingle();
+    if (!row) return json({ success: false }, 404);
+    return json({ success: true, email: row.email });
   }
 
   // Testimonial: signed-in only.

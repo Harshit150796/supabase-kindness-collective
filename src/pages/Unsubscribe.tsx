@@ -8,7 +8,8 @@ import { Footer } from '@/components/layout/Footer';
 
 export default function Unsubscribe() {
   const [params] = useSearchParams();
-  const token = params.get('token');
+  const followup = params.get('f');
+  const token = followup ?? params.get('token');
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [email, setEmail] = useState('');
 
@@ -20,9 +21,9 @@ export default function Unsubscribe() {
 
     const unsubscribe = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('handle-newsletter-unsubscribe', {
-          body: { token },
-        });
+        const { data, error } = followup
+          ? await supabase.functions.invoke('public-submit', { body: { action: 'followup_unsubscribe', token: followup } })
+          : await supabase.functions.invoke('handle-newsletter-unsubscribe', { body: { token } });
         if (error || !data?.success) {
           setStatus('error');
         } else {

@@ -37,6 +37,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
   { title: 'Trust', items: [{ label: 'Moderation', path: '/admin/moderation', icon: Flag, adminOnly: true }] },
   { title: 'Work', items: [
     { label: 'Contact messages', path: '/admin/contact', icon: Inbox, countsNew: true },
+    { label: 'Follow-ups', path: '/admin/followups', icon: Mail },
     { label: 'Tasks', path: '/admin/tasks', icon: ListTodo },
     { label: 'Notifications', path: '/admin/notifications', icon: Bell },
   ] },
