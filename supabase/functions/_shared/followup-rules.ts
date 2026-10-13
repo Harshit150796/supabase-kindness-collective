@@ -2,7 +2,7 @@
 export const COOLDOWN_DAYS = 14;
 export const RUN_EVERY_MINUTES = 15;
 
-export type Consent = { consent_status: string; opted_out_at: string | null; last_emailed_at: string | null };
+export type Consent = { consent_status: string; opted_out_at: string | null; last_emailed_at: string | null; suppressed?: boolean };
 export type Persona = { id: string; approved: boolean; signals: unknown; subject: string | null; body: string | null };
 
 /** Signals are page path prefixes, e.g. ["/start-fundraiser", "/how-it-works"]. */
