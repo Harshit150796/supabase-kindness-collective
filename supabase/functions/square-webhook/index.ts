@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { brandRows, couponSlots, describeSplit, parseSplit, type Share } from '../_shared/brand-split.ts';
 import { readPayment } from '../_shared/checkout-total.ts';
+import { monthlyMetadata } from '../_shared/square-recurring.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -91,6 +92,14 @@ serve(async (req) => {
       if (refund && refund.status === "COMPLETED") {
         await handleRefund(supabase, refund);
       }
+    } else if (event.type === "invoice.payment_made") {
+      const invoice = event.data?.object?.invoice;
+      if (invoice?.subscription_id && invoice?.order_id) await handleMonthlyInvoice(supabase, accessToken, invoice);
+    } else if (event.type === "subscription.updated") {
+      const sub = event.data?.object?.subscription;
+      if (sub?.id && (sub.status === "CANCELED" || sub.status === "DEACTIVATED")) {
+        await supabase.from("recurring_donations").update({ status: "canceled", canceled_at: new Date().toISOString() }).eq("square_subscription_id", sub.id);
+      }
     } else {
       console.log(`Unhandled Square event type: ${event.type}`);
     }
@@ -151,7 +160,34 @@ async function handleCompletedPayment(supabase: any, accessToken: string, paymen
     console.log(`Order ${orderId} is not a donation — skipping`);
     return;
   }
+  await recordDonation(supabase, payment, orderId, metadata);
+}
 
+// Monthly gifts: Square bills each month through an invoice. Our record is found from the
+// subscription's plan variation (one per monthly checkout) and the same split is recorded again.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function handleMonthlyInvoice(supabase: any, accessToken: string, invoice: any) {
+  const headers = { "Authorization": `Bearer ${accessToken}`, "Square-Version": "2025-01-23" };
+  const subRes = await fetch(`${squareBaseUrl()}/v2/subscriptions/${invoice.subscription_id}`, { headers });
+  const sub = (await subRes.json())?.subscription;
+  if (!sub?.plan_variation_id) { console.error("Monthly invoice: subscription not found", invoice.subscription_id); return; }
+  const { data: row } = await supabase.from("recurring_donations").select("*").eq("square_plan_variation_id", sub.plan_variation_id).maybeSingle();
+  if (!row) { console.log("Invoice is not a CouponDonation monthly gift — skipping"); return; }
+  if (!row.square_subscription_id || row.status === "pending") {
+    await supabase.from("recurring_donations").update({ square_subscription_id: sub.id, status: "active" }).eq("id", row.id);
+  }
+  const { data: existing } = await supabase.from("donations").select("id").eq("stripe_session_id", invoice.order_id).maybeSingle();
+  if (existing) return;
+  const order = (await (await fetch(`${squareBaseUrl()}/v2/orders/${invoice.order_id}`, { headers })).json())?.order;
+  const paymentId = order?.tenders?.[0]?.payment_id;
+  if (!paymentId) { console.error("Monthly invoice: no payment on order", invoice.order_id); return; }
+  const payment = (await (await fetch(`${squareBaseUrl()}/v2/payments/${paymentId}`, { headers })).json())?.payment;
+  if (!payment || payment.status !== "COMPLETED") return;
+  await recordDonation(supabase, payment, invoice.order_id, monthlyMetadata(row));
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function recordDonation(supabase: any, payment: any, orderId: string, metadata: Record<string, string | undefined>) {
   const paidCents = payment.total_money?.amount || 0;
   const paid = paidCents / 100; // everything charged: gift + tip + covered fee
   // The gift (100% to families) apart from the optional tip and the card fee the donor covered.
