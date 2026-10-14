@@ -57,8 +57,17 @@ export default function Auth() {
 
   // Google sends errors back in the address (e.g. the person pressed Cancel).
   useEffect(() => {
-    const p = new URLSearchParams(window.location.hash.slice(1) || window.location.search);
-    if (p.get('error')) toast.error('Google sign-in was cancelled or failed. Please try again.');
+    const h = new URLSearchParams(window.location.hash.slice(1));
+    const q = new URLSearchParams(window.location.search);
+    const err = h.get('error') || q.get('error');
+    if (!err) return;
+    const desc = (h.get('error_description') || q.get('error_description') || '').replace(/\+/g, ' ');
+    console.warn('Google sign-in error:', err, desc);
+    let msg = 'Google sign-in was cancelled. Please try again.';
+    if (/database error/i.test(desc)) msg = 'We couldn’t finish setting up your account. Please try again in a moment.';
+    else if (/already|exists|identity/i.test(desc)) msg = 'This email already has an account. Sign in with your password once, then Google will work too.';
+    else if (desc && err !== 'access_denied') msg = `Google sign-in didn’t finish: ${desc.replace(/supabase/gi, 'our sign-in service')}`;
+    toast.error(msg);
   }, []);
   const [errors, setErrors] = useState<{ email?: string; password?: string; fullName?: string }>({});
   const [authStep, setAuthStep] = useState<AuthStep>('form');
