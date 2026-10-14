@@ -1,5 +1,10 @@
 # Roadmap
 
+## Branded Google sign-in (Oct 14)
+- [x] Add prominent login logo/wordmark and nonce-protected direct Google sign-in.
+- [ ] Verify rules, popup, failure recovery and layouts.
+- [ ] Google Cloud origins/brand review and real signup/account continuity — requires user Google access; no publishing.
+
 ## Live-tree cursor parity (Oct 12)
 - [x] Measure live-tree and controlled non-tree cursor timing; isolate discarded elapsed time above 64ms.
 - [x] Preserve normal trail feel while correcting delayed-frame catch-up, capture input before canvas handlers, skip unnecessary transforms and reset hidden-tab motion. Tree appearance/motion unchanged.
