@@ -1,5 +1,6 @@
 # Architecture Rules
-- Scoped rules: tree/opening/motion in src/components/landing/AGENTS.md, admin portal in src/pages/admin/AGENTS.md, navigation/auth in src/components/navigation/AGENTS.md. Read the matching file before changing that area.
+- Read AGENTS.md in components/landing, pages/admin and components/navigation before edits.
+- Google uses GIS ID tokens, not redirects, for site identity; hashed Google/raw exchange nonce; existing navigation.
 
 ## Design System Rules
 - CouponDonation UI uses logo green `hsl(123 46% 34%)` as primary and logo blue `hsl(212 80% 42%)` as its only secondary accent; warm UI colors are forbidden outside protected third-party and 3D artwork.
