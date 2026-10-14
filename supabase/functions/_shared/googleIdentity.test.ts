@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { createGoogleNonce, googleIdentityOptions, googleTokenRequest } from './googleIdentity';
+import { createGoogleNonce, googleIdentityOptions, googleTokenRequest } from '../../../src/lib/googleIdentity';
 
 test('direct Google sign-in never automatically selects an account', () => {
   const options = googleIdentityOptions('hashed-nonce', () => undefined);
