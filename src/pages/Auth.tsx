@@ -64,7 +64,8 @@ export default function Auth() {
     const desc = (h.get('error_description') || q.get('error_description') || '').replace(/\+/g, ' ');
     console.warn('Google sign-in error:', err, desc);
     let msg = 'Google sign-in was cancelled. Please try again.';
-    if (/database error/i.test(desc)) msg = 'We couldn’t finish setting up your account. Please try again in a moment.';
+    if (/exchange external code|invalid_client|client secret/i.test(desc)) msg = 'Google sign-in is temporarily unavailable. Please use your email for now.';
+    else if (/database error/i.test(desc)) msg = 'We couldn’t finish setting up your account. Please try again in a moment.';
     else if (/already|exists|identity/i.test(desc)) msg = 'This email already has an account. Sign in with your password once, then Google will work too.';
     else if (desc && err !== 'access_denied') msg = `Google sign-in didn’t finish: ${desc.replace(/supabase/gi, 'our sign-in service')}`;
     toast.error(msg);
