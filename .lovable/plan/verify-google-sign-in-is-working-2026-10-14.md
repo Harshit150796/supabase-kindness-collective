@@ -2,6 +2,8 @@
 
 You enabled the Google provider in Supabase (free plan, so the callback address stays `vbnbacowuoeeojjdrzzp.supabase.co/auth/v1/callback` — the Google consent screen will show that domain; everything else shows CouponDonation).
 
+In the Supabase Google panel: Client IDs = the OAuth client ID from Google Cloud (ends in `.apps.googleusercontent.com`), Client Secret = the matching secret from the same client. Leave "Skip nonce checks" and "Allow users without an email" off. Click Save.
+
 ## Checks
 
 1. **Provider is on** — query Supabase auth settings and confirm `google: true` (it was `false` before).
