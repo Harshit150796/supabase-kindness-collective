@@ -2,7 +2,7 @@
 
 ## Branded Google sign-in (Oct 14)
 - [x] Add prominent login logo/wordmark and nonce-protected direct Google sign-in.
-- [ ] Verify rules, popup, failure recovery and layouts.
+- [x] Four nonce/account-selection tests, real Google popup/cancellation, script and credential failure recovery, and 390/937/1280 layouts verified; automatic build OK. Local popup needs Google Cloud localhost origins. See docs/google-sign-in-setup.md.
 - [ ] Google Cloud origins/brand review and real signup/account continuity — requires user Google access; no publishing.
 
 ## Live-tree cursor parity (Oct 12)
