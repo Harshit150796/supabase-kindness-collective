@@ -32,9 +32,9 @@ export function AccountMenu({ className = '' }: { className?: string }) {
         <button
           type="button"
           aria-label={unread > 0 ? `Your account, ${unread} unread messages` : 'Your account'}
-          className={`relative inline-flex h-11 w-11 items-center justify-center rounded-full outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=open]:bg-muted ${className}`}
+          className={`relative inline-flex h-10 w-10 items-center justify-center rounded-full outline-none transition-transform hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=open]:bg-muted ${className}`}
         >
-          <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-20 text-sm font-semibold text-primary-foreground">
+          <span aria-hidden="true" className="nav-account-badge flex h-10 w-10 items-center justify-center rounded-full bg-primary-20 text-sm font-semibold text-primary-foreground">
             {name.charAt(0).toUpperCase()}
           </span>
           {unread > 0 && <span aria-hidden="true" className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background" />}
