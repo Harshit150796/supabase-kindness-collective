@@ -5,7 +5,7 @@ import { AccountMenu } from '@/components/navigation/AccountMenu';
 import { BrandLockup } from '@/components/navigation/BrandLockup';
 import { MenuButton } from '@/components/navigation/MenuButton';
 import { useSiteMenu } from '@/components/navigation/menuContext';
-import { signInHref } from '@/components/navigation/siteLinks';
+import { signInHref, signUpHref } from '@/components/navigation/siteLinks';
 
 const quietLink = 'nav-quiet-link';
 
@@ -63,10 +63,12 @@ export function Navbar({ autoHide = true }: { autoHide?: boolean } = {}) {
           <BrandLockup navBrand />
 
           <div className="flex items-center gap-1.5">
-            <Link to="/apply" className={`hidden lg:inline-flex ${quietLink}`}>Start a fundraiser</Link>
             {!loading && (user
               ? <AccountMenu className="hidden md:inline-flex" />
-              : !onAuthPage && <Link to={signInHref(pathname, search)} className={`hidden md:inline-flex ${quietLink}`}>Sign in</Link>)}
+              : !onAuthPage && <>
+                <Link to={signInHref(pathname, search)} className={`hidden md:inline-flex ${quietLink}`}>Sign in</Link>
+                <Link to={signUpHref(pathname, search)} className="nav-signup-pill">Sign up</Link>
+              </>)}
             <span aria-hidden="true" className="nav-divider hidden md:block" />
             <MenuButton />
           </div>
