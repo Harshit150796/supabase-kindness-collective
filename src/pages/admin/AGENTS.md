@@ -7,3 +7,4 @@
 - Shared RecordWork attaches private notes and audited follow-ups to exact record identities; AdminRecordDrawer reads paginated exact-match histories so guest/outside donors never require fabricated accounts.
 - Notification counts and read actions use useAdminNotifications with the owner-scoped admin_notification_state RPC; list rows never determine unread totals.
 - Saved personal views store only non-sensitive list preferences; never persist search text, credentials or donor record identifiers.
+- Admin portal pages render inside one nested AdminShell route (guards + persistent frame + Suspense in content); pages must not add their own route guards or lazy imports outside adminPages.ts.

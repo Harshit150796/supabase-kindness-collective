@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,6 +19,10 @@ import logo from '@/assets/logo.png';
 import { SavedAdminViews } from '@/components/admin/SavedAdminViews';
 import { useAdminNotifications } from '@/hooks/useAdminNotifications';
 import { useNewContactCount } from '@/hooks/useNewContactCount';
+import { prefetchAdminPage } from '@/pages/admin/adminPages';
+
+// Pages still wrap themselves in the layout; inside the persistent shell that wrapper renders only its content.
+const InFrame = createContext(false);
 
 type Item = { label: string; path: string; icon: any; adminOnly?: boolean; countsNew?: boolean };
 const GROUPS: { title: string; items: Item[] }[] = [
@@ -66,6 +70,11 @@ export function useTeamRole() {
 }
 
 export function AdminLayout({ children }: { children: ReactNode }) {
+  if (useContext(InFrame)) return <>{children}</>;
+  return <InFrame.Provider value={true}><AdminFrame>{children}</AdminFrame></InFrame.Provider>;
+}
+
+function AdminFrame({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const signOut = useSignOut();
   const { isAdmin, label } = useTeamRole();
@@ -142,7 +151,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             {items.map((i) => {
               const active = i.path === '/admin' ? location.pathname === '/admin' : location.pathname.startsWith(i.path);
               return (
-                <Link key={i.path} to={i.path} title={i.label}
+                <Link key={i.path} to={i.path} title={i.label} onMouseEnter={() => prefetchAdminPage(i.path)} onFocus={() => prefetchAdminPage(i.path)}
                   className={cn('flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] transition-colors',
                     active ? 'bg-primary text-primary-foreground' : 'text-ink-foreground/75 hover:bg-ink-foreground/10 hover:text-ink-foreground',
                     compact && 'justify-center')}>
@@ -169,8 +178,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh bg-muted/30 font-sans">
       <aside className={cn('sticky top-0 hidden h-dvh shrink-0 flex-col bg-ink text-ink-foreground md:flex', collapsed ? 'w-14' : 'w-60')}>
-        <Brand compact={collapsed} />
-        <Nav compact={collapsed} />
+        {Brand({ compact: collapsed })}
+        {Nav({ compact: collapsed })}
         <button onClick={() => setCollapsed((c) => !c)} className="flex items-center gap-2 border-t border-ink-foreground/10 px-4 py-3 text-xs text-ink-foreground/60 hover:text-ink-foreground" aria-label="Toggle sidebar">
           {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <><PanelLeftClose className="h-4 w-4" /> Collapse</>}
         </button>
@@ -179,7 +188,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-foreground/40" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 flex w-64 flex-col bg-ink text-ink-foreground"><Brand compact={false} /><Nav compact={false} /></aside>
+          <aside className="absolute inset-y-0 left-0 flex w-64 flex-col bg-ink text-ink-foreground">{Brand({ compact: false })}{Nav({ compact: false })}</aside>
         </div>
       )}
 

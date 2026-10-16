@@ -9,6 +9,8 @@ type Mode = "advisory" | "strict";
 
 let advisoryToastShown = false;
 let blockedToastShown = false;
+// Once strict access is granted this session, re-entering the portal never shows "Checking access" again.
+let strictAllowed = false;
 
 interface GeoGuardProps {
   children: ReactNode;
@@ -24,7 +26,7 @@ export function GeoGuard({ children, mode = "advisory" }: GeoGuardProps) {
   const isAdmin = hasRole("admin");
   const strict = mode === "strict";
 
-  const [status, setStatus] = useState<Status>(strict ? "checking" : "allowed");
+  const [status, setStatus] = useState<Status>(strict && !strictAllowed ? "checking" : "allowed");
 
   useEffect(() => {
     let cancelled = false;
@@ -32,6 +34,7 @@ export function GeoGuard({ children, mode = "advisory" }: GeoGuardProps) {
     // Admins bypass geo entirely — role checks + RLS are the real control.
     if (strict && !rolesLoaded) return;
     if (strict && isAdmin) {
+      strictAllowed = true;
       setStatus("allowed");
       return;
     }
@@ -42,6 +45,7 @@ export function GeoGuard({ children, mode = "advisory" }: GeoGuardProps) {
       const isUS = country === null || country === "US";
 
       if (isUS) {
+        if (strict) strictAllowed = true;
         setStatus("allowed");
         return;
       }
@@ -51,6 +55,7 @@ export function GeoGuard({ children, mode = "advisory" }: GeoGuardProps) {
           blockedToastShown = true;
           toast.error("Admin access is restricted to United States residents.");
         }
+        strictAllowed = false;
         setStatus("blocked");
         return;
       }
