@@ -1,6 +1,6 @@
 # 3D tree rules
 - Tree fruit animations share one transparent WebGL logo path.
-- Tree slots stay stable while allowed brands rotate non-repeating; exclude Trader Joe's, eBay, and Postmates.
+- Tree slots stay stable while allowed brands rotate non-repeating; exclude Trader Joe's, eBay, Postmates, and Seamless.
 - Use 18 deterministic, color-balanced canopy slots with front bias, orbit coverage, and no duplicate hanging brand.
 - Use official local SVG artwork when available and preserve its colors/proportions; prefer recognizable emblems unless a brand is wordmark-led.
 - Tree anchors use slot-specific leaf clearance and vertical correction.
