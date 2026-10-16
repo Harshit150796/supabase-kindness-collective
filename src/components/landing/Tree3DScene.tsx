@@ -390,8 +390,8 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = fals
         intensity={initial.dirInt}
         color={initial.dirCol}
         castShadow
-        shadow-mapSize-width={shadowSize}
-        shadow-mapSize-height={shadowSize}
+        shadow-mapSize-width={liveShadow}
+        shadow-mapSize-height={liveShadow}
         shadow-camera-left={tightShadow ? -5 : -12}
         shadow-camera-right={tightShadow ? 5 : 12}
         shadow-camera-top={tightShadow ? 9 : 12}
