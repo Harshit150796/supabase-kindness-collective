@@ -284,7 +284,6 @@ export const COUPON_FRUITS: CouponData[] = [
   { brand: 'Whole Foods', logo: 'whole-foods', color: '#006F46', amount: 5, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Publix', logo: 'publix', color: '#649441', amount: 10, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Uber Eats', logo: 'uber-eats', color: '#06C167', amount: 10, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 7 },
-  { brand: 'Seamless', logo: 'seamless', color: '#C90117', amount: 10, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
   { brand: "Domino's", logo: 'dominos', color: '#006491', amount: 5, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Taco Bell', logo: 'taco-bell', color: '#38096C', amount: 10, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Subway', logo: 'subway', color: '#008938', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
