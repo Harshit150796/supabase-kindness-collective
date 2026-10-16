@@ -932,7 +932,7 @@ html.site-menu-open{overflow:hidden;padding-right:var(--site-menu-gap,0px)}
 .giving-deal[data-deal="dealt"] .giving-deal-face{-webkit-backface-visibility:visible;backface-visibility:visible}
 
 /* Header right side: quiet underline links, hairline divider, glass Menu pill. */
-.nav-quiet-link{display:inline-flex;align-items:center;height:2.5rem;padding:0 .7rem;font-size:.875rem;font-weight:500;letter-spacing:.01em;color:hsl(var(--muted-foreground));background:linear-gradient(hsl(var(--primary)),hsl(var(--primary))) no-repeat left calc(100% - .55rem)/0 1.5px;background-origin:content-box;transition:color .25s,background-size .35s cubic-bezier(.65,0,.35,1)}
+.nav-quiet-link{align-items:center;white-space:nowrap;height:2.5rem;padding:0 .7rem;font-size:.875rem;font-weight:500;letter-spacing:.01em;color:hsl(var(--muted-foreground));background:linear-gradient(hsl(var(--primary)),hsl(var(--primary))) no-repeat left calc(100% - .55rem)/0 1.5px;background-origin:content-box;transition:color .25s,background-size .35s cubic-bezier(.65,0,.35,1)}
 .nav-quiet-link:hover{color:hsl(var(--foreground));background-size:calc(100% - 1.4rem) 1.5px;background-position:.7rem calc(100% - .55rem)}
 .nav-quiet-link:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:2px;border-radius:6px}
 .nav-divider{width:1px;height:1.25rem;background:hsl(var(--border));margin:0 .35rem}
