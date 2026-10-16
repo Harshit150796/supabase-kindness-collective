@@ -45,7 +45,7 @@ Deno.test('fundraiser list loads card numbers in one batched request', async () 
 
 Deno.test('tree model stays under its compressed budget', async () => {
   const { size } = await Deno.stat('public/models/tree.glb');
-  assert(size < 1_300_000, `tree.glb is ${size} bytes`);
+  assert(size < 1_200_000, `tree.glb is ${size} bytes`);
 });
 
 Deno.test('the hero shows the whole tree scene or nothing, and a painted scene only where the tree cannot run', async () => {
@@ -104,4 +104,14 @@ Deno.test('the hero kicker stays readable on the night sky', async () => {
   assert(headline.includes('className="hero-kicker-lead ') && headline.includes('className="hero-kicker-word '));
   assert(css.includes('html[data-sky=night] .hero-kicker-lead{color:rgb(255 255 255 / .8)}'));
   assert(css.includes('html[data-sky=night] .hero-kicker-word{color:hsl(123 46% 66%)}'));
+});
+
+Deno.test('tree.glb ships without the hidden red apples', async () => {
+  const bytes = await Deno.readFile('public/models/tree.glb');
+  assert(!new TextDecoder().decode(bytes.subarray(0, 20000)).includes('Material.004'));
+});
+
+Deno.test('first tree frames use a 2048 shadow map before full size', async () => {
+  const src = await Deno.readTextFile('src/components/landing/Tree3DScene.tsx');
+  assert(src.includes('FIRST_SHADOW_SIZE = 2048') && src.includes('shadow-mapSize-width={liveShadow}'));
 });

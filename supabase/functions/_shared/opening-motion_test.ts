@@ -85,7 +85,7 @@ Deno.test('live-capable opening preloads exact 18 logo URLs and model/Draco fetc
   const o = await opening();
   const links = o.head.children as { href: string; as: string; crossOrigin?: string; fetchPriority: string }[];
   assertEquals(links.length,21);
-  assertEquals(links.filter(x=>x.as==='fetch').map(x=>[x.href,x.crossOrigin,x.fetchPriority]),[['/models/tree.glb','anonymous','low'],['/draco/draco_wasm_wrapper.js','anonymous','low'],['/draco/draco_decoder.wasm','anonymous','low']]);
+  assertEquals(links.filter(x=>x.as==='fetch').map(x=>[x.href,x.crossOrigin,x.fetchPriority]),[['/models/tree.glb','anonymous','high'],['/draco/draco_wasm_wrapper.js','anonymous','high'],['/draco/draco_decoder.wasm','anonymous','high']]);
   const expected=['walmart','cvs','target','dominos','aldi','starbucks','mcdonalds','instacart','amazon','home-depot','uber','publix','doordash','walgreens','taco-bell','whole-foods','costco','lyft'];
   assertEquals(links.filter(x=>x.as==='image').map(x=>x.href),expected.map(x=>`/brand-logos/${x}.svg`));
 });
