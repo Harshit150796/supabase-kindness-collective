@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useMotionPreference } from "@/hooks/useMotionPreference";
 import { ArrowRight } from "lucide-react";
@@ -48,20 +47,11 @@ export function HeroHeadline() {
           {ROTATING_WORDS.map((word, index) => <span key={word} aria-hidden={index !== idx} className={`col-start-1 row-start-1 transition-[opacity,transform] duration-500 ${preference === 'gentle' ? 'translate-y-0' : index === idx ? 'translate-y-0' : 'translate-y-1'} ${index === idx ? 'opacity-100' : 'opacity-0'}`}>{word}</span>)}
         </span>
       </div>
-      <div className="mt-3 md:mt-4 inline-flex items-center justify-center gap-1.5 md:gap-2">
-        <Button asChild size="sm" className="min-h-11 shadow-lg whitespace-nowrap">
-          <Link to="/donate">
-            Donate now <ArrowRight className="ml-1 w-3.5 h-3.5" />
-          </Link>
-        </Button>
-        <Button
-          asChild
-          size="sm"
-          variant="outline"
-          className="min-h-11 whitespace-nowrap bg-background shadow-lg"
-        >
-          <Link to="/apply">Apply as Recipient</Link>
-        </Button>
+      <div className="mt-3 md:mt-4 flex flex-wrap items-center justify-center gap-2.5 md:gap-3" style={{ textShadow: "none" }}>
+        <Link to="/donate" className="btn-tva">
+          <span className="tva-label">Donate now</span> <ArrowRight className="h-4 w-4" />
+        </Link>
+        <Link to="/apply" className="btn-tva-ghost"><span>Apply as Recipient</span></Link>
       </div>
     </div>
   );
