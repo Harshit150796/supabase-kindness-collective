@@ -8,6 +8,8 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SessionSecurityProvider } from "@/components/auth/SessionSecurityProvider";
 import { GeoGuard } from "@/components/auth/GeoGuard";
+import { AdminShell, AdminOnly } from "@/components/admin/AdminShell";
+import { adminPage } from "./pages/admin/adminPages";
 const Index = lazy(() => import("./pages/Index"));
 import { PrivacyConsentBanner } from "./components/PrivacyConsentBanner";
 import { VisitorAnalytics } from "./components/VisitorAnalytics";
@@ -61,35 +63,10 @@ const DonorHistory = lazy(() => import("./pages/donor/DonorHistory"));
 
 
 // Admin pages
-const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
-const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
-const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications"));
-const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
-const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
-const AdminContent = lazy(() => import("./pages/admin/AdminContent"));
-const AdminStories = lazy(() => import("./pages/admin/AdminStories"));
-const AdminTestimonials = lazy(() => import("./pages/admin/AdminTestimonials"));
-const AdminBlog = lazy(() => import("./pages/admin/AdminBlog"));
-const AdminFAQ = lazy(() => import("./pages/admin/AdminFAQ"));
-const AdminFundraisers = lazy(() => import("./pages/admin/AdminFundraisers"));
-const AdminNewsletters = lazy(() => import("./pages/admin/AdminNewsletters"));
-const AdminDonations = lazy(() => import("./pages/admin/AdminDonations"));
-const AdminMonthly = lazy(() => import("./pages/admin/AdminMonthly"));
-const AdminFollowups = lazy(() => import("./pages/admin/AdminFollowups"));
-const AdminProcurement = lazy(() => import("./pages/admin/AdminProcurement"));
-const AdminDonors = lazy(() => import("./pages/admin/AdminDonors"));
-const AdminTasks = lazy(() => import("./pages/admin/AdminTasks"));
-const AdminPartners = lazy(() => import("./pages/admin/AdminPartners"));
-const AdminContactMessages = lazy(() => import("./pages/admin/AdminContactMessages"));
-const AdminGoldCoins = lazy(() => import("./pages/admin/AdminGoldCoins"));
 const NeedPage = lazy(() => import("./pages/NeedPage"));
 const Partners = lazy(() => import("./pages/Partners"));
-const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
-const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
-const AdminTeam = lazy(() => import("./pages/admin/AdminTeam"));
-const AdminAudit = lazy(() => import("./pages/admin/AdminAudit"));
-const TEAM = ['admin', 'staff', 'viewer'];
-const AdminModeration = lazy(() => import("./pages/admin/AdminModeration"));
+const ADMIN_PAGES = [['/admin', adminPage('/admin')],['/admin/analytics', adminPage('/admin/analytics')],['/admin/fundraisers', adminPage('/admin/fundraisers')],['/admin/donations', adminPage('/admin/donations')],['/admin/donors', adminPage('/admin/donors')],['/admin/monthly', adminPage('/admin/monthly')],['/admin/verifications', adminPage('/admin/verifications')],['/admin/coupons', adminPage('/admin/coupons')],['/admin/procurement', adminPage('/admin/procurement')],['/admin/gold-coins', adminPage('/admin/gold-coins')],['/admin/partners', adminPage('/admin/partners')],['/admin/moderation', adminPage('/admin/moderation')],['/admin/contact', adminPage('/admin/contact')],['/admin/followups', adminPage('/admin/followups')],['/admin/tasks', adminPage('/admin/tasks')],['/admin/notifications', adminPage('/admin/notifications')],['/admin/content', adminPage('/admin/content')],['/admin/stories', adminPage('/admin/stories')],['/admin/testimonials', adminPage('/admin/testimonials')],['/admin/blog', adminPage('/admin/blog')],['/admin/faq', adminPage('/admin/faq')],['/admin/newsletters', adminPage('/admin/newsletters')],['/admin/team', adminPage('/admin/team')],['/admin/users', adminPage('/admin/users')],['/admin/audit', adminPage('/admin/audit')],['/admin/settings', adminPage('/admin/settings')]] as const;
+const ADMIN_ONLY = new Set(['/admin/audit', '/admin/moderation', '/admin/users']);
 const Messages = lazy(() => import("./pages/Messages"));
 const TeamAccept = lazy(() => import("./pages/TeamAccept"));
 const Blog = lazy(() => import("./pages/Blog"));
@@ -177,34 +154,14 @@ const AppRoutes = () => (
       <Route path="/donor/history" element={<Navigate to="/dashboard/giving" replace />} />
 
 
-      {/* Admin Routes (US-only) */}
-      <Route path="/admin" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin', 'staff', 'viewer']}><AdminDashboard /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/donors" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminDonors /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/partners" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminPartners /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/contact" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminContactMessages /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/gold-coins" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminGoldCoins /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/followups" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminFollowups /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/tasks" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminTasks /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/notifications" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminNotifications /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/settings" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminSettings /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/team" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminTeam /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/audit" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminAudit /></ProtectedRoute></GeoGuard>} />
+      {/* Admin portal (US-only): one persistent frame; only the middle area changes. */}
       <Route path="/admin/fundraisers/manage" element={<Navigate to="/admin/fundraisers" replace />} />
-      <Route path="/admin/moderation" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminModeration /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/users" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/verifications" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminVerifications /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/coupons" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminCoupons /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/analytics" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminAnalytics /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/content" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminContent /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/stories" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminStories /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/testimonials" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminTestimonials /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/blog" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminBlog /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/faq" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminFAQ /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/fundraisers" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin', 'staff', 'viewer']}><AdminFundraisers /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/newsletters" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminNewsletters /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/donations" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin', 'staff', 'viewer']}><AdminDonations /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/monthly" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={['admin', 'staff', 'viewer']}><AdminMonthly /></ProtectedRoute></GeoGuard>} />
-      <Route path="/admin/procurement" element={<GeoGuard mode="strict"><ProtectedRoute allowedRoles={TEAM}><AdminProcurement /></ProtectedRoute></GeoGuard>} />
+      <Route path="/admin" element={<AdminShell />}>
+        {ADMIN_PAGES.map(([path, Page]) => {
+          const el = ADMIN_ONLY.has(path) ? <AdminOnly><Page /></AdminOnly> : <Page />;
+          return path === '/admin' ? <Route key={path} index element={el} /> : <Route key={path} path={path.slice(7)} element={el} />;
+        })}
+      </Route>
 
       {/* Blog Routes */}
       <Route path="/blog" element={<Blog />} />

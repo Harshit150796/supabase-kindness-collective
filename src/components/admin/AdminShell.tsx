@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ADMIN_LOADERS, prefetchAdminPage } from '@/pages/admin/adminPages';
 import { prefetchWhenIdle } from '@/lib/idlePrefetch';
-import { signInPath } from '@/lib/authRedirect';
+import { signInPath } from '@/lib/serverActions';
 
 const TEAM = ['admin', 'staff', 'viewer'];
 

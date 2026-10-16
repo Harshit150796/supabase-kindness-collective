@@ -2,7 +2,7 @@ import { useEffect, useRef, useState }
  from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { sb, cleanSearch } from '@/lib/adminApi';
 
 interface Opts {
@@ -31,6 +31,8 @@ export function useAdminPaged<T = any>({ table, select = '*', searchCols = [], d
   useEffect(() => { if (initialSearch.current) { initialSearch.current = false; return; } const t = setTimeout(() => { setDq(search); setPage(0); }, 300); return () => clearTimeout(t); }, [search]);
   useEffect(() => { if (initialDeps.current) { initialDeps.current = false; return; } setPage(0); }, deps); // eslint-disable-line react-hooks/exhaustive-deps
   const q = useQuery({
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
     queryKey: ['adm-paged', table, user?.id, select, dq, page, sort, pageSize, ...deps],
     queryFn: async () => {
       let b = sb.from(table).select(select, { count: 'exact' });
