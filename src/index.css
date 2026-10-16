@@ -698,8 +698,8 @@ html[data-sky=night] .hero-stage:not([data-scene]) .hero-kicker-word{color:hsl(v
 
 /* Hero CTA pair, TVA/Loki-inspired green energy. Founder-approved glow exception: these two buttons only. */
 :root{--tva-green:123 70% 58%;--tva-deep:123 55% 14%;--tva-glow:123 90% 70%}
-.btn-tva,.btn-tva-ghost{position:relative;isolation:isolate;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;height:3rem;min-width:11.5rem;padding:0 1.5rem;border-radius:9999px;font-weight:600;font-size:.9rem;letter-spacing:.01em;white-space:nowrap;transition:transform .25s ease,box-shadow .35s ease,color .3s ease}
-@media (min-width:768px){.btn-tva,.btn-tva-ghost{height:52px}}
+.btn-tva,.btn-tva-ghost{position:relative;isolation:isolate;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;height:2.5rem;min-width:9.5rem;padding:0 1.15rem;border-radius:9999px;font-weight:600;font-size:.84rem;letter-spacing:.02em;white-space:nowrap;transition:transform .25s ease,box-shadow .35s ease,color .3s ease}
+@media (min-width:768px){.btn-tva,.btn-tva-ghost{height:2.75rem}}
 .btn-tva::before,.btn-tva-ghost::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;background:conic-gradient(from var(--tva-a,0deg),transparent 0 55%,hsl(var(--tva-glow)) 70%,transparent 85%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:tva-spin 5s linear infinite;z-index:1;pointer-events:none}
 @property --tva-a{syntax:"<angle>";inherits:false;initial-value:0deg}
 @keyframes tva-spin{to{--tva-a:360deg}}
@@ -712,10 +712,10 @@ html[data-sky=night] .hero-stage:not([data-scene]) .hero-kicker-word{color:hsl(v
 .btn-tva .tva-label{animation:tva-flicker 6s infinite}
 @keyframes tva-flicker{0%,92%,100%{opacity:1}93%{opacity:.55}94%{opacity:1}95.5%{opacity:.7}96.5%{opacity:1}}
 .btn-tva svg{transition:transform .25s ease}
-.btn-tva:hover{transform:translateY(-1px);box-shadow:0 0 0 1px hsl(var(--tva-glow)/.7),0 0 28px -4px hsl(var(--tva-glow)/.75)}
+.btn-tva:hover{transform:translateY(-1px);box-shadow:0 0 0 1px hsl(var(--tva-glow)/.7),0 0 18px -4px hsl(var(--tva-glow)/.6)}
 .btn-tva:hover::after{animation:tva-sweep-once .8s ease-out}
 .btn-tva:hover svg{transform:translateX(3px)}
-.btn-tva-ghost:hover{transform:translateY(-1px);color:hsl(0 0% 100%);box-shadow:inset 0 0 0 1px hsl(var(--tva-glow)/.85),0 0 22px -6px hsl(var(--tva-glow)/.7)}
+.btn-tva-ghost:hover{transform:translateY(-1px);color:hsl(0 0% 100%);box-shadow:inset 0 0 0 1px hsl(var(--tva-glow)/.85),0 0 16px -6px hsl(var(--tva-glow)/.6)}
 .btn-tva-ghost:hover::after{animation:tva-sweep-once .9s ease-out}
 @keyframes tva-sweep-once{from{transform:translateX(-160%) skewX(-18deg)}to{transform:translateX(330%) skewX(-18deg)}}
 .btn-tva:focus-visible,.btn-tva-ghost:focus-visible{outline:2px solid hsl(var(--tva-glow));outline-offset:3px}
@@ -930,3 +930,12 @@ html.site-menu-open{overflow:hidden;padding-right:var(--site-menu-gap,0px)}
 .giving-deal-back{position:absolute;inset:0;display:none}
 .giving-deal[data-deal="stacked"] .giving-deal-back,.giving-deal[data-deal="dealing"] .giving-deal-back{display:flex}
 .giving-deal[data-deal="dealt"] .giving-deal-face{-webkit-backface-visibility:visible;backface-visibility:visible}
+
+/* Header right side: quiet underline links, hairline divider, glass Menu pill. */
+.nav-quiet-link{align-items:center;white-space:nowrap;height:2.5rem;padding:0 .7rem;font-size:.875rem;font-weight:500;letter-spacing:.01em;color:hsl(var(--muted-foreground));background:linear-gradient(hsl(var(--primary)),hsl(var(--primary))) no-repeat left calc(100% - .55rem)/0 1.5px;background-origin:content-box;transition:color .25s,background-size .35s cubic-bezier(.65,0,.35,1)}
+.nav-quiet-link:hover{color:hsl(var(--foreground));background-size:calc(100% - 1.4rem) 1.5px;background-position:.7rem calc(100% - .55rem)}
+.nav-quiet-link:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:2px;border-radius:6px}
+.nav-divider{width:1px;height:1.25rem;background:hsl(var(--border));margin:0 .35rem}
+[data-site-header] .site-menu-button{height:2.5rem;min-height:2.5rem;padding:0 .7rem 0 1rem;border-radius:9999px;font-size:.84rem;letter-spacing:.02em;color:hsl(123 40% 94%);background:hsl(var(--ink)/.9);box-shadow:inset 0 0 0 1px hsl(var(--tva-green)/.45);transition:box-shadow .3s,transform .25s}
+@media (hover:hover){[data-site-header] .site-menu-button:hover{background:hsl(var(--ink));transform:translateY(-1px);box-shadow:inset 0 0 0 1px hsl(var(--tva-glow)/.85),0 0 14px -6px hsl(var(--tva-glow)/.6)}}
+.nav-account-badge{box-shadow:inset 0 0 0 1px hsl(var(--tva-green)/.55)}

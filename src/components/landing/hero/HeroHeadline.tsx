@@ -47,7 +47,7 @@ export function HeroHeadline() {
           {ROTATING_WORDS.map((word, index) => <span key={word} aria-hidden={index !== idx} className={`col-start-1 row-start-1 transition-[opacity,transform] duration-500 ${preference === 'gentle' ? 'translate-y-0' : index === idx ? 'translate-y-0' : 'translate-y-1'} ${index === idx ? 'opacity-100' : 'opacity-0'}`}>{word}</span>)}
         </span>
       </div>
-      <div className="mt-3 md:mt-4 flex flex-wrap items-center justify-center gap-2.5 md:gap-3" style={{ textShadow: "none" }}>
+      <div className="mt-3 md:mt-4 flex flex-wrap min-[361px]:flex-nowrap items-center justify-center gap-2.5 md:gap-3" style={{ textShadow: "none" }}>
         <Link to="/donate" className="btn-tva">
           <span className="tva-label">Donate now</span> <ArrowRight className="h-4 w-4" />
         </Link>

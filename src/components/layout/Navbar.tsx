@@ -1,6 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { AccountMenu } from '@/components/navigation/AccountMenu';
 import { BrandLockup } from '@/components/navigation/BrandLockup';
@@ -8,7 +7,7 @@ import { MenuButton } from '@/components/navigation/MenuButton';
 import { useSiteMenu } from '@/components/navigation/menuContext';
 import { signInHref } from '@/components/navigation/siteLinks';
 
-const quietLink = 'inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+const quietLink = 'nav-quiet-link';
 
 /**
  * The site header: brand, the two main actions, the account, and the Menu button
@@ -60,17 +59,15 @@ export function Navbar({ autoHide = true }: { autoHide?: boolean } = {}) {
   return (
     <nav ref={navRef} data-site-header aria-label="Main" className={`sticky top-0 z-50 border-b border-border/70 bg-background lg:bg-background/90 lg:backdrop-blur-lg transition-transform duration-300 ${hidden ? '-translate-y-full' : 'translate-y-0'}`}>
       <div className="container mx-auto px-4">
-        <div className="flex h-18 items-center justify-between gap-3 py-3 [@media(max-height:500px)]:h-[52px] [@media(max-height:500px)]:py-1">
+        <div className="flex h-16 items-center justify-between gap-3 py-3 [@media(max-height:500px)]:h-[52px] [@media(max-height:500px)]:py-1">
           <BrandLockup navBrand />
 
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-1.5">
             <Link to="/apply" className={`hidden lg:inline-flex ${quietLink}`}>Start a fundraiser</Link>
-            <Button asChild size="sm" className="min-h-11 px-4 max-[339px]:hidden">
-              <Link to="/donate">Donate</Link>
-            </Button>
             {!loading && (user
               ? <AccountMenu className="hidden md:inline-flex" />
               : !onAuthPage && <Link to={signInHref(pathname, search)} className={`hidden md:inline-flex ${quietLink}`}>Sign in</Link>)}
+            <span aria-hidden="true" className="nav-divider hidden md:block" />
             <MenuButton />
           </div>
         </div>
