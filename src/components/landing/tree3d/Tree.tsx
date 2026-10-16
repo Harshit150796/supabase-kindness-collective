@@ -186,6 +186,15 @@ export function Tree(_props: { lowPower?: boolean }) {
       shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', WIND_VERTEX_SNIPPET);
     };
 
+    // The model's red canopy fruit (Material.004, upper canopy only) is removed:
+    // logos are the only fruit, and it saves ~30k vertices of draw/shadow work.
+    const fruit: THREE.Object3D[] = [];
+    root.traverse((obj) => {
+      const m = (obj as THREE.Mesh).material as THREE.Material | undefined;
+      if ((obj as THREE.Mesh).isMesh && !Array.isArray(m) && m?.name === 'Material.004') fruit.push(obj);
+    });
+    fruit.forEach((obj) => obj.removeFromParent());
+
     root.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (!mesh.isMesh) return;

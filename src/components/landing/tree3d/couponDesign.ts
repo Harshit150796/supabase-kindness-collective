@@ -277,7 +277,7 @@ export const COUPON_FRUITS: CouponData[] = [
   { brand: 'Lyft', logo: 'lyft', color: '#EA0B8C', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Starbucks', logo: 'starbucks', color: '#006241', amount: 5, mark: 'emblem', scale: 0.94, sizeFactor: 0.825, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Amazon', logo: 'amazon', color: '#000000', amount: 10, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 7 },
-  { brand: 'Grubhub', logo: 'grubhub', color: '#FF5500', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Grubhub', logo: 'grubhub-mark', color: '#FF5500', amount: 5, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 6 },
   { brand: "McDonald's", logo: 'mcdonalds', color: '#FFCC00', amount: 10, mark: 'emblem', scale: 0.94, sizeFactor: 0.825, edgeTone: 'dark', edgeRadius: 6 },
   { brand: 'Aldi', logo: 'aldi', color: '#00529B', amount: 10, mark: 'emblem', scale: 0.96, sizeFactor: 0.825, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Kroger', logo: 'kroger', color: '#0468B3', amount: 10, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 6 },
