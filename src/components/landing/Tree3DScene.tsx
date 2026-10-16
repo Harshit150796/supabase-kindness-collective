@@ -302,6 +302,8 @@ function CameraRig({
   return null;
 }
 
+export const FIRST_SHADOW_SIZE = 2048;
+const STAGED_SHADOW_FRAMES = 60;
 function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = false }: { shadowSize?: number; shadowBlur?: number; tightShadow?: boolean }) {
   const { timeOfDay } = useInteraction();
   const dirRef = useRef<THREE.DirectionalLight>(null);
@@ -309,13 +311,18 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = fals
   const fillRef = useRef<THREE.DirectionalLight>(null);
   const fogColorRef = useRef(new THREE.Color('#DCE6D5'));
   const { scene } = useThree();
+  // The first frames use a 2048 shadow map so the tree appears sooner; full size follows ~1s later.
+  const [warm, setWarm] = useState(false);
+  const drawn = useRef(0);
+  useFrame(() => { if (!warm && ++drawn.current >= STAGED_SHADOW_FRAMES) setWarm(true); });
+  const liveShadow = warm ? shadowSize : Math.min(shadowSize, FIRST_SHADOW_SIZE);
   useEffect(() => {
     const light = dirRef.current;
     if (!light) return;
     light.shadow.map?.dispose(); light.shadow.map = null;
-    light.shadow.mapSize.set(shadowSize, shadowSize);
+    light.shadow.mapSize.set(liveShadow, liveShadow);
     light.shadow.needsUpdate = true;
-  }, [shadowSize]);
+  }, [liveShadow]);
 
   const targets: Record<TimeOfDay, { dirCol: string; dirInt: number; ambCol: string; ambInt: number; fillCol: string; fillInt: number; fog: string }> = useMemo(
     () => ({
@@ -383,8 +390,8 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = fals
         intensity={initial.dirInt}
         color={initial.dirCol}
         castShadow
-        shadow-mapSize-width={shadowSize}
-        shadow-mapSize-height={shadowSize}
+        shadow-mapSize-width={liveShadow}
+        shadow-mapSize-height={liveShadow}
         shadow-camera-left={tightShadow ? -5 : -12}
         shadow-camera-right={tightShadow ? 5 : 12}
         shadow-camera-top={tightShadow ? 9 : 12}
