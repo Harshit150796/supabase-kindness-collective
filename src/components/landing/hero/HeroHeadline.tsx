@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useMotionPreference } from "@/hooks/useMotionPreference";
 import { ArrowRight } from "lucide-react";
