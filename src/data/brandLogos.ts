@@ -22,18 +22,18 @@ export const brandLogos: Record<string, BrandInfo> = {
   // Grocery
   Kroger: { name: 'Kroger', logo: logo('kroger.com.png'), color: '#0066B2', category: 'grocery' },
   WholeFoods: { name: 'Whole Foods', logo: logo('wholefoodsmarket.com.png'), color: '#00674B', category: 'grocery' },
-  Costco: { name: 'Costco', logo: logo('costco.com.png'), color: '#E31837', category: 'grocery' },
+  Costco: { name: 'Costco', logo: '/brand-logos/costco.svg', color: '#E31837', category: 'grocery' },
   Safeway: { name: 'Safeway', logo: logo('safeway.com.png'), color: '#E21A2C', category: 'grocery' },
-  Publix: { name: 'Publix', logo: logo('publix.com.png'), color: '#4C8C2B', category: 'grocery' },
+  Publix: { name: 'Publix', logo: '/brand-logos/publix.svg', color: '#4C8C2B', category: 'grocery' },
   Aldi: { name: 'Aldi', logo: logo('aldi.us.png'), color: '#00529B', category: 'grocery' },
   // Food Delivery
   Grubhub: { name: 'Grubhub', logo: logo('grubhub.com.png'), color: '#F63440', category: 'food-delivery' },
   Instacart: { name: 'Instacart', logo: '/brand-logos/instacart.svg', color: '#0AAD0A', category: 'food-delivery' },
-  Postmates: { name: 'Postmates', logo: logo('postmates.com.png'), color: '#000000', category: 'food-delivery' },
+  Postmates: { name: 'Postmates', logo: '/brand-logos/postmates.svg', color: '#000000', category: 'food-delivery' },
   // Retail
-  BestBuy: { name: 'Best Buy', logo: logo('bestbuy.com.png'), color: '#0046BE', category: 'retail' },
+  BestBuy: { name: 'Best Buy', logo: '/brand-logos/best-buy.svg', color: '#0046BE', category: 'retail' },
   HomeDepot: { name: 'Home Depot', logo: logo('homedepot.com.png'), color: '#F96302', category: 'retail' },
-  Lowes: { name: "Lowe's", logo: logo('lowes.com.png'), color: '#004990', category: 'retail' },
+  Lowes: { name: "Lowe's", logo: '/brand-logos/lowes.svg', color: '#004990', category: 'retail' },
   // Pharmacy
   CVS: { name: 'CVS', logo: '/brand-logos/cvs.svg', color: '#CC0000', category: 'pharmacy' },
   Walgreens: { name: 'Walgreens', logo: logo('walgreens.com.png'), color: '#E31837', category: 'pharmacy' },
@@ -42,7 +42,7 @@ export const brandLogos: Record<string, BrandInfo> = {
   Dunkin: { name: "Dunkin'", logo: logo('dunkindonuts.com.png'), color: '#FF671F', category: 'coffee' },
   Chipotle: { name: 'Chipotle', logo: logo('chipotle.com.png'), color: '#441500', category: 'restaurant' },
   Panera: { name: 'Panera Bread', logo: logo('panerabread.com.png'), color: '#4A6741', category: 'restaurant' },
-  Subway: { name: 'Subway', logo: logo('subway.com.png'), color: '#008C15', category: 'restaurant' },
+  Subway: { name: 'Subway', logo: '/brand-logos/subway.svg', color: '#008C15', category: 'restaurant' },
   McDonalds: { name: "McDonald's", logo: logo('mcdonalds.com.png'), color: '#FFC72C', category: 'restaurant' },
   Wendys: { name: "Wendy's", logo: logo('wendys.com.png'), color: '#E2203D', category: 'restaurant' },
 };
