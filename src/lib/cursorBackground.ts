@@ -54,3 +54,20 @@ export function luminance({ r, g, b }: CursorRGB) {
   const linear = (v: number) => (v /= 255) <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
   return .2126 * linear(r) + .7152 * linear(g) + .0722 * linear(b);
 }
+// Following dots glide on the browser's compositor (Web Animations), so busy tree frames cannot
+// stall them. Each glide is the same exponential approach as before, stretched to end exactly at
+// FOLLOW_SPAN time constants so the visual curve and the model in followProgress match.
+export const FOLLOW_SPAN = 5;
+export function followProgress(elapsed: number, tau: number) {
+  if (!Number.isFinite(elapsed) || elapsed <= 0) return 0;
+  if (elapsed >= FOLLOW_SPAN * tau) return 1;
+  return (1 - Math.exp(-elapsed / tau)) / (1 - Math.exp(-FOLLOW_SPAN));
+}
+export function followEasing(samples = 24) {
+  const points: string[] = [];
+  for (let i = 0; i <= samples; i++) points.push(followProgress(i / samples * FOLLOW_SPAN, 1).toFixed(4));
+  return `linear(${points.join(',')})`;
+}
+// Where the OS pointer stands in for the lead dot: the hero (tree, sky, headline) and the header.
+export const NATIVE_ZONE_SELECTOR = '.hero-stage,[data-site-header]';
+export const HOVER_SELECTOR = 'a,button,[role=button],label,summary,[data-cursor=hover]';

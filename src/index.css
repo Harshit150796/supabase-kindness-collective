@@ -8,10 +8,6 @@
   html.cd-cursor-active, html.cd-cursor-active body, html.cd-cursor-active body * { cursor: none !important; }
   html.cd-cursor-active input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]), html.cd-cursor-active textarea, html.cd-cursor-active [contenteditable]:not([contenteditable="false"]) { cursor: text !important; }
   html.cd-cursor-active select, html.cd-cursor-active iframe { cursor: auto !important; }
-  /* Over the live tree the lead dot is the system pointer itself, an image of the same blue dot. The OS
-     draws it, so it stays perfectly smooth however hard the tree works the GPU; the DOM trail follows it.
-     CursorTrail adds the class for the image-set syntax this browser supports (one declaration per rule,
-     so no minifier can drop a fallback), and only then hides the DOM lead dot there. */
   /* Over the live tree, hero and header the lead dot is the system pointer itself (an image of the same
      blue dot), drawn by the OS so it never waits for the tree. CursorTrail adds cd-native-zone only there. */
   html.cd-cursor-active.cd-native-zone.cd-native-dot :is(.hero-stage,[data-site-header]), html.cd-cursor-active.cd-native-zone.cd-native-dot :is(.hero-stage,[data-site-header]) :not(:is(a,button,[role=button],label,summary,[data-cursor=hover],input,textarea,select),:is(a,button,[role=button],label,summary,[data-cursor=hover]) *) { cursor: image-set(url(/cursor/dot.png) 1x, url(/cursor/dot@2x.png) 2x) 16 16, auto !important; }
