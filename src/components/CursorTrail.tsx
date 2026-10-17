@@ -150,8 +150,13 @@ export function CursorTrail() {
       const up = () => { root.classList.remove('cursor-pressed'); html.classList.remove('cd-native-pressed'); };
       const introEnd = () => { arm(); request(); };
       routeChanged.current = () => { backgroundCache = undefined; if (admin()) hide(); else { arm(); request(); } };
-      const observer = new MutationObserver(() => { backgroundCache = undefined; arm(); if (inside) request(); });
-      observer.observe(html, { attributes: true, attributeFilter: ['class'] });
+      // Ignore the cursor's own html classes so toggling them never feeds back into extra hit tests.
+      const own = /\b(cd-native-zone|cd-native-pressed|cd-cursor-active)\b/g;
+      const observer = new MutationObserver(records => {
+        if (records.every(r => (r.oldValue ?? '').replace(own, '').trim().split(/\s+/).sort().join(' ') === html.className.replace(own, '').trim().split(/\s+/).sort().join(' '))) return;
+        backgroundCache = undefined; arm(); if (inside) request();
+      });
+      observer.observe(html, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
       const scrolled = () => request();
       // Capture the fresh input before canvas raycasting/interaction listeners run.
       window.addEventListener('pointermove', move, { passive: true, capture: true });
