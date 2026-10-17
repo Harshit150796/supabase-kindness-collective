@@ -37,14 +37,16 @@ Deno.test('over the live tree the lead dot is a system pointer image of the same
   const css = await Deno.readTextFile('src/index.css');
   const trail = await Deno.readTextFile('src/components/CursorTrail.tsx');
   for (const src of NATIVE_DOT_IMAGES) assert((await Deno.stat(`public${src}`)).size > 500, src);
-  assert(css.includes('html.cd-cursor-active.cd-native-dot .hero-stage canvas { cursor: image-set(url(/cursor/dot.png) 1x, url(/cursor/dot@2x.png) 2x) 16 16, auto !important; }'));
-  assert(css.includes('html.cd-cursor-active.cd-native-dot-webkit .hero-stage canvas { cursor: -webkit-image-set('));
+  assert(css.includes('html.cd-cursor-active.cd-native-zone.cd-native-dot :is(.hero-stage,[data-site-header])'));
+  assert(css.includes('cursor: image-set(url(/cursor/dot.png) 1x, url(/cursor/dot@2x.png) 2x) 16 16, auto !important;'));
+  assert(css.includes('html.cd-cursor-active.cd-native-zone.cd-native-dot-webkit'));
   assert(css.includes('.cursor-native > span:first-child { opacity: 0; }'));
   // Only where the browser understands the syntax, only on the canvas, and the DOM dot resumes at the pointer.
   assert(trail.includes("CSS.supports?.('cursor'"));
   assert(trail.includes('on &&= !!nativeClass;'));
-  assert(trail.includes('target instanceof HTMLCanvasElement'));
-  assert(trail.includes('if (!on) { pos[0].x = x; pos[0].y = y; write(0); }'));
+  // The whole hero and header (not only the canvas) use the OS lead dot, except over links/buttons.
+  assert(trail.includes("setNative(!!target.closest(NATIVE_ZONE_SELECTOR) && !root.classList.contains('cursor-hover'))"));
+  assert(trail.includes("pos[0].x = x; pos[0].y = y; write(0); }"));
 });
 import { trailFactor, TRAIL_TAU, TRAIL_MAX_DT } from '../../../src/lib/cursorBackground.ts';
 Deno.test('all dots retain 20/170/340ms smoothing with full delayed-frame catch-up', () => {
@@ -68,8 +70,8 @@ Deno.test('cursor dt uses performance.now at callback start, with 16ms first fra
   const trail = await Deno.readTextFile('src/components/CursorTrail.tsx');
   assert(/const tick = \(ts: number\) => \{\s*const now = performance\.now\(\);/.test(trail));
   assert(trail.includes('const dt = lastTs ? frameDt(ts - lastTs, now - lastNow) : 16'));
-  assert(trail.includes('for (let i = 0; i < pos.length; i++)'));
-  assert(trail.includes('trailFactor(dt, TRAIL_TAU[i])'));
+  assert(trail.includes('trailFactor(dt, TRAIL_TAU[0])'));
+  assert(trail.includes('.animate(['));
   assert(trail.includes('let settled = !hadMove'));
   assert(trail.includes('TRAIL_SETTLE_PX'));
 });
@@ -105,4 +107,19 @@ Deno.test('long interruptions reset at one second and invalid timing cannot corr
   }
   assertEquals(frameDt(5000, 5000), 1000);
   assertEquals(frameDt(NaN, NaN), 0);
+});
+
+import { followProgress, followEasing, FOLLOW_SPAN, NATIVE_ZONE_SELECTOR } from '../../../src/lib/cursorBackground.ts';
+Deno.test('compositor glides keep 170/340ms exponential follow and end exactly at the pointer', () => {
+  assertEquals(FOLLOW_SPAN, 5);
+  assertEquals(NATIVE_ZONE_SELECTOR, '.hero-stage,[data-site-header]');
+  for (const tau of [170, 340]) {
+    assertEquals(followProgress(0, tau), 0);
+    assertEquals(followProgress(5 * tau, tau), 1);
+    const k = followProgress(tau, tau);
+    assert(Math.abs(k - (1 - Math.exp(-1)) / (1 - Math.exp(-5))) < 1e-12);
+    assert(followProgress(tau / 2, tau) < k);
+  }
+  const e = followEasing();
+  assert(e.startsWith('linear(0.0000,') && e.endsWith(',1.0000)'));
 });

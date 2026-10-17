@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import {
-  CURSOR_QUERY, NATIVE_DOT_IMAGES, TEXT_ENTRY_SELECTOR, TRAIL_SETTLE_PX, TRAIL_TAU, cursorColour, elementBackground, frameDt,
+  CURSOR_QUERY, FOLLOW_SPAN, HOVER_SELECTOR, NATIVE_DOT_IMAGES, NATIVE_ZONE_SELECTOR, followEasing, followProgress, TEXT_ENTRY_SELECTOR, TRAIL_SETTLE_PX, TRAIL_TAU, cursorColour, elementBackground, frameDt,
   opaqueBackground, trailFactor,
 } from '@/lib/cursorBackground';
 export { CURSOR_QUERY } from '@/lib/cursorBackground';
@@ -28,6 +28,11 @@ export function CursorTrail() {
       let active = false, inside = false, native = false, focused = document.hasFocus();
       let hovered: Element | null = null;
       let backgroundCache: BgCache | undefined;
+      // Followers (dots 1 and 2) glide on the compositor; this models where each one is right now.
+      type Glide = { fx: number; fy: number; tx: number; ty: number; t0: number; anim?: Animation };
+      const glides: Glide[] = dots.map(() => ({ fx: -100, fy: -100, tx: -100, ty: -100, t0: 0 }));
+      const easing = typeof CSS !== 'undefined' && CSS.supports?.('transition-timing-function', 'linear(0, 1)') ? followEasing() : 'cubic-bezier(.16,1,.3,1)';
+      let lastGlide = 0, glidePending = false;
       // The system pointer becomes the lead dot over the live tree (see index.css) where this browser
       // supports pointer image sets; have its images ready before the tree appears.
       const probe = (fn: string) => typeof CSS !== 'undefined' && CSS.supports?.('cursor', `${fn}(url("${NATIVE_DOT_IMAGES[0]}") 1x) 16 16, auto`);
@@ -36,6 +41,27 @@ export function CursorTrail() {
       const admin = () => path.current.startsWith('/admin');
       const paint = (colour: string) => { if (root.dataset.colour !== colour) root.dataset.colour = colour; };
       const write = (i: number) => { dots[i].style.transform = `translate3d(${pos[i].x}px,${pos[i].y}px,0)`; };
+      const T = (px: number, py: number) => `translate3d(${px}px,${py}px,0)`;
+      const at = (g: Glide, i: number, now: number) => {
+        const k = followProgress(now - g.t0, TRAIL_TAU[i]);
+        return { x: g.fx + (g.tx - g.fx) * k, y: g.fy + (g.ty - g.fy) * k };
+      };
+      const place = (i: number) => {
+        const g = glides[i]; g.anim?.cancel(); g.anim = undefined;
+        g.fx = g.tx = x; g.fy = g.ty = y; g.t0 = 0; dots[i].style.transform = T(x, y);
+      };
+      const glide = (now: number) => {
+        lastGlide = now; glidePending = false;
+        for (let i = 1; i < dots.length; i++) {
+          const g = glides[i];
+          if (g.tx === x && g.ty === y) continue;
+          const c = at(g, i, now);
+          g.anim?.cancel();
+          g.fx = c.x; g.fy = c.y; g.tx = x; g.ty = y; g.t0 = now;
+          dots[i].style.transform = T(x, y);
+          g.anim = dots[i].animate([{ transform: T(c.x, c.y) }, { transform: T(x, y) }], { duration: FOLLOW_SPAN * TRAIL_TAU[i], easing });
+        }
+      };
       // Over the live tree the OS draws the lead dot (a blue-dot pointer image), so it never waits for the
       // tree's frames; the DOM lead dot hides and takes over again exactly at the pointer when it leaves.
       const setNative = (on: boolean) => {
@@ -43,7 +69,8 @@ export function CursorTrail() {
         if (on === native) return;
         native = on;
         root.classList.toggle('cursor-native', on);
-        if (!on) { pos[0].x = x; pos[0].y = y; write(0); }
+        html.classList.toggle('cd-native-zone', on);
+        if (!on) { html.classList.remove('cd-native-pressed'); pos[0].x = x; pos[0].y = y; write(0); }
       };
       // Hide the system pointer from load; dots stay invisible until the first move.
       const arm = () => {
@@ -54,6 +81,7 @@ export function CursorTrail() {
         cancelAnimationFrame(frame); frame = 0; lastTs = 0; lastNow = 0;
         if (html.classList.contains('cd-cursor-active')) html.classList.remove('cd-cursor-active');
         root.classList.remove('cursor-visible', 'cursor-pressed');
+        glides.forEach(g => { g.anim?.cancel(); g.anim = undefined; });
       };
       const stageBackground = (target: Element, stage: Element) => {
         for (let node: Element | null = target; node && node !== stage; node = node.parentElement) if (opaqueBackground(node)) return elementBackground(target);
@@ -62,8 +90,8 @@ export function CursorTrail() {
       const checkTarget = (target: Element | null, now: number) => {
         if (!inside) return;
         if (!focused || admin() || !target || target.closest(`${TEXT_ENTRY_SELECTOR},iframe`)) { hide(); return; }
-        root.classList.toggle('cursor-hover', !!target.closest('a,button,[role=button],label,summary,[data-cursor=hover]'));
-        if (!active) pos.forEach(p => { p.x = x; p.y = y; }); // first entry: all dots at the pointer
+        root.classList.toggle('cursor-hover', !!target.closest(HOVER_SELECTOR));
+        if (!active) { pos.forEach(p => { p.x = x; p.y = y; }); write(0); for (let i = 1; i < dots.length; i++) place(i); } // first entry: all dots at the pointer
         active = true;
         if (!html.classList.contains('cd-cursor-active')) html.classList.add('cd-cursor-active');
         root.classList.add('cursor-visible');
@@ -75,11 +103,11 @@ export function CursorTrail() {
           return;
         }
         const stage = target.closest('.hero-stage');
-        if (!backgroundCache || backgroundCache.target !== target || now - backgroundCache.at > 150) {
+        if (!backgroundCache || backgroundCache.target !== target || now - backgroundCache.at > 400) {
           backgroundCache = { target, at: now, value: stage ? stageBackground(target, stage) : elementBackground(target) };
         }
         const bg = backgroundCache.value;
-        setNative(!bg && !!stage && target instanceof HTMLCanvasElement && !root.classList.contains('cursor-hover'));
+        setNative(!!target.closest(NATIVE_ZONE_SELECTOR) && !root.classList.contains('cursor-hover'));
         if (bg) { paint(cursorColour(bg.rgb, bg.photo)); return; }
         // The live tree and its sky change colour all the time, so the cursor stays blue over them
         // instead of sampling what is underneath (reading pixels back stalled every frame on the GPU).
@@ -93,14 +121,14 @@ export function CursorTrail() {
         if (recheck) { recheck = false; if (inside) { hovered = document.elementFromPoint(x, y); checkTarget(hovered, now); } }
         else if (hadMove) checkTarget(hovered, now);
         if (!active) { lastTs = 0; return; }
+        if (glidePending || hadMove) glide(now);
+        // Only the lead dot is stepped here; the followers glide on the compositor.
         let settled = !hadMove;
-        for (let i = 0; i < pos.length; i++) {
-          const k = trailFactor(dt, TRAIL_TAU[i]), p = pos[i];
-          const oldX = p.x, oldY = p.y;
-          p.x += (x - p.x) * k; p.y += (y - p.y) * k;
-          if (Math.abs(x - p.x) < TRAIL_SETTLE_PX && Math.abs(y - p.y) < TRAIL_SETTLE_PX) { p.x = x; p.y = y; } else settled = false;
-          if ((!native || i !== 0) && (p.x !== oldX || p.y !== oldY || hadMove)) write(i);
-        }
+        const k = trailFactor(dt, TRAIL_TAU[0]), p = pos[0];
+        const oldX = p.x, oldY = p.y;
+        p.x += (x - p.x) * k; p.y += (y - p.y) * k;
+        if (Math.abs(x - p.x) < TRAIL_SETTLE_PX && Math.abs(y - p.y) < TRAIL_SETTLE_PX) { p.x = x; p.y = y; } else settled = false;
+        if (!native && (p.x !== oldX || p.y !== oldY || hadMove)) write(0);
         if (settled) lastTs = 0; else frame = requestAnimationFrame(tick);
       };
       const start = () => { if (!frame) frame = requestAnimationFrame(tick); };
@@ -109,18 +137,26 @@ export function CursorTrail() {
         if (event.pointerType !== 'mouse' || document.hidden || !focused || admin()) return;
         const events = event.getCoalescedEvents?.(); const point = events?.[events.length - 1] ?? event;
         hovered = event.target instanceof Element ? event.target : null;
-        x = point.clientX; y = point.clientY; inside = true; moved = true; start();
+        x = point.clientX; y = point.clientY; inside = true; moved = true;
+        // Retarget the compositor glides straight from input (bounded rate) so they never wait for a frame.
+        if (active) { const now = performance.now(); if (now - lastGlide >= 8) glide(now); else glidePending = true; }
+        start();
       };
       const leave = () => { inside = false; hide(); };
       const blur = () => { focused = false; hide(); };
       const focus = () => { focused = true; arm(); request(); };
       const visibility = () => { if (document.hidden) { inside = false; hide(); } else { focused = document.hasFocus(); arm(); } };
-      const down = () => { if (active) root.classList.add('cursor-pressed'); };
-      const up = () => root.classList.remove('cursor-pressed');
+      const down = () => { if (active) { root.classList.add('cursor-pressed'); if (native) html.classList.add('cd-native-pressed'); } };
+      const up = () => { root.classList.remove('cursor-pressed'); html.classList.remove('cd-native-pressed'); };
       const introEnd = () => { arm(); request(); };
       routeChanged.current = () => { backgroundCache = undefined; if (admin()) hide(); else { arm(); request(); } };
-      const observer = new MutationObserver(() => { backgroundCache = undefined; arm(); if (inside) request(); });
-      observer.observe(html, { attributes: true, attributeFilter: ['class'] });
+      // Ignore the cursor's own html classes so toggling them never feeds back into extra hit tests.
+      const own = /\b(cd-native-zone|cd-native-pressed|cd-cursor-active)\b/g;
+      const observer = new MutationObserver(records => {
+        if (records.every(r => (r.oldValue ?? '').replace(own, '').trim().split(/\s+/).sort().join(' ') === html.className.replace(own, '').trim().split(/\s+/).sort().join(' '))) return;
+        backgroundCache = undefined; arm(); if (inside) request();
+      });
+      observer.observe(html, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
       const scrolled = () => request();
       // Capture the fresh input before canvas raycasting/interaction listeners run.
       window.addEventListener('pointermove', move, { passive: true, capture: true });
