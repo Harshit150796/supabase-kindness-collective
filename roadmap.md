@@ -41,7 +41,7 @@
 - [x] Cache journey geometry and suspend invisible recurring work; recalibrate height reservations.
 - [x] Verify 15 screen sizes, fill/drain, off-screen/resumed underline, zero journey scroll geometry reads, fundraiser sorting and donation review without paying; 126 tests and automatic build pass. Slower CPU/network sample: arrival 5.68s before / 4.98s after, p95 frame interval unchanged at 33.4ms, no long tasks or CLS in final sample. Preview-only, WebGL disabled; physical-device/production speed not established. Nothing published or deployed.
 
-## Cinematic every-load opening (Oct 9)
+## Harshit's cinematic every-load opening (Oct 9)
 - [ ] Replace visit/skip gates with every-full-homepage opening and cinematic time-of-day artwork.
 - [ ] Start tree assets/module concurrently; suppress poster until fallback; match direct live palette.
 - [ ] Enable opening cursor dots and add timing/gating tests.
