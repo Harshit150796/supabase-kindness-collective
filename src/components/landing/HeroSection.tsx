@@ -83,7 +83,7 @@ export function HeroSection() {
 
       {/* Overlay layer — pointer-events isolated so 3D scene stays interactive */}
       <div data-hero-overlay className="absolute inset-0 pointer-events-none transition-opacity duration-700" style={{ opacity: visible ? 1 : 0 }}>
-        <HeroHeadline />
+        <HeroHeadline play={visible} />
         <AITreeLauncher onClick={() => setChatOpen(true)} hidden={chatOpen} />
         {chatOpen && <Suspense fallback={null}><AITreeChat open={chatOpen} onClose={() => setChatOpen(false)} /></Suspense>}
       </div>
