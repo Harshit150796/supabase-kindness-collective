@@ -1,4 +1,5 @@
-import { createContext, useContext, useRef, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback, ReactNode } from 'react';
+import { getSky, subscribeSky, toggleSky } from '@/lib/sky';
 import type { FallingDonation } from '@/hooks/useFallingDonations';
 
 export type TimeOfDay = 'day' | 'night';
@@ -99,13 +100,13 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
   const lastBirdRef = useRef(0);
   const idRef = useRef(1);
 
-  // The sky stays as chosen for the visit; tapping it toggles between night and day.
-  const cycleTimeOfDay = useCallback(() => {
-    setTimeOfDay((p) => {
-      const next: TimeOfDay = p === 'day' ? 'night' : 'day';
-      document.documentElement.dataset.sky = next;
-      return next;
-    });
+  // The sky stays as chosen for the visit; tapping it (or the header's sky switch) toggles
+  // between night and day. Both write <html data-sky>, and the scene follows that attribute.
+  const cycleTimeOfDay = useCallback(() => toggleSky(), []);
+  useEffect(() => {
+    const sync = () => setTimeOfDay(getSky());
+    sync();
+    return subscribeSky(sync);
   }, []);
 
   const bumpWind = useCallback((v: number) => {

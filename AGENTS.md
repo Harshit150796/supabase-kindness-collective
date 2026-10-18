@@ -4,7 +4,7 @@
 
 ## Design System Rules
 - CouponDonation UI uses logo green `hsl(123 46% 34%)` as primary and logo blue `hsl(212 80% 42%)` as its only secondary accent; warm UI colors are forbidden outside protected third-party and 3D artwork.
-- Preserve the two-color wordmark exactly: `#2e7d32` for Coupon, `#1565c0` for Donation. Founder-approved exceptions: the rotating "CouponDonation is …" hero kicker, and retailer colours kept in the Live Donation Tracking bars.
+- Preserve the two-color wordmark exactly: `#2e7d32` for Coupon, `#1565c0` for Donation. Founder-approved exceptions: the rotating "CouponDonation is …" hero kicker, the header wordmark on the homepage night sky (`#F7FAF7` / `#BFD6F2`, turning back to the two colours once the page moves), and retailer colours kept in the Live Donation Tracking bars.
 - Campaign pages use the `ink` token (near-black, green undertone) for Share buttons, strong headings and the dark more-fundraisers band; Donate stays primary green; blue marks verification only.
 - Marketing pages alternate neutral, soft-green and deep-forest bands; tonal panels have no borders or shadows and hairlines are for tables. No eyebrow headings, decorative pills, icon circles, gradient text, glow shadows or card-on-card.
 - Shared organizer primitives own titles/numerals, surfaces, labels, stats, status, progress and states; controls use sans.
