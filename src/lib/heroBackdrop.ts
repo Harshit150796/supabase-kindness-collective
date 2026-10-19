@@ -19,10 +19,15 @@ const FOG_FAR = 45;
 const SKY_RADIUS = 60;
 const GROUND_RADIUS = 12;
 const GROUND_Y = -0.01;
-const ORBS = {
+export const ORBS = {
   day: { at: [8, 9, -12], radius: 1.2, color: '#FFF6D8' },
   night: { at: [6, 10, -12], radius: 0.9, color: '#E8EBF5' },
 } as const;
+
+/** Height of the canopy's top in world units, read from rendered frames (25.4% down a laptop hero). */
+export const TREE_TOP_Y = 6.06;
+/** Half the width of the hero's headline and buttons plus a margin: the orb's edge stays this far right of centre. */
+export const ORB_CLEARANCE_PX = 168;
 
 /** Must match useIsMobile: phones get the narrower lens and the farther camera. */
 export const PHONE_BREAKPOINT = 768;
@@ -65,6 +70,29 @@ export function heroCamera(width: number, height: number, phone: boolean): HeroC
   const forward: Vec = [0, -Math.sin(lowest), -Math.cos(lowest)];
   const up: Vec = [0, Math.cos(lowest), -Math.sin(lowest)];
   return { position, forward, up, tanHalf };
+}
+
+/** Where the canopy's top lands in a hero of this size, in px from the hero's top. */
+export function canopyTopPx(width: number, height: number, phone: boolean): number {
+  const { position: c, forward: f, up: u, tanHalf } = heroCamera(width, height, phone);
+  const rel: Vec = [-c[0], TREE_TOP_Y - c[1], -c[2]];
+  return height / 2 - (dot(rel, u) / dot(rel, f)) * (height / 2 / tanHalf);
+}
+
+/**
+ * The moon's (or sun's) x in the scene. On laptop framing it moves right just far enough that its
+ * edge clears the hero's buttons (founder request), staying inside the frame; phones keep it as it was,
+ * since their buttons sit below it.
+ */
+export function orbX(sky: HeroSky, width: number, height: number, phone: boolean): number {
+  const orb = ORBS[sky];
+  if (phone || !width || !height) return orb.at[0];
+  const { position: c, forward: f, tanHalf } = heroCamera(width, height, phone);
+  const depth = dot([orb.at[0] - c[0], orb.at[1] - c[1], orb.at[2] - c[2]], f);
+  const pxPerUnit = height / 2 / tanHalf / depth;
+  const clear = ORB_CLEARANCE_PX / pxPerUnit + orb.radius;
+  const inFrame = (width / 2 - 12) / pxPerUnit - orb.radius;
+  return Math.max(orb.at[0], Math.min(clear, inFrame));
 }
 
 function groundBase(stops: readonly Stop[], angle: number): Vec {
@@ -153,7 +181,7 @@ export function drawHeroBackdrop(canvas: HTMLCanvasElement, sky: HeroSky, phone:
 
   // Moon or sun: an unlit sphere, fogged by its distance like everything else in the scene.
   const orb = ORBS[sky];
-  const rel: Vec = [orb.at[0] - c[0], orb.at[1] - c[1], orb.at[2] - c[2]];
+  const rel: Vec = [orbX(sky, width, height, phone) - c[0], orb.at[1] - c[1], orb.at[2] - c[2]];
   const oz = dot(rel, f);
   const focal = height / 2 / tanHalf;
   const ox = width / 2 + (rel[0] / oz) * focal;

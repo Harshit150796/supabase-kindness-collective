@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { canopyTopPx, PHONE_BREAKPOINT } from "@/lib/heroBackdrop";
 
 const ROTATING_WORDS = ["transparent", "trackable", "real-time"];
 const WORD_MS = 3000;
@@ -12,17 +13,13 @@ function openingUncovered() {
 }
 
 /**
- * The hero's headline and two actions (founder-chosen "two halves meet"). They always sit in open
- * sky, sized from the hero's own height: on wide, short heroes they stand on the left in line with
- * the logo (the tree centre, the moon right); on taller and phone heroes they sit centred above the
- * canopy. The tree's framing is fixed by its camera (canopy top at about a quarter of the hero's
- * height, moon to the right), so the CSS container queries can keep clear of both.
- *
- * Content:
- * "CouponDonation is" with a serif word that slides in (green, blue, then light), and one capsule
- * split in two, Donate now in logo green and Apply as Recipient in logo blue. When the scene
- * arrives (`play`) the halves slide in from either side and meet; a small heart pops into the
- * seam and beats now and then while the halves breathe apart and back. Nothing ever hides them.
+ * The hero's headline and two actions (founder-chosen "two halves meet"), centred just above the
+ * tree's canopy: "CouponDonation is" with a serif word that slides in (green, blue, then light), and
+ * one capsule split in two, Donate now in logo green and Apply as Recipient in logo blue. Sizes are
+ * fixed (no scaling with the window); only the position follows the canopy, whose top comes from the
+ * tree camera (canopyTopPx), so the buttons always rest right on top of the tree. The moon and sun
+ * move right of them (orbX). When the scene arrives the halves slide in and meet, a heart pops into
+ * the seam, then every 9s they breathe apart and back. Nothing ever hides them.
  */
 export function HeroHeadline({ play = true }: { play?: boolean }) {
   const [idx, setIdx] = useState(0);
@@ -44,8 +41,24 @@ export function HeroHeadline({ play = true }: { play?: boolean }) {
 
   const prev = (idx + ROTATING_WORDS.length - 1) % ROTATING_WORDS.length;
 
+  // Keep the buttons resting on the canopy: its top follows the hero's size through the camera.
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const place = () => {
+      const { clientWidth: w, clientHeight: h } = el;
+      if (w && h) el.style.setProperty("--canopy", `${canopyTopPx(w, h, window.innerWidth < PHONE_BREAKPOINT).toFixed(1)}px`);
+    };
+    place();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(place);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div data-play={(play && uncovered) || undefined} className="hero-headline antialiased">
+    <div ref={ref} data-play={(play && uncovered) || undefined} className="hero-headline antialiased">
       <h1 className="sr-only">CouponDonation — Turn Donations Into Grocery Coupons for Verified Families</h1>
       <div className="hero-cta container mx-auto px-4 lg:px-8">
         <div className="hero-cta-box">
@@ -73,7 +86,6 @@ export function HeroHeadline({ play = true }: { play?: boolean }) {
             </span>
             <Link to="/apply" className="hero-half hero-half-ask">Apply as Recipient</Link>
           </div>
-          <p className="hero-promise">100% of every gift reaches a family.</p>
         </div>
       </div>
     </div>
