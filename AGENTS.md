@@ -9,7 +9,7 @@
 - Marketing bands alternate neutral/soft-green/deep-forest; borderless tonal panels, hairlines for tables only; no eyebrows, decorative pills, icon circles, gradient text, glow or card-on-card.
 - Shared organizer primitives own titles/numerals, surfaces, labels, stats, status, progress and states; controls use sans.
 - Motion is full on every device; the OS reduced-motion setting is not consulted (founder decision lives in memory).
-- Public photos stay local; without verified people-photo consent use coupon/receipt/trace visuals. Responsive photos use proportional contain transforms on managed Supabase hosts or generated local variants — never append transformation parameters to unknown hosts or crop at delivery (framing belongs to the container).
+- Public photos stay local; without people-photo consent use coupon/receipt/trace visuals. Only transform managed Supabase hosts or local variants (contain, never crop at delivery).
 - Module-level Intl formatters only (toLocale* per render is slow).
 
 ## Data, Privacy & Dispatch Rules
