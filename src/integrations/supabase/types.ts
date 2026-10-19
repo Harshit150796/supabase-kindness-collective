@@ -4001,6 +4001,15 @@ export type Database = {
           redeemed: number
         }[]
       }
+      get_fundraiser_coupons_by_store: {
+        Args: { _fundraiser_id: string }
+        Returns: {
+          brand_name: string
+          coupons_count: number
+          total_value: number
+          used_count: number
+        }[]
+      }
       get_fundraiser_donations: {
         Args: { _fundraiser_id: string; _limit?: number; _order?: string }
         Returns: {
