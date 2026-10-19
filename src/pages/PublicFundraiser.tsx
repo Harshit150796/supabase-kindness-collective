@@ -127,7 +127,7 @@ const PublicFundraiser = () => {
               </p>
               <p className="flex items-start gap-2 text-sm text-muted-foreground">
                 <Lock className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                <span><span className="font-medium text-foreground">Coupon-locked · Traceable.</span> Donations become restricted retailer coupons for this need — never cash — with a receipt trail.</span>
+                <span>{"\n"}</span>
               </p>
             </div>
 
