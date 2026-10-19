@@ -10,6 +10,7 @@ import { FundraiserGallery } from "@/components/fundraiser/FundraiserGallery";
 import { ImageUploadModal } from "@/components/fundraiser/ImageUploadModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useFundraiserLive, usd } from "@/hooks/useFundraiserLive";
+import { brandLogoFor } from "@/data/brandLogos";
 import { Reveal } from "@/components/ui/editorial-motion";
 import { StoryBody } from "@/components/fundraiser/campaign/StoryBody";
 import { DonationPanel } from "@/components/fundraiser/campaign/DonationPanel";
@@ -146,7 +147,20 @@ const PublicFundraiser = () => {
                 {live.converted > 0 && (
                   <p className="mt-3 text-muted-foreground"><span className="font-medium text-foreground">{usd(live.converted)}</span> converted to {live.couponsCount} coupons · <span className="font-medium text-foreground">{usd(live.redeemed)}</span> redeemed</p>
                 )}
-                {live.retailers.length > 0 && (
+                {live.byStore.length > 0 ? (
+                  <div className="mt-6">
+                    <h3 className="text-sm font-medium text-foreground">Coupons by store</h3>
+                    <ul className="mt-2 divide-y divide-border/60">
+                      {live.byStore.map((r) => { const logo = brandLogoFor(r.brand_name); return (
+                        <li key={r.brand_name} className="flex items-center gap-3 py-3 text-sm">
+                          {logo ? <img src={logo} alt="" className="h-6 w-10 object-contain" loading="lazy" /> : <span className="w-10" />}
+                          <span className="flex-1 font-medium text-foreground">{r.brand_name}</span>
+                          <span className="tabular-nums text-foreground">{usd(r.total_value)}</span>
+                          <span className="hidden w-40 text-right tabular-nums text-muted-foreground sm:inline">{r.coupons_count} coupons · {r.used_count} used</span>
+                        </li>); })}
+                    </ul>
+                  </div>
+                ) : live.retailers.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-2">{live.retailers.map((r) => <span key={r} className="rounded-full bg-background px-3 py-1 text-sm text-foreground">{r}</span>)}</div>
                 )}
                 <p className="mt-4 text-xs text-muted-foreground">Totals only. Individual purchases are never shown publicly.</p>
