@@ -24,7 +24,7 @@ import { resolveFundraiserImage } from "@/lib/fundraiserImages";
 interface Fundraiser {
   id: string; title: string; story: string; category: string; monthly_goal: number; cover_photo_url: string | null;
   status: string | null; unique_slug: string | null; created_at: string | null; user_id: string; allow_messages: boolean;
-  beneficiary_display_name: string | null; show_beneficiary_name: boolean;
+  beneficiary_display_name: string | null; show_beneficiary_name: boolean; is_example?: boolean;
 }
 interface FundraiserImage { id: string; image_url: string; display_order: number; is_primary: boolean }
 
@@ -60,7 +60,7 @@ const PublicFundraiser = () => {
     setLoading(true); setError(null);
     (async () => {
       const { data, error } = await supabase.from("fundraisers")
-        .select("id,title,story,category,monthly_goal,cover_photo_url,status,unique_slug,created_at,user_id,allow_messages,beneficiary_display_name,show_beneficiary_name")
+        .select("id,title,story,category,monthly_goal,cover_photo_url,status,unique_slug,created_at,user_id,allow_messages,beneficiary_display_name,show_beneficiary_name,is_example")
         .eq(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug) ? "id" : "unique_slug", slug).maybeSingle();
       if (error || !data) setError("Fundraiser not found");
       else if (data.status !== "active" && data.status !== "pending") setError("This fundraiser is no longer active");
@@ -111,7 +111,7 @@ const PublicFundraiser = () => {
 
       <main className="container mx-auto px-4 pt-24 md:pt-28">
         <Link to="/stories" className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ChevronLeft className="h-4 w-4" />All fundraisers</Link>
-        <Reveal><h1 className="mt-4 max-w-4xl font-display text-4xl font-normal leading-[1.05] text-ink md:text-6xl dark:text-foreground">{fundraiser.title}</h1></Reveal>
+        <Reveal><h1 className="mt-4 max-w-4xl font-display text-4xl font-normal leading-[1.05] text-ink md:text-6xl dark:text-foreground">{fundraiser.title}</h1>{fundraiser.is_example && <p className="mt-3 text-sm text-muted-foreground">Example campaign · Giving is closed on example campaigns.</p>}</Reveal>
 
         <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-14">
           <div className="min-w-0 space-y-12">
@@ -131,12 +131,12 @@ const PublicFundraiser = () => {
             </div>
 
             {/* Mobile panel */}
-            <div className="lg:hidden"><DonationPanel live={live} goal={Number(fundraiser.monthly_goal)} onDonate={donate} onShare={() => setShare(true)} fundraiserId={fundraiser.id} /></div>
+            <div className="lg:hidden"><DonationPanel live={live} goal={Number(fundraiser.monthly_goal)} onDonate={donate} onShare={() => setShare(true)} fundraiserId={fundraiser.id} closed={!!fundraiser.is_example} /></div>
 
             <section><StoryBody story={fundraiser.story} /></section>
 
             <div className="flex flex-wrap gap-3">
-              <Button size="lg" onClick={donate}><Heart className="mr-2 h-4 w-4" />Donate</Button>
+              {!fundraiser.is_example && <Button size="lg" onClick={donate}><Heart className="mr-2 h-4 w-4" />Donate</Button>}
               <Button size="lg" className="bg-ink text-ink-foreground hover:bg-ink/90" onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
             </div>
 
@@ -173,7 +173,7 @@ const PublicFundraiser = () => {
           </div>
 
           <aside className="hidden lg:block">
-            <div className="sticky top-28"><DonationPanel live={live} goal={Number(fundraiser.monthly_goal)} onDonate={donate} onShare={() => setShare(true)} fundraiserId={fundraiser.id} /></div>
+            <div className="sticky top-28"><DonationPanel live={live} goal={Number(fundraiser.monthly_goal)} onDonate={donate} onShare={() => setShare(true)} fundraiserId={fundraiser.id} closed={!!fundraiser.is_example} /></div>
           </aside>
         </div>
 
