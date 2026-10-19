@@ -6,7 +6,6 @@ import { BrandLockup } from '@/components/navigation/BrandLockup';
 import { MenuButton } from '@/components/navigation/MenuButton';
 import { useSiteMenu } from '@/components/navigation/menuContext';
 import { signInHref } from '@/components/navigation/siteLinks';
-import { SkySwitch } from '@/components/navigation/SkySwitch';
 
 const quietLink = 'nav-quiet-link';
 const DONATE = 'Donate'.split('');
@@ -73,7 +72,6 @@ export function Navbar({ autoHide = true }: { autoHide?: boolean } = {}) {
           <BrandLockup navBrand />
 
           <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
-            {onHome && <SkySwitch />}
             {!loading && (user
               ? <AccountMenu className="hidden md:inline-flex" />
               : !onAuthPage && <Link to={signInHref(pathname, search)} className={`hidden md:inline-flex ${quietLink}`}>Sign in</Link>)}
