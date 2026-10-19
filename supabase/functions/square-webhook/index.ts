@@ -4,6 +4,7 @@ import { brandRows, couponSlots, describeSplit, parseSplit, type Share } from '.
 import { readPayment } from '../_shared/checkout-total.ts';
 import { monthlyMetadata } from '../_shared/square-recurring.ts';
 import { cardRow } from '../_shared/saved-card.ts';
+import { isExampleFundraiser } from '../_shared/example-guard.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -247,7 +248,9 @@ async function recordDonation(supabase: any, payment: any, orderId: string, meta
     : (payment.buyer_email_address || null);
 
   const rawFundraiserId = metadata.fundraiser_id || null;
-  const fundraiserId = (rawFundraiserId && rawFundraiserId.trim() !== "") ? rawFundraiserId : null;
+  const candidateFundraiser = (rawFundraiserId && rawFundraiserId.trim() !== "") ? rawFundraiserId : null;
+  // Never attach a payment to an example campaign; keep it as a general gift instead.
+  const fundraiserId = candidateFundraiser && !(await isExampleFundraiser(candidateFundraiser)) ? candidateFundraiser : null;
 
   console.log(`Processing ${isMultiBrand ? 'multi-brand' : 'single-brand'} Square donation: $${amount}, ${shares.length} brand(s)`);
 
