@@ -4,6 +4,7 @@ import { brandRows, couponSlots, describeSplit, parseSplit, type Share } from '.
 import { readPayment } from '../_shared/checkout-total.ts';
 import { monthlyMetadata } from '../_shared/square-recurring.ts';
 import { cardRow } from '../_shared/saved-card.ts';
+import { isExampleFundraiser } from '../_shared/example-guard.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
