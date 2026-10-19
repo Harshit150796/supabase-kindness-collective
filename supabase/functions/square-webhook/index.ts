@@ -247,7 +247,9 @@ async function recordDonation(supabase: any, payment: any, orderId: string, meta
     : (payment.buyer_email_address || null);
 
   const rawFundraiserId = metadata.fundraiser_id || null;
-  const fundraiserId = (rawFundraiserId && rawFundraiserId.trim() !== "") ? rawFundraiserId : null;
+  const candidateFundraiser = (rawFundraiserId && rawFundraiserId.trim() !== "") ? rawFundraiserId : null;
+  // Never attach a payment to an example campaign; keep it as a general gift instead.
+  const fundraiserId = candidateFundraiser && !(await isExampleFundraiser(candidateFundraiser)) ? candidateFundraiser : null;
 
   console.log(`Processing ${isMultiBrand ? 'multi-brand' : 'single-brand'} Square donation: $${amount}, ${shares.length} brand(s)`);
 
