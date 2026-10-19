@@ -27,7 +27,7 @@ export const ORBS = {
 /** Height of the canopy's top in world units, read from rendered frames (25.4% down a laptop hero). */
 export const TREE_TOP_Y = 6.06;
 /** Half the width of the hero's headline and buttons plus a margin: the orb's edge stays this far right of centre. */
-export const ORB_CLEARANCE_PX = 168;
+export const ORB_CLEARANCE_PX = 260;
 
 /** Must match useIsMobile: phones get the narrower lens and the farther camera. */
 export const PHONE_BREAKPOINT = 768;
