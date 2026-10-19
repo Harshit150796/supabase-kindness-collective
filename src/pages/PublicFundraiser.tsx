@@ -125,10 +125,6 @@ const PublicFundraiser = () => {
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink text-ink-foreground">{organizer[0]?.toUpperCase()}</span>
                 <span><span className="font-medium">{organizer}</span>{beneficiary ? <> is organizing for <span className="font-medium">{beneficiary}</span></> : " is organizing this fundraiser"}</span>
               </p>
-              <p className="flex items-start gap-2 text-sm text-muted-foreground">
-                <Lock className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                <span>{"\n"}</span>
-              </p>
             </div>
 
             {/* Mobile panel */}
