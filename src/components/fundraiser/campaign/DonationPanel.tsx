@@ -77,7 +77,7 @@ export function DonationPanel({ live, goal, onDonate, onShare, fundraiserId, clo
       </div>
       <div className="mt-6 space-y-3">
         {funded || closed ? (
-          <div className="flex h-14 items-center justify-center gap-2 rounded-full bg-primary/10 font-semibold text-primary"><CheckCircle2 className="h-5 w-5" />{funded ? 'Fully funded' : 'Giving is closed on example campaigns'}</div>
+          <div className="flex h-14 items-center justify-center gap-2 rounded-full bg-primary/10 font-semibold text-primary"><CheckCircle2 className="h-5 w-5" />{funded ? 'Fully funded' : '\n'}</div>
         ) : (
           <Button size="lg" className="h-14 w-full text-lg font-semibold" onClick={onDonate}><Heart className="mr-2 h-5 w-5" />Donate now</Button>
         )}
