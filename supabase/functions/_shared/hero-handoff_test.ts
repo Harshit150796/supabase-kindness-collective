@@ -1,5 +1,5 @@
 import { assert, assertAlmostEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { FOG_COLORS, PHONE_BREAKPOINT, SKY_PALETTES, heroCamera } from '../../../src/lib/heroBackdrop.ts';
+import { FOG_COLORS, ORBS, PHONE_BREAKPOINT, SKY_PALETTES, canopyTopPx, heroCamera, orbX } from '../../../src/lib/heroBackdrop.ts';
 
 Deno.test('the no-WebGL fallback is drawn from the live scene\'s own sky, fog, ground and lens', async () => {
   const sky = await Deno.readTextFile('src/components/landing/tree3d/Sky.tsx');
@@ -9,8 +9,10 @@ Deno.test('the no-WebGL fallback is drawn from the live scene\'s own sky, fog, g
   const mobile = await Deno.readTextFile('src/hooks/use-mobile.tsx');
   for (const [name, p] of Object.entries(SKY_PALETTES)) assert(sky.includes(`${name}: { top: '${p.top}', mid: '${p.mid}', bot: '${p.bot}' }`), name);
   assert(sky.includes('<sphereGeometry args={[60, 32, 32]} />') && sky.includes('smoothstep(0.0, 0.7, h)') && sky.includes('smoothstep(0.0, -0.4, h)'));
-  assert(sky.includes('<mesh position={[8, 9, -12]}>') && sky.includes('args={[1.2, 24, 24]}') && sky.includes('color="#FFF6D8"'));
-  assert(sky.includes('<mesh position={[6, 10, -12]}>') && sky.includes('args={[0.9, 24, 24]}') && sky.includes('color="#E8EBF5"'));
+  assert(sky.includes('<mesh position={[sunX, 9, -12]}>') && sky.includes('args={[1.2, 24, 24]}') && sky.includes('color="#FFF6D8"'));
+  assert(sky.includes('<mesh position={[moonX, 10, -12]}>') && sky.includes('args={[0.9, 24, 24]}') && sky.includes('color="#E8EBF5"'));
+  assert(sky.includes("const sunX = orbX('day', width, height, phone);") && sky.includes("const moonX = orbX('night', width, height, phone);"));
+  assert(ORBS.day.at[1] === 9 && ORBS.night.at[1] === 10 && ORBS.day.radius === 1.2 && ORBS.night.radius === 0.9);
   assert(scene.includes(`fog: '${FOG_COLORS.day}' }`) && scene.includes(`fog: '${FOG_COLORS.night}' }`));
   assert(scene.includes("<fog attach=\"fog\" args={['#DCE6D5', 18, 45]} />") && backdrop.includes('const FOG_NEAR = 18;') && backdrop.includes('const FOG_FAR = 45;'));
   assert(ground.includes('<circleGeometry args={[12, 96]} />') && scene.includes('const GROUND_Y = -0.01;'));
@@ -55,4 +57,26 @@ Deno.test('startup creates no extra WebGL contexts once the opening has checked'
   assert(hero.includes("gl?.getExtension('WEBGL_lose_context')?.loseContext();"));
   // Under the opening the tree mounts at once instead of after two frames.
   assert(hero.includes("return known === undefined ? 'checking' : known ? 'live' : 'fallback';"));
+});
+
+Deno.test('the moon and sun clear the hero buttons on laptop framing and stay in the frame', () => {
+  for (const [w, h] of [[1000, 330], [1000, 381], [1280, 533], [1440, 666], [1920, 799], [1024, 568], [768, 758]]) {
+    for (const sky of ['night', 'day'] as const) {
+      const cam = heroCamera(w, h, false);
+      const orb = ORBS[sky];
+      const x = orbX(sky, w, h, false);
+      const depth = (orb.at[1] - cam.position[1]) * cam.forward[1] + (orb.at[2] - cam.position[2]) * cam.forward[2];
+      const k = h / 2 / cam.tanHalf / depth;
+      assert(x >= orb.at[0]);
+      assert(w / 2 + (x + orb.radius) * k <= w - 11, `${sky} ${w}x${h} leaves the frame`);
+      assert((x - orb.radius) * k >= 168 - 0.5 || w / 2 + (x + orb.radius) * k >= w - 13, `${sky} ${w}x${h} overlaps the buttons`);
+    }
+  }
+  // Phones keep the scene's original orbs (their buttons sit below them).
+  assert(orbX('night', 390, 490, true) === 6 && orbX('day', 390, 490, true) === 8);
+});
+
+Deno.test('the canopy top matches rendered frames', () => {
+  assertAlmostEquals(canopyTopPx(1440, 666, false), 169, 1.5);
+  assertAlmostEquals(canopyTopPx(390, 489, true), 150, 3);
 });

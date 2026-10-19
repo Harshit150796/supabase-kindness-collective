@@ -1,7 +1,8 @@
 import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useInteraction } from './InteractionContext';
+import { orbX, PHONE_BREAKPOINT } from '@/lib/heroBackdrop';
 
 const PALETTES = {
   day: { top: '#7FB5E6', mid: '#CFE6F5', bot: '#E8F1E0' },
@@ -10,6 +11,11 @@ const PALETTES = {
 
 export function Sky({ gentle = false }: { gentle?: boolean } = {}) {
   const { timeOfDay } = useInteraction();
+  // The moon and sun sit right of the hero's buttons (orbX); the backdrop places them the same way.
+  const { width, height } = useThree((state) => state.size);
+  const phone = typeof window !== 'undefined' && window.innerWidth < PHONE_BREAKPOINT;
+  const sunX = orbX('day', width, height, phone);
+  const moonX = orbX('night', width, height, phone);
 
   const targets = useMemo(
     () => ({
@@ -73,13 +79,13 @@ export function Sky({ gentle = false }: { gentle?: boolean } = {}) {
         <primitive object={mat} attach="material" />
       </mesh>
       {timeOfDay !== 'night' && (
-        <mesh position={[8, 9, -12]}>
+        <mesh position={[sunX, 9, -12]}>
           <sphereGeometry args={[1.2, 24, 24]} />
           <meshBasicMaterial color="#FFF6D8" toneMapped={false} />
         </mesh>
       )}
       {timeOfDay === 'night' && (
-        <mesh position={[6, 10, -12]}>
+        <mesh position={[moonX, 10, -12]}>
           <sphereGeometry args={[0.9, 24, 24]} />
           <meshBasicMaterial color="#E8EBF5" toneMapped={false} />
         </mesh>
