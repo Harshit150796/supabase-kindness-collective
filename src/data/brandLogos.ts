@@ -27,7 +27,7 @@ export const brandLogos: Record<string, BrandInfo> = {
   Publix: { name: 'Publix', logo: '/brand-logos/publix.svg', color: '#4C8C2B', category: 'grocery' },
   Aldi: { name: 'Aldi', logo: logo('aldi.us.png'), color: '#00529B', category: 'grocery' },
   // Food Delivery
-  Grubhub: { name: 'Grubhub', logo: logo('grubhub.com.png'), color: '#F63440', category: 'food-delivery' },
+  Grubhub: { name: 'Grubhub', logo: '/brand-logos/grubhub.svg', color: '#FF5500', category: 'food-delivery' },
   Instacart: { name: 'Instacart', logo: '/brand-logos/instacart.svg', color: '#0AAD0A', category: 'food-delivery' },
   Postmates: { name: 'Postmates', logo: '/brand-logos/postmates.svg', color: '#000000', category: 'food-delivery' },
   // Retail
