@@ -1910,6 +1910,91 @@ export type Database = {
         }
         Relationships: []
       }
+      example_coupons: {
+        Row: {
+          brand_name: string
+          created_at: string
+          example_donation_id: string
+          id: string
+          issued_at: string
+          received_at: string | null
+          status: string
+          used_at: string | null
+          value: number
+        }
+        Insert: {
+          brand_name: string
+          created_at?: string
+          example_donation_id: string
+          id?: string
+          issued_at?: string
+          received_at?: string | null
+          status?: string
+          used_at?: string | null
+          value: number
+        }
+        Update: {
+          brand_name?: string
+          created_at?: string
+          example_donation_id?: string
+          id?: string
+          issued_at?: string
+          received_at?: string | null
+          status?: string
+          used_at?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "example_coupons_example_donation_id_fkey"
+            columns: ["example_donation_id"]
+            isOneToOne: false
+            referencedRelation: "example_donations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      example_donations: {
+        Row: {
+          amount: number
+          brand_name: string
+          created_at: string
+          donor_name: string
+          fundraiser_id: string
+          id: string
+          is_anonymous: boolean
+          message: string | null
+        }
+        Insert: {
+          amount: number
+          brand_name: string
+          created_at?: string
+          donor_name: string
+          fundraiser_id: string
+          id?: string
+          is_anonymous?: boolean
+          message?: string | null
+        }
+        Update: {
+          amount?: number
+          brand_name?: string
+          created_at?: string
+          donor_name?: string
+          fundraiser_id?: string
+          id?: string
+          is_anonymous?: boolean
+          message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "example_donations_fundraiser_id_fkey"
+            columns: ["fundraiser_id"]
+            isOneToOne: false
+            referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       featured_stories: {
         Row: {
           amount_raised: number
@@ -2317,8 +2402,10 @@ export type Database = {
           cover_photo_url: string | null
           created_at: string | null
           donors_count: number | null
+          example_organizer: string | null
           featured_order: number | null
           id: string
+          is_example: boolean
           is_long_term: boolean | null
           monthly_goal: number
           rejection_reason: string | null
@@ -2344,8 +2431,10 @@ export type Database = {
           cover_photo_url?: string | null
           created_at?: string | null
           donors_count?: number | null
+          example_organizer?: string | null
           featured_order?: number | null
           id?: string
+          is_example?: boolean
           is_long_term?: boolean | null
           monthly_goal: number
           rejection_reason?: string | null
@@ -2371,8 +2460,10 @@ export type Database = {
           cover_photo_url?: string | null
           created_at?: string | null
           donors_count?: number | null
+          example_organizer?: string | null
           featured_order?: number | null
           id?: string
+          is_example?: boolean
           is_long_term?: boolean | null
           monthly_goal?: number
           rejection_reason?: string | null
@@ -4025,6 +4116,7 @@ export type Database = {
       }
       is_admin_any: { Args: { _uid: string }; Returns: boolean }
       is_admin_staff: { Args: { _uid: string }; Returns: boolean }
+      is_example_fundraiser: { Args: { _id: string }; Returns: boolean }
       is_fundraiser_organizer: {
         Args: { _fid: string; _uid: string }
         Returns: boolean
