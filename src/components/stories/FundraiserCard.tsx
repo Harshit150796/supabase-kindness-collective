@@ -11,7 +11,7 @@ export function FundraiserCard({ fundraiser, lead = false, inverse = false }: { 
   const image = resolveFundraiserImage(fundraiser);
   const location = useZipLocation(fundraiser.zip_code, fundraiser.country);
   const raised = fundraiser.live_raised ?? 0;
-  const count = fundraiser.donors_count ?? 0;
+  const count = fundraiser.live_donations_count ?? fundraiser.donors_count ?? 0;
   const progress = fundraiser.monthly_goal > 0 ? Math.min(100, raised / fundraiser.monthly_goal * 100) : 0;
   const organizerName = fundraiser.organizer_name
     ? fundraiser.organizer_name.charAt(0).toUpperCase() + fundraiser.organizer_name.slice(1)

@@ -4,12 +4,12 @@
 
 ## Design System Rules
 - CouponDonation UI uses logo green `hsl(123 46% 34%)` as primary and logo blue `hsl(212 80% 42%)` as its only secondary accent; warm UI colors are forbidden outside protected third-party and 3D artwork.
-- Preserve the two-color wordmark exactly: `#2e7d32` for Coupon, `#1565c0` for Donation. Founder-approved exceptions: the rotating "CouponDonation is …" hero kicker, the header wordmark on the homepage night sky (`#F7FAF7` / `#BFD6F2`, turning back to the two colours once the page moves), and retailer colours kept in the Live Donation Tracking bars.
+- Wordmark is exactly `#2e7d32` Coupon / `#1565c0` Donation; founder-approved exceptions (hero kicker, night-sky header, tracking-bar retailer colours) are listed in components/landing/AGENTS.md.
 - Campaign pages use the `ink` token (near-black, green undertone) for Share buttons, strong headings and the dark more-fundraisers band; Donate stays primary green; blue marks verification only.
-- Marketing pages alternate neutral, soft-green and deep-forest bands; tonal panels have no borders or shadows and hairlines are for tables. No eyebrow headings, decorative pills, icon circles, gradient text, glow shadows or card-on-card.
+- Marketing bands alternate neutral/soft-green/deep-forest; borderless tonal panels, hairlines for tables only; no eyebrows, decorative pills, icon circles, gradient text, glow or card-on-card.
 - Shared organizer primitives own titles/numerals, surfaces, labels, stats, status, progress and states; controls use sans.
 - Motion is full on every device; the OS reduced-motion setting is not consulted (founder decision lives in memory).
-- Public photos stay local; without verified people-photo consent use coupon/receipt/trace visuals. Responsive photos use proportional contain transforms on managed Supabase hosts or generated local variants — never append transformation parameters to unknown hosts or crop at delivery (framing belongs to the container).
+- Public photos stay local; without people-photo consent use coupon/receipt/trace visuals. Only transform managed Supabase hosts or local variants (contain, never crop at delivery).
 - Module-level Intl formatters only (toLocale* per render is slow).
 
 ## Data, Privacy & Dispatch Rules
@@ -31,3 +31,4 @@
 - Donors choose retailers and whole-dollar shares only (src/lib/donationSplit.ts: $10 minimum each, always adds up; no amount is suggested); the site never promises coupon counts or sizes. Checkouts re-check the split and send it compact (`_shared/brand-split.ts`); webhooks create ONE pending coupon slot per retailer holding its exact share, and the team sizes real coupons by hand.
 - 100% of every gift reaches families; no platform fee is taken from it. Checkout adds a tip (default in checkout-total.ts), an opt-in monthly box (one fixed Square plan per checkout, `recurring_donations`) and a card-fee cover box ticked by default; an uncovered fee is paid from tips. One calculation for page and server: `supabase/functions/_shared/checkout-total.ts`. Webhooks record donations.amount = gift, plus amount_paid, tip_amount and fee_covered_amount.
 - PostHog: consent-gated, ID-only; docs/workflow-contract.md.
+- Example campaigns (`is_example`) read only `example_donations`/`example_coupons`; checkouts refuse them (`_shared/example-guard.ts`) and stats exclude them, so showcase data never mixes with real gifts.
