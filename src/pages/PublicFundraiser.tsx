@@ -198,7 +198,7 @@ const PublicFundraiser = () => {
       )}
 
       <div className="campaign-sticky-actions fixed inset-x-0 bottom-0 z-40 flex gap-3 border-t border-border bg-background/95 p-3 backdrop-blur lg:hidden">
-        <Button className="h-12 flex-1 text-base font-semibold" onClick={donate}><Heart className="mr-2 h-4 w-4" />Donate</Button>
+        {!fundraiser.is_example && <Button className="h-12 flex-1 text-base font-semibold" onClick={donate}><Heart className="mr-2 h-4 w-4" />Donate</Button>}
         <Button className="h-12 flex-1 bg-ink text-ink-foreground hover:bg-ink/90" onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
       </div>
 
