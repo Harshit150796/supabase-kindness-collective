@@ -4,6 +4,7 @@ import { ChargeError, chargeMetadata, computeCharge } from '../_shared/checkout-
 import { SQUARE_PAYMENT_METHODS } from '../_shared/square-payment-methods.ts';
 import { MONTHLY_CONSENT, monthlyPlanBody } from '../_shared/square-recurring.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { EXAMPLE_CLOSED_MESSAGE, isExampleFundraiser } from '../_shared/example-guard.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,6 +37,10 @@ serve(async (req) => {
       { headers: { apikey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` } },
     ).catch(() => null);
     const { amount, tipAmount, coverFee, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = body;
+
+    if (await isExampleFundraiser(fundraiserId)) {
+      return new Response(JSON.stringify({ error: EXAMPLE_CLOSED_MESSAGE }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     // Validate amount
     if (!amount || amount < 5 || amount > 10000) {

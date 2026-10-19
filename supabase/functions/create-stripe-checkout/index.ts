@@ -2,6 +2,7 @@ import Stripe from "npm:stripe@14.21.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { SplitError, describeSplit, encodeSplit, normalizeSplit } from '../_shared/brand-split.ts';
 import { ChargeError, chargeMetadata, computeCharge } from '../_shared/checkout-total.ts';
+import { EXAMPLE_CLOSED_MESSAGE, isExampleFundraiser } from '../_shared/example-guard.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,6 +23,7 @@ Deno.serve(async (req) => {
     }
 
     const { amount, tipAmount, coverFee, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId, embedded } = await req.json();
+    if (await isExampleFundraiser(fundraiserId)) return json({ error: EXAMPLE_CLOSED_MESSAGE }, 403);
     const amt = Number(amount);
     if (!amt || amt < 5 || amt > 10000) return json({ error: "Invalid donation amount. Must be between $5 and $10,000." }, 400);
 

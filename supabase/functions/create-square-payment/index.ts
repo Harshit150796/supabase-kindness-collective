@@ -1,6 +1,7 @@
 import { SplitError, describeSplit, encodeSplit, normalizeSplit } from '../_shared/brand-split.ts';
 import { ChargeError, chargeMetadata, computeCharge } from '../_shared/checkout-total.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { EXAMPLE_CLOSED_MESSAGE, isExampleFundraiser } from '../_shared/example-guard.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,6 +37,7 @@ Deno.serve(async (req) => {
     if (settings && settings.square_enabled === false) return json({ error: "Square payments are currently turned off." }, 403);
 
     const { sourceId: rawSource, savedCardId, verificationToken, amount, tipAmount, coverFee, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = await req.json();
+    if (await isExampleFundraiser(fundraiserId)) return json({ error: EXAMPLE_CLOSED_MESSAGE }, 403);
     const amt = Number(amount);
     // Paying with a saved card: only the signed-in owner may use it, with their Square customer.
     let sourceId = rawSource;
