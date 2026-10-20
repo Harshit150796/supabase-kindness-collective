@@ -1,7 +1,6 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
 import { useFrame, useThree, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
-import { Html } from '@react-three/drei';
 import { drawCouponTexture, getLogo, onLogoSettled, type CouponData } from './couponDesign';
 import type { FallingDonation } from '@/hooks/useFallingDonations';
 import { useInteraction } from './InteractionContext';
@@ -26,8 +25,6 @@ interface Props {
   onRegrown: (idx: number) => void;
   onClickHanging: (idx: number) => void;
   isMobile?: boolean;
-  /** On mobile only the most recently landed coupon shows its donor label. */
-  labelSuppressed?: boolean;
 }
 
 const HANG_DROP = 0.34;
@@ -49,7 +46,7 @@ function logoSize(aspect: number, alphaCoverage: number, mark: CouponData['mark'
   return { width, height };
 }
 
-export function CouponFruit({ branch, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false, labelSuppressed = false }: Props) {
+export function CouponFruit({ branch, data, state, groundY, index, onLanded, onRegrown, onClickHanging, isMobile = false }: Props) {
   const gentle = useMotionPreference() === 'gentle';
   const groupRef = useRef<THREE.Group>(null);
   const canvas = useThree((root) => root.gl.domElement);
@@ -125,8 +122,9 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
     if (plantSpawnedRef.current) return;
     if (state.phase !== 'falling') return;
     plantSpawnedRef.current = true;
+    // The landing plants a dandelion or a cosmos, and the donor's name arrives with it (PlantsLayer).
     spawnPlant(
-      { id: state.donation.id, amount: state.donation.amount },
+      { id: state.donation.id, amount: state.donation.amount, donorName: state.donation.donorName },
       [pos.x, groundY, pos.z],
       data.color
     );
@@ -236,15 +234,6 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
     }
   });
 
-  const showLabel =
-    !labelSuppressed &&
-    state.phase === 'landed' &&
-    performance.now() / 1000 - state.landTime < 2.8;
-  const safeDonorName =
-    state.phase === 'landed'
-      ? (state.donation.donorName || 'A generous donor').slice(0, isMobile ? 12 : 14)
-      : '';
-
   return (
     <>
       <group
@@ -281,80 +270,6 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
         />
       )}
 
-      {showLabel && state.phase === 'landed' && (
-        <Html
-          position={[
-            // Pull the anchor toward the scene centre so a card that landed on
-            // the edge of the ring still renders fully in-canvas.
-            state.restPos.x * (isMobile ? 0.7 : 0.8),
-            // Raise the label so the badge isn't clipped at the canvas bottom
-            // or overlapped by the bottom-right action button.
-            state.restPos.y + (isMobile ? 0.85 : 0.75),
-            state.restPos.z * (isMobile ? 0.7 : 0.8),
-          ]}
-          center
-          distanceFactor={isMobile ? 5.5 : 6.5}
-          style={{ pointerEvents: 'none' }}
-        >
-          <div
-            style={{
-              background: '#FFFFFF',
-              border: '1.5px solid #D4A017',
-              borderRadius: isMobile ? '12px' : '13px',
-              padding: isMobile ? '8px 13px' : '10px 15px',
-              fontFamily: 'system-ui, -apple-system, Arial',
-              fontSize: isMobile ? '13px' : '14px',
-              fontWeight: 600,
-              color: '#1f2937',
-              boxShadow: '0 10px 30px rgba(212,160,23,0.35), 0 0 0 4px rgba(212,160,23,0.08)',
-              whiteSpace: 'nowrap',
-              maxWidth: isMobile ? 170 : 210,
-              display: 'flex',
-              alignItems: 'center',
-              gap: isMobile ? 8 : 10,
-              animation: 'fadeIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            }}
-          >
-            <div
-              style={{
-                width: isMobile ? 26 : 29,
-                height: isMobile ? 26 : 29,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #10B981, #059669)',
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: isMobile ? 13 : 14,
-                flexShrink: 0,
-              }}
-            >
-              {safeDonorName.charAt(0).toUpperCase()}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, minWidth: 0 }}>
-              <span
-                style={{
-                  color: '#059669',
-                  fontWeight: 700,
-                  maxWidth: isMobile ? 118 : 150,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {safeDonorName}
-              </span>
-              <span style={{ color: '#6b7280', fontSize: isMobile ? 12 : 12, fontWeight: 500 }}>
-                donated{' '}
-                <span style={{ color: '#D4A017', fontWeight: 800, fontSize: isMobile ? 13 : 14 }}>
-                  ${state.donation.amount}
-                </span>
-              </span>
-            </div>
-          </div>
-        </Html>
-      )}
     </>
   );
 }
