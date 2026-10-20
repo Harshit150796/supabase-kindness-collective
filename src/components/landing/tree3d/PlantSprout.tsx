@@ -1,356 +1,293 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, type ReactNode } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { mergeBufferGeometries } from 'three-stdlib';
 import { useInteraction } from './InteractionContext';
+import { BLOW_AT } from './gardenMoments';
 
-export type PlantArchetype = 'sprout' | 'flower' | 'bush';
+/**
+ * What grows where a coupon lands (founder-chosen garden): a dandelion (its seeds carry the donor's
+ * name up toward the tree) or a white cosmos (a butterfly brings the name to it). Both are about four
+ * times the old sprouts and stay on the grass. Every part is a shared, pre-merged geometry, so a
+ * plant costs 7–8 draw calls whatever its detail.
+ */
+export type PlantArchetype = 'dandelion' | 'cosmos';
 
 export interface PlantSpec {
   id: string;
   position: [number, number, number];
   archetype: PlantArchetype;
-  accentColor: string;
+  /** Kept for callers; the garden uses its own palette. */
+  accentColor?: string;
   bornAt: number;
   fadingOut?: boolean;
   onFadedOut?: (id: string) => void;
   seed: number;
+  /** Rendered at the plant's anchor (the dandelion's head, the cosmos's main bloom); sways with it. */
+  children?: ReactNode;
 }
 
-// ---- shared cached resources --------------------------------------------------
-let stemGeomCache: THREE.CylinderGeometry | null = null;
-function getStemGeom() {
-  if (!stemGeomCache) {
-    stemGeomCache = new THREE.CylinderGeometry(0.012, 0.018, 1, 6, 1);
-    stemGeomCache.translate(0, 0.5, 0); // pivot at base
+// ---- shared geometry, built once ------------------------------------------------------------
+
+interface Shared {
+  stem: THREE.CylinderGeometry;
+  rosette: THREE.BufferGeometry;
+  cosmosLeaves: THREE.BufferGeometry;
+  bloom: THREE.BufferGeometry;
+  disc: THREE.CircleGeometry;
+  core: THREE.SphereGeometry;
+  fluff: THREE.SphereGeometry;
+  shadow: THREE.CircleGeometry;
+  rays: THREE.BufferGeometry;
+  tips: THREE.BufferGeometry;
+  dot: THREE.Texture;
+}
+
+let shared: Shared | null = null;
+
+function toothedLeaf(): THREE.Shape {
+  const s = new THREE.Shape();
+  const top: [number, number][] = [[0.06, 0.03], [0.08, 0.012], [0.15, 0.052], [0.17, 0.02], [0.25, 0.066], [0.27, 0.026], [0.36, 0.06], [0.37, 0.022], [0.46, 0.036], [0.5, 0]];
+  s.moveTo(0, 0);
+  top.forEach(([x, y]) => s.lineTo(x, y));
+  [...top].reverse().slice(1).forEach(([x, y]) => s.lineTo(x, -y));
+  s.lineTo(0, 0);
+  return s;
+}
+
+function slenderLeaf(length: number, width: number): THREE.Shape {
+  const s = new THREE.Shape();
+  s.moveTo(0, 0);
+  s.bezierCurveTo(length * 0.22, width, length * 0.7, width, length, 0);
+  s.bezierCurveTo(length * 0.7, -width, length * 0.22, -width, 0, 0);
+  return s;
+}
+
+/** A leaf geometry lying on the ground along +x, lifted by `lift` and turned to `yaw`. */
+function placedLeaf(shape: THREE.Shape, yaw: number, lift: number, scale = 1): THREE.BufferGeometry {
+  const g = new THREE.ShapeGeometry(shape, 8);
+  g.rotateX(-Math.PI / 2);
+  g.scale(scale, scale, scale);
+  g.rotateZ(lift);
+  g.rotateY(yaw);
+  return g;
+}
+
+function getShared(): Shared {
+  if (shared) return shared;
+  const stem = new THREE.CylinderGeometry(0.013, 0.021, 1, 6, 1);
+  stem.translate(0, 0.5, 0);
+
+  const toothed = toothedLeaf();
+  const rosette = mergeBufferGeometries(
+    [0, 1, 2, 3, 4, 5].map((i) => placedLeaf(toothed, (i / 6) * Math.PI * 2 + (i % 2) * 0.2, 0.34 + (i % 3) * 0.08, 0.9 + (i % 2) * 0.18)),
+  )!;
+
+  const slender = slenderLeaf(0.34, 0.045);
+  const cosmosLeaves = mergeBufferGeometries(
+    [0, 1, 2, 3, 4].map((i) => placedLeaf(slender, (i / 5) * Math.PI * 2 + 0.3, 0.55 + (i % 2) * 0.2, 0.85 + (i % 3) * 0.12)),
+  )!;
+
+  // Eight petals around a centre, facing +z: one draw call per bloom.
+  const petal = new THREE.Shape();
+  petal.moveTo(0, 0.02);
+  petal.bezierCurveTo(0.075, 0.06, 0.08, 0.2, 0, 0.245);
+  petal.bezierCurveTo(-0.08, 0.2, -0.075, 0.06, 0, 0.02);
+  const bloom = mergeBufferGeometries(
+    Array.from({ length: 8 }, (_, i) => {
+      const g = new THREE.ShapeGeometry(petal, 10);
+      g.rotateZ((i / 8) * Math.PI * 2);
+      return g;
+    }),
+  )!;
+  const disc = new THREE.CircleGeometry(0.062, 24);
+
+  const core = new THREE.SphereGeometry(0.05, 12, 10);
+  const fluff = new THREE.SphereGeometry(0.31, 20, 14);
+  const shadow = new THREE.CircleGeometry(0.3, 28);
+  shadow.rotateX(-Math.PI / 2);
+
+  // The seed head: fibres from the core to evenly spread tips (a Fibonacci sphere).
+  const n = 110;
+  const rayPos = new Float32Array(n * 6);
+  const tipPos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const y = 1 - ((i + 0.5) / n) * 2;
+    const r = Math.sqrt(1 - y * y);
+    const phi = i * 2.399963;
+    const d = [Math.cos(phi) * r, y, Math.sin(phi) * r];
+    const len = 0.29 + ((i * 7) % 5) * 0.008;
+    for (let k = 0; k < 3; k++) {
+      rayPos[i * 6 + k] = d[k] * 0.045;
+      rayPos[i * 6 + 3 + k] = d[k] * len;
+      tipPos[i * 3 + k] = d[k] * len;
+    }
   }
-  return stemGeomCache;
+  const rays = new THREE.BufferGeometry();
+  rays.setAttribute('position', new THREE.BufferAttribute(rayPos, 3));
+  const tips = new THREE.BufferGeometry();
+  tips.setAttribute('position', new THREE.BufferAttribute(tipPos, 3));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 32;
+  const ctx = canvas.getContext('2d')!;
+  const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.45, 'rgba(255,255,255,.9)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 32, 32);
+  const dot = new THREE.CanvasTexture(canvas);
+
+  shared = { stem, rosette, cosmosLeaves, bloom, disc, core, fluff, shadow, rays, tips, dot };
+  return shared;
 }
 
-let leafGeomCache: THREE.ShapeGeometry | null = null;
-function getLeafGeom() {
-  if (!leafGeomCache) {
-    const s = new THREE.Shape();
-    s.moveTo(0, 0);
-    s.bezierCurveTo(0.05, 0.04, 0.09, 0.12, 0.0, 0.18);
-    s.bezierCurveTo(-0.09, 0.12, -0.05, 0.04, 0, 0);
-    leafGeomCache = new THREE.ShapeGeometry(s, 12);
-  }
-  return leafGeomCache;
+// ---- motion helpers -------------------------------------------------------------------------
+
+const clamp01 = (k: number) => Math.max(0, Math.min(1, k));
+const easeOutCubic = (k: number) => 1 - Math.pow(1 - clamp01(k), 3);
+function easeOutBack(k: number) {
+  const x = clamp01(k);
+  const c1 = 1.5;
+  return 1 + (c1 + 1) * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
 }
-
-let petalGeomCache: THREE.ShapeGeometry | null = null;
-function getPetalGeom() {
-  if (!petalGeomCache) {
-    const s = new THREE.Shape();
-    s.moveTo(0, 0);
-    s.bezierCurveTo(0.04, 0.02, 0.05, 0.07, 0, 0.09);
-    s.bezierCurveTo(-0.05, 0.07, -0.04, 0.02, 0, 0);
-    petalGeomCache = new THREE.ShapeGeometry(s, 10);
-  }
-  return petalGeomCache;
-}
-
-let budGeomCache: THREE.SphereGeometry | null = null;
-function getBudGeom() {
-  if (!budGeomCache) budGeomCache = new THREE.SphereGeometry(0.025, 10, 8);
-  return budGeomCache;
-}
-
-const STEM_COLOR = '#3f8a4a';
-const LEAF_COLOR = '#52b15c';
-const LEAF_COLOR_DARK = '#2f7a3c';
-const CENTER_COLOR = '#f5d75b';
-
-function pastelize(hex: string): string {
-  const c = new THREE.Color(hex);
-  c.lerp(new THREE.Color('#ffffff'), 0.35);
-  return `#${c.getHexString()}`;
-}
-
-function easeOutElastic(k: number): number {
+function easeOutElastic(k: number) {
   if (k <= 0) return 0;
   if (k >= 1) return 1;
-  const c4 = (2 * Math.PI) / 3;
-  return Math.pow(2, -10 * k) * Math.sin((k * 10 - 0.75) * c4) + 1;
+  return Math.pow(2, -9 * k) * Math.sin((k * 9 - 0.75) * ((2 * Math.PI) / 3)) + 1;
 }
 
-function easeOutCubic(k: number): number {
-  return 1 - Math.pow(1 - Math.max(0, Math.min(1, k)), 3);
-}
+const STEM = '#3F7A3A';
+const LEAF = '#4C9A48';
+const LEAF_DARK = '#3A8538';
 
-interface ArchetypeShape {
-  height: number;            // final stem height (m)
-  leaves: { yFrac: number; angle: number; scale: number; tilt: number }[];
-  flowers: { yFrac: number; petals: number; size: number; offsetAngle: number }[];
-  buds: { yFrac: number; offset: [number, number]; size: number }[];
-  stems: { x: number; z: number; height: number; tilt: number }[]; // extra stems for bush
-}
-
-function buildShape(archetype: PlantArchetype, seed: number): ArchetypeShape {
-  const rand = (i: number) => {
-    const x = Math.sin(seed * 9301 + i * 49297) * 233280;
-    return x - Math.floor(x);
-  };
-
-  if (archetype === 'sprout') {
-    return {
-      height: 0.22 + rand(1) * 0.06,
-      leaves: [
-        { yFrac: 0.55, angle: 0, scale: 1.0, tilt: 0.35 },
-        { yFrac: 0.55, angle: Math.PI, scale: 1.0, tilt: 0.35 },
-        { yFrac: 0.85, angle: rand(2) * Math.PI * 2, scale: 0.7, tilt: 0.15 },
-      ],
-      flowers: [],
-      buds: [],
-      stems: [],
-    };
-  }
-
-  if (archetype === 'flower') {
-    return {
-      height: 0.36 + rand(1) * 0.08,
-      leaves: [
-        { yFrac: 0.35, angle: rand(2) * Math.PI * 2, scale: 1.0, tilt: 0.3 },
-        { yFrac: 0.55, angle: rand(3) * Math.PI * 2, scale: 0.9, tilt: 0.25 },
-        { yFrac: 0.72, angle: rand(4) * Math.PI * 2, scale: 0.8, tilt: 0.2 },
-      ],
-      flowers: [{ yFrac: 1.0, petals: 5, size: 1.0, offsetAngle: rand(5) * Math.PI * 2 }],
-      buds: [],
-      stems: [],
-    };
-  }
-
-  // bush
-  const stems: ArchetypeShape['stems'] = [];
-  for (let i = 0; i < 3; i++) {
-    const a = (i / 3) * Math.PI * 2 + rand(10 + i) * 0.5;
-    const r = 0.06 + rand(20 + i) * 0.04;
-    stems.push({
-      x: Math.cos(a) * r,
-      z: Math.sin(a) * r,
-      height: 0.22 + rand(30 + i) * 0.1,
-      tilt: (rand(40 + i) - 0.5) * 0.25,
-    });
-  }
-  return {
-    height: 0.3 + rand(1) * 0.08,
-    leaves: [
-      { yFrac: 0.4, angle: rand(2) * Math.PI * 2, scale: 0.85, tilt: 0.3 },
-      { yFrac: 0.6, angle: rand(3) * Math.PI * 2, scale: 0.85, tilt: 0.25 },
-      { yFrac: 0.78, angle: rand(4) * Math.PI * 2, scale: 0.7, tilt: 0.2 },
-    ],
-    flowers: [],
-    buds: [
-      { yFrac: 0.95, offset: [0, 0], size: 1.0 },
-      { yFrac: 0.85, offset: [0.05, 0.02], size: 0.8 },
-      { yFrac: 0.9, offset: [-0.04, -0.03], size: 0.85 },
-    ],
-    stems,
-  };
-}
-
-export function PlantSprout({
-  id,
-  position,
-  archetype,
-  accentColor,
-  bornAt,
-  fadingOut,
-  onFadedOut,
-  seed,
-}: PlantSpec) {
+export function PlantSprout({ id, position, archetype, bornAt, fadingOut, onFadedOut, seed, children }: PlantSpec) {
   const groupRef = useRef<THREE.Group>(null);
+  const stemRefs = useRef<(THREE.Object3D | null)[]>([]);
+  const tipRefs = useRef<(THREE.Object3D | null)[]>([]);
+  const leavesRef = useRef<THREE.Mesh>(null);
+  const headRef = useRef<THREE.Group>(null);
+  const bloomRefs = useRef<(THREE.Object3D | null)[]>([]);
   const fadeStartRef = useRef<number | null>(null);
   const removedRef = useRef(false);
   const { windRef } = useInteraction();
+  const g = getShared();
 
-  const shape = useMemo(() => buildShape(archetype, seed), [archetype, seed]);
-  const stemGeom = getStemGeom();
-  const leafGeom = getLeafGeom();
-  const petalGeom = getPetalGeom();
-  const budGeom = getBudGeom();
-  const accent = useMemo(() => pastelize(accentColor), [accentColor]);
-
-  // Per-instance materials so we can fade opacity independently without
-  // mutating other plants. Cheap — 4 small materials per plant.
-  const mats = useMemo(() => {
-    return {
-      stem: new THREE.MeshStandardMaterial({ color: STEM_COLOR, roughness: 0.85, transparent: true }),
-      leaf: new THREE.MeshStandardMaterial({
-        color: LEAF_COLOR,
-        roughness: 0.7,
-        side: THREE.DoubleSide,
-        transparent: true,
-      }),
-      leafDark: new THREE.MeshStandardMaterial({
-        color: LEAF_COLOR_DARK,
-        roughness: 0.8,
-        side: THREE.DoubleSide,
-        transparent: true,
-      }),
-      petal: new THREE.MeshStandardMaterial({
-        color: accent,
-        roughness: 0.55,
-        side: THREE.DoubleSide,
-        transparent: true,
-      }),
-      center: new THREE.MeshStandardMaterial({
-        color: CENTER_COLOR,
-        roughness: 0.5,
-        transparent: true,
-      }),
-      bud: new THREE.MeshStandardMaterial({
-        color: accent,
-        roughness: 0.55,
-        transparent: true,
-      }),
+  // Per-plant variety from the seed: size, lean, which way it faces.
+  const shape = useMemo(() => {
+    const rand = (i: number) => {
+      const x = Math.sin(seed * 9301 + i * 49297) * 233280;
+      return x - Math.floor(x);
     };
-  }, [accent]);
+    const size = 0.92 + rand(1) * 0.18;
+    const flip = rand(2) < 0.5 ? 1 : -1;
+    return archetype === 'dandelion'
+      ? { size, flip, yaw: rand(3) * Math.PI * 2, stems: [{ h: 1.32 + rand(4) * 0.12, lean: (rand(5) - 0.5) * 0.14 }] }
+      : { size, flip, yaw: rand(3) * Math.PI * 2, stems: [{ h: 1.26 + rand(4) * 0.1, lean: -0.1 }, { h: 0.9 + rand(5) * 0.1, lean: 0.34 }] };
+  }, [archetype, seed]);
+
+  const mats = useMemo(() => {
+    const m = {
+      shadow: new THREE.MeshBasicMaterial({ color: '#0B1A0C', transparent: true, opacity: 0.12, depthWrite: false }),
+      stem: new THREE.MeshStandardMaterial({ color: STEM, roughness: 0.85, transparent: true }),
+      leaf: new THREE.MeshStandardMaterial({ color: archetype === 'dandelion' ? LEAF_DARK : LEAF, roughness: 0.75, side: THREE.DoubleSide, transparent: true }),
+      petalA: new THREE.MeshBasicMaterial({ color: '#FBFCF6', side: THREE.DoubleSide, transparent: true, toneMapped: false }),
+      petalB: new THREE.MeshBasicMaterial({ color: '#E3ECFA', side: THREE.DoubleSide, transparent: true, toneMapped: false }),
+      disc: new THREE.MeshBasicMaterial({ color: '#2C4A9A', side: THREE.DoubleSide, transparent: true, toneMapped: false }),
+      core: new THREE.MeshStandardMaterial({ color: '#C9CFB8', roughness: 0.9, transparent: true }),
+      fluff: new THREE.MeshBasicMaterial({ color: '#FFFFFF', transparent: true, opacity: 0.2, depthWrite: false, toneMapped: false }),
+      rays: new THREE.LineBasicMaterial({ color: '#FFFFFF', transparent: true, opacity: 0.95, toneMapped: false }),
+      tips: new THREE.PointsMaterial({ color: '#FFFFFF', size: 0.075, map: g.dot, transparent: true, depthWrite: false, toneMapped: false }),
+    };
+    return m;
+  }, [archetype, g.dot]);
 
   useFrame(() => {
-    if (!groupRef.current || removedRef.current) return;
-    const t = performance.now() / 1000;
+    const group = groupRef.current;
+    if (!group || removedRef.current) return;
+    const now = performance.now() / 1000;
+    const t = now - bornAt;
 
-    // Growth phases
-    const stemDur = 1.2;
-    const leafDur = 1.0;
-    const flowerDur = 0.9;
-    const ageStem = t - bornAt;
-    const ageLeaf = ageStem - 0.3;
-    const ageFlower = ageStem - 0.9;
-
-    const stemK = easeOutElastic(Math.min(1, ageStem / stemDur));
-    const leafK = easeOutCubic(Math.min(1, ageLeaf / leafDur));
-    const flowerK = easeOutElastic(Math.min(1, ageFlower / flowerDur));
-
-    // Sway driven by shared wind value
-    const wind = windRef.current.value;
-    const swayBase = (Math.sin(t * 1.3 + seed) * 0.05 + Math.sin(t * 0.7 + seed * 0.5) * 0.03) * (1 + wind * 1.5);
-
-    // Fade
-    let opacity = 1;
+    let fade = 1;
     if (fadingOut) {
-      if (fadeStartRef.current == null) fadeStartRef.current = t;
-      const fk = Math.min(1, (t - fadeStartRef.current) / 0.6);
-      opacity = 1 - fk;
-      if (fk >= 1 && !removedRef.current) {
+      if (fadeStartRef.current == null) fadeStartRef.current = now;
+      const k = clamp01((now - fadeStartRef.current) / 0.8);
+      fade = 1 - k;
+      if (k >= 1) {
         removedRef.current = true;
         onFadedOut?.(id);
         return;
       }
     }
-    mats.stem.opacity = opacity;
-    mats.leaf.opacity = opacity;
-    mats.leafDark.opacity = opacity;
-    mats.petal.opacity = opacity;
-    mats.center.opacity = opacity;
-    mats.bud.opacity = opacity;
 
-    // Walk children to apply growth scales + sway. Children layout matches the
-    // JSX render order below; we use refs via traverse for simplicity.
-    const g = groupRef.current;
-    g.rotation.z = swayBase * 0.6;
-    g.rotation.x = -swayBase * 0.4;
-
-    // Per-child userData drives the scale logic.
-    g.children.forEach((child) => {
-      const ud = (child as any).userData;
-      if (!ud) return;
-      if (ud.kind === 'stem') {
-        const targetH = ud.height as number;
-        child.scale.set(1, targetH * stemK, 1);
-      } else if (ud.kind === 'leaf') {
-        const s = (ud.scale as number) * leafK;
-        child.scale.setScalar(Math.max(0.0001, s));
-      } else if (ud.kind === 'flower') {
-        const s = (ud.scale as number) * flowerK;
-        child.scale.setScalar(Math.max(0.0001, s));
-      }
+    const stemK = easeOutCubic(t / 1.15);
+    const leafK = easeOutBack(t / 0.9);
+    shape.stems.forEach((s, i) => {
+      const stemMesh = stemRefs.current[i];
+      if (stemMesh) stemMesh.scale.set(1, Math.max(0.0001, s.h * easeOutCubic((t - i * 0.18) / 1.15)), 1);
+      const tip = tipRefs.current[i];
+      if (tip) tip.position.y = s.h * easeOutCubic((t - i * 0.18) / 1.15);
     });
+    if (leavesRef.current) leavesRef.current.scale.setScalar(Math.max(0.0001, leafK));
+
+    if (archetype === 'dandelion') {
+      const headK = easeOutElastic((t - 0.85) / 0.8);
+      headRef.current?.scale.setScalar(Math.max(0.0001, headK));
+      // The seeds leave at BLOW_AT (the name rides them up); a few stay on the head.
+      const blown = clamp01((t - BLOW_AT) / 1.3);
+      mats.rays.opacity = (0.95 - blown * 0.72) * fade;
+      mats.tips.opacity = (1 - blown * 0.78) * fade;
+      mats.fluff.opacity = (0.2 - blown * 0.15) * fade;
+      mats.core.opacity = fade;
+    } else {
+      bloomRefs.current.forEach((b, i) => {
+        if (b) b.scale.setScalar(Math.max(0.0001, easeOutElastic((t - 0.95 - i * 0.22) / 0.85)));
+      });
+      mats.petalA.opacity = fade;
+      mats.petalB.opacity = fade;
+      mats.disc.opacity = fade;
+    }
+    mats.shadow.opacity = 0.12 * fade * stemK;
+    mats.stem.opacity = fade;
+    mats.leaf.opacity = fade;
+
+    const wind = windRef.current.value;
+    const sway = (Math.sin(now * 1.2 + seed) * 0.045 + Math.sin(now * 0.63 + seed * 0.5) * 0.03) * (1 + wind * 1.5);
+    group.rotation.z = sway * 0.6;
+    group.rotation.x = -sway * 0.35;
   });
 
+  const s = shape.size;
   return (
-    <group ref={groupRef} position={position}>
-      {/* Main stem */}
-      <mesh
-        geometry={stemGeom}
-        material={mats.stem}
-        userData={{ kind: 'stem', height: shape.height }}
-        castShadow={false}
-      />
-
-      {/* Extra bush stems */}
-      {shape.stems.map((s, i) => (
-        <mesh
-          key={`s${i}`}
-          geometry={stemGeom}
-          material={mats.stem}
-          position={[s.x, 0, s.z]}
-          rotation={[s.tilt, 0, s.tilt * 0.7]}
-          userData={{ kind: 'stem', height: s.height }}
-        />
-      ))}
-
-      {/* Leaves */}
-      {shape.leaves.map((lf, i) => {
-        const y = lf.yFrac * shape.height;
-        return (
-          <mesh
-            key={`l${i}`}
-            geometry={leafGeom}
-            material={i % 2 === 0 ? mats.leaf : mats.leafDark}
-            position={[0, y, 0]}
-            rotation={[lf.tilt, lf.angle, 0]}
-            userData={{ kind: 'leaf', scale: lf.scale }}
-          />
-        );
-      })}
-
-      {/* Flowers */}
-      {shape.flowers.map((fl, i) => {
-        const y = fl.yFrac * shape.height + 0.01;
-        return (
-          <group
-            key={`f${i}`}
-            position={[0, y, 0]}
-            rotation={[0, fl.offsetAngle, 0]}
-            userData={{ kind: 'flower', scale: fl.size }}
-          >
-            {Array.from({ length: fl.petals }).map((_, p) => {
-              const a = (p / fl.petals) * Math.PI * 2;
-              return (
-                <mesh
-                  key={p}
-                  geometry={petalGeom}
-                  material={mats.petal}
-                  rotation={[Math.PI / 2.4, 0, a]}
-                />
-              );
-            })}
-            <mesh geometry={budGeom} material={mats.center} scale={[0.7, 0.7, 0.7]} />
+    <group position={position}>
+      <mesh geometry={g.shadow} material={mats.shadow} position={[0, 0.006, 0]} scale={s} renderOrder={1} />
+      <group ref={groupRef} scale={[s * shape.flip, s, s]}>
+        <mesh ref={leavesRef} geometry={archetype === 'dandelion' ? g.rosette : g.cosmosLeaves} material={mats.leaf} rotation={[0, shape.yaw, 0]} position={[0, 0.01, 0]} />
+        {shape.stems.map((st, i) => (
+          <group key={i} rotation={[0, 0, st.lean]}>
+            <mesh ref={(el) => { stemRefs.current[i] = el; }} geometry={g.stem} material={mats.stem} />
+            <group ref={(el) => { tipRefs.current[i] = el; }}>
+              {archetype === 'dandelion' ? (
+                <group ref={headRef}>
+                  <mesh geometry={g.core} material={mats.core} />
+                  <mesh geometry={g.fluff} material={mats.fluff} />
+                  <lineSegments geometry={g.rays} material={mats.rays} />
+                  <points geometry={g.tips} material={mats.tips} />
+                  {children}
+                </group>
+              ) : (
+                // Blooms face the viewer, tipped up a little toward the camera.
+                <group rotation={[-0.3, 0, -st.lean]} ref={(el) => { bloomRefs.current[i] = el; }} scale={i === 0 ? 1 : 0.82}>
+                  <mesh geometry={g.bloom} material={i === 0 ? mats.petalA : mats.petalB} />
+                  <mesh geometry={g.disc} material={mats.disc} position={[0, 0, 0.006]} />
+                  {i === 0 && children}
+                </group>
+              )}
+            </group>
           </group>
-        );
-      })}
-
-      {/* Buds (bush) */}
-      {shape.buds.map((b, i) => {
-        const y = b.yFrac * shape.height;
-        return (
-          <mesh
-            key={`b${i}`}
-            geometry={budGeom}
-            material={mats.bud}
-            position={[b.offset[0], y, b.offset[1]]}
-            userData={{ kind: 'flower', scale: b.size }}
-          />
-        );
-      })}
+        ))}
+      </group>
     </group>
   );
-}
-
-export function pickArchetype(amount: number): PlantArchetype {
-  if (amount >= 50) return 'bush';
-  if (amount >= 10) return 'flower';
-  return 'sprout';
 }

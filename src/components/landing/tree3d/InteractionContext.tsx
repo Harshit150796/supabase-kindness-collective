@@ -24,6 +24,8 @@ export interface PlantEvent {
   id: string; // donation id
   position: [number, number, number];
   amount: number;
+  /** The donor's display name, shown in the garden's name moment where the coupon landed. */
+  donorName: string;
   accentColor: string;
 }
 
@@ -64,7 +66,7 @@ export interface InteractionState {
 
   // Plant spawn (coupon landed)
   plantEvent: PlantEvent | null;
-  spawnPlant: (donation: { id: string; amount: number }, position: [number, number, number], accentColor: string) => void;
+  spawnPlant: (donation: { id: string; amount: number; donorName: string }, position: [number, number, number], accentColor: string) => void;
 }
 
 const Ctx = createContext<InteractionState | null>(null);
@@ -144,12 +146,13 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
 
   const [plantEvent, setPlantEvent] = useState<PlantEvent | null>(null);
   const spawnPlant = useCallback(
-    (donation: { id: string; amount: number }, position: [number, number, number], accentColor: string) => {
+    (donation: { id: string; amount: number; donorName: string }, position: [number, number, number], accentColor: string) => {
       setPlantEvent({
         uid: idRef.current++,
         id: donation.id,
         position,
         amount: donation.amount,
+        donorName: donation.donorName,
         accentColor,
       });
     },
