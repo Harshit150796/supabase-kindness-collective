@@ -9,6 +9,10 @@ interface Props {
   amount: number;
   /** +1 when the plant stands right of the trunk, -1 when left: the tag sits outward, the seeds and the butterfly travel on the tree's side. */
   side: 1 | -1;
+  /** Which side of the plant the dandelion's tag sits (inward near the screen's edges). */
+  tagSide?: 1 | -1;
+  /** Near a screen edge the butterfly's hanging tag opens inward instead of centring. */
+  edge?: 'l' | 'r' | null;
   isMobile: boolean;
   /** The site's gentle-motion setting: the tag alone, no flight. */
   still?: boolean;
@@ -63,7 +67,7 @@ function Tag({ name, amount }: { name: string; amount: number }) {
  * butterfly. Drawn in the page (crisp at any size) and anchored to the plant in the scene; it plays
  * once (MOMENT_SECONDS) and the layer unmounts it. Below the hero's headline layer, never clickable.
  */
-export function NameMoment({ kind, donorName, amount, side, isMobile, still = false }: Props) {
+export function NameMoment({ kind, donorName, amount, side, tagSide = side, edge = null, isMobile, still = false }: Props) {
   const distanceFactor = useGardenDistanceFactor(isMobile);
   const name = displayDonor(donorName);
   const toward = -side; // the tree is on this side of the plant
@@ -73,8 +77,8 @@ export function NameMoment({ kind, donorName, amount, side, isMobile, still = fa
   return (
     <Html center distanceFactor={distanceFactor} zIndexRange={[20, 0]} pointerEvents="none" style={{ pointerEvents: 'none' }}>
       <div
-        className={`gm gm-${kind} gm-side-${side > 0 ? 'r' : 'l'}${still ? ' gm-still' : ''}`}
-        style={{ ['--side' as string]: side, ['--toward' as string]: toward } as CSSProperties}
+        className={`gm gm-${kind} gm-side-${tagSide > 0 ? 'r' : 'l'}${edge ? ` gm-edge-${edge}` : ''}${still ? ' gm-still' : ''}`}
+        style={{ ['--side' as string]: tagSide, ['--toward' as string]: toward } as CSSProperties}
         aria-hidden="true"
       >
         {kind === 'dandelion' ? (

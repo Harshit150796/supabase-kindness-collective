@@ -5,6 +5,7 @@ import { drawCouponTexture, getLogo, onLogoSettled, type CouponData } from './co
 import type { FallingDonation } from '@/hooks/useFallingDonations';
 import { useInteraction } from './InteractionContext';
 import { SparkleBurst } from './SparkleBurst';
+import { pickGardenSpot, releaseSpot } from './gardenSpots';
 import { toast } from 'sonner';
 import type { BranchTip } from './Tree';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
@@ -50,6 +51,7 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
   const gentle = useMotionPreference() === 'gentle';
   const groupRef = useRef<THREE.Group>(null);
   const canvas = useThree((root) => root.gl.domElement);
+  const camera = useThree((root) => root.camera);
   const velocityRef = useRef({ y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 });
   const posRef = useRef(new THREE.Vector3());
   const rotRef = useRef(new THREE.Euler());
@@ -95,20 +97,31 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
     return { x: Math.cos(ang) * rad, z: Math.sin(ang) * rad };
   }, [index, isMobile]);
 
+  // Where this fall ends: the open spot on the visible hill farthest from every plant and every
+  // other falling coupon (gardenSpots), so the garden spreads evenly; the ring is the fallback.
+  const targetRef = useRef(scatterTarget);
+  const fallKey = `fall:${index}`;
+  useEffect(() => () => releaseSpot(fallKey), [fallKey]);
+
   useEffect(() => {
     if (state.phase === 'falling') {
       caughtRef.current = false;
       plantSpawnedRef.current = false;
+      const target = pickGardenSpot(camera, fallKey) ?? scatterTarget;
+      targetRef.current = target;
       const startY = hangingPosition.y;
-      const dropH = Math.max(0.1, startY - groundY);
-      const tFall = Math.sqrt((2 * dropH) / 9.8);
-      const dx = scatterTarget.x - hangingPosition.x;
-      const dz = scatterTarget.z - hangingPosition.z;
-      const jitter = 0.12;
+      const landY = groundY + dimensions.height / 2;
+      const dx = target.x - hangingPosition.x;
+      const dz = target.z - hangingPosition.z;
+      // A gentle arc: farther spots get a little more lift, and the flight time is solved so the
+      // coupon meets the grass exactly at its spot.
+      const vy = Math.min(3.2, 0.4 + 0.32 * Math.hypot(dx, dz));
+      const drop = Math.max(0.1, startY - landY);
+      const tFall = (vy + Math.sqrt(vy * vy + 19.6 * drop)) / 9.8;
       velocityRef.current = {
-        y: 0.4,
-        x: dx / tFall + (Math.random() - 0.5) * jitter,
-        z: dz / tFall + (Math.random() - 0.5) * jitter,
+        y: vy,
+        x: dx / tFall,
+        z: dz / tFall,
         rotX: (Math.random() - 0.5) * 5,
         rotY: (Math.random() - 0.5) * 3,
         rotZ: (Math.random() - 0.5) * 5,
@@ -116,7 +129,7 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
       posRef.current.copy(hangingPosition);
       rotRef.current.set(0, 0, 0);
     }
-  }, [state.phase, groundY, hangingPosition, scatterTarget, isMobile]);
+  }, [state.phase, groundY, hangingPosition, scatterTarget, isMobile, camera, fallKey, dimensions.height]);
 
   const tryPlant = (pos: THREE.Vector3) => {
     if (plantSpawnedRef.current) return;
@@ -144,6 +157,7 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
       setTimeout(() => {
         const restPos = posRef.current.clone();
         restPos.y = groundY + 0.025;
+        releaseSpot(fallKey);
         tryPlant(restPos);
         onLanded(index, restPos);
       }, 350);
@@ -179,8 +193,6 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
       groupRef.current.scale.setScalar(breathe * opticalScale);
     } else if (state.phase === 'falling') {
       velocityRef.current.y -= 9.8 * dt;
-      velocityRef.current.x *= 0.99; // air drag
-      velocityRef.current.z *= 0.99;
       posRef.current.y += velocityRef.current.y * dt;
       posRef.current.x += velocityRef.current.x * dt;
       posRef.current.z += velocityRef.current.z * dt;
@@ -189,11 +201,12 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
       rotRef.current.z += velocityRef.current.rotZ * dt;
 
       if (posRef.current.y <= groundY + dimensions.height / 2) {
-        // Snap to scatter target so coupons land spread across the grass.
-        posRef.current.x = scatterTarget.x + (Math.random() - 0.5) * 0.15;
-        posRef.current.z = scatterTarget.z + (Math.random() - 0.5) * 0.15;
+        // Settle exactly on its garden spot.
+        posRef.current.x = targetRef.current.x;
+        posRef.current.z = targetRef.current.z;
         posRef.current.y = groundY + 0.025;
         const restPos = posRef.current.clone();
+        releaseSpot(fallKey);
         tryPlant(restPos);
         onLanded(index, restPos);
       }

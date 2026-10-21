@@ -30,6 +30,9 @@ import { SLOW_TREE_FPS, shouldReduceQuality } from '@/lib/treeQuality';
 import { createRefreshTracker, pacingDivisor } from '@/lib/framePacing';
 import { useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
 
+/** The tree lets one coupon fall every 9s (see the auto-drop timer below). */
+const AUTO_DROP_MS = 9000;
+
 // Start all opening SVG decodes alongside the model/Draco preload at module evaluation.
 const OPENING_LOGOS = [
   'walmart', 'cvs', 'target', 'dominos', 'aldi',
@@ -658,7 +661,8 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
     [donations]
   );
 
-  // Auto drops on timer
+  // Auto drops on timer: one coupon every 9s, a little longer than its donor's name moment
+  // (MOMENT_SECONDS), so one name plays at a time (founder request: fewer, calmer moments).
   useEffect(() => {
     if (gentle || !logosReady || donations.length === 0) return;
     const interval = setInterval(() => {
@@ -672,7 +676,7 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
         next[pick] = { phase: 'falling', startTime: performance.now() / 1000, donation };
         return next;
       });
-    }, 4000);
+    }, AUTO_DROP_MS);
     return () => clearInterval(interval);
   }, [donations, logosReady, gentle]);
 

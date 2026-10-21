@@ -39,6 +39,9 @@
 .gm-hang{position:absolute;left:22px;top:30px;width:0;height:0;transform-origin:0 0;animation:gm-swing 7.6s ease-out both}
 .gm-hang i{position:absolute;left:-.5px;top:0;width:1px;height:30px;background:rgba(20,48,26,.5)}
 .gm-hang .gm-tag{position:absolute;left:0;top:30px;align-items:center;transform:translateX(-50%);animation:gm-b-tag 7.6s ease both}
+/* Near a screen edge the hanging tag opens inward rather than centring under the butterfly. */
+.gm-edge-l .gm-hang .gm-tag{align-items:flex-start;transform:translateX(-18px)}
+.gm-edge-r .gm-hang .gm-tag{align-items:flex-end;transform:translateX(calc(-100% + 18px))}
 @keyframes gm-swing{0%,42%{transform:rotate(14deg)}49%{transform:rotate(-7deg)}55%{transform:rotate(3deg)}61%,100%{transform:rotate(0)}}
 @keyframes gm-b-tag{0%,12%{opacity:0}18%,74%{opacity:1}80%,100%{opacity:0}}
 
