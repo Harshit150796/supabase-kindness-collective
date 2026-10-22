@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { loadApplyRecipient } from "@/lib/applyRoute";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,7 +35,23 @@ const DonationCancelled = lazy(() => import("./pages/DonationCancelled"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Stories = lazy(() => import("./pages/Stories"));
 const StoryDetail = lazy(() => import("./pages/StoryDetail"));
-const ApplyRecipient = lazy(() => import("./pages/ApplyRecipient"));
+const ApplyRecipient = lazy(loadApplyRecipient);
+// Shown only if the application isn't downloaded yet: an outline in the page's own colours, not a blank "Loading...".
+const ApplyFallback = () => (
+  <div className="min-h-dvh flex flex-col lg:flex-row bg-background" aria-busy="true" aria-label="Loading application">
+    <div className="lg:w-[42%] bg-secondary p-6 lg:p-10 space-y-6">
+      <div className="h-11 w-48 rounded-full bg-primary/10 animate-pulse" />
+      <div className="h-8 w-8 rounded-full bg-primary/30" />
+      <div className="h-10 w-4/5 rounded-lg bg-foreground/10 animate-pulse" />
+      <div className="h-5 w-3/5 rounded bg-foreground/5" />
+    </div>
+    <div className="lg:w-[58%] bg-card p-6 lg:p-12 space-y-4 min-h-[60vh]">
+      <div className="h-14 rounded-xl bg-muted animate-pulse" />
+      <div className="h-14 rounded-xl bg-muted animate-pulse" />
+      <div className="h-14 rounded-xl bg-muted animate-pulse" />
+    </div>
+  </div>
+);
 const PublicFundraiser = lazy(() => import("./pages/PublicFundraiser"));
 const ProgressBarOverlay = lazy(() => import("./pages/overlays/ProgressBarOverlay"));
 const DonationAlertOverlay = lazy(() => import("./pages/overlays/DonationAlertOverlay"));
@@ -121,7 +138,7 @@ const AppRoutes = () => (
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/donation-success" element={<DonationSuccess />} />
       <Route path="/donation-cancelled" element={<DonationCancelled />} />
-      <Route path="/apply" element={<GeoGuard><ApplyRecipient /></GeoGuard>} />
+      <Route path="/apply" element={<GeoGuard><Suspense fallback={<ApplyFallback />}><ApplyRecipient /></Suspense></GeoGuard>} />
       <Route path="/donate" element={<Donate />} />
       <Route path="/my-fundraisers" element={<GeoGuard><MyFundraisers /></GeoGuard>} />
       <Route path="/my-impact" element={<MyImpact />} />
