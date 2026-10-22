@@ -632,7 +632,8 @@
 
 /* Touch requirements belong to shared controls, not individual forms. */
 @media (max-width: 767px), (pointer: coarse) {
-  .touch-form-control, input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), textarea, select { font-size: 16px !important; }
+  /* Inputs set in large display type (data-large-type, always over 16px) keep their size. */
+  .touch-form-control, input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([data-large-type]), textarea, select { font-size: 16px !important; }
   .touch-control { min-height: 44px; }
   .touch-control:not(:has(span)):has(svg:only-child) { min-width: 44px; }
 }

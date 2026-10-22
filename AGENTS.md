@@ -32,3 +32,9 @@
 - 100% of every gift reaches families; no platform fee is taken from it. Checkout adds a tip (default in checkout-total.ts), an opt-in monthly box (one fixed Square plan per checkout, `recurring_donations`) and a card-fee cover box ticked by default; an uncovered fee is paid from tips. One calculation for page and server: `supabase/functions/_shared/checkout-total.ts`. Webhooks record donations.amount = gift, plus amount_paid, tip_amount and fee_covered_amount.
 - PostHog: consent-gated, ID-only; docs/workflow-contract.md.
 - Example campaigns (`is_example`) read only `example_donations`/`example_coupons`; checkouts refuse them (`_shared/example-guard.ts`) and stats exclude them, so showcase data never mixes with real gifts.
+
+## Apply as Recipient
+- Four steps (ApplyLayout): Who & what, Your story, Goal & place, Review, with the deep-green "Your request" panel on wide screens (RequestPanel, mirroring the donor's "Your gift" ledger). Continue says what's missing beside it.
+- Recipients pick one or more needs and, per need, up to 8 stores from the donor catalogue (src/lib/helpNeeds.ts, NeedsAndStores); `category` keeps the first need, `help_categories`/`preferred_brands`/`similar_stores_ok` keep the rest. Writes retry without those columns if a database lacks them.
+- Location is a US ZIP code; donors see city and state only (`city`, `state_code`, saved at submit), never a bare ZIP. The confirmed city uses the verification blue.
+- Fundraiser pages show "What's needed" (RequestedHelp): each requested store links to /donate?fundraiser=…&store=…, and the donate flow lists a fundraiser's requested stores first, marked Requested.

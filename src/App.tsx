@@ -38,18 +38,17 @@ const StoryDetail = lazy(() => import("./pages/StoryDetail"));
 const ApplyRecipient = lazy(loadApplyRecipient);
 // Shown only if the application isn't downloaded yet: an outline in the page's own colours, not a blank "Loading...".
 const ApplyFallback = () => (
-  <div className="min-h-dvh flex flex-col lg:flex-row bg-background" aria-busy="true" aria-label="Loading application">
-    <div className="lg:w-[42%] bg-secondary p-6 lg:p-10 space-y-6">
-      <div className="h-11 w-48 rounded-full bg-primary/10 animate-pulse" />
-      <div className="h-8 w-8 rounded-full bg-primary/30" />
-      <div className="h-10 w-4/5 rounded-lg bg-foreground/10 animate-pulse" />
-      <div className="h-5 w-3/5 rounded bg-foreground/5" />
+  <div className="min-h-dvh bg-background lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(22rem,30rem)] xl:grid-cols-[minmax(0,1fr)_32rem]" aria-busy="true" aria-label="Loading application">
+    <div className="px-4 sm:px-8 lg:px-12 xl:px-16">
+      <div className="flex h-16 items-center"><div className="h-9 w-44 rounded-lg bg-muted animate-pulse" /></div>
+      <div className="mx-auto max-w-[46rem] pt-4 sm:pt-6 lg:pt-8">
+        <div className="grid grid-cols-4 gap-3"><div className="h-[3px] rounded-full bg-primary" /><div className="h-[3px] rounded-full bg-border" /><div className="h-[3px] rounded-full bg-border" /><div className="h-[3px] rounded-full bg-border" /></div>
+        <div className="mt-10 h-12 w-3/4 rounded-lg bg-muted animate-pulse" />
+        <div className="mt-4 h-5 w-2/3 rounded bg-muted/70" />
+        <div className="mt-12 grid gap-3 sm:grid-cols-3"><div className="h-28 rounded-2xl bg-muted/70 animate-pulse" /><div className="h-28 rounded-2xl bg-muted/70 animate-pulse" /><div className="h-28 rounded-2xl bg-muted/70 animate-pulse" /></div>
+      </div>
     </div>
-    <div className="lg:w-[58%] bg-card p-6 lg:p-12 space-y-4 min-h-[60vh]">
-      <div className="h-14 rounded-xl bg-muted animate-pulse" />
-      <div className="h-14 rounded-xl bg-muted animate-pulse" />
-      <div className="h-14 rounded-xl bg-muted animate-pulse" />
-    </div>
+    <div className="hidden bg-primary-20 lg:block" />
   </div>
 );
 const PublicFundraiser = lazy(() => import("./pages/PublicFundraiser"));

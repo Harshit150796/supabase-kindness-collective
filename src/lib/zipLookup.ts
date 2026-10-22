@@ -67,6 +67,21 @@ export function useZipLocation(zip?: string | null, country?: string | null) {
   return clean || null;
 }
 
+export type ZipStatus = 'empty' | 'partial' | 'checking' | 'found' | 'unknown';
+
+/**
+ * The ZIP code's place, with where the lookup stands: still typing, checking, found, or not found
+ * (an unknown ZIP or the lookup service being unreachable; neither blocks the application).
+ */
+export function useZipLookup(zip?: string | null): { status: ZipStatus; city: string | null; stateCode: string | null } {
+  const { clean, valid, data } = useZipData(zip, 'us');
+  if (!clean) return { status: 'empty', city: null, stateCode: null };
+  if (!valid) return { status: 'partial', city: null, stateCode: null };
+  if (data === undefined) return { status: 'checking', city: null, stateCode: null };
+  if (!data) return { status: 'unknown', city: null, stateCode: null };
+  return { status: 'found', city: data.city, stateCode: data.stateCode };
+}
+
 export function useZipState(zip?: string | null, country?: string | null): string | null {
   const { valid, data } = useZipData(zip, country);
   return valid && data ? data.stateCode : null;

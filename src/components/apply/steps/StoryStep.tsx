@@ -1,6 +1,6 @@
 import { PhotoGuidance, usePhotoCropper } from "@/components/photo/PhotoCropDialog";
 import { useState, useRef } from "react";
-import { Sparkles, ImagePlus, Upload, Camera, Video, Folder } from "lucide-react";
+import { ImagePlus, Camera, Video, Folder } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -46,12 +46,10 @@ const PickerTile = ({
   <button
     type="button"
     onClick={onClick}
-    className="flex flex-col items-center gap-2 rounded-2xl border border-border/60 bg-secondary/30 px-2 py-4
-      transition-all duration-200 active:scale-[0.97] hover:border-primary/40 hover:bg-primary/5"
+    className="flex flex-col items-center gap-2.5 rounded-2xl bg-muted/70 px-2 py-5
+      transition-[background-color,transform] duration-200 active:scale-[0.97] hover:bg-muted"
   >
-    <span className="w-14 h-14 rounded-2xl bg-background flex items-center justify-center text-primary shadow-sm">
-      {icon}
-    </span>
+    <span className="text-primary">{icon}</span>
     <span className="text-sm font-medium text-foreground leading-tight text-center">{label}</span>
     {sublabel && <span className="text-xs text-muted-foreground leading-none">{sublabel}</span>}
   </button>
@@ -245,80 +243,77 @@ export const StoryStep = ({
   const getPlaceholder = () => {
     switch (category) {
       case "food":
-        return "Share why you need food assistance. Tell donors about your situation, your family, and how coupons will help you...";
+      case "meals":
+        return "For example: I'm a single mom of two in Dayton. My hours were cut in March, and after rent there's little left for groceries...";
       case "healthcare":
-        return "Explain your healthcare needs. Share your medical situation and how coupon assistance will make a difference...";
+        return "For example: I'm recovering from surgery and can't work for six weeks. Prescriptions and basics at the pharmacy add up fast...";
       case "education":
-        return "Describe your educational goals. Tell donors about your learning journey and how coupons will help...";
+        return "For example: My daughter starts high school this fall and needs supplies and a laptop for homework...";
       default:
-        return "Introduce yourself and share why you need coupon assistance. The more detail you provide, the more donors can connect with your story...";
+        return "For example: who you are, who lives with you, what changed, and how coupons at the stores you chose would help...";
     }
   };
 
+  const [dragging, setDragging] = useState(false);
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length) void handleFiles(files);
+  };
+  const dropProps = {
+    onDragOver: (e: React.DragEvent) => { e.preventDefault(); setDragging(true); },
+    onDragLeave: () => setDragging(false),
+    onDrop,
+  };
+
+  const toContinue = Math.max(0, 10 - wordCount);
+  const guidance =
+    toContinue > 0
+      ? `${toContinue} more ${toContinue === 1 ? "word" : "words"} to continue`
+      : wordCount < minWords
+        ? `Enough to continue. Around ${minWords} words gives donors the full picture.`
+        : "Great detail. Donors can see what's happening.";
+
   return (
-    <div className="space-y-6 stagger-children">
-      {/* Textarea */}
-      <div className="relative">
-        <textarea
-          value={story}
-          onChange={(e) => setStory(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          placeholder={getPlaceholder()}
-          className={`
-            w-full min-h-[200px] lg:min-h-[220px] p-4 rounded-xl
-            bg-background border-2 resize-none
-            text-foreground placeholder:text-muted-foreground/60
-            transition-all duration-300 ease-out
-            focus:outline-none
-            ${isFocused
-              ? "border-primary ring-4 ring-primary/10"
-              : "border-border/60 hover:border-border"
-            }
-          `}
-        />
+    <div className="space-y-12">
+      <section aria-labelledby="story-heading">
+        <h2 id="story-heading" className="font-display text-[1.75rem] font-normal leading-tight text-foreground sm:text-[2rem]">What's happening?</h2>
+        <p className="mt-1.5 max-w-[36rem] text-[15px] leading-relaxed text-muted-foreground">
+          Say who you are and who lives with you, what changed, and how the stores you chose would help.
+        </p>
 
-        <div className="absolute bottom-3 right-3 text-xs text-muted-foreground">
-          {wordCount} words
-        </div>
-      </div>
-
-      {/* Strengthen your story card */}
-      <div className="p-4 rounded-xl bg-gradient-to-r from-verify/20 to-verify/10 border border-verify/30">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-verify/20 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-5 h-5 text-verify" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground mb-2">Strengthen your story</h3>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">
-                  {wordCount >= minWords
-                    ? "Great! Your story is detailed enough"
-                    : `${minWords - wordCount} more words needed`}
-                </span>
-              </div>
-              <div className="h-2 bg-background rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ease-out ${
-                    progress >= 100 ? "bg-primary" : "bg-verify"
-                  }`}
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+        <div className={`mt-5 rounded-2xl bg-muted/60 transition-shadow ${isFocused ? "shadow-[inset_0_0_0_2px_hsl(var(--primary))]" : ""}`}>
+          <textarea
+            value={story}
+            onChange={(e) => setStory(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder={getPlaceholder()}
+            aria-label="Your story"
+            aria-describedby="story-guidance"
+            className="block min-h-[240px] w-full resize-y rounded-2xl bg-transparent px-5 pb-3 pt-5 text-[17px] leading-[1.7] text-foreground outline-none placeholder:text-muted-foreground/60 lg:min-h-[280px]"
+          />
+          <div className="flex items-center gap-4 px-5 pb-4">
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-border/80">
+              <div
+                className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+              />
             </div>
+            <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{wordCount} {wordCount === 1 ? "word" : "words"}</span>
           </div>
         </div>
-      </div>
+        <p id="story-guidance" className="mt-2.5 text-sm text-muted-foreground" aria-live="polite">{guidance}</p>
+      </section>
 
-      {/* Required photos or videos */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-foreground">Add photos or videos</h3>
-          <span className="text-xs font-medium text-primary">At least one photo required</span>
+      <section aria-labelledby="media-heading" className="space-y-4">
+        <div>
+          <h2 id="media-heading" className="font-display text-[1.75rem] font-normal leading-tight text-foreground sm:text-[2rem]">Add photos or a video</h2>
+          <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">
+            At least one photo, so donors can see who they're helping. The first one becomes your cover.
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground">Donors give more confidently when they can see who they are helping, so every fundraiser needs at least one photo. Videos are welcome in addition.</p>
         <PhotoGuidance />
         {cropDialog}
 
@@ -326,31 +321,25 @@ export const StoryStep = ({
           <button
             type="button"
             onClick={openPicker}
-            className="w-full text-left cursor-pointer rounded-xl border-2 border-dashed border-border/60 hover:border-primary/50 hover:bg-secondary/40 transition-all duration-300 flex items-center gap-4 p-4"
+            {...dropProps}
+            className={`flex w-full flex-col items-center justify-center gap-3 rounded-2xl px-6 py-10 text-center outline-none transition-[background-color,box-shadow] duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+              dragging ? "bg-[hsl(var(--primary-97))] shadow-[inset_0_0_0_2px_hsl(var(--primary))]" : "bg-muted/60 hover:bg-muted"
+            }`}
           >
-            <div className="relative">
-              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center">
-                <ImagePlus className="w-6 h-6 text-muted-foreground" />
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-lg">
-                <Upload className="w-3 h-3 text-primary-foreground" />
-              </div>
-            </div>
-            <div className="min-w-0">
-              <p className="text-foreground font-medium">Upload photos or videos</p>
-              <p className="text-sm text-muted-foreground">
-                Add up to {MAX_MEDIA_ITEMS} — the first one becomes your cover
-              </p>
-            </div>
+            <ImagePlus className="h-8 w-8 text-primary" strokeWidth={1.5} aria-hidden="true" />
+            <span className="text-base font-medium text-foreground">{isMobile ? "Take or choose a photo" : "Choose photos or drop them here"}</span>
+            <span className="text-sm text-muted-foreground">Up to {MAX_MEDIA_ITEMS}. Photos up to 10 MB, videos up to 90 seconds.</span>
           </button>
         ) : (
-          <MediaTray
-            items={media}
-            onAdd={openPicker}
-            onRemove={handleRemove}
-            onSetCover={handleSetCover}
-            onRetry={handleRetry}
-          />
+          <div {...dropProps} className={`rounded-2xl transition-shadow ${dragging ? "shadow-[0_0_0_2px_hsl(var(--primary))]" : ""}`}>
+            <MediaTray
+              items={media}
+              onAdd={openPicker}
+              onRemove={handleRemove}
+              onSetCover={handleSetCover}
+              onRetry={handleRetry}
+            />
+          </div>
         )}
 
         {/* Hidden inputs: direct camera photo, camera video, and files/gallery */}
@@ -383,23 +372,22 @@ export const StoryStep = ({
           <Drawer open={pickerOpen} onOpenChange={setPickerOpen}>
             <DrawerContent>
               <DrawerHeader className="text-left">
-                <DrawerTitle>Choose an action</DrawerTitle>
+                <DrawerTitle className="font-display text-2xl font-normal">Add a photo or video</DrawerTitle>
               </DrawerHeader>
               <div className="grid grid-cols-3 gap-2 px-4 pb-8">
                 <PickerTile
                   icon={<Camera className="w-7 h-7" />}
-                  label="Camera"
+                  label="Take photo"
                   onClick={() => choose(photoCaptureRef)}
                 />
                 <PickerTile
                   icon={<Video className="w-7 h-7" />}
-                  label="Camera"
-                  sublabel="Camcorder"
+                  label="Record video"
                   onClick={() => choose(videoCaptureRef)}
                 />
                 <PickerTile
                   icon={<Folder className="w-7 h-7" />}
-                  label="Files"
+                  label="Choose from library"
                   onClick={() => choose(libraryRef)}
                 />
               </div>
@@ -419,9 +407,7 @@ export const StoryStep = ({
             </DialogContent>
           </Dialog>
         )}
-
-      </div>
-
+      </section>
     </div>
   );
 };
