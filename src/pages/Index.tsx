@@ -1,3 +1,4 @@
+import { prefetchApply } from '@/lib/applyRoute';
 import { lazy, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { HeroSection } from '@/components/landing/HeroSection';
@@ -34,7 +35,7 @@ const Footer = lazy(() => sectionCode.footer().then(m => ({ default: m.Footer })
 
 const Index = () => {
   // Page order, one module per idle period (BrandLeaderboard is ImpactDashboard's own lazy chart).
-  useEffect(() => prefetchWhenIdle(Object.values(sectionCode)), []);
+  useEffect(() => prefetchWhenIdle([...Object.values(sectionCode), prefetchApply]), []);
 
   return (
     <div className="min-h-dvh bg-background">

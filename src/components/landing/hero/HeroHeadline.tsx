@@ -1,3 +1,4 @@
+import { prefetchApply } from "@/lib/applyRoute";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { canopyTopPx, PHONE_BREAKPOINT } from "@/lib/heroBackdrop";
@@ -84,7 +85,7 @@ export function HeroHeadline({ play = true }: { play?: boolean }) {
                 <path d="M12 20.5s-8-4.9-8-10.6A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 8 2.6c0 5.7-8 10.6-8 10.6z" />
               </svg>
             </span>
-            <Link to="/apply" className="hero-half hero-half-ask">Apply as Recipient</Link>
+            <Link to="/apply" className="hero-half hero-half-ask" onPointerEnter={prefetchApply} onTouchStart={prefetchApply} onFocus={prefetchApply}>Apply as Recipient</Link>
           </div>
         </div>
       </div>
