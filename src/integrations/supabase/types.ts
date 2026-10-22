@@ -2607,6 +2607,41 @@ export type Database = {
         }
         Relationships: []
       }
+      legal_acceptances: {
+        Row: {
+          accepted_at: string
+          context: string
+          fundraiser_id: string | null
+          id: string
+          terms_version: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          context: string
+          fundraiser_id?: string | null
+          id?: string
+          terms_version: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          context?: string
+          fundraiser_id?: string | null
+          id?: string
+          terms_version?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_acceptances_fundraiser_id_fkey"
+            columns: ["fundraiser_id"]
+            isOneToOne: false
+            referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_cards: {
         Row: {
           card_number: string
@@ -3316,6 +3351,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      request_rate_limits: {
+        Row: {
+          bucket: string
+          created_at: string
+          id: number
+          key_hash: string
+        }
+        Insert: {
+          bucket: string
+          created_at?: string
+          id?: never
+          key_hash: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          id?: never
+          key_hash?: string
+        }
+        Relationships: []
       }
       saved_cards: {
         Row: {
