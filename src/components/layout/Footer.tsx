@@ -5,6 +5,8 @@ import { SectionLabel } from '@/components/ui/organizer';
 import { Reveal } from '@/components/ui/editorial-motion';
 import logo from '@/assets/logo.png';
 import { ContactClose } from './ContactClose';
+import { COOKIE_SETTINGS_EVENT } from '@/components/PrivacyConsentBanner';
+import { MotionPauseButton } from '@/components/MotionPauseButton';
 
 const linkClass = 'inline-flex min-h-11 items-center py-2.5 transition-colors hover:text-primary-foreground';
 /** `contact={false}` leaves out the closing contact form (account and payment pages). */
@@ -47,9 +49,23 @@ export function Footer({ contact = true }: { contact?: boolean } = {}) {
         </div>
       </Reveal>
       <Reveal className="mt-6 md:mt-12 flex flex-col justify-between gap-2 md:gap-5 border-t border-primary-foreground/20 pt-4 md:pt-6 text-[13px] leading-5 text-primary-foreground/70 md:flex-row">
-        <p>© {new Date().getFullYear()} CouponDonation. All rights reserved.</p>
-        <div className="flex flex-wrap gap-x-6"><Link to="/privacy" className={linkClass}>Privacy policy</Link><Link to="/cookies" className={linkClass}>Cookie policy</Link><Link to="/terms" className={linkClass}>Terms of service</Link></div>
+        <p className="shrink-0">© {new Date().getFullYear()} CouponDonation Inc. All rights reserved.</p>
+        <nav aria-label="Legal" className="flex flex-wrap gap-x-6 md:justify-end">
+          <Link to="/terms" className={linkClass}>Terms of use</Link>
+          <Link to="/privacy" className={linkClass}>Privacy policy</Link>
+          <Link to="/health-data-privacy" className={linkClass}>Health data privacy</Link>
+          <Link to="/cookies" className={linkClass}>Cookie policy</Link>
+          <button type="button" onClick={() => window.dispatchEvent(new Event(COOKIE_SETTINGS_EVENT))} className={linkClass}>Cookie settings</button>
+          <Link to="/refunds" className={linkClass}>Refund policy</Link>
+          <Link to="/fundraiser-rules" className={linkClass}>Fundraiser rules</Link>
+          <Link to="/copyright" className={linkClass}>Copyright</Link>
+          <Link to="/accessibility" className={linkClass}>Accessibility</Link>
+          <MotionPauseButton variant="link" className="py-2.5 transition-colors" />
+        </nav>
       </Reveal>
+      <p className="mt-4 max-w-3xl text-[12px] leading-5 text-primary-foreground/55">
+        Store names and logos shown on CouponDonation are trademarks of their owners. Those stores are not affiliated with, and do not sponsor or endorse, CouponDonation. CouponDonation Inc. is not a registered charity, and gifts are not tax-deductible.
+      </p>
     </div>
   </footer>;
 }

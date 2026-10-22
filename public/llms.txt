@@ -1,22 +1,25 @@
 # CouponDonation
 
-> CouponDonation turns monetary donations into real grocery coupons for verified families in need, partnering with brands like Walmart, Target, and Amazon. 95% of every dollar reaches recipients.
+> CouponDonation turns donations into store coupons and gift cards for people in need in the United States. 100% of each gift goes to the family; nothing is paid out as cash, and every dollar is tracked.
 
-CouponDonation is a US-based giving platform. Donors contribute any amount; funds are converted into $5 and $10 grocery coupons that verified recipient families redeem at major retail partners. Every donation is tracked end-to-end for transparency.
+CouponDonation Inc. is a US company (a Delaware corporation), not a registered 501(c)(3) charity, so gifts are not tax-deductible. People in need post a fundraiser and say which stores would help most. Donors give to a fundraiser and choose the stores their gift is used at, such as Walmart, Target, Kroger, CVS or DoorDash. The team then issues store coupons and gift cards for the recipient. CouponDonation takes no platform fee; it runs on optional tips donors can add at checkout. Store names are trademarks of their owners, and the stores are not affiliated with CouponDonation.
 
 ## Pages
 
-- [Home](/): Overview of the platform and live impact.
-- [About](/about): Mission, team, and how we operate.
+- [Home](/): How CouponDonation works and live totals from completed donations.
+- [About](/about): Mission and team.
 - [How It Works](/how-it-works): Step-by-step flow for donors and recipients.
-- [Donate](/donate): Make a tax-deductible donation that becomes grocery coupons.
-- [Apply for Help](/apply): Recipient application and verification flow.
-- [Stories](/stories): Real recipient stories and active fundraisers.
-- [Blog](/blog): News, impact updates, and donor spotlights.
-- [FAQ](/faq): Common questions about donations, coupons, and verification.
+- [Donate](/donate): Give store coupons; choose the stores and the amount.
+- [Apply for Help](/apply): Free application for people in the US who need help with essentials.
+- [Fundraisers](/stories): Live fundraisers with totals from completed donations.
+- [FAQ](/faq): Common questions about donations, coupons and privacy.
 
-## Optional
+## Legal
 
-- [Privacy Policy](/privacy): How we handle personal data.
-- [Terms of Service](/terms): Platform terms and Smart Voucher conditions.
-- [Cookie Policy](/cookies): Cookie usage and consent details.
+- [Terms of Use](/terms)
+- [Privacy Policy](/privacy)
+- [Cookie Policy](/cookies)
+- [Refund Policy](/refunds)
+- [Copyright Policy](/copyright)
+- [Consumer Health Data Privacy Policy](/health-data-privacy)
+- [Accessibility](/accessibility)

@@ -71,8 +71,8 @@ export default function DonationSuccess() {
           {/* Impact Message */}
           <div className="border-y border-border bg-primary/5 p-4">
             <p className="text-sm text-foreground">
-              Your donation creates coupons that are distributed to verified families, 
-              redeemable at partner brands for groceries, essentials, and more.
+              Your donation becomes coupons for the family you supported, 
+              at the stores you chose, for groceries, essentials and more.
             </p>
           </div>
 

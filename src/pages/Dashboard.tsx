@@ -249,8 +249,8 @@ export default function Dashboard() {
               ) : donations.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-border p-6 text-center">
                   <p className="text-sm text-muted-foreground">
-                    You haven't given yet. Every $5 becomes a restricted retail voucher for a
-                    verified family.
+                    You haven't given yet. Your gift becomes store coupons for a family that
+                    asked for help.
                   </p>
                   <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate('/dashboard/donate')}>
                     Make your first donation
@@ -308,7 +308,7 @@ export default function Dashboard() {
               ) : coupons.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-border p-6 text-center">
                   <p className="text-sm text-muted-foreground">
-                    No vouchers yet. Browse what's available from our US retail partners.
+                    No vouchers yet. Coupons appear here once donors give to your fundraiser.
                   </p>
                   <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate('/dashboard/wallet')}>
                     Browse vouchers

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { emailExists } from "../_shared/email-exists.ts";
+import { HOUR, clientIp, overLimit } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,8 +31,15 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // At most 20 checks an hour from one network, so the check can't be used to list members.
+    if (await overLimit(supabaseAdmin, "email-check-ip", clientIp(req), 20, HOUR)) {
+      return new Response(
+        JSON.stringify({ error: "Too many requests. Please try again later." }),
+        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const exists = await emailExists(supabaseAdmin, email);
-    console.log(`Email check completed: exists = ${exists}`);
 
     return new Response(
       JSON.stringify({ exists }),

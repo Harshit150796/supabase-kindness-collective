@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { ImagePlus, MapPin, Sparkles } from "lucide-react";
 import { getSuggestedTitles } from "@/lib/suggestedTitles";
 import { MediaItem, formatDuration } from "@/lib/mediaUpload";
@@ -24,6 +25,8 @@ interface ReviewStepProps {
   onEditStory: () => void;
   onEditDetails: () => void;
   onEditLocation: () => void;
+  confirmed: boolean;
+  setConfirmed: (value: boolean) => void;
 }
 
 const whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
@@ -60,6 +63,8 @@ export const ReviewStep = ({
   onEditStory,
   onEditDetails,
   onEditLocation,
+  confirmed,
+  setConfirmed,
 }: ReviewStepProps) => {
   const cover = media[0];
   const extras = media.slice(1);
@@ -213,9 +218,26 @@ export const ReviewStep = ({
           : <p className="text-muted-foreground">No story written yet.</p>}
       </section>
 
-      <p className="text-sm leading-relaxed text-muted-foreground">
-        Your page goes live as soon as you submit. You can change any part of it later from your fundraiser page.
-      </p>
+      <div className="space-y-3">
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-muted/60 p-4 sm:p-5" data-apply-confirm>
+          <input
+            type="checkbox"
+            checked={confirmed}
+            onChange={(e) => setConfirmed(e.target.checked)}
+            className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[hsl(var(--primary))]"
+          />
+          <span className="text-[15px] leading-relaxed text-foreground">
+            I confirm this request is true, that I'm 18 or older, and that I have permission to share every photo and detail in it.
+          </span>
+        </label>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Submitting publishes your page right away, including any health details you shared, under our{" "}
+          <Link to="/terms" target="_blank" className="font-medium text-primary underline underline-offset-2">Terms of Use</Link>,{" "}
+          <Link to="/fundraiser-rules" target="_blank" className="font-medium text-primary underline underline-offset-2">Fundraiser Rules</Link> and{" "}
+          <Link to="/health-data-privacy" target="_blank" className="font-medium text-primary underline underline-offset-2">Consumer Health Data Privacy Policy</Link>.
+          You can change any part of it later from your fundraiser page.
+        </p>
+      </div>
     </div>
   );
 };

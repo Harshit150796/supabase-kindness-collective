@@ -17,6 +17,8 @@ import { PasswordInput } from '@/components/auth/PasswordInput';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import { Navbar } from '@/components/layout/Navbar';
 import { GoogleSignIn } from '@/components/auth/GoogleSignIn';
+import { AgreementNotice } from '@/components/legal/AgreementNotice';
+import { markAgreement } from '@/lib/legal';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -162,6 +164,7 @@ export default function Auth() {
     if (!validateForm()) return;
     
     setLoading(true);
+    markAgreement(mode === 'signup' ? 'sign-up' : 'sign-in');
 
     try {
       if (mode === 'signup') {
@@ -396,6 +399,7 @@ export default function Auth() {
                   </TabsList>
 
                   <GoogleSignIn />
+                  <AgreementNotice google adult={mode === 'signup'} className="mt-3 text-center" />
                   <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
                     <span className="h-px flex-1 bg-border" />or use email<span className="h-px flex-1 bg-border" />
                   </div>
@@ -463,9 +467,10 @@ export default function Auth() {
 
                       {mode === 'signup' && <UpdatesOptIn id="signup-updates" checked={optIn} onChange={setOptIn} />}
 
+                      <AgreementNotice action={mode === 'signin' ? 'Sign in' : 'Create account'} adult={mode === 'signup'} />
                       <Button type="submit" className="w-full" disabled={loading}>
                         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {mode === 'signin' ? 'Sign In' : 'Continue'}
+                        {mode === 'signin' ? 'Sign in' : 'Create account'}
                       </Button>
                     </div>
                   </form>

@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { clearAllDrafts, clearAnonymousDrafts } from '@/lib/draftStorage';
+import { flushAgreement } from '@/lib/legal';
 
 type AppRole = 'admin' | 'donor' | 'recipient';
 
@@ -84,6 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         prevUserIdRef.current = newUserId;
         applySession(nextSession);
+
+        // Record the Terms acceptance the person gave on the button they pressed to sign in or up.
+        // Deferred: Supabase calls made inside this callback can deadlock the auth client.
+        if (event === 'SIGNED_IN' && newUserId) window.setTimeout(() => { void flushAgreement(newUserId); }, 0);
       }
     );
 

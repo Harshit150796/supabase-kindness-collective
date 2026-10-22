@@ -2,6 +2,7 @@ import { prefetchApply } from "@/lib/applyRoute";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { canopyTopPx, PHONE_BREAKPOINT } from "@/lib/heroBackdrop";
+import { useMotionPreference } from "@/hooks/useMotionPreference";
 
 const ROTATING_WORDS = ["transparent", "trackable", "real-time"];
 const WORD_MS = 3000;
@@ -35,10 +36,13 @@ export function HeroHeadline({ play = true }: { play?: boolean }) {
     return () => { window.removeEventListener("cd:intro-iris", lift); window.removeEventListener("cd:intro-end", lift); };
   }, [uncovered]);
 
+  // The word keeps changing unless the visitor paused animations.
+  const still = useMotionPreference() === 'gentle';
   useEffect(() => {
+    if (still) return;
     const id = setInterval(() => setIdx((i) => (i + 1) % ROTATING_WORDS.length), WORD_MS);
     return () => clearInterval(id);
-  }, []);
+  }, [still]);
 
   const prev = (idx + ROTATING_WORDS.length - 1) % ROTATING_WORDS.length;
 
@@ -60,7 +64,7 @@ export function HeroHeadline({ play = true }: { play?: boolean }) {
 
   return (
     <div ref={ref} data-play={(play && uncovered) || undefined} className="hero-headline antialiased">
-      <h1 className="sr-only">CouponDonation — Turn Donations Into Grocery Coupons for Verified Families</h1>
+      <h1 className="sr-only">CouponDonation — Turn Donations Into Grocery Coupons for Families in Need</h1>
       <div className="hero-cta container mx-auto px-4 lg:px-8">
         <div className="hero-cta-box">
           <p className="hero-kicker">

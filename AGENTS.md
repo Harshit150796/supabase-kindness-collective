@@ -8,7 +8,7 @@
 - Campaign pages use the `ink` token (near-black, green undertone) for Share buttons, strong headings and the dark more-fundraisers band; Donate stays primary green; blue marks verification only.
 - Marketing bands alternate neutral/soft-green/deep-forest; borderless tonal panels, hairlines for tables only; no eyebrows, decorative pills, icon circles, gradient text, glow or card-on-card.
 - Shared organizer primitives own titles/numerals, surfaces, labels, stats, status, progress and states; controls use sans.
-- Motion is full on every device; the OS reduced-motion setting is not consulted (founder decision lives in memory).
+- Motion is full on every device; the OS reduced-motion setting is not consulted (founder decision lives in memory). The visitor's own Pause animations control is the only exception.
 - Public photos stay local; without people-photo consent use coupon/receipt/trace visuals. Only transform managed Supabase hosts or local variants (contain, never crop at delivery).
 - Module-level Intl formatters only (toLocale* per render is slow).
 
@@ -38,3 +38,11 @@
 - Recipients pick one or more needs and, per need, up to 8 stores from the donor catalogue (src/lib/helpNeeds.ts, NeedsAndStores); `category` keeps the first need, `help_categories`/`preferred_brands`/`similar_stores_ok` keep the rest. Writes retry without those columns if a database lacks them.
 - Location is a US ZIP code; donors see city and state only (`city`, `state_code`, saved at submit), never a bare ZIP. The confirmed city uses the verification blue.
 - Fundraiser pages show "What's needed" (RequestedHelp): each requested store links to /donate?fundraiser=…&store=…, and the donate flow lists a fundraiser's requested stores first, marked Requested.
+
+## Legal, Claims & Security
+- Legal facts live in src/lib/legal.ts (company, email, phone, mailing address, LEGAL_VERSION). Pages use LegalPage: /terms, /privacy, /cookies, /refunds, /fundraiser-rules, /health-data-privacy, /copyright, /accessibility, all linked in the footer. Bump LEGAL_VERSION and LEGAL_UPDATED for material changes.
+- Every button that creates an account, signs in or pays sits under an AgreementNotice (18+, Terms, Privacy, Refunds for donations); pressing it calls markAgreement, and useAuth records it in legal_acceptances. Submitting a fundraiser needs the ReviewStep confirmation checkbox and records "fundraiser-submit". Never remove these.
+- Claims must be true: no "verified families", "PCI compliant" or "tax-deductible" wording, no claimed retailer partnerships or endorsements, and CouponDonation is never called a nonprofit or charity; CouponDonation Inc. is a for-profit company and gifts are not tax-deductible. No invented stories, testimonials, reviews, people or figures: editorial and CMS stories were removed for this reason, and testimonials pictured with stock photos never show. Testimonials need the person's permission; staff or relatives must be disclosed. The Coupon assistant follows the same facts.
+- Analytics loads only after Okay on the cookie bar and never with Global Privacy Control; Essential only and Cookie settings (footer) switch it off. Motion keeps playing by default; the hero and footer "Pause animations" control (src/lib/motionChoice.ts) is the WCAG 2.2.2 pause and must stay.
+- Public edge functions that send codes or reveal account existence are rate-limited through `_shared/rate-limit.ts` (hashed keys in request_rate_limits). Retired admin/import functions return 410; don't revive them without authentication.
+- Account deletion and data copies are requests to support@coupondonation.com (Settings), answered within 45 days; deletion within 30 days apart from records the law requires.

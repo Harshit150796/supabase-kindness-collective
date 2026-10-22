@@ -22,8 +22,8 @@ interface TestimonialForm {
 }
 
 const emptyForm: TestimonialForm = {
-  quote: '', name: '', role: 'donor', role_label: 'Verified Donor', location: '',
-  image_url: '', verified: true, is_published: false, display_order: 0,
+  quote: '', name: '', role: 'donor', role_label: 'Donor', location: '',
+  image_url: '', verified: false, is_published: false, display_order: 0,
 };
 
 

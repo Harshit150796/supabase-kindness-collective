@@ -3,6 +3,7 @@ import { Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { createGoogleNonce, googleIdentityOptions, googleTokenRequest, loadGoogleIdentity } from '@/lib/googleIdentity';
+import { markAgreement } from '@/lib/legal';
 
 /** Google's own button opens from this site's origin, not an OAuth redirect. */
 export function GoogleSignIn() {
@@ -25,6 +26,7 @@ export function GoogleSignIn() {
           inFlight.current = true;
           setError('');
           setState('signing-in');
+          markAgreement('google');
           try {
             const { data, error: authError } = await supabase.auth.signInWithIdToken(googleTokenRequest(response.credential, nonce.raw));
             if (authError || !data.user || !data.session) throw new Error('Google sign-in could not finish.');

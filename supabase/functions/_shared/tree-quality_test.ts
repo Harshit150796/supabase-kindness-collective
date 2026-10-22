@@ -142,10 +142,14 @@ Deno.test('all four compact giving stories keep a visible animation loop', async
   assert(story.includes('data-giving-steps="compact"'));
   assert(story.includes('data-desktop-step={index + 1}'));
 });
-Deno.test('full motion on every device regardless of the OS Reduce Motion setting', async () => {
+Deno.test('full motion on every device regardless of the OS Reduce Motion setting, unless the visitor presses Pause', async () => {
   const hook = await Deno.readTextFile('src/hooks/useMotionPreference.tsx');
   const css = await Deno.readTextFile('src/index.css');
-  assert(/useMotionPreference\(\): MotionPreference \{\s*return 'full';/.test(hook));
+  const choice = await Deno.readTextFile('src/lib/motionChoice.ts');
+  // Only the on-page Pause animations control (WCAG 2.2.2) slows anything; the OS setting is never read.
+  const body = hook.slice(hook.indexOf('export function useMotionPreference'), hook.indexOf('function osReducedMotion'));
+  assert(/return paused \? 'gentle' : 'full';/.test(body));
+  assert(!body.includes('matchMedia') && !body.includes('QUERY') && !choice.includes('matchMedia'));
   assert(!css.includes('prefers-reduced-motion'));
 });
 

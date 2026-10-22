@@ -204,7 +204,7 @@ export default function About() {
               <Check className="h-7 w-7 text-primary" />
               <h2 className="mt-6 font-about-serif text-3xl md:text-4xl">What we do</h2>
               <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-                We provide an online donation platform where people support fundraisers, choose participating brands, and fund coupons that recipients can use for everyday needs.
+                We provide an online donation platform where people support fundraisers, choose stores, and fund coupons that recipients can use for everyday needs.
               </p>
             </Reveal>
             <Reveal className="border-t border-border pt-10 md:border-l md:border-t-0 md:pl-16 md:pt-0" delay={0.1}>

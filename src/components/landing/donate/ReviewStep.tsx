@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { TIP_PERCENTS, TYPICAL_TIP_PERCENT, tipCentsFor, type Charge, type Provider } from '../../../../supabase/functions/_shared/checkout-total.ts';
 import { EASE_OUT, SPRING } from './tokens';
 import { plainNumber, usd, type Retailer } from './retailers';
+import { AgreementNotice } from '@/components/legal/AgreementNotice';
 
 export type { Provider };
 /** null = nothing chosen yet (no tip), a number = that percent, 'other' = a typed dollar amount. */
@@ -218,6 +219,8 @@ export function ReviewStep(props: ReviewStepProps) {
         {providers.length === 0 ? (
           <p className="rounded-xl bg-muted/70 p-4 text-sm text-muted-foreground">Online payments are paused for a moment. Please check back soon.</p>
         ) : (
+          <>
+          <AgreementNotice action="Donate" donate className="mb-3 text-[13px]" />
           <motion.button
             type="button"
             data-pay-with={provider}
@@ -235,6 +238,7 @@ export function ReviewStep(props: ReviewStepProps) {
               </>
             )}
           </motion.button>
+          </>
         )}
 
         {error && (
