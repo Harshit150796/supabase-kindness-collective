@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { HOUR, QUARTER_HOUR, clientIp, overLimit, recentCount, recordEvent } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,6 +33,21 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Guessing limits: 5 wrong codes per email in 15 minutes, 30 tries an hour per network.
+    const normalizedEmail = String(email).trim().toLowerCase();
+    if ((await recentCount(supabase, "otp-fail", normalizedEmail, QUARTER_HOUR)) >= 5) {
+      return new Response(
+        JSON.stringify({ error: "Too many wrong codes. Wait 15 minutes, then request a new code." }),
+        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    if (await overLimit(supabase, "otp-verify-ip", clientIp(req), 30, HOUR)) {
+      return new Response(
+        JSON.stringify({ error: "Too many attempts. Please try again later." }),
+        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Find the OTP record
     const { data: otpRecord, error: fetchError } = await supabase
       .from("otp_codes")
@@ -51,6 +67,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (!otpRecord) {
+      await recordEvent(supabase, "otp-fail", normalizedEmail);
       return new Response(
         JSON.stringify({ error: "Invalid or expired OTP code" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -74,7 +91,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Clean up - delete all OTPs for this email
     await supabase.from("otp_codes").delete().eq("email", email);
 
-    console.log("OTP verified successfully for:", email);
+    console.log("OTP verified");
 
     return new Response(
       JSON.stringify({ success: true, verified: true }),

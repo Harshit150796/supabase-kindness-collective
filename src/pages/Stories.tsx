@@ -1,14 +1,12 @@
-import { ResponsivePhoto } from '@/components/ResponsivePhoto';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Heart, MapPin, PlusCircle } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { SEO, breadcrumbJsonLd } from '@/components/SEO';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LineReveal, Reveal, ImageReveal } from '@/components/ui/editorial-motion';
-import { impactStories, type ImpactStory } from '@/data/impactStories';
+import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
 import { useFundraisers } from '@/hooks/useFundraisers';
 import { useLandingStats, formatUSD } from '@/hooks/useLandingStats';
 import { FundraiserCard } from '@/components/stories/FundraiserCard';
@@ -18,13 +16,8 @@ import { FundraiserFilterBar, type FundraiserFilters } from '@/components/storie
 import { useZipStates } from '@/lib/zipStates';
 import { brandLogos } from '@/data/brandLogos';
 
-const categoryLabels: Record<string, string> = {
-  family: 'Family Support', child: 'Child Welfare', emergency: 'Emergency Aid', community: 'Community',
-};
-type CategoryFilter = 'all' | 'family' | 'child' | 'emergency' | 'community';
 
 export default function Stories() {
-  const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
   const [fundraiserFilters, setFundraiserFilters] = useState<FundraiserFilters>({ category: 'all', state: 'all' });
   const { data: fundraisers, isLoading, isError, refetch } = useFundraisers();
   const stats = useLandingStats();
@@ -34,8 +27,6 @@ export default function Stories() {
     if (fundraiserFilters.state !== 'all') return item.zip_code ? stateMap.get(item.zip_code) === fundraiserFilters.state : false;
     return true;
   }), [fundraisers, fundraiserFilters, stateMap]);
-  const filteredStories = activeCategory === 'all' ? impactStories : impactStories.filter((story) => story.category === activeCategory);
-  const categories: CategoryFilter[] = ['all', 'family', 'child', 'emergency', 'community'];
   const liveTotals = stats ? [
     { label: 'Completed donations', value: stats.donations_count.toLocaleString() },
     { label: 'Donated', value: formatUSD(stats.total_raised) },
@@ -52,7 +43,7 @@ export default function Stories() {
           <div className="container mx-auto px-4">
             <div className="max-w-5xl">
               <LineReveal><h1 className="max-w-4xl font-display text-6xl font-normal leading-none text-foreground md:text-8xl">Find a need you can help meet.</h1></LineReveal>
-              <Reveal delay={0.1}><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">Active fundraisers use live campaign records. Editorial stories explain the kinds of needs restricted coupons can cover.</p></Reveal>
+              <Reveal delay={0.1}><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">Every fundraiser here is a live request, and every figure comes from completed donations.</p></Reveal>
             </div>
             {liveTotals.length > 0 && (
               <div className="mt-16 grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -80,13 +71,8 @@ export default function Stories() {
         </section>
         <CompletedCampaigns />
 
-        <section className="py-24 md:py-32" style={{backgroundColor:'hsl(var(--primary-97))'}}>
-          <div className="container mx-auto px-4">
-            <div className="mb-10 max-w-3xl"><LineReveal><h2 className="font-display text-5xl font-normal text-foreground md:text-6xl">Stories behind everyday needs.</h2></LineReveal><Reveal delay={0.08}><p className="mt-4 text-lg text-muted-foreground">These are editorial stories, not live fundraisers. Their text and photographs remain separate from campaign totals.</p></Reveal></div>
-            <div className="mb-8 flex snap-x gap-2 overflow-x-auto [&>*]:shrink-0 [&>*]:snap-start">{categories.map((category) => <Button key={category} variant={activeCategory === category ? 'default' : 'outline'} size="sm" onClick={() => setActiveCategory(category)}>{category === 'all' ? 'All stories' : categoryLabels[category]}</Button>)}</div>
-            <div className="grid gap-x-7 gap-y-12 md:grid-cols-2 lg:grid-cols-3">{filteredStories.map((story, index) => <EditorialStoryCard key={story.id} story={story} index={index} />)}</div>
-          </div>
-        </section>
+        {/* Editorial stories were removed in the October 2026 legal review: they described people and
+            results that weren't real. Only live fundraisers and real totals appear here. */}
 
         <section className="py-24 md:py-32">
           <div className="container mx-auto max-w-4xl px-4">
@@ -96,18 +82,5 @@ export default function Stories() {
       </main>
       <Footer />
     </div>
-  );
-}
-
-function EditorialStoryCard({ story, index }: { story: ImpactStory; index: number }) {
-  return (
-    <Reveal delay={index * 0.05}>
-      <Link to={`/story/${story.id}`} className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-        <article>
-          <ImageReveal className="aspect-[4/3] bg-muted"><ResponsivePhoto src={story.image} width={1200} height={900} alt={story.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02] group-active:scale-[1.02]" loading="lazy" /></ImageReveal>
-          <div className="pt-5"><div className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />{story.location}</div><h3 className="mt-3 font-display text-3xl font-normal text-foreground">{story.name}</h3><p className="mt-3 line-clamp-3 leading-relaxed text-muted-foreground">{story.story}</p><span className="mt-5 inline-flex min-h-11 items-center text-sm font-medium text-primary py-2">Read the story <ArrowRight className="ml-2 h-4 w-4" /></span></div>
-        </article>
-      </Link>
-    </Reveal>
   );
 }

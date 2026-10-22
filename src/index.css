@@ -630,6 +630,12 @@
   animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }
 
+/* The visitor's own "Pause animations" choice (src/lib/motionChoice.ts, WCAG 2.2.2): looping motion
+   stops after its current pass and scrolling rails freeze; one-time entrances still finish, so nothing
+   is left half-shown. Loading spinners keep turning. */
+html[data-motion="paused"] *:not(.animate-spin), html[data-motion="paused"] *::before, html[data-motion="paused"] *::after { animation-iteration-count: 1 !important; }
+html[data-motion="paused"] .animate-marquee, html[data-motion="paused"] .voices-track { animation-play-state: paused !important; }
+
 /* Touch requirements belong to shared controls, not individual forms. */
 @media (max-width: 767px), (pointer: coarse) {
   /* Inputs set in large display type (data-large-type, always over 16px) keep their size. */

@@ -1,13 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { motionPaused, subscribeMotionChoice } from '@/lib/motionChoice';
 import { createPortal } from 'react-dom';
 
 export type MotionPreference = 'full' | 'gentle';
 
 const QUERY = '(prefers-reduced-motion: reduce)';
 
-/** Founder decision: every device gets full motion, whatever the OS setting. */
+/**
+ * Founder decision: every device gets full motion, whatever the OS setting. The only exception is the
+ * visitor's own "Pause animations" button (src/lib/motionChoice.ts), which switches to gentle motion.
+ */
 export function useMotionPreference(): MotionPreference {
-  return 'full';
+  const paused = useSyncExternalStore(subscribeMotionChoice, motionPaused, () => false);
+  return paused ? 'gentle' : 'full';
 }
 
 function osReducedMotion(): boolean {

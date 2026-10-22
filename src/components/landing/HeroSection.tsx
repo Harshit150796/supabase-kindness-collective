@@ -5,6 +5,7 @@ import { HeroBackdrop } from '@/components/landing/hero/HeroBackdrop';
 const AITreeChat = lazy(() => import('@/components/landing/hero/AITreeChat').then(m => ({ default: m.AITreeChat })));
 import { Tree3DErrorBoundary } from '@/components/landing/Tree3DErrorBoundary';
 import { announceTreeReady } from '@/lib/treeReady';
+import { MotionPauseButton } from '@/components/MotionPauseButton';
 const Tree3DScene = lazy(() => import('@/components/landing/Tree3DScene'));
 
 const BOT_UA_RE = /(bot|crawler|spider|crawling|Googlebot|bingbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|Discordbot|HeadlessChrome|Lighthouse|PageSpeed)/i;
@@ -85,6 +86,7 @@ export function HeroSection() {
       <div data-hero-overlay className="absolute inset-0 pointer-events-none transition-opacity duration-700" style={{ opacity: visible ? 1 : 0 }}>
         <HeroHeadline play={visible} />
         <AITreeLauncher onClick={() => setChatOpen(true)} hidden={chatOpen} />
+        <MotionPauseButton className="absolute bottom-[max(12px,env(safe-area-inset-bottom))] left-[max(12px,env(safe-area-inset-left))] z-30 md:bottom-4 md:left-4" />
         {chatOpen && <Suspense fallback={null}><AITreeChat open={chatOpen} onClose={() => setChatOpen(false)} /></Suspense>}
       </div>
     </section>

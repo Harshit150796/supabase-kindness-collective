@@ -32,6 +32,7 @@ import {
   loadScopedDraft,
   clearScopedDraft,
 } from "@/lib/draftStorage";
+import { markAgreement, recordAgreement } from "@/lib/legal";
 
 
 interface ApplicationData {
@@ -152,6 +153,8 @@ const ApplyRecipient = () => {
   const [story, setStory] = useState("");
   const [title, setTitle] = useState("");
   const [titleSource, setTitleSource] = useState<"suggested" | "custom">("suggested");
+  // The final step's required confirmation (truth, consent for photos, Terms). Never saved in drafts.
+  const [confirmed, setConfirmed] = useState(false);
 
   // Account state (only used for non-authenticated users)
   const [accountOpen, setAccountOpen] = useState(false);
@@ -288,7 +291,8 @@ const ApplyRecipient = () => {
         if (!monthlyGoal || parseInt(monthlyGoal) <= 0) return "Enter your goal";
         return /^\d{5}$/.test(zipCode) ? null : "Enter your 5-digit ZIP code";
       case 4:
-        return (title || "").trim().length > 0 ? null : "Add a title";
+        if (!(title || "").trim()) return "Add a title";
+        return confirmed ? null : "Tick the confirmation to submit";
       default:
         return "Not ready";
     }
@@ -378,6 +382,7 @@ const ApplyRecipient = () => {
   };
 
   const handleGoogleAuth = async () => {
+    markAgreement("google");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -445,6 +450,9 @@ const ApplyRecipient = () => {
       throw fundraiserError;
     }
 
+    // Keep a record that they confirmed the request and accepted the Terms when submitting.
+    void recordAgreement(userId, "fundraiser-submit", fundraiserData.id);
+
     // Save the full gallery (cover first)
     if (uploadedUrls.length > 0) {
       const { error: imagesError } = await supabase.from("fundraiser_images").insert(
@@ -472,6 +480,7 @@ const ApplyRecipient = () => {
 
   const handleAccountSubmit = async () => {
     preserveOnAuthRef.current = true;
+    markAgreement("apply-account");
     await handleSendOTP();
   };
 
@@ -604,6 +613,7 @@ const ApplyRecipient = () => {
 
   const handleSignInAndContinue = async (signInPassword: string) => {
     setIsSubmitting(true);
+    markAgreement("sign-in");
     preserveOnAuthRef.current = true;
 
     try {
@@ -826,6 +836,8 @@ const ApplyRecipient = () => {
             onEditStory={() => goToStep(2)}
             onEditDetails={() => goToStep(1)}
             onEditLocation={() => goToStep(3)}
+            confirmed={confirmed}
+            setConfirmed={setConfirmed}
           /></Suspense>
         )}
       </ApplyLayout>

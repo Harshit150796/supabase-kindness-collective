@@ -10,7 +10,7 @@ export default function DonorDonate() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Make a Donation</h1>
           <p className="text-muted-foreground mt-1">
-            Your contribution helps families in need through partner brand coupons
+            Your contribution helps families in need through store coupons
           </p>
         </div>
         

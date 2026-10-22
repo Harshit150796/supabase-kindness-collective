@@ -6,7 +6,7 @@ const SITE = 'https://coupondonation.com';
 const TOKEN_DAYS = 30;
 export const CHARITY_LINE = 'CouponDonation is not a registered charity, so this donation is not tax-deductible.';
 export const NO_FUNDRAISER_NEXT =
-  'Your donation becomes coupons for the retailers you chose. Once they are ready, they go into our shared pool, where verified families can claim them from their voucher wallet.';
+  'Your donation becomes coupons for the retailers you chose. Once they are ready, they go into our shared pool, where families who have asked for help can claim them from their voucher wallet.';
 export const FUNDRAISER_NEXT = (organizer: string) =>
   `Your donation becomes coupons for ${organizer}, and we will email you when they receive it.`;
 

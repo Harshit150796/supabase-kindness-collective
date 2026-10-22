@@ -21,7 +21,7 @@ const schema = z.object({
 });
 
 const provides = [
-  ['Coupon-locked giving', 'Donations are converted into coupons for participating retailers, never cash, so support goes to the need described.'],
+  ['Coupon-locked giving', 'Donations are converted into coupons for the stores chosen, never cash, so support goes to the need described.'],
   ['A receipt trail', 'Every completed donation has a receipt and a coupon trail. Public pages show only campaign totals.'],
   ['Organizer tools', 'Co-organizers, campaign updates, supporter messaging with safety checks, and share links with QR codes.'],
 ];
@@ -48,7 +48,7 @@ export default function Partners() {
       <main>
         <section className="py-20 md:py-28"><div className="container mx-auto max-w-4xl px-4">
           <h1 className="font-display text-5xl leading-[1.02] md:text-7xl">Run fundraisers for the families you already serve</h1>
-          <p className="mt-6 max-w-2xl text-lg text-muted-foreground">Churches, nonprofits and community organizations can organize campaigns for households in their care. Each family consents to its campaign, chooses what is shared, and receives support as coupons for participating retailers.</p>
+          <p className="mt-6 max-w-2xl text-lg text-muted-foreground">Churches, nonprofits and community organizations can organize campaigns for households in their care. Each family consents to its campaign, chooses what is shared, and receives support as coupons for the stores they need.</p>
         </div></section>
         <section className="bg-primary/5 py-16"><div className="container mx-auto grid gap-10 px-4 md:grid-cols-3">
           {provides.map(([t, d]) => <div key={t}><h2 className="font-display text-3xl">{t}</h2><p className="mt-3 text-muted-foreground">{d}</p></div>)}

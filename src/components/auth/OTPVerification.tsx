@@ -11,6 +11,15 @@ interface OTPVerificationProps {
   onBack: () => void;
 }
 
+/** The message a function sent with a non-2xx reply (wrong code, too many tries), if any. */
+async function serverMessage(error: unknown): Promise<string | null> {
+  const context = (error as { context?: Response })?.context;
+  try {
+    if (context && typeof context.json === 'function') return (await context.clone().json())?.error ?? null;
+  } catch { /* not JSON */ }
+  return null;
+}
+
 export function OTPVerification({ email, onVerified, onBack }: OTPVerificationProps) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -88,7 +97,7 @@ export function OTPVerification({ email, onVerified, onBack }: OTPVerificationPr
       }
     } catch (error: any) {
       console.error('Verification error:', error);
-      toast.error(error.message || 'Failed to verify code');
+      toast.error((await serverMessage(error)) || 'That code didn\'t work. Check it and try again.');
     } finally {
       setLoading(false);
     }
@@ -116,7 +125,7 @@ export function OTPVerification({ email, onVerified, onBack }: OTPVerificationPr
       }
     } catch (error: any) {
       console.error('Resend error:', error);
-      toast.error(error.message || 'Failed to resend code');
+      toast.error((await serverMessage(error)) || 'We couldn\'t send a new code. Please try again.');
     } finally {
       setResendLoading(false);
     }

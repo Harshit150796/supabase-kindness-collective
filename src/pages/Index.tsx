@@ -41,7 +41,7 @@ const Index = () => {
     <div className="min-h-dvh bg-background">
       <SEO
         title="CouponDonation - Transforming Giving Through Generosity"
-        description="CouponDonation converts your donation into grocery coupons for verified families in need. Donate to causes from Walmart, Target, Amazon and more."
+        description="CouponDonation turns your donation into store coupons for families in need, at stores like Walmart, Target and Amazon. Every dollar is tracked."
         path="/"
       />
       <Navbar />

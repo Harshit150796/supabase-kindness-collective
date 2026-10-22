@@ -28,6 +28,11 @@ const FAQ = lazy(() => import("./pages/FAQ"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Cookies = lazy(() => import("./pages/Cookies"));
 const Terms = lazy(() => import("./pages/Terms"));
+const Refunds = lazy(() => import("./pages/legal/Refunds"));
+const Copyright = lazy(() => import("./pages/legal/Copyright"));
+const HealthDataPrivacy = lazy(() => import("./pages/legal/HealthDataPrivacy"));
+const Accessibility = lazy(() => import("./pages/legal/Accessibility"));
+const FundraiserRules = lazy(() => import("./pages/legal/FundraiserRules"));
 const Auth = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const DonationSuccess = lazy(() => import("./pages/DonationSuccess"));
@@ -119,6 +124,11 @@ const AppRoutes = () => (
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/cookies" element={<Cookies />} />
       <Route path="/terms" element={<Terms />} />
+      <Route path="/refunds" element={<Refunds />} />
+      <Route path="/copyright" element={<Copyright />} />
+      <Route path="/health-data-privacy" element={<HealthDataPrivacy />} />
+      <Route path="/accessibility" element={<Accessibility />} />
+      <Route path="/fundraiser-rules" element={<FundraiserRules />} />
       <Route path="/stories" element={<Stories />} />
       <Route path="/help/:need" element={<NeedPage />} />
       <Route path="/partners" element={<Partners />} />

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, LogIn, Mail } from "lucide-react";
 import { PasswordInput } from "@/components/auth/PasswordInput";
+import { AgreementNotice } from "@/components/legal/AgreementNotice";
 
 interface SignInPromptProps {
   email: string;
@@ -59,6 +60,7 @@ export const SignInPrompt = ({
             />
           </div>
 
+          <AgreementNotice action="Sign in and continue" adult={false} />
           <Button 
             type="submit" 
             className="w-full gap-2" 

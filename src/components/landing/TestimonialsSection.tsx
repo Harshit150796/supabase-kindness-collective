@@ -4,6 +4,7 @@ import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
 import { ReservedSectionState } from './ReservedSectionState';
 import { photoUrl } from '@/lib/responsivePhotos';
 import { tidy, tidyLabel, voiceRows, type VoiceLine } from '@/lib/testimonialLines';
+import { useMotionPreference } from '@/hooks/useMotionPreference';
 
 type Voice = { id: string; quote: string; name: string; roleLabel: string; location: string; image: string };
 type CmsTestimonial = { id: string; quote: string | null; name: string | null; role_label: string | null; location: string | null; image_url: string | null };
@@ -11,6 +12,12 @@ type CmsTestimonial = { id: string; quote: string | null; name: string | null; r
 /** Speed of the drifting rows in px per second: calm enough to read on every screen size. */
 const DRIFT_SPEED = { phone: 34, wide: 44 };
 const FEATURE_EVERY_MS = 9000;
+
+/**
+ * Stock-photo hosts. An account pictured with a stock photo isn't a real person's account (the early
+ * seeded placeholders were), so it is never shown, whatever the CMS says. FTC rule 16 CFR 465.
+ */
+const STOCK_PHOTO = /(^|\/\/|\.)(unsplash\.com|pexels\.com|pravatar\.cc|randomuser\.me|istockphoto\.com|shutterstock\.com)/i;
 
 function initials(name: string) {
   return name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
@@ -81,6 +88,7 @@ export function TestimonialsSection() {
   const { data: cmsTestimonials, isLoading, isError, refetch } = useCMSTestimonials(true);
   const featureRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
+  const still = useMotionPreference() === 'gentle';
 
   const voices = useMemo<Voice[]>(() => ((cmsTestimonials || []) as CmsTestimonial[]).map((t) => ({
     id: t.id,
@@ -89,15 +97,15 @@ export function TestimonialsSection() {
     roleLabel: tidyLabel(t.role_label || ''),
     location: tidyLabel(t.location || ''),
     image: t.image_url || '',
-  })).filter((voice) => voice.quote && voice.name), [cmsTestimonials]);
+  })).filter((voice) => voice.quote && voice.name && !STOCK_PHOTO.test(voice.image)), [cmsTestimonials]);
   const rows = useMemo(() => voiceRows(voices.map((voice) => voice.quote)), [voices]);
 
   // The featured account keeps turning over while both rows drift continuously.
   useEffect(() => {
-    if (voices.length < 2) return;
+    if (voices.length < 2 || still) return;
     const timer = window.setInterval(() => setActive((current) => (current + 1) % voices.length), FEATURE_EVERY_MS);
     return () => window.clearInterval(timer);
-  }, [voices.length]);
+  }, [voices.length, still]);
 
   const pick = useCallback((person: number, event: MouseEvent<HTMLButtonElement>) => {
     setActive(person);
