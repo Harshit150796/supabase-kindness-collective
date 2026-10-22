@@ -1,4 +1,4 @@
-import { Check, Play, Plus, RotateCcw, Star, X, AlertCircle } from "lucide-react";
+import { Check, Play, Plus, RotateCcw, X, AlertCircle } from "lucide-react";
 import {
   MAX_MEDIA_ITEMS,
   MediaItem,
@@ -57,22 +57,21 @@ export const MediaTray = ({ items, onAdd, onRemove, onSetCover, onRetry }: Media
   return (
     <div className="space-y-3 animate-fade-in">
       {/* Cover preview */}
-      <div className="relative rounded-xl overflow-hidden bg-muted/30 border border-border/50">
+      <div className="relative overflow-hidden rounded-2xl bg-muted/60">
         {cover.previewUrl ? (
           <img
             src={cover.previewUrl}
             alt="Cover preview"
-            className="w-full h-48 object-cover"
+            className="h-56 w-full object-cover sm:h-64"
           />
         ) : (
-          <div className="w-full h-48 flex items-center justify-center text-muted-foreground text-sm">
+          <div className="flex h-56 w-full items-center justify-center text-sm text-muted-foreground sm:h-64">
             {cover.kind === "video" ? "Video attached" : "Photo attached"}
           </div>
         )}
 
         <div className="absolute top-3 left-3 flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-background/90 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-foreground">
-            <Star className="w-3.5 h-3.5 text-verify" />
+          <span className="rounded-lg bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground backdrop-blur-sm">
             Cover
           </span>
           {cover.kind === "video" && (
@@ -111,8 +110,8 @@ export const MediaTray = ({ items, onAdd, onRemove, onSetCover, onRetry }: Media
         {items.map((item, index) => (
           <div
             key={item.id}
-            className={`group relative aspect-square rounded-xl overflow-hidden border bg-muted/30 ${
-              index === 0 ? "border-primary/60 ring-2 ring-primary/20" : "border-border/60"
+            className={`group relative aspect-square overflow-hidden rounded-xl bg-muted/60 ${
+              index === 0 ? "shadow-[0_0_0_2px_hsl(var(--primary))]" : ""
             }`}
           >
             <button
@@ -188,8 +187,8 @@ export const MediaTray = ({ items, onAdd, onRemove, onSetCover, onRetry }: Media
             type="button"
             onClick={onAdd}
             aria-label="Add more media"
-            className="aspect-square rounded-xl border-2 border-dashed border-border/60 flex flex-col items-center justify-center gap-1
-              text-muted-foreground transition-all duration-200 hover:border-primary/50 hover:bg-primary/5 active:scale-[0.97]"
+            className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl bg-muted/70 text-muted-foreground
+              transition-[background-color,transform] duration-200 hover:bg-muted hover:text-foreground active:scale-[0.97]"
           >
             <Plus className="w-5 h-5" />
             <span className="text-[10px] font-medium">Add</span>

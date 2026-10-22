@@ -1,150 +1,102 @@
-import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Sparkles, TrendingUp, Check, MapPin } from "lucide-react";
+import { BadgeCheck, Loader2, MapPin } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { cn } from "@/lib/utils";
+import { US_STATES } from "@/data/usStates";
+import type { ZipStatus } from "@/lib/zipLookup";
 
 interface GoalStepProps {
   goalAmount: string;
   setGoalAmount: (value: string) => void;
-  smartMatching: boolean;
-  setSmartMatching: (value: boolean) => void;
   beneficiaryType: string;
   zipCode: string;
   setZipCode: (value: string) => void;
-  locationLabel?: string | null;
+  zip: { status: ZipStatus; city: string | null; stateCode: string | null };
 }
 
-const personalAmounts = [100, 250, 500, 1000];
-const organizationAmounts = [500, 1500, 3000, 5000];
+const personalAmounts = [150, 300, 500, 1000];
+const organizationAmounts = [1500, 3000, 5000, 10000];
+const MAX_GOAL = 100000;
+const whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+const STATE_NAMES = new Map(US_STATES.map((s) => [s.code, s.name]));
 
-export const GoalStep = ({
-  goalAmount,
-  setGoalAmount,
-  smartMatching,
-  setSmartMatching,
-  beneficiaryType,
-  zipCode,
-  setZipCode,
-  locationLabel,
-}: GoalStepProps) => {
-  const numericGoal = parseInt(goalAmount) || 0;
-  const [displayAmount, setDisplayAmount] = useState(0);
-
+/** Step 3: one total goal, and where the recipient lives (shown to donors as city and state only). */
+export const GoalStep = ({ goalAmount, setGoalAmount, beneficiaryType, zipCode, setZipCode, zip }: GoalStepProps) => {
   const isOrganization = beneficiaryType === "organization";
-  const suggestedAmounts = isOrganization ? organizationAmounts : personalAmounts;
-  const helperText = isOrganization
-    ? "Organizations often request $1,500–$5,000 to cover a program period — tell donors the timeframe in your story."
-    : "Most personal requests are $150–$600.";
-  const progressCeiling = isOrganization ? 5000 : 1000;
-  const cityState = locationLabel && locationLabel.includes(",") ? locationLabel : null;
-  // Long labels ("San Luis Obispo, CA") would collide with the digits on narrow
-  // screens, so they confirm on a line below the field instead of inside it.
-  const inlineCityState = !!cityState && cityState.length <= 16;
+  const presets = isOrganization ? organizationAmounts : personalAmounts;
+  const numeric = parseInt(goalAmount, 10) || 0;
+  const stateName = zip.stateCode ? STATE_NAMES.get(zip.stateCode) ?? zip.stateCode : null;
 
-  // Animate the display amount when goal changes
-  useEffect(() => {
-    if (numericGoal === 0) {
-      setDisplayAmount(0);
-      return;
-    }
-
-    const duration = 500;
-    const steps = 20;
-    const stepValue = numericGoal / steps;
-    let current = 0;
-
-    const timer = setInterval(() => {
-      current += stepValue;
-      if (current >= numericGoal) {
-        setDisplayAmount(numericGoal);
-        clearInterval(timer);
-      } else {
-        setDisplayAmount(Math.floor(current));
-      }
-    }, duration / steps);
-
-    return () => clearInterval(timer);
-  }, [numericGoal]);
+  const onAmount = (raw: string) => {
+    const digits = raw.replace(/\D/g, "").replace(/^0+/, "").slice(0, 6);
+    setGoalAmount(digits && Number(digits) > MAX_GOAL ? String(MAX_GOAL) : digits);
+  };
 
   return (
-    <div className="space-y-10 stagger-children">
-      {/* Amount Input Section */}
-      <div className="space-y-5">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
-            <TrendingUp className="w-5 h-5 text-accent" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">How much do you need?</h2>
-            <p className="text-sm text-muted-foreground">
-              One goal. Once it's fully funded, your request closes.
-            </p>
-          </div>
-        </div>
+    <div className="space-y-12">
+      <section aria-labelledby="goal-heading">
+        <h2 id="goal-heading" className="font-display text-[1.75rem] font-normal leading-tight text-foreground sm:text-[2rem]">How much do you need in total?</h2>
+        <p className="mt-1.5 max-w-[34rem] text-[15px] leading-relaxed text-muted-foreground">
+          One goal for the whole request. When it's fully funded, your request closes.
+        </p>
 
-        {/* Large Amount Input */}
-        <div className="relative group">
-          <div className="absolute left-6 top-1/2 -translate-y-1/2 text-3xl font-bold text-muted-foreground/60 group-focus-within:text-primary transition-colors">
-            $
-          </div>
-          <Input
-            type="number"
+        <label className="mt-5 flex h-[5.5rem] items-center gap-2 rounded-2xl bg-muted/60 px-5 transition-shadow focus-within:shadow-[inset_0_0_0_2px_hsl(var(--primary))] sm:h-24 sm:px-6">
+          <span className={cn("font-display text-[2.75rem] leading-none transition-colors sm:text-5xl", numeric ? "text-foreground" : "text-muted-foreground/60")} aria-hidden="true">$</span>
+          <input
+            id="apply-goal"
+            data-large-type
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
             placeholder="0"
-            value={goalAmount}
-            onChange={(e) => setGoalAmount(e.target.value)}
-            className="h-20 text-3xl font-bold pl-14 pr-24 rounded-2xl border-2 border-border/60 bg-card hover:border-primary/30 focus:border-primary transition-all input-focus-ring"
+            aria-label="Goal in US dollars"
+            value={numeric ? whole.format(numeric) : ""}
+            onChange={(e) => onAmount(e.target.value)}
+            className="min-w-0 flex-1 bg-transparent font-display text-[2.75rem] leading-none tabular-nums text-foreground outline-none placeholder:text-muted-foreground/40 sm:text-5xl"
           />
-          <div className="absolute right-5 top-1/2 -translate-y-1/2 bg-secondary/80 px-4 py-1.5 rounded-lg text-sm font-semibold text-muted-foreground">
-            USD total
-          </div>
-        </div>
+          <span className="shrink-0 text-sm font-medium text-muted-foreground">USD</span>
+        </label>
 
-        {/* Suggested Amounts */}
-        <div className="flex flex-wrap gap-3">
-          {suggestedAmounts.map((amount) => {
-            const isSelected = goalAmount === amount.toString();
+        <div className="mt-3 grid grid-cols-4 gap-2" role="group" aria-label="Common goals">
+          {presets.map((amount) => {
+            const selected = numeric === amount;
             return (
               <button
                 key={amount}
-                onClick={() => setGoalAmount(amount.toString())}
-                className={`
-                  pill-chip px-6 py-2.5 rounded-full border-2 font-semibold
-                  ${isSelected
-                    ? "selected"
-                    : "bg-card border-border/60 text-muted-foreground hover:text-foreground"
-                  }
-                `}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setGoalAmount(String(amount))}
+                className={cn(
+                  "h-12 rounded-xl text-[15px] font-medium tabular-nums outline-none transition-[background-color,box-shadow] duration-200",
+                  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[.98]",
+                  selected
+                    ? "bg-[hsl(var(--primary-97))] text-foreground shadow-[inset_0_0_0_2px_hsl(var(--primary))] dark:bg-primary/15"
+                    : "bg-muted/70 text-foreground hover:bg-muted",
+                )}
               >
-                ${amount.toLocaleString()}
-                {isSelected && <Check className="w-4 h-4 ml-2 inline animate-check-pop" />}
+                ${whole.format(amount)}
               </button>
             );
           })}
         </div>
-
-        <p className="text-sm text-muted-foreground flex items-start gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-accent/80 mt-1.5 shrink-0" />
-          {helperText}
+        <p className="mt-3 text-sm text-muted-foreground">
+          {isOrganization
+            ? "Groups often ask for $1,500 to $5,000 for a program. Say how long it covers in your story."
+            : "Most personal requests are between $150 and $600."}
         </p>
-      </div>
+      </section>
 
-      {/* ZIP code */}
-      <div className="space-y-4">
-        <div className="space-y-1.5">
-          <h2 className="text-xl font-semibold tracking-tight text-foreground">
-            Where are you located?
-          </h2>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            Your ZIP code matches you with retailers near you. Vouchers are redeemable at US
-            retailers only.
-          </p>
-        </div>
+      <section aria-labelledby="where-heading">
+        <h2 id="where-heading" className="font-display text-[1.75rem] font-normal leading-tight text-foreground sm:text-[2rem]">Where do you live?</h2>
+        <p className="mt-1.5 max-w-[34rem] text-[15px] leading-relaxed text-muted-foreground">
+          Help is for people living in the United States. Your ZIP code finds your city.
+        </p>
 
-        <div className="relative group">
-          <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-            <MapPin className="w-5 h-5 text-muted-foreground/70 group-focus-within:text-primary transition-colors" />
-          </div>
-          <Input
+        <div className="mt-5 flex h-16 items-stretch overflow-hidden rounded-2xl bg-muted/60 transition-shadow focus-within:shadow-[inset_0_0_0_2px_hsl(var(--primary))]">
+          <span className="flex shrink-0 items-center gap-2 border-r border-border/70 px-4 text-[15px] font-medium text-foreground sm:px-5">
+            <MapPin className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            United States
+          </span>
+          <input
             id="apply-zip"
             type="text"
             inputMode="numeric"
@@ -152,77 +104,47 @@ export const GoalStep = ({
             maxLength={5}
             placeholder="ZIP code"
             aria-label="ZIP code"
+            aria-describedby="apply-zip-status"
             value={zipCode}
             onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
-            className={`h-14 w-full rounded-2xl bg-muted/40 border border-border pl-12 text-lg
-              font-medium tracking-normal transition-all hover:border-primary/30
-              focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20
-              ${inlineCityState ? "pr-36" : "pr-4"}`}
-          />
-          {inlineCityState && (
-            <div className="absolute inset-y-0 right-4 flex items-center gap-1.5 pointer-events-none animate-fade-in">
-              <Check className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-primary">{cityState}</span>
-            </div>
-          )}
-        </div>
-
-        {cityState && !inlineCityState && (
-          <p className="flex items-center gap-1.5 text-sm font-medium text-primary animate-fade-in">
-            <Check className="w-4 h-4" />
-            {cityState}
-          </p>
-        )}
-
-      </div>
-
-
-      {/* Smart Matching Card - Glass effect */}
-      <div className="glass-strong rounded-2xl p-6 border border-accent/20 hover:border-accent/40 transition-all duration-300 hover:shadow-lg hover:shadow-accent/5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent/30 to-accent/10 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-6 h-6 text-accent animate-sparkle" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5 mb-1.5">
-                <h3 className="font-semibold text-foreground text-lg">Smart coupon matching</h3>
-                <span className="bg-accent/20 text-accent text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide pulse-glow-primary">
-                  Recommended
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                We'll automatically match you with available brand coupons based on your category and maximize your savings.
-              </p>
-            </div>
-          </div>
-          <Switch
-            checked={smartMatching}
-            onCheckedChange={setSmartMatching}
-            className="flex-shrink-0 scale-110"
+            className="min-w-0 flex-1 bg-transparent px-4 text-xl font-medium tracking-[0.12em] tabular-nums text-foreground outline-none placeholder:tracking-normal placeholder:text-muted-foreground/60 sm:px-5"
           />
         </div>
-      </div>
 
-      {/* Goal progress preview */}
-      {numericGoal > 0 && (
-        <div className="bg-gradient-to-br from-secondary via-secondary/80 to-primary/5 rounded-2xl p-6 border border-primary/10 animate-scale-in">
-          <div className="flex items-center justify-between text-sm mb-2">
-            <span className="text-muted-foreground">Your goal</span>
-            <span className="font-semibold text-primary">${displayAmount.toLocaleString()}</span>
-          </div>
-          <div className="h-2 bg-border/50 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-primary to-primary rounded-full transition-all duration-500 ease-out progress-glow"
-              style={{ width: `${Math.min((numericGoal / progressCeiling) * 100, 100)}%` }}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5 text-primary" />
-            100% of donations go directly to your coupon wallet
-          </p>
+        <div id="apply-zip-status" aria-live="polite" className="mt-4 min-h-[3.5rem]">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={zip.status}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, transition: { duration: 0.1 } }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {zip.status === "found" && (
+                <div className="flex items-start gap-3">
+                  <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-verify" aria-hidden="true" />
+                  <div>
+                    <p className="text-lg font-medium leading-snug text-foreground">{zip.city}, {stateName}</p>
+                    <p className="text-sm text-muted-foreground">Donors will see {zip.city}, {zip.stateCode}. Your ZIP code stays off your page.</p>
+                  </div>
+                </div>
+              )}
+              {zip.status === "checking" && (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Finding your city</p>
+              )}
+              {zip.status === "partial" && (
+                <p className="text-sm tabular-nums text-muted-foreground">{zipCode.length} of 5 digits</p>
+              )}
+              {zip.status === "empty" && <p className="text-sm text-muted-foreground">Enter your 5-digit ZIP code.</p>}
+              {zip.status === "unknown" && (
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  We couldn't confirm the city for {zipCode}. Check the numbers. If they're right, you can still continue.
+                </p>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
-      )}
+      </section>
     </div>
   );
 };

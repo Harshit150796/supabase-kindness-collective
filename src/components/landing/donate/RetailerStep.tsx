@@ -9,7 +9,7 @@ import { CATEGORY_LABEL, POPULAR_RETAILERS, type Retailer } from './retailers';
 
 const POP = { type: 'spring', stiffness: 640, damping: 30 } as const;
 
-function RetailerTile({ retailer, selected, disabled, onToggle }: { retailer: Retailer; selected: boolean; disabled: boolean; onToggle: () => void }) {
+function RetailerTile({ retailer, selected, disabled, requested = false, onToggle }: { retailer: Retailer; selected: boolean; disabled: boolean; requested?: boolean; onToggle: () => void }) {
   return (
     <motion.button
       type="button"
@@ -32,7 +32,9 @@ function RetailerTile({ retailer, selected, disabled, onToggle }: { retailer: Re
       <RetailerLogo retailer={retailer} className="h-11 w-11 p-1.5" />
       <span className="block min-w-0">
         <span className="block truncate text-[15px] font-medium text-foreground">{retailer.name}</span>
-        <span className="block truncate text-xs text-muted-foreground">{CATEGORY_LABEL[retailer.category]}</span>
+        {requested
+          ? <span className="block truncate text-xs font-medium text-primary">Requested</span>
+          : <span className="block truncate text-xs text-muted-foreground">{CATEGORY_LABEL[retailer.category]}</span>}
       </span>
       <AnimatePresence>
         {selected && (
@@ -52,20 +54,33 @@ function RetailerTile({ retailer, selected, disabled, onToggle }: { retailer: Re
   );
 }
 
-export function RetailerStep({ chosen, onToggle, onBrowse }: { chosen: Retailer[]; onToggle: (r: Retailer) => void; onBrowse: () => void }) {
+interface FundraiserRequest {
+  title: string;
+  /** The stores the fundraiser asked for, in its own order. */
+  stores: Retailer[];
+  similarOk: boolean;
+}
+
+export function RetailerStep({ chosen, onToggle, onBrowse, request }: { chosen: Retailer[]; onToggle: (r: Retailer) => void; onBrowse: () => void; request?: FundraiserRequest | null }) {
   const ids = new Set(chosen.map((r) => r.id));
-  // Popular stores first, then anything picked from the full list, so every choice stays visible.
-  const tiles = [...POPULAR_RETAILERS, ...chosen.filter((r) => !POPULAR_RETAILERS.some((p) => p.id === r.id))];
+  const requested = request?.stores ?? [];
+  const requestedIds = new Set(requested.map((r) => r.id));
+  // The fundraiser's own stores first, then popular stores, then anything picked from the full list,
+  // so every choice stays visible.
+  const tiles: Retailer[] = [];
+  for (const r of [...requested, ...POPULAR_RETAILERS, ...chosen]) if (!tiles.some((t) => t.id === r.id)) tiles.push(r);
   const full = chosen.length >= MAX_RETAILERS;
   return (
     <div>
       <h3 className="font-display text-[2rem] leading-[1.05] text-foreground sm:text-[2.5rem]">Where should your gift be used?</h3>
       <p className="mt-2 max-w-[34rem] text-[15px] leading-relaxed text-muted-foreground">
-        Choose up to {MAX_RETAILERS} stores. Families use your gift there for food and everyday essentials.
+        {requested.length > 0
+          ? <>Choose up to {MAX_RETAILERS} stores. <span className="text-foreground">{request?.title ? <>“{request.title}”</> : 'This fundraiser'} asked for the stores marked Requested.</span>{request?.similarOk ? ' Other stores are welcome too.' : ''}</>
+          : <>Choose up to {MAX_RETAILERS} stores. Families use your gift there for food and everyday essentials.</>}
       </p>
       <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
         {tiles.map((r) => (
-          <RetailerTile key={r.id} retailer={r} selected={ids.has(r.id)} disabled={full && !ids.has(r.id)} onToggle={() => onToggle(r)} />
+          <RetailerTile key={r.id} retailer={r} selected={ids.has(r.id)} disabled={full && !ids.has(r.id)} requested={requestedIds.has(r.id)} onToggle={() => onToggle(r)} />
         ))}
       </div>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">

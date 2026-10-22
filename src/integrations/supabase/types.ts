@@ -2398,19 +2398,24 @@ export type Database = {
           beneficiary_display_name: string | null
           beneficiary_type: string
           category: string
+          city: string | null
           country: string | null
           cover_photo_url: string | null
           created_at: string | null
           donors_count: number | null
           example_organizer: string | null
           featured_order: number | null
+          help_categories: string[]
           id: string
           is_example: boolean
           is_long_term: boolean | null
           monthly_goal: number
+          preferred_brands: string[]
           rejection_reason: string | null
           show_beneficiary_name: boolean
           show_full_name: boolean
+          similar_stores_ok: boolean
+          state_code: string | null
           status: string | null
           story: string
           title: string
@@ -2427,19 +2432,24 @@ export type Database = {
           beneficiary_display_name?: string | null
           beneficiary_type: string
           category: string
+          city?: string | null
           country?: string | null
           cover_photo_url?: string | null
           created_at?: string | null
           donors_count?: number | null
           example_organizer?: string | null
           featured_order?: number | null
+          help_categories?: string[]
           id?: string
           is_example?: boolean
           is_long_term?: boolean | null
           monthly_goal: number
+          preferred_brands?: string[]
           rejection_reason?: string | null
           show_beneficiary_name?: boolean
           show_full_name?: boolean
+          similar_stores_ok?: boolean
+          state_code?: string | null
           status?: string | null
           story: string
           title: string
@@ -2456,19 +2466,24 @@ export type Database = {
           beneficiary_display_name?: string | null
           beneficiary_type?: string
           category?: string
+          city?: string | null
           country?: string | null
           cover_photo_url?: string | null
           created_at?: string | null
           donors_count?: number | null
           example_organizer?: string | null
           featured_order?: number | null
+          help_categories?: string[]
           id?: string
           is_example?: boolean
           is_long_term?: boolean | null
           monthly_goal?: number
+          preferred_brands?: string[]
           rejection_reason?: string | null
           show_beneficiary_name?: boolean
           show_full_name?: boolean
+          similar_stores_ok?: boolean
+          state_code?: string | null
           status?: string | null
           story?: string
           title?: string

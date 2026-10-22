@@ -1,7 +1,7 @@
 import { SEO, breadcrumbJsonLd } from "@/components/SEO";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Heart, Share2, ChevronLeft, AlertCircle, Loader2, Lock, Receipt, ShieldCheck, Flag, Calendar, Tag } from "lucide-react";
+import { Heart, Share2, ChevronLeft, AlertCircle, Loader2, Lock, Receipt, ShieldCheck, Flag, Calendar, Tag, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -21,18 +21,19 @@ import { ShareSheet, ShareCardPreview } from "@/components/fundraiser/campaign/S
 import { MoreFundraisers } from "@/components/fundraiser/campaign/MoreFundraisers";
 import { ReportDialog } from "@/components/fundraiser/campaign/ReportDialog";
 import { resolveFundraiserImage } from "@/lib/fundraiserImages";
+import { RequestedHelp } from "@/components/fundraiser/campaign/RequestedHelp";
+import { cityState, needLabel, requestNeeds } from "@/lib/helpNeeds";
+import { useZipLocation } from "@/lib/zipLookup";
 
 interface Fundraiser {
   id: string; title: string; story: string; category: string; monthly_goal: number; cover_photo_url: string | null;
   status: string | null; unique_slug: string | null; created_at: string | null; user_id: string; allow_messages: boolean;
-  beneficiary_display_name: string | null; show_beneficiary_name: boolean; is_example?: boolean;
+  beneficiary_display_name: string | null; show_beneficiary_name: boolean; is_example?: boolean; zip_code?: string | null;
 }
+/** Needs, stores and city/state; read separately so the page still opens on databases without them. */
+interface FundraiserRequest { help_categories: string[] | null; preferred_brands: string[] | null; similar_stores_ok: boolean | null; city: string | null; state_code: string | null }
 interface FundraiserImage { id: string; image_url: string; display_order: number; is_primary: boolean }
 
-const categoryLabels: Record<string, string> = {
-  food: "Food & Groceries", household: "Household Essentials", health: "Health & Wellness", childcare: "Childcare",
-  education: "Education", utilities: "Utilities", other: "Other",
-};
 
 const PublicFundraiser = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -46,8 +47,12 @@ const PublicFundraiser = () => {
   const [imgModal, setImgModal] = useState(false);
   const [report, setReport] = useState(false);
   const [isTeam, setIsTeam] = useState(false);
+  const [request, setRequest] = useState<FundraiserRequest | null>(null);
+  const [requestRead, setRequestRead] = useState(false);
 
   const live = useFundraiserLive(fundraiser?.id);
+  // Requests made before city and state were saved find them from the ZIP code, as the cards do.
+  const zipPlace = useZipLocation(requestRead && !request?.city ? fundraiser?.zip_code : null, "us");
   const team = useFundraiserTeam(fundraiser?.id);
   const isOwner = !!user && !!fundraiser && user.id === fundraiser.user_id;
 
@@ -58,14 +63,18 @@ const PublicFundraiser = () => {
 
   useEffect(() => {
     if (!slug) return;
-    setLoading(true); setError(null);
+    setLoading(true); setError(null); setRequest(null); setRequestRead(false);
     (async () => {
       const { data, error } = await supabase.from("fundraisers")
-        .select("id,title,story,category,monthly_goal,cover_photo_url,status,unique_slug,created_at,user_id,allow_messages,beneficiary_display_name,show_beneficiary_name,is_example")
+        .select("id,title,story,category,monthly_goal,cover_photo_url,status,unique_slug,created_at,user_id,allow_messages,beneficiary_display_name,show_beneficiary_name,is_example,zip_code")
         .eq(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug) ? "id" : "unique_slug", slug).maybeSingle();
       if (error || !data) setError("Fundraiser not found");
       else if (data.status !== "active" && data.status !== "pending") setError("This fundraiser is no longer active");
-      else { setFundraiser(data as Fundraiser); fetchImages(data.id); }
+      else {
+        setFundraiser(data as Fundraiser); fetchImages(data.id);
+        supabase.from("fundraisers").select("help_categories,preferred_brands,similar_stores_ok,city,state_code").eq("id", data.id).maybeSingle()
+          .then(({ data: extra, error: extraError }) => { setRequest(extraError ? null : (extra as FundraiserRequest | null)); setRequestRead(true); });
+      }
       setLoading(false);
     })();
   }, [slug]);
@@ -97,6 +106,9 @@ const PublicFundraiser = () => {
   const donate = () => navigate(`/donate?fundraiser=${fundraiser.id}`);
   const created = fundraiser.created_at ? new Date(fundraiser.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : null;
   const resolvedCover = resolveFundraiserImage({ cover_photo_url: fundraiser.cover_photo_url, fundraiser_images: images });
+  // City and state only; a bare ZIP code is never shown.
+  const place = cityState(request?.city, request?.state_code) ?? (zipPlace?.includes(",") ? zipPlace : null);
+  const needs = requestNeeds(request?.help_categories, fundraiser.category);
 
   return (
     <div className="min-h-dvh bg-background pb-24 lg:pb-0">
@@ -112,7 +124,7 @@ const PublicFundraiser = () => {
 
       <main className="container mx-auto px-4 pt-24 md:pt-28">
         <Link to="/stories" className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ChevronLeft className="h-4 w-4" />All fundraisers</Link>
-        <Reveal><h1 className="mt-4 max-w-4xl font-display text-4xl font-normal leading-[1.05] text-ink md:text-6xl dark:text-foreground">{fundraiser.title}</h1>{fundraiser.is_example && <p className="mt-3 text-sm text-muted-foreground">Example campaign · Giving is closed on example campaigns.</p>}</Reveal>
+        <Reveal><h1 className="mt-4 max-w-4xl font-display text-4xl font-normal leading-[1.05] text-ink md:text-6xl dark:text-foreground">{fundraiser.title}</h1>{place && <p className="mt-3 flex items-center gap-1.5 text-[15px] text-muted-foreground"><MapPin className="h-4 w-4" aria-hidden="true" />{place}</p>}{fundraiser.is_example && <p className="mt-3 text-sm text-muted-foreground">Example campaign · Giving is closed on example campaigns.</p>}</Reveal>
 
         <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-14">
           <div className="min-w-0 space-y-12">
@@ -129,6 +141,8 @@ const PublicFundraiser = () => {
 
             {/* Mobile panel */}
             <div className="lg:hidden"><DonationPanel live={live} goal={Number(fundraiser.monthly_goal)} onDonate={donate} onShare={() => setShare(true)} fundraiserId={fundraiser.id} closed={!!fundraiser.is_example} /></div>
+
+            <RequestedHelp fundraiserId={fundraiser.id} needs={needs} stores={request?.preferred_brands ?? []} similarOk={request?.similar_stores_ok !== false} closed={!!fundraiser.is_example} />
 
             <section><StoryBody story={fundraiser.story} /></section>
 
@@ -177,7 +191,7 @@ const PublicFundraiser = () => {
 
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-6 text-sm text-muted-foreground">
               {created && <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />Created {created}</span>}
-              <Link to={`/stories?category=${fundraiser.category}`} className="flex min-h-11 items-center gap-2 py-2.5 hover:text-foreground"><Tag className="h-4 w-4" />{categoryLabels[fundraiser.category] ?? fundraiser.category}</Link>
+              <Link to={`/stories?category=${fundraiser.category}`} className="flex min-h-11 items-center gap-2 py-2.5 hover:text-foreground"><Tag className="h-4 w-4" />{needLabel(fundraiser.category)}</Link>
               <button onClick={() => setReport(true)} className="flex min-h-11 items-center gap-2 py-2.5 hover:text-foreground"><Flag className="h-4 w-4" />Report fundraiser</button>
             </div>
           </div>

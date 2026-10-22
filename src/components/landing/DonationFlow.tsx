@@ -15,7 +15,8 @@ import { ReviewStep, type Provider, type TipChoice } from './donate/ReviewStep';
 import { DEFAULT_TIP_PERCENT, MAX_TIP_CENTS, computeCharge, coveredFeeCents, tipCentsFor } from '../../../supabase/functions/_shared/checkout-total.ts';
 import { AnimatedHeight } from './donate/motion';
 import { PRESET_AMOUNTS, SPRING, amountProblem, type SplitMode } from './donate/tokens';
-import { findRetailer, usd } from './donate/retailers';
+import { findRetailer, retailerId, usd, type Retailer } from './donate/retailers';
+import { brandList } from '@/data/brandLogos';
 
 const MAX_RETRIES = 2;
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
@@ -63,7 +64,29 @@ export function DonationFlow() {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
-  const [ids, setIds] = useState<string[]>([]);
+  const [ids, setIds] = useState<string[]>(() => {
+    // "Give at Walmart" on a fundraiser page opens with that store chosen.
+    const store = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('store');
+    return store && brandList.some((b) => retailerId(b.name) === retailerId(store)) ? [retailerId(store)] : [];
+  });
+  const [request, setRequest] = useState<{ title: string; stores: Retailer[]; similarOk: boolean } | null>(null);
+  // Giving to a fundraiser: its requested stores come first in the store step.
+  useEffect(() => {
+    const fundraiserId = new URLSearchParams(window.location.search).get('fundraiser');
+    if (!fundraiserId) return;
+    let live = true;
+    supabase
+      .from('fundraisers')
+      .select('title, preferred_brands, similar_stores_ok')
+      .eq('id', fundraiserId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!live || error || !data) return;
+        const stores = (data.preferred_brands ?? []).map(findRetailer).filter((r) => !!r.logo);
+        if (stores.length) setRequest({ title: data.title, stores, similarOk: data.similar_stores_ok !== false });
+      });
+    return () => { live = false; };
+  }, []);
   const [amount, setAmount] = useState(0); // 0 until the donor chooses
   const [other, setOther] = useState(false);
   const [otherText, setOtherText] = useState('');
@@ -245,7 +268,7 @@ export function DonationFlow() {
             <AnimatedHeight className="mt-8">
               <AnimatePresence mode="popLayout" initial={false} custom={direction}>
                 <motion.div key={step} custom={direction} variants={stepMotion} initial="enter" animate="center" exit="exit" transition={SPRING}>
-                  {step === 1 && <RetailerStep chosen={retailers} onToggle={(r) => toggleRetailer(r.id)} onBrowse={() => setBrowse(true)} />}
+                  {step === 1 && <RetailerStep chosen={retailers} onToggle={(r) => toggleRetailer(r.id)} onBrowse={() => setBrowse(true)} request={request} />}
                   {step === 2 && (
                     <AmountStep
                       retailers={retailers}
