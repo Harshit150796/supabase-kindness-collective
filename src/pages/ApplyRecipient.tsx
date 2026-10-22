@@ -1,16 +1,24 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { prefetchWhenIdle } from "@/lib/idlePrefetch";
 import { useNavigate } from "react-router-dom";
 import { ApplyLayout } from "@/components/apply/ApplyLayout";
 import { BasicsStep } from "@/components/apply/steps/BasicsStep";
 import { GoalStep } from "@/components/apply/steps/GoalStep";
-import { StoryStep } from "@/components/apply/steps/StoryStep";
-import { ReviewStep } from "@/components/apply/steps/ReviewStep";
-import { AccountDialog } from "@/components/apply/AccountDialog";
-import { SuccessScreen } from "@/components/apply/SuccessScreen";
-import { ShareScreen } from "@/components/apply/ShareScreen";
-
-import { SignInPrompt } from "@/components/apply/SignInPrompt";
-import { OTPVerification } from "@/components/auth/OTPVerification";
+// Later steps and screens load separately so step 1 opens fast; they preload once step 1 shows.
+const loadStory = () => import("@/components/apply/steps/StoryStep");
+const loadReview = () => import("@/components/apply/steps/ReviewStep");
+const loadAccount = () => import("@/components/apply/AccountDialog");
+const loadSuccess = () => import("@/components/apply/SuccessScreen");
+const loadShare = () => import("@/components/apply/ShareScreen");
+const loadSignIn = () => import("@/components/apply/SignInPrompt");
+const loadOtp = () => import("@/components/auth/OTPVerification");
+const StoryStep = lazy(() => loadStory().then((m) => ({ default: m.StoryStep })));
+const ReviewStep = lazy(() => loadReview().then((m) => ({ default: m.ReviewStep })));
+const AccountDialog = lazy(() => loadAccount().then((m) => ({ default: m.AccountDialog })));
+const SuccessScreen = lazy(() => loadSuccess().then((m) => ({ default: m.SuccessScreen })));
+const ShareScreen = lazy(() => loadShare().then((m) => ({ default: m.ShareScreen })));
+const SignInPrompt = lazy(() => loadSignIn().then((m) => ({ default: m.SignInPrompt })));
+const OTPVerification = lazy(() => loadOtp().then((m) => ({ default: m.OTPVerification })));
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -91,6 +99,8 @@ const ApplyRecipient = () => {
 
   // Track the previous user ID to detect user changes
   const prevUserIdRef = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => prefetchWhenIdle([loadStory, loadReview, loadAccount, loadOtp, loadSignIn, loadSuccess, loadShare]), []);
 
   // Determine if user is already authenticated
   const isAuthenticated = !!user && !authLoading;
@@ -658,11 +668,11 @@ const ApplyRecipient = () => {
   if (screenState === "otp") {
     return (
       <div className="min-h-dvh bg-background flex items-center justify-center p-4">
-        <OTPVerification
+        <Suspense fallback={null}><OTPVerification
           email={email}
           onVerified={handleOTPVerified}
           onBack={() => setScreenState("form")}
-        />
+        /></Suspense>
       </div>
     );
   }
@@ -671,12 +681,12 @@ const ApplyRecipient = () => {
   if (screenState === "signin-prompt") {
     return (
       <div className="min-h-dvh bg-background flex items-center justify-center p-4">
-        <SignInPrompt
+        <Suspense fallback={null}><SignInPrompt
           email={email}
           onSignIn={handleSignInAndContinue}
           onUseNewEmail={() => setScreenState("form")}
           isLoading={isSubmitting}
-        />
+        /></Suspense>
       </div>
     );
   }
@@ -684,19 +694,19 @@ const ApplyRecipient = () => {
   // Render success screen
   if (screenState === "success") {
     return (
-      <SuccessScreen
+      <Suspense fallback={null}><SuccessScreen
         onComplete={handleSuccessContinue}
-      />
+      /></Suspense>
     );
   }
 
   // Render share screen
   if (screenState === "share") {
     return (
-      <ShareScreen
+      <Suspense fallback={null}><ShareScreen
         onGoToDashboard={handleGoToDashboardWithShare}
         onSkip={handleGoToDashboard}
-      />
+      /></Suspense>
     );
   }
 
@@ -728,14 +738,14 @@ const ApplyRecipient = () => {
         )}
 
         {currentStep === 2 && (
-          <StoryStep
+          <Suspense fallback={null}><StoryStep
             story={story}
             setStory={setStory}
             category={category}
             media={media}
             setMedia={setMedia}
             userId={user?.id ?? null}
-          />
+          /></Suspense>
         )}
 
         {currentStep === 3 && (
@@ -752,7 +762,7 @@ const ApplyRecipient = () => {
         )}
 
         {currentStep === 4 && (
-          <ReviewStep
+          <Suspense fallback={null}><ReviewStep
             media={media}
             title={title}
             setTitle={setTitle}
@@ -765,7 +775,7 @@ const ApplyRecipient = () => {
             onEditStory={() => goToStep(2)}
             onEditDetails={() => goToStep(1)}
             onEditLocation={() => goToStep(3)}
-          />
+          /></Suspense>
         )}
 
 
@@ -773,7 +783,7 @@ const ApplyRecipient = () => {
       </ApplyLayout>
 
       {!isAuthenticated && (
-        <AccountDialog
+        <Suspense fallback={null}><AccountDialog
           open={accountOpen}
           onOpenChange={(open) => {
             setAccountOpen(open);
@@ -795,7 +805,7 @@ const ApplyRecipient = () => {
           intent={authIntent}
           goalAmount={monthlyGoal}
           title={title}
-        />
+        /></Suspense>
       )}
 
       {/* ShareModal removed - now handled by FundraiserDashboard */}
