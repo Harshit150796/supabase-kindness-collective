@@ -1,0 +1,1 @@
+<section class="bg-background py-8 lg:py-14"><div class="container mx-auto max-w-6xl px-4"><div data-reveal="true" class="max-w-5xl font-display text-[2.5rem] leading-[1.12] tracking-normal text-foreground md:text-[3.5rem] lg:text-[4.5rem]" data-reveal-mode="animate" style="opacity: 1; transform: none;"><p>We don't track the person. We track the money.</p></div></div></section>

@@ -1,0 +1,18 @@
+import { open, shot, html, log, BASE, OUT } from './lib.mjs';
+const { browser, page, ctx, errors, supa } = await open();
+if (ctx.routeWebSocket) await ctx.routeWebSocket(/supabase\.co/, (ws) => ws.close());
+await page.goto(BASE + '/donation-success?amount=50', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(3500);
+await shot(page, 'impact-1');
+await html(page, 'main', 'impact-1');
+log('SUCCESS TEXT', await page.locator('main').innerText());
+await page.goto(BASE + '/f/example-campaign', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(4000);
+await shot(page, 'fundraiser-1');
+log('F TEXT', (await page.locator('body').innerText()).slice(0, 400));
+await page.goto(BASE + '/stories', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(5000);
+await shot(page, 'stories-1');
+log('S TEXT', (await page.locator('body').innerText()).slice(0, 1200));
+log('supa', [...new Set(supa)].slice(0, 20));
+await browser.close();

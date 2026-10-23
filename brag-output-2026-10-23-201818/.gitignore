@@ -1,0 +1,9 @@
+work/captures/
+work/stills*/
+work/node_modules
+work/*.mp4
+work/*.wav
+work/*.log
+work/research/*.png
+work/research/**/*.png
+work/research/**/_scripts/*.png

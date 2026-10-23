@@ -1,0 +1,11 @@
+import { open, html, log, BASE } from './lib.mjs';
+const { browser, page, ctx } = await open();
+if (ctx.routeWebSocket) await ctx.routeWebSocket(/supabase\.co/, (ws) => ws.close());
+await ctx.addInitScript(() => { const o = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, ...r) { return /webgl/i.test(String(t)) ? null : o.call(this, t, ...r); }; });
+await page.goto(BASE + '/?intro=0&time3d=night', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(6000);
+await html(page, '.hero-headline', 'home-hero-headline');
+await page.goto(BASE + '/donate?store=walmart', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(3000);
+log('preselected', await page.$$eval('[data-retailer-tile][aria-pressed="true"]', (e) => e.map((x) => x.getAttribute('data-retailer-tile'))));
+await browser.close();

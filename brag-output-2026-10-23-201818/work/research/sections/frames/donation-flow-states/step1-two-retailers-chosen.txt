@@ -1,0 +1,27 @@
+1
+Retailers
+2
+Amount
+3
+Review
+Where should your gift be used?
+
+Choose up to 5 stores. Families use your gift there for food and everyday essentials.
+
+DoorDash
+Meal delivery
+Walmart
+Groceries
+Uber
+Meal delivery
+Amazon
+Everyday essentials
+Target
+Everyday essentials
+Starbucks
+Coffee and breakfast
+Browse all 26 retailers
+
+2 of 5 chosen
+
+Choose amount

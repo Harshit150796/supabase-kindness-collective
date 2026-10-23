@@ -1,0 +1,138 @@
+{
+ "captured": "2026-10-23 from Vite dev server http://127.0.0.1:5173 at HEAD 780cf7a (1920x1080, Chromium headless, *.supabase.co aborted unless noted)",
+ "rerender": "Each .html is outerHTML with scripts stripped and absolute asset URLs to the dev server; load site.css (all page CSS rules dumped from /donate) to restyle it.",
+ "files": [
+  [
+   "donate-1.png",
+   "/donate top: 'Choose where your help can be used.' + step 1 Retailers (nothing chosen, Continue disabled)"
+  ],
+  [
+   "donate-2.png/.html",
+   "Step 1 card in view, 6 popular retailer tiles, 'Browse all 26 retailers', '0 of 5 chosen'"
+  ],
+  [
+   "donate-3.png/.html",
+   "Walmart, Target, DoorDash selected (green ring + tick), '3 of 5 chosen', 'Choose amount' enabled"
+  ],
+  [
+   "donate-4.png/.html",
+   "'All retailers' browse modal with category filters and search"
+  ],
+  [
+   "donate-5.png/.html",
+   "Step 2 Amount, no amount chosen yet: $10/$25 disabled for 3 retailers, ledger closed (no suggested amount)"
+  ],
+  [
+   "donate-6.png/.html",
+   "$50 chosen: deep-green 'Your gift' ledger slides open; split 'Evenly' $17/$17/$16"
+  ],
+  [
+   "donate-7.png/.html",
+   "'I'll choose' steppers: Walmart $20, Target $15, DoorDash $15; ledger split bar follows"
+  ],
+  [
+   "donate-8.png/.html",
+   "Step 3 Review: two-line 'what happens next', tip picker (15% preselected), fee-cover box ticked, summary, Gold Coins, monthly box"
+  ],
+  [
+   "donate-9.png",
+   "Review lower half: summary rows, Total today $59.78, Donate button, Visa/Mastercard/Amex marks, Square secure-page note"
+  ],
+  [
+   "donate-10.png/.html",
+   "Monthly ticked: 'Total today, then every month', 'Donate $59.78 monthly'"
+  ],
+  [
+   "donate-ledger.html",
+   "The 'Your gift' ledger aside alone (Review state)"
+  ],
+  [
+   "apply-1.png",
+   "/apply step 1 'Start your request' + empty deep-green 'Your request' panel"
+  ],
+  [
+   "apply-2.png/.html",
+   "Needs chosen (Food & groceries, Health & pharmacy) -> stores grouped by need, 3 of 8 chosen, 'Other stores are welcome too' switch; panel fills in"
+  ],
+  [
+   "apply-3.png",
+   "Step 2 'Tell your story' (empty)"
+  ],
+  [
+   "apply-4-crop.png",
+   "'Frame your photo' crop dialog with coupon-locked card preview (stand-in receipt graphic, not a person)"
+  ],
+  [
+   "apply-4.png",
+   "Step 2 with example story text typed by the capture script (39 words) and progress bar"
+  ],
+  [
+   "apply-5.png/.html",
+   "Step 2 lower half: photo added (stand-in receipt graphic)"
+  ],
+  [
+   "apply-6.png/.html",
+   "Step 3 'Set your goal': $500, ZIP 45402 -> 'Dayton, Ohio' / 'Your ZIP code stays off your page.' (ZIP->city seeded in localStorage with the real mapping)"
+  ],
+  [
+   "apply-7.png/.html",
+   "Guest after step 3: 'Save your request' account dialog with Continue with Google"
+  ],
+  [
+   "apply-8.png, apply-9.png",
+   "Step 4 'Review your request' (cover photo, title ideas open) - captured with a placeholder signed-in session; header email hidden"
+  ],
+  [
+   "apply-10.png/.html",
+   "Step 4 lower half: goal/place/for, needs + stores, story, confirmation ticked, 'Submit request'"
+  ],
+  [
+   "apply-panel-*.html",
+   "'Your request' panel at empty / step 1 / step 3 / review states"
+  ],
+  [
+   "header-2.png/.html",
+   "Header 'two words' on a normal page (frosted light bar): brand lockup, Sign in, serif Donate + Menu"
+  ],
+  [
+   "menu-1.png, menu-1b.png",
+   "Full-screen 'two hands' menu opening: green sheet growing from the Menu button, then blue hand rising"
+  ],
+  [
+   "menu-2.png/.html",
+   "Menu open/settled (signed out): Donate / Start a fundraiser / How it works / Stories / About us; blue hand 'See where your giving goes.'"
+  ],
+  [
+   "home-1.png, home-1b.png, home-2.png",
+   "Homepage hero WITHOUT WebGL (designed HeroBackdrop fallback: tree's sky + ground, no tree): night/day skies, kicker 'CouponDonation is real-time/transparent', split Donate now | Apply as Recipient capsule, Talk to Coupon button, pause button. NOT the live tree."
+  ],
+  [
+   "home-header-night.html, home-hero-headline.html",
+   "Header over night sky; hero headline block"
+  ],
+  [
+   "chat-1.png/.html",
+   "Talk to Coupon panel opened (empty state + 3 suggestions); no AI answer captured (backend blocked)"
+  ],
+  [
+   "impact-1.png/.html",
+   "/donation-success (signed out) thank-you card"
+  ],
+  [
+   "email-1.html, email-1.png, email-1-full.png",
+   "SAMPLE render of the repo's donation-confirmation email template (account-emails.ts) with test data; template shows its own 'SAMPLE EMAIL' banner and 'This is a test message.'"
+  ],
+  [
+   "stories-1.png",
+   "/stories header and filters; fundraiser cards stay as loading skeletons without backend"
+  ],
+  [
+   "site.css",
+   "All CSS rules from the /donate page"
+  ],
+  [
+   "_scripts/",
+   "Playwright scripts used (lib.mjs, donate.mjs, apply.mjs, apply-review.mjs, menu.mjs, home.mjs, after.mjs, hero-html.mjs, email-render.mts, email-shot.mjs, session.mjs) + stand-in-receipt.png"
+  ]
+ ]
+}
