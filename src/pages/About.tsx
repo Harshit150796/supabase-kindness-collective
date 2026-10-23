@@ -112,14 +112,14 @@ const aboutJsonLd = [
     '@type': 'AboutPage',
     name: 'About CouponDonation',
     url: 'https://coupondonation.com/about',
-    description: 'How CouponDonation makes charitable giving transparent and trackable by converting donations into brand-specific coupons.',
+    description: 'Who runs CouponDonation and how it turns donations into gift cards and coupons for the specific things people ask for.',
     mainEntity: {
       '@type': 'Organization',
       name: 'CouponDonation',
       url: 'https://coupondonation.com',
-      email: 'connect@coupondonation.com',
+      email: 'support@coupondonation.com',
       areaServed: 'US',
-      founder: { '@type': 'Person', name: founder.name },
+      founder: { '@type': 'Person', name: founder.name, jobTitle: founder.role, sameAs: founder.linkedin ? [founder.linkedin] : undefined },
     },
   },
 ];
@@ -128,8 +128,8 @@ export default function About() {
   return (
     <div className="min-h-dvh overflow-x-hidden bg-background text-foreground">
       <SEO
-        title="About CouponDonation — Transparent, Trackable Giving"
-        description="Meet CouponDonation, the online donation platform making charitable giving transparent and trackable through brand-specific grocery coupons for US communities."
+        title="About CouponDonation: Who We Are and Why We Built It"
+        description="CouponDonation turns donations into gift cards for the specific things people ask for, from groceries to rides. Meet the founder and see how every gift is traced."
         path="/about"
         jsonLd={aboutJsonLd}
       />

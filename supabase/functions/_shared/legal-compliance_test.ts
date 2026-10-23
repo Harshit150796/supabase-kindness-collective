@@ -42,8 +42,8 @@ Deno.test('the site never claims charity status, tax deductions, verification or
     /participating (retailers|stores|brands|grocers)/i,
     /\ba (registered )?charity that\b/i,
   ];
-  const allowed = /is not a registered charity|not a registered 501|not tax-deductible|aren't tax-deductible|Is my donation tax-deductible/i;
-  for (const dir of ['src/pages', 'src/components', 'src/data/needs.ts', 'public/llms.txt', 'supabase/functions']) {
+  const allowed = /is not a registered charity|not a registered (501|charity)|not tax-deductible|(aren|isn)['’]t tax-deductible|tax-deductible\?/i;
+  for (const dir of ['src/pages', 'src/components', 'src/data/needs.ts', 'src/data/givePages.ts', 'public/llms.txt', 'index.html', 'supabase/functions']) {
     const files = dir.includes('.') ? [dir] : [...walk(dir)];
     for (const file of files) {
       // Admin screens and the unused legacy story components aren't public copy.

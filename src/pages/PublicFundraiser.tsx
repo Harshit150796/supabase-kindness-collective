@@ -1,4 +1,6 @@
 import { SEO, breadcrumbJsonLd } from "@/components/SEO";
+import { snippet } from "@/lib/seo";
+import { needForCategory } from "@/data/needs";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Heart, Share2, ChevronLeft, AlertCircle, Loader2, Lock, Receipt, ShieldCheck, Flag, Calendar, Tag, MapPin } from "lucide-react";
@@ -89,6 +91,7 @@ const PublicFundraiser = () => {
   if (error || !fundraiser) {
     return (
       <div className="min-h-dvh bg-background">
+        <SEO title="Fundraiser not found" description="This fundraiser may have been removed or the link might be incorrect." path={`/f/${slug ?? ""}`} noindex />
         <Navbar />
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
           <AlertCircle className="h-10 w-10 text-destructive" />
@@ -109,16 +112,26 @@ const PublicFundraiser = () => {
   // City and state only; a bare ZIP code is never shown.
   const place = cityState(request?.city, request?.state_code) ?? (zipPlace?.includes(",") ? zipPlace : null);
   const needs = requestNeeds(request?.help_categories, fundraiser.category);
+  // Search and share text: who is asking, for what and where, then the start of their story.
+  const helpPage = needForCategory(needs[0] ?? fundraiser.category);
+  const asking = `${team.find((t) => t.role === "organizer")?.display_name ?? "A family"} is asking for help with ${needs.length ? needs.map((n) => needLabel(n).toLowerCase()).join(", ") : "everyday needs"}${place ? ` in ${place}` : ""}.`;
+  const seoTitle = place ? `${fundraiser.title} — ${place}` : fundraiser.title;
 
   return (
     <div className="min-h-dvh bg-background pb-24 lg:pb-0">
       <SEO
-        title={`${fundraiser.title} — Fundraiser`}
-        description={(fundraiser.story || `Support ${fundraiser.title} on CouponDonation.`).slice(0, 155)}
+        title={seoTitle}
+        description={snippet(`${asking} ${fundraiser.story ?? ""}`)}
         path={`/f/${fundraiser.unique_slug}`}
         type="article"
         image={resolvedCover || undefined}
-        jsonLd={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Stories", path: "/stories" }, { name: fundraiser.title, path: `/f/${fundraiser.unique_slug}` }])}
+        imageAlt={fundraiser.title}
+        noindex={!!fundraiser.is_example}
+        jsonLd={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          helpPage ? { name: helpPage.name, path: `/help/${helpPage.slug}` } : { name: "Fundraisers", path: "/stories" },
+          { name: fundraiser.title, path: `/f/${fundraiser.unique_slug}` },
+        ])}
       />
       <Navbar />
 
@@ -191,7 +204,7 @@ const PublicFundraiser = () => {
 
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-6 text-sm text-muted-foreground">
               {created && <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />Created {created}</span>}
-              <Link to={`/stories?category=${fundraiser.category}`} className="flex min-h-11 items-center gap-2 py-2.5 hover:text-foreground"><Tag className="h-4 w-4" />{needLabel(fundraiser.category)}</Link>
+              <Link to={helpPage ? `/help/${helpPage.slug}` : "/stories"} className="flex min-h-11 items-center gap-2 py-2.5 hover:text-foreground"><Tag className="h-4 w-4" />{needLabel(fundraiser.category)}</Link>
               <button onClick={() => setReport(true)} className="flex min-h-11 items-center gap-2 py-2.5 hover:text-foreground"><Flag className="h-4 w-4" />Report fundraiser</button>
             </div>
           </div>

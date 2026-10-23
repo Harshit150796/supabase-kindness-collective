@@ -1,4 +1,5 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
+import { NoIndex } from "@/components/SEO";
 import { loadApplyRecipient } from "@/lib/applyRoute";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -11,6 +12,8 @@ import { SessionSecurityProvider } from "@/components/auth/SessionSecurityProvid
 import { GeoGuard } from "@/components/auth/GeoGuard";
 import { AdminShell, AdminOnly } from "@/components/admin/AdminShell";
 import { adminPage } from "./pages/admin/adminPages";
+
+
 const Index = lazy(() => import("./pages/Index"));
 import { PrivacyConsentBanner } from "./components/PrivacyConsentBanner";
 import { VisitorAnalytics } from "./components/VisitorAnalytics";
@@ -18,6 +21,9 @@ import { CursorTrail } from './components/CursorTrail';
 import { SiteMenuProvider } from './components/navigation/SiteMenuProvider';
 import { signInPath } from './lib/serverActions';
 import { PageChoreography } from './components/PageChoreography';
+
+/** Account, payment-result and utility pages: a tab title, and kept out of search results. */
+const Private = ({ title, children }: { title: string; children: ReactNode }) => <><NoIndex title={title} />{children}</>;
 
 // All non-homepage routes are lazy-loaded so mobile users don't download
 // the entire app on first paint.
@@ -85,6 +91,8 @@ const DonorHistory = lazy(() => import("./pages/donor/DonorHistory"));
 
 // Admin pages
 const NeedPage = lazy(() => import("./pages/NeedPage"));
+const GivePage = lazy(() => import("./pages/GivePage"));
+const GoFundMeAlternative = lazy(() => import("./pages/GoFundMeAlternative"));
 const Partners = lazy(() => import("./pages/Partners"));
 const ADMIN_PAGES = [['/admin', adminPage('/admin')],['/admin/analytics', adminPage('/admin/analytics')],['/admin/fundraisers', adminPage('/admin/fundraisers')],['/admin/donations', adminPage('/admin/donations')],['/admin/donors', adminPage('/admin/donors')],['/admin/monthly', adminPage('/admin/monthly')],['/admin/verifications', adminPage('/admin/verifications')],['/admin/coupons', adminPage('/admin/coupons')],['/admin/procurement', adminPage('/admin/procurement')],['/admin/gold-coins', adminPage('/admin/gold-coins')],['/admin/partners', adminPage('/admin/partners')],['/admin/moderation', adminPage('/admin/moderation')],['/admin/contact', adminPage('/admin/contact')],['/admin/followups', adminPage('/admin/followups')],['/admin/tasks', adminPage('/admin/tasks')],['/admin/notifications', adminPage('/admin/notifications')],['/admin/content', adminPage('/admin/content')],['/admin/stories', adminPage('/admin/stories')],['/admin/testimonials', adminPage('/admin/testimonials')],['/admin/blog', adminPage('/admin/blog')],['/admin/faq', adminPage('/admin/faq')],['/admin/newsletters', adminPage('/admin/newsletters')],['/admin/team', adminPage('/admin/team')],['/admin/users', adminPage('/admin/users')],['/admin/audit', adminPage('/admin/audit')],['/admin/settings', adminPage('/admin/settings')]] as const;
 const ADMIN_ONLY = new Set(['/admin/audit', '/admin/moderation', '/admin/users']);
@@ -131,41 +139,45 @@ const AppRoutes = () => (
       <Route path="/fundraiser-rules" element={<FundraiserRules />} />
       <Route path="/stories" element={<Stories />} />
       <Route path="/help/:need" element={<NeedPage />} />
+      <Route path="/donate-gift-cards" element={<GivePage />} />
+      <Route path="/buy-groceries-for-a-family" element={<GivePage />} />
+      <Route path="/holiday-giving" element={<GivePage />} />
+      <Route path="/gofundme-alternative" element={<GoFundMeAlternative />} />
       <Route path="/partners" element={<Partners />} />
       <Route path="/story/:id" element={<StoryDetail />} />
       <Route path="/f/:slug" element={<PublicFundraiser />} />
       <Route path="/messages" element={<Messages />} />
-      <Route path="/team/accept" element={<TeamAccept />} />
+      <Route path="/team/accept" element={<Private title="Join a fundraiser team"><TeamAccept /></Private>} />
       <Route path="/featured/:storyKey" element={<FeaturedStoryDetail />} />
       <Route path="/story-detail/:id" element={<CMSStoryDetail />} />
 
       {/* OBS/Streaming Overlay Routes */}
-      <Route path="/overlay/progress/:slug" element={<ProgressBarOverlay />} />
-      <Route path="/overlay/alerts/:slug" element={<DonationAlertOverlay />} />
-      <Route path="/overlay/qr/:slug" element={<QRCodeOverlay />} />
-      <Route path="/auth" element={<Auth />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/donation-success" element={<DonationSuccess />} />
-      <Route path="/donation-cancelled" element={<DonationCancelled />} />
+      <Route path="/overlay/progress/:slug" element={<Private title="Stream overlay"><ProgressBarOverlay /></Private>} />
+      <Route path="/overlay/alerts/:slug" element={<Private title="Stream overlay"><DonationAlertOverlay /></Private>} />
+      <Route path="/overlay/qr/:slug" element={<Private title="Stream overlay"><QRCodeOverlay /></Private>} />
+      <Route path="/auth" element={<Private title="Sign in"><Auth /></Private>} />
+      <Route path="/reset-password" element={<Private title="Reset your password"><ResetPassword /></Private>} />
+      <Route path="/donation-success" element={<Private title="Thank you"><DonationSuccess /></Private>} />
+      <Route path="/donation-cancelled" element={<Private title="Donation cancelled"><DonationCancelled /></Private>} />
       <Route path="/apply" element={<GeoGuard><Suspense fallback={<ApplyFallback />}><ApplyRecipient /></Suspense></GeoGuard>} />
       <Route path="/donate" element={<Donate />} />
-      <Route path="/my-fundraisers" element={<GeoGuard><MyFundraisers /></GeoGuard>} />
-      <Route path="/my-impact" element={<MyImpact />} />
+      <Route path="/my-fundraisers" element={<Private title="Your fundraisers"><GeoGuard><MyFundraisers /></GeoGuard></Private>} />
+      <Route path="/my-impact" element={<Private title="Your impact"><MyImpact /></Private>} />
       <Route path="/impact/:token" element={<ImpactLink />} />
-      <Route path="/fundraiser/:id" element={<GeoGuard><FundraiserDashboard /></GeoGuard>} />
-      <Route path="/fundraiser/:id/edit" element={<GeoGuard><FundraiserEdit /></GeoGuard>} />
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/settings" element={<Settings />} />
+      <Route path="/fundraiser/:id" element={<Private title="Your fundraiser"><GeoGuard><FundraiserDashboard /></GeoGuard></Private>} />
+      <Route path="/fundraiser/:id/edit" element={<Private title="Edit fundraiser"><GeoGuard><FundraiserEdit /></GeoGuard></Private>} />
+      <Route path="/profile" element={<Private title="Your profile"><Profile /></Private>} />
+      <Route path="/settings" element={<Private title="Settings"><Settings /></Private>} />
 
       {/* Unified account routes — one account, giving + receiving */}
-      <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><Dashboard /></ProtectedRoute>} />
-      <Route path="/dashboard/donate" element={<ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><DonorDonate /></ProtectedRoute>} />
-      <Route path="/dashboard/giving" element={<ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><DonorHistory /></ProtectedRoute>} />
-      <Route path="/dashboard/impact" element={<ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><DonorImpact /></ProtectedRoute>} />
-      <Route path="/dashboard/wallet" element={<GeoGuard><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><RecipientCoupons /></ProtectedRoute></GeoGuard>} />
-      <Route path="/dashboard/loyalty-card" element={<GeoGuard><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><RecipientLoyaltyCard /></ProtectedRoute></GeoGuard>} />
-      <Route path="/dashboard/verification" element={<GeoGuard><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><RecipientVerification /></ProtectedRoute></GeoGuard>} />
-      <Route path="/dashboard/history" element={<GeoGuard><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><RecipientHistory /></ProtectedRoute></GeoGuard>} />
+      <Route path="/dashboard" element={<Private title="Your account"><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><Dashboard /></ProtectedRoute></Private>} />
+      <Route path="/dashboard/donate" element={<Private title="Give"><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><DonorDonate /></ProtectedRoute></Private>} />
+      <Route path="/dashboard/giving" element={<Private title="Your giving"><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><DonorHistory /></ProtectedRoute></Private>} />
+      <Route path="/dashboard/impact" element={<Private title="Your impact"><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><DonorImpact /></ProtectedRoute></Private>} />
+      <Route path="/dashboard/wallet" element={<Private title="Your wallet"><GeoGuard><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><RecipientCoupons /></ProtectedRoute></GeoGuard></Private>} />
+      <Route path="/dashboard/loyalty-card" element={<Private title="Your loyalty card"><GeoGuard><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><RecipientLoyaltyCard /></ProtectedRoute></GeoGuard></Private>} />
+      <Route path="/dashboard/verification" element={<Private title="Verification"><GeoGuard><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><RecipientVerification /></ProtectedRoute></GeoGuard></Private>} />
+      <Route path="/dashboard/history" element={<Private title="Your history"><GeoGuard><ProtectedRoute allowedRoles={['donor', 'recipient', 'admin']}><RecipientHistory /></ProtectedRoute></GeoGuard></Private>} />
 
       {/* Legacy role-split paths — kept as redirects so old links keep working */}
       <Route path="/recipient" element={<Navigate to="/dashboard" replace />} />
@@ -192,9 +204,9 @@ const AppRoutes = () => (
       {/* Blog Routes */}
       <Route path="/blog" element={<Blog />} />
       <Route path="/blog/:slug" element={<BlogPost />} />
-      <Route path="/unsubscribe" element={<Unsubscribe />} />
+      <Route path="/unsubscribe" element={<Private title="Unsubscribe"><Unsubscribe /></Private>} />
 
-      <Route path="*" element={<NotFound />} />
+      <Route path="*" element={<Private title="Page not found"><NotFound /></Private>} />
     </Routes>
   </Suspense>
 );

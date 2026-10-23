@@ -33,6 +33,8 @@ import {
   clearScopedDraft,
 } from "@/lib/draftStorage";
 import { markAgreement, recordAgreement } from "@/lib/legal";
+import { pingSearchEngines } from "@/lib/searchPing";
+import { SEO, breadcrumbJsonLd } from "@/components/SEO";
 
 
 interface ApplicationData {
@@ -452,6 +454,8 @@ const ApplyRecipient = () => {
 
     // Keep a record that they confirmed the request and accepted the Terms when submitting.
     void recordAgreement(userId, "fundraiser-submit", fundraiserData.id);
+    // Let Bing-powered search know a new request is live.
+    pingSearchEngines((fundraiserData as { unique_slug?: string | null }).unique_slug);
 
     // Save the full gallery (cover first)
     if (uploadedUrls.length > 0) {
@@ -755,6 +759,12 @@ const ApplyRecipient = () => {
 
   return (
     <>
+      <SEO
+        title="Ask for Help With Groceries, Bills and Essentials"
+        description="Need help with groceries, medicine, rides or household basics? Start a free request in a few minutes. Donors give gift cards for the stores you choose."
+        path="/apply"
+        jsonLd={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Ask for help", path: "/apply" }])}
+      />
       <ApplyLayout
         step={currentStep}
         reached={reached}

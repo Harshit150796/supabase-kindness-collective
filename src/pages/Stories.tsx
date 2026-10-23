@@ -36,7 +36,7 @@ export default function Stories() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <SEO title="Stories and Fundraisers" description="Browse active CouponDonation fundraisers and read editorial stories about needs that restricted coupons can meet." path="/stories" jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Stories', path: '/stories' }])} />
+      <SEO title="Fundraisers for Families in Need: Help Someone Today" description="Browse open requests for groceries, medicine, rides and household essentials. Pick one and give gift cards for the stores they asked for." path="/stories" jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Stories', path: '/stories' }])} />
       <Navbar />
       <main>
         <section className="py-24 md:py-36">

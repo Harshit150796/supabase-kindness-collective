@@ -8,26 +8,26 @@ import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
 import { ProductTraceVisual } from '@/components/marketing/ProductTraceVisual';
 
 const donorSteps = [
-  { icon: UserPlus, title: 'Choose a fundraiser', description: 'Browse active campaigns and decide where your support should go.' },
-  { icon: CreditCard, title: 'Choose the amount and retailer', description: 'Make a secure donation and select the familiar brand where its coupon value can be used.' },
-  { icon: Heart, title: 'Follow the record', description: 'Your account keeps the donation and resulting coupon activity connected.' },
+  { icon: UserPlus, title: 'Choose a request', description: 'Pick someone who asked for help, or give to the shared pool that people who asked for help can claim.' },
+  { icon: CreditCard, title: 'Choose stores and an amount', description: 'Pick the stores where your gift can be used and how much goes to each, from $10 per store. Payment runs through Square.' },
+  { icon: Heart, title: 'Follow your gift', description: 'You get a receipt right away and an email when the recipient has their gift cards.' },
 ];
 const recipientSteps = [
-  { icon: UserPlus, title: 'Tell us what you need', description: 'Create an account and submit an application with the requested information.' },
-  { icon: Shield, title: 'Complete review', description: 'The CouponDonation team reviews the application before recipient access is approved.' },
-  { icon: Gift, title: 'Use available coupons', description: 'Approved recipients can browse their coupon wallet and use available value at its named retailer.' },
+  { icon: UserPlus, title: 'Tell us what you need', description: 'Choose your needs and the stores you’d use, add your story and a photo, and set a goal. It’s free.' },
+  { icon: Shield, title: 'Share your page', description: 'Your page goes live when you submit it. Our team reviews requests and may ask for more information.' },
+  { icon: Gift, title: 'Use your gift cards', description: 'Gift cards and coupons appear in your wallet as our team issues them. Use them at the store like any gift card.' },
 ];
 
 export default function HowItWorks() {
   const navigate = useNavigate();
   return (
     <div className="min-h-dvh bg-background">
-      <SEO title="How CouponDonation Works — Donate, Verify, Redeem" description="See how donations become retailer-specific coupons through a transparent path for donors and approved recipients." path="/how-it-works" jsonLd={breadcrumbJsonLd([{ name:'Home', path:'/' },{ name:'How It Works', path:'/how-it-works' }])}/>
+      <SEO title="How CouponDonation Works: From Donation to Gift Card" description="See how a donation becomes gift cards for the stores someone asked for: you choose the request and stores, our team issues the cards, and you get a receipt." path="/how-it-works" jsonLd={breadcrumbJsonLd([{ name:'Home', path:'/' },{ name:'How It Works', path:'/how-it-works' }])}/>
       <Navbar />
       <main>
-        <section className="py-24 md:py-36"><div className="container mx-auto grid gap-10 px-4 lg:grid-cols-[1fr_.8fr] lg:items-center"><div><LineReveal><h1 className="max-w-5xl font-display text-6xl font-normal leading-none text-foreground md:text-8xl">One donation. A visible path to use.</h1></LineReveal><Reveal delay={0.1}><p className="mt-8 max-w-2xl text-xl leading-relaxed text-muted-foreground">Donors choose the cause and retailer. Approved recipients receive restricted coupon value for everyday needs.</p></Reveal></div><ProductTraceVisual mode="trace"/></div></section>
+        <section className="py-24 md:py-36"><div className="container mx-auto grid gap-10 px-4 lg:grid-cols-[1fr_.8fr] lg:items-center"><div><LineReveal><h1 className="max-w-5xl font-display text-6xl font-normal leading-none text-foreground md:text-8xl">One donation. A visible path to use.</h1></LineReveal><Reveal delay={0.1}><p className="mt-8 max-w-2xl text-xl leading-relaxed text-muted-foreground">Donors choose the request and the stores. People who asked for help receive gift cards and coupons for exactly those stores.</p></Reveal></div><ProductTraceVisual mode="trace"/></div></section>
         <ProcessSection title="For people ready to give." steps={donorSteps} action="Start donating" onAction={()=>navigate('/donate')} />
-        <ProcessSection title="For people seeking support." steps={recipientSteps} action="Apply for support" onAction={()=>navigate('/auth?mode=signup&role=recipient')} alternate />
+        <ProcessSection title="For people seeking support." steps={recipientSteps} action="Ask for help" onAction={()=>navigate('/apply')} alternate />
       </main>
       <Footer />
     </div>
