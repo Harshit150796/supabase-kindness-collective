@@ -1,25 +1,43 @@
 # CouponDonation
 
-> CouponDonation turns donations into store coupons and gift cards for people in need in the United States. 100% of each gift goes to the family; nothing is paid out as cash, and every dollar is tracked.
+> Give what people need. CouponDonation is a US giving platform where people ask for help with a specific need, such as groceries, medicine, rides or household essentials, and donors give store gift cards and coupons for exactly that. 100% of each gift goes to the person who asked; nothing is paid out as cash, and every gift comes with a receipt.
 
-CouponDonation Inc. is a US company (a Delaware corporation), not a registered 501(c)(3) charity, so gifts are not tax-deductible. People in need post a fundraiser and say which stores would help most. Donors give to a fundraiser and choose the stores their gift is used at, such as Walmart, Target, Kroger, CVS or DoorDash. The team then issues store coupons and gift cards for the recipient. CouponDonation takes no platform fee; it runs on optional tips donors can add at checkout. Store names are trademarks of their owners, and the stores are not affiliated with CouponDonation.
+CouponDonation Inc. is a US company (a Delaware corporation), not a registered 501(c)(3) charity, so gifts are not tax-deductible. Adults 18 or older in the United States can start a free request, choose their needs and up to eight stores they would use, and share their page. Donors pick a request (or give to a shared pool), choose stores such as Walmart, Kroger, Aldi, Target, CVS, Walgreens, DoorDash or Uber, and an amount from $10 per store. The team issues the gift cards and coupons by hand and adds them to the recipient's wallet; timing depends on the store. CouponDonation takes no platform fee from gifts; it runs on optional tips donors can add at checkout. It never pays bills, rent or medical providers directly. Store names are trademarks of their owners, and the stores are not affiliated with CouponDonation.
 
-## Pages
+## Get help
 
-- [Home](/): How CouponDonation works and live totals from completed donations.
-- [About](/about): Mission and team.
-- [How It Works](/how-it-works): Step-by-step flow for donors and recipients.
-- [Donate](/donate): Give store coupons; choose the stores and the amount.
-- [Apply for Help](/apply): Free application for people in the US who need help with essentials.
-- [Fundraisers](/stories): Live fundraisers with totals from completed donations.
-- [FAQ](/faq): Common questions about donations, coupons and privacy.
+- [Ask for help](https://coupondonation.com/apply): Start a free request for groceries, bills, rides, pharmacy items or essentials.
+- [Food assistance](https://coupondonation.com/help/food-assistance): Grocery and meal gift cards, plus food banks, SNAP and WIC.
+- [Grocery assistance](https://coupondonation.com/help/grocery-assistance): Gift cards for the grocery stores people already use.
+- [Help paying bills](https://coupondonation.com/help/help-paying-bills): Programs for utility and phone bills, and gift cards that free up money for bills.
+- [Transportation and travel assistance](https://coupondonation.com/help/transportation-assistance): Uber gift cards and programs that cover rides.
+- [Healthcare assistance](https://coupondonation.com/help/healthcare-assistance): Pharmacy gift cards, plus Medicaid, health centers and prescription help.
+- [Emergency assistance](https://coupondonation.com/help/emergency-assistance): Help after a fire, flood or crisis, plus Red Cross and FEMA.
+- [Help with essentials](https://coupondonation.com/help/help-with-essentials): Diapers, formula, clothes, toiletries and household basics.
+
+## Give
+
+- [Donate](https://coupondonation.com/donate): Choose stores and an amount; give to a request or the shared pool.
+- [Open requests](https://coupondonation.com/stories): Live requests with totals from completed donations.
+- [Donate gift cards](https://coupondonation.com/donate-gift-cards): Give a gift card to someone who asked for one.
+- [Buy groceries for a family](https://coupondonation.com/buy-groceries-for-a-family): Grocery gift cards for families who asked for help with food.
+- [Holiday giving](https://coupondonation.com/holiday-giving): Sponsor a family's holiday meal or gifts.
+- [CouponDonation vs GoFundMe](https://coupondonation.com/gofundme-alternative): A sourced, side-by-side comparison of fees and how help is delivered.
+
+## About
+
+- [About](https://coupondonation.com/about): Mission and founder.
+- [How it works](https://coupondonation.com/how-it-works): Step by step for donors and for people asking for help.
+- [FAQ](https://coupondonation.com/faq): Donations, gift cards, fees, review and privacy.
+- [Partner with us](https://coupondonation.com/partners): Churches, nonprofits and community groups.
 
 ## Legal
 
-- [Terms of Use](/terms)
-- [Privacy Policy](/privacy)
-- [Cookie Policy](/cookies)
-- [Refund Policy](/refunds)
-- [Copyright Policy](/copyright)
-- [Consumer Health Data Privacy Policy](/health-data-privacy)
-- [Accessibility](/accessibility)
+- [Terms of Use](https://coupondonation.com/terms)
+- [Privacy Policy](https://coupondonation.com/privacy)
+- [Cookie Policy](https://coupondonation.com/cookies)
+- [Refund Policy](https://coupondonation.com/refunds)
+- [Fundraiser Rules](https://coupondonation.com/fundraiser-rules)
+- [Copyright Policy](https://coupondonation.com/copyright)
+- [Consumer Health Data Privacy Policy](https://coupondonation.com/health-data-privacy)
+- [Accessibility](https://coupondonation.com/accessibility)

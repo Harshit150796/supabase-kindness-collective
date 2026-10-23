@@ -4,63 +4,57 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Primary Meta Tags -->
-    <title>CouponDonation — Turn Donations Into Grocery Coupons</title>
-    <meta name="title" content="CouponDonation — Turn Donations Into Grocery Coupons" />
-    <meta name="description" content="Your donation becomes real grocery coupons for verified families. 95% efficiency, Walmart/Target/Amazon partners. Donate in seconds, see your impact.">
-    <meta name="keywords" content="donation platform, coupon donation, digital vouchers, retail vouchers, crowdfunding, fundraiser, food assistance, grocery coupons, gift card donation, help families, community support" />
-    <meta name="author" content="CouponDonation" />
-    <meta name="robots" content="index, follow" />
+    <!-- Default tags for crawlers that don't run JavaScript. Pages replace them through react-helmet-async
+         (data-rh marks them as Helmet's own). Keep them true for any page: no canonical or og:url here,
+         since this same file is served for every route. -->
+    <title>CouponDonation: Give Groceries &amp; Gift Cards to Families in Need</title>
+    <meta name="description" content="Help someone with a real need. Your donation becomes gift cards for the groceries, medicine and rides they asked for, and you get a receipt for every gift." data-rh="true" />
+    <meta name="robots" content="index, follow, max-image-preview:large" data-rh="true" />
     <meta name="theme-color" content="#2e7d32" />
     <link rel="preload" href="/fonts/instrument-sans-variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/instrument-serif-400.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/brand/logo-256.webp" as="image" type="image/webp" fetchpriority="high" />
-    
-    <!-- Favicon & Icons - Optimized for Google Search Console -->
+
     <link rel="icon" type="image/png" href="/favicon-512.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/favicon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon-192.png" />
     <link rel="manifest" href="/manifest.json" />
-    <!-- Preconnect to backend + payments so first XHR / image starts faster on mobile -->
+    <!-- Preconnect to the backend so the first data request starts sooner on mobile -->
     <link rel="preconnect" href="https://vbnbacowuoeeojjdrzzp.supabase.co" crossorigin />
     <link rel="dns-prefetch" href="https://vbnbacowuoeeojjdrzzp.supabase.co" />
-    <link rel="preconnect" href="https://js.stripe.com" crossorigin />
 
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://coupondonation.com" />
-    
-    
-    <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/WxokFoHEXkf8Hqp8p5J7xCrwnIo1/social-images/social-1782483846797-Gemini_Generated_Image_4tc3kk4tc3kk4tc3-removebg-preview.webp">
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:site_name" content="CouponDonation" />
-    <meta property="og:locale" content="en_US" />
-    
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@CouponDonation" />
-    <meta name="twitter:creator" content="@CouponDonation" />
-    <meta name="twitter:url" content="https://coupondonation.com" />
-    
-    
-    <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/WxokFoHEXkf8Hqp8p5J7xCrwnIo1/social-images/social-1782483846797-Gemini_Generated_Image_4tc3kk4tc3kk4tc3-removebg-preview.webp">
-    
-    <!-- Organization Structured Data -->
+    <!-- Social previews -->
+    <meta property="og:type" content="website" data-rh="true" />
+    <meta property="og:title" content="CouponDonation: Give Groceries &amp; Gift Cards to Families in Need" data-rh="true" />
+    <meta property="og:description" content="Help someone with a real need. Your donation becomes gift cards for the groceries, medicine and rides they asked for, and you get a receipt for every gift." data-rh="true" />
+    <meta property="og:image" content="https://coupondonation.com/og-image.png" data-rh="true" />
+    <meta property="og:image:width" content="1200" data-rh="true" />
+    <meta property="og:image:height" content="630" data-rh="true" />
+    <meta property="og:image:alt" content="CouponDonation logo with the line Give what people need" data-rh="true" />
+    <meta property="og:site_name" content="CouponDonation" data-rh="true" />
+    <meta property="og:locale" content="en_US" data-rh="true" />
+    <meta name="twitter:card" content="summary_large_image" data-rh="true" />
+    <meta name="twitter:title" content="CouponDonation: Give Groceries &amp; Gift Cards to Families in Need" data-rh="true" />
+    <meta name="twitter:description" content="Help someone with a real need. Your donation becomes gift cards for the groceries, medicine and rides they asked for, and you get a receipt for every gift." data-rh="true" />
+    <meta name="twitter:image" content="https://coupondonation.com/og-image.png" data-rh="true" />
+
+    <!-- Who we are, for search engines and AI assistants. Keep every claim true (AGENTS.md, Legal). -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Organization",
+      "@id": "https://coupondonation.com/#organization",
       "name": "CouponDonation",
       "alternateName": ["Coupon Donation", "CouponDonation.com"],
-      "url": "https://coupondonation.com",
+      "url": "https://coupondonation.com/",
       "logo": "https://coupondonation.com/favicon-512.png",
-      "image": "https://coupondonation.com/favicon-512.png",
-      "description": "CouponDonation converts monetary donations into grocery coupons for verified families in need, partnering with brands like Walmart, Target, and Amazon.",
-      "email": "connect@coupondonation.com",
+      "image": "https://coupondonation.com/og-image.png",
+      "slogan": "Give what people need.",
+      "description": "CouponDonation is a US giving platform where people ask for help with a specific need and donors give store gift cards and coupons for it, such as groceries, medicine, rides and household essentials. Gifts are not cash and are not tax-deductible.",
+      "email": "support@coupondonation.com",
       "telephone": "+1-315-898-6745",
+      "areaServed": { "@type": "Country", "name": "United States" },
       "sameAs": [
         "https://www.linkedin.com/company/coupondonation",
         "https://twitter.com/CouponDonation"
@@ -68,53 +62,25 @@
       "contactPoint": [{
         "@type": "ContactPoint",
         "telephone": "+1-315-898-6745",
-        "email": "connect@coupondonation.com",
-        "contactType": "customer service",
+        "email": "support@coupondonation.com",
+        "contactType": "customer support",
         "areaServed": "US",
         "availableLanguage": "English"
       }]
     }
     </script>
-
-    <!-- WebSite Schema for Sitelinks Search Box -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
+      "@id": "https://coupondonation.com/#website",
       "name": "CouponDonation",
       "alternateName": ["Coupon Donation", "CouponDonation.com"],
-      "url": "https://coupondonation.com",
-      "publisher": {
-        "@type": "Organization",
-        "name": "CouponDonation"
-      },
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://coupondonation.com/stories?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
+      "url": "https://coupondonation.com/",
+      "inLanguage": "en-US",
+      "publisher": { "@id": "https://coupondonation.com/#organization" }
     }
     </script>
-
-    <!-- Site Navigation - helps Google build sitelinks -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@graph": [
-        { "@type": "SiteNavigationElement", "name": "About Us", "url": "https://coupondonation.com/about" },
-        { "@type": "SiteNavigationElement", "name": "How It Works", "url": "https://coupondonation.com/how-it-works" },
-        { "@type": "SiteNavigationElement", "name": "Stories", "url": "https://coupondonation.com/stories" },
-        { "@type": "SiteNavigationElement", "name": "Donate", "url": "https://coupondonation.com/donate" },
-        { "@type": "SiteNavigationElement", "name": "Apply for Help", "url": "https://coupondonation.com/apply" },
-        { "@type": "SiteNavigationElement", "name": "Blog", "url": "https://coupondonation.com/blog" },
-        { "@type": "SiteNavigationElement", "name": "FAQ", "url": "https://coupondonation.com/faq" }
-      ]
-    }
-    </script>
-    <meta property="og:title" content="CouponDonation — Turn Donations Into Grocery Coupons">
-  <meta name="twitter:title" content="CouponDonation — Turn Donations Into Grocery Coupons">
-  <meta property="og:description" content="Your donation becomes real grocery coupons for verified families. 95% efficiency, Walmart/Target/Amazon partners. Donate in seconds, see your impact.">
-  <meta name="twitter:description" content="Your donation becomes real grocery coupons for verified families. 95% efficiency, Walmart/Target/Amazon partners. Donate in seconds, see your impact.">
 </head>
 
   <body>

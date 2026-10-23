@@ -64,7 +64,7 @@ export function HeroHeadline({ play = true }: { play?: boolean }) {
 
   return (
     <div ref={ref} data-play={(play && uncovered) || undefined} className="hero-headline antialiased">
-      <h1 className="sr-only">CouponDonation — Turn Donations Into Grocery Coupons for Families in Need</h1>
+      <h1 className="sr-only">CouponDonation: give what people need. Donations become gift cards for groceries, medicine, rides and essentials for families in need.</h1>
       <div className="hero-cta container mx-auto px-4 lg:px-8">
         <div className="hero-cta-box">
           <p className="hero-kicker">

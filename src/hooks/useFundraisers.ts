@@ -31,9 +31,13 @@ export interface Fundraiser {
   latest_donation_at?: string | null;
 }
 
-export function useFundraisers(options?: { limit?: number; category?: string }) {
+/** Category ids, old and new, are plain words; anything else is dropped before it reaches a filter. */
+const cleanIds = (ids: string[]) => ids.filter((id) => /^[a-z_]+$/.test(id));
+
+export function useFundraisers(options?: { limit?: number; category?: string; needs?: string[] }) {
+  const needs = options?.needs?.length ? cleanIds(options.needs) : [];
   return useQuery({
-    queryKey: ['fundraisers', 'active', options?.category, options?.limit],
+    queryKey: ['fundraisers', 'active', options?.category, options?.limit, needs.join(',')],
     queryFn: async ({ signal }) => {
       const controller = new AbortController();
       const cancel = () => controller.abort();
@@ -54,6 +58,11 @@ export function useFundraisers(options?: { limit?: number; category?: string }) 
 
       if (options?.category && options.category !== 'all') {
         query = query.eq('category', options.category);
+      }
+
+      // A need page lists requests whose first need or any chosen need matches (help_categories).
+      if (needs.length) {
+        query = query.or(`category.in.(${needs.join(',')}),help_categories.ov.{${needs.join(',')}}`);
       }
 
       if (options?.limit) {

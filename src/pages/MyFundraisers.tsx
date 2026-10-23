@@ -91,7 +91,7 @@ export default function MyFundraisers() {
   }, [user?.id, retry]);
   const summary = fundraisers.reduce((s, f) => ({ raised: s.raised + Number(f.amount_raised), donors: s.donors + Number(f.donors_count), ready: s.ready + Number(f.coupons_ready) }), { raised: 0, donors: 0, ready: 0 });
   return <div className="flex min-h-dvh flex-col bg-background">
-    <SEO title="Your fundraisers" description="Manage your fundraisers, track giving, and reveal ready coupons." path="/my-fundraisers" />
+    <SEO title="Your fundraisers" description="Manage your fundraisers, track giving, and reveal ready coupons." path="/my-fundraisers" noindex />
     <Navbar />
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
       <PageHeader title="Your fundraisers" subtitle="Track your campaigns and keep support moving." action={<Button variant="outline" className="h-11 gap-2 bg-card" onClick={() => navigate("/apply")}><Plus className="h-4 w-4" />New fundraiser</Button>} />

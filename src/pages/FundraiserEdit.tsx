@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { pingSearchEngines } from "@/lib/searchPing";
 import { NeedsAndStores } from "@/components/apply/NeedsAndStores";
 import { findRetailer, retailerId } from "@/components/landing/donate/retailers";
 import { requestNeeds } from "@/lib/helpNeeds";
@@ -33,6 +34,7 @@ export default function FundraiserEdit() {
   const [stores, setStores] = useState<string[]>([]);
   const [similarOk, setSimilarOk] = useState(true);
   const [hasExtras, setHasExtras] = useState(true);
+  const [slug, setSlug] = useState<string | null>(null);
   const zip = useZipLookup(zipCode);
 
   useEffect(() => {
@@ -40,11 +42,12 @@ export default function FundraiserEdit() {
     if (!user) { navigate("/auth"); return; }
     (async () => {
       const { data } = await supabase.from("fundraisers")
-        .select("id, user_id, title, story, category, monthly_goal, zip_code").eq("id", id!).maybeSingle();
+        .select("id, user_id, title, story, category, monthly_goal, zip_code, unique_slug").eq("id", id!).maybeSingle();
       if (!data || data.user_id !== user.id) { navigate(`/fundraiser/${id}`); return; }
       setTitle(data.title ?? ""); setStory(data.story ?? "");
       setCategory(data.category ?? ""); setGoal(String(data.monthly_goal ?? ""));
       setZipCode(data.zip_code ?? "");
+      setSlug(data.unique_slug ?? null);
       // Needs and stores arrived later; older databases may not have them yet.
       const extras = await supabase.from("fundraisers")
         .select("help_categories, preferred_brands, similar_stores_ok").eq("id", id!).maybeSingle();
@@ -86,6 +89,7 @@ export default function FundraiserEdit() {
     setSaving(false);
     if (error) { toast({ title: "Couldn't save changes", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Changes saved" });
+    pingSearchEngines(slug);
     navigate(`/fundraiser/${id}`);
   };
 
