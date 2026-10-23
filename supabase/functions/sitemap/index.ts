@@ -1,9 +1,10 @@
 // Live sitemap of every open fundraiser and published blog post, listed in robots.txt next to the
 // static /sitemap.xml (Google and Bing accept a sitemap on another host when robots.txt names it).
+// Supabase serves function responses as text/plain, so this is a plain-text sitemap: one URL per line.
 // Public data only, read with the anon key under row-level security; examples and closed campaigns
-// stay out of search. Cached for an hour at the edge.
+// stay out of search. Cached for an hour.
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { sitemapXml, type SitemapEntry } from "../_shared/sitemap.ts";
+import { sitemapText, type SitemapEntry } from "../_shared/sitemap.ts";
 
 const SITE = "https://coupondonation.com";
 
@@ -34,9 +35,9 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("sitemap query failed", error instanceof Error ? error.message : error);
   }
-  return new Response(req.method === "HEAD" ? null : sitemapXml(entries), {
+  return new Response(req.method === "HEAD" ? null : sitemapText(entries), {
     headers: {
-      "Content-Type": "application/xml; charset=utf-8",
+      "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "public, max-age=3600, s-maxage=3600",
       "Access-Control-Allow-Origin": "*",
     },

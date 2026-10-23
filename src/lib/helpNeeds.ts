@@ -19,7 +19,7 @@ export interface HelpNeed {
 export const HELP_NEEDS: HelpNeed[] = [
   { id: 'food', label: 'Food & groceries', hint: 'Weekly groceries and pantry staples', stores: ['Walmart', 'Kroger', 'Aldi', 'Costco', 'Publix', 'Safeway', 'Whole Foods', 'Instacart'] },
   { id: 'meals', label: 'Meals & delivery', hint: 'Hot meals and food brought to your door', stores: ['DoorDash', 'Uber', 'Grubhub', 'Postmates', 'Subway', 'Panera Bread', "McDonald's", 'Chipotle'] },
-  { id: 'healthcare', label: 'Health & pharmacy', hint: 'Medicine, first aid and recovery basics', stores: ['CVS', 'Walgreens', 'Rite Aid', 'Walmart', 'Target', 'Amazon'] },
+  { id: 'healthcare', label: 'Health & pharmacy', hint: 'Medicine, first aid and recovery basics', stores: ['CVS', 'Walgreens', 'Walmart', 'Target', 'Amazon'] },
   { id: 'childcare', label: 'Baby & kids', hint: 'Diapers, formula and children’s needs', stores: ['Target', 'Walmart', 'Amazon', 'CVS', 'Walgreens', 'Costco'] },
   { id: 'clothing', label: 'Clothing', hint: 'Clothes and shoes for work, school or weather', stores: ['Target', 'Walmart', 'Amazon', 'Costco'] },
   { id: 'education', label: 'School & learning', hint: 'Supplies, books and a device for school', stores: ['Amazon', 'Target', 'Walmart', 'Best Buy'] },

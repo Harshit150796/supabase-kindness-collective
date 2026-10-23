@@ -1,7 +1,7 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { NEEDS, ASKING_FAQ } from '../../../src/data/needs.ts';
 import { GIVE_PAGES, GIVING_FAQ } from '../../../src/data/givePages.ts';
-import { sitemapXml, lastmodDate } from './sitemap.ts';
+import { sitemapText, sitemapXml, lastmodDate } from './sitemap.ts';
 import { INDEXNOW_KEY, indexNowBody, indexNowUrls } from './indexnow.ts';
 
 const root = new URL('../../../', import.meta.url);
@@ -48,8 +48,17 @@ Deno.test('the live sitemap keeps to our pages, escapes text and writes plain da
   assert(xml.includes('/blog/a&amp;b'));
   assert(!xml.includes('evil.example'));
   assertEquals(lastmodDate('not a date'), null);
+  // Supabase serves function responses as text/plain, so the live sitemap uses the text format.
+  assertEquals(sitemapText([
+    { loc: 'https://coupondonation.com/f/a' },
+    { loc: 'https://coupondonation.com/f/a' },
+    { loc: 'https://evil.example/f/b' },
+    { loc: 'https://coupondonation.com/f/has space' },
+  ]), 'https://coupondonation.com/f/a\n');
+  assertEquals(sitemapText([]), '');
   const fn = read('supabase/functions/sitemap/index.ts');
   assert(fn.includes('.eq("is_example", false)') && fn.includes('.eq("status", "active")'));
+  assert(fn.includes('sitemapText(entries)') && fn.includes('"text/plain; charset=utf-8"'));
   assert(read('supabase/config.toml').includes('[functions.sitemap]\nverify_jwt = false'));
 });
 
