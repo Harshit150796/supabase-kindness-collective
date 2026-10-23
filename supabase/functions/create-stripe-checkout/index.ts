@@ -1,12 +1,13 @@
 import Stripe from "npm:stripe@14.21.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { SplitError, describeSplit, encodeSplit, normalizeSplit } from '../_shared/brand-split.ts';
+import { ChargeError, chargeMetadata, computeCharge } from '../_shared/checkout-total.ts';
+import { EXAMPLE_CLOSED_MESSAGE, isExampleFundraiser } from '../_shared/example-guard.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-interface BrandAllocation { brand: string; brandId: string; percent: number; amount: number }
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -21,15 +22,22 @@ Deno.serve(async (req) => {
       return json({ error: "Stripe payments are currently turned off." }, 403);
     }
 
-    const { amount, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId, embedded } = await req.json();
+    const { amount, tipAmount, coverFee, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId, embedded } = await req.json();
+    if (await isExampleFundraiser(fundraiserId)) return json({ error: EXAMPLE_CLOSED_MESSAGE }, 403);
     const amt = Number(amount);
     if (!amt || amt < 5 || amt > 10000) return json({ error: "Invalid donation amount. Must be between $5 and $10,000." }, 400);
 
-    const allocations: BrandAllocation[] = Array.isArray(brandAllocations) && brandAllocations.length > 0
-      ? brandAllocations
-      : brandName ? [{ brand: brandName, brandId: brandId || "", percent: 100, amount: amt }] : [];
-    const isMultiBrand = allocations.length > 1;
-    const brandNames = allocations.map((a) => a.brand).join(", ");
+    // The donor's dollar split, checked again here (each retailer's share becomes one coupon slot).
+    // The gift goes to families in full; an optional tip and the covered card fee are added on top.
+    let shares, charge;
+    try {
+      shares = normalizeSplit(amt, brandAllocations, { brand: brandName, brandId });
+      charge = computeCharge({ gift: amt, tip: tipAmount, coverFee, provider: "stripe" });
+    } catch (e) {
+      if (e instanceof SplitError || e instanceof ChargeError) return json({ error: e.message }, 400);
+      throw e;
+    }
+    const isMultiBrand = shares.length > 1;
 
     const key = Deno.env.get("STRIPE_SECRET_KEY");
     if (!key) return json({ error: "Missing STRIPE_SECRET_KEY." }, 500);
@@ -45,21 +53,29 @@ Deno.serve(async (req) => {
         quantity: 1,
         price_data: {
           currency: "usd",
-          unit_amount: Math.round(amt * 100),
+          unit_amount: charge.giftCents,
           product_data: {
-            name: isMultiBrand ? `Multi-Brand Donation (${allocations.length} brands)` : "Donation to Help Families",
-            description: isMultiBrand ? `Split across: ${brandNames}` : (brandName ? `Via ${brandName}` : undefined),
+            name: isMultiBrand ? `Donation for families (${shares.length} retailers)` : "Donation to Help Families",
+            description: isMultiBrand ? `100% to families, shared between ${describeSplit(shares)}` : (shares[0] ? `100% to families, via ${shares[0].brand}` : "100% to families"),
           },
         },
-      }],
+      },
+      ...(charge.tipCents > 0 ? [{
+        quantity: 1,
+        price_data: { currency: "usd", unit_amount: charge.tipCents, product_data: { name: "Tip to CouponDonation", description: "Optional. Keeps the platform running." } },
+      }] : []),
+      ...(charge.feeCents > 0 ? [{
+        quantity: 1,
+        price_data: { currency: "usd", unit_amount: charge.feeCents, product_data: { name: "Card processing fee (you covered it)" } },
+      }] : [])],
       metadata: {
         type: "donation",
-        amount: amt.toString(),
+        ...chargeMetadata(charge),
         meals_provided: mealsProvided.toString(),
         is_multi_brand: isMultiBrand.toString(),
-        brand_name: allocations[0]?.brand || "",
-        brand_id: allocations[0]?.brandId || "",
-        brand_allocations: JSON.stringify(allocations).slice(0, 500),
+        brand_name: shares[0]?.brand || "",
+        brand_id: shares[0]?.brandId || "",
+        brand_allocations: shares.length ? encodeSplit(shares) : "",
         donor_id: userId || "",
         donor_email: userEmail || "",
         fundraiser_id: fundraiserId || "",

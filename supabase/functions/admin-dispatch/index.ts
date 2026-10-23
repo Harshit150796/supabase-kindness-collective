@@ -3,13 +3,12 @@
 // creates pending-approval auto-tasks by polling, then fans out to notify-dispatch and email-scheduler.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { NOTIFY_SENDER } from '../_shared/email-layout.ts';
+import { ADMIN_SENDER, shell } from '../_shared/email-layout.ts';
 import { processAccountEmail } from '../_shared/account-emails.ts';
 
 const SUPA = Deno.env.get('SUPABASE_URL')!;
 const SITE = 'https://coupondonation.com';
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const shortName = (n: string | null) => {
   const p = (n ?? '').trim().split(/\s+/).filter(Boolean);
   if (!p.length) return 'Supporter';
@@ -33,11 +32,11 @@ Deno.serve(async (req) => {
   const key = Deno.env.get('RESEND_API_KEY');
 
   const send = async (subject: string, items: { line: string; link: string }[]) => {
-    const html = `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(subject)}</title></head><body style="margin:0;background:#fff"><div style="display:none;max-height:0;overflow:hidden;opacity:0">There is new account activity to review.</div><main style="font-family:Arial,Helvetica,sans-serif;color:#13201a;max-width:560px;margin:0 auto;padding:28px 22px"><p style="font-size:15px;line-height:23px">Hi team,</p><p style="font-size:15px;line-height:23px">There ${items.length === 1 ? 'is one account item' : `are ${items.length} account items`} ready for review.</p>${items.map((i) => `<p style="font-size:14px;line-height:21px">${esc(i.line)}</p>`).join('')}<p style="font-size:15px;line-height:23px"><a href="${SITE}/admin" style="color:#13201a;text-decoration:underline">Open the admin portal</a></p><p style="font-size:15px;line-height:23px">— The CouponDonation team</p><p style="font-size:12px;color:#6b7280;margin-top:24px">Internal account notification. Manage recipients in Admin Settings.</p></main></body></html>`;
+    const html = shell({ preheader: 'There is new account activity to review.', greeting: 'Hi team', status: 'Admin notice', headline: 'Account activity needs review', paragraphs: [`There ${items.length === 1 ? 'is one account item' : `are ${items.length} account items`} ready for review.`, ...items.map((i) => i.line)], valueCard: { label: 'Review queue', value: `${items.length}`, details: [items.length === 1 ? 'item ready' : 'items ready'] }, link: { label: 'Open the admin portal', url: `${SITE}/admin` }, footer: 'Internal account notification. Manage recipients in Admin Settings.', recipient: false });
     const text = ['Hi team,', '', `There ${items.length === 1 ? 'is one account item' : `are ${items.length} account items`} ready for review.`, '', ...items.map((i) => `- ${i.line}`), '', `Open the admin portal: ${SITE}/admin`, '', '— The CouponDonation team'].join('\n');
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: NOTIFY_SENDER.from, reply_to: NOTIFY_SENDER.replyTo, to: recipients, subject, html, text }),
+      body: JSON.stringify({ from: ADMIN_SENDER.from, reply_to: ADMIN_SENDER.replyTo, to: recipients, subject, html, text }),
     });
     const t = await r.text();
     if (!r.ok) throw new Error(`[${r.status}] ${t}`);
@@ -131,7 +130,7 @@ Deno.serve(async (req) => {
   }
 
   // 4) Fan out to the other dispatchers with the same secret.
-  for (const fn of ['notify-dispatch', 'email-scheduler', 'impact-dispatch']) {
+  for (const fn of ['notify-dispatch', 'email-scheduler', 'impact-dispatch', 'followup-dispatch']) {
     try {
       const r = await fetch(`${SUPA}/functions/v1/${fn}`, { method: 'POST', headers: { 'x-dispatch-secret': secret!, 'Content-Type': 'application/json' }, body: '{}' });
       report[fn] = r.status;

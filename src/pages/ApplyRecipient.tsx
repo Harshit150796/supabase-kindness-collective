@@ -1,32 +1,48 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { prefetchWhenIdle } from "@/lib/idlePrefetch";
 import { useNavigate } from "react-router-dom";
 import { ApplyLayout } from "@/components/apply/ApplyLayout";
 import { BasicsStep } from "@/components/apply/steps/BasicsStep";
 import { GoalStep } from "@/components/apply/steps/GoalStep";
-import { StoryStep } from "@/components/apply/steps/StoryStep";
-import { ReviewStep } from "@/components/apply/steps/ReviewStep";
-import { AccountDialog } from "@/components/apply/AccountDialog";
-import { SuccessScreen } from "@/components/apply/SuccessScreen";
-import { ShareScreen } from "@/components/apply/ShareScreen";
-
-import { SignInPrompt } from "@/components/apply/SignInPrompt";
-import { OTPVerification } from "@/components/auth/OTPVerification";
+// Later steps and screens load separately so step 1 opens fast; they preload once step 1 shows.
+const loadStory = () => import("@/components/apply/steps/StoryStep");
+const loadReview = () => import("@/components/apply/steps/ReviewStep");
+const loadAccount = () => import("@/components/apply/AccountDialog");
+const loadSuccess = () => import("@/components/apply/SuccessScreen");
+const loadShare = () => import("@/components/apply/ShareScreen");
+const loadSignIn = () => import("@/components/apply/SignInPrompt");
+const loadOtp = () => import("@/components/auth/OTPVerification");
+const StoryStep = lazy(() => loadStory().then((m) => ({ default: m.StoryStep })));
+const ReviewStep = lazy(() => loadReview().then((m) => ({ default: m.ReviewStep })));
+const AccountDialog = lazy(() => loadAccount().then((m) => ({ default: m.AccountDialog })));
+const SuccessScreen = lazy(() => loadSuccess().then((m) => ({ default: m.SuccessScreen })));
+const ShareScreen = lazy(() => loadShare().then((m) => ({ default: m.ShareScreen })));
+const SignInPrompt = lazy(() => loadSignIn().then((m) => ({ default: m.SignInPrompt })));
+const OTPVerification = lazy(() => loadOtp().then((m) => ({ default: m.OTPVerification })));
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useZipLocation } from "@/lib/zipLookup";
+import { useZipLookup } from "@/lib/zipLookup";
+import { cityState, needLabel } from "@/lib/helpNeeds";
+import { findRetailer } from "@/components/landing/donate/retailers";
+import { RequestPanel } from "@/components/apply/RequestPanel";
 import { MediaItem, uploadMediaFile } from "@/lib/mediaUpload";
 import {
   saveScopedDraft,
   loadScopedDraft,
   clearScopedDraft,
 } from "@/lib/draftStorage";
+import { markAgreement, recordAgreement } from "@/lib/legal";
+import { pingSearchEngines } from "@/lib/searchPing";
+import { SEO, breadcrumbJsonLd } from "@/components/SEO";
 
 
 interface ApplicationData {
   country: string;
   zipCode: string;
   category: string;
+  needs: string[];
+  stores: string[];
   beneficiaryType: string;
   monthlyGoal: string;
   smartMatching: boolean;
@@ -41,6 +57,8 @@ const getDefaults = (): Omit<ApplicationData, "media"> => ({
   country: "us",
   zipCode: "",
   category: "",
+  needs: [],
+  stores: [],
   beneficiaryType: "",
   monthlyGoal: "",
   smartMatching: true,
@@ -52,22 +70,32 @@ const getDefaults = (): Omit<ApplicationData, "media"> => ({
 
 const stepConfig = [
   {
-    headline: "Who are we helping?",
-    subtext: "Two quick taps — no typing yet. The whole application takes about 3 minutes.",
+    headline: "Start your request",
+    subtext: "Who it's for, what you need, and the stores where coupons would help most. The whole application takes about 3 minutes.",
   },
   {
-    headline: "Tell donors your story",
-    subtext: "A few sentences about your situation, plus a photo or short video so donors can connect.",
+    headline: "Tell your story",
+    subtext: "A few honest sentences and a photo help donors understand what's happening.",
   },
   {
-    headline: "How much do you need?",
-    subtext: "One goal and your ZIP code. Once it's fully funded, your request closes.",
+    headline: "Set your goal",
+    subtext: "How much you need in total, and where you live.",
   },
   {
-    headline: "Last details, then you're done",
-    subtext: "Give your request a title and take a quick look at everything you've written.",
+    headline: "Review your request",
+    subtext: "This is how donors will see it. Check each part, then submit.",
   },
 ];
+
+const countWords = (text: string) => (text.trim() ? text.trim().split(/\s+/).length : 0);
+
+/** Writes the request; if the database doesn't have the needs and stores columns yet, saves without them. */
+async function insertFundraiser(row: Record<string, unknown>, extras: Record<string, unknown>) {
+  const first = await supabase.from("fundraisers").insert({ ...row, ...extras } as never).select().single();
+  const missing = first.error && (first.error.code === "PGRST204" || first.error.code === "42703");
+  if (!missing) return first;
+  return supabase.from("fundraisers").insert(row as never).select().single();
+}
 
 
 
@@ -92,6 +120,8 @@ const ApplyRecipient = () => {
   // Track the previous user ID to detect user changes
   const prevUserIdRef = useRef<string | null | undefined>(undefined);
 
+  useEffect(() => prefetchWhenIdle([loadStory, loadReview, loadAccount, loadOtp, loadSignIn, loadSuccess, loadShare]), []);
+
   // Determine if user is already authenticated
   const isAuthenticated = !!user && !authLoading;
   const userEmail = user?.email || "";
@@ -102,6 +132,7 @@ const ApplyRecipient = () => {
 
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [reached, setReached] = useState(1);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [screenState, setScreenState] = useState<ScreenState>("form");
@@ -112,7 +143,10 @@ const ApplyRecipient = () => {
   // Form state
   const [country, setCountry] = useState("us");
   const [zipCode, setZipCode] = useState("");
-  const [category, setCategory] = useState("");
+  const [needs, setNeeds] = useState<string[]>([]);
+  const [stores, setStores] = useState<string[]>([]);
+  // The first need is the fundraiser's main category (filters and older pages read it).
+  const category = needs[0] ?? "";
   const [beneficiaryType, setBeneficiaryType] = useState("");
   const [monthlyGoal, setMonthlyGoal] = useState("");
   const [smartMatching, setSmartMatching] = useState(true);
@@ -121,6 +155,8 @@ const ApplyRecipient = () => {
   const [story, setStory] = useState("");
   const [title, setTitle] = useState("");
   const [titleSource, setTitleSource] = useState<"suggested" | "custom">("suggested");
+  // The final step's required confirmation (truth, consent for photos, Terms). Never saved in drafts.
+  const [confirmed, setConfirmed] = useState(false);
 
   // Account state (only used for non-authenticated users)
   const [accountOpen, setAccountOpen] = useState(false);
@@ -136,7 +172,8 @@ const ApplyRecipient = () => {
     const defaults = getDefaults();
     setCountry(defaults.country);
     setZipCode(defaults.zipCode);
-    setCategory(defaults.category);
+    setNeeds([]);
+    setStores([]);
     setBeneficiaryType(defaults.beneficiaryType);
     setMonthlyGoal(defaults.monthlyGoal);
     setSmartMatching(defaults.smartMatching);
@@ -145,6 +182,7 @@ const ApplyRecipient = () => {
     setTitle(defaults.title);
     setTitleSource(defaults.titleSource);
     setCurrentStep(1);
+    setReached(1);
   };
 
   // Load saved data on mount and when user changes
@@ -177,7 +215,9 @@ const ApplyRecipient = () => {
     if (saved) {
       setCountry((saved.country as string) || "us");
       setZipCode((saved.zipCode as string) || "");
-      setCategory((saved.category as string) || "");
+      const savedNeeds = Array.isArray(saved.needs) ? (saved.needs as string[]) : saved.category ? [saved.category as string] : [];
+      setNeeds(savedNeeds);
+      setStores(Array.isArray(saved.stores) ? (saved.stores as string[]) : []);
       setBeneficiaryType((saved.beneficiaryType as string) || "");
       setMonthlyGoal((saved.monthlyGoal as string) || "");
       setSmartMatching(saved.smartMatching !== false);
@@ -201,6 +241,8 @@ const ApplyRecipient = () => {
       country,
       zipCode,
       category,
+      needs,
+      stores,
       beneficiaryType,
       monthlyGoal,
       smartMatching,
@@ -214,6 +256,8 @@ const ApplyRecipient = () => {
     country,
     zipCode,
     category,
+    needs,
+    stores,
     beneficiaryType,
     monthlyGoal,
     smartMatching,
@@ -222,32 +266,40 @@ const ApplyRecipient = () => {
     titleSource,
   ]);
 
-  const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+  const zip = useZipLookup(zipCode);
+  const place = zip.status === "found" ? cityState(zip.city, zip.stateCode) : null;
+  const words = countWords(story || "");
 
-  const locationLabel = useZipLocation(zipCode, "us");
+  useEffect(() => {
+    setReached((r) => Math.max(r, currentStep));
+    if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentStep]);
 
-  const canContinue = () => {
+  /** What still stops this step, in the words shown beside Continue; null when it can go on. */
+  const blockedReason = (): string | null => {
     switch (currentStep) {
       case 1:
-        return !!beneficiaryType && !!category;
+        if (!beneficiaryType) return "Choose who the request is for";
+        if (!needs.length) return "Choose at least one need";
+        if (!stores.length) return "Choose at least one store";
+        return null;
       case 2: {
-        const storyText = story || "";
-        const enoughWords = storyText.trim().split(/\s+/).filter(Boolean).length >= 10;
-        return (
-          enoughWords &&
-          !media.some((m) => m.status === "uploading") &&
-          media.some((m) => !m.file.type.startsWith("video/") && (m.status === "done" || m.status === "ready"))
-        );
+        if (words < 10) return `Write ${10 - words} more ${10 - words === 1 ? "word" : "words"}`;
+        if (media.some((m) => m.status === "uploading")) return "Waiting for uploads to finish";
+        const hasPhoto = media.some((m) => !m.file.type.startsWith("video/") && (m.status === "done" || m.status === "ready"));
+        return hasPhoto ? null : "Add at least one photo";
       }
       case 3:
-        return !!monthlyGoal && parseInt(monthlyGoal) > 0 && /^\d{5}$/.test(zipCode);
+        if (!monthlyGoal || parseInt(monthlyGoal) <= 0) return "Enter your goal";
+        return /^\d{5}$/.test(zipCode) ? null : "Enter your 5-digit ZIP code";
       case 4:
-        // Review step - final step for everyone
-        return (title || "").trim().length > 0;
+        if (!(title || "").trim()) return "Add a title";
+        return confirmed ? null : "Tick the confirmation to submit";
       default:
-        return false;
+        return "Not ready";
     }
   };
+  const canContinue = () => blockedReason() === null;
 
 
 
@@ -332,6 +384,7 @@ const ApplyRecipient = () => {
   };
 
   const handleGoogleAuth = async () => {
+    markAgreement("google");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -369,9 +422,9 @@ const ApplyRecipient = () => {
     const coverPhotoUrl = uploadedUrls[0] ?? null;
 
 
-    const { data: fundraiserData, error: fundraiserError } = await supabase
-      .from("fundraisers")
-      .insert({
+    const storeNames = stores.map((id) => findRetailer(id).name);
+    const { data: fundraiserData, error: fundraiserError } = await insertFundraiser(
+      {
         user_id: userId,
         title: title,
         story: story,
@@ -384,14 +437,25 @@ const ApplyRecipient = () => {
         zip_code: zipCode,
         status: "active",
         cover_photo_url: coverPhotoUrl,
-      })
-      .select()
-      .single();
+      },
+      {
+        help_categories: needs,
+        preferred_brands: storeNames,
+        similar_stores_ok: smartMatching,
+        city: zip.status === "found" ? zip.city : null,
+        state_code: zip.status === "found" ? zip.stateCode : null,
+      },
+    );
 
     if (fundraiserError) {
       console.error("Fundraiser creation error:", fundraiserError);
       throw fundraiserError;
     }
+
+    // Keep a record that they confirmed the request and accepted the Terms when submitting.
+    void recordAgreement(userId, "fundraiser-submit", fundraiserData.id);
+    // Let Bing-powered search know a new request is live.
+    pingSearchEngines((fundraiserData as { unique_slug?: string | null }).unique_slug);
 
     // Save the full gallery (cover first)
     if (uploadedUrls.length > 0) {
@@ -411,7 +475,7 @@ const ApplyRecipient = () => {
     await supabase.from("recipient_verifications").insert({
       user_id: userId,
       verification_type: beneficiaryType,
-      notes: `Category: ${category}, Goal: $${monthlyGoal} total, Smart matching: ${smartMatching}, Title: ${title}`,
+      notes: `Needs: ${needs.map(needLabel).join(", ")}. Stores: ${storeNames.join(", ")}${smartMatching ? " (other stores welcome)" : ""}. Goal: $${monthlyGoal} total. Location: ${place ?? zipCode}. Title: ${title}`,
       status: "pending",
     });
 
@@ -420,6 +484,7 @@ const ApplyRecipient = () => {
 
   const handleAccountSubmit = async () => {
     preserveOnAuthRef.current = true;
+    markAgreement("apply-account");
     await handleSendOTP();
   };
 
@@ -552,6 +617,7 @@ const ApplyRecipient = () => {
 
   const handleSignInAndContinue = async (signInPassword: string) => {
     setIsSubmitting(true);
+    markAgreement("sign-in");
     preserveOnAuthRef.current = true;
 
     try {
@@ -634,22 +700,10 @@ const ApplyRecipient = () => {
     }
   };
 
-  // Get step config based on current step (adjust headline for authenticated users on review step)
-  const getStepConfig = (step: number) => {
-    if (step === 4) {
-      return {
-        headline: "Review and submit your request",
-        subtext: "Let's make sure your request is complete.",
-      };
-    }
-    return stepConfig[step - 1] || stepConfig[0];
-  };
+  const getStepConfig = (step: number) => stepConfig[step - 1] || stepConfig[0];
 
   const getContinueLabel = () => {
-    if (currentStep === 4) {
-      if (isAuthenticated) return isSubmitting ? "Submitting..." : "Submit Fundraiser";
-      return "Submit Fundraiser";
-    }
+    if (currentStep === 4) return isSubmitting ? "Submitting" : "Submit request";
     return "Continue";
   };
 
@@ -658,11 +712,11 @@ const ApplyRecipient = () => {
   if (screenState === "otp") {
     return (
       <div className="min-h-dvh bg-background flex items-center justify-center p-4">
-        <OTPVerification
+        <Suspense fallback={null}><OTPVerification
           email={email}
           onVerified={handleOTPVerified}
           onBack={() => setScreenState("form")}
-        />
+        /></Suspense>
       </div>
     );
   }
@@ -671,12 +725,12 @@ const ApplyRecipient = () => {
   if (screenState === "signin-prompt") {
     return (
       <div className="min-h-dvh bg-background flex items-center justify-center p-4">
-        <SignInPrompt
+        <Suspense fallback={null}><SignInPrompt
           email={email}
           onSignIn={handleSignInAndContinue}
           onUseNewEmail={() => setScreenState("form")}
           isLoading={isSubmitting}
-        />
+        /></Suspense>
       </div>
     );
   }
@@ -684,96 +738,122 @@ const ApplyRecipient = () => {
   // Render success screen
   if (screenState === "success") {
     return (
-      <SuccessScreen
+      <Suspense fallback={null}><SuccessScreen
         onComplete={handleSuccessContinue}
-      />
+      /></Suspense>
     );
   }
 
   // Render share screen
   if (screenState === "share") {
     return (
-      <ShareScreen
+      <Suspense fallback={null}><ShareScreen
         onGoToDashboard={handleGoToDashboardWithShare}
         onSkip={handleGoToDashboard}
-      />
+      /></Suspense>
     );
   }
 
   const config = getStepConfig(currentStep);
+  const reason = blockedReason();
 
   return (
     <>
+      <SEO
+        title="Ask for Help With Groceries, Bills and Essentials"
+        description="Need help with groceries, medicine, rides or household basics? Start a free request in a few minutes. Donors give gift cards for the stores you choose."
+        path="/apply"
+        jsonLd={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Ask for help", path: "/apply" }])}
+      />
       <ApplyLayout
         step={currentStep}
-        totalSteps={totalSteps}
+        reached={reached}
+        onGoTo={(n) => { if (n < currentStep || reason === null) goToStep(n); }}
         headline={config.headline}
         subtext={config.subtext}
         showBack={currentStep > 1}
-        continueDisabled={!canContinue()}
+        continueDisabled={reason !== null}
+        blockedReason={reason}
+        busy={isSubmitting}
         onBack={handleBack}
         onContinue={handleContinue}
-        progress={progress}
+        direction={direction}
         continueLabel={getContinueLabel()}
         isAuthenticated={isAuthenticated}
         userEmail={userEmail}
+        panel={
+          <RequestPanel
+            title={currentStep === 4 ? title : ""}
+            beneficiaryType={beneficiaryType}
+            needs={needs}
+            stores={stores}
+            goal={parseInt(monthlyGoal, 10) || 0}
+            place={place ?? (zip.status === "unknown" ? `ZIP ${zipCode}` : null)}
+            words={words}
+            photos={media.filter((m) => m.kind !== "video").length}
+            videos={media.filter((m) => m.kind === "video").length}
+          />
+        }
       >
         {currentStep === 1 && (
           <BasicsStep
-            category={category}
-            setCategory={setCategory}
             beneficiaryType={beneficiaryType}
             setBeneficiaryType={setBeneficiaryType}
+            needs={needs}
+            setNeeds={setNeeds}
+            stores={stores}
+            setStores={setStores}
+            similarOk={smartMatching}
+            setSimilarOk={setSmartMatching}
           />
         )}
 
         {currentStep === 2 && (
-          <StoryStep
+          <Suspense fallback={<div className="h-96" />}><StoryStep
             story={story}
             setStory={setStory}
             category={category}
             media={media}
             setMedia={setMedia}
             userId={user?.id ?? null}
-          />
+          /></Suspense>
         )}
 
         {currentStep === 3 && (
           <GoalStep
             goalAmount={monthlyGoal}
             setGoalAmount={setMonthlyGoal}
-            smartMatching={smartMatching}
-            setSmartMatching={setSmartMatching}
             beneficiaryType={beneficiaryType}
             zipCode={zipCode}
             setZipCode={setZipCode}
-            locationLabel={locationLabel}
+            zip={zip}
           />
         )}
 
         {currentStep === 4 && (
-          <ReviewStep
+          <Suspense fallback={<div className="h-96" />}><ReviewStep
             media={media}
             title={title}
             setTitle={setTitle}
             story={story}
-            category={category}
+            needs={needs}
+            stores={stores}
+            similarOk={smartMatching}
             beneficiaryType={beneficiaryType}
             goalAmount={monthlyGoal}
             zipCode={zipCode}
-            locationLabel={locationLabel}
+            place={place}
             onEditStory={() => goToStep(2)}
             onEditDetails={() => goToStep(1)}
             onEditLocation={() => goToStep(3)}
-          />
+            confirmed={confirmed}
+            setConfirmed={setConfirmed}
+          /></Suspense>
         )}
-
-
-
       </ApplyLayout>
 
       {!isAuthenticated && (
-        <AccountDialog
+        <Suspense fallback={null}><AccountDialog
           open={accountOpen}
           onOpenChange={(open) => {
             setAccountOpen(open);
@@ -795,7 +875,7 @@ const ApplyRecipient = () => {
           intent={authIntent}
           goalAmount={monthlyGoal}
           title={title}
-        />
+        /></Suspense>
       )}
 
       {/* ShareModal removed - now handled by FundraiserDashboard */}

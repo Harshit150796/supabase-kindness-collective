@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+import { suppressedSet, withoutSuppressed, UNSUB_FUNCTION_URL } from "../_shared/suppression.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -101,7 +103,9 @@ serve(async (req) => {
       }
     }
 
-    const recipients = await resolveAudience(supabase, campaign);
+    const audience = await resolveAudience(supabase, campaign);
+    // Anyone on the shared unsubscribed list never gets a campaign, even as a test.
+    const recipients = withoutSuppressed(audience, await suppressedSet(supabase, audience.map((r: any) => r.email)));
     if (recipients.length === 0) {
       return new Response(JSON.stringify({ error: "No recipients" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -151,7 +155,7 @@ You're receiving this because you subscribed to CouponDonation updates.<br/>
             text,
             reply_to: "connect@coupondonation.com",
             headers: sub.unsubscribe_token ? {
-              "List-Unsubscribe": `<${unsubUrl}>`,
+              "List-Unsubscribe": `<${UNSUB_FUNCTION_URL}?n=${sub.unsubscribe_token}>, <mailto:support@coupondonation.com?subject=unsubscribe>`,
               "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
             } : undefined,
           }),

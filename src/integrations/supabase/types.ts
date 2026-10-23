@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -214,6 +214,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_record_notes: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          record_key: string
+          record_type: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string
+          body: string
+          created_at?: string
+          id?: string
+          record_key: string
+          record_type: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          record_key?: string
+          record_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       admin_saved_views: {
         Row: {
           created_at: string
@@ -246,7 +276,11 @@ export type Database = {
           allow_manual_prepaid: boolean
           email_new_donation: boolean
           email_new_fundraiser: boolean
+          followup_ai_writing: boolean
+          followup_last_run_at: string | null
+          followup_live_sending: boolean
           id: number
+          include_trial_stats: boolean
           notification_recipients: string[]
           require_fundraiser_approval: boolean
           updated_at: string
@@ -256,7 +290,11 @@ export type Database = {
           allow_manual_prepaid?: boolean
           email_new_donation?: boolean
           email_new_fundraiser?: boolean
+          followup_ai_writing?: boolean
+          followup_last_run_at?: string | null
+          followup_live_sending?: boolean
           id?: number
+          include_trial_stats?: boolean
           notification_recipients?: string[]
           require_fundraiser_approval?: boolean
           updated_at?: string
@@ -266,7 +304,11 @@ export type Database = {
           allow_manual_prepaid?: boolean
           email_new_donation?: boolean
           email_new_fundraiser?: boolean
+          followup_ai_writing?: boolean
+          followup_last_run_at?: string | null
+          followup_live_sending?: boolean
           id?: number
+          include_trial_stats?: boolean
           notification_recipients?: string[]
           require_fundraiser_approval?: boolean
           updated_at?: string
@@ -704,6 +746,78 @@ export type Database = {
           },
         ]
       }
+      contact_messages: {
+        Row: {
+          confirmation_email_status: string
+          created_at: string
+          email: string
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          message: string
+          name: string
+          page: string | null
+          phone: string | null
+          state: string
+          status: string
+          support_email_status: string
+          topic: string
+          user_id: string | null
+        }
+        Insert: {
+          confirmation_email_status?: string
+          created_at?: string
+          email: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          message: string
+          name: string
+          page?: string | null
+          phone?: string | null
+          state: string
+          status?: string
+          support_email_status?: string
+          topic: string
+          user_id?: string | null
+        }
+        Update: {
+          confirmation_email_status?: string
+          created_at?: string
+          email?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          message?: string
+          name?: string
+          page?: string | null
+          phone?: string | null
+          state?: string
+          status?: string
+          support_email_status?: string
+          topic?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      contact_rate_limits: {
+        Row: {
+          created_at: string
+          id: number
+          ip_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          ip_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          ip_hash?: string
+        }
+        Relationships: []
+      }
       content_reports: {
         Row: {
           admin_notes: string | null
@@ -1011,6 +1125,56 @@ export type Database = {
           },
         ]
       }
+      coupon_sources: {
+        Row: {
+          confirmation_count: number
+          confirmation_sent_at: string | null
+          created_at: string
+          created_by: string | null
+          donor_email: string | null
+          donor_name: string | null
+          donor_user_id: string | null
+          fundraiser_id: string
+          id: string
+          is_anonymous: boolean
+          source_label: string | null
+        }
+        Insert: {
+          confirmation_count?: number
+          confirmation_sent_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          donor_email?: string | null
+          donor_name?: string | null
+          donor_user_id?: string | null
+          fundraiser_id: string
+          id?: string
+          is_anonymous?: boolean
+          source_label?: string | null
+        }
+        Update: {
+          confirmation_count?: number
+          confirmation_sent_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          donor_email?: string | null
+          donor_name?: string | null
+          donor_user_id?: string | null
+          fundraiser_id?: string
+          id?: string
+          is_anonymous?: boolean
+          source_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_sources_fundraiser_id_fkey"
+            columns: ["fundraiser_id"]
+            isOneToOne: false
+            referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupons: {
         Row: {
           batch_id: string | null
@@ -1054,6 +1218,7 @@ export type Database = {
           revealed_at: string | null
           revealed_by: string | null
           secret_cipher: Json | null
+          source_id: string | null
           status: Database["public"]["Enums"]["coupon_status"]
           store_name: string
           title: string
@@ -1111,6 +1276,7 @@ export type Database = {
           revealed_at?: string | null
           revealed_by?: string | null
           secret_cipher?: Json | null
+          source_id?: string | null
           status?: Database["public"]["Enums"]["coupon_status"]
           store_name: string
           title: string
@@ -1168,6 +1334,7 @@ export type Database = {
           revealed_at?: string | null
           revealed_by?: string | null
           secret_cipher?: Json | null
+          source_id?: string | null
           status?: Database["public"]["Enums"]["coupon_status"]
           store_name?: string
           title?: string
@@ -1210,6 +1377,13 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupons_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "coupon_sources"
             referencedColumns: ["id"]
           },
         ]
@@ -1322,6 +1496,7 @@ export type Database = {
       donations: {
         Row: {
           amount: number
+          amount_paid: number | null
           brand_partner: string | null
           category_id: string | null
           created_at: string
@@ -1330,6 +1505,7 @@ export type Database = {
           donor_email: string | null
           donor_id: string | null
           donor_name: string | null
+          fee_covered_amount: number
           fundraiser_id: string | null
           id: string
           is_anonymous: boolean | null
@@ -1343,9 +1519,11 @@ export type Database = {
           stripe_fee: number | null
           stripe_payment_intent_id: string | null
           stripe_session_id: string | null
+          tip_amount: number
         }
         Insert: {
           amount: number
+          amount_paid?: number | null
           brand_partner?: string | null
           category_id?: string | null
           created_at?: string
@@ -1354,6 +1532,7 @@ export type Database = {
           donor_email?: string | null
           donor_id?: string | null
           donor_name?: string | null
+          fee_covered_amount?: number
           fundraiser_id?: string | null
           id?: string
           is_anonymous?: boolean | null
@@ -1367,9 +1546,11 @@ export type Database = {
           stripe_fee?: number | null
           stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
+          tip_amount?: number
         }
         Update: {
           amount?: number
+          amount_paid?: number | null
           brand_partner?: string | null
           category_id?: string | null
           created_at?: string
@@ -1378,6 +1559,7 @@ export type Database = {
           donor_email?: string | null
           donor_id?: string | null
           donor_name?: string | null
+          fee_covered_amount?: number
           fundraiser_id?: string | null
           id?: string
           is_anonymous?: boolean | null
@@ -1391,6 +1573,7 @@ export type Database = {
           stripe_fee?: number | null
           stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
+          tip_amount?: number
         }
         Relationships: [
           {
@@ -1459,6 +1642,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      donor_payment_profiles: {
+        Row: {
+          created_at: string
+          square_customer_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          square_customer_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          square_customer_id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       email_campaigns: {
         Row: {
@@ -1655,6 +1856,24 @@ export type Database = {
         }
         Relationships: []
       }
+      email_suppressions: {
+        Row: {
+          created_at: string
+          email: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          source?: string
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           created_at: string
@@ -1690,6 +1909,91 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      example_coupons: {
+        Row: {
+          brand_name: string
+          created_at: string
+          example_donation_id: string
+          id: string
+          issued_at: string
+          received_at: string | null
+          status: string
+          used_at: string | null
+          value: number
+        }
+        Insert: {
+          brand_name: string
+          created_at?: string
+          example_donation_id: string
+          id?: string
+          issued_at?: string
+          received_at?: string | null
+          status?: string
+          used_at?: string | null
+          value: number
+        }
+        Update: {
+          brand_name?: string
+          created_at?: string
+          example_donation_id?: string
+          id?: string
+          issued_at?: string
+          received_at?: string | null
+          status?: string
+          used_at?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "example_coupons_example_donation_id_fkey"
+            columns: ["example_donation_id"]
+            isOneToOne: false
+            referencedRelation: "example_donations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      example_donations: {
+        Row: {
+          amount: number
+          brand_name: string
+          created_at: string
+          donor_name: string
+          fundraiser_id: string
+          id: string
+          is_anonymous: boolean
+          message: string | null
+        }
+        Insert: {
+          amount: number
+          brand_name: string
+          created_at?: string
+          donor_name: string
+          fundraiser_id: string
+          id?: string
+          is_anonymous?: boolean
+          message?: string | null
+        }
+        Update: {
+          amount?: number
+          brand_name?: string
+          created_at?: string
+          donor_name?: string
+          fundraiser_id?: string
+          id?: string
+          is_anonymous?: boolean
+          message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "example_donations_fundraiser_id_fkey"
+            columns: ["fundraiser_id"]
+            isOneToOne: false
+            referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       featured_stories: {
         Row: {
@@ -1750,6 +2054,173 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      followup_nonces: {
+        Row: {
+          content_hash: string
+          created_at: string
+          email: string
+          expires_at: string
+          nonce: string
+          send_id: string
+          used_at: string | null
+        }
+        Insert: {
+          content_hash: string
+          created_at?: string
+          email: string
+          expires_at: string
+          nonce: string
+          send_id: string
+          used_at?: string | null
+        }
+        Update: {
+          content_hash?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          nonce?: string
+          send_id?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "followup_nonces_send_id_fkey"
+            columns: ["send_id"]
+            isOneToOne: false
+            referencedRelation: "followup_sends"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      followup_personas: {
+        Row: {
+          approved: boolean
+          approved_at: string | null
+          approved_by: string | null
+          body: string | null
+          created_at: string
+          evidence: Json
+          id: string
+          label: string
+          persona_key: string
+          signals: Json
+          subject: string | null
+          updated_at: string
+          version: number
+          visitor_count: number
+        }
+        Insert: {
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          body?: string | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          label: string
+          persona_key: string
+          signals?: Json
+          subject?: string | null
+          updated_at?: string
+          version?: number
+          visitor_count?: number
+        }
+        Update: {
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          body?: string | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          label?: string
+          persona_key?: string
+          signals?: Json
+          subject?: string | null
+          updated_at?: string
+          version?: number
+          visitor_count?: number
+        }
+        Relationships: []
+      }
+      followup_sends: {
+        Row: {
+          ai_written: boolean
+          attempt_id: string | null
+          consent_id: string
+          created_at: string
+          due_at: string | null
+          hubspot_note_id: string | null
+          id: string
+          last_activity_at: string | null
+          pages: Json
+          persona_id: string
+          persona_version: number
+          provider_receipt: string | null
+          reason: string | null
+          sent_at: string | null
+          sent_body: string | null
+          sent_subject: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ai_written?: boolean
+          attempt_id?: string | null
+          consent_id: string
+          created_at?: string
+          due_at?: string | null
+          hubspot_note_id?: string | null
+          id?: string
+          last_activity_at?: string | null
+          pages?: Json
+          persona_id: string
+          persona_version: number
+          provider_receipt?: string | null
+          reason?: string | null
+          sent_at?: string | null
+          sent_body?: string | null
+          sent_subject?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_written?: boolean
+          attempt_id?: string | null
+          consent_id?: string
+          created_at?: string
+          due_at?: string | null
+          hubspot_note_id?: string | null
+          id?: string
+          last_activity_at?: string | null
+          pages?: Json
+          persona_id?: string
+          persona_version?: number
+          provider_receipt?: string | null
+          reason?: string | null
+          sent_at?: string | null
+          sent_body?: string | null
+          sent_subject?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "followup_sends_consent_id_fkey"
+            columns: ["consent_id"]
+            isOneToOne: false
+            referencedRelation: "visitor_consents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "followup_sends_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "followup_personas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fundraiser_comments: {
         Row: {
@@ -1927,17 +2398,24 @@ export type Database = {
           beneficiary_display_name: string | null
           beneficiary_type: string
           category: string
+          city: string | null
           country: string | null
           cover_photo_url: string | null
           created_at: string | null
           donors_count: number | null
+          example_organizer: string | null
           featured_order: number | null
+          help_categories: string[]
           id: string
+          is_example: boolean
           is_long_term: boolean | null
           monthly_goal: number
+          preferred_brands: string[]
           rejection_reason: string | null
           show_beneficiary_name: boolean
           show_full_name: boolean
+          similar_stores_ok: boolean
+          state_code: string | null
           status: string | null
           story: string
           title: string
@@ -1954,17 +2432,24 @@ export type Database = {
           beneficiary_display_name?: string | null
           beneficiary_type: string
           category: string
+          city?: string | null
           country?: string | null
           cover_photo_url?: string | null
           created_at?: string | null
           donors_count?: number | null
+          example_organizer?: string | null
           featured_order?: number | null
+          help_categories?: string[]
           id?: string
+          is_example?: boolean
           is_long_term?: boolean | null
           monthly_goal: number
+          preferred_brands?: string[]
           rejection_reason?: string | null
           show_beneficiary_name?: boolean
           show_full_name?: boolean
+          similar_stores_ok?: boolean
+          state_code?: string | null
           status?: string | null
           story: string
           title: string
@@ -1981,17 +2466,24 @@ export type Database = {
           beneficiary_display_name?: string | null
           beneficiary_type?: string
           category?: string
+          city?: string | null
           country?: string | null
           cover_photo_url?: string | null
           created_at?: string | null
           donors_count?: number | null
+          example_organizer?: string | null
           featured_order?: number | null
+          help_categories?: string[]
           id?: string
+          is_example?: boolean
           is_long_term?: boolean | null
           monthly_goal?: number
+          preferred_brands?: string[]
           rejection_reason?: string | null
           show_beneficiary_name?: boolean
           show_full_name?: boolean
+          similar_stores_ok?: boolean
+          state_code?: string | null
           status?: string | null
           story?: string
           title?: string
@@ -2114,6 +2606,41 @@ export type Database = {
           email?: string
         }
         Relationships: []
+      }
+      legal_acceptances: {
+        Row: {
+          accepted_at: string
+          context: string
+          fundraiser_id: string | null
+          id: string
+          terms_version: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          context: string
+          fundraiser_id?: string | null
+          id?: string
+          terms_version: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          context?: string
+          fundraiser_id?: string | null
+          id?: string
+          terms_version?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_acceptances_fundraiser_id_fkey"
+            columns: ["fundraiser_id"]
+            isOneToOne: false
+            referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       loyalty_cards: {
         Row: {
@@ -2662,6 +3189,134 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_charges: {
+        Row: {
+          amount_cents: number
+          charged_at: string
+          created_at: string
+          donation_id: string | null
+          id: string
+          recurring_id: string
+          square_invoice_id: string | null
+          square_order_id: string | null
+          status: string
+        }
+        Insert: {
+          amount_cents?: number
+          charged_at?: string
+          created_at?: string
+          donation_id?: string | null
+          id?: string
+          recurring_id: string
+          square_invoice_id?: string | null
+          square_order_id?: string | null
+          status?: string
+        }
+        Update: {
+          amount_cents?: number
+          charged_at?: string
+          created_at?: string
+          donation_id?: string | null
+          id?: string
+          recurring_id?: string
+          square_invoice_id?: string | null
+          square_order_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_charges_recurring_id_fkey"
+            columns: ["recurring_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_donations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recurring_donations: {
+        Row: {
+          brand_allocations: string | null
+          brand_name: string | null
+          canceled_at: string | null
+          charges_count: number
+          consent_at: string
+          consent_text: string
+          created_at: string
+          donor_email: string | null
+          failure_reason: string | null
+          fee_cents: number
+          fundraiser_id: string | null
+          gift_cents: number
+          id: string
+          last_charge_at: string | null
+          next_charge_on: string | null
+          paused_at: string | null
+          square_card_id: string | null
+          square_customer_id: string | null
+          square_plan_variation_id: string | null
+          square_subscription_id: string | null
+          status: string
+          tip_cents: number
+          total_charged_cents: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          brand_allocations?: string | null
+          brand_name?: string | null
+          canceled_at?: string | null
+          charges_count?: number
+          consent_at?: string
+          consent_text: string
+          created_at?: string
+          donor_email?: string | null
+          failure_reason?: string | null
+          fee_cents?: number
+          fundraiser_id?: string | null
+          gift_cents: number
+          id?: string
+          last_charge_at?: string | null
+          next_charge_on?: string | null
+          paused_at?: string | null
+          square_card_id?: string | null
+          square_customer_id?: string | null
+          square_plan_variation_id?: string | null
+          square_subscription_id?: string | null
+          status?: string
+          tip_cents?: number
+          total_charged_cents?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          brand_allocations?: string | null
+          brand_name?: string | null
+          canceled_at?: string | null
+          charges_count?: number
+          consent_at?: string
+          consent_text?: string
+          created_at?: string
+          donor_email?: string | null
+          failure_reason?: string | null
+          fee_cents?: number
+          fundraiser_id?: string | null
+          gift_cents?: number
+          id?: string
+          last_charge_at?: string | null
+          next_charge_on?: string | null
+          paused_at?: string | null
+          square_card_id?: string | null
+          square_customer_id?: string | null
+          square_plan_variation_id?: string | null
+          square_subscription_id?: string | null
+          status?: string
+          tip_cents?: number
+          total_charged_cents?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       redemption_history: {
         Row: {
           coupon_id: string | null
@@ -2697,6 +3352,114 @@ export type Database = {
           },
         ]
       }
+      request_rate_limits: {
+        Row: {
+          bucket: string
+          created_at: string
+          id: number
+          key_hash: string
+        }
+        Insert: {
+          bucket: string
+          created_at?: string
+          id?: never
+          key_hash: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          id?: never
+          key_hash?: string
+        }
+        Relationships: []
+      }
+      saved_cards: {
+        Row: {
+          brand: string | null
+          created_at: string
+          exp_month: number | null
+          exp_year: number | null
+          id: string
+          last4: string | null
+          square_card_id: string
+          user_id: string
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          exp_month?: number | null
+          exp_year?: number | null
+          id?: string
+          last4?: string | null
+          square_card_id: string
+          user_id: string
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          exp_month?: number | null
+          exp_year?: number | null
+          id?: string
+          last4?: string | null
+          square_card_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trial_coupons: {
+        Row: {
+          brand_name: string
+          created_at: string
+          id: string
+          issued_at: string
+          label: string
+          received_at: string | null
+          used_at: string | null
+          value: number
+        }
+        Insert: {
+          brand_name: string
+          created_at?: string
+          id?: string
+          issued_at?: string
+          label?: string
+          received_at?: string | null
+          used_at?: string | null
+          value: number
+        }
+        Update: {
+          brand_name?: string
+          created_at?: string
+          id?: string
+          issued_at?: string
+          label?: string
+          received_at?: string | null
+          used_at?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
+      unsubscribe_requests: {
+        Row: {
+          created_at: string
+          email: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          token?: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -2715,6 +3478,54 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      visitor_consents: {
+        Row: {
+          consent_status: string
+          consent_time: string | null
+          created_at: string
+          email: string
+          email_source: string
+          hubspot_contact_id: string | null
+          id: string
+          last_emailed_at: string | null
+          opted_out_at: string | null
+          posthog_distinct_id: string | null
+          unsubscribe_token: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          consent_status?: string
+          consent_time?: string | null
+          created_at?: string
+          email: string
+          email_source: string
+          hubspot_contact_id?: string | null
+          id?: string
+          last_emailed_at?: string | null
+          opted_out_at?: string | null
+          posthog_distinct_id?: string | null
+          unsubscribe_token?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          consent_status?: string
+          consent_time?: string | null
+          created_at?: string
+          email?: string
+          email_source?: string
+          hubspot_contact_id?: string | null
+          id?: string
+          last_emailed_at?: string | null
+          opted_out_at?: string | null
+          posthog_distinct_id?: string | null
+          unsubscribe_token?: string
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -2758,6 +3569,30 @@ export type Database = {
         Returns: string
       }
       _svc_as: { Args: { _actor: string }; Returns: undefined }
+      admin_add_outside_coupon: {
+        Args: {
+          _actor: string
+          _anon: boolean
+          _brand: string
+          _code: string
+          _donor_email: string
+          _donor_name: string
+          _donor_user: string
+          _expiry: string
+          _fundraiser: string
+          _instructions: string
+          _pin: string
+          _source_label: string
+          _stock: string
+          _url: string
+          _value: number
+        }
+        Returns: Json
+      }
+      admin_add_record_note: {
+        Args: { _body: string; _key: string; _type: string }
+        Returns: string
+      }
       admin_add_stock_codes: {
         Args: {
           _batch?: Json
@@ -2823,6 +3658,18 @@ export type Database = {
           fundraiser_id: string
         }[]
       }
+      admin_followup_save_persona: {
+        Args: {
+          _approved: boolean
+          _body: string
+          _id: string
+          _label: string
+          _subject: string
+        }
+        Returns: undefined
+      }
+      admin_followup_set_ai: { Args: { _on: boolean }; Returns: undefined }
+      admin_followup_set_live: { Args: { _on: boolean }; Returns: undefined }
       admin_fundraiser_action: {
         Args: {
           _action: string
@@ -2929,7 +3776,56 @@ export type Database = {
         Args: { _id: string; _used: boolean }
         Returns: undefined
       }
+      admin_moderation_action: {
+        Args: { _id: string; _kind: string; _status: string }
+        Returns: undefined
+      }
+      admin_moderation_list: {
+        Args: {
+          _fundraiser?: string
+          _kind: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _status?: string
+        }
+        Returns: Json
+      }
+      admin_notification_state: {
+        Args: { _ids?: string[]; _mark?: string }
+        Returns: Json
+      }
+      admin_outside_coupons: {
+        Args: { _fundraiser_id: string }
+        Returns: {
+          code_hint: string
+          confirmation_count: number
+          confirmation_sent_at: string
+          created_at: string
+          donor_email: string
+          donor_name: string
+          id: string
+          is_anonymous: boolean
+          revealed_at: string
+          source_id: string
+          source_label: string
+          status: string
+          store_name: string
+          used_at: string
+          value: number
+        }[]
+      }
       admin_overview_kpis: { Args: never; Returns: Json }
+      admin_personal_view: {
+        Args: {
+          _id?: string
+          _module: string
+          _name?: string
+          _op: string
+          _state?: Json
+        }
+        Returns: Json
+      }
       admin_procurement_groups: {
         Args: never
         Returns: {
@@ -2937,6 +3833,46 @@ export type Database = {
           oldest: string
           store_name: string
           value: number
+        }[]
+      }
+      admin_record_history: {
+        Args: {
+          _key: string
+          _kind?: string
+          _limit?: number
+          _offset?: number
+          _type: string
+        }
+        Returns: Json
+      }
+      admin_recurring_list: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _status?: string
+        }
+        Returns: {
+          brand_allocations: string
+          brand_name: string
+          charges_count: number
+          created_at: string
+          donor_email: string
+          donor_name: string
+          failure_reason: string
+          fee_cents: number
+          fundraiser_id: string
+          fundraiser_title: string
+          gift_cents: number
+          id: string
+          last_charge_at: string
+          next_charge_on: string
+          square_subscription_id: string
+          status: string
+          tip_cents: number
+          total_charged_cents: number
+          total_count: number
+          user_id: string
         }[]
       }
       admin_resplit_coupons: {
@@ -2972,6 +3908,10 @@ export type Database = {
           sub: string
         }[]
       }
+      admin_set_contact_message_status: {
+        Args: { _id: string; _status: string }
+        Returns: undefined
+      }
       admin_set_coupon_code: {
         Args: { _code: string; _coupon_id: string; _redemption_url?: string }
         Returns: Json
@@ -2983,6 +3923,32 @@ export type Database = {
           _user: string
         }
         Returns: undefined
+      }
+      admin_source_donors: {
+        Args: {
+          _fundraiser: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+        }
+        Returns: Json
+      }
+      admin_stock_picker: {
+        Args: {
+          _brand?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+        }
+        Returns: Json
+      }
+      admin_task_comment: {
+        Args: { _body: string; _id: string }
+        Returns: undefined
+      }
+      admin_task_save: {
+        Args: { _id?: string; _patch?: Json }
+        Returns: string
       }
       admin_update_fundraiser: {
         Args: { _id: string; _patch: Json }
@@ -3012,6 +3978,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      assert_fundraiser_totals: { Args: never; Returns: boolean }
       attach_procured_codes: {
         Args: { _brand: string; _codes: string[]; _value: number }
         Returns: number
@@ -3048,6 +4015,21 @@ export type Database = {
           source_id: string
         }[]
       }
+      followup_reserve: {
+        Args: {
+          _attempt: string
+          _consent: string
+          _last_activity: string
+          _pages: Json
+          _persona: string
+          _version: number
+        }
+        Returns: boolean
+      }
+      followup_use_nonce: {
+        Args: { _email: string; _hash: string; _nonce: string }
+        Returns: string
+      }
       generate_card_number: { Args: never; Returns: string }
       get_completed_fundraisers: {
         Args: never
@@ -3072,12 +4054,31 @@ export type Database = {
         }[]
       }
       get_donation_impact: { Args: { _donation_id: string }; Returns: Json }
+      get_fundraiser_cards: {
+        Args: { _ids: string[] }
+        Returns: {
+          donations_count: number
+          fundraiser_id: string
+          latest_donation_at: string
+          organizer_name: string
+          total_raised: number
+        }[]
+      }
       get_fundraiser_coupon_trail: {
         Args: { _fundraiser_id: string }
         Returns: {
           converted: number
           coupons_count: number
           redeemed: number
+        }[]
+      }
+      get_fundraiser_coupons_by_store: {
+        Args: { _fundraiser_id: string }
+        Returns: {
+          brand_name: string
+          coupons_count: number
+          total_value: number
+          used_count: number
         }[]
       }
       get_fundraiser_donations: {
@@ -3150,6 +4151,11 @@ export type Database = {
           value_expires_on: string
         }[]
       }
+      get_my_fundraiser_donations: {
+        Args: { _fundraiser_id: string }
+        Returns: Json
+      }
+      get_my_fundraisers: { Args: never; Returns: Json }
       get_proof_stats: { Args: never; Returns: Json }
       get_public_donation_stats: {
         Args: never
@@ -3190,6 +4196,7 @@ export type Database = {
       }
       is_admin_any: { Args: { _uid: string }; Returns: boolean }
       is_admin_staff: { Args: { _uid: string }; Returns: boolean }
+      is_example_fundraiser: { Args: { _id: string }; Returns: boolean }
       is_fundraiser_organizer: {
         Args: { _fid: string; _uid: string }
         Returns: boolean
@@ -3222,6 +4229,10 @@ export type Database = {
         Returns: undefined
       }
       owner_reveal_coupon: { Args: { _coupon_id: string }; Returns: Json }
+      recompute_fundraiser_totals: {
+        Args: { _fundraiser_id: string }
+        Returns: undefined
+      }
       set_comment_hidden: {
         Args: { _comment_id: string; _hidden: boolean }
         Returns: undefined

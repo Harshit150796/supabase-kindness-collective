@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { AdminRecordDrawer } from '@/components/admin/AdminRecordDrawer';
+import { fetchRpcPages } from '@/lib/adminWorkspace';
+import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/admin/AdminLayout';
@@ -13,10 +16,14 @@ const PAGE = 25;
 
 // CRM contacts aggregated server-side from completed donations (admin_list_donors).
 export default function AdminDonors() {
-  const [q, setQ] = useState('');
+  const [params, setParams] = useSearchParams();
+  const [selected, setSelected] = useState<any>(null);
+  const [exporting, setExporting] = useState(false);
+  const [q, setQ] = useState(params.get('q') ?? '');
   const [dq, setDq] = useState('');
   const [page, setPage] = useState(0);
-  const [sort, setSort] = useState('total');
+  const [sort, setSort] = useState(params.get('sort') ?? 'total');
+  useEffect(() => { setParams((p) => { p.set('sort', sort); return p; }, { replace: true }); }, [sort]);
   useEffect(() => { const t = setTimeout(() => { setDq(q); setPage(0); }, 300); return () => clearTimeout(t); }, [q]);
 
   const query = useQuery({
@@ -34,22 +41,25 @@ export default function AdminDonors() {
     { key: 'first', header: 'First gift', cell: (r) => fmtDate(r.first_at) },
     { key: 'recent', header: 'Last gift', sortable: true, cell: (r) => fmtDate(r.last_at) },
     { key: 'anon', header: 'Public display', cell: (r) => r.any_anonymous ? <span className="text-xs text-muted-foreground">Gives anonymously</span> : <span className="text-xs">Named</span> },
-    { key: 'open', header: '', cell: (r) => r.email ? <Link className="text-xs text-primary" to={`/admin/donations?q=${encodeURIComponent(r.email)}`}>Donations</Link> : null },
+    { key: 'open', header: '', cell: (r) => <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setSelected(r); }}>View record</Button> },
   ];
 
   const exportCsv = async () => {
-    const all = await rpc<any[]>('admin_list_donors', { _search: dq.trim() || null, _limit: 200, _offset: 0, _sort: sort });
-    downloadCsv('donors', all.map(({ total_count, donor_key, ...r }) => r));
+    setExporting(true);
+    try { const all = await fetchRpcPages<any>((offset, limit) => rpc('admin_list_donors', { _search: dq.trim() || null, _limit: limit, _offset: offset, _sort: sort })); downloadCsv('donors', all.map(({ total_count, donor_key, ...r }) => r)); toast({ title: `${all.length} donor records exported` }); }
+    catch (e) { toast({ title: 'Export failed', description: (e as Error).message, variant: 'destructive' }); }
+    finally { setExporting(false); }
   };
 
   return (
     <DashboardLayout>
       <PageHeader title="Donors" description="Everyone who has completed a donation, grouped by account or email. Anonymous givers stay anonymous on the public site."
-        actions={<Button size="sm" variant="outline" onClick={exportCsv}><Download className="mr-1.5 h-4 w-4" />CSV</Button>} />
+        actions={<Button size="sm" variant="outline" disabled={exporting} onClick={exportCsv}><Download className="mr-1.5 h-4 w-4" />CSV</Button>} />
       <div className="relative mb-3 max-w-sm"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input className="h-9 pl-8" placeholder="Search name or email" value={q} onChange={(e) => setQ(e.target.value)} /></div>
       <DataTable columns={cols} rows={rows} total={total} loading={query.isLoading} error={query.error ? (query.error as Error).message : null} onRetry={() => query.refetch()}
         page={page} pageSize={PAGE} onPage={setPage} sort={{ key: sort, dir: 'desc' }} onSort={(k) => { setSort(k); setPage(0); }}
-        rowKey={(r) => r.donor_key} empty="No completed donations yet." />
+        onRowClick={setSelected} rowKey={(r) => r.donor_key} empty="No completed donations yet." />
+      <AdminRecordDrawer type="donor" record={selected} onClose={() => setSelected(null)} />
     </DashboardLayout>
   );
 }

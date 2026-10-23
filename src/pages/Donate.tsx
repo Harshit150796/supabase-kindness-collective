@@ -8,8 +8,8 @@ export default function Donate() {
   return (
     <div className="min-h-dvh bg-background">
       <SEO
-        title="Donate Now — Turn Your Gift Into Grocery Coupons"
-        description="Support verified US families with restricted digital retail vouchers. Choose participating retailers like Walmart, Target, or Amazon and track your impact."
+        title="Donate Gift Cards and Groceries to Families in Need"
+        description="Choose stores like Walmart, Kroger or CVS and an amount. Your gift becomes gift cards for people who asked for help, with a receipt for every gift."
         path="/donate"
         jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Donate', path: '/donate' }])}
       />

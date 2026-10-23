@@ -1,4 +1,26 @@
-import { CircleDollarSign, Heart, ShoppingBag, Users } from 'lucide-react';
+import { lazy, Suspense } from 'react';
 import { CountUp, LineReveal, Reveal } from '@/components/ui/editorial-motion';
-import { formatUSD, useLandingStats } from '@/hooks/useLandingStats';
-export function ImpactDashboard(){const stats=useLandingStats();const items=stats?[{Icon:CircleDollarSign,value:stats.total_raised,label:'Donated',currency:true},{Icon:Heart,value:stats.donations_count,label:'Completed donations'},{Icon:ShoppingBag,value:stats.coupons_created,label:'Coupons created'},{Icon:Users,value:stats.coupons_claimed,label:'Coupons claimed'}].filter(i=>i.value>0):[];return <section className="py-24 md:py-36" style={{backgroundColor:'hsl(var(--primary-93))'}}><div className="container mx-auto px-4"><div className="max-w-4xl"><LineReveal><h2 className="font-display text-5xl font-normal leading-none text-foreground md:text-7xl">The numbers, as they are.</h2></LineReveal><Reveal delay={.1}><p className="mt-6 text-lg text-muted-foreground">Only completed donations and coupons recorded by the platform appear here.</p></Reveal></div>{items.length?<div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{items.map((item,i)=><Reveal key={item.label} delay={i*.09} className="rounded-[1.5rem] bg-background p-7 transition-transform duration-500 hover:-translate-y-1"><item.Icon className="h-6 w-6 text-primary"/><div className="mt-12 font-display text-5xl font-normal text-foreground md:text-6xl">{item.currency?formatUSD(item.value):<CountUp value={item.value}/>}</div><p className="mt-2 text-sm text-muted-foreground">{item.label}</p></Reveal>)}</div>:<p className="mt-14 rounded-[1.5rem] bg-background p-9 text-muted-foreground">Verified platform totals will appear after the first completed donation.</p>}</div></section>}
+import { formatUSD, plural, useLandingStats } from '@/hooks/useLandingStats';
+import { ReservedSectionState } from './ReservedSectionState';
+const BrandLeaderboard = lazy(() => import('./BrandLeaderboard').then(m => ({default:m.BrandLeaderboard})));
+export function ImpactDashboard() {
+  const stats = useLandingStats();
+  const items = stats ? [
+    {value:stats.total_raised,label:'Donated',definition:'Total amount of completed donations.',currency:true},
+    {value:stats.pending_value_total,label:'Coupons being prepared',definition:'Value of coupons for completed donations that are still being purchased from retailers and have no code yet.',currency:true},
+    {value:stats.issued_value_total,label:'Issued coupon value',definition:'Value of non-void, credential-issued coupons linked to completed donations.',currency:true},
+    {value:stats.coupons_received,label:'Coupons received',definition:'Coupons revealed by recipients, including those subsequently marked used.'},
+    {value:stats.coupons_used,label:'Coupons marked used',definition:'Recipient-reported use or recorded retailer redemption; not independent proof of purchase.'},
+  ] : [];
+  return <section className="flex min-h-[var(--lazy-reserved-height,0px)] flex-col bg-primary/5 py-14 lg:py-28" aria-labelledby="impact-figures-heading">
+    <div className="container mx-auto flex flex-1 flex-col max-w-6xl px-4">
+      <LineReveal><h2 id="impact-figures-heading" className="font-display text-4xl md:text-6xl">The numbers, as they are.</h2></LineReveal>
+      <Reveal><p className="mt-5 max-w-3xl text-muted-foreground">One platform snapshot, different stages of giving. Donations, allocations and issued value are not interchangeable totals.</p></Reveal>
+      {stats ? <><div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">{items.map(item => <Reveal key={item.label} className="rounded-2xl bg-background p-4 sm:p-6">
+        <div className="font-display text-4xl tabular-nums sm:text-5xl"><CountUp value={item.value} formatter={item.currency ? formatUSD : undefined}/></div>
+        <p className="mt-3 text-sm font-semibold">{item.label}</p><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{item.definition}</p>
+      </Reveal>)}</div><p className="mt-5 text-sm text-muted-foreground">{stats.pending_value_total === 0 && stats.issued_value_total >= stats.total_raised && stats.total_raised > 0 ? `All donated money has been converted into coupons. ${plural(stats.donations_count,'completed donation')}; ${plural(stats.coupons_created,'coupon')} issued.` : `${plural(stats.donations_count,'completed donation')}; ${plural(stats.coupons_pending,'coupon')} still being prepared.`} This calendar month: {formatUSD(stats.issued_value_month)} issued; {plural(stats.used_month,'coupon')} marked used. All-time retailer allocations: {formatUSD(stats.allocated_total)}.</p></> : <ReservedSectionState title="Waiting for the platform snapshot." description="Figures appear only when the latest totals are available. Refresh to try again, or browse the stories in the meantime." onRetry={() => window.location.reload()} />}
+      {stats && <Suspense fallback={<div className="min-h-[320px]"/>}><BrandLeaderboard /></Suspense>}
+    </div>
+  </section>;
+}

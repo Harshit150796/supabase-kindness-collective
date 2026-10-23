@@ -1,887 +1,386 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { ArrowRight, Check, Heart, Gift, Search, Loader2, ExternalLink, Globe, CreditCard, X } from 'lucide-react';
-import { brandList, popularBrands, brandLogos, BrandInfo } from '@/data/brandLogos';
-import { BrandSelectorModal } from './BrandSelectorModal';
-import { BrandAllocationSliders, BrandAllocation } from './BrandAllocationSliders';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
+import { MAX_RETAILERS, MIN_SHARE, evenSplit, minTotal, percentages, resizeShares, setShare } from '@/lib/donationSplit';
+import { BrandSelectorModal } from './BrandSelectorModal';
+import { GiftLedger, StepTrack } from './donate/GiftLedger';
+import { RetailerStep } from './donate/RetailerStep';
+import { AmountStep } from './donate/AmountStep';
+import { UpdatesOptIn, recordUpdatesConsent } from '@/components/UpdatesOptIn';
+import { ReviewStep, type Provider, type TipChoice } from './donate/ReviewStep';
+import { DEFAULT_TIP_PERCENT, MAX_TIP_CENTS, computeCharge, coveredFeeCents, tipCentsFor } from '../../../supabase/functions/_shared/checkout-total.ts';
+import { AnimatedHeight } from './donate/motion';
+import { PRESET_AMOUNTS, SPRING, amountProblem, type SplitMode } from './donate/tokens';
+import { findRetailer, retailerId, usd, type Retailer } from './donate/retailers';
+import { brandList } from '@/data/brandLogos';
 
-// Payment method icons as SVG components for brand accuracy
-const PaymentMethodIcons = () => (
-  <div className="flex flex-wrap items-center justify-center gap-3 py-3">
-    {/* Visa */}
-    <div className="h-8 w-12 bg-white rounded border border-border/50 flex items-center justify-center p-1" title="Visa">
-      <svg viewBox="0 0 48 32" className="h-full w-full">
-        <rect fill="#1A1F71" width="48" height="32" rx="4"/>
-        <text x="24" y="20" fill="white" fontSize="10" fontWeight="bold" textAnchor="middle" fontFamily="Arial">VISA</text>
-      </svg>
-    </div>
-    {/* Mastercard */}
-    <div className="h-8 w-12 bg-white rounded border border-border/50 flex items-center justify-center p-1" title="Mastercard">
-      <svg viewBox="0 0 48 32" className="h-full w-full">
-        <rect fill="#000" width="48" height="32" rx="4"/>
-        <circle cx="18" cy="16" r="10" fill="#EB001B"/>
-        <circle cx="30" cy="16" r="10" fill="#F79E1B"/>
-        <path d="M24 8.5a10 10 0 010 15" fill="#FF5F00"/>
-      </svg>
-    </div>
-    {/* Amex */}
-    <div className="h-8 w-12 bg-white rounded border border-border/50 flex items-center justify-center p-1" title="American Express">
-      <svg viewBox="0 0 48 32" className="h-full w-full">
-        <rect fill="#016FD0" width="48" height="32" rx="4"/>
-        <text x="24" y="18" fill="white" fontSize="6" fontWeight="bold" textAnchor="middle" fontFamily="Arial">AMEX</text>
-      </svg>
-    </div>
-    {/* Apple Pay */}
-    <div className="h-8 w-12 bg-black rounded border border-border/50 flex items-center justify-center p-1" title="Apple Pay">
-      <svg viewBox="0 0 48 32" className="h-full w-full">
-        <text x="24" y="20" fill="white" fontSize="8" fontWeight="bold" textAnchor="middle" fontFamily="Arial"> Pay</text>
-      </svg>
-    </div>
-    {/* Google Pay */}
-    <div className="h-8 w-12 bg-white rounded border border-border/50 flex items-center justify-center p-1" title="Google Pay">
-      <svg viewBox="0 0 48 32" className="h-full w-full">
-        <text x="24" y="18" fill="#4285F4" fontSize="7" fontWeight="bold" textAnchor="middle" fontFamily="Arial">G Pay</text>
-      </svg>
-    </div>
-  </div>
-);
+const MAX_RETRIES = 2;
+const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
+const LEDGER_WIDTH = 400;
 
-const presetAmounts = [10, 25, 50, 100, 250];
-const MAX_BRANDS = 5;
-const MIN_AMOUNT_PER_BRAND = 5;
+/** True from the laptop breakpoint (lg), where the gift panel sits beside the steps. */
+function useWide() {
+  const query = '(min-width: 1024px)';
+  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const update = () => setWide(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  return wide;
+}
 
-// Helper to get brand info from ID
-const getBrandInfo = (brandId: string): BrandInfo | null => {
-  for (const [key, info] of Object.entries(brandLogos)) {
-    if (key.toLowerCase().replace(/\s+/g, '') === brandId.toLowerCase().replace(/\s+/g, '')) {
-      return info;
-    }
+/** The message an edge function sent back with a non-2xx status, when there is one. */
+async function functionError(error: unknown): Promise<string> {
+  const context = (error as { context?: Response } | null)?.context;
+  if (context && typeof context.clone === 'function') {
+    try {
+      const body = await context.clone().json();
+      if (body?.error) return String(body.error);
+    } catch { /* not JSON */ }
   }
-  return null;
+  return error instanceof Error ? error.message : '';
+}
+
+const stepMotion = {
+  enter: (dir: number) => ({ opacity: 0, x: dir * 28 }),
+  center: { opacity: 1, x: 0 },
+  exit: (dir: number) => ({ opacity: 0, x: dir * -28 }),
 };
 
-// Calculate total coupons across all brand allocations
-const getTotalCoupons = (amount: number, allocations: BrandAllocation[]) => {
-  if (allocations.length === 0) {
-    const couponValue = amount >= 50 ? 10 : 5;
-    return Math.floor(amount / couponValue);
-  }
-  return allocations.reduce((total, alloc) => {
-    const brandAmount = (amount * alloc.percentage) / 100;
-    const couponValue = brandAmount >= 50 ? 10 : 5;
-    return total + Math.floor(brandAmount / couponValue);
-  }, 0);
-};
-
+/**
+ * Three steps: retailers, amount (with a dollar split that always adds up), review and pay.
+ * No amount is suggested: the gift panel opens only once the donor has chosen one on step 2.
+ * Donors only ever see dollars per retailer; each retailer's share reaches the server as one coupon
+ * slot, and the team sizes the real coupons by hand (supabase/functions/_shared/brand-split.ts).
+ */
 export function DonationFlow() {
   const { user } = useAuth();
-  // Multi-brand selection state
-  const [selectedBrands, setSelectedBrands] = useState<BrandAllocation[]>([]);
-  const [useCustomAllocation, setUseCustomAllocation] = useState(false);
-  const [amount, setAmount] = useState(50);
-  const [customAmountText, setCustomAmountText] = useState('');
-  const [providers, setProviders] = useState<{ square: boolean; stripe: boolean }>({ square: true, stripe: true });
-  const [activeProvider, setActiveProvider] = useState<'square' | 'stripe'>('square');
+  const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState(1);
+  const [ids, setIds] = useState<string[]>(() => {
+    // "Give at Walmart" on a fundraiser page opens with that store chosen.
+    const store = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('store');
+    return store && brandList.some((b) => retailerId(b.name) === retailerId(store)) ? [retailerId(store)] : [];
+  });
+  const [request, setRequest] = useState<{ title: string; stores: Retailer[]; similarOk: boolean } | null>(null);
+  // Giving to a fundraiser: its requested stores come first in the store step.
+  useEffect(() => {
+    const fundraiserId = new URLSearchParams(window.location.search).get('fundraiser');
+    if (!fundraiserId) return;
+    let live = true;
+    supabase
+      .from('fundraisers')
+      .select('title, preferred_brands, similar_stores_ok')
+      .eq('id', fundraiserId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!live || error || !data) return;
+        const stores = (data.preferred_brands ?? []).map(findRetailer).filter((r) => !!r.logo);
+        if (stores.length) setRequest({ title: data.title, stores, similarOk: data.similar_stores_ok !== false });
+      });
+    return () => { live = false; };
+  }, []);
+  const [amount, setAmount] = useState(0); // 0 until the donor chooses
+  const [other, setOther] = useState(false);
+  const [otherText, setOtherText] = useState('');
+  const [raisedNote, setRaisedNote] = useState<string | null>(null);
+  const [mode, setMode] = useState<SplitMode>('even');
+  const [custom, setCustom] = useState<number[]>([]);
+  const [browse, setBrowse] = useState(false);
+  // Square handles all payments; Stripe is retired.
+  const [providers, setProviders] = useState<Provider[]>(['square']);
+  const [provider, setProvider] = useState<Provider>('square');
+  const [tip, setTip] = useState<TipChoice>(DEFAULT_TIP_PERCENT); // 15% starts selected (founder choice)
+  const [otherTip, setOtherTip] = useState('');
+  const [coverFee, setCoverFee] = useState(true); // ticked by default
+  const [optIn, setOptIn] = useState(false);
+  const [monthly, setMonthly] = useState(false); // donor must tick it themselves
+  const [savedCards, setSavedCards] = useState<{ square_card_id: string; brand: string | null; last4: string | null }[]>([]);
+  const [savedCard, setSavedCard] = useState<string | null>(null);
+  useEffect(() => {
+    setSavedCards([]); setSavedCard(null);
+    if (!user) return;
+    supabase.from('saved_cards' as never).select('square_card_id, brand, last4').then(({ data }) => setSavedCards((data as typeof savedCards | null) ?? []));
+  }, [user]);
+  const [busy, setBusy] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const wide = useWide();
+
   useEffect(() => {
     supabase
       .from('payment_settings' as never)
-      .select('square_enabled, stripe_enabled')
+      .select('square_enabled')
       .eq('id', 1)
       .maybeSingle()
       .then(({ data }) => {
-        const d = data as { square_enabled: boolean; stripe_enabled: boolean } | null;
-        if (d) setProviders({ square: d.square_enabled, stripe: d.stripe_enabled });
+        const d = data as { square_enabled: boolean } | null;
+        if (!d) return;
+        setProviders(d.square_enabled ? ['square'] : []);
+        setProvider('square');
       });
   }, []);
-  const [isCustomMode, setIsCustomMode] = useState(false);
-  const customInputRef = useRef<HTMLInputElement>(null);
-  const [step, setStep] = useState(1);
-  const [showBrandModal, setShowBrandModal] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
 
-  // totalCoupons moved after currentAllocations
+  // Back from the payment page without paying: the browser may restore this page as it was left,
+  // with the button still spinning. Reset it so the donor can pay again (a fresh link is made).
+  useEffect(() => {
+    const reset = (e?: PageTransitionEvent) => {
+      if (e && !e.persisted) return;
+      setBusy(false);
+      setCheckoutUrl(null);
+    };
+    const onVisible = () => { if (document.visibilityState === 'visible') reset(); };
+    window.addEventListener('pageshow', reset);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener('pageshow', reset);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
 
-  // Calculate max brands allowed based on amount
-  const maxBrandsForAmount = Math.min(MAX_BRANDS, Math.floor(amount / MIN_AMOUNT_PER_BRAND));
+  // Wake the checkout service when the donor reaches the review step, so the click is quick.
+  useEffect(() => {
+    if (step !== 3 || provider !== 'square') return;
+    supabase.functions.invoke('create-donation-checkout', { body: { warm: true } }).catch(() => {});
+  }, [step, provider]);
 
-  // Calculate equal split allocations
-  const equalSplitAllocations = useMemo(() => {
-    if (selectedBrands.length === 0) return [];
-    const equalPercent = Math.floor(100 / selectedBrands.length);
-    const remainder = 100 - (equalPercent * selectedBrands.length);
-    
-    return selectedBrands.map((brand, index) => ({
-      ...brand,
-      percentage: equalPercent + (index === 0 ? remainder : 0),
-    }));
-  }, [selectedBrands]);
+  const retailers = useMemo(() => ids.map(findRetailer), [ids]);
+  const count = retailers.length;
+  const minimum = minTotal(count);
+  const shares = useMemo(() => {
+    if (!count) return [];
+    if (mode === 'even' || custom.length !== count) return evenSplit(amount, count);
+    return sum(custom) === amount ? custom : resizeShares(custom, amount);
+  }, [amount, count, custom, mode]);
+  const problem = amountProblem(amount, minimum, count);
+  const ledgerOpen = step >= 2 && amount > 0 && count > 0;
 
-  // Get current allocations (custom or equal)
-  const currentAllocations = useMemo(() => {
-    if (!useCustomAllocation || selectedBrands.length === 0) {
-      return equalSplitAllocations;
-    }
-    return selectedBrands;
-  }, [useCustomAllocation, selectedBrands, equalSplitAllocations]);
-
-  const totalCoupons = getTotalCoupons(amount, currentAllocations);
-
-  // Toggle brand selection
-  const toggleBrand = (brandId: string, brandName: string) => {
-    const exists = selectedBrands.find(b => b.brandId === brandId);
-    
-    if (exists) {
-      // Remove brand
-      setSelectedBrands(prev => prev.filter(b => b.brandId !== brandId));
+  // A new set of retailers starts from an even split, and the amount rises if it can no longer
+  // give every retailer its minimum.
+  const chooseRetailers = useCallback((next: string[]) => {
+    setIds(next);
+    setMode('even');
+    setCustom([]);
+    const min = minTotal(next.length);
+    if (!other && amount > 0 && amount < min) {
+      const raised = PRESET_AMOUNTS.find((p) => p >= min) ?? min;
+      setAmount(raised);
+      setRaisedNote(`Raised to ${usd.format(raised)} so each retailer gets at least ${usd.format(MIN_SHARE)}.`);
     } else {
-      // Add brand if under limit
-      if (selectedBrands.length < maxBrandsForAmount) {
-        const newBrand: BrandAllocation = {
-          brandId,
-          brandName,
-          percentage: 0, // Will be calculated by equal split
-        };
-        setSelectedBrands(prev => [...prev, newBrand]);
-      } else {
-        toast({
-          title: 'Maximum brands reached',
-          description: `You can select up to ${maxBrandsForAmount} brands for a $${amount} donation (minimum $${MIN_AMOUNT_PER_BRAND} per brand).`,
-          variant: 'destructive',
-        });
-      }
+      setRaisedNote(null);
     }
+  }, [amount, other]);
+
+  const toggleRetailer = (id: string) => {
+    if (ids.includes(id)) chooseRetailers(ids.filter((x) => x !== id));
+    else if (ids.length < MAX_RETAILERS) chooseRetailers([...ids, id]);
   };
 
-  // Remove brand chip
-  const removeBrand = (brandId: string) => {
-    setSelectedBrands(prev => prev.filter(b => b.brandId !== brandId));
+  const reachable = (n: number) => n === 1 || (n === 2 && count > 0) || (n === 3 && count > 0 && !problem);
+  const go = (n: number) => {
+    if (!reachable(n) || n === step) return;
+    setDirection(n > step ? 1 : -1);
+    setStep(n);
+    setPayError(null);
+    // Bring the card's top into view when the new step starts above the fold (long lists on phones).
+    const top = cardRef.current?.getBoundingClientRect().top ?? 0;
+    if (top < 0) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // Handle brands selected from modal (multi-select mode)
-  const handleBrandsFromModal = (brandIds: string[]) => {
-    const newBrands: BrandAllocation[] = brandIds.map(brandId => {
-      const info = getBrandInfo(brandId);
-      return {
-        brandId,
-        brandName: info?.name || brandId,
-        percentage: 0,
-      };
-    });
-    setSelectedBrands(newBrands);
-  };
+  // What the donor pays: the gift in full, plus an optional tip and (if ticked) the card fee.
+  const giftCents = Math.round(amount * 100);
+  const tipCents = Math.min(MAX_TIP_CENTS, tip === 'other' ? Math.max(0, Math.round((parseFloat(otherTip) || 0) * 100)) : tip ? tipCentsFor(giftCents, tip) : 0);
+  const charge = useMemo(() => computeCharge({ gift: amount || 0.01, tip: tipCents / 100, coverFee, provider }), [amount, tipCents, coverFee, provider]);
+  const feeIfCovered = coveredFeeCents(giftCents + tipCents, provider);
 
-  // Handle custom allocation changes
-  const handleAllocationsChange = (allocations: BrandAllocation[]) => {
-    setSelectedBrands(allocations);
-  };
-
-  // Validate allocations before continuing
-  const validateAllocations = (): boolean => {
-    if (selectedBrands.length === 0) return false;
-    
-    if (useCustomAllocation) {
-      const total = selectedBrands.reduce((sum, b) => sum + b.percentage, 0);
-      if (total !== 100) {
-        toast({
-          title: 'Invalid allocation',
-          description: 'Percentages must add up to 100%.',
-          variant: 'destructive',
-        });
-        return false;
-      }
-      
-      // Check minimum per brand
-      for (const brand of selectedBrands) {
-        const brandAmount = (amount * brand.percentage) / 100;
-        if (brandAmount < MIN_AMOUNT_PER_BRAND) {
-          toast({
-            title: 'Minimum not met',
-            description: `${brand.brandName} allocation ($${brandAmount.toFixed(2)}) is below the $${MIN_AMOUNT_PER_BRAND} minimum.`,
-            variant: 'destructive',
-          });
-          return false;
-        }
-      }
-    }
-    
-    return true;
-  };
-
-  const MAX_RETRIES = 2;
-
-  const handleContinue = async (retryCount: number = 0, provider: 'square' | 'stripe' = 'square'): Promise<void> => {
-    if (step === 1) {
-      if (!validateAllocations()) return;
-      setStep(2);
-      return;
-    }
-    
-    if (step < 3) {
-      setStep(step + 1);
-      return;
-    }
-    
-    // Process payment with the donor's chosen processor
-    setIsProcessing(true);
-    setActiveProvider(provider);
+  const pay = async (attempt = 0): Promise<void> => {
+    setBusy(true);
+    setPayError(null);
     setCheckoutUrl(null);
-    
+    if (optIn && user?.email && attempt === 0) void recordUpdatesConsent(user.email, 'donate');
     try {
-      // Prepare brand allocations for the edge function
-      const brandAllocations = currentAllocations.map(a => ({
-        brand: a.brandName,
-        brandId: a.brandId,
-        percent: a.percentage,
-        amount: Number(((amount * a.percentage) / 100).toFixed(2)),
-      }));
-
-      // Capture fundraiser context from URL query string (?fundraiser=<id>)
-      const fundraiserId = typeof window !== 'undefined'
-        ? new URLSearchParams(window.location.search).get('fundraiser')
-        : null;
-
-      const fnName = provider === 'stripe' ? 'create-stripe-checkout' : 'create-donation-checkout';
-      const { data, error } = await supabase.functions.invoke(fnName, {
+      const pct = percentages(shares);
+      const brandAllocations = retailers.map((r, i) => ({ brand: r.name, brandId: r.id, percent: pct[i], amount: shares[i] }));
+      const fundraiserId = new URLSearchParams(window.location.search).get('fundraiser');
+      if (savedCard && !monthly) {
+        const { data, error } = await supabase.functions.invoke('create-square-payment', {
+          body: { amount, tipAmount: tipCents / 100, coverFee, brandName: brandAllocations[0]?.brand ?? '', brandId: brandAllocations[0]?.brandId ?? '', brandAllocations, userId: user?.id ?? null, userEmail: user?.email ?? null, fundraiserId: fundraiserId || null, savedCardId: savedCard },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        window.location.assign(`/donation-success?amount=${amount}`);
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke(provider === 'stripe' ? 'create-stripe-checkout' : 'create-donation-checkout', {
         body: {
           amount,
-          // For backward compatibility, send primary brand
-          brandName: brandAllocations[0]?.brand || '',
-          brandId: brandAllocations[0]?.brandId || '',
-          // New: send all brand allocations
+          tipAmount: tipCents / 100,
+          coverFee,
+          brandName: brandAllocations[0]?.brand ?? '',
+          brandId: brandAllocations[0]?.brandId ?? '',
           brandAllocations,
-          userId: user?.id || null,
-          userEmail: user?.email || null,
+          userId: user?.id ?? null,
+          userEmail: user?.email ?? null,
           fundraiserId: fundraiserId || null,
+          recurring: monthly,
         },
       });
-
       if (error) throw error;
-
-      if (data?.url) {
-        setCheckoutUrl(data.url);
-        toast({ title: 'Opening secure checkout...', description: 'You will return here when payment is complete.' });
-        // Same tab only — never open a new tab for payments
-        window.location.assign(data.url);
-      } else {
-        throw new Error('No checkout URL received from server');
-      }
+      if (!data?.url) throw new Error('No checkout page came back. Please try again.');
+      setCheckoutUrl(data.url);
+      // Same tab only: never open a new tab for payments.
+      window.location.assign(data.url);
     } catch (error) {
-      console.error('Checkout error (attempt ' + (retryCount + 1) + '):', error);
-      
-      // Retry on transient network errors
-      const errorMessage = error instanceof Error ? error.message : '';
-      const isNetworkError = errorMessage.includes('network') || 
-                             errorMessage.includes('timeout') || 
-                             errorMessage.includes('fetch') ||
-                             errorMessage.includes('Failed to fetch');
-      
-      if (retryCount < MAX_RETRIES && isNetworkError) {
-        toast({
-          title: 'Connection issue',
-          description: 'Retrying...',
-        });
-        // Wait 1 second before retry
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return handleContinue(retryCount + 1, provider);
+      const message = await functionError(error);
+      if (attempt < MAX_RETRIES && /network|timeout|fetch/i.test(message)) {
+        toast({ title: 'Connection issue', description: 'Trying again…' });
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        return pay(attempt + 1);
       }
-      
-      const rawMsg = error instanceof Error ? error.message : '';
-      const isUnavailable =
-        /payments are temporarily unavailable|payments_unavailable|cannot currently make live charges/i.test(rawMsg);
-
-      toast({
-        title: isUnavailable ? 'Payments Temporarily Unavailable' : 'Payment Error',
-        description: isUnavailable
-          ? "We can't process donations right now. Our team has been notified — please try again in a little while."
-          : (rawMsg || 'Unable to start checkout. Please try again.'),
-        variant: 'destructive',
-      });
-      setIsProcessing(false);
-    }
-  };
-
-
-  const handleManualRedirect = () => {
-    if (checkoutUrl) {
-      window.location.assign(checkoutUrl);
+      const unavailable = /payments are temporarily unavailable|payments_unavailable|cannot currently make live charges|currently turned off/i.test(message);
+      setPayError(unavailable
+        ? "We can't take donations through this checkout right now. Please try the other option or come back a little later."
+        : message || 'Checkout did not open. Please try again.');
+      setBusy(false);
     }
   };
 
   return (
-    <section id="donation-flow" className="relative overflow-hidden py-24 md:py-36" style={{ backgroundColor: 'hsl(var(--primary-93))' }}>
-      <div className="container mx-auto px-4 relative">
-        {/* Header */}
-        <div className="mx-auto mb-12 max-w-3xl text-center md:mb-16">
-          <LineReveal><h2 className="font-display text-5xl font-normal leading-none text-foreground md:text-6xl">Choose where your help can be used.</h2></LineReveal>
-          <Reveal delay={0.1} className="mt-5"><p className="text-lg leading-relaxed text-muted-foreground">Pick one or more retailers, set the amount, and review the coupons your donation creates.</p></Reveal>
+    <section id="donation-flow" className="relative overflow-hidden py-16 lg:py-20" style={{ backgroundColor: 'hsl(var(--primary-93))' }}>
+      <div className="container relative mx-auto px-4">
+        <div className="mx-auto mb-10 max-w-3xl text-center md:mb-14">
+          <LineReveal><h2 className="font-display text-[2.5rem] font-normal leading-[1.06] tracking-normal text-foreground md:text-[3.5rem] lg:text-[4.5rem]">Choose where your help can be used.</h2></LineReveal>
+          <Reveal delay={0.1} className="mt-5"><p className="text-lg leading-relaxed text-muted-foreground">Pick retailers, choose an amount, and see exactly where every dollar goes.</p></Reveal>
         </div>
 
-        {/* Steps indicator */}
-        <div className="flex justify-center gap-3 mb-10">
-          {[
-            { num: 1, label: 'Choose Brands' },
-            { num: 2, label: 'Select Amount' },
-            { num: 3, label: 'See Impact' }
-          ].map((s) => (
-            <div
-              key={s.num}
-              className={`flex items-center gap-2 border-b-2 px-3 py-2 text-sm transition-colors ${
-                s.num === step 
-                  ? 'border-primary text-primary' 
-                  : s.num < step 
-                    ? 'border-primary/30 text-primary' 
-                    : 'border-transparent text-muted-foreground'
-              }`}
-            >
-              {s.num < step ? (
-                <Check className="w-4 h-4" />
-              ) : (
-                <span className="flex h-5 w-5 items-center justify-center text-xs font-bold">
-                  {s.num}
-                </span>
-              )}
-              <span className="font-medium hidden sm:inline">{s.label}</span>
-            </div>
-          ))}
-        </div>
+        <Reveal className="mx-auto max-w-5xl"><div ref={cardRef} data-donate-card className="flex scroll-mt-24 flex-col overflow-hidden rounded-[1.75rem] bg-card shadow-card-hover lg:flex-row">
+          <div className="flex min-w-0 flex-1 flex-col p-5 sm:p-8 lg:p-10">
+            <StepTrack step={step} reachable={reachable} onGo={go} />
 
-        {/* Interactive Flow */}
-        <Card className="mx-auto max-w-3xl rounded-[1.5rem] border-0 p-6 shadow-card-hover md:p-10">
-          {/* Step 1: Choose Brands (Multi-Select) */}
-          {step === 1 && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="text-center">
-                <h3 className="text-xl font-bold mb-2 text-foreground">Select Available Retailers</h3>
-                <p className="text-muted-foreground text-sm">Select one or more retailers for your donation (up to {maxBrandsForAmount})</p>
-              </div>
-              
-              {/* Selected brands chips */}
-              {selectedBrands.length > 0 && (
-                <div className="flex flex-wrap gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
-                  {selectedBrands.map((brand) => {
-                    const info = getBrandInfo(brand.brandId);
-                    return (
-                      <div
-                        key={brand.brandId}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-full border border-border"
-                      >
-                        {info && (
-                          <div className="w-5 h-5 rounded bg-white p-0.5 flex items-center justify-center">
-                            <img src={info.logo} alt={info.name} className="w-full h-full object-contain" />
-                          </div>
-                        )}
-                        <span className="text-sm font-medium text-foreground">{brand.brandName}</span>
-                        <button
-                          onClick={() => removeBrand(brand.brandId)}
-                          className="text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                  <span className="text-xs text-muted-foreground self-center ml-2">
-                    {selectedBrands.length} of {maxBrandsForAmount} max
-                  </span>
-                </div>
-              )}
-
-              {/* Brand grid with checkboxes */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {popularBrands.map((brand) => {
-                  const brandId = brand.name.toLowerCase().replace(/\s+/g, '');
-                  const isSelected = selectedBrands.some(b => b.brandId === brandId);
-                  const isDisabled = !isSelected && selectedBrands.length >= maxBrandsForAmount;
-                  
-                  return (
-                    <button
-                      key={brand.name}
-                      onClick={() => toggleBrand(brandId, brand.name)}
-                      disabled={isDisabled}
-                      className={`p-4 rounded-xl border-2 transition-all hover:shadow-md flex flex-col items-center gap-2 relative ${
-                        isSelected 
-                          ? 'border-primary bg-primary/5' 
-                          : isDisabled
-                            ? 'border-border bg-muted/50 opacity-50 cursor-not-allowed'
-                            : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      {/* Checkbox indicator */}
-                      <div className={`absolute top-2 right-2 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                        isSelected 
-                          ? 'bg-primary border-primary' 
-                          : 'border-muted-foreground/30'
-                      }`}>
-                        {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
-                      </div>
-                      
-                      <div className="w-12 h-12 rounded-lg bg-background border border-border/50 flex items-center justify-center p-2">
-                        <img 
-                          src={brand.logo} 
-                          alt={brand.name}
-                          className="w-full h-full object-contain"
-                          onError={(e) => {
-                            const target = e.currentTarget;
-                            target.style.display = 'none';
-                            const fallback = document.createElement('div');
-                            fallback.className = 'w-full h-full rounded flex items-center justify-center text-white font-bold text-sm';
-                            fallback.style.backgroundColor = brand.color;
-                            fallback.textContent = brand.name.charAt(0);
-                            target.parentElement?.appendChild(fallback);
-                          }}
-                        />
-                      </div>
-                      <div className="font-medium text-foreground text-sm">{brand.name}</div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Browse All Brands Button */}
-              <Button
-                variant="ghost"
-                className="w-full gap-2 text-muted-foreground hover:text-foreground"
-                onClick={() => setShowBrandModal(true)}
-              >
-                <Search className="w-4 h-4" />
-                Browse all 25+ brands
-              </Button>
-
-              {/* Allocation preview (when multiple brands selected) */}
-              {selectedBrands.length > 1 && (
-                <div className="border-t border-border pt-4 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        id="custom-allocation"
-                        checked={useCustomAllocation}
-                        onCheckedChange={setUseCustomAllocation}
-                      />
-                      <Label htmlFor="custom-allocation" className="text-sm text-muted-foreground cursor-pointer">
-                        Customize split percentages
-                      </Label>
-                    </div>
-                  </div>
-
-                  {useCustomAllocation ? (
-                    <BrandAllocationSliders
-                      selectedBrands={selectedBrands}
+            <AnimatedHeight className="mt-8">
+              <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+                <motion.div key={step} custom={direction} variants={stepMotion} initial="enter" animate="center" exit="exit" transition={SPRING}>
+                  {step === 1 && <RetailerStep chosen={retailers} onToggle={(r) => toggleRetailer(r.id)} onBrowse={() => setBrowse(true)} request={request} />}
+                  {step === 2 && (
+                    <AmountStep
+                      retailers={retailers}
                       amount={amount}
-                      onAllocationsChange={handleAllocationsChange}
+                      minimum={minimum}
+                      other={other}
+                      otherText={otherText}
+                      raisedNote={raisedNote}
+                      onPreset={(value) => { setOther(false); setOtherText(''); setAmount(value); setRaisedNote(null); }}
+                      onOther={() => { setOther(true); setOtherText(amount ? String(amount) : ''); setRaisedNote(null); }}
+                      onOtherText={(text) => { setOtherText(text); setAmount(parseInt(text, 10) || 0); }}
+                      shares={shares}
+                      mode={mode}
+                      onMode={(m) => { if (m === 'custom') setCustom(shares); setMode(m); }}
+                      onShare={(i, value) => { setCustom(setShare(shares, i, value)); setMode('custom'); }}
                     />
-                  ) : (
-                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                      <div className="text-sm font-medium text-foreground">Equal Split Preview</div>
-                      <div className="space-y-1">
-                        {equalSplitAllocations.map((allocation) => {
-                          const brandAmount = (amount * allocation.percentage) / 100;
-                          return (
-                            <div key={allocation.brandId} className="flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground">{allocation.brandName}</span>
-                              <span className="font-medium text-foreground">
-                                {allocation.percentage}% = ${brandAmount.toFixed(2)}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
                   )}
-                </div>
-              )}
-
-              <Button 
-                size="lg" 
-                className="w-full"
-                disabled={selectedBrands.length === 0}
-                onClick={() => handleContinue()}
-              >
-                Continue
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-
-              {/* Brand Selector Modal (Multi-Select Mode) */}
-              <BrandSelectorModal
-                open={showBrandModal}
-                onOpenChange={setShowBrandModal}
-                selectedBrands={selectedBrands.map(b => b.brandId)}
-                onSelectBrands={handleBrandsFromModal}
-                maxBrands={maxBrandsForAmount}
-                multiSelect={true}
-              />
-            </div>
-          )}
-
-          {/* Step 2: Select Amount */}
-          {step === 2 && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="text-center">
-                {/* Show selected brands */}
-                <div className="inline-flex items-center gap-1 text-muted-foreground mb-3 flex-wrap justify-center">
-                  {currentAllocations.slice(0, 3).map((allocation, index) => {
-                    const info = getBrandInfo(allocation.brandId);
-                    return (
-                      <span key={allocation.brandId} className="inline-flex items-center gap-1">
-                        {index > 0 && <span className="mx-1">+</span>}
-                        {info && (
-                          <div className="w-6 h-6 rounded bg-background border border-border/50 flex items-center justify-center p-0.5">
-                            <img src={info.logo} alt={info.name} className="w-full h-full object-contain" />
-                          </div>
-                        )}
-                        <span className="font-medium text-sm">{allocation.brandName}</span>
-                      </span>
-                    );
-                  })}
-                  {currentAllocations.length > 3 && (
-                    <span className="text-sm text-muted-foreground ml-1">
-                      +{currentAllocations.length - 3} more
-                    </span>
+                  {step === 3 && (
+                    <ReviewStep
+                      amount={amount}
+                      retailers={retailers}
+                      providers={providers}
+                      provider={provider}
+                      onProvider={setProvider}
+                      tip={tip}
+                      otherTip={otherTip}
+                      onTip={setTip}
+                      onOtherTip={setOtherTip}
+                      coverFee={coverFee}
+                      onCoverFee={setCoverFee}
+                      monthly={monthly}
+                      onMonthly={setMonthly}
+                      signedIn={!!user}
+                      feeIfCovered={feeIfCovered}
+                      charge={charge}
+                      busy={busy}
+                      error={payError}
+                      checkoutUrl={checkoutUrl}
+                      onPay={() => void pay()}
+                      savedCards={savedCards}
+                      savedCard={savedCard}
+                      onSavedCard={setSavedCard}
+                    />
                   )}
-                </div>
-                <h3 className="text-xl font-bold mb-2 text-foreground">Select Donation Amount</h3>
-                <p className="text-muted-foreground text-sm">Your donation creates coupons for families to use at partner brands</p>
-              </div>
+                  {step === 3 && user?.email && (
+                    <div className="mt-4"><UpdatesOptIn id="donate-updates" checked={optIn} onChange={setOptIn} /></div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </AnimatedHeight>
 
-              {/* Amount display with impact */}
-              <div className="text-center py-6 bg-secondary/50 rounded-xl">
-                <div className="text-5xl font-bold text-foreground mb-2">${amount}</div>
-                <div className="flex items-center justify-center gap-2 text-primary font-medium">
-                  <Gift className="w-4 h-4" />
-                  <span>= {totalCoupons} coupons for families</span>
-                </div>
-                {selectedBrands.length > 1 && (
-                  <div className="text-xs text-muted-foreground mt-2">
-                    Split across {selectedBrands.length} brands
-                  </div>
-                )}
-              </div>
-
-              {/* Preset amounts + Custom */}
-              <div className="flex flex-wrap justify-center gap-2">
-                {presetAmounts.map((preset) => (
-                  <button
-                    key={preset}
-                    onClick={() => {
-                      setAmount(preset);
-                      setCustomAmountText('');
-                      setIsCustomMode(false);
-                    }}
-                    className={`px-5 py-2.5 rounded-lg font-medium transition-all text-sm ${
-                      amount === preset && !isCustomMode
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'bg-muted hover:bg-muted/80 text-foreground'
-                    }`}
-                  >
-                    ${preset}
-                  </button>
-                ))}
+            <div className="mt-8 flex items-center justify-between gap-3">
+              {step > 1 ? (
                 <button
-                  onClick={() => {
-                    setIsCustomMode(true);
-                    setTimeout(() => customInputRef.current?.focus(), 50);
-                  }}
-                  className={`px-5 py-2.5 rounded-lg font-medium transition-all text-sm ${
-                    isCustomMode
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted hover:bg-muted/80 text-foreground'
-                  }`}
+                  type="button"
+                  onClick={() => go(step - 1)}
+                  disabled={busy}
+                  className="inline-flex h-12 items-center gap-2 rounded-xl px-3 text-[15px] font-medium text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 sm:-ml-3"
                 >
-                  Custom
-                </button>
-              </div>
-
-              {/* Custom amount input */}
-              {isCustomMode && (
-                <div className="flex items-center gap-2 max-w-xs mx-auto">
-                  <span className="text-2xl font-bold text-foreground">$</span>
-                  <Input
-                    ref={customInputRef}
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Enter amount..."
-                    value={customAmountText}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/[^0-9]/g, '');
-                      setCustomAmountText(val);
-                      const num = parseInt(val, 10);
-                      if (!isNaN(num) && num > 0) {
-                        setAmount(Math.min(num, 10000));
-                      }
-                    }}
-                    onBlur={() => {
-                      const num = parseInt(customAmountText, 10);
-                      if (isNaN(num) || num < 5) {
-                        toast({
-                          title: 'Minimum $5',
-                          description: 'The minimum donation amount is $5.',
-                          variant: 'destructive',
-                        });
-                        if (isNaN(num) || num < 5) {
-                          setAmount(5);
-                          setCustomAmountText('5');
-                        }
-                      } else if (num > 10000) {
-                        setAmount(10000);
-                        setCustomAmountText('10000');
-                      }
-                    }}
-                    className="text-xl font-semibold text-center"
-                  />
-                </div>
-              )}
-
-              {/* Slider */}
-              <div className="px-2">
-                <Slider
-                  value={[Math.min(amount, 500)]}
-                  onValueChange={([v]) => {
-                    setAmount(v);
-                    setCustomAmountText('');
-                    setIsCustomMode(false);
-                  }}
-                  min={5}
-                  max={500}
-                  step={5}
-                  className="py-4"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>$5</span>
-                  <span>$500</span>
-                </div>
-              </div>
-
-              {/* Per-brand breakdown */}
-              {selectedBrands.length > 1 && (
-                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                  <div className="text-sm font-medium text-foreground">Breakdown by Brand</div>
-                  <div className="space-y-1">
-                    {currentAllocations.map((allocation) => {
-                      const brandAmount = (amount * allocation.percentage) / 100;
-                      const couponValue = brandAmount >= 50 ? 10 : 5;
-                      const coupons = Math.floor(brandAmount / couponValue);
-                      return (
-                        <div key={allocation.brandId} className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">{allocation.brandName}</span>
-                          <span className="text-foreground">
-                            ${brandAmount.toFixed(2)} → {coupons} coupon{coupons !== 1 ? 's' : ''}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-3">
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="flex-1"
-                  onClick={() => setStep(1)}
-                >
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   Back
-                </Button>
-                <Button 
-                  size="lg" 
-                  className="flex-1"
-                  onClick={() => handleContinue()}
+                </button>
+              ) : <span />}
+              {step < 3 && (
+                <motion.button
+                  type="button"
+                  onClick={() => go(step + 1)}
+                  disabled={!reachable(step + 1)}
+                  whileTap={{ scale: 0.98 }}
+                  data-donate-continue
+                  className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-[15px] font-medium text-primary-foreground outline-none transition-[background-color,opacity] hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Continue
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: See Impact */}
-          {step === 3 && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="text-center">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Heart className="w-8 h-8 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-2 text-foreground">Your Impact</h3>
-                <p className="text-muted-foreground text-sm">Here's how your donation helps families</p>
-              </div>
-
-              {/* Impact Summary */}
-              <div className="bg-secondary/50 rounded-xl p-6 space-y-4">
-                {/* Show all selected brands */}
-                <div className="flex items-center justify-between pb-4 border-b border-border/50">
-                  <span className="text-muted-foreground">Donating to</span>
-                  <div className="flex items-center gap-1 font-medium text-foreground flex-wrap justify-end">
-                    {currentAllocations.map((allocation, index) => {
-                      const info = getBrandInfo(allocation.brandId);
-                      return (
-                        <span key={allocation.brandId} className="inline-flex items-center gap-1">
-                          {index > 0 && <span className="text-muted-foreground mx-0.5">+</span>}
-                          {info && (
-                            <div className="w-6 h-6 rounded bg-background border border-border/50 flex items-center justify-center p-0.5">
-                              <img src={info.logo} alt={info.name} className="w-full h-full object-contain" />
-                            </div>
-                          )}
-                        </span>
-                      );
-                    })}
-                    <span className="ml-2 text-sm">
-                      {currentAllocations.length === 1 
-                        ? currentAllocations[0].brandName 
-                        : `${currentAllocations.length} brands`}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 text-center py-4">
-                  <div>
-                    <div className="text-3xl font-bold text-foreground">${amount}</div>
-                    <div className="text-sm text-muted-foreground">Your Donation (USD)</div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold text-primary flex items-center justify-center gap-1">
-                      <Gift className="w-6 h-6" />
-                      {totalCoupons}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Coupons Created</div>
-                  </div>
-                </div>
-
-                {/* Coupon breakdown per brand */}
-                {selectedBrands.length > 0 && (
-                  <div className="border-t border-border/50 pt-4">
-                    <div className="text-sm font-medium text-foreground mb-3">Coupon Breakdown</div>
-                    <div className="space-y-2">
-                      {currentAllocations.map((allocation) => {
-                        const brandAmount = (amount * allocation.percentage) / 100;
-                        const couponValue = brandAmount >= 50 ? 10 : 5;
-                        const coupons = Math.floor(brandAmount / couponValue);
-                        const info = getBrandInfo(allocation.brandId);
-                        return (
-                          <div key={allocation.brandId} className="flex items-center justify-between text-sm bg-background/50 rounded-lg p-2">
-                            <div className="flex items-center gap-2">
-                              {info && (
-                                <div className="w-6 h-6 rounded bg-white p-0.5 flex items-center justify-center">
-                                  <img src={info.logo} alt={info.name} className="w-full h-full object-contain" />
-                                </div>
-                              )}
-                              <span className="text-foreground">{allocation.brandName}</span>
-                            </div>
-                            <span className="text-muted-foreground text-xs sm:text-sm truncate">
-                              ${brandAmount.toFixed(2)} → {coupons} × ${couponValue} coupon{coupons !== 1 ? 's' : ''}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Payment Methods Section */}
-                <div className="border-t border-border/50 pt-4">
-                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-2">
-                    <CreditCard className="w-4 h-4" />
-                    <span>Accepted Payment Methods</span>
-                  </div>
-                  <PaymentMethodIcons />
-                  <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mt-2">
-                    <Globe className="w-3 h-3" />
-                    <span>International cards accepted · Your bank handles currency conversion</span>
-                  </div>
-                </div>
-
-                {/* Rewards bonus */}
-                <div className="bg-verify/5 rounded-md p-4 border border-verify/20">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-verify to-verify flex items-center justify-center">
-                      <Gift className="w-5 h-5 text-verify-foreground" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">Plus, earn {amount * 10} Gold Coins</p>
-                      <p className="text-xs text-muted-foreground">Redeem for exclusive rewards and recognition</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {(() => {
-                const options = ([
-                  providers.square && { id: 'square' as const, label: 'Pay with Square', hint: 'Card, Apple Pay, Google Pay' },
-                  providers.stripe && { id: 'stripe' as const, label: 'Pay with Stripe', hint: 'Card, Link, wallets' },
-                ].filter(Boolean)) as { id: 'square' | 'stripe'; label: string; hint: string }[];
-                const single = options.length === 1;
-                return (
-                  <div className="space-y-3">
-                    {options.length === 0 && (
-                      <p className="text-center text-sm text-muted-foreground">Online payments are temporarily unavailable. Please check back soon.</p>
-                    )}
-                    {options.length > 1 && (
-                      <p className="text-center text-sm font-medium text-foreground">Choose how you'd like to pay</p>
-                    )}
-                    <div className={`grid gap-3 ${options.length > 1 ? 'sm:grid-cols-2' : ''}`}>
-                      {options.map((o, i) => (
-                        <Button
-                          key={o.id}
-                          size="lg"
-                          variant={i === 0 ? 'default' : 'outline'}
-                          className="h-auto min-h-12 flex-col gap-0.5 py-3"
-                          onClick={() => handleContinue(0, o.id)}
-                          disabled={isProcessing}
-                        >
-                          {isProcessing && activeProvider === o.id ? (
-                            <span className="flex items-center"><Loader2 className="w-5 h-5 mr-2 animate-spin" />Processing...</span>
-                          ) : (
-                            <>
-                              <span className="flex items-center">
-                                {single ? 'Complete Donation' : o.label}
-                                <Heart className="w-4 h-4 ml-2" />
-                              </span>
-                              <span className="text-xs font-normal opacity-80">{single ? `Secure checkout · ${o.hint}` : o.hint}</span>
-                            </>
-                          )}
-                        </Button>
-                      ))}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="lg"
-                      className="w-full"
-                      onClick={() => setStep(2)}
-                      disabled={isProcessing}
-                    >
-                      Back
-                    </Button>
-                  </div>
-                );
-              })()}
-
-              {/* Manual redirect fallback */}
-              {checkoutUrl && !isProcessing && (
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Didn't see the payment page?
-                  </p>
-                  <Button 
-                    variant="link" 
-                    className="text-primary gap-1"
-                    onClick={handleManualRedirect}
-                  >
-                    Open payment page
-                    <ExternalLink className="w-4 h-4" />
-                  </Button>
-                </div>
+                  {step === 1 ? 'Choose amount' : 'Review gift'}
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </motion.button>
               )}
             </div>
-          )}
-        </Card>
+          </div>
+
+          {/* The gift panel stays closed on step 1 and opens once an amount is chosen. */}
+          <AnimatePresence initial={false}>
+            {ledgerOpen && (
+              <motion.div
+                key="ledger"
+                data-ledger-panel
+                className="order-first shrink-0 overflow-hidden lg:order-last"
+                initial={wide ? { width: 0 } : { height: 0 }}
+                animate={wide ? { width: LEDGER_WIDTH } : { height: 'auto' }}
+                exit={wide ? { width: 0 } : { height: 0 }}
+                transition={SPRING}
+              >
+                <motion.div
+                  className="flex h-full lg:w-[400px]"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1, transition: { duration: 0.35, delay: 0.12 } }}
+                  exit={{ opacity: 0, transition: { duration: 0.12 } }}
+                >
+                  <GiftLedger amount={amount} retailers={retailers} shares={shares} step={step} />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div></Reveal>
+
+        <BrandSelectorModal
+          open={browse}
+          onOpenChange={setBrowse}
+          selectedBrands={ids}
+          onSelectBrands={(next) => chooseRetailers(next.slice(0, MAX_RETAILERS))}
+          maxBrands={MAX_RETAILERS}
+          multiSelect
+        />
       </div>
     </section>
   );

@@ -1,9 +1,12 @@
+import { SplitError, describeSplit, encodeSplit, normalizeSplit } from '../_shared/brand-split.ts';
+import { ChargeError, chargeMetadata, computeCharge } from '../_shared/checkout-total.ts';
+import { createClient } from 'npm:@supabase/supabase-js@2';
+import { EXAMPLE_CLOSED_MESSAGE, isExampleFundraiser } from '../_shared/example-guard.ts';
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-interface BrandAllocation { brand: string; brandId: string; percent: number; amount: number }
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -33,32 +36,45 @@ Deno.serve(async (req) => {
     const settings = settingsRes.ok ? (await settingsRes.json())?.[0] : null;
     if (settings && settings.square_enabled === false) return json({ error: "Square payments are currently turned off." }, 403);
 
-    const { sourceId, verificationToken, amount, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = await req.json();
+    const { sourceId: rawSource, savedCardId, verificationToken, amount, tipAmount, coverFee, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = await req.json();
+    if (await isExampleFundraiser(fundraiserId)) return json({ error: EXAMPLE_CLOSED_MESSAGE }, 403);
     const amt = Number(amount);
+    // Paying with a saved card: only the signed-in owner may use it, with their Square customer.
+    let sourceId = rawSource;
+    let customerId: string | null = null;
+    if (typeof savedCardId === "string" && savedCardId) {
+      const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const jwt = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+      const { data: who } = await db.auth.getUser(jwt).catch(() => ({ data: null }));
+      if (!who?.user) return json({ error: "Please sign in to use a saved card." }, 401);
+      const { data: card } = await db.from("saved_cards").select("square_card_id").eq("user_id", who.user.id).eq("square_card_id", savedCardId).maybeSingle();
+      const { data: prof } = await db.from("donor_payment_profiles").select("square_customer_id").eq("user_id", who.user.id).maybeSingle();
+      if (!card || !prof) return json({ error: "That saved card was not found." }, 404);
+      sourceId = card.square_card_id; customerId = prof.square_customer_id;
+    }
     if (typeof sourceId !== "string" || !sourceId || sourceId.length > 500) return json({ error: "Missing payment details." }, 400);
     if (!amt || amt < 5 || amt > 10000) return json({ error: "Invalid donation amount. Must be between $5 and $10,000." }, 400);
 
-    const allocations: BrandAllocation[] = Array.isArray(brandAllocations) && brandAllocations.length > 0
-      ? brandAllocations
-      : brandName ? [{ brand: brandName, brandId: brandId || "", percent: 100, amount: amt }] : [];
-    const isMultiBrand = allocations.length > 1;
-    const brandNames = allocations.map((a) => a.brand).join(", ");
+    // The donor's dollar split, checked again here (each retailer's share becomes one coupon slot).
+    let shares, charge;
+    try {
+      shares = normalizeSplit(amt, brandAllocations, { brand: brandName, brandId });
+      charge = computeCharge({ gift: amt, tip: tipAmount, coverFee, provider: "square" });
+    } catch (e) {
+      if (e instanceof SplitError || e instanceof ChargeError) return json({ error: e.message }, 400);
+      throw e;
+    }
+    const isMultiBrand = shares.length > 1;
 
     const token = (Deno.env.get("SQUARE_ACCESS_TOKEN") ?? "").trim();
     const locationId = (Deno.env.get("SQUARE_LOCATION_ID") ?? "").trim();
     if (!token || !locationId) return json({ error: "Square is not configured." }, 500);
     const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "Square-Version": "2025-01-23" };
 
-    const metadata: Record<string, string> = {
-      type: "donation",
-      amount: amt.toString(),
-      meals_provided: (amt * 2).toString(),
-      is_multi_brand: isMultiBrand.toString(),
-    };
-    if (allocations[0]?.brand) metadata.brand_name = allocations[0].brand;
-    if (allocations[0]?.brandId) metadata.brand_id = allocations[0].brandId;
-    const allocJson = JSON.stringify(allocations);
-    if (allocations.length > 0 && allocJson.length <= 255) metadata.brand_allocations = allocJson;
+    // Square allows ten metadata keys; these are nine at most.
+    const metadata: Record<string, string> = { type: "donation", ...chargeMetadata(charge) };
+    if (shares[0]?.brand) metadata.brand_name = shares[0].brand;
+    if (shares.length > 0) metadata.brand_allocations = encodeSplit(shares);
     if (userId) metadata.donor_id = String(userId);
     if (userEmail) metadata.donor_email = String(userEmail);
     if (fundraiserId) metadata.fundraiser_id = String(fundraiserId);
@@ -72,11 +88,14 @@ Deno.serve(async (req) => {
           location_id: locationId,
           reference_id: `donation_${Date.now()}`,
           line_items: [{
-            name: isMultiBrand ? `Multi-Brand Donation (${allocations.length} brands)` : "Donation to Help Families",
+            name: isMultiBrand ? `Donation for families (${shares.length} retailers)` : "Donation to Help Families",
             quantity: "1",
-            base_price_money: { amount: Math.round(amt * 100), currency: "USD" },
-            ...(brandNames ? { note: `Via ${brandNames}`.slice(0, 500) } : {}),
-          }],
+            base_price_money: { amount: charge.giftCents, currency: "USD" },
+            ...(shares.length ? { note: (isMultiBrand ? `100% to families, shared between ${describeSplit(shares)}` : `100% to families, via ${shares[0].brand}`).slice(0, 500) } : {}),
+          },
+          // The order total must match the charge, so the tip and covered fee are their own lines.
+          ...(charge.tipCents > 0 ? [{ name: "Tip to CouponDonation", quantity: "1", base_price_money: { amount: charge.tipCents, currency: "USD" } }] : []),
+          ...(charge.feeCents > 0 ? [{ name: "Card processing fee (you covered it)", quantity: "1", base_price_money: { amount: charge.feeCents, currency: "USD" } }] : [])],
           metadata,
         },
       }),
@@ -95,7 +114,8 @@ Deno.serve(async (req) => {
         idempotency_key: crypto.randomUUID(),
         source_id: sourceId,
         ...(verificationToken ? { verification_token: verificationToken } : {}),
-        amount_money: { amount: Math.round(amt * 100), currency: "USD" },
+        ...(customerId ? { customer_id: customerId } : {}),
+        amount_money: { amount: charge.totalCents, currency: "USD" },
         order_id: orderId,
         location_id: locationId,
         autocomplete: true,

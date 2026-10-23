@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
 import { DataTable, StatusBadge, Column } from '@/components/admin/DataTable';
+import { useAdminDirtyGuard } from '@/hooks/useAdminDirtyGuard';
 import { useAdminPaged } from '@/hooks/useAdminPaged';
 import { sb, rpc, adminWrite, fmtDate } from '@/lib/adminApi';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -43,6 +44,7 @@ export default function AdminNewsletters() {
   const subs = useAdminPaged<Subscriber>({ table: 'email_subscribers', searchCols: ['email', 'name'], defaultSort: { key: 'created_at', dir: 'desc' } });
   const evs = useAdminPaged<EventRow>({ table: 'email_events', select: 'id,campaign_id,event_type,recipient_email,url,created_at', searchCols: ['recipient_email', 'event_type'], defaultSort: { key: 'created_at', dir: 'desc' } });
   const stats = useQuery({ queryKey: ['adm-email-stats'], queryFn: () => rpc<any>('admin_email_stats') });
+  const suppressions = useQuery({ queryKey: ['adm-suppressions'], queryFn: async () => { const { data } = await sb.from('email_suppressions').select('email, created_at'); return new Map<string, string>((data ?? []).map((r: any) => [r.email, r.created_at])); } });
   const [templates, setTemplates] = useState<Template[]>([]);
   const [segments, setSegments] = useState<Segment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +57,8 @@ export default function AdminNewsletters() {
   const [importing, setImporting] = useState(false);
 
   const [form, setForm] = useState({ ...DEFAULT_FORM });
+  useAdminDirtyGuard(showCompose && (!!form.subject || !!form.html_content));
+  const closeCompose = () => { if (sending) return; if ((form.subject || form.html_content) && !window.confirm('Discard unsaved campaign changes?')) return; setShowCompose(false); };
   const [editId, setEditId] = useState<string | null>(null);
   const [testEmail, setTestEmail] = useState('');
   const [newSubEmail, setNewSubEmail] = useState('');
@@ -223,7 +227,7 @@ export default function AdminNewsletters() {
     { key: 'source', header: 'Source', sortable: true, cell: (x) => x.source },
     { key: 'subscribed_at', header: 'Added', sortable: true, cell: (x) => x.source === 'excel_import' ? `Imported · ${fmtDate(x.subscribed_at)}` : fmtDate(x.subscribed_at) },
     { key: 'last_open_at', header: 'Last open', sortable: true, cell: (x) => fmtDate(x.last_open_at) },
-    { key: 'subscribed', header: 'Status', sortable: true, cell: (x) => <StatusBadge value={x.subscribed ? 'active' : 'dismissed'} /> },
+    { key: 'subscribed', header: 'Status', sortable: true, cell: (x) => { const un = suppressions.data?.get(x.email); return <div><StatusBadge value={x.subscribed ? 'active' : 'dismissed'} />{un && <p className="text-xs text-muted-foreground mt-1">Unsubscribed {fmtDate(un)} · all optional emails</p>}</div>; } },
     ...(isAdmin ? [{ key: 'a', header: '', align: 'right' as const, cell: (x: Subscriber) => <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleRemoveSubscriber(x.id)} aria-label="Remove"><Trash2 className="h-3.5 w-3.5" /></Button> }] : []),
   ];
   const evCols: Column<EventRow>[] = [
@@ -405,7 +409,7 @@ export default function AdminNewsletters() {
       </div>
 
       {/* Compose */}
-      <Dialog open={showCompose} onOpenChange={setShowCompose}>
+      <Dialog open={showCompose} onOpenChange={(v) => v ? setShowCompose(true) : closeCompose()}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editId ? 'Edit Campaign' : 'New Campaign'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
@@ -474,7 +478,7 @@ export default function AdminNewsletters() {
               </div>
             </div>
             <div className="flex gap-2 justify-end pt-2">
-              <Button variant="outline" onClick={() => setShowCompose(false)}>Cancel</Button>
+              <Button variant="outline" onClick={closeCompose}>Cancel</Button>
               <Button variant="outline" onClick={() => handleSaveCampaign('draft')}>Save draft</Button>
               <Button onClick={() => handleSaveCampaign('scheduled')} disabled={!form.scheduled_for}>
                 <Calendar className="w-4 h-4 mr-1" /> Schedule

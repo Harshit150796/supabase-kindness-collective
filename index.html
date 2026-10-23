@@ -4,64 +4,57 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Primary Meta Tags -->
-    <title>CouponDonation — Turn Donations Into Grocery Coupons</title>
-    <meta name="title" content="CouponDonation — Turn Donations Into Grocery Coupons" />
-    <meta name="description" content="Your donation becomes real grocery coupons for verified families. 95% efficiency, Walmart/Target/Amazon partners. Donate in seconds, see your impact.">
-    <meta name="keywords" content="donation platform, coupon donation, digital vouchers, retail vouchers, crowdfunding, fundraiser, food assistance, grocery coupons, gift card donation, help families, community support" />
-    <meta name="author" content="CouponDonation" />
-    <meta name="robots" content="index, follow" />
+    <!-- Default tags for crawlers that don't run JavaScript. Pages replace them through react-helmet-async
+         (data-rh marks them as Helmet's own). Keep them true for any page: no canonical or og:url here,
+         since this same file is served for every route. -->
+    <title>CouponDonation: Give Groceries &amp; Gift Cards to Families in Need</title>
+    <meta name="description" content="Help someone with a real need. Your donation becomes gift cards for the groceries, medicine and rides they asked for, and you get a receipt for every gift." data-rh="true" />
+    <meta name="robots" content="index, follow, max-image-preview:large" data-rh="true" />
     <meta name="theme-color" content="#2e7d32" />
     <link rel="preload" href="/fonts/instrument-sans-variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/instrument-serif-400.woff2" as="font" type="font/woff2" crossorigin />
-    
-    <!-- Favicon & Icons - Optimized for Google Search Console -->
+    <link rel="preload" href="/brand/logo-256.webp" as="image" type="image/webp" fetchpriority="high" />
+
     <link rel="icon" type="image/png" href="/favicon-512.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/favicon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon-192.png" />
     <link rel="manifest" href="/manifest.json" />
-    <!-- Preconnect to backend + payments so first XHR / image starts faster on mobile -->
+    <!-- Preconnect to the backend so the first data request starts sooner on mobile -->
     <link rel="preconnect" href="https://vbnbacowuoeeojjdrzzp.supabase.co" crossorigin />
     <link rel="dns-prefetch" href="https://vbnbacowuoeeojjdrzzp.supabase.co" />
-    <link rel="preconnect" href="https://js.stripe.com" crossorigin />
-    <!-- Preload the GLB so it downloads in parallel with the JS bundle. -->
-    <link rel="preload" as="fetch" href="/models/tree.glb" crossorigin />
 
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://coupondonation.com" />
-    
-    
-    <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/WxokFoHEXkf8Hqp8p5J7xCrwnIo1/social-images/social-1782483846797-Gemini_Generated_Image_4tc3kk4tc3kk4tc3-removebg-preview.webp">
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:site_name" content="CouponDonation" />
-    <meta property="og:locale" content="en_US" />
-    
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@CouponDonation" />
-    <meta name="twitter:creator" content="@CouponDonation" />
-    <meta name="twitter:url" content="https://coupondonation.com" />
-    
-    
-    <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/WxokFoHEXkf8Hqp8p5J7xCrwnIo1/social-images/social-1782483846797-Gemini_Generated_Image_4tc3kk4tc3kk4tc3-removebg-preview.webp">
-    
-    <!-- Organization Structured Data -->
+    <!-- Social previews -->
+    <meta property="og:type" content="website" data-rh="true" />
+    <meta property="og:title" content="CouponDonation: Give Groceries &amp; Gift Cards to Families in Need" data-rh="true" />
+    <meta property="og:description" content="Help someone with a real need. Your donation becomes gift cards for the groceries, medicine and rides they asked for, and you get a receipt for every gift." data-rh="true" />
+    <meta property="og:image" content="https://coupondonation.com/og-image.png" data-rh="true" />
+    <meta property="og:image:width" content="1200" data-rh="true" />
+    <meta property="og:image:height" content="630" data-rh="true" />
+    <meta property="og:image:alt" content="CouponDonation logo with the line Give what people need" data-rh="true" />
+    <meta property="og:site_name" content="CouponDonation" data-rh="true" />
+    <meta property="og:locale" content="en_US" data-rh="true" />
+    <meta name="twitter:card" content="summary_large_image" data-rh="true" />
+    <meta name="twitter:title" content="CouponDonation: Give Groceries &amp; Gift Cards to Families in Need" data-rh="true" />
+    <meta name="twitter:description" content="Help someone with a real need. Your donation becomes gift cards for the groceries, medicine and rides they asked for, and you get a receipt for every gift." data-rh="true" />
+    <meta name="twitter:image" content="https://coupondonation.com/og-image.png" data-rh="true" />
+
+    <!-- Who we are, for search engines and AI assistants. Keep every claim true (AGENTS.md, Legal). -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Organization",
+      "@id": "https://coupondonation.com/#organization",
       "name": "CouponDonation",
       "alternateName": ["Coupon Donation", "CouponDonation.com"],
-      "url": "https://coupondonation.com",
+      "url": "https://coupondonation.com/",
       "logo": "https://coupondonation.com/favicon-512.png",
-      "image": "https://coupondonation.com/favicon-512.png",
-      "description": "CouponDonation converts monetary donations into grocery coupons for verified families in need, partnering with brands like Walmart, Target, and Amazon.",
-      "email": "connect@coupondonation.com",
+      "image": "https://coupondonation.com/og-image.png",
+      "slogan": "Give what people need.",
+      "description": "CouponDonation is a US giving platform where people ask for help with a specific need and donors give store gift cards and coupons for it, such as groceries, medicine, rides and household essentials. Gifts are not cash and are not tax-deductible.",
+      "email": "support@coupondonation.com",
       "telephone": "+1-315-898-6745",
+      "areaServed": { "@type": "Country", "name": "United States" },
       "sameAs": [
         "https://www.linkedin.com/company/coupondonation",
         "https://twitter.com/CouponDonation"
@@ -69,57 +62,29 @@
       "contactPoint": [{
         "@type": "ContactPoint",
         "telephone": "+1-315-898-6745",
-        "email": "connect@coupondonation.com",
-        "contactType": "customer service",
+        "email": "support@coupondonation.com",
+        "contactType": "customer support",
         "areaServed": "US",
         "availableLanguage": "English"
       }]
     }
     </script>
-
-    <!-- WebSite Schema for Sitelinks Search Box -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
+      "@id": "https://coupondonation.com/#website",
       "name": "CouponDonation",
       "alternateName": ["Coupon Donation", "CouponDonation.com"],
-      "url": "https://coupondonation.com",
-      "publisher": {
-        "@type": "Organization",
-        "name": "CouponDonation"
-      },
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://coupondonation.com/stories?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
+      "url": "https://coupondonation.com/",
+      "inLanguage": "en-US",
+      "publisher": { "@id": "https://coupondonation.com/#organization" }
     }
     </script>
-
-    <!-- Site Navigation - helps Google build sitelinks -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@graph": [
-        { "@type": "SiteNavigationElement", "name": "About Us", "url": "https://coupondonation.com/about" },
-        { "@type": "SiteNavigationElement", "name": "How It Works", "url": "https://coupondonation.com/how-it-works" },
-        { "@type": "SiteNavigationElement", "name": "Stories", "url": "https://coupondonation.com/stories" },
-        { "@type": "SiteNavigationElement", "name": "Donate", "url": "https://coupondonation.com/donate" },
-        { "@type": "SiteNavigationElement", "name": "Apply for Help", "url": "https://coupondonation.com/apply" },
-        { "@type": "SiteNavigationElement", "name": "Blog", "url": "https://coupondonation.com/blog" },
-        { "@type": "SiteNavigationElement", "name": "FAQ", "url": "https://coupondonation.com/faq" }
-      ]
-    }
-    </script>
-    <meta property="og:title" content="CouponDonation — Turn Donations Into Grocery Coupons">
-  <meta name="twitter:title" content="CouponDonation — Turn Donations Into Grocery Coupons">
-  <meta property="og:description" content="Your donation becomes real grocery coupons for verified families. 95% efficiency, Walmart/Target/Amazon partners. Donate in seconds, see your impact.">
-  <meta name="twitter:description" content="Your donation becomes real grocery coupons for verified families. 95% efficiency, Walmart/Target/Amazon partners. Donate in seconds, see your impact.">
 </head>
 
   <body>
-    <div id="root"></div>
+<style id="cd-intro-style">#cd-intro{display:none;position:fixed;inset:0;z-index:99;align-items:center;justify-content:center;touch-action:none}html.cd-intro #cd-intro{display:flex}html.cd-intro:not(.cd-iris){overflow:hidden}html.cd-iris #cd-intro{pointer-events:none}html.cd-held #cd-intro *{animation-play-state:paused!important}@media (hover:hover) and (pointer:fine){html.cd-intro,html.cd-intro *{cursor:none!important}}#cd-cover{position:absolute;inset:0;background:radial-gradient(120% 95% at 50% 46%,#fbfaf6,#f6f5ef 55%,#eeece3)}html.cd-iris #cd-cover{opacity:0;transition:opacity .8s cubic-bezier(.4,0,.2,1) .12s}#cd-lock{position:relative;display:flex;align-items:center;gap:calc(12px*var(--s,2));margin-top:-3vh;transform-origin:0 0;will-change:transform}#cd-mark{flex:none;width:calc(48px*var(--s,2));height:calc(48px*var(--s,2));animation:cdMark .85s cubic-bezier(.2,1.3,.35,1) .08s both,cdBreathe 2.6s ease-in-out 1.1s infinite alternate}#cd-mark img{display:block;width:100%;height:100%}#cd-text{position:relative;display:flex;flex-direction:column}#cd-words{position:relative;display:flex;overflow:hidden;white-space:nowrap;font:700 calc(18px*var(--s,2))/calc(28px*var(--s,2)) "Instrument Sans","Instrument Sans Fallback",Arial,sans-serif}#cd-w1,#cd-w2{display:block;transform:translateY(110%)}#cd-w1{color:#2e7d31}#cd-w2{color:#1665bf}html.cd-words #cd-w1{animation:cdUp .8s cubic-bezier(.16,1,.3,1) var(--wd,0s) both}html.cd-words #cd-w2{animation:cdUp .8s cubic-bezier(.16,1,.3,1) calc(var(--wd,0s) + .1s) both}#cd-shine{position:absolute;inset:0;overflow:hidden;transform:translate(-100%);-webkit-mask-image:linear-gradient(105deg,transparent 32%,#000 50%,transparent 68%);mask-image:linear-gradient(105deg,transparent 32%,#000 50%,transparent 68%)}#cd-shine-t{display:flex;transform:translate(100%);color:#ffffff80}html.cd-words #cd-shine{animation:cdShine .85s cubic-bezier(.45,0,.25,1) calc(var(--wd,0s) + .5s) both}html.cd-words #cd-shine-t{animation:cdShineT .85s cubic-bezier(.45,0,.25,1) calc(var(--wd,0s) + .5s) both}#cd-tag{font:400 calc(12px*var(--s,2))/calc(15px*var(--s,2)) "Instrument Sans","Instrument Sans Fallback",Arial,sans-serif;color:#576b58;white-space:nowrap;opacity:0}html.cd-words #cd-tag{animation:cdTag .9s cubic-bezier(.16,1,.3,1) calc(var(--wd,0s) + .42s) both}#cd-bar{position:absolute;left:50%;top:calc(100% + 30px*var(--s,2));width:calc(64px*var(--s,2));height:2px;transform:translate(-50%);border-radius:2px;background:#2e7d3124;overflow:hidden;opacity:0;transition:opacity .6s ease}#cd-bar i{display:block;height:100%;background:#2e7d31;transform-origin:0 50%;transform:scaleX(var(--p,.06));transition:transform .8s cubic-bezier(.2,.8,.2,1)}html.cd-wait #cd-bar{opacity:1}html.cd-iris #cd-bar{opacity:0;transition:opacity .2s}html.cd-fly #cd-lock{transform:translate(var(--fx),var(--fy)) scale(var(--fk));transition:transform .95s cubic-bezier(.62,0,.24,1)}html.cd-fade #cd-lock{opacity:0;transition:opacity .5s}html.cd-landed #cd-lock{visibility:hidden}@media (max-width:639px){#cd-mark{width:calc(40px*var(--s,1.75));height:calc(40px*var(--s,1.75))}#cd-words{font-size:calc(16px*var(--s,1.75));line-height:calc(20px*var(--s,1.75))}#cd-tagwrap{position:absolute;left:0;top:100%;padding-top:calc(3px*var(--s,1.75));transition:opacity .3s}html.cd-fly #cd-tagwrap{opacity:0}}@keyframes cdMark{0%{opacity:0;transform:scale(.6) rotate(-20deg)}to{opacity:1;transform:none}}@keyframes cdBreathe{to{transform:scale(1.025)}}@keyframes cdUp{0%{transform:translateY(110%)}to{transform:none}}@keyframes cdShine{to{transform:translate(100%)}}@keyframes cdShineT{to{transform:translate(-100%)}}@keyframes cdTag{0%{opacity:0;transform:translateY(.45em)}to{opacity:1;transform:none}}</style><div id="cd-intro" aria-hidden="true"><div id="cd-cover"></div><div id="cd-lock"><div id="cd-mark"><img src="/brand/logo-256.webp" width="256" height="256" alt=""></div><div id="cd-text"><div id="cd-words"><span id="cd-w1">Coupon</span><span id="cd-w2">Donation</span><span id="cd-shine"><span id="cd-shine-t"><span>Coupon</span><span>Donation</span></span></span></div><div id="cd-tagwrap"><div id="cd-tag">Transforming Giving</div></div></div><div id="cd-bar"><i></i></div></div></div><script>(()=>{const t=document.documentElement,v=document.getElementById("cd-intro"),E=new URLSearchParams(location.search),C=/(bot|crawler|spider|crawling|Googlebot|bingbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|Discordbot|HeadlessChrome|Lighthouse|PageSpeed)/i,m=E.get("time3d");if(t.dataset.sky=m==="day"||m==="night"?m:Math.random()<.7?"night":"day",location.pathname!=="/"||E.get("intro")==="0"||C.test(navigator.userAgent)){v.remove();return}let _=performance.now();const x=()=>performance.now()-_;t.dataset.introStarted=String(_),t.classList.add("cd-intro");try{history.scrollRestoration="manual",scrollTo(0,0)}catch{}let s=!1,L=!1,f=!1,u=!!window.__cdTreeReady,y=!1,h=.06;try{const e=document.createElement("canvas"),o=e.getContext("webgl2")||e.getContext("webgl"),g=o?.getExtension("WEBGL_debug_renderer_info");y=!!o,window.__cdGpu=g?String(o.getParameter(g.UNMASKED_RENDERER_WEBGL)):"",o?.getExtension("WEBGL_lose_context")?.loseContext()}catch{}window.__cdWebGL=y;const i=(e,o,r,c)=>{const a=document.createElement("link");a.rel=e,a.href=o,r&&(a.as=r,r==="fetch"&&(a.crossOrigin="anonymous")),c&&(a.fetchPriority=c),document.head.append(a)},k="__CD_PAGE_CHUNKS__",T="__CD_TREE_CHUNKS__";Array.isArray(k)&&k.forEach(e=>i("modulepreload",e)),y&&(Array.isArray(T)&&T.forEach(e=>i("modulepreload",e)),["/models/tree.glb","/draco/draco_wasm_wrapper.js","/draco/draco_decoder.wasm"].forEach(e=>i("preload",e,"fetch","high")),["walmart","cvs","target","dominos","aldi","starbucks","mcdonalds","instacart","amazon","home-depot","uber","publix","doordash","walgreens","taco-bell","whole-foods","costco","lyft"].forEach(e=>i("preload","/brand-logos/"+e+".svg","image")));const d=document.getElementById("cd-lock"),B=document.getElementById("cd-mark"),I=document.getElementById("cd-bar");function g(){if(s)return;const e=innerWidth,o=innerHeight;d.style.setProperty("--s",(e<640?Math.min(1.75,(e-48)/190):Math.min(2.4,(e-96)/212,o*.2/48)).toFixed(3))}g(),addEventListener("resize",g);const n=e=>{e>h&&(h=e,I.style.setProperty("--p",h.toFixed(3)))};try{new PerformanceObserver(e=>{for(const o of e.getEntries()){const r=o.name;/tree\.glb/.test(r)?n(.8):/draco_decoder\.wasm/.test(r)?n(.6):/Tree3DScene/.test(r)?n(.45):/\/assets\/Index-/.test(r)&&n(.3)}}).observe({type:"resource",buffered:!0})}catch{}const p=()=>document.querySelector("[data-nav-brand] img");function l(){s||(p()&&n(.35),u&&n(1),L&&f&&u&&p()&&P("ready"))}function P(e){if(s)return;s=!0,t.dataset.introMs=x().toFixed(0),t.dataset.introReason=e,t.dataset.introTarget=document.querySelector("[data-tree-reveal-reason]")?"live":"backdrop";const o=p();if(o){let r=0;const c=o.closest("nav");try{r=c?new DOMMatrixReadOnly(getComputedStyle(c).transform).m42:0}catch{}const a=o.getBoundingClientRect(),b=B.getBoundingClientRect();d.style.setProperty("--fx",(a.left-b.left).toFixed(2)+"px"),d.style.setProperty("--fy",(a.top-r-b.top).toFixed(2)+"px"),d.style.setProperty("--fk",(a.width/b.width).toFixed(4)),t.classList.add("cd-fly")}else t.classList.add("cd-fade");t.classList.add("cd-iris"),dispatchEvent(new Event("cd:intro-iris")),setTimeout(()=>t.classList.add("cd-landed"),o?960:500),setTimeout(()=>{v.remove(),removeEventListener("resize",g),removeEventListener("cd:tree-ready",S),clearInterval(R)},1e3),setTimeout(()=>{t.classList.remove("cd-intro","cd-iris","cd-fly","cd-fade","cd-landed","cd-words","cd-wait"),delete t.dataset.introStarted,dispatchEvent(new Event("cd:intro-end"))},1600)}function S(){u=!0,l()}const w=()=>{f||(f=!0,d.style.setProperty("--wd",Math.max(0,.36-x()/1e3).toFixed(3)+"s"),t.classList.add("cd-words"),l())};try{Promise.race([document.fonts.load('700 18px "Instrument Sans"'),new Promise(e=>setTimeout(e,650))]).then(w,w)}catch{setTimeout(w,0)}addEventListener("cd:tree-ready",S);const R=setInterval(l,150),G=()=>{setTimeout(()=>{L=!0,l()},1550),setTimeout(()=>{s||t.classList.add("cd-wait")},1800),setTimeout(()=>P("cap"),15e3)};if(document.hidden){t.classList.add("cd-held");const D=document,V=()=>{D.hidden||(D.removeEventListener("visibilitychange",V),_=performance.now(),d.style.setProperty("--wd",".36s"),t.classList.remove("cd-held"),G())};D.addEventListener("visibilitychange",V)}else G()})();</script><div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

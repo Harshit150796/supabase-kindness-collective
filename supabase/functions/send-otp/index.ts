@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { renderOtpEmail, EMAIL_SENDER } from "../_shared/email-layout.ts";
 import { emailExists } from "../_shared/email-exists.ts";
+import { HOUR, clientIp, overLimit } from "../_shared/rate-limit.ts";
 
 
 
@@ -50,6 +51,14 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // At most 10 codes an hour from one network, so the form can't be used to flood inboxes.
+    if (await overLimit(supabase, "otp-send-ip", clientIp(req), 10, HOUR)) {
+      return new Response(
+        JSON.stringify({ error: "Too many codes requested. Please try again in an hour." }),
+        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     // Signup guard: never send a verification code to an address that already
     // has an account — the caller should route the person to sign in instead.

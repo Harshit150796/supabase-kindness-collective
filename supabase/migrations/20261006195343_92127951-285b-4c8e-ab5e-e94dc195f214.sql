@@ -1,0 +1,1 @@
+ALTER FUNCTION public.get_fundraiser_cards(uuid[]) SECURITY INVOKER;

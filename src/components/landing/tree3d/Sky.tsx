@@ -1,16 +1,21 @@
 import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useInteraction } from './InteractionContext';
+import { orbX, PHONE_BREAKPOINT } from '@/lib/heroBackdrop';
 
 const PALETTES = {
   day: { top: '#7FB5E6', mid: '#CFE6F5', bot: '#E8F1E0' },
-  sunset: { top: '#5B7BB5', mid: '#FFD89E', bot: '#FF8E5C' },
   night: { top: '#0A1530', mid: '#1F2C5C', bot: '#3A4A7E' },
 };
 
-export function Sky({ isMobile = false }: { isMobile?: boolean } = {}) {
+export function Sky({ gentle = false }: { gentle?: boolean } = {}) {
   const { timeOfDay } = useInteraction();
+  // The moon and sun sit right of the hero's buttons (orbX); the backdrop places them the same way.
+  const { width, height } = useThree((state) => state.size);
+  const phone = typeof window !== 'undefined' && window.innerWidth < PHONE_BREAKPOINT;
+  const sunX = orbX('day', width, height, phone);
+  const moonX = orbX('night', width, height, phone);
 
   const targets = useMemo(
     () => ({
@@ -22,13 +27,15 @@ export function Sky({ isMobile = false }: { isMobile?: boolean } = {}) {
   );
 
   const mat = useMemo(() => {
+    // Starts in this load's sky: no daylight moment before a night scene.
+    const initial = PALETTES[timeOfDay];
     return new THREE.ShaderMaterial({
       side: THREE.BackSide,
       depthWrite: false,
       uniforms: {
-        topColor: { value: new THREE.Color(PALETTES.day.top) },
-        midColor: { value: new THREE.Color(PALETTES.day.mid) },
-        bottomColor: { value: new THREE.Color(PALETTES.day.bot) },
+        topColor: { value: new THREE.Color(initial.top) },
+        midColor: { value: new THREE.Color(initial.mid) },
+        bottomColor: { value: new THREE.Color(initial.bot) },
       },
       vertexShader: `
         varying vec3 vWorldPos;
@@ -59,7 +66,7 @@ export function Sky({ isMobile = false }: { isMobile?: boolean } = {}) {
     targets.top.set(p.top);
     targets.mid.set(p.mid);
     targets.bot.set(p.bot);
-    const k = Math.min(1, dt * 1.5);
+    const k = Math.min(dt * 1.5, 0.05);
     (mat.uniforms.topColor.value as THREE.Color).lerp(targets.top, k);
     (mat.uniforms.midColor.value as THREE.Color).lerp(targets.mid, k);
     (mat.uniforms.bottomColor.value as THREE.Color).lerp(targets.bot, k);
@@ -72,18 +79,18 @@ export function Sky({ isMobile = false }: { isMobile?: boolean } = {}) {
         <primitive object={mat} attach="material" />
       </mesh>
       {timeOfDay !== 'night' && (
-        <mesh position={[8, 9, -12]}>
+        <mesh position={[sunX, 9, -12]}>
           <sphereGeometry args={[1.2, 24, 24]} />
-          <meshBasicMaterial color={timeOfDay === 'sunset' ? '#FFB070' : '#FFF6D8'} toneMapped={false} />
+          <meshBasicMaterial color="#FFF6D8" toneMapped={false} />
         </mesh>
       )}
       {timeOfDay === 'night' && (
-        <mesh position={[6, 10, -12]}>
+        <mesh position={[moonX, 10, -12]}>
           <sphereGeometry args={[0.9, 24, 24]} />
           <meshBasicMaterial color="#E8EBF5" toneMapped={false} />
         </mesh>
       )}
-      {!isMobile && <DustMotes />}
+      {!gentle && <DustMotes />}
     </>
   );
 }

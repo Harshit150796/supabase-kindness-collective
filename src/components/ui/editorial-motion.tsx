@@ -1,86 +1,78 @@
-import { animate, motion, useInView, useScroll, useTransform } from 'motion/react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { animate, motion, useScroll, useTransform } from 'motion/react';
+import { forwardRef, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { cn } from '@/lib/utils';
+import { figureDisplay } from '@/lib/landingPresentation';
+import { observeEarly } from '@/lib/earlyObserver';
 
 type RevealProps = { children: ReactNode; className?: string; delay?: number };
 
-export function Reveal({ children, className, delay = 0 }: RevealProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const visible = useInView(ref, { once: true, amount: 0.2 });
-  const preference = useMotionPreference();
-  return (
-    <motion.div
-      ref={ref}
-      className={className}
-      initial={{ opacity: 0, y: preference === 'full' ? 40 : 16 }}
-      animate={visible ? { opacity: 1, y: 0 } : undefined}
-      transition={{ duration: preference === 'full' ? 0.8 : 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
-    >
-      {children}
-    </motion.div>
-  );
+/**
+ * Pre-trigger 20% below the viewport so motion plays as content arrives.
+ * Content that mounts already on screen (late data, lazy chunks) still plays a
+ * shorter fade-and-rise instead of snapping in. Only content already scrolled
+ * completely past finishes instantly.
+ */
+export function useEarlyReveal<T extends HTMLElement>(ref: React.RefObject<T>) {
+  const [visible, setVisible] = useState(false);
+  const [instant, setInstant] = useState(false);
+  const [late, setLate] = useState(false);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    return observeEarly(node, mode => {
+      if (mode === 'instant') setInstant(true);
+      else if (mode === 'late') setLate(true);
+      setVisible(true);
+    });
+  }, [ref]);
+  return { visible, instant, late };
 }
 
-export function LineReveal({ children, className, delay = 0 }: RevealProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const visible = useInView(ref, { once: true, amount: 0.35 });
-  const preference = useMotionPreference();
-  return (
-    <div ref={ref} className={cn(preference === 'full' && 'overflow-hidden', className)}>
-      <motion.div
-        initial={{ opacity: 0, y: preference === 'full' ? '110%' : 16 }}
-        animate={visible ? { opacity: 1, y: 0 } : undefined}
-        transition={{ duration: preference === 'full' ? 0.9 : 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
-      >
-        {children}
-      </motion.div>
-    </div>
-  );
+function assignRef<T>(target: React.ForwardedRef<T>, value: T | null) {
+  if (typeof target === 'function') target(value);
+  else if (target) target.current = value;
 }
+
+export const Reveal = forwardRef<HTMLDivElement, RevealProps>(function Reveal({ children, className, delay = 0 }, forwarded) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { visible, instant, late } = useEarlyReveal(ref);
+  const setRef = useCallback((node: HTMLDivElement | null) => { ref.current = node; assignRef(forwarded, node); }, [forwarded]);
+  return <motion.div ref={setRef} data-reveal className={className}
+    initial={{ opacity: 0, y: 24 }}
+    animate={visible ? { opacity: 1, y: 0 } : undefined}
+    transition={{ duration: instant ? 0 : late ? 0.45 : 0.6, delay: instant || late ? 0 : Math.min(delay, 0.08), ease: [0.16, 1, 0.3, 1] }}>
+    {children}
+  </motion.div>;
+});
+
+export const LineReveal = forwardRef<HTMLDivElement, RevealProps>(function LineReveal(props, ref) {
+  return <Reveal ref={ref} {...props} />;
+});
 
 export function ImageReveal({ children, className, delay = 0 }: RevealProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.08 });
-  const [fallbackVisible, setFallbackVisible] = useState(false);
-  const preference = useMotionPreference();
-  const full = preference === 'full';
-  useEffect(() => {
-    const timer = window.setTimeout(() => setFallbackVisible(true), 900);
-    return () => window.clearTimeout(timer);
-  }, []);
-  const visible = preference !== 'full' || inView || fallbackVisible;
-  return (
-    <motion.div
-      ref={ref}
-      className={cn('overflow-hidden', className)}
-      initial={full ? { opacity: 0, clipPath: 'inset(0 0 100% 0)' } : { opacity: 1, y: 0, clipPath: 'inset(0 0 0 0)' }}
-      animate={visible ? { opacity: 1, clipPath: 'inset(0 0 0 0)' } : undefined}
-      transition={{ duration: full ? 1.2 : 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
-    >
-      <motion.div className="h-full w-full" initial={{ scale: full ? 1.12 : 1 }} animate={visible ? { scale: 1 } : undefined} transition={{ duration: 1.2, delay, ease: [0.16, 1, 0.3, 1] }}>
-        {children}
-      </motion.div>
-    </motion.div>
-  );
+  return <Reveal className={cn('overflow-hidden', className)} delay={delay}>{children}</Reveal>;
 }
 
-export function CountUp({ value, className }: { value: number; className?: string }) {
+export const CountUp = forwardRef<HTMLSpanElement, { value: number; className?: string; formatter?: (value: number) => string }>(function CountUp({ value, className, formatter }, forwarded) {
   const ref = useRef<HTMLSpanElement>(null);
-  const visible = useInView(ref, { once: true, amount: 0.5 });
+  const setRef = useCallback((node: HTMLSpanElement | null) => { ref.current = node; assignRef(forwarded, node); }, [forwarded]);
+  const { visible } = useEarlyReveal(ref);
   const preference = useMotionPreference();
-  const [display, setDisplay] = useState(0);
+  const [display, setDisplay] = useState(value);
   useEffect(() => {
+    if (value < 10) { setDisplay(value); return; }
     if (!visible) return;
-    const controls = animate(0, value, {
+    const controls = animate(value > 0 ? 1 : 0, value, {
       duration: preference === 'full' ? 1.6 : 0.7,
       ease: 'easeOut',
       onUpdate: (latest) => setDisplay(Math.round(latest)),
     });
     return () => controls.stop();
   }, [preference, value, visible]);
-  return <span ref={ref} className={className}>{display.toLocaleString()}</span>;
-}
+  const shown = figureDisplay(value, display, false, visible);
+  return <span ref={setRef} className={className}>{formatter ? formatter(shown) : shown.toLocaleString()}</span>;
+});
 
 export function Parallax({ children, className, distance = 70 }: RevealProps & { distance?: number }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -91,11 +83,10 @@ export function Parallax({ children, className, distance = 70 }: RevealProps & {
 }
 
 export function WordReveal({ children, className }: { children: string; className?: string }) {
-  const preference = useMotionPreference();
-  return <p className={className}>{children.split(/\s+/).map((word, index) => <motion.span key={`${word}-${index}`} className="inline-block" initial={{ opacity: 0.15, y: preference === 'full' ? 8 : 0 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.8 }} transition={{ duration: preference === 'full' ? 0.55 : 0.42, delay: index * (preference === 'full' ? 0.055 : 0.035), ease: [0.16, 1, 0.3, 1] }}>{word}{index < children.split(/\s+/).length - 1 ? '\u00a0' : ''}</motion.span>)}</p>;
+  return <Reveal className={className}><p>{children}</p></Reveal>;
 }
 
 export function MotionBar({ value, className }: { value: number; className?: string }) {
   const preference = useMotionPreference();
-  return <motion.div className={className} initial={{ scaleX: 0, opacity: 0 }} whileInView={{ scaleX: Math.max(0, Math.min(value, 100)) / 100, opacity: 1 }} viewport={{ once: true, amount: 0.6 }} transition={{ duration: preference === 'full' ? 1.1 : 0.55, ease: [0.16, 1, 0.3, 1] }} style={{ transformOrigin: 'left' }} />;
+  return <motion.div className={className} initial={preference === 'gentle' ? { scaleX: Math.max(0, Math.min(value, 100)) / 100 } : { scaleX: 0, opacity: 1 }} whileInView={{ scaleX: Math.max(0, Math.min(value, 100)) / 100, opacity: 1 }} viewport={{ once: true, amount: 0.6 }} transition={{ duration: preference === 'full' ? 0.8 : 0, ease: [0.16, 1, 0.3, 1] }} style={{ transformOrigin: 'left' }} />;
 }

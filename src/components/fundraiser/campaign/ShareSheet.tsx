@@ -20,7 +20,7 @@ export function ShareCardPreview({ title, cover, raised, goal, organizer }: { ti
   const pct = goal > 0 ? Math.min(100, (raised / goal) * 100) : 0;
   return (
     <div className="overflow-hidden rounded-[1.25rem] bg-ink text-ink-foreground">
-      <div className="aspect-[16/9] w-full">{cover ? <img src={transformedFundraiserImage(cover, 900) ?? cover} alt="" className="h-full w-full object-cover" loading="lazy" /> : <FundraiserImageFallback />}</div>
+      <div className="aspect-[16/9] w-full">{cover ? <img width={900} height={506} decoding="async" src={transformedFundraiserImage(cover, 900) ?? cover} alt="" className="h-full w-full object-cover" loading="lazy" /> : <FundraiserImageFallback />}</div>
       <div className="flex items-center gap-4 p-5">
         <div className="rounded-full bg-background p-1"><ProgressRing percent={pct} size={72} /></div>
         <div className="min-w-0">
@@ -69,7 +69,7 @@ export function ShareSheet({ open, onOpenChange, slug, title, cover, raised, goa
         </div>
         <Button variant="outline" asChild><a href={`sms:?&body=${e(`${text} ${url}`)}`}><MessageSquare className="mr-2 h-4 w-4" />Text message</a></Button>
         <div className="flex items-center gap-4 rounded-[1rem] bg-secondary/60 p-4">
-          <img src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${e(url)}`} alt="QR code for this fundraiser" className="h-24 w-24 rounded-lg bg-background" loading="lazy" />
+          <img width={160} height={160} decoding="async" src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${e(url)}`} alt="QR code for this fundraiser" className="h-24 w-24 rounded-lg bg-background" loading="lazy" />
           <div><p className="font-medium">QR code</p><p className="text-sm text-muted-foreground">For posters and flyers.</p><Button size="sm" variant="link" className="px-0" onClick={downloadQR}><Download className="mr-1 h-4 w-4" />Download</Button></div>
         </div>
       </DialogContent>

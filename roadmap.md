@@ -1,5 +1,114 @@
 # Roadmap
 
+## Branded Google sign-in (Oct 14)
+- [x] Add prominent login logo/wordmark and nonce-protected direct Google sign-in.
+- [x] Four nonce/account-selection tests, real Google popup/cancellation, script and credential failure recovery, and 390/937/1280 layouts verified; automatic build OK. Local popup needs Google Cloud localhost origins. See docs/google-sign-in-setup.md.
+- [ ] Google Cloud origins/brand review and real signup/account continuity — requires user Google access; no publishing.
+
+## Live-tree cursor parity (Oct 12)
+- [x] Measure live-tree and controlled non-tree cursor timing; isolate discarded elapsed time above 64ms.
+- [x] Preserve normal trail feel while correcting delayed-frame catch-up, capture input before canvas handlers, skip unnecessary transforms and reset hidden-tab motion. Tree appearance/motion unchanged.
+- [x] 24 checked numerical/tree regressions pass; live day-tree catch-up, settlement, menu layering, text entry and touch exclusion checked; automatic build OK. See docs/verification/cursor-parity-oct12.md. No publishing.
+- [ ] Accelerated hardware/high-refresh smoothness parity — unavailable in the sandbox; software tree has multi-second frame gaps, not representative performance.
+
+## Personalized admin portal (Oct 12)
+- [x] Personal workspace, saved/default views, pinned pages and shared controls.
+- [x] Fundraiser context, follow-ups, confirmed selected pause/archive actions with individual results, and outside-coupon review.
+- [x] Exact donor/user histories and private team notes; record-local drafts reset across identities.
+- [x] Audited moderation and authoritative notification counts/page/all-read actions.
+- [x] Portal-wide form guards, export error feedback, complete donor/analytics exports and contextual links.
+- [x] 140 Deno + 3 Bun tests pass; automatic preview build OK. Migration role proofs completed; fixture notes/views/notifications all absent afterward. No publishing or live test emails.
+- [ ] Authenticated fundraiser/coupon/save/readback, note/task, donor and moderation walkthroughs — blocked by external unmanaged auth and the existing US-only admin access gate. No credentials requested.
+
+## Visible journey travel (Oct 12)
+- [x] Add visible line travel between selected icon stops, preserving gesture grouping and exact landing.
+- [x] Verified visible intermediate travel and exact forward/reverse landing at 899×514, 390×844 and 1280×1800; momentum holds, quick retargeting and long pauses pass, alignment error ≤0.5px, no page errors. 137 Deno + 3 Bun tests pass; automatic build OK. Nothing published or deployed.
+
+## Four-stop green coupon journey (Oct 12)
+- [x] Replace interpolation with discrete icon stops and one advance per wheel gesture; keep normal page scrolling and other-input checkpoints.
+- [x] Verified real wheel arrival and forward stops 1→2→3→4, reverse 4→3→2→1, momentum hold, resize alignment and keyboard checkpoints in Chromium; icon alignment within 0.25px, no page errors, 135 tests pass and automatic build OK. Nothing published or deployed.
+
+## Scroll-timed coupon journey (Oct 12)
+- [x] Anchor travel to first/last icons and give each of three transitions equal scroll progress; preserve design and direct reverse movement.
+- [x] Verified all four forward/reverse checkpoints and stationary holds after resizing across 899×514, 1280×800, 1920×1080, 390×844 and 768×1024; marker alignment within 5px, no browser page errors. All 132 tests and automatic build pass. Nothing published or deployed.
+
+## Dealt-card arrival timing (Oct 12)
+- [x] Replace early edge trigger with sustained actual visibility and clearer card beats; preserve artwork and compact layout.
+- [x] Verified sustained visible entry, cancelled brief crossings, off-screen/tab-hidden pause and resume, replay below viewport and mid-deal resize at 1024/1280/1920; compact phone layout unchanged. 129 tests pass, automatic build OK, no browser page errors. Nothing published or deployed.
+
+## Every dollar blue-band and neighboring presentation (Oct 12)
+- [x] Refine section contrast, breakpoint typography and neighboring statement/donation spacing.
+- [x] Cache journey geometry and suspend invisible recurring work; recalibrate height reservations.
+- [x] Verify 15 screen sizes, fill/drain, off-screen/resumed underline, zero journey scroll geometry reads, fundraiser sorting and donation review without paying; 126 tests and automatic build pass. Slower CPU/network sample: arrival 5.68s before / 4.98s after, p95 frame interval unchanged at 33.4ms, no long tasks or CLS in final sample. Preview-only, WebGL disabled; physical-device/production speed not established. Nothing published or deployed.
+
+## Harshit's cinematic every-load opening (Oct 9)
+- [ ] Replace visit/skip gates with every-full-homepage opening and cinematic time-of-day artwork.
+- [ ] Start tree assets/module concurrently; suppress poster until fallback; match direct live palette.
+- [ ] Enable opening cursor dots and add timing/gating tests.
+- [ ] Verify repeat loads, no skip, preload/fallback/readiness/cap and day/night desktop/phone captures; do not publish.
+
+## Poster rect caching and AGENTS.md timing note (Oct 9)
+- [x] Cache poster rect in page coordinates, refresh on resize/src change/500ms; derive viewport rect from scroll offsets.
+- [x] AGENTS.md cursor timing rule now says rAF timestamp with >6ms clock fallback (frameDt).
+- [x] Verified: poster colours unchanged (sky green, canopy white, grass blue), 1 getBoundingClientRect per moves burst, 21 tests, build OK. Nothing published.
+
+## Cursor light smoothing and hit-test follow-up (Oct 9)
+- [x] Smooth all three dots with callback execution time; cache move targets/backgrounds; soften the hover ring only.
+- [x] Verify 20 tests, homepage move hit tests (0), settled writes next second (0), animated ring and clean build; no runtime errors, existing preview ref warnings reported. Nothing published.
+- [ ] Physical-mouse/accelerated-tree callback cost — hardware unavailable; DOM/poster verification used WebGL disabled.
+
+## Restore complete homepage motion and tighten the 95¢ transition (Oct 7)
+- [x] Remove the unrequested retailer-logo pause control while retaining the universal 48-second loop.
+- [x] Restore the animated 95¢ ring, allocation bars, staggered labels, and donation-to-use journey.
+- [x] Match the 95¢ lazy reservation to its animated content and pull the following statement upward.
+- [ ] Verify every homepage motion path, responsive spacing, stable scroll height, tests, and build; do not publish.
+
+## Restore every approved animation and remove Top Donors (Oct 7)
+- [x] Audit homepage and prior motion work across shared, lazy, CSS, chart, and 3D paths.
+- [x] Remove Top Donors UI and all donor-leaderboard requests; keep retailer reporting intact.
+- [x] Use the desktop 48-second retailer-rail timing universally.
+- [x] Restore visible compact giving-step loops, shared reveals, campaign entrances, and touch restarts.
+- [x] Verify Chromium/WebKit motion, section order, stable height, overflow, runtime console, tests, and build; do not publish.
+
+## Restore mobile animations and tree fidelity (Oct 6)
+- [ ] Remove network guessing; mount live gentle tree and respond to Save-Data changes.
+- [ ] Start all hardware at desktop appearance; measure frames and reduce invisible costs first; retain software-renderer fallback.
+- [ ] Restore early full reveals, gentle fades/count-ups/headline and touch states.
+- [ ] Animate compact story steps and add an accessible marquee pause control.
+- [ ] Verify simulated phones, reduced motion, settings debug and stable 390/1024 scroll recordings; run tests and report real-device limits.
+- [ ] Optional phone-only model: do not ship without frozen-time DPR 2/3 visual/SSIM proof.
+
+## Live re-audit follow-up: tablet hero, short states and truthful figures
+- [x] Keep Top Donors below the hero until xl; verify 1024/1180.
+- [x] Fill reserved error/empty states and add generous automatic retry/backoff; force failures and recovery.
+- [x] Show small figures immediately, including reduced motion; test first visible render at 390/1024.
+- [x] Verify nondecreasing scroll heights, existing tests and preview health; do not publish.
+
+## Responsive and performance pass (Oct 6)
+- [x] Measure baseline downloads and homepage scroll length.
+- [x] Isolate route/tree/chart downloads and provide an immediate tree poster.
+- [x] Compact homepage storytelling, consolidate authoritative figures, and repair loading/reveal states.
+- [x] Fix shared forms, touch controls, footer, short-view donation bar, and success wrapping.
+- [x] Verify all 14 requested sizes on public routes, stepped phone/tablet recordings, and existing/new tests; do not publish.
+- [ ] Production compressed after-transfer comparison / <350KB JS target and independent TypeScript check — unverified; see docs/verification/responsive-performance-oct-6.md.
+- [ ] Authenticated screens and exhaustive rotating orbit checks — unverified.
+
+## Fundraiser home, footer and authoritative totals (Oct 6)
+- [x] Recompute completed-donation totals automatically, backfill every campaign, and prove distinct donors/refunds/idempotence.
+- [x] Extract shared organizer primitives; rebuild My fundraisers with one private RPC and working public sharing.
+- [x] Rebuild footer and verify wordmark containment at 1440/1024/768/390.
+- [x] Run existing tests, verify live public totals and fixture layouts/actions; report unavailable signed-in verification.
+- [x] Inventory totals readers and all routes; propose ordered next design passes without publishing.
+
+- [ ] Actual authenticated owner browser walkthrough — external unmanaged auth; SQL role-context and fixture evidence only.
+
+## Transactional email design system
+- [x] Replace divergent production renderers with one table-based branded renderer.
+- [x] Preserve impact grouping, dedupe, and the 10-minute settle window while adding impact-only stop headers.
+- [x] Render and inspect every template at desktop and 320px.
+- [x] Send and verify only the two founder-requested test messages; do not publish.
+- [x] Add the shared support contact and support Reply-To to all recipient account mail; verify and deploy without test sends.
+
 ## Done
 - [x] Rewrite `WhatWeDo` as a light, organic donation branch using only existing ivory, gold, emerald, and semantic text/surface tokens.
 - [x] Replace telemetry, chips, comparison rows, and dark card chrome with one continuous five-line verse.
@@ -217,3 +326,110 @@
 - [x] Newsletter Reply-To connect@ on every send
 - [x] Self-undoing proofs + four founder-only samples delivered
 - [ ] Fast path inactive until checkout success URLs carry a reference (needs founder approval — checkout change)
+
+## Fundraiser dashboard privacy and visual upgrade (Oct 6)
+- [x] Remove donor contact identifiers from the organizer ledger RPC and prove anonymity/display-name behavior.
+- [x] Rebuild all organizer dashboard sections to the prescribed typography, surfaces, density, states, and motion.
+- [x] Run the full test suite, typecheck, and production build; verify protected-route behavior at 1440/768/390.
+- [ ] Signed-in visual and control walkthrough at 1440/768/390 — unverified because this project uses external unmanaged auth.
+
+## Live re-audit follow-up (Oct 6)
+- [x] Figures: pluralised labels; "Coupons being prepared" value stage from get_landing_stats
+- [x] Footer two-column link groups on phones (390: 1,273 → 1,013px)
+- [x] Tree model re-compressed 1,491 → 1,268 KB with identical look; poster kept on 2g/3g
+- [x] Batched card RPC (get_fundraiser_cards); one shared top-donors request
+- [x] Small text/tap target leftovers; compact navbar on short landscape
+- [ ] Tree model under 400 KB — not possible without visibly changing the tree (needs founder decision)
+
+## Restore mobile motion and shared tree fidelity (Oct 6)
+- [x] Remove estimated network-speed gating; honor explicit Save-Data changes; live gentle tree.
+- [x] Same initial desktop artwork/settings on phones/tablets; no width/DPR/CPU/memory score.
+- [x] Measured visible-frame fallback: shadows then DPR, before last-resort ambient reductions; preserve GLB canopy.
+- [ ] Antialias-method downgrade — deliberately retained context MSAA/leaf coverage; switching risks context reset or altered edges.
+- [x] Early visible shared reveals, gentle opacity fades, compact story animations/caption stagger, phone headline rotation and touch feedback.
+- [x] Active tree settings in motiondebug; the later unrequested marquee pause control was removed.
+- [x] Browser simulations, gentle camera evidence, 390/1024 stepped recordings: no height decreases/hidden reveals/overflow; 58 tests passed; automatic build clean.
+- [ ] Real capable iPhone/Android frame-rate/final-settings proof and frozen-time visual-equivalence comparison — hardware unavailable.
+- [ ] Optional phone-model SSIM experiment — not attempted; identical shared model retained.
+- [ ] Separate TS-only diagnostics — not independently run; automatic preview build reported clean.
+- Report: docs/mobile-motion-verification.md. No publishing, DB changes or unique-content removal.
+
+## All animations on every phone (Oct 7)
+- [x] Full motion regardless of OS Reduce Motion (founder decision); removed CSS/Tailwind/JS reduced-motion switches.
+- [x] Late-mounting sections animate instead of snapping; time-based fling detection.
+- [x] Tree stops drawing completely while off-screen (was ~2 fps mid-page in tests, now ~59 fps).
+- [x] Tree quality step-down waits 2s and needs two slow samples.
+- [x] WebKit (iPhone) + Chromium (Android) recordings: home, iPad landscape, About, How It Works; Reduce Motion on/off; 60 tests pass.
+- [ ] Publish — founder publishes; live site still runs the older version.
+- [ ] Real-phone smoothness — hardware unavailable.
+
+## Restore complete homepage motion and tighten the 95¢ transition (Oct 7)
+- [x] Remove the unrequested retailer-logo pause control while retaining the universal 48-second loop.
+- [x] Restore the animated 95¢ ring, allocation bars, staggered labels, and donation-to-use journey.
+- [x] Match the 95¢ lazy reservation to its animated content and pull the following statement upward.
+- [x] Restore automatic four-step desktop motion, section entrances, donation form/footer reveals, and currency count-ups.
+- [x] Verify mobile and desktop motion with OS Reduce Motion enabled: all four giving illustrations move, page height stays stable, no runtime errors; 24 tests, TypeScript, diff, and automatic build clean.
+- [ ] Physical-device and published-site behavior — not verified; no publishing performed.
+
+## Optimize every device without reducing motion (Oct 8)
+- [x] Audit device, pointer, lazy-mount, visibility and motion-preference gates across public and shared account surfaces.
+- [x] Keep the retailer rail continuously moving at the universal 48-second speed; add touch equivalents for logo/story interactions.
+- [x] Make the tree chat use dynamic viewport height and safe-area positioning, including short landscape.
+- [x] Serve responsive transformed legacy fundraiser covers instead of one 1400px phone download.
+- [x] Align the account drawer with the labeled 44px shared control standard and constrain its narrow-screen width.
+- [x] Separate the campaign donation notice from the sticky action bar using safe-area-aware short-landscape spacing.
+- [x] Current 15-size Chromium responsive, overflow and stepped-scroll verification; focused motion frames captured at 390, 844 landscape, 1024 and 1440.
+- [ ] Physical-device and published-site performance — not verified; no publishing performed.
+
+## Faster tree and homepage startup (Oct 8)
+- [x] Confirm the previous 7,000-leaf setting was diagnostic only and measure the baked tree model.
+- [x] Remove five hidden rear logo fruits and limit startup decoding to the 13 visible opening brands.
+- [x] Preload replacement brands only when selected; lazy-decode the duplicate retailer rail and lazy-load completed campaigns.
+- [ ] Replace the baked canopy only if a visual comparison proves the reduced model indistinguishable.
+- [x] Capture matched phone/desktop posters from the approved tree and crossfade only after the canvas commits.
+- [ ] Physical-device and published-site performance — not verified; no publishing performed.
+
+- [x] Restore 18-fruit tree layout (296764a7), staged rear-logo decode, recaptured posters
+- [x] Self-host Draco decoder at /draco/ (no gstatic)
+
+## Poster/live-tree handoff (Oct 8)
+- [x] Parallel 18-logo startup, drawn-frame reveal with safety timeout, controls listener timing, bounded sky/light/fog easing.
+- [x] Recapture daytime panorama and 2x phone posters; measure nine overlays and cold 4G timing (no speed improvement established).
+- [x] Verify local decoder, both phone engines, 70 tests, fallback failure and orbit hook; desktop sampled overlays pass. No publishing.
+- [ ] Physical-phone/production timing — hardware and unpublished bundled version unavailable.
+- [ ] WebKit monotonic height — one observed decrease; repeat timed out, cause unisolated.
+- [ ] All-18 individual logo offsets / literal first GPU frame — not instrumented; four sampled desktop marks measured.
+
+## Founder-approved seed opening and page choreography (Oct 8)
+- [x] First-HTML visit-gated opening, skip/iris and tree-ready bridge; alignment/timing checks.
+- [x] Fine-pointer cursor trail, shared line reveals, coupon scroll path, CTA wipe, directional navbar.
+- [x] Phone image delivery pass on home, campaign, Stories and Blog.
+- [x] Rule tests (76 passed), browser flows and measured report; nothing published.
+- [ ] Production-bundled after-transfer measurement, real-device smoothness and pixel-measured live-tree alignment remain unverified; preview module transfer is not comparable to published bundles.
+
+## Opening review corrections (Oct 8)
+- [x] Protect canvas layout measurement; uniformly scaled compositor-only opening shapes, under the inline budget.
+- [x] Correct cursor layering, hollow hover ring and scroll colour checks; align journey path using layout positions.
+- [x] Preserve React heading nodes with a removable, aria-hidden line overlay.
+- [x] Desktop/phone size, blocked-thread Chromium recording, cursor/path checks; 36 tests passed, preview build OK; nothing published.
+- [ ] Physical iPhone/Safari blocked-thread smoothness and frozen-live pixel registration: blocked on physical hardware/reference capture; simulated evidence and limits documented.
+
+## Round-2 intro and phone photo corrections (Oct 9)
+- [x] Restore all six compositor-animated trunk/branch/twig shapes at original coordinates and timings.
+- [x] Preserve Supabase photo proportions in both shared image helpers.
+- [x] Verify 1200/2200ms intro frames and real 390px homepage/Stories cards; 40 regression tests pass, preview build OK; nothing published.
+
+## Founder cursor rebuild (Oct 9)
+- [x] Compositor chasing, replacement-pointer lifecycle, top-level portal, press and hollow hover states.
+- [x] Background colour layers with poster/DOM sampling and desktop-hover-only tree probe.
+- [x] Verify controlled jitter, lifecycle, colour mapping, real portal layering, phone exclusion and 46 tests; document limits. No publishing.
+- [ ] Hardware-tree jitter/performance and all live scene colour locations — blocked on hardware acceleration; software rendering is too slow for reliable measurements.
+
+## Cursor motion follow-up (Oct 9)
+- [x] Direct rAF lead, time-based exponential tails (170/340ms), loop stops when settled; transitions removed.
+- [x] 7×7 averaged probe read and textured-colour hysteresis; DOM colours immediate.
+- [x] Screencast benchmark: zero busy stalls; busy CV 0.17–0.30 vs previous 0.75; 50 Deno + 3 Bun tests pass. Nothing published.
+- [ ] Busy CV ≤0.15 confirmation — blocked on a lower-noise capture rig (this sandbox's compositor-only control already measures 0.22–0.24).
+
+## Cursor frame timing, poster colours, route persistence (Oct 9)
+- [x] frameDt hybrid, stage poster sampling, route-persistent setup, pointer hidden from load; verified in preview, unpublished.

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
 import { DataTable, Column } from '@/components/admin/DataTable';
+import { useAdminDirtyGuard } from '@/hooks/useAdminDirtyGuard';
 import { useAdminPaged } from '@/hooks/useAdminPaged';
 import { adminWrite, fmtDate } from '@/lib/adminApi';
 import { Button } from '@/components/ui/button';
@@ -22,10 +23,12 @@ export default function AdminContent() {
   const [section, setSection] = useState('all');
   const t = useAdminPaged({ table: 'cms_content', searchCols: ['content_key', 'content_value'], defaultSort: { key: 'content_key', dir: 'asc' }, filter: (b) => (section === 'all' ? b : b.eq('section', section)), deps: [section] });
   const [edit, setEdit] = useState<any | null>(null);
+  const [busy, setBusy] = useState(false);
+  useAdminDirtyGuard(!!edit);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const refresh = () => { qc.invalidateQueries({ queryKey: ['adm-paged', 'cms_content'] }); qc.invalidateQueries({ queryKey: ['cms-content'] }); };
   const run = async (fn: () => Promise<unknown>, ok: string) => {
-    try { await fn(); toast({ title: ok }); refresh(); return true; } catch (e) { toast({ title: 'Could not save', description: (e as Error).message, variant: 'destructive' }); return false; }
+    setBusy(true); try { await fn(); toast({ title: ok }); refresh(); return true; } catch (e) { toast({ title: 'Could not save', description: (e as Error).message, variant: 'destructive' }); return false; } finally { setBusy(false); }
   };
   const save = async () => {
     if (!edit.content_key?.trim()) { toast({ title: 'Key required', variant: 'destructive' }); return; }
@@ -52,7 +55,7 @@ export default function AdminContent() {
       </div>
       <DataTable columns={cols} {...t.tableProps} rowKey={(r: any) => r.id} onRowClick={(r) => setEdit({ ...r })} empty="No content items match." />
 
-      <Sheet open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
+      <Sheet open={!!edit} onOpenChange={(o) => { if (!o && !busy && (!edit || window.confirm('Discard unsaved content changes?'))) setEdit(null); }}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
           {edit && <div className="space-y-4">
             <SheetHeader><SheetTitle className="text-left font-serif text-2xl font-normal">{edit.id ? edit.content_key : 'New content'}</SheetTitle></SheetHeader>
@@ -61,7 +64,7 @@ export default function AdminContent() {
             <Textarea rows={10} value={edit.content_value ?? ''} readOnly={!canWrite} onChange={(e) => setEdit({ ...edit, content_value: e.target.value })} />
             {canWrite && <div className="flex justify-between">
               {isAdmin && edit.id ? <Button variant="ghost" className="text-destructive" onClick={() => setDeleteId(edit.id)}><Trash2 className="mr-1.5 h-4 w-4" />Delete</Button> : <span />}
-              <Button onClick={save}>Save</Button></div>}
+              <Button disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</Button></div>}
           </div>}
         </SheetContent>
       </Sheet>
@@ -69,7 +72,7 @@ export default function AdminContent() {
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Delete content</AlertDialogTitle><AlertDialogDescription>This permanently deletes the content item and is recorded in the audit log.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => { if (await run(() => adminWrite('cms_content', 'delete', [deleteId!]), 'Deleted')) setEdit(null); setDeleteId(null); }}>Delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => { if (!deleteId) return; if (await run(() => adminWrite('cms_content', 'delete', [deleteId]), 'Deleted')) setEdit(null); setDeleteId(null); }}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </DashboardLayout>

@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Suspense, useLayoutEffect, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
   /** Minimum height reserved before children render — prevents layout shift. */
   minHeight?: number | string;
+  intrinsicSize?: { mobile: number; tablet: number; desktop: number };
   /** rootMargin for the IntersectionObserver. */
   rootMargin?: string;
   /** Optional className passed to the wrapper. */
@@ -24,12 +25,14 @@ interface Props {
 export function LazyOnView({
   children,
   minHeight = 400,
+  intrinsicSize,
   rootMargin = '300px',
   className,
   contentVisibilityAuto = false,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [show, setShow] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     if (show) return;
@@ -53,16 +56,30 @@ export function LazyOnView({
   }, [show, rootMargin]);
 
   const style: CSSProperties & Record<string, string | number> = {};
-  if (!show) style.minHeight = minHeight;
+  const intrinsic = intrinsicSize ? 'var(--lazy-reserved-height)' : typeof minHeight === 'number' ? `${minHeight}px` : minHeight;
+  if (intrinsicSize) {
+    style['--lazy-mobile'] = `${intrinsicSize.mobile}px`;
+    style['--lazy-tablet'] = `${intrinsicSize.tablet}px`;
+    style['--lazy-desktop'] = `${intrinsicSize.desktop}px`;
+  }
+  // Keep the (conservative) reservation even after mount: content that is still
+  // fetching its own data must never collapse the page under the reader.
+  style.minHeight = intrinsic;
+  void mounted;
   if (contentVisibilityAuto) {
     style.contentVisibility = 'auto';
-    const intrinsic = typeof minHeight === 'number' ? `${minHeight}px` : minHeight;
-    style.containIntrinsicSize = `0 ${intrinsic}`;
+    style.containIntrinsicSize = `auto ${intrinsic}`;
   }
 
   return (
-    <div ref={ref} className={className} style={style}>
-      {show ? children : null}
+    <div ref={ref} className={[intrinsicSize ? "lazy-responsive-region" : "", className].filter(Boolean).join(" ")} style={style}>
+      {show ? <Suspense fallback={<div aria-hidden="true" style={{ height: intrinsic }} />}><MountSignal onMount={() => setMounted(true)}>{children}</MountSignal></Suspense> : null}
     </div>
   );
+}
+
+/** Fires only after the lazily loaded children actually commit to the DOM. */
+function MountSignal({ children, onMount }: { children: ReactNode; onMount: () => void }) {
+  useLayoutEffect(() => { onMount(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return <>{children}</>;
 }

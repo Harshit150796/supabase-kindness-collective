@@ -27,7 +27,7 @@ export function resolveFundraiserImage(source: FundraiserImageSource): string | 
 export function transformedFundraiserImage(url: string | null, width = 960, quality = 76) {
   if (!url || !url.includes('/storage/v1/object/public/')) return url;
   const rendered = url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
-  return `${rendered}?width=${width}&quality=${quality}&resize=cover`;
+  return `${rendered}?width=${width}&quality=${quality}&resize=contain`;
 }
 
 export function FundraiserImageFallback({ category, className = '' }: { category?: string | null; className?: string }) {
@@ -36,7 +36,7 @@ export function FundraiserImageFallback({ category, className = '' }: { category
     <div className={`flex h-full w-full items-end bg-primary-20 p-6 text-primary-foreground ${className}`} aria-label={`${label} fundraiser`}>
       <div>
         <div className="mb-5 h-1 w-16 bg-primary-foreground/70" />
-        <p className="font-display text-3xl leading-none">{label}</p>
+        <p className="font-sans text-xl font-semibold leading-snug">{label}</p>
         <p className="mt-2 max-w-[15rem] text-sm text-primary-foreground/75">Coupon-locked support through CouponDonation</p>
       </div>
     </div>

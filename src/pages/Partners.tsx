@@ -21,7 +21,7 @@ const schema = z.object({
 });
 
 const provides = [
-  ['Coupon-locked giving', 'Donations are converted into coupons for participating retailers, never cash, so support goes to the need described.'],
+  ['Coupon-locked giving', 'Donations are converted into coupons for the stores chosen, never cash, so support goes to the need described.'],
   ['A receipt trail', 'Every completed donation has a receipt and a coupon trail. Public pages show only campaign totals.'],
   ['Organizer tools', 'Co-organizers, campaign updates, supporter messaging with safety checks, and share links with QR codes.'],
 ];
@@ -48,7 +48,7 @@ export default function Partners() {
       <main>
         <section className="py-20 md:py-28"><div className="container mx-auto max-w-4xl px-4">
           <h1 className="font-display text-5xl leading-[1.02] md:text-7xl">Run fundraisers for the families you already serve</h1>
-          <p className="mt-6 max-w-2xl text-lg text-muted-foreground">Churches, nonprofits and community organizations can organize campaigns for households in their care. Each family consents to its campaign, chooses what is shared, and receives support as coupons for participating retailers.</p>
+          <p className="mt-6 max-w-2xl text-lg text-muted-foreground">Churches, nonprofits and community organizations can organize campaigns for households in their care. Each family consents to its campaign, chooses what is shared, and receives support as coupons for the stores they need.</p>
         </div></section>
         <section className="bg-primary/5 py-16"><div className="container mx-auto grid gap-10 px-4 md:grid-cols-3">
           {provides.map(([t, d]) => <div key={t}><h2 className="font-display text-3xl">{t}</h2><p className="mt-3 text-muted-foreground">{d}</p></div>)}
@@ -58,19 +58,19 @@ export default function Partners() {
           {sent ? <p className="mt-6 text-lg">Thank you. Our team will reply by email.</p> : (
             <form onSubmit={submit} className="mt-8 grid gap-5 sm:grid-cols-2" noValidate>
               <div className="sm:col-span-2"><Label htmlFor="org">Organization name</Label><Input id="org" value={f.org_name} onChange={set('org_name')} maxLength={160} required /></div>
-              <div><Label htmlFor="type">Type</Label><select id="type" value={f.org_type} onChange={set('org_type')} className="mt-1 h-10 w-full border border-input bg-background px-3 text-sm"><option>Church</option><option>Nonprofit</option><option>Community organization</option><option>School</option><option>Other</option></select></div>
+              <div><Label htmlFor="type">Type</Label><select id="type" value={f.org_type} onChange={set('org_type')} className="mt-1 h-11 w-full border border-input bg-background px-3 text-sm"><option>Church</option><option>Nonprofit</option><option>Community organization</option><option>School</option><option>Other</option></select></div>
               <div><Label htmlFor="fam">Families you serve (approx.)</Label><Input id="fam" type="number" min={0} value={f.families_count} onChange={set('families_count')} /></div>
               <div><Label htmlFor="cn">Contact name</Label><Input id="cn" value={f.contact_name} onChange={set('contact_name')} maxLength={120} required /></div>
               <div><Label htmlFor="em">Email</Label><Input id="em" type="email" value={f.email} onChange={set('email')} maxLength={255} required /></div>
               <div className="sm:col-span-2"><Label htmlFor="cs">City, state</Label><Input id="cs" value={f.city_state} onChange={set('city_state')} maxLength={120} /></div>
               <div className="sm:col-span-2"><Label htmlFor="msg">Message</Label><Textarea id="msg" value={f.message} onChange={set('message')} maxLength={2000} rows={5} /></div>
-              <div className="absolute -left-[9999px]" aria-hidden="true"><label>Website<input tabIndex={-1} autoComplete="off" value={f.website} onChange={set('website')} /></label></div>
+              <div className="absolute -left-[9999px]" aria-hidden="true"><label>Website<input tabIndex={-1} autoComplete="off" className="h-11" value={f.website} onChange={set('website')} /></label></div>
               <div className="sm:col-span-2"><Button type="submit" disabled={busy}>{busy ? 'Sending…' : 'Send inquiry'}</Button></div>
             </form>
           )}
         </div></section>
       </main>
-      <Footer />
+      <Footer contact={false} />
     </div>
   );
 }

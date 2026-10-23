@@ -1,7 +1,9 @@
-import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { clearAllDrafts, clearAnonymousDrafts } from '@/lib/draftStorage';
+import { flushAgreement } from '@/lib/legal';
 
 type AppRole = 'admin' | 'donor' | 'recipient';
 
@@ -20,78 +22,87 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [rolesLoaded, setRolesLoaded] = useState(false);
-  
+
   // Track previous user ID to detect user changes
   const prevUserIdRef = useRef<string | null | undefined>(undefined);
+  // Roles belong to a user. Token refreshes for the same user keep them: refetching on
+  // every auth event flashed role-gated pages back to "Loading…" about once an hour.
+  const rolesForRef = useRef<string | null>(null);
 
-  const fetchUserRoles = async (userId: string) => {
+  const loadRoles = useCallback(async (userId: string) => {
+    if (rolesForRef.current === userId) return;
+    rolesForRef.current = userId;
     setRolesLoaded(false);
     const { data, error } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', userId);
-    
-    if (!error && data) {
-      setRoles(data.map(r => r.role as AppRole));
-    }
+    if (rolesForRef.current !== userId) return; // someone else signed in meanwhile
+    if (error) rolesForRef.current = null; // let the next auth event retry
+    setRoles(!error && data ? data.map((r) => r.role as AppRole) : []);
     setRolesLoaded(true);
-  };
+  }, []);
+
+  const applySession = useCallback((next: Session | null) => {
+    setSession(next);
+    setUser(next?.user ?? null);
+    if (next?.user) {
+      const id = next.user.id;
+      // Deferred: Supabase must not be called from inside its own auth callback.
+      setTimeout(() => { void loadRoles(id); }, 0);
+    } else {
+      rolesForRef.current = null;
+      setRoles([]);
+      setRolesLoaded(true);
+    }
+    setLoading(false);
+  }, [loadRoles]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        const newUserId = session?.user?.id ?? null;
+      (event, nextSession) => {
+        const newUserId = nextSession?.user?.id ?? null;
         const prevUserId = prevUserIdRef.current;
-        
-        // Detect logout - clear all drafts for security
+
+        // Signed out (here, in another tab, or by an expired session): drop drafts and
+        // every cached query so the next person on this device sees none of it.
         if (event === 'SIGNED_OUT') {
           clearAllDrafts();
+          queryClient.clear();
         }
-        
+
         // Detect user change (different user signed in)
         if (prevUserId !== undefined && prevUserId !== null && newUserId !== null && prevUserId !== newUserId) {
-          // Different user signed in - clear anonymous drafts
           clearAnonymousDrafts();
+          queryClient.clear();
         }
-        
+
         prevUserIdRef.current = newUserId;
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          setTimeout(() => {
-            fetchUserRoles(session.user.id);
-          }, 0);
-        } else {
-          setRoles([]);
-          setRolesLoaded(true);
-        }
-        setLoading(false);
+        applySession(nextSession);
+
+        // Record the Terms acceptance the person gave on the button they pressed to sign in or up.
+        // Deferred: Supabase calls made inside this callback can deadlock the auth client.
+        if (event === 'SIGNED_IN' && newUserId) window.setTimeout(() => { void flushAgreement(newUserId); }, 0);
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      prevUserIdRef.current = session?.user?.id ?? null;
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserRoles(session.user.id);
-      }
-      setLoading(false);
+    supabase.auth.getSession().then(({ data: { session: current } }) => {
+      if (prevUserIdRef.current === undefined) prevUserIdRef.current = current?.user?.id ?? null;
+      applySession(current);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [applySession, queryClient]);
 
   // One generic account: every user can both give and receive. Roles are
   // capabilities, not account types, so both are always written.
-  const signUp = async (
+  const signUp = useCallback(async (
     email: string,
     password: string,
     fullName: string
@@ -121,27 +132,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return { error: error as Error | null, user: data?.user };
-  };
+  }, []);
 
-
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
     return { error: error as Error | null };
-  };
+  }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    setRoles([]);
-    setRolesLoaded(false);
-  };
+  // Always signs this device out, even offline or with a broken stored session:
+  // Supabase keeps the session when its logout request fails, which left people
+  // "signed out" on screen but still signed in.
+  const signOut = useCallback(async () => {
+    // This device only; other phones and laptops stay signed in.
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+    if (error) {
+      const auth = supabase.auth as unknown as { storage?: { removeItem(key: string): unknown }; storageKey?: string };
+      try {
+        if (auth.storage && auth.storageKey) await auth.storage.removeItem(auth.storageKey);
+      } catch {
+        /* storage unavailable */
+      }
+      // With nothing stored this only clears memory and announces SIGNED_OUT.
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+    }
+    prevUserIdRef.current = null;
+    applySession(null);
+    clearAllDrafts();
+    queryClient.clear();
+  }, [applySession, queryClient]);
 
-  const hasRole = (role: AppRole) => roles.includes(role);
+  const hasRole = useCallback((role: AppRole) => roles.includes(role), [roles]);
+
+  const value = useMemo(
+    () => ({ user, session, loading, roles, rolesLoaded, signUp, signIn, signOut, hasRole }),
+    [user, session, loading, roles, rolesLoaded, signUp, signIn, signOut, hasRole],
+  );
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, roles, rolesLoaded, signUp, signIn, signOut, hasRole }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
@@ -149,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  
+
   // During ErrorBoundary recovery, context might briefly be undefined
   // Return a safe "loading" state instead of throwing
   if (context === undefined) {
@@ -165,6 +196,6 @@ export function useAuth() {
       hasRole: () => false,
     };
   }
-  
+
   return context;
 }

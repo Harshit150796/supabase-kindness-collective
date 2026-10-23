@@ -72,12 +72,12 @@ export function DonationPanel({ live, goal, onDonate, onShare, fundraiserId, clo
         <div className="min-w-0">
           <p className="font-display text-4xl leading-none text-foreground">{usd(live.totalRaised)}</p>
           <p className="mt-2 text-sm text-muted-foreground">raised of {usd(goal)} goal</p>
-          {live.donationsCount > 0 && <p className="mt-1 text-sm text-muted-foreground">{live.donationsCount.toLocaleString()} {live.donationsCount === 1 ? 'donation' : 'donations'}</p>}
+          <p className="mt-1 text-sm text-muted-foreground">{live.donationsCount.toLocaleString()} {live.donationsCount === 1 ? 'donor' : 'donors'}</p>
         </div>
       </div>
       <div className="mt-6 space-y-3">
         {funded || closed ? (
-          <div className="flex h-14 items-center justify-center gap-2 rounded-full bg-primary/10 font-semibold text-primary"><CheckCircle2 className="h-5 w-5" />{funded ? 'Fully funded' : 'Not accepting donations'}</div>
+          <div className="flex h-14 items-center justify-center gap-2 rounded-full bg-primary/10 font-semibold text-primary"><CheckCircle2 className="h-5 w-5" />{funded ? 'Fully funded' : 'Donate'}</div>
         ) : (
           <Button size="lg" className="h-14 w-full text-lg font-semibold" onClick={onDonate}><Heart className="mr-2 h-5 w-5" />Donate now</Button>
         )}

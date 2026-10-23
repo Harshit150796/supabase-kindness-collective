@@ -3,16 +3,15 @@ import {
   animate,
   motion,
   useMotionValue,
-  useMotionValueEvent,
-  useInView,
-  useScroll,
   useTransform,
   type MotionValue,
 } from 'motion/react';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
+import { LineReveal, Reveal, useEarlyReveal } from '@/components/ui/editorial-motion';
+import { CARD_DEAL_TIMING, cardDealEligible, cardDealThreshold } from '@/lib/cardDealTiming';
 
 const BLUE = 'hsl(var(--verify))';
 const EMERALD = 'hsl(var(--primary))';
@@ -22,6 +21,7 @@ type ArtProps = { progress: MotionValue<number>; still: boolean; offset: number 
 
 const svgProps = {
   viewBox: '0 0 120 120',
+  focusable: 'false' as const,
   className: 'h-full w-full overflow-hidden',
   'aria-hidden': true as const,
   strokeLinecap: 'round' as const,
@@ -234,7 +234,7 @@ function ProofReceipt({ progress, still }: { progress: MotionValue<number>; stil
 
 const steps = [
   { title: 'You donate', body: 'You pick a real need someone has posted and cover it. Any amount, toward one specific thing.', accent: BLUE, offset: 0, Art: GiveIllustration },
-  { title: 'It becomes a coupon', body: 'Your money converts into a gift card or credit that only works for that need. It can never be withdrawn as cash.', accent: EMERALD, offset: 0.12, Art: CouponIllustration },
+  { title: 'It becomes a coupon', body: 'Your money becomes a gift card or coupon for the store chosen. It can never be withdrawn as cash.', accent: EMERALD, offset: 0.12, Art: CouponIllustration },
   { title: 'They get what they needed', body: 'They redeem it at the store for groceries, medicine or a ride to work — the actual thing, not money.', accent: EMERALD, offset: 0.24, Art: DeliveryIllustration },
   { title: 'You get the receipt', body: 'A receipt comes back to you showing exactly what your money became, and when.', accent: VERIFY, offset: 0.36, Art: ReceiptIllustration },
 ];
@@ -258,7 +258,7 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
 }) {
   const itemRef = useRef<HTMLLIElement>(null);
   const progress = useMotionValue(step.offset);
-  const inView = useInView(itemRef, { amount: 0.45 });
+  const { visible: inView, instant } = useEarlyReveal(itemRef);
   const animationRef = useRef<ReturnType<typeof animate> | null>(null);
   const Art = step.Art;
 
@@ -275,80 +275,230 @@ function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
     }
     if (inView) {
       progress.set(step.offset);
-      animationRef.current = animate(progress, step.offset + 0.82, { duration: 1.8, ease: [0.22, 1, 0.36, 1] });
+      // Keep each compact story visibly alive while it is near the viewport.
+      // A one-shot 1.8s run was often over before phone users looked at the row.
+      animationRef.current = animate(progress, step.offset + 1, {
+        duration: 6,
+        ease: 'linear',
+        repeat: Infinity,
+      });
     } else {
       progress.set(step.offset);
     }
     return () => animationRef.current?.stop();
-  }, [inView, progress, reduced, step.offset]);
+  }, [inView, instant, progress, reduced, step.offset]);
 
   return (
-    <li
-      ref={itemRef}
-      data-mobile-step={index + 1}
-      data-in-view={inView ? 'true' : 'false'}
-      className={`relative flex flex-col items-center justify-center py-12 text-center ${reduced ? 'min-h-0' : 'min-h-[640px] sm:min-h-[680px] md:min-h-[720px]'}`}
-    >
-      <motion.div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[43%] h-[min(68vw,290px)] w-[min(68vw,290px)] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
-        style={{ background: `radial-gradient(circle, color-mix(in hsl, ${step.accent} 18%, transparent), transparent 68%)` }}
-        initial={false}
-        animate={{ opacity: reduced || inView ? 1 : 0 }}
-        transition={{ duration: 0.55 }}
-      />
+    <li ref={itemRef} data-mobile-step={index + 1} data-in-view={inView ? 'true' : 'false'} className="grid grid-cols-[76px_minmax(0,1fr)] items-center gap-4 py-5 sm:grid-cols-[100px_minmax(0,1fr)]">
       <motion.div
         data-mobile-step-art
-        className="relative h-[clamp(200px,60vw,260px)] w-[clamp(200px,60vw,260px)] shrink-0 overflow-hidden"
-        initial={false}
-        animate={{ opacity: reduced || inView ? 1 : 0.45, scale: 1, y: reduced || inView ? 0 : 12 }}
-        transition={{ type: 'spring', stiffness: 190, damping: 24 }}
+        initial={reduced ? { opacity: 0.7 } : { opacity: 0, scale: 0.94, y: 4 }}
+        animate={inView || reduced ? (reduced ? { opacity: 1, scale: 1, y: 0 } : { opacity: 1, scale: 1, y: [0, -3, 0] }) : undefined}
+        transition={reduced ? { duration: 0.18 } : { opacity: { duration: 0.55 }, scale: { duration: 0.55, ease: [0.16, 1, 0.3, 1] }, y: { duration: 3, ease: 'easeInOut', repeat: Infinity } }}
+        className="h-[76px] w-[76px] overflow-hidden sm:h-[100px] sm:w-[100px]"
       >
         <Art progress={progress} still={reduced} offset={step.offset} />
       </motion.div>
-      <motion.div
-        className="relative mt-7 max-w-lg"
-        initial={false}
-        animate={{ opacity: reduced || inView ? 1 : 0, y: reduced || inView ? 0 : 24 }}
-        transition={{ type: 'spring', stiffness: 220, damping: 26, delay: reduced ? 0 : 0.16 }}
-      >
-        <div className="flex items-center justify-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold" style={{ color: step.accent, borderColor: step.accent }}>{index + 1}</span>
-          <h3 className="text-xl font-semibold text-foreground sm:text-2xl">{step.title}</h3>
-        </div>
-        <p className="mt-3 text-base leading-relaxed text-muted-foreground sm:text-lg">{step.body}</p>
+      <motion.div initial={reduced ? { opacity: 0.7 } : { opacity: 0, y: 12 }} animate={inView || reduced ? { opacity: 1, y: 0 } : undefined} transition={{ duration: reduced ? 0.18 : 0.55, delay: reduced ? 0 : 0.12 }}>
+        <h3 className="font-sans text-lg font-semibold text-foreground"><span className="mr-2 text-sm tabular-nums text-primary">0{index + 1}</span>{step.title}</h3>
+        <p className="mt-2 text-[15px] leading-[23px] text-muted-foreground">{step.body}</p>
       </motion.div>
-      <nav className="relative mt-6 flex items-center justify-center" aria-label={`How it works, step ${index + 1} of 4`}>
-        {steps.map((target, targetIndex) => (
-          <Button
-            key={target.title}
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-11 w-11"
-            onClick={() => onNavigate(targetIndex)}
-            aria-label={`Go to step ${targetIndex + 1}: ${target.title}`}
-          >
-            <span className={`block h-1.5 rounded-full transition-[width,background-color] duration-300 ${targetIndex === index ? 'w-7 bg-primary' : 'w-2 bg-border'}`} />
-          </Button>
-        ))}
-      </nav>
     </li>
   );
 }
 
+// Laptops and wide screens: the four steps arrive as a dealt hand of cards, alternating logo
+// green and logo blue. They wait face down in a small deck in the middle of the row and, once
+// the row is properly on screen, deal out to their places one by one, flipping face up as they
+// land. Only `transform` animates, through the Web Animations API with pixel values, so the
+// browser runs it on the compositor and page scrolling stays smooth while cards are in flight.
+// Nothing listens to scroll: IntersectionObservers decide when to deal, when to finish a deal
+// that was scrolled past, and when to quietly re-stack (only once the row is off screen below,
+// so it never re-deals in view or while you scroll back up past it).
+// It replaced illustrations scrubbed from the scroll position and looped on a shared clock,
+// which jumped, froze half drawn and kept animating off screen.
+const DEAL_TONES = ['123 46% 34%', '212 80% 42%', '123 46% 34%', '212 80% 42%']; // logo green / logo blue
+const DEAL_TILT = [-5, 4, -3, 6]; // degrees each card leans in the waiting deck
+const DEAL_DROP = 28; // px the deck sits below the row
+const DEAL_DURATION = CARD_DEAL_TIMING.duration;
+const DEAL_STAGGER = CARD_DEAL_TIMING.stagger;
+const DEAL_EASE = 'cubic-bezier(.2,.85,.25,1)';
+
+// The pictures are drawn in white on the coloured cards by pointing their colour tokens at white
+// and at the card's own tone; the illustration components themselves are shared with phones.
+const dealArtTokens = {
+  '--primary': '0 0% 100%',
+  '--verify': '0 0% 100%',
+  '--muted-foreground': '0 0% 100%',
+  '--border': '0 0% 100% / 0.7',
+  '--card': 'var(--deal-tone)',
+  '--background': 'var(--deal-tone)',
+  '--verify-foreground': 'var(--deal-tone)',
+} as React.CSSProperties;
+
+// Each card is two flat sides that turn together: the back from facing you to edge-on and away,
+// the face from turned away to facing you. Every pose uses the same list of functions so the
+// browser interpolates each one directly, and nothing needs a shared 3D scene.
+function dealPose(dx: number, index: number, side: 'face' | 'back', landed: boolean) {
+  const turn = side === 'back' ? (landed ? 180 : 0) : (landed ? 0 : -180);
+  return landed
+    ? `perspective(1600px) translate3d(0px, 0px, 0px) rotate(0deg) rotateY(${turn}deg)`
+    : `perspective(1600px) translate3d(${dx}px, ${DEAL_DROP}px, 0px) rotate(${DEAL_TILT[index]}deg) rotateY(${turn}deg)`;
+}
+
+function DesktopDeal({ still }: { still: boolean }) {
+  const listRef = useRef<HTMLOListElement>(null);
+  const rest = useMotionValue(0);
+
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const cards = Array.from(list.querySelectorAll<HTMLElement>('[data-deal-card]'));
+    const sides = cards.flatMap((card) => {
+      const face = card.querySelector<HTMLElement>('[data-deal-face]');
+      const back = card.querySelector<HTMLElement>('[data-deal-back]');
+      return face && back ? [{ face, back }] : [];
+    });
+    if (sides.length !== cards.length) return;
+    let state: 'stacked' | 'dealing' | 'dealt' = 'dealt';
+    let running: Animation[] = [];
+    let hold: ReturnType<typeof setTimeout> | undefined;
+    let eligible = false;
+    let onScreen = false;
+    const clearHold = () => { clearTimeout(hold); hold = undefined; };
+
+    // One layout read per deal or resize: how far each card sits from the middle of the row.
+    const offsets = () => {
+      const step = (cards[0]?.offsetWidth ?? 0) + (parseFloat(getComputedStyle(list).columnGap) || 0);
+      return cards.map((_, index) => (1.5 - index) * step);
+    };
+    const stop = () => { clearHold(); running.forEach((animation) => animation.cancel()); running = []; };
+    const showDealt = () => {
+      stop();
+      sides.forEach(({ face, back }) => { face.style.transform = ''; back.style.transform = ''; });
+      list.dataset.deal = 'dealt';
+      state = 'dealt';
+    };
+    const showStacked = () => {
+      stop();
+      const dx = offsets();
+      sides.forEach(({ face, back }, index) => {
+        face.style.transform = dealPose(dx[index], index, 'face', false);
+        back.style.transform = dealPose(dx[index], index, 'back', false);
+      });
+      list.dataset.deal = 'stacked';
+      state = 'stacked';
+    };
+    const deal = () => {
+      const dx = offsets();
+      list.dataset.deal = 'dealing';
+      state = 'dealing';
+      running = sides.flatMap((card, index) => (['face', 'back'] as const).map((side) => {
+        const element = card[side];
+        // What each side rests on once its own animation ends: the face flat, the back turned away.
+        element.style.transform = side === 'back' ? dealPose(0, index, 'back', true) : '';
+        return element.animate(
+          [{ transform: dealPose(dx[index], index, side, false) }, { transform: dealPose(0, index, side, true) }],
+          { duration: DEAL_DURATION, delay: index * DEAL_STAGGER, easing: DEAL_EASE, fill: 'backwards' },
+        );
+      }));
+      const batch = running;
+      Promise.all(batch.map((animation) => animation.finished))
+        .then(() => { if (running === batch) { running = []; list.dataset.deal = 'dealt'; state = 'dealt'; } })
+        .catch(() => {});
+    };
+
+    if (still) { showDealt(); return; }
+    showStacked();
+
+    const sync = () => {
+      if (state === 'dealing') {
+        running.forEach((animation) => {
+          if (animation.playState === 'finished') return;
+          if (!onScreen || document.hidden) animation.pause();
+          else if (animation.playState === 'paused') animation.play();
+        });
+      }
+      if (state !== 'stacked' || !eligible || document.hidden) { clearHold(); return; }
+      if (hold === undefined) hold = setTimeout(() => {
+        hold = undefined;
+        if (state === 'stacked' && eligible && !document.hidden) deal();
+      }, CARD_DEAL_TIMING.hold);
+    };
+    let trigger: IntersectionObserver | undefined;
+    const observe = () => {
+      trigger?.disconnect();
+      clearHold();
+      eligible = false;
+      trigger = new IntersectionObserver(([entry]) => {
+        const box = entry.boundingClientRect;
+        onScreen = entry.isIntersecting && entry.intersectionRect.height > 0;
+        eligible = onScreen && cardDealEligible(entry.intersectionRect.height, box.height, window.innerHeight);
+        if (!onScreen && box.height > 0) {
+          if (box.top >= window.innerHeight && state !== 'stacked') showStacked();
+          else if (box.bottom <= 0 && state === 'stacked') showDealt();
+        }
+        sync();
+      }, { threshold: [0, cardDealThreshold(list.offsetHeight, window.innerHeight), 1] });
+      trigger.observe(list);
+    };
+    const resize = new ResizeObserver(() => {
+      if (state === 'stacked') showStacked();
+      observe();
+    });
+    observe();
+    resize.observe(list);
+    window.addEventListener('resize', observe);
+    document.addEventListener('visibilitychange', sync);
+    return () => {
+      trigger?.disconnect(); resize.disconnect(); stop();
+      window.removeEventListener('resize', observe);
+      document.removeEventListener('visibilitychange', sync);
+    };
+  }, [still]);
+
+  return (
+    <div className="relative mt-16 hidden lg:block">
+      <ol ref={listRef} className="giving-deal relative grid grid-cols-4 gap-x-8" data-giving-steps="deal">
+        {steps.map((step, index) => {
+          const Art = step.Art;
+          return (
+            <li key={step.title} className="relative" data-desktop-step={index + 1} style={{ zIndex: index + 1, '--deal-tone': DEAL_TONES[index] } as React.CSSProperties}>
+              <div data-deal-card className="relative h-full">
+                <div aria-hidden="true" data-deal-back className="giving-deal-back items-center justify-center rounded-2xl bg-[hsl(var(--deal-tone))] text-white">
+                  <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg>
+                </div>
+                <div data-deal-face className="giving-deal-face flex h-full flex-col rounded-2xl bg-[hsl(var(--deal-tone))] p-6 text-white xl:p-7">
+                  <div className="h-28 w-28 xl:h-32 xl:w-32" style={dealArtTokens}>
+                    <Art progress={rest} still offset={0} />
+                  </div>
+                  <div className="mt-6 flex items-baseline gap-2">
+                    <span className="text-sm font-medium tabular-nums text-white/80">0{index + 1}</span>
+                    <h3 className="font-display text-[1.375rem] font-normal leading-tight xl:text-2xl">{step.title}</h3>
+                  </div>
+                  <p className="mt-2 text-[15px] leading-relaxed text-white/90 xl:text-base">{step.body}</p>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
 export function WhatWeDo() {
-  // Animations always play, even when the phone reports reduced motion
-  // (Battery Saver etc. switch that on silently).
-  useMotionPreference();
+  // The founder-approved motion hook currently returns full on every device.
+  const preference = useMotionPreference();
   const sectionRef = useRef<HTMLElement>(null);
   const mobileStepRefs = useRef<Array<HTMLLIElement | null>>([]);
+  // Phones keep the receipt on this still clock; laptops count it up once when it arrives.
   const progress = useMotionValue(0);
-  const still = false;
+  const receiptProgress = useMotionValue(0);
+  const receiptRef = useRef<HTMLDivElement>(null);
+  const { visible: receiptVisible } = useEarlyReveal(receiptRef);
+  const still = preference === 'gentle';
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
-  const { scrollYProgress: desktopScroll } = useScroll({ target: sectionRef, offset: ['start end', 'end start'] });
-  const idleTimerRef = useRef<number | null>(null);
-  const idleAnimationRef = useRef<ReturnType<typeof animate> | null>(null);
 
   useEffect(() => {
     const query = window.matchMedia('(min-width: 1024px)');
@@ -357,42 +507,13 @@ export function WhatWeDo() {
     return () => query.removeEventListener('change', update);
   }, []);
 
-  const startIdleMotion = useCallback(() => {
-    if (still || !isDesktop) return;
-    idleAnimationRef.current?.stop();
-    const current = progress.get();
-    idleAnimationRef.current = animate(progress, current + 1, {
-      duration: 12,
-      ease: 'linear',
-      repeat: Infinity,
-    });
-  }, [isDesktop, progress, still]);
+  useEffect(() => {
+    if (!isDesktop || still || !receiptVisible) return;
+    const animation = animate(receiptProgress, 1, { duration: 2.6, ease: [0.16, 1, 0.3, 1] });
+    return () => animation.stop();
+  }, [isDesktop, still, receiptVisible, receiptProgress]);
 
-  useMotionValueEvent(desktopScroll, 'change', (value) => {
-    if (still || !isDesktop) return;
-    idleAnimationRef.current?.stop();
-    progress.set(Math.max(0, Math.min(1, (value - 0.12) / 0.66)));
-    if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
-    idleTimerRef.current = window.setTimeout(startIdleMotion, 1500);
-  });
-
-  useEffect(() => () => {
-    idleAnimationRef.current?.stop();
-    if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
-  }, []);
-
-  const connectorPhase = useTransform(progress, (value) => ((value % 1) + 1) % 1);
-  const connectorPosition = mapValue(connectorPhase, [0, 0.12, 0.24, 0.36, 0.62, 1], [0, 0, 33, 66, 100, 100]);
-  const connectorLeft = useTransform(connectorPosition, (value) => `${value}%`);
   const chevronY = mapValue(progress, [0, 0.5, 1], [0, 5, 0]);
-
-  const restartSharedClock = () => {
-    if (!still && isDesktop && typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches) {
-      idleAnimationRef.current?.stop();
-      progress.set(0);
-      startIdleMotion();
-    }
-  };
 
   const registerMobileStep = useCallback((index: number, node: HTMLLIElement | null) => {
     mobileStepRefs.current[index] = node;
@@ -403,71 +524,48 @@ export function WhatWeDo() {
   }, [still]);
 
   return (
-    <section ref={sectionRef} className="relative py-24 md:py-36" style={{ backgroundColor: 'hsl(var(--primary-97))' }}>
+    <section ref={sectionRef} className="relative py-12 lg:py-24" style={{ backgroundColor: 'hsl(var(--primary-97))' }}>
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ background: 'radial-gradient(60% 40% at 12% 18%, hsl(var(--verify) / 0.04), transparent 70%), radial-gradient(60% 40% at 88% 82%, hsl(var(--primary) / 0.05), transparent 70%)' }} />
       </div>
       <div className="container relative mx-auto px-4">
         <div className="max-w-3xl">
-          <h2 className="font-display text-5xl font-normal leading-[1.02] text-foreground md:text-6xl">Give what people need.</h2>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">CouponDonation turns your donation into coupons, gift cards and credits — so it arrives as food, medicine or transport, never as cash. And you can always see exactly where it went.</p>
+          <LineReveal><h2 className="font-display text-5xl font-normal leading-[1.02] text-foreground md:text-6xl">Give what people need.</h2></LineReveal>
+          <Reveal delay={0.06}><p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">CouponDonation turns your donation into coupons, gift cards and credits — so it arrives as food, medicine or transport, never as cash. And you can always see exactly where it went.</p></Reveal>
         </div>
 
-        <div className="relative mt-8 lg:hidden">
-          <ol>
+        <div className="relative mt-6 lg:hidden">
+          <ol className="divide-y divide-border" data-giving-steps="compact">
             {steps.map((step, index) => (
               <MobileInViewStep key={step.title} step={step} index={index} reduced={still} onRegister={registerMobileStep} onNavigate={jumpToStep} />
             ))}
           </ol>
         </div>
 
-        <div className="relative mt-14 hidden md:mt-16 lg:block">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[86px] hidden lg:block">
-            <div className="relative mx-[12%] h-px bg-border">
-              {!still && <motion.span className="absolute -top-[3px] h-[7px] w-[7px] rounded-full bg-primary/70" style={{ left: connectorLeft }} />}
-            </div>
-          </div>
-          <ol className="relative grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-4">
-            {steps.map((step, index) => {
-              const Art = step.Art;
-              return (
-                <li key={step.title} className="relative pl-8 lg:pl-0">
-                  <motion.div className="mx-auto h-[130px] w-[130px] overflow-hidden sm:h-[150px] sm:w-[150px] lg:mx-0" whileHover={still ? undefined : { y: -4 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }} onMouseEnter={restartSharedClock}>
-                    <Art progress={progress} still={still} offset={step.offset} />
-                  </motion.div>
-                  <div className="mt-4 flex items-center gap-2">
-                     <span className="text-sm font-medium tabular-nums text-muted-foreground">0{index + 1}</span>
-                     <h3 className="font-display text-xl font-normal text-foreground md:text-2xl">{step.title}</h3>
-                  </div>
-                  <p className="mt-2 text-base leading-relaxed text-muted-foreground">{step.body}</p>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
+        <DesktopDeal still={still} />
 
-        <div className="mt-12 overflow-hidden border-y border-primary/20 bg-primary/[0.03] px-0 py-10 md:mt-20 md:px-10 md:py-12">
-          <div className="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_280px] md:gap-12">
+        <Reveal className="mt-8 overflow-hidden border-y border-primary/20 bg-primary/[0.03] px-0 py-6 lg:mt-20 lg:px-10 lg:py-12">
+          <div className="grid items-center gap-5 sm:grid-cols-[minmax(0,1fr)_220px] lg:gap-12">
             <div className="text-center md:text-left">
                <p className="font-display text-3xl font-normal leading-snug text-foreground md:text-5xl">Donate $10 today. Check where it went in 2036.</p>
               <p className="mt-4 max-w-2xl text-base text-muted-foreground md:text-lg">Every donation keeps its receipt. Permanently verifiable — not a promise, a record.</p>
             </div>
-            <ProofReceipt progress={progress} still={still} />
+            <div ref={receiptRef}><ProofReceipt progress={isDesktop ? receiptProgress : progress} still={still} /></div>
           </div>
-        </div>
+        </Reveal>
 
-        <div className="grid border-y border-border sm:grid-cols-2 sm:divide-x sm:divide-border">
-          <Link to="/donate" className="group flex min-h-32 items-center gap-4 border-b border-border p-6 transition-colors hover:bg-primary/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:border-b-0">
+        <Reveal className="grid border-y border-border sm:grid-cols-2 sm:divide-x sm:divide-border">
+          <Link to="/donate" className="group flex min-h-24 items-center gap-4 border-b border-border p-4 transition-colors hover:bg-primary/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:border-b-0">
             <DonateDoorIcon />
             <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-lg font-semibold text-foreground md:text-xl">I want to help someone <ArrowRight className="h-4 w-4 shrink-0 text-primary transition-transform group-hover:translate-x-1" /></span><span className="mt-1 block text-base text-muted-foreground">Pick a real need and cover it.</span></span>
           </Link>
-          <Link to="/apply" className="group flex min-h-32 items-center gap-4 p-6 transition-colors hover:bg-verify/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+          <Link to="/apply" className="group flex min-h-24 items-center gap-4 p-4 transition-colors hover:bg-verify/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
             <ApplyDoorIcon />
             <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-lg font-semibold text-foreground md:text-xl">I need help <ArrowRight className="h-4 w-4 shrink-0 text-verify transition-transform group-hover:translate-x-1" /></span><span className="mt-1 block text-base text-muted-foreground">Tell us what you need. U.S. residents, free to apply.</span></span>
           </Link>
-        </div>
+        </Reveal>
 
-        <div className="mt-10 flex flex-col items-center gap-2 text-center">
+        <div className="mt-6 flex flex-col items-center gap-2 text-center">
           <p className="text-base text-muted-foreground">Real people are asking right now. Here's who.</p>
           <motion.span aria-hidden="true" style={{ y: still ? 0 : chevronY }}><ChevronDown className="h-5 w-5 text-primary/70" /></motion.span>
         </div>

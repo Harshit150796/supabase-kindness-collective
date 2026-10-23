@@ -1,4 +1,5 @@
 import { FundraiserReceiptsAdmin } from '@/components/admin/FundraiserReceiptsAdmin';
+import { OutsideCoupons } from '@/components/admin/OutsideCoupons';
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronRight, Eye, EyeOff, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -271,20 +272,22 @@ function CouponGroupEditor({ fundraiserId, donationId, brand, donationAt, rows, 
   );
 }
 
-export function FundraiserCouponsTab({ fundraiserId, canWrite, donationId }: { fundraiserId: string; canWrite: boolean; donationId?: string }) {
+export function FundraiserCouponsTab({ fundraiserId, canWrite, donationId, onDirtyChange }: { fundraiserId: string; canWrite: boolean; donationId?: string; onDirtyChange?: (dirty: boolean) => void }) {
   const q = useQuery({ queryKey: ['adm-fr-coupons', fundraiserId], queryFn: () => rpc<Row[]>('admin_fundraiser_coupons', { _fundraiser_id: fundraiserId }) });
   const [openKey, setOpenKey] = useState<string | null>(null);
   const dirty = useRef(false);
   const toggle = (k: string, open: boolean) => {
     if (dirty.current && !confirm('You have unsaved coupon changes. Discard them?')) return;
-    dirty.current = false;
+    dirty.current = false; onDirtyChange?.(false);
     setOpenKey(open ? k : null);
   };
   const rows = (q.data ?? []).filter((r) => !donationId || r.donation_id === donationId);
 
   if (q.isLoading) return <p className="py-6 text-center text-sm text-muted-foreground">Loading coupons…</p>;
   if (q.error) return <div className="py-6 text-center text-sm text-destructive">{(q.error as Error).message} <button className="ml-2 text-primary" onClick={() => q.refetch()}>Retry</button></div>;
-  if (!rows.length) return <p className={donationId ? 'mt-1 text-xs text-muted-foreground' : 'py-6 text-center text-sm text-muted-foreground'}>{donationId ? 'No coupons for this donation yet.' : 'No coupons yet. Coupons appear here once a donation to this fundraiser is completed.'}</p>;
+  if (!rows.length) return donationId ? <p className="mt-1 text-xs text-muted-foreground">No coupons for this donation yet.</p> : (
+    <div className="space-y-3"><OutsideCoupons fundraiserId={fundraiserId} canWrite={canWrite} /><p className="py-6 text-center text-sm text-muted-foreground">No donation coupons yet. They appear here once a donation to this fundraiser is completed.</p></div>
+  );
 
   const groups = new Map<string, Row[]>();
   for (const r of rows) { const k = `${r.donation_id}|${r.store_name}`; groups.set(k, [...(groups.get(k) ?? []), r]); }
@@ -292,6 +295,7 @@ export function FundraiserCouponsTab({ fundraiserId, canWrite, donationId }: { f
 
   return (
     <div className="space-y-3">
+      {!donationId && <OutsideCoupons fundraiserId={fundraiserId} canWrite={canWrite} />}
       {!donationId && <FundraiserReceiptsAdmin fundraiserId={fundraiserId} canWrite={canWrite} />}
       {!donationId && (
         <p className="text-xs text-muted-foreground">
@@ -301,7 +305,7 @@ export function FundraiserCouponsTab({ fundraiserId, canWrite, donationId }: { f
       )}
       {[...groups.entries()].map(([k, g]) => (
         <CouponGroupEditor key={k} fundraiserId={fundraiserId} donationId={g[0].donation_id} brand={g[0].store_name} donationAt={g[0].donation_at} rows={g}
-          canWrite={canWrite} open={openKey === k} onToggle={(o) => toggle(k, o)} onDirty={(d) => { dirty.current = d; }} onDone={() => q.refetch()} />
+          canWrite={canWrite} open={openKey === k} onToggle={(o) => toggle(k, o)} onDirty={(d) => { dirty.current = d; onDirtyChange?.(d); }} onDone={() => q.refetch()} />
       ))}
     </div>
   );

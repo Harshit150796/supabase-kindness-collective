@@ -69,7 +69,7 @@ export const SuccessScreen = ({ onComplete }: SuccessScreenProps) => {
         {/* Success text */}
         <h1 
           className={`
-            mt-8 text-3xl lg:text-4xl font-bold text-foreground
+            mt-8 font-display text-4xl font-normal text-foreground lg:text-5xl
             transition-all duration-500 ease-out
             ${showText 
               ? "opacity-100 translate-y-0" 

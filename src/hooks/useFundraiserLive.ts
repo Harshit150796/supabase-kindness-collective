@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PublicDonation { id: string; display_name: string; is_anonymous: boolean; amount: number; message: string | null; created_at: string }
+export interface StoreRow { brand_name: string; total_value: number; coupons_count: number; used_count: number }
 export interface FundraiserLive {
   totalRaised: number; donationsCount: number; retailers: string[];
-  recent: PublicDonation[]; converted: number; redeemed: number; couponsCount: number;
+  byStore: StoreRow[]; recent: PublicDonation[]; converted: number; redeemed: number; couponsCount: number;
   loaded: boolean; justDonated: PublicDonation | null;
 }
 
@@ -24,23 +25,24 @@ export async function fetchFundraiserDonations(fid: string, order: 'recent' | 't
  * Polls every 30 seconds while the tab is visible — no realtime on payment tables (AGENTS.md).
  */
 export function useFundraiserLive(fundraiserId: string | undefined): FundraiserLive {
-  const [state, setState] = useState<FundraiserLive>({ totalRaised: 0, donationsCount: 0, retailers: [], recent: [], converted: 0, redeemed: 0, couponsCount: 0, loaded: false, justDonated: null });
+  const [state, setState] = useState<FundraiserLive>({ totalRaised: 0, donationsCount: 0, retailers: [], byStore: [], recent: [], converted: 0, redeemed: 0, couponsCount: 0, loaded: false, justDonated: null });
   const lastTop = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     if (!fundraiserId) return;
     try {
-      const [totals, recent, trail] = await Promise.all([
+      const [totals, recent, trail, stores] = await Promise.all([
         rpc<Array<{ total_raised: number; donations_count: number; retailers: string[] }>>('get_fundraiser_totals', { _fundraiser_id: fundraiserId }),
         fetchFundraiserDonations(fundraiserId, 'recent', 5),
         rpc<Array<{ converted: number; redeemed: number; coupons_count: number }>>('get_fundraiser_coupon_trail', { _fundraiser_id: fundraiserId }).catch(() => []),
+        rpc<StoreRow[]>('get_fundraiser_coupons_by_store', { _fundraiser_id: fundraiserId }).catch(() => []),
       ]);
       const t = totals?.[0]; const c = trail?.[0];
       const newest = recent[0];
       const isNew = lastTop.current !== null && newest && newest.id !== lastTop.current;
       lastTop.current = newest?.id ?? '';
       setState((s) => ({
-        totalRaised: Number(t?.total_raised ?? 0), donationsCount: Number(t?.donations_count ?? 0), retailers: t?.retailers ?? [],
+        totalRaised: Number(t?.total_raised ?? 0), donationsCount: Number(t?.donations_count ?? 0), retailers: t?.retailers ?? [], byStore: (stores ?? []).map((r) => ({ ...r, total_value: Number(r.total_value), coupons_count: Number(r.coupons_count), used_count: Number(r.used_count) })),
         recent, converted: Number(c?.converted ?? 0), redeemed: Number(c?.redeemed ?? 0), couponsCount: Number(c?.coupons_count ?? 0),
         loaded: true, justDonated: isNew ? newest : s.justDonated,
       }));
@@ -71,12 +73,21 @@ export function useFundraiserLive(fundraiserId: string | undefined): FundraiserL
   return state;
 }
 
+// Formatters are built once: the toLocale* helpers construct a new Intl
+// formatter on every call, which made each fundraiser card cost tens of ms to mount.
+const dateFormat = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const wholeDollars = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+const centDollars = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+
 export const timeAgo = (iso: string) => {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
   if (s < 60) return 'just now';
   if (s < 3600) return `${Math.floor(s / 60)} min ago`;
   if (s < 86400) return `${Math.floor(s / 3600)} hr ago`;
   if (s < 604800) return `${Math.floor(s / 86400)} d ago`;
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return dateFormat.format(new Date(iso));
 };
-export const usd = (n: number) => `$${n.toLocaleString('en-US', { maximumFractionDigits: n % 1 ? 2 : 0 })}`;
+export const usd = (n: number) => {
+  const value = Number(n) || 0;
+  return `$${(value % 1 ? centDollars : wholeDollars).format(value)}`;
+};

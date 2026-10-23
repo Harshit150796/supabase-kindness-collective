@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     const { data: fr } = await admin.from('fundraisers').select('title, unique_slug').eq('id', n.fundraiser_id).maybeSingle();
     const isMsg = n.kind === 'message';
     const mail = renderNoticeEmail({
-      subject: isMsg ? `New message about "${fr?.title ?? 'your fundraiser'}"` : `New update on "${fr?.title ?? 'a fundraiser you support'}"`,
+      subject: isMsg ? 'A new message is waiting' : 'A fundraiser posted an update',
       heading: isMsg ? 'You have a new message' : 'A fundraiser you support posted an update',
       intro: isMsg ? 'Someone sent you a message on CouponDonation. For your safety, the message is only shown on the site.' : `The organizer of "${fr?.title}" shared a new update.`,
       ctaLabel: isMsg ? 'Open messages' : 'Read the update',

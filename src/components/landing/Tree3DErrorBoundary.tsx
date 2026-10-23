@@ -3,6 +3,7 @@ import { Component, ErrorInfo, ReactNode } from 'react';
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  onError?: () => void;
 }
 
 interface State {
@@ -23,6 +24,7 @@ export class Tree3DErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, info: ErrorInfo) {
+    this.props.onError?.();
     console.error('[Tree3DErrorBoundary] 3D hero failed, falling back:', error, info);
   }
 

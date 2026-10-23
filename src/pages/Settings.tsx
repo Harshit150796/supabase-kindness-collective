@@ -8,21 +8,31 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
-import { Bell, Shield, Trash2, Mail, Heart } from "lucide-react";
+import { useSignOut } from "@/hooks/useSignOut";
+import { signInPath } from "@/lib/serverActions";
+import { PaymentMethods } from "@/components/donor/PaymentMethods";
+import { Bell, Shield, Trash2, Mail, Heart, LogOut } from "lucide-react";
+import { LEGAL_EMAIL } from "@/lib/legal";
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
+  const signOut = useSignOut();
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate("/auth");
+      navigate(signInPath("/settings"), { replace: true });
     }
   }, [user, loading, navigate]);
 
-  const handleDeleteAccount = () => {
-    // This would require backend implementation
-    alert("Please contact support to delete your account.");
+  // Deletion and data copies are handled by the team from an email sent from the account's own
+  // address, which confirms it's really the account holder (Privacy Policy, "Your choices").
+  const requestEmail = (kind: "delete" | "copy") => {
+    const subject = kind === "delete" ? "Delete my CouponDonation account" : "Send me a copy of my CouponDonation data";
+    const body = kind === "delete"
+      ? `Please delete my CouponDonation account (${user?.email ?? ""}) and the personal data linked to it.`
+      : `Please send me a copy of the personal data linked to my CouponDonation account (${user?.email ?? ""}).`;
+    window.location.href = `mailto:${LEGAL_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   if (loading) {
@@ -125,6 +135,31 @@ const Settings = () => {
             </CardContent>
           </Card>
 
+          <PaymentMethods />
+
+          {/* Session */}
+          <Card className="mb-6 rounded-md shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LogOut className="w-5 h-5 text-primary" />
+                Signed in
+              </CardTitle>
+              <CardDescription>
+                {user?.email ? `You are signed in as ${user.email}.` : 'You are signed in on this device.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-sm text-muted-foreground">
+                  Sign out here when you are on a shared or public device. Other devices stay signed in.
+                </p>
+                <Button variant="outline" size="sm" className="min-h-11 shrink-0" onClick={() => { void signOut(); }}>
+                  Sign out
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Danger Zone */}
           <Card className="rounded-md border-destructive/20 shadow-sm">
             <CardHeader>
@@ -137,19 +172,32 @@ const Settings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-0.5">
+                  <Label>Get a copy of your data</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Opens an email to our team. We reply within 30 days.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => requestEmail("copy")}>
+                  Request a copy
+                </Button>
+              </div>
+              <Separator className="my-5" />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-0.5">
                   <Label>Delete account</Label>
                   <p className="text-sm text-muted-foreground">
-                    Permanently delete your account and all data
+                    Opens an email to our team from your address. We delete your account and personal data
+                    within 30 days, except records the law requires us to keep, such as donation receipts.
                   </p>
                 </div>
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={handleDeleteAccount}
+                  onClick={() => requestEmail("delete")}
                 >
-                  Delete Account
+                  Request deletion
                 </Button>
               </div>
             </CardContent>
@@ -157,7 +205,7 @@ const Settings = () => {
         </div>
       </main>
 
-      <Footer />
+      <Footer contact={false} />
     </div>
   );
 };

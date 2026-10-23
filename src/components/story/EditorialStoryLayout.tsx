@@ -24,7 +24,7 @@ export function EditorialStoryLayout({ title, location, summary, body, image, im
       <main>
         <header className="py-20 md:py-28">
           <div className="container mx-auto max-w-6xl px-4">
-            <Link to="/stories" className="mb-10 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"><ArrowLeft className="h-4 w-4" />All stories</Link>
+            <Link to="/stories" className="mb-10 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"><ArrowLeft className="h-4 w-4" />All stories</Link>
             <div className="grid items-end gap-10 lg:grid-cols-[1fr_18rem]">
               <div><LineReveal><h1 className="max-w-4xl font-display text-6xl font-normal leading-none text-foreground md:text-8xl">{title}</h1></LineReveal>{location && <Reveal delay={0.08}><p className="mt-7 flex items-center gap-2 text-muted-foreground"><MapPin className="h-4 w-4" />{location}</p></Reveal>}</div>
               <Reveal delay={0.12}><p className="text-lg leading-relaxed text-muted-foreground">{summary}</p></Reveal>

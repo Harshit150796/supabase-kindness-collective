@@ -9,12 +9,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Gift, Heart } from 'lucide-react';
 
 import { toast } from 'sonner';
+import { UpdatesOptIn, recordUpdatesConsent } from '@/components/UpdatesOptIn';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { OTPVerification } from '@/components/auth/OTPVerification';
 import { PasswordInput } from '@/components/auth/PasswordInput';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
-import logo from '@/assets/logo.png';
+import { Navbar } from '@/components/layout/Navbar';
+import { GoogleSignIn } from '@/components/auth/GoogleSignIn';
+import { AgreementNotice } from '@/components/legal/AgreementNotice';
+import { markAgreement } from '@/lib/legal';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -25,21 +29,49 @@ const authSchema = z.object({
 type AuthStep = 'form' | 'otp';
 type AuthView = 'auth' | 'forgot-password';
 
+/** Says what went wrong and what to do, instead of one message for every failure. */
+function signInErrorMessage(error: Error & { status?: number; code?: string }) {
+  const code = (error.code || '').toLowerCase();
+  const message = (error.message || '').toLowerCase();
+  if (code === 'email_not_confirmed' || message.includes('not confirmed')) return 'Confirm your email first. The link is in your inbox.';
+  if (error.status === 429 || code.includes('rate_limit') || message.includes('rate limit')) return 'Too many attempts. Wait a minute, then try again.';
+  if (!error.status || message.includes('fetch') || message.includes('network')) return 'We could not reach the server. Check your connection and try again.';
+  return 'That email and password do not match.';
+}
+
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, signIn, signUp, hasRole, loading: authLoading, rolesLoaded } = useAuth();
 
-  const [mode, setMode] = useState<'signin' | 'signup'>(
-    searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
-  );
+  const modeParam = searchParams.get('mode') === 'signup' ? 'signup' : 'signin';
+  const [mode, setMode] = useState<'signin' | 'signup'>(modeParam);
   // Signup intent only decides where we land first — it never limits the account.
   const intent = searchParams.get('intent') || searchParams.get('role');
-  const nextPath = searchParams.get('next');
+  // Only same-site paths: "next" comes from the address bar and must never send people elsewhere.
+  const rawNext = searchParams.get('next');
+  const nextPath = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') && !rawNext.startsWith('/\\') && !rawNext.startsWith('/auth') ? rawNext : null;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [optIn, setOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Google sends errors back in the address (e.g. the person pressed Cancel).
+  useEffect(() => {
+    const h = new URLSearchParams(window.location.hash.slice(1));
+    const q = new URLSearchParams(window.location.search);
+    const err = h.get('error') || q.get('error');
+    if (!err) return;
+    const desc = (h.get('error_description') || q.get('error_description') || '').replace(/\+/g, ' ');
+    console.warn('Google sign-in error:', err, desc);
+    let msg = 'Google sign-in was cancelled. Please try again.';
+    if (/exchange external code|invalid_client|client secret/i.test(desc)) msg = 'Google sign-in is temporarily unavailable. Please use your email for now.';
+    else if (/database error/i.test(desc)) msg = 'We couldn’t finish setting up your account. Please try again in a moment.';
+    else if (/already|exists|identity/i.test(desc)) msg = 'This email already has an account. Sign in with your password once, then Google will work too.';
+    else if (desc && err !== 'access_denied') msg = `Google sign-in didn’t finish: ${desc.replace(/supabase/gi, 'our sign-in service')}`;
+    toast.error(msg);
+  }, []);
   const [errors, setErrors] = useState<{ email?: string; password?: string; fullName?: string }>({});
   const [authStep, setAuthStep] = useState<AuthStep>('form');
   const [authView, setAuthView] = useState<AuthView>('auth');
@@ -50,13 +82,22 @@ export default function Auth() {
     fullName: string;
   } | null>(null);
 
+  // "Sign in" / "Create account" pressed while already on this page (the menu links
+  // here with ?mode=…): switch to that form instead of staying on the other one.
+  useEffect(() => {
+    setMode(modeParam);
+    setAuthStep('form');
+    setAuthView('auth');
+  }, [modeParam]);
+
   useEffect(() => {
     if (user && !authLoading && rolesLoaded) {
-      if (hasRole('admin')) navigate('/admin');
-      else if (nextPath) navigate(nextPath);
-      else if (intent === 'recipient') navigate('/apply');
-      else if (intent === 'donor') navigate('/dashboard/donate');
-      else navigate('/dashboard');
+      // Back to the page that asked for sign-in first; otherwise the right home.
+      if (nextPath) navigate(nextPath, { replace: true });
+      else if (hasRole('admin')) navigate('/admin', { replace: true });
+      else if (intent === 'recipient') navigate('/apply', { replace: true });
+      else if (intent === 'donor') navigate('/dashboard/donate', { replace: true });
+      else navigate('/dashboard', { replace: true });
     }
   }, [user, authLoading, rolesLoaded, hasRole, navigate, intent, nextPath]);
 
@@ -123,6 +164,7 @@ export default function Auth() {
     if (!validateForm()) return;
     
     setLoading(true);
+    markAgreement(mode === 'signup' ? 'sign-up' : 'sign-in');
 
     try {
       if (mode === 'signup') {
@@ -144,7 +186,7 @@ export default function Auth() {
       } else {
         const { error } = await signIn(email, password);
         if (error) {
-          toast.error('Invalid email or password');
+          toast.error(signInErrorMessage(error));
         }
       }
     } catch (error: any) {
@@ -206,6 +248,7 @@ export default function Auth() {
         return;
       }
 
+      if (optIn) void recordUpdatesConsent(signupEmail, 'signup');
       toast.success('Account created successfully!', {
         description: 'Welcome to CouponDonation!',
         duration: 3000,
@@ -262,23 +305,24 @@ export default function Auth() {
 
   if (authLoading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-dvh bg-background">
+        <Navbar />
+        <div className="flex min-h-[calc(100dvh-var(--site-header-h))] items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-dvh bg-background flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-background">
+    <Navbar />
+    <div className="flex min-h-[calc(100dvh-var(--site-header-h))] items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-            <img src={logo} alt="CouponDonation" className="w-12 h-12 object-contain" width={48} height={48} loading="eager" decoding="async" fetchPriority="high" />
-            <span className="font-bold text-2xl"><span className="text-[#2e7d32]">Coupon</span><span className="text-[#1565c0]">Donation</span></span>
-          </div>
+        <div className="mb-7 flex flex-col items-center gap-3 text-center">
+          <img src="/brand/logo-256.webp" alt="CouponDonation logo" width={80} height={80} className="h-20 w-20 object-contain" />
+          <div className="font-sans text-3xl font-bold leading-tight"><span className="brand-coupon">Coupon</span><span className="brand-donation">Donation</span></div>
         </div>
-
         <Card className="rounded-md border-border shadow-sm">
           {authView === 'forgot-password' ? (
             <CardContent className="pt-6">
@@ -338,7 +382,7 @@ export default function Auth() {
             <>
               <CardHeader className="text-center">
                 <CardTitle className="font-display text-4xl font-normal">
-                  {mode === 'signin' ? 'Welcome Back' : 'Create Account'}
+                  {mode === 'signin' ? 'Welcome back' : 'Create an account'}
                 </CardTitle>
                 <CardDescription>
                   {mode === 'signin' 
@@ -350,9 +394,16 @@ export default function Auth() {
               <CardContent>
                 <Tabs value={mode} onValueChange={(v) => setMode(v as 'signin' | 'signup')}>
                   <TabsList className="grid w-full grid-cols-2 mb-6">
-                    <TabsTrigger value="signin">Sign In</TabsTrigger>
-                    <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                    <TabsTrigger value="signin">Sign in</TabsTrigger>
+                    <TabsTrigger value="signup">Sign up</TabsTrigger>
                   </TabsList>
+
+                  <GoogleSignIn />
+                  <AgreementNotice google adult={mode === 'signup'} className="mt-3 text-center" />
+                  <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="h-px flex-1 bg-border" />or use email<span className="h-px flex-1 bg-border" />
+                  </div>
+
 
                   <form onSubmit={handleSubmit}>
                     <TabsContent value="signup" className="space-y-4">
@@ -398,7 +449,7 @@ export default function Auth() {
                             <button
                               type="button"
                               onClick={() => setAuthView('forgot-password')}
-                              className="text-sm text-primary hover:underline"
+                              className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline py-1"
                             >
                               Forgot Password?
                             </button>
@@ -414,9 +465,12 @@ export default function Auth() {
                         {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                       </div>
 
+                      {mode === 'signup' && <UpdatesOptIn id="signup-updates" checked={optIn} onChange={setOptIn} />}
+
+                      <AgreementNotice action={mode === 'signin' ? 'Sign in' : 'Create account'} adult={mode === 'signup'} />
                       <Button type="submit" className="w-full" disabled={loading}>
                         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {mode === 'signin' ? 'Sign In' : 'Continue'}
+                        {mode === 'signin' ? 'Sign in' : 'Create account'}
                       </Button>
                     </div>
                   </form>
@@ -426,6 +480,7 @@ export default function Auth() {
           )}
         </Card>
       </div>
+    </div>
     </div>
   );
 }

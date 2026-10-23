@@ -26,7 +26,6 @@ const SUPABASE_URL =
 const SUGGESTIONS = [
   "Show me active campaigns",
   "Where does my money go?",
-  "Top donors this week",
   "How does CouponDonation work?",
 ];
 
@@ -93,8 +92,8 @@ export function AITreeChat({ open, onClose }: Props) {
   if (!open) return null;
 
   return (
-    <div className="absolute bottom-4 right-4 z-40 pointer-events-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="flex flex-col w-[360px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-8rem)] rounded-2xl border border-border bg-background/95 backdrop-blur-xl shadow-2xl overflow-hidden">
+    <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-40 pointer-events-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="flex h-[520px] max-h-[calc(100dvh-8rem)] w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-border bg-background/95 shadow-2xl backdrop-blur-xl [@media(max-height:500px)]:h-[calc(100dvh-5rem)] [@media(max-height:500px)]:max-h-[calc(100dvh-5rem)]">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-primary/5">
           <div className="flex items-center gap-2">
@@ -297,23 +296,6 @@ function ToolResults({ toolParts }: { toolParts: any[] }) {
               <Stat label="Coupons created" value={String(output.total_coupons ?? 0)} />
               <Stat label="Active campaigns" value={String(output.active_fundraisers ?? 0)} />
               <Stat label="Raised today" value={`$${Math.round(output.raised_today ?? 0)}`} />
-            </div>
-          );
-        }
-
-        if (toolName === "getTopDonors" && Array.isArray(output.donors)) {
-          return (
-            <div key={i} className="rounded-lg border border-border bg-card p-2 space-y-1">
-              {output.donors.slice(0, 5).map((d: any, j: number) => (
-                <div key={j} className="flex items-center justify-between text-xs">
-                  <span className="text-foreground truncate">
-                    {j + 1}. {d.display_name}
-                  </span>
-                  <span className="font-semibold text-primary">
-                    ${Math.round(Number(d.total))}
-                  </span>
-                </div>
-              ))}
             </div>
           );
         }

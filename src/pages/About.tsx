@@ -24,7 +24,8 @@ import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { ProductTraceVisual } from '@/components/marketing/ProductTraceVisual';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import harshitPhoto from '@/assets/harshit-agrawal.png';
+import harshitSmall from '@/assets/harshit-400.webp';
+import harshitLarge from '@/assets/harshit-800.webp';
 
 const journey = [
   { icon: HeartHandshake, label: 'Donation', text: 'Support a public fundraiser.' },
@@ -60,7 +61,7 @@ const principles = [
 const founder = {
   name: 'Harshit Agrawal',
   role: 'Founder & CEO',
-  image: harshitPhoto,
+  image: harshitLarge,
   linkedin: 'https://www.linkedin.com/in/harshit-agrawal-71565a139',
   statement: 'CouponDonation began with one question: why should giving require blind trust?',
   bio: 'Harshit founded CouponDonation to create a clearer connection between a donor’s decision and the support a recipient can actually use. His focus is building a trusted giving system where choice, visibility, and accountability are part of the product—not an afterthought.',
@@ -111,14 +112,14 @@ const aboutJsonLd = [
     '@type': 'AboutPage',
     name: 'About CouponDonation',
     url: 'https://coupondonation.com/about',
-    description: 'How CouponDonation makes charitable giving transparent and trackable by converting donations into brand-specific coupons.',
+    description: 'Who runs CouponDonation and how it turns donations into gift cards and coupons for the specific things people ask for.',
     mainEntity: {
       '@type': 'Organization',
       name: 'CouponDonation',
       url: 'https://coupondonation.com',
-      email: 'connect@coupondonation.com',
+      email: 'support@coupondonation.com',
       areaServed: 'US',
-      founder: { '@type': 'Person', name: founder.name },
+      founder: { '@type': 'Person', name: founder.name, jobTitle: founder.role, sameAs: founder.linkedin ? [founder.linkedin] : undefined },
     },
   },
 ];
@@ -127,8 +128,8 @@ export default function About() {
   return (
     <div className="min-h-dvh overflow-x-hidden bg-background text-foreground">
       <SEO
-        title="About CouponDonation — Transparent, Trackable Giving"
-        description="Meet CouponDonation, the online donation platform making charitable giving transparent and trackable through brand-specific grocery coupons for US communities."
+        title="About CouponDonation: Who We Are and Why We Built It"
+        description="CouponDonation turns donations into gift cards for the specific things people ask for, from groceries to rides. Meet the founder and see how every gift is traced."
         path="/about"
         jsonLd={aboutJsonLd}
       />
@@ -203,7 +204,7 @@ export default function About() {
               <Check className="h-7 w-7 text-primary" />
               <h2 className="mt-6 font-about-serif text-3xl md:text-4xl">What we do</h2>
               <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-                We provide an online donation platform where people support fundraisers, choose participating brands, and fund coupons that recipients can use for everyday needs.
+                We provide an online donation platform where people support fundraisers, choose stores, and fund coupons that recipients can use for everyday needs.
               </p>
             </Reveal>
             <Reveal className="border-t border-border pt-10 md:border-l md:border-t-0 md:pl-16 md:pt-0" delay={0.1}>
@@ -230,7 +231,7 @@ export default function About() {
             <Reveal className="mt-16 grid gap-9 md:mt-24 md:grid-cols-12 md:items-center md:gap-14">
               <div className="relative md:col-span-5">
                 <div aria-hidden="true" className="absolute -left-3 -top-3 h-20 w-20 border-l border-t border-accent" />
-                <img src={founder.image} alt={`${founder.name}, ${founder.role} at CouponDonation`} className="aspect-[4/5] w-full object-cover object-top grayscale-[20%]" />
+                <img width={800} height={1000} loading="lazy" decoding="async" srcSet={`${harshitSmall} 400w, ${harshitLarge} 800w`} sizes="(min-width: 1024px) 480px, (min-width: 768px) 40vw, calc(100vw - 40px)" src={founder.image} alt={`${founder.name}, ${founder.role} at CouponDonation`} className="aspect-[4/5] w-full object-cover object-top grayscale-[20%]" />
                 <div className="absolute bottom-5 right-0 bg-background px-5 py-4 shadow-card-hover md:-right-6">
                   <p className="font-about-serif text-lg italic">{founder.name}</p>
                   <p className="mt-1 text-sm text-primary">{founder.role}</p>
@@ -240,7 +241,7 @@ export default function About() {
                 <blockquote className="font-about-serif text-2xl italic leading-snug text-foreground md:text-4xl">“{founder.statement}”</blockquote>
                 <div className="my-7 h-px w-12 bg-accent" />
                 <p className="text-base leading-relaxed text-muted-foreground md:text-lg">{founder.bio}</p>
-                <a href={founder.linkedin} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex items-center gap-2 border-b border-foreground pb-1 text-sm font-semibold text-foreground transition-colors hover:text-primary">
+                <a href={founder.linkedin} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex min-h-11 items-center gap-2 border-b border-foreground pb-1 text-sm font-semibold text-foreground transition-colors hover:text-primary">
                   <Linkedin className="h-4 w-4" /> Connect on LinkedIn <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               </div>

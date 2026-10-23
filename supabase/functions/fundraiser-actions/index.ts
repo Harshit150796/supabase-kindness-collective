@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     const { data: prof } = await admin.from('profiles').select('email, full_name').eq('user_id', f.user_id).maybeSingle();
     if (!prof?.email) return json({ sent: false, reason: 'no organizer email' });
     const sent = await sendEmail(prof.email, renderNoticeEmail({
-      subject: `An update about your fundraiser “${f.title}”`,
+      subject: 'An update about your fundraiser',
       heading: 'An update about your fundraiser',
       intro: `We reviewed “${f.title}” and need a change before it can be published. Our note: ${p.reason}`,
       ctaLabel: 'Review your fundraiser', ctaUrl: `${SITE}/my-fundraisers`,
@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
     if (error) return json({ error: 'Could not invite' }, 500);
     const { data: fr } = await admin.from('fundraisers').select('title').eq('id', p.fundraiser_id).single();
     const sent = await sendEmail(email, renderNoticeEmail({
-      subject: `You’re invited to help with “${fr?.title}”`, heading: 'Join a fundraiser team',
+      subject: 'You’re invited to help with a fundraiser', heading: 'Join a fundraiser team',
       intro: `You've been invited to co-organize "${fr?.title}" on CouponDonation. Sign in with this email address to accept.`,
       ctaLabel: 'Accept invitation', ctaUrl: `${SITE}/team/accept?token=${raw}`,
     }));
@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
     await admin.from('fundraiser_team').update({ invite_token_hash: await sha256(raw) }).eq('id', row.id);
     const { data: fr } = await admin.from('fundraisers').select('title').eq('id', row.fundraiser_id).single();
     const sent = await sendEmail(row.invite_email, renderNoticeEmail({
-      subject: `A reminder about “${fr?.title}”`, heading: 'Join a fundraiser team',
+      subject: 'A reminder about your fundraiser invitation', heading: 'Join a fundraiser team',
       intro: `You've been invited to co-organize "${fr?.title}" on CouponDonation. Sign in with this email address to accept.`,
       ctaLabel: 'Accept invitation', ctaUrl: `${SITE}/team/accept?token=${raw}`,
     }));

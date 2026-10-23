@@ -1,5 +1,5 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, addEffect, useFrame, useThree } from '@react-three/fiber';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
@@ -21,7 +21,31 @@ import { AmbientBirds } from './tree3d/AmbientBirds';
 import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
 import { TransparencyPopover } from './tree3d/TransparencyPopover';
 import { PlantsLayer } from './tree3d/PlantsLayer';
-import { settingsForTier, useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
+import { HillLife } from './tree3d/HillLife';
+import { PlantSprout } from './tree3d/PlantSprout';
+import { SparkleBurst } from './tree3d/SparkleBurst';
+import { prewarmTreeTextures } from './tree3d/textures';
+import { useMotionPreference } from '@/hooks/useMotionPreference';
+import { SLOW_TREE_FPS, shouldReduceQuality } from '@/lib/treeQuality';
+import { createRefreshTracker, pacingDivisor } from '@/lib/framePacing';
+import { useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
+
+/** The tree lets one coupon fall every 9s (see the auto-drop timer below). */
+const AUTO_DROP_MS = 9000;
+
+// Start all opening SVG decodes alongside the model/Draco preload at module evaluation.
+const OPENING_LOGOS = [
+  'walmart', 'cvs', 'target', 'dominos', 'aldi',
+  'starbucks', 'mcdonalds', 'instacart', 'amazon', 'home-depot', 'uber', 'publix',
+  'doordash', 'walgreens', 'taco-bell', 'whole-foods', 'costco', 'lyft',
+];
+const OPENING_FRUITS = OPENING_LOGOS.flatMap(logo => {
+  const fruit = COUPON_FRUITS.find(fruit => fruit.logo === logo);
+  return fruit ? [fruit] : [];
+});
+const openingLogoPreload = preloadCouponLogos(OPENING_FRUITS, { paintAhead: true });
+// The ground and leaf textures are drawn while the model downloads, not when it lands.
+prewarmTreeTextures();
 
 const GROUND_Y = -0.01;
 const DEFAULT_CAM = new THREE.Vector3(0, 4.0, 13);
@@ -29,22 +53,6 @@ const TARGET = new THREE.Vector3(0, 3.4, 0);
 const MOBILE_CAM = new THREE.Vector3(0, 4.4, 16);
 const MOBILE_TARGET = new THREE.Vector3(0, 3.6, 0);
 const MOBILE_BASE_DIST = 16;
-
-/**
- * Mobile rebalance: spend the budget on tone mapping, MSAA, shadows and canopy
- * density rather than raw pixels. Values only — no colours change.
- */
-function mobileSettings(s: TierSettings): TierSettings {
-  if (s.tier === 'low') return s;
-  return {
-    ...s,
-    dprCap: 2,
-    shadows: true,
-    shadowMapSize: 1024,
-    antialias: true,
-    leafCount: 4200,
-  };
-}
 
 // Frame-loop scratch objects — avoids per-frame allocation inside useFrame.
 const TMP_OFFSET = new THREE.Vector3();
@@ -61,8 +69,8 @@ function ProceduralEnvironment() {
   useEffect(() => {
     const previousEnvironment = scene.environment;
     const room = new RoomEnvironment();
+    // fromScene never uses the equirectangular shader, so it is not compiled here.
     const generator = new THREE.PMREMGenerator(gl);
-    generator.compileEquirectangularShader();
     const target = generator.fromScene(room, 0.04);
     scene.environment = target.texture;
 
@@ -77,6 +85,105 @@ function ProceduralEnvironment() {
   return null;
 }
 
+const TEXTURE_SLOTS = ['map', 'normalMap', 'alphaMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap', 'bumpMap'] as const;
+const nextTask = () => new Promise<void>((resolve) => { window.setTimeout(resolve, 0); });
+
+/** Every texture the materials under `root` will sample. */
+function texturesUnder(root: THREE.Object3D) {
+  const found = new Set<THREE.Texture>();
+  root.traverse((object) => {
+    const material = (object as THREE.Mesh).material;
+    for (const m of Array.isArray(material) ? material : material ? [material] : []) {
+      for (const slot of TEXTURE_SLOTS) {
+        const texture = (m as unknown as Record<string, unknown>)[slot];
+        if (texture instanceof THREE.Texture) found.add(texture);
+      }
+    }
+  });
+  return found;
+}
+
+/**
+ * Sends textures to the GPU ahead of the frame that first shows them (which would otherwise stall on
+ * every one in turn), in slices of about 8ms so the page keeps its frames on slower machines too.
+ */
+async function uploadAhead(gl: THREE.WebGLRenderer, textures: Iterable<THREE.Texture>, isDone: () => boolean) {
+  let slice = performance.now();
+  for (const texture of textures) {
+    if (isDone()) return;
+    try { gl.initTexture(texture); } catch { /* the first frame uploads whatever is left */ }
+    if (performance.now() - slice > 8) { await nextTask(); slice = performance.now(); }
+  }
+}
+
+/**
+ * Compiles (in parallel where the GPU allows) and uploads everything under `root` while it is
+ * still hidden, so the frame that first shows it reuses finished programs and resident textures.
+ */
+async function prepareHidden(gl: THREE.WebGLRenderer, root: THREE.Object3D, camera: THREE.Camera, scene: THREE.Scene) {
+  let settled = false;
+  const compiled = gl.compileAsync(root, camera, scene).catch(() => undefined);
+  const deadline = new Promise((resolve) => window.setTimeout(resolve, 3000));
+  await Promise.all([Promise.race([compiled, deadline]), uploadAhead(gl, texturesUnder(root), () => settled)]);
+  settled = true;
+}
+
+/**
+ * Compiles every scene shader before the first frame. With KHR_parallel_shader_compile
+ * the GPU compiles them in parallel while the page keeps animating, instead of the
+ * first frame freezing the main thread on each one in turn; without the extension the
+ * work is only queued early. The first frame then reuses the finished programs.
+ */
+function ShaderWarmup({ onDone }: { onDone: () => void }) {
+  const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
+  const camera = useThree((state) => state.camera);
+
+  useEffect(() => {
+    let done = false;
+    let timer = 0;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      window.clearTimeout(timer);
+      gl.domElement.dataset.treeCompiledMs = performance.now().toFixed(1);
+      onDone();
+    };
+    let pending: THREE.Material[] = [];
+    try {
+      // Runs after the scene's own effects, so lights, fog, shadows and the
+      // environment map match the first frame and its programs are reused.
+      pending = [...gl.compile(scene, camera)];
+    } catch {
+      finish();
+      return;
+    }
+    // While the GPU compiles, the model's and the ground's textures go up one per task,
+    // so the first frame doesn't upload them all at once.
+    let uploaded = false;
+    void uploadAhead(gl, texturesUnder(scene), () => done).then(() => { uploaded = true; });
+    // A lost context never reports completion; past the deadline the first frame
+    // simply compiles whatever is left, as it would have without this step.
+    const deadline = performance.now() + 5000;
+    const poll = () => {
+      if (done) return;
+      pending = pending.filter((material) => {
+        const program = gl.properties.get(material)?.currentProgram;
+        return !!program && typeof program.isReady === 'function' && !program.isReady();
+      });
+      if ((!pending.length && uploaded) || performance.now() > deadline) finish();
+      else timer = window.setTimeout(poll, 16);
+    };
+    poll();
+    return () => {
+      done = true;
+      window.clearTimeout(timer);
+    };
+  }, [gl, scene, camera, onDone]);
+
+  return null;
+}
+
 
 function CameraRig({
   controlsRef,
@@ -87,37 +194,59 @@ function CameraRig({
   zoomProgressRef: React.MutableRefObject<number>;
   isMobile: boolean;
 }) {
-  const { camera, mouse } = useThree();
+  const { camera, mouse, size, gl, controls } = useThree();
+  const gentle = useMotionPreference() === 'gentle';
   const { parallaxBoostRef } = useInteraction();
   const lastInteractionRef = useRef(performance.now() / 1000);
   const resetAnim = useRef<{ start: number; from: THREE.Vector3 } | null>(null);
-  const defaultCam = isMobile ? MOBILE_CAM : DEFAULT_CAM;
+  // Fit the full rotating canopy envelope, not just the trunk, on narrow canvases.
+  const aspect = size.width / Math.max(size.height, 1);
+  const verticalFov = THREE.MathUtils.degToRad(isMobile ? 32 : 38);
+  const fitDist = Math.max(isMobile ? MOBILE_BASE_DIST : 13,
+    4.5 / (Math.tan(verticalFov / 2) * Math.min(aspect, 1)));
+  const defaultCam = (isMobile ? MOBILE_CAM : DEFAULT_CAM).clone();
+  defaultCam.z = fitDist;
   const target = isMobile ? MOBILE_TARGET : TARGET;
-  const baseDist = isMobile ? MOBILE_BASE_DIST : 13;
+  const baseDist = fitDist;
   // Seed at the current zoom progress so the initial (already pulled-back) view
   // paints immediately instead of animating outward on load.
   const currentDistRef = useRef(baseDist + zoomProgressRef.current * 4);
 
-  // Track interactions on the controls
   useEffect(() => {
-    const c = controlsRef.current;
-    if (!c) return;
-    const onStart = () => {
-      lastInteractionRef.current = performance.now() / 1000;
-      resetAnim.current = null;
+    currentDistRef.current = baseDist + zoomProgressRef.current * 4;
+    if (gentle) {
+      camera.position.copy(defaultCam); camera.position.z = currentDistRef.current;
+      camera.lookAt(target); controlsRef.current?.target.copy(target);
+    }
+  }, [baseDist, zoomProgressRef, gentle, camera, controlsRef]);
+
+  // Drei creates the controls after its first render. Wait for the actual ref,
+  // rather than treating the still-null first effect as a completed attachment.
+  useEffect(() => {
+    let frame = 0;
+    let detach: (() => void) | undefined;
+    const attach = () => {
+      const c = controlsRef.current;
+      if (!c) { frame = requestAnimationFrame(attach); return; }
+      const onStart = () => {
+        lastInteractionRef.current = performance.now() / 1000;
+        resetAnim.current = null;
+      };
+      const onChange = () => {
+        lastInteractionRef.current = performance.now() / 1000;
+        gl.domElement.dataset.treeAzimuth = c.getAzimuthalAngle().toFixed(4);
+      };
+      gl.domElement.dataset.treeAzimuth = c.getAzimuthalAngle().toFixed(4);
+      c.addEventListener('start', onStart);
+      c.addEventListener('change', onChange);
+      detach = () => {
+        c.removeEventListener('start', onStart);
+        c.removeEventListener('change', onChange);
+      };
     };
-    const onChange = () => {
-      lastInteractionRef.current = performance.now() / 1000;
-      const canvas = c.domElement;
-      canvas.dataset.treeAzimuth = c.getAzimuthalAngle().toFixed(4);
-    };
-    c.addEventListener('start', onStart);
-    c.addEventListener('change', onChange);
-    return () => {
-      c.removeEventListener('start', onStart);
-      c.removeEventListener('change', onChange);
-    };
-  }, [controlsRef]);
+    attach();
+    return () => { cancelAnimationFrame(frame); detach?.(); };
+  }, [controlsRef, controls, gl]);
 
   // Expose reset on double-click via window event
   useEffect(() => {
@@ -128,7 +257,15 @@ function CameraRig({
     return () => window.removeEventListener('tree3d-reset-camera', onReset);
   }, [camera]);
 
+  const cameraStampRef = useRef(0);
   useFrame((_, dt) => {
+    // QA readout of the camera, a few times a second rather than a DOM write on every frame.
+    const stamp = performance.now();
+    if (stamp - cameraStampRef.current > 250) {
+      cameraStampRef.current = stamp;
+      gl.domElement.dataset.treeCamera = camera.position.toArray().map(v => v.toFixed(4)).join(',');
+    }
+    if (gentle) return;
     const c = controlsRef.current;
     if (!c) return;
     const now = performance.now() / 1000;
@@ -169,6 +306,8 @@ function CameraRig({
   return null;
 }
 
+export const FIRST_SHADOW_SIZE = 2048;
+const STAGED_SHADOW_FRAMES = 60;
 function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = false }: { shadowSize?: number; shadowBlur?: number; tightShadow?: boolean }) {
   const { timeOfDay } = useInteraction();
   const dirRef = useRef<THREE.DirectionalLight>(null);
@@ -176,11 +315,22 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = fals
   const fillRef = useRef<THREE.DirectionalLight>(null);
   const fogColorRef = useRef(new THREE.Color('#DCE6D5'));
   const { scene } = useThree();
+  // The first frames use a 2048 shadow map so the tree appears sooner; full size follows ~1s later.
+  const [warm, setWarm] = useState(false);
+  const drawn = useRef(0);
+  useFrame(() => { if (!warm && ++drawn.current >= STAGED_SHADOW_FRAMES) setWarm(true); });
+  const liveShadow = warm ? shadowSize : Math.min(shadowSize, FIRST_SHADOW_SIZE);
+  useEffect(() => {
+    const light = dirRef.current;
+    if (!light) return;
+    light.shadow.map?.dispose(); light.shadow.map = null;
+    light.shadow.mapSize.set(liveShadow, liveShadow);
+    light.shadow.needsUpdate = true;
+  }, [liveShadow]);
 
   const targets: Record<TimeOfDay, { dirCol: string; dirInt: number; ambCol: string; ambInt: number; fillCol: string; fillInt: number; fog: string }> = useMemo(
     () => ({
       day: { dirCol: '#FFF4E0', dirInt: 1.35, ambCol: '#F4F1E8', ambInt: 0.75, fillCol: '#BFD8E8', fillInt: 0.45, fog: '#DCE6D5' },
-      sunset: { dirCol: '#FFA060', dirInt: 1.0, ambCol: '#FFD0A0', ambInt: 0.55, fillCol: '#9B7BB5', fillInt: 0.35, fog: '#E8B890' },
       night: { dirCol: '#9DB4E6', dirInt: 0.45, ambCol: '#5A6B8A', ambInt: 0.35, fillCol: '#3A4A7E', fillInt: 0.2, fog: '#1A2440' },
     }),
     []
@@ -195,20 +345,24 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = fals
       fill: new THREE.Color(targets[k].fillCol),
       fog: new THREE.Color(targets[k].fog),
     });
-    return { day: build('day'), sunset: build('sunset'), night: build('night') } as Record<
+    return { day: build('day'), night: build('night') } as Record<
       TimeOfDay,
       { dir: THREE.Color; amb: THREE.Color; fill: THREE.Color; fog: THREE.Color }
     >;
   }, [targets]);
 
-  const dirColor = useMemo(() => new THREE.Color(targets.day.dirCol), [targets]);
-  const ambColor = useMemo(() => new THREE.Color(targets.day.ambCol), [targets]);
-  const fillColor = useMemo(() => new THREE.Color(targets.day.fillCol), [targets]);
+  // Lights start in this load's sky, so a night scene never opens in daylight.
+  const initialTime = useRef<TimeOfDay>(timeOfDay).current;
+  const initial = targets[initialTime];
+  const dirColor = useMemo(() => new THREE.Color(initial.dirCol), [targets]);
+  const ambColor = useMemo(() => new THREE.Color(initial.ambCol), [targets]);
+  const fillColor = useMemo(() => new THREE.Color(initial.fillCol), [targets]);
 
+  useEffect(() => { fogColorRef.current.set(initial.fog); }, [initial]);
   useFrame((_, dt) => {
     const t = targets[timeOfDay];
     const tc = targetColors[timeOfDay];
-    const k = Math.min(1, dt * 1.5);
+    const k = Math.min(dt * 1.5, 0.05);
     if (dirRef.current) {
       dirColor.lerp(tc.dir, k);
       dirRef.current.color.copy(dirColor);
@@ -233,15 +387,15 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = fals
 
   return (
     <>
-      <ambientLight ref={ambRef} intensity={0.75} color="#F4F1E8" />
+      <ambientLight ref={ambRef} intensity={initial.ambInt} color={initial.ambCol} />
       <directionalLight
         ref={dirRef}
         position={[6, 11, 5]}
-        intensity={1.35}
-        color="#FFF4E0"
+        intensity={initial.dirInt}
+        color={initial.dirCol}
         castShadow
-        shadow-mapSize-width={shadowSize}
-        shadow-mapSize-height={shadowSize}
+        shadow-mapSize-width={liveShadow}
+        shadow-mapSize-height={liveShadow}
         shadow-camera-left={tightShadow ? -5 : -12}
         shadow-camera-right={tightShadow ? 5 : 12}
         shadow-camera-top={tightShadow ? 9 : 12}
@@ -250,7 +404,7 @@ function DayNightLights({ shadowSize = 4096, shadowBlur = 25, tightShadow = fals
         shadow-radius={8}
         shadow-blurSamples={shadowBlur}
       />
-      <directionalLight ref={fillRef} position={[-6, 5, -3]} intensity={0.45} color="#BFD8E8" />
+      <directionalLight ref={fillRef} position={[-6, 5, -3]} intensity={initial.fillInt} color={initial.fillCol} />
     </>
   );
 }
@@ -276,43 +430,62 @@ function ShadowSwitch({ enabled }: { enabled: boolean }) {
 }
 
 /**
- * Rolling 2s frame-rate sampler. Ignores the first 2s of warm-up and fires at
- * most once; the hook itself enforces one downgrade per session.
+ * Draws the scene itself (render priority 1, so R3F stops drawing on its own): every frame until the
+ * reveal, because the opening counts drawn frames, then about 60 times a second on 120Hz-and-up
+ * screens (see framePacing.ts) so the tree leaves the GPU room for the cursor and scrolling.
  */
-function PerfWatchdog({ onSlow }: { onSlow: () => void }) {
-  const startRef = useRef(performance.now());
-  const windowStartRef = useRef(0);
-  const framesRef = useRef(0);
-  const firedRef = useRef(false);
-
-  useFrame(() => {
-    if (firedRef.current) return;
-    const now = performance.now();
-    if (now - startRef.current < 2000) return;
-    if (windowStartRef.current === 0) {
-      windowStartRef.current = now;
-      framesRef.current = 0;
-      return;
-    }
-    framesRef.current++;
-    const elapsed = now - windowStartRef.current;
-    if (elapsed < 2000) return;
-    const fps = (framesRef.current * 1000) / elapsed;
-    const canvas = document.querySelector('canvas');
-    if (canvas) canvas.dataset.treeFps = fps.toFixed(1);
-    windowStartRef.current = now;
-    framesRef.current = 0;
-    if (fps < 45) {
-      firedRef.current = true;
-      onSlow();
-    }
-  });
-
+const pace = { draw: true, frame: 0, drawn: 0 };
+function FramePacer() {
+  useEffect(() => {
+    const refresh = createRefreshTracker();
+    return addEffect((timestamp) => {
+      const divisor = pacingDivisor(refresh.push(timestamp));
+      pace.frame++;
+      pace.draw = !window.__cdTreeReady || divisor === 1 || pace.frame % divisor === 0;
+    });
+  }, []);
+  useFrame(({ gl, scene, camera }) => {
+    if (!pace.draw) return;
+    gl.render(scene, camera);
+    pace.drawn++;
+  }, 1);
   return null;
 }
 
-function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boolean }) {
-  const { leafCount, plantCap } = settings;
+/** Sample only committed, visible rendering; loading/hidden time is not hardware evidence. */
+/** Page-load jank must not count: wait 2s, then step down only after two slow samples in a row. */
+function PerfWatchdog({ onSlow, active }: { onSlow: () => void; active: boolean }) {
+  const sample = useRef({ start: 0, drawn: 0, warm: 0, strikes: 0 });
+  const slowBelow = useMemo(() => (matchMedia('(hover: hover) and (pointer: fine)').matches ? SLOW_TREE_FPS.pointer : SLOW_TREE_FPS.touch), []);
+  useEffect(() => { sample.current = { start: 0, drawn: 0, warm: performance.now(), strikes: 0 }; }, [active]);
+  useFrame(({ gl }) => {
+    if (!active || document.hidden) return;
+    const now = performance.now();
+    const s = sample.current;
+    if (now - s.warm < 2000) return;
+    if (!s.start) { s.start = now; s.drawn = pace.drawn; return; }
+    const elapsed = now - s.start;
+    if (elapsed < 2500) return;
+    // Frames actually drawn, not animation callbacks: on fast screens the pacer skips some on purpose.
+    const fps = (pace.drawn - s.drawn) * 1000 / elapsed;
+    gl.domElement.dataset.treeFps = fps.toFixed(1);
+    s.start = now; s.drawn = pace.drawn;
+    s.strikes = shouldReduceQuality(fps, active, elapsed, slowBelow) ? s.strikes + 1 : 0;
+    if (s.strikes >= 2) { s.strikes = 0; onSlow(); }
+  });
+  return null;
+}
+
+const WARMUP_SPOT = new THREE.Vector3(0, 0, 0);
+const noop = () => undefined;
+
+function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobile: boolean; onReady: (coverUp: boolean) => void }) {
+  const gentle = useMotionPreference() === 'gentle';
+  useEffect(() => {
+    if (gentle) setStates(previous => previous.map(() => ({ phase: 'hanging' })));
+  }, [gentle]);
+
+  const { plantCap } = settings;
   const visibleFruitCount = Math.min(18, COUPON_FRUITS.length);
   // Open with 18 distinct, instantly recognizable brands — no two marks from the
   // same family (Uber / Uber Eats) hang at the same time. Every omitted brand
@@ -320,12 +493,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
   const initialBrandIndices = useMemo(() => {
     // Opening-facing slots lead with distinct red, blue, green, and orange
     // silhouettes. Wider marks stay separated while rear slots retain depth.
-    const openingLogos = [
-      'walmart', 'cvs', 'target', 'dominos', 'aldi',
-      'starbucks', 'mcdonalds', 'instacart', 'amazon', 'home-depot', 'uber', 'publix',
-      'doordash', 'walgreens', 'taco-bell', 'whole-foods', 'costco', 'lyft',
-    ];
-    return openingLogos
+    return OPENING_LOGOS
       .map((logo) => COUPON_FRUITS.findIndex((fruit) => fruit.logo === logo))
       .filter((index) => index >= 0)
       .slice(0, visibleFruitCount);
@@ -336,27 +504,65 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
     return getBranchTips(visibleFruitCount);
   }, [visibleFruitCount]);
   const [logosReady, setLogosReady] = useState(false);
+  // The coupons stay hidden until their shaders have compiled and their textures are on the GPU,
+  // so the frame that shows all 18 for the first time doesn't stall the page.
+  const [fruitsShown, setFruitsShown] = useState(false);
+  const fruitsRef = useRef<THREE.Group>(null);
+  const { gl } = useThree();
+  const camera = useThree((state) => state.camera);
+  const scene = useThree((state) => state.scene);
+  const revealRef = useRef({ frames: 0, revealed: false });
+  const reveal = useCallback((reason: 'logos' | 'safety') => {
+    if (revealRef.current.revealed) return;
+    revealRef.current.revealed = true;
+    // Still under the opening's cover? Then the tree is simply there when the cover lifts.
+    const root = document.documentElement;
+    const coverUp = root.classList.contains('cd-intro') && !root.classList.contains('cd-iris');
+    gl.domElement.dataset.treeRevealReason = reason;
+    gl.domElement.dataset.treeRevealMs = performance.now().toFixed(1);
+    window.__cdTreeReady = true;
+    window.dispatchEvent(new Event('cd:tree-ready'));
+    onReady(coverUp);
+  }, [gl, onReady]);
+  // A scene mounted under the opening must prove a full drawn frame; the inline
+  // cap owns its fallback, rather than announcing a timer as live readiness.
+  const underOpening = useRef(typeof document !== 'undefined' && document.documentElement.classList.contains('cd-intro')).current;
+  useEffect(() => {
+    if (underOpening) return;
+    const timer = window.setTimeout(() => reveal('safety'), 3000);
+    return () => window.clearTimeout(timer);
+  }, [reveal, underOpening]);
   useEffect(() => {
     let active = true;
-    preloadCouponLogos().then((diagnostics) => {
+    openingLogoPreload.then((diagnostics) => {
       if (!active) return;
-      const canvas = document.querySelector<HTMLCanvasElement>('canvas');
-      if (canvas) {
-        canvas.dataset.treeLogosReady = 'true';
-        canvas.dataset.treeLogoFailures = diagnostics.failed.join('|');
-        canvas.dataset.treeLogoInvalid = diagnostics.invalid.join('|');
-        canvas.dataset.treeSlotsFinite = String(
-          branchTips.every(({ tip, faceOffset }) =>
-            [tip.x, tip.y, tip.z, faceOffset].every(Number.isFinite),
-          ),
-        );
-      }
+      const canvas = gl.domElement;
+      canvas.dataset.treeLogoFailures = diagnostics.failed.join('|');
+      canvas.dataset.treeLogoInvalid = diagnostics.invalid.join('|');
+      canvas.dataset.treeSlotsFinite = String(branchTips.every(({ tip, faceOffset }) =>
+        [tip.x, tip.y, tip.z, faceOffset].every(Number.isFinite)));
       setLogosReady(true);
     });
-    return () => {
-      active = false;
-    };
-  }, [branchTips]);
+    return () => { active = false; };
+  }, [branchTips, gl]);
+  useEffect(() => {
+    if (!logosReady || fruitsShown) return;
+    const group = fruitsRef.current;
+    if (!group) { setFruitsShown(true); return; }
+    let active = true;
+    void prepareHidden(gl, group, camera, scene).then(() => { if (active) setFruitsShown(true); });
+    return () => { active = false; };
+  }, [logosReady, fruitsShown, gl, camera, scene]);
+  // useFrame runs before rendering. The second committed frame proves the first
+  // full 18-fruit frame has already been drawn/uploaded before revealing it.
+  useFrame(() => {
+    if (!fruitsShown) return;
+    revealRef.current.frames++;
+    if (revealRef.current.frames < 2) return;
+    gl.domElement.dataset.treeLogosReady = 'true';
+    gl.domElement.dataset.treeDrawnLogos = String(OPENING_FRUITS.length);
+    reveal('logos');
+  });
   const [brandIndices, setBrandIndices] = useState(() => initialBrandIndices);
   const replacementQueueRef = useRef(
     COUPON_FRUITS.map((_, index) => index).filter((index) => !initialBrandIndices.includes(index)),
@@ -389,6 +595,7 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
       const pick = queue.findIndex(isFree);
       if (pick >= 0) {
         const [chosen] = queue.splice(pick, 1);
+        void preloadCouponLogos([COUPON_FRUITS[chosen]]);
         return chosen;
       }
       let seed = 0x9e3779b9 ^ shuffleRoundRef.current++;
@@ -454,9 +661,10 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
     [donations]
   );
 
-  // Auto drops on timer
+  // Auto drops on timer: one coupon every 9s, a little longer than its donor's name moment
+  // (MOMENT_SECONDS), so one name plays at a time (founder request: fewer, calmer moments).
   useEffect(() => {
-    if (!logosReady || donations.length === 0) return;
+    if (gentle || !logosReady || donations.length === 0) return;
     const interval = setInterval(() => {
       setStates((prev) => {
         const hangingIdx = prev.map((s, i) => (s.phase === 'hanging' ? i : -1)).filter((i) => i >= 0);
@@ -468,13 +676,13 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
         next[pick] = { phase: 'falling', startTime: performance.now() / 1000, donation };
         return next;
       });
-    }, 4000);
+    }, AUTO_DROP_MS);
     return () => clearInterval(interval);
-  }, [donations, logosReady]);
+  }, [donations, logosReady, gentle]);
 
   // Shake event → cascade drop 3-5 hanging coupons
   useEffect(() => {
-    if (!logosReady || !shakeEvent) return;
+    if (gentle || !logosReady || !shakeEvent) return;
     setStates((prev) => {
       const hangingIdx = prev.map((s, i) => (s.phase === 'hanging' ? i : -1)).filter((i) => i >= 0);
       if (hangingIdx.length === 0) return prev;
@@ -493,14 +701,9 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
       return next;
     });
     bumpWind(0.5);
-  }, [shakeEvent, donations, bumpWind, logosReady]);
-
-  // On phones only the most recently landed coupon shows its donor label,
-  // so overlapping cards can never stack on a narrow screen.
-  const [lastLandedIdx, setLastLandedIdx] = useState<number | null>(null);
+  }, [shakeEvent, donations, bumpWind, logosReady, gentle]);
 
   const handleLanded = useCallback((idx: number, restPos: THREE.Vector3) => {
-    setLastLandedIdx(idx);
     setStates((prev) => {
       if (prev[idx].phase !== 'falling') return prev;
       const donation = (prev[idx] as Extract<CouponState, { phase: 'falling' }>).donation;
@@ -537,24 +740,32 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
 
   return (
     <>
-      <DayNightLights shadowSize={settings.shadowMapSize} shadowBlur={isMobile ? 5 : settings.shadows && settings.tier === 'high' ? 25 : 6} tightShadow={isMobile} />
-      <ProceduralEnvironment />
-      {!isMobile && <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />}
-      {isMobile && <hemisphereLight args={['#cfe8d8', '#3a4a3a', 0.45]} />}
-      <fog attach="fog" args={isMobile ? ['#DCE6D5', 25, 70] : ['#DCE6D5', 18, 45]} />
+      <DayNightLights shadowSize={settings.shadowMapSize} />
+      <directionalLight position={[0, 4, -8]} intensity={0.35} color="#FFD8A8" />
+      <fog attach="fog" args={['#DCE6D5', 18, 45]} />
 
-      <Sky isMobile={isMobile} />
+      <Sky gentle={gentle} />
 
-      <Tree leafCount={leafCount} lowPower={settings.tier === 'low'} />
-      <Ground y={GROUND_Y} isMobile={isMobile} />
-      <HitZones />
-      {settings.fireflies && <Fireflies count={settings.fireflyCount} />}
-      {settings.trunkRipple && <TrunkRipple />}
-      <Bird />
-      <AmbientBirds count={settings.ambientBirds} />
-      <PlantsLayer cap={plantCap} />
+      <Tree lowPower={settings.tier === 'low'} />
+      <Ground y={GROUND_Y} />
+      {!gentle && <HitZones />}
+      {settings.fireflies && <Fireflies count={settings.fireflyCount} gentle={gentle} />}
+      {settings.trunkRipple && !gentle && <TrunkRipple />}
+      {!gentle && <Bird />}
+      {!gentle && <AmbientBirds count={settings.ambientBirds} />}
+      {/* The garden: where a coupon lands a dandelion or a cosmos grows and the donor's name arrives
+          (seeds or a butterfly, taking turns); life on the hill moves quietly behind it. */}
+      <PlantsLayer cap={plantCap} isMobile={isMobile} gentle={gentle} />
+      {!gentle && <HillLife isMobile={isMobile} lowPower={settings.tier === 'low'} />}
+      {/* Never drawn: puts the effects that appear later (a sprout where a coupon lands, the sparkle
+          of a tap) into the first parallel compile, so their first appearance never stalls a frame. */}
+      <group visible={false} position={[0, -40, 0]}>
+        <PlantSprout id="warmup" position={[0, 0, 0]} archetype="dandelion" bornAt={0} seed={1} />
+        <PlantSprout id="warmup-cosmos" position={[0, 0, 0]} archetype="cosmos" bornAt={0} seed={2} />
+        <SparkleBurst position={WARMUP_SPOT} startTime={0} onDone={noop} />
+      </group>
 
-
+      <group ref={fruitsRef} visible={fruitsShown}>
       {logosReady && brandIndices.map((brandIndex, i) => (
         <CouponFruit
           key={i}
@@ -567,9 +778,9 @@ function Scene({ settings, isMobile }: { settings: TierSettings; isMobile: boole
           onRegrown={handleRegrown}
           onClickHanging={dropOne}
           isMobile={isMobile}
-          labelSuppressed={lastLandedIdx !== i}
         />
       ))}
+      </group>
     </>
   );
 }
@@ -609,7 +820,7 @@ function readForcedTier(): DeviceTier | undefined {
   }
 }
 
-export function Tree3DScene() {
+export function Tree3DScene({ onReady }: { onReady?: () => void }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   // 0 = zoomed in, 1 = zoomed out. Start mostly out so one wheel gesture finishes it.
@@ -621,11 +832,8 @@ export function Tree3DScene() {
   // Tier is resolved synchronously on first render and never re-detected, so the
   // Canvas never re-initialises. `?tier3d=low|medium|high` forces a tier for QA.
   const forced = useMemo(() => readForcedTier(), []);
-  const { settings, initialTier, requestDowngrade } = useDeviceTier(forced);
-  const effectiveSettings = useMemo(
-    () => (isMobile ? mobileSettings(settings) : settings),
-    [isMobile, settings],
-  );
+  const gentle = useMotionPreference() === 'gentle';
+  const { settings: effectiveSettings, initialTier, requestDowngrade, step } = useDeviceTier(forced);
 
   // DPR follows the tier cap; changing it later only calls setPixelRatio in place.
   const dpr = useMemo<[number, number]>(() => {
@@ -636,8 +844,8 @@ export function Tree3DScene() {
   const enablePost = false;
   // Antialias must be fixed at context creation time — derived from the first tier.
   const antialias = useMemo(
-    () => (isMobile ? mobileSettings(settingsForTier(initialTier)).antialias : initialTier !== 'low'),
-    [initialTier, isMobile],
+    () => true,
+    [],
   );
 
   useEffect(() => {
@@ -675,11 +883,10 @@ export function Tree3DScene() {
       const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
       if (dy > 0 && cur >= 1) return;
       if (dy < 0 && cur <= 0) return;
-      e.preventDefault();
       zoomProgressRef.current = Math.max(0, Math.min(1, cur + dy * WHEEL_SENSITIVITY));
     };
 
-    el.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('wheel', onWheel, { passive: true });
     return () => {
       el.removeEventListener('wheel', onWheel);
     };
@@ -700,10 +907,19 @@ export function Tree3DScene() {
           willChange: 'transform',
         }}
         data-tree-tier={effectiveSettings.tier}
+        data-tree-initial-tier={initialTier}
+        data-tree-quality-step={step}
+        data-tree-settings={JSON.stringify(effectiveSettings)}
+        data-tree-shadow-size={effectiveSettings.shadowMapSize}
+        data-tree-dpr-cap={effectiveSettings.dprCap}
+        data-tree-leaves={effectiveSettings.leafCount}
         data-tree-fireflies={effectiveSettings.fireflyCount}
         data-tree-birds={effectiveSettings.ambientBirds}
         data-tree-plant-cap={effectiveSettings.plantCap}
-        data-tree-trunk-ripple={effectiveSettings.trunkRipple}
+        data-tree-trunk-ripple={!gentle && effectiveSettings.trunkRipple}
+        data-tree-motion={gentle ? "gentle" : "full"}
+        data-tree-active-birds={gentle ? 0 : effectiveSettings.ambientBirds}
+        data-tree-rendering={effectiveInView ? "active" : "paused"}
       >
         {mounted ? (
           <Tree3DInner
@@ -716,6 +932,7 @@ export function Tree3DScene() {
             antialias={antialias}
             isMobile={isMobile}
             onSlow={forced ? () => undefined : requestDowngrade}
+            onReady={onReady}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-b from-[#BFD8E8] via-[#FFF2D8] to-[#D8E0CC]" />
@@ -738,34 +955,53 @@ interface InnerProps {
   antialias: boolean;
   isMobile: boolean;
   onSlow: () => void;
+  onReady?: () => void;
 }
 
-function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, settings, antialias, isMobile, onSlow }: InnerProps) {
+function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, settings, antialias, isMobile, onSlow, onReady }: InnerProps) {
   const { spawnRipple, setParallaxBoost } = useInteraction();
+  const gentle = useMotionPreference() === 'gentle';
+  const [ready, setReady] = useState(false);
+  // Under the opening's cover the canvas appears at once (the cover's own fade reveals it);
+  // anywhere else the whole scene fades in together with the hero's headline.
+  const [instant, setInstant] = useState(false);
+  const sceneReady = useCallback((coverUp: boolean) => {
+    setInstant(coverUp);
+    setReady(true);
+    onReady?.();
+  }, [onReady]);
   const lastClickRef = useRef(0);
   // Fixed at first render so the WebGL context is never recreated.
   const initialShadows = useRef(settings.shadows).current;
+  // No frame is drawn until the scene's shaders have compiled (see ShaderWarmup).
+  const [compiled, setCompiled] = useState(false);
+  const shadersCompiled = useCallback(() => setCompiled(true), []);
 
   return (
     <>
       <Canvas
+        resize={{ offsetSize: true }}
         shadows={initialShadows ? { type: THREE.PCFSoftShadowMap } : false}
         dpr={dpr}
-        frameloop={inView ? 'always' : 'demand'}
+        frameloop={inView && compiled ? 'always' : 'never'}
         camera={{ position: isMobile ? [0, 4.4, 16] : [0, 4.0, 13], fov: isMobile ? 32 : 38 }}
         gl={{
           antialias,
           alpha: true,
-          powerPreference: isMobile && settings.tier === 'low' ? 'low-power' : 'high-performance',
-          toneMapping: isMobile && settings.tier === 'low' ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping,
-          toneMappingExposure: isMobile && settings.tier === 'low' ? 1.2 : 1.25,
+          powerPreference: 'high-performance',
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.25,
         }}
-
-        style={{ background: 'transparent' }}
+        onCreated={({ gl }) => {
+          // Each shader error check makes the page wait for the GPU; production skips them.
+          gl.debug.checkShaderErrors = import.meta.env.DEV;
+        }}
+        style={{ background: 'transparent', opacity: ready ? 1 : 0, transition: instant ? 'none' : 'opacity .7s cubic-bezier(.4,0,.2,1)' }}
         onPointerDown={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(true); }}
         onPointerUp={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(false); }}
         onPointerLeave={(e) => { if (e.pointerType === 'mouse') setParallaxBoost(false); }}
         onClick={() => {
+          if (gentle) return;
           spawnRipple();
           const now = performance.now();
           if (now - lastClickRef.current < 350) {
@@ -775,25 +1011,31 @@ function Tree3DInner({ controlsRef, zoomProgressRef, dpr, inView, enablePost, se
         }}
       >
         {/* PerformanceMonitor removed — was causing DPR rescaling flicker */}
+        <FramePacer />
         <OrbitControls
           ref={controlsRef}
+          enabled={!gentle}
           enablePan={false}
           enableZoom={false}
           enableDamping
           dampingFactor={0.08}
           minDistance={isMobile ? 12 : 9}
-          maxDistance={isMobile ? 20 : 17}
+          maxDistance={60}
           minPolarAngle={Math.PI / 3}
           maxPolarAngle={Math.PI / 2.1}
           target={isMobile ? [0, 3.6, 0] : [0, 3.4, 0]}
           makeDefault
         />
         <CameraRig controlsRef={controlsRef} zoomProgressRef={zoomProgressRef} isMobile={isMobile} />
-        <WindTracker />
+        {!gentle && <WindTracker />}
         <ShadowSwitch enabled={settings.shadows} />
-        <PerfWatchdog onSlow={onSlow} />
+        {/* Outside Suspense: the environment map is built while the model downloads. */}
+        <ProceduralEnvironment />
         <Suspense fallback={null}>
-          <Scene settings={settings} isMobile={isMobile} />
+          <Scene settings={settings} isMobile={isMobile} onReady={sceneReady} />
+          {/* After Scene, so its effects (environment map, shadows) run before compiling. */}
+          <ShaderWarmup onDone={shadersCompiled} />
+          <PerfWatchdog onSlow={onSlow} active={inView && ready} />
         </Suspense>
 
       </Canvas>

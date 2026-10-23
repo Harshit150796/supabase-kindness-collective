@@ -31,7 +31,7 @@ export function StoryBody({ story }: { story: string }) {
         })}
         {long && !open && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent" />}
       </div>
-      {long && <button onClick={() => setOpen((o) => !o)} className="mt-4 font-medium text-foreground underline underline-offset-4">{open ? 'Show less' : 'Read more'}</button>}
+      {long && <button onClick={() => setOpen((o) => !o)} className="mt-4 inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-4">{open ? 'Show less' : 'Read more'}</button>}
     </div>
   );
 }

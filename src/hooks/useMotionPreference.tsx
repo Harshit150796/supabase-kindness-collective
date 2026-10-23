@@ -1,42 +1,49 @@
-import { useEffect, useState } from 'react';
-import { detectDeviceTier } from '@/hooks/useDeviceTier';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { motionPaused, subscribeMotionChoice } from '@/lib/motionChoice';
+import { createPortal } from 'react-dom';
 
 export type MotionPreference = 'full' | 'gentle';
 
 const QUERY = '(prefers-reduced-motion: reduce)';
 
-function read(): MotionPreference {
-  if (typeof window === 'undefined') return 'full';
-  try {
-    return window.matchMedia?.(QUERY)?.matches ? 'gentle' : 'full';
-  } catch {
-    return 'full';
-  }
+/**
+ * Founder decision: every device gets full motion, whatever the OS setting. The only exception is the
+ * visitor's own "Pause animations" button (src/lib/motionChoice.ts), which switches to gentle motion.
+ */
+export function useMotionPreference(): MotionPreference {
+  const paused = useSyncExternalStore(subscribeMotionChoice, motionPaused, () => false);
+  return paused ? 'gentle' : 'full';
 }
 
-/** Animations always play; 'gentle' only means calmer, never frozen. */
-export function useMotionPreference(): MotionPreference {
-  const [pref, setPref] = useState<MotionPreference>(read);
-  useEffect(() => {
-    const mql = window.matchMedia?.(QUERY);
-    if (!mql) return;
-    const onChange = () => setPref(read());
-    mql.addEventListener?.('change', onChange);
-    return () => mql.removeEventListener?.('change', onChange);
-  }, []);
-  return pref;
+function osReducedMotion(): boolean {
+  try { return window.matchMedia?.(QUERY)?.matches ?? false; } catch { return false; }
 }
 
 /** Visible only with ?motiondebug=1 in the URL. */
 export function MotionDebug() {
   const pref = useMotionPreference();
   const [show] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('motiondebug'));
+  const [initialTier, setInitialTier] = useState('Waiting for tree');
+  const [settings, setSettings] = useState('Waiting for tree');
+  useEffect(() => {
+    if (!show) return;
+    const readSettings = () => {
+      const tree = document.querySelector<HTMLElement>('[data-tree-settings]');
+      if (!tree) return;
+      const values = JSON.parse(tree.dataset.treeSettings || '{}');
+      setInitialTier(tree.dataset.treeInitialTier || 'unknown');
+      setSettings(`${values.tier}; ${values.leafCount} leaves; ${values.fireflyCount} fireflies; ${tree.dataset.treeActiveBirds} active birds; ripple ${tree.dataset.treeTrunkRipple === 'true' ? 'on' : 'off'}; shadow ${values.shadowMapSize}; DPR ${values.dprCap}; MSAA retained; ${tree.dataset.treeMotion}; step ${tree.dataset.treeQualityStep}`);
+    };
+    const timer = window.setInterval(readSettings, 500);
+    return () => window.clearInterval(timer);
+  }, [show]);
   if (!show) return null;
-  return (
+  return createPortal(
     <div className="fixed bottom-2 left-2 z-[100] rounded-md border border-border bg-card px-3 py-2 text-xs text-foreground shadow-lg">
-      <div>Reduce motion reported: {pref === 'gentle' ? 'YES' : 'no'}</div>
+      <div>Phone Reduce Motion setting: {osReducedMotion() ? 'on' : 'off'} · site motion: {pref}</div>
       <div>Width: {window.innerWidth}px</div>
-      <div>3D tier: {detectDeviceTier()}</div>
-    </div>
+      <div>Initial renderer tier: {initialTier}</div>
+      <div className="max-w-[min(360px,85vw)]">Active tree: {settings}</div>
+    </div>, document.body
   );
 }

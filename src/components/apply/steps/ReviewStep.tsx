@@ -1,223 +1,160 @@
 import { useEffect, useState } from "react";
-import { Camera, ImagePlus, Sparkles, Check, ShieldCheck } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ImagePlus, MapPin, Sparkles } from "lucide-react";
 import { getSuggestedTitles } from "@/lib/suggestedTitles";
 import { MediaItem, formatDuration } from "@/lib/mediaUpload";
+import { needLabel } from "@/lib/helpNeeds";
+import { RetailerLogo } from "@/components/landing/donate/GiftLedger";
+import { findRetailer } from "@/components/landing/donate/retailers";
+import { NeedIcon } from "../NeedsAndStores";
+import { BENEFICIARY_OPTIONS } from "../applyOptions";
 
 interface ReviewStepProps {
   media: MediaItem[];
   title: string;
   setTitle: (title: string) => void;
   story: string;
-  category: string;
+  needs: string[];
+  stores: string[];
+  similarOk: boolean;
   beneficiaryType: string;
   goalAmount: string;
   zipCode: string;
-  locationLabel?: string | null;
+  /** "Syracuse, NY" once the ZIP code is found. */
+  place: string | null;
   onEditStory: () => void;
   onEditDetails: () => void;
   onEditLocation: () => void;
+  confirmed: boolean;
+  setConfirmed: (value: boolean) => void;
 }
 
-const getCategoryLabel = (category: string): string => {
-  const labels: Record<string, string> = {
-    food: "Food & Groceries",
-    healthcare: "Healthcare & Medical",
-    education: "Education & School",
-    clothing: "Clothing",
-    transportation: "Transportation",
-    utilities: "Utilities",
-    other: "Other Essentials",
-  };
-  return labels[category] || category;
-};
+const whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 
-const getBeneficiaryLabel = (type: string): string => {
-  const labels: Record<string, string> = {
-    yourself: "Myself",
-    myself: "Myself",
-    family: "My Family",
-    organization: "Community Organization",
-  };
-  return labels[type] || type;
-};
-
-interface RowProps {
-  label: string;
-  onEdit?: () => void;
-  children: React.ReactNode;
-  align?: "center" | "start";
-}
-
-const Row = ({ label, onEdit, children, align = "center" }: RowProps) => (
-  <div
-    className={`group flex gap-4 px-4 py-3.5 transition-colors duration-200 hover:bg-secondary/40 ${
-      align === "center" ? "items-center" : "items-start"
-    }`}
-  >
-    <span className="w-20 sm:w-28 shrink-0 text-sm text-muted-foreground">{label}</span>
-    <div className="flex-1 min-w-0 text-sm text-foreground">{children}</div>
-    {onEdit && (
+function SectionHead({ title, onEdit, editLabel }: { title: string; onEdit: () => void; editLabel: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4">
+      <h2 className="font-display text-[1.5rem] font-normal leading-tight text-foreground sm:text-[1.75rem]">{title}</h2>
       <button
         type="button"
         onClick={onEdit}
-        className="shrink-0 text-sm font-medium text-primary/70 hover:text-primary transition-colors duration-200 md:opacity-60 md:group-hover:opacity-100"
+        aria-label={editLabel}
+        className="inline-flex min-h-11 shrink-0 items-center rounded-md px-1 text-sm font-medium text-primary outline-none hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring"
       >
         Edit
       </button>
-    )}
-  </div>
-);
+    </div>
+  );
+}
 
+/** Step 4: the request laid out the way donors will see it, with a title and an edit link per part. */
 export const ReviewStep = ({
   media,
   title,
   setTitle,
   story,
-  category,
+  needs,
+  stores,
+  similarOk,
   beneficiaryType,
   goalAmount,
   zipCode,
-  locationLabel,
+  place,
   onEditStory,
   onEditDetails,
   onEditLocation,
+  confirmed,
+  setConfirmed,
 }: ReviewStepProps) => {
   const cover = media[0];
-  const coverPhotoPreview = cover?.previewUrl || "";
   const extras = media.slice(1);
-  const suggestions = getSuggestedTitles(category);
+  const suggestions = getSuggestedTitles(needs[0] ?? "");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const cityState = locationLabel && locationLabel.includes(",") ? locationLabel : null;
+  const who = BENEFICIARY_OPTIONS.find((o) => o.id === beneficiaryType)?.title;
+  const goal = Number(goalAmount || 0);
 
-  // Pre-fill the title with the first suggestion the first time we land here
+  // Start from the first suggestion the first time the review opens.
   useEffect(() => {
-    if (!title.trim() && suggestions[0]) {
-      setTitle(suggestions[0]);
-    }
+    if (!title.trim() && suggestions[0]) setTitle(suggestions[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <div className="space-y-5 stagger-children">
-      {/* Cover photo hero */}
-      {coverPhotoPreview ? (
-        <button
-          type="button"
-          onClick={onEditStory}
-          className="group relative block w-full aspect-[16/9] rounded-2xl overflow-hidden border border-border/60 bg-muted/30 shadow-[0_10px_40px_-24px_rgba(0,0,0,0.35)]"
-        >
-          <img
-            src={coverPhotoPreview}
-            alt="Your request cover photo"
-            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
-          />
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background/70 to-transparent opacity-70" />
-          <span
-            className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-background/85 backdrop-blur-sm px-3 py-1.5
-              text-xs font-medium text-foreground shadow-sm transition-all duration-200
-              opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0"
+    <div className="space-y-10">
+      {cover?.previewUrl ? (
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={onEditStory}
+            className="group relative block aspect-[16/10] w-full overflow-hidden rounded-[1.5rem] bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-label="Change your photos"
           >
-            <Camera className="w-3.5 h-3.5" />
-            Change photo
-          </span>
-          {media.length > 1 && (
-            <span className="absolute top-3 left-3 rounded-full bg-background/85 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-foreground">
-              1 / {media.length}
+            <img src={cover.previewUrl} alt="Your cover photo" className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]" />
+            <span className="absolute bottom-3 right-3 rounded-lg bg-background/90 px-3 py-1.5 text-sm font-medium text-foreground opacity-0 backdrop-blur transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
+              Change photos
             </span>
+          </button>
+          {extras.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {extras.map((item, index) => (
+                <button key={item.id} type="button" onClick={onEditStory} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted" aria-label={`Photo ${index + 2}`}>
+                  {item.previewUrl
+                    ? <img src={item.previewUrl} alt="" className="h-full w-full object-cover" />
+                    : <span className="flex h-full w-full items-center justify-center text-[11px] text-muted-foreground">Video</span>}
+                  {item.kind === "video" && item.durationSec ? (
+                    <span className="absolute bottom-1 right-1 rounded bg-background/85 px-1 text-[10px] font-medium text-foreground">{formatDuration(item.durationSec)}</span>
+                  ) : null}
+                </button>
+              ))}
+            </div>
           )}
-        </button>
+        </div>
       ) : (
         <button
           type="button"
           onClick={onEditStory}
-          className="group w-full aspect-[16/9] max-h-44 rounded-2xl border border-dashed border-border/70 bg-secondary/25
-            flex flex-col items-center justify-center gap-2 transition-all duration-200
-            hover:border-primary/40 hover:bg-primary/5"
+          className="flex aspect-[16/10] max-h-56 w-full flex-col items-center justify-center gap-2 rounded-[1.5rem] bg-muted/60 outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <span className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
-            <ImagePlus className="w-5 h-5 text-primary" />
-          </span>
-          <span className="text-sm font-medium text-foreground">Add a photo</span>
-          <span className="text-xs text-muted-foreground">Required — it helps people connect</span>
+          <ImagePlus className="h-7 w-7 text-primary" strokeWidth={1.5} aria-hidden="true" />
+          <span className="text-[15px] font-medium text-foreground">Add a cover photo</span>
+          <span className="text-sm text-muted-foreground">Required, so donors can see who they're helping</span>
         </button>
       )}
 
-      {/* Extra media strip */}
-      {extras.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {extras.map((item, index) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={onEditStory}
-              className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-border/60 bg-muted/30"
-            >
-              {item.previewUrl ? (
-                <img
-                  src={item.previewUrl}
-                  alt={`Additional media ${index + 2}`}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground">
-                  Video
-                </span>
-              )}
-              {item.kind === "video" && item.durationSec ? (
-                <span className="absolute bottom-1 right-1 rounded bg-background/85 px-1 text-[10px] font-medium text-foreground">
-                  {formatDuration(item.durationSec)}
-                </span>
-              ) : null}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Title */}
-      <div className="space-y-2">
-        <div className="relative">
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            maxLength={80}
-            placeholder="Give your request a title..."
-            aria-label="Request title"
-            className="w-full bg-transparent text-xl lg:text-2xl font-semibold text-foreground leading-snug
-              placeholder:text-muted-foreground/50 rounded-lg px-2 -mx-2 py-1.5
-              border border-transparent hover:border-border/60 focus:border-primary/50
-              focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all duration-200"
-          />
-        </div>
-        <div className="flex items-center justify-between gap-3 px-0.5">
+      <section aria-label="Title" className="space-y-2">
+        <label htmlFor="apply-title" className="text-sm font-medium text-muted-foreground">Title</label>
+        <input
+          id="apply-title"
+          data-large-type
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          maxLength={80}
+          placeholder="Give your request a title"
+          className="block w-full rounded-xl bg-muted/60 px-4 py-3 font-display text-[1.75rem] leading-tight text-foreground outline-none transition-shadow placeholder:text-muted-foreground/50 focus:shadow-[inset_0_0_0_2px_hsl(var(--primary))] sm:text-[2rem]"
+        />
+        <div className="flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => setShowSuggestions((v) => !v)}
-            className="text-xs font-medium text-primary hover:text-primary/80 inline-flex items-center gap-1.5 transition-colors duration-200"
+            aria-expanded={showSuggestions}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-md text-sm font-medium text-primary outline-none hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            {showSuggestions ? "Hide suggestions" : "Need ideas?"}
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
+            {showSuggestions ? "Hide title ideas" : "Title ideas"}
           </button>
-          <span
-            className={`text-xs tabular-nums transition-opacity duration-200 ${
-              title.length > 60 ? "opacity-100 text-muted-foreground" : "opacity-0"
-            }`}
-          >
-            {title.length}/80
-          </span>
+          <span className="text-sm tabular-nums text-muted-foreground">{title.length}/80</span>
         </div>
-
         {showSuggestions && (
-          <div className="flex flex-wrap gap-2 pt-1 animate-fade-in">
+          <div className="grid gap-2 sm:grid-cols-3">
             {suggestions.map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => setTitle(s)}
-                className={`px-3 py-1.5 rounded-full border text-xs transition-all duration-200 ${
-                  title === s
-                    ? "border-primary bg-primary/10 text-foreground"
-                    : "border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40"
+                aria-pressed={title === s}
+                className={`rounded-xl px-3.5 py-3 text-left text-sm leading-snug outline-none transition-[background-color,box-shadow] focus-visible:ring-2 focus-visible:ring-ring ${
+                  title === s ? "bg-[hsl(var(--primary-97))] text-foreground shadow-[inset_0_0_0_2px_hsl(var(--primary))]" : "bg-muted/70 text-foreground hover:bg-muted"
                 }`}
               >
                 {s}
@@ -225,52 +162,80 @@ export const ReviewStep = ({
             ))}
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Summary card */}
-      <div className="rounded-2xl border border-border/60 overflow-hidden divide-y divide-border/50 bg-card">
-        <Row label="Category" onEdit={onEditDetails}>
-          <span className="font-medium">{getCategoryLabel(category)}</span>
-        </Row>
-
-        <Row label="Beneficiary" onEdit={onEditDetails}>
-          <span className="font-medium">{getBeneficiaryLabel(beneficiaryType)}</span>
-        </Row>
-
-        <Row label="Goal" onEdit={onEditLocation}>
-          <span className="font-semibold">
-            ${Number(goalAmount || 0).toLocaleString()}{" "}
-            <span className="font-normal text-muted-foreground">total</span>
-          </span>
-        </Row>
-
-        <Row label="Location" onEdit={onEditLocation}>
-          <div className="flex items-center gap-2 flex-wrap">
-            {cityState ? (
-              <span className="font-medium">{cityState}</span>
-            ) : null}
-            <span className={cityState ? "text-muted-foreground" : "font-medium"}>
-              {zipCode || "Not set"}
-            </span>
+      <section className="space-y-4">
+        <SectionHead title="Goal and place" onEdit={onEditLocation} editLabel="Edit goal and place" />
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+          <div>
+            <dt className="text-sm text-muted-foreground">Goal</dt>
+            <dd className="mt-1 font-display text-[2rem] leading-none tabular-nums text-foreground">${whole.format(goal)}</dd>
           </div>
-        </Row>
+          <div>
+            <dt className="text-sm text-muted-foreground">Shown as</dt>
+            <dd className="mt-1.5 flex items-center gap-1.5 text-[15px] font-medium text-foreground">
+              <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              {place ?? (zipCode ? `ZIP ${zipCode}` : "Not set")}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-sm text-muted-foreground">For</dt>
+            <dd className="mt-1.5 text-[15px] font-medium text-foreground">{who ?? "Not chosen"}</dd>
+          </div>
+        </dl>
+      </section>
 
-        <Row label="Story" onEdit={onEditStory} align="start">
-          {story ? (
-            <p className="text-muted-foreground leading-relaxed line-clamp-2">{story}</p>
-          ) : (
-            <p className="text-muted-foreground/70 italic">No story written yet</p>
-          )}
-        </Row>
-      </div>
+      <section className="space-y-4">
+        <SectionHead title="What's needed" onEdit={onEditDetails} editLabel="Edit needs and stores" />
+        <ul className="flex flex-wrap gap-x-5 gap-y-2">
+          {needs.map((id) => (
+            <li key={id} className="flex items-center gap-2 text-[15px] text-foreground">
+              <NeedIcon id={id} className="h-4 w-4 text-primary" />
+              {needLabel(id)}
+            </li>
+          ))}
+        </ul>
+        <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-4" aria-label="Stores you chose">
+          {stores.map((id) => {
+            const r = findRetailer(id);
+            return (
+              <li key={id} className="flex items-center gap-2.5 rounded-xl bg-muted/60 p-2.5">
+                <RetailerLogo retailer={r} className="h-9 w-9 p-1" />
+                <span className="min-w-0 truncate text-sm font-medium text-foreground">{r.name}</span>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="text-sm text-muted-foreground">
+          {similarOk ? "Your page says gifts to other stores are welcome too." : "Your page asks donors to give to these stores."}
+        </p>
+      </section>
 
-      {/* Footnote */}
-      <div className="flex items-start gap-2.5 px-1">
-        <ShieldCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          Vouchers are redeemable at <span className="font-medium text-foreground">US</span> retailers
-          only, so we use your ZIP code to match retailers near you. You can edit any detail after
-          submitting.
+      <section className="space-y-3">
+        <SectionHead title="Your story" onEdit={onEditStory} editLabel="Edit your story" />
+        {story
+          ? <p className="line-clamp-5 whitespace-pre-line text-[16px] leading-[1.7] text-foreground/85">{story}</p>
+          : <p className="text-muted-foreground">No story written yet.</p>}
+      </section>
+
+      <div className="space-y-3">
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-muted/60 p-4 sm:p-5" data-apply-confirm>
+          <input
+            type="checkbox"
+            checked={confirmed}
+            onChange={(e) => setConfirmed(e.target.checked)}
+            className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[hsl(var(--primary))]"
+          />
+          <span className="text-[15px] leading-relaxed text-foreground">
+            I confirm this request is true, that I'm 18 or older, and that I have permission to share every photo and detail in it.
+          </span>
+        </label>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Submitting publishes your page right away, including any health details you shared, under our{" "}
+          <Link to="/terms" target="_blank" className="font-medium text-primary underline underline-offset-2">Terms of Use</Link>,{" "}
+          <Link to="/fundraiser-rules" target="_blank" className="font-medium text-primary underline underline-offset-2">Fundraiser Rules</Link> and{" "}
+          <Link to="/health-data-privacy" target="_blank" className="font-medium text-primary underline underline-offset-2">Consumer Health Data Privacy Policy</Link>.
+          You can change any part of it later from your fundraiser page.
         </p>
       </div>
     </div>

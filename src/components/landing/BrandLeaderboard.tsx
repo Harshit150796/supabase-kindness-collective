@@ -9,11 +9,13 @@ import { useMotionPreference } from '@/hooks/useMotionPreference';
 type RecentDonation = { name: string; amount: number; brand: string; time: string };
 type ChartDatum = { name: string; donations: number };
 
+// Built once: the toLocale* helpers construct a new Intl formatter on every call.
+const shortDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
 const timeAgo = (iso: string) => {
   const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
   if (minutes < 60) return `${Math.max(minutes, 1)} min ago`;
   const hours = Math.floor(minutes / 60);
-  return hours < 24 ? `${hours}h ago` : new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return hours < 24 ? `${hours}h ago` : shortDate.format(new Date(iso));
 };
 
 const findBrand = (name: string): BrandInfo | undefined => {
@@ -42,8 +44,8 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<
   const data = payload[0].payload;
   const brand = findBrand(data.name);
   return <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 shadow-lg">
-    {brand && <img src={brand.logo} alt="" className="h-8 w-8 object-contain" />}
-    <div><p className="font-semibold text-foreground">{data.name}</p><p className="font-bold text-primary">${data.donations.toLocaleString()} donated</p></div>
+    {brand && <img width={48} height={48} loading="lazy" decoding="async" src={brand.logo} alt="" className="h-8 w-8 object-contain" />}
+    <div><p className="font-semibold text-foreground">{data.name}</p><p className="font-bold text-primary">${data.donations.toLocaleString()} allocated</p></div>
   </div>;
 }
 
@@ -65,7 +67,7 @@ function DonationAvatar({ donation }: { donation: RecentDonation }) {
   const brand = firstRecognizedBrand(donation.brand);
   const initial = donation.name.trim().charAt(0).toUpperCase();
   return <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-secondary md:h-10 md:w-10">
-    {brand && !failed ? <img src={brand.logo} alt="" className="h-5 w-5 object-contain md:h-6 md:w-6" onError={() => setFailed(true)} />
+    {brand && !failed ? <img width={48} height={48} loading="lazy" decoding="async" src={brand.logo} alt="" className="h-5 w-5 object-contain md:h-6 md:w-6" onError={() => setFailed(true)} />
       : initial ? <span className="text-xs font-semibold text-primary md:text-sm" aria-hidden="true">{initial}</span>
       : <Heart className="h-4 w-4 text-primary" aria-hidden="true" />}
   </div>;
@@ -77,7 +79,7 @@ export function BrandLeaderboard() {
   const [chartVisible, setChartVisible] = useState(false);
   const motionPreference = useMotionPreference();
   const leaderboardData = (stats?.brands ?? []).slice(0, 6).map((brand) => ({ name: brand.name, donations: Math.round(brand.total) }));
-  const animatedData = leaderboardData.map((brand) => ({ ...brand, donations: chartVisible ? brand.donations : 0 }));
+  const animatedData = leaderboardData;
   const [recent, setRecent] = useState<RecentDonation[]>([]);
   const [donationIndex, setDonationIndex] = useState(0);
 
@@ -103,23 +105,23 @@ export function BrandLeaderboard() {
   }, []);
 
   useEffect(() => {
-    if (recent.length < 2) return;
+    if (recent.length < 2 || motionPreference !== 'full') return;
     const interval = window.setInterval(() => setDonationIndex((current) => (current + 1) % recent.length), 4000);
     return () => window.clearInterval(interval);
-  }, [recent.length]);
+  }, [recent.length, motionPreference]);
 
   const latestDonation = recent[donationIndex];
-  return <section className="bg-background py-24 md:py-36">
+  return <div className="mt-8 rounded-2xl bg-background py-6">
     <div className="container mx-auto max-w-5xl px-4">
       <div className="mb-4 flex items-center justify-between md:mb-6">
-        <h2 className="text-base font-semibold text-foreground md:text-lg">Live Donation Tracking</h2>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground md:text-sm"><span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse md:h-2 md:w-2" />Real-time</div>
+        <h2 className="text-base font-semibold text-foreground md:text-lg">Retailer allocations</h2>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground md:text-sm"><span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse md:h-2 md:w-2" />Completed donations</div>
       </div>
       {leaderboardData.length ? <div ref={chartRef} className="h-[240px] w-full min-w-0 md:h-[320px]" data-chart-visible={chartVisible ? 'true' : 'false'}>
         <ResponsiveContainer width="100%" height="100%"><BarChart data={animatedData} margin={{ top: 30, right: 4, bottom: 70, left: 4 }}>
           <XAxis dataKey="name" axisLine={false} tickLine={false} tick={<CustomXAxisTick />} interval={0} height={70} /><YAxis hide />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
-          <Bar dataKey="donations" radius={[8, 8, 0, 0]} maxBarSize={48} isAnimationActive animationBegin={0} animationDuration={motionPreference === 'full' ? 1500 : 900} animationEasing="ease-out">
+          <Bar dataKey="donations" radius={[8, 8, 0, 0]} maxBarSize={48} isAnimationActive={motionPreference === 'full'} animationBegin={0} animationDuration={350} animationEasing="ease-out">
             <LabelList dataKey="donations" content={<CustomLabel />} />
             {leaderboardData.map((entry, index) => { const brand = findBrand(entry.name); return <Cell key={entry.name} fill={brand?.color || 'hsl(var(--primary))'} className="transition-opacity duration-500 hover:opacity-80" style={{ filter: index === 0 ? brandGlow(brand?.color) : 'none' }} />; })}
           </Bar>
@@ -133,5 +135,5 @@ export function BrandLeaderboard() {
         </div><Heart className="h-4 w-4 flex-shrink-0 text-primary animate-pulse" aria-hidden="true" />
       </div></div>}
     </div>
-  </section>;
+  </div>;
 }

@@ -66,7 +66,7 @@ export function RecipientStoryPanel() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Goes to recipients</span>
-                  <span className="font-semibold text-emerald-600">95%</span>
+                  <span className="font-semibold text-primary">100%</span>
                 </div>
               </div>
 

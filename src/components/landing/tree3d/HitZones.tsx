@@ -3,6 +3,8 @@ import { ThreeEvent } from '@react-three/fiber';
 import { useInteraction } from './InteractionContext';
 import { toast } from 'sonner';
 
+// Click targets only: their materials are never drawn (an invisible full-screen sky plane and canopy
+// sphere were still being blended every frame), and raycasting ignores material visibility.
 export function HitZones() {
   const {
     triggerShake,
@@ -30,7 +32,7 @@ export function HitZones() {
         }}
       >
         <cylinderGeometry args={[0.55, 0.7, 3.6, 12]} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} visible={false} />
       </mesh>
 
       {/* Root disc — click for transparency */}
@@ -43,7 +45,7 @@ export function HitZones() {
         }}
       >
         <ringGeometry args={[0.7, 1.6, 32]} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} visible={false} />
       </mesh>
 
       {/* Canopy hold zone — bird flies out */}
@@ -65,23 +67,23 @@ export function HitZones() {
         }}
       >
         <sphereGeometry args={[2.6, 16, 12]} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} visible={false} />
       </mesh>
 
-      {/* Sky back-plane — click to cycle day/night */}
+      {/* Sky back-plane — click to switch between night and day */}
       <mesh
         position={[0, 6, -14]}
         onClick={(e) => {
           stop(e);
           cycleTimeOfDay();
-          const next = timeOfDay === 'day' ? 'sunset' : timeOfDay === 'sunset' ? 'night' : 'day';
-          toast(`${next === 'day' ? '☀️ Day' : next === 'sunset' ? '🌅 Sunset' : '🌙 Night'}`, {
+          const next = timeOfDay === 'day' ? 'night' : 'day';
+          toast(`${next === 'day' ? '☀️ Day' : '🌙 Night'}`, {
             duration: 1200,
           });
         }}
       >
         <planeGeometry args={[40, 20]} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} visible={false} />
       </mesh>
     </>
   );

@@ -1,30 +1,47 @@
-import { lazy, Suspense } from 'react';
+import { prefetchApply } from '@/lib/applyRoute';
+import { lazy, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { WhatWeDo } from '@/components/landing/WhatWeDo';
 import { SEO } from '@/components/SEO';
 import { LazyOnView } from '@/components/LazyOnView';
-import { CompletedCampaigns, ProofFigures } from '@/components/proof/ProofSections';
 import { WordReveal } from '@/components/ui/editorial-motion';
+import { prefetchWhenIdle } from '@/lib/idlePrefetch';
 
-// Below-the-fold sections — lazy chunks, only fetched as user scrolls.
+// Below-the-fold sections — lazy chunks, mounted as the user scrolls. Their code is
+// also fetched in idle time after the opening, so scrolling never waits on a download.
 import { LiveActivityBar } from '@/components/landing/LiveActivityBar';
-const ImpactStories = lazy(() => import('@/components/landing/ImpactStories').then(m => ({ default: m.ImpactStories })));
-const TrustTransparency = lazy(() => import('@/components/landing/TrustTransparency').then(m => ({ default: m.TrustTransparency })));
-const BrandLeaderboard = lazy(() => import('@/components/landing/BrandLeaderboard').then(m => ({ default: m.BrandLeaderboard })));
-const DonationFlow = lazy(() => import('@/components/landing/DonationFlow').then(m => ({ default: m.DonationFlow })));
-const SecurityBadges = lazy(() => import('@/components/landing/SecurityBadges').then(m => ({ default: m.SecurityBadges })));
-const TestimonialsSection = lazy(() => import('@/components/landing/TestimonialsSection').then(m => ({ default: m.TestimonialsSection })));
-const ImpactDashboard = lazy(() => import('@/components/landing/ImpactDashboard').then(m => ({ default: m.ImpactDashboard })));
-const CTASection = lazy(() => import('@/components/landing/CTASection').then(m => ({ default: m.CTASection })));
-const Footer = lazy(() => import('@/components/layout/Footer').then(m => ({ default: m.Footer })));
+const sectionCode = {
+  stories: () => import('@/components/landing/ImpactStories'),
+  proof: () => import('@/components/proof/ProofSections'),
+  transparency: () => import('@/components/landing/TrustTransparency'),
+  donationFlow: () => import('@/components/landing/DonationFlow'),
+  security: () => import('@/components/landing/SecurityBadges'),
+  testimonials: () => import('@/components/landing/TestimonialsSection'),
+  dashboard: () => import('@/components/landing/ImpactDashboard'),
+  leaderboard: () => import('@/components/landing/BrandLeaderboard'),
+  cta: () => import('@/components/landing/CTASection'),
+  footer: () => import('@/components/layout/Footer'),
+};
+const ImpactStories = lazy(() => sectionCode.stories().then(m => ({ default: m.ImpactStories })));
+const CompletedCampaigns = lazy(() => sectionCode.proof().then(m => ({ default: m.CompletedCampaigns })));
+const TrustTransparency = lazy(() => sectionCode.transparency().then(m => ({ default: m.TrustTransparency })));
+const DonationFlow = lazy(() => sectionCode.donationFlow().then(m => ({ default: m.DonationFlow })));
+const SecurityBadges = lazy(() => sectionCode.security().then(m => ({ default: m.SecurityBadges })));
+const TestimonialsSection = lazy(() => sectionCode.testimonials().then(m => ({ default: m.TestimonialsSection })));
+const ImpactDashboard = lazy(() => sectionCode.dashboard().then(m => ({ default: m.ImpactDashboard })));
+const CTASection = lazy(() => sectionCode.cta().then(m => ({ default: m.CTASection })));
+const Footer = lazy(() => sectionCode.footer().then(m => ({ default: m.Footer })));
 
 const Index = () => {
+  // Page order, one module per idle period (BrandLeaderboard is ImpactDashboard's own lazy chart).
+  useEffect(() => prefetchWhenIdle([...Object.values(sectionCode), prefetchApply]), []);
+
   return (
     <div className="min-h-dvh bg-background">
       <SEO
-        title="CouponDonation - Transforming Giving Through Generosity"
-        description="CouponDonation converts your donation into grocery coupons for verified families in need. Donate to causes from Walmart, Target, Amazon and more."
+        title="CouponDonation: Give Groceries & Gift Cards to Families in Need"
+        description="Help someone with a real need. Your donation becomes gift cards for the groceries, medicine and rides they asked for, and you get a receipt for every gift."
         path="/"
       />
       <Navbar />
@@ -36,66 +53,60 @@ const Index = () => {
 
         <WhatWeDo />
 
-        <LazyOnView minHeight={600} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
+        <LazyOnView minHeight={1150} intrinsicSize={{ mobile: 1150, tablet: 680, desktop: 1900 }} rootMargin="900px" contentVisibilityAuto>
+          <>
             <ImpactStories />
-            <ProofFigures />
             <CompletedCampaigns limit={3} compact />
-          </Suspense>
+          </>
         </LazyOnView>
 
-        <LazyOnView minHeight={600} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
+        <LazyOnView minHeight={1100} intrinsicSize={{ mobile: 1550, tablet: 990, desktop: 1100 }} rootMargin="900px" contentVisibilityAuto>
+          <>
             <TrustTransparency />
-          </Suspense>
+          </>
         </LazyOnView>
 
-        <LazyOnView minHeight={500} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
-            <BrandLeaderboard />
-          </Suspense>
-        </LazyOnView>
 
-        <section className="bg-background py-24 md:py-36">
+        <section className="bg-background py-8 lg:py-14">
           <div className="container mx-auto max-w-6xl px-4">
-            <WordReveal className="font-display text-5xl leading-tight text-foreground md:text-7xl">We don't track the person. We track the money.</WordReveal>
+            <WordReveal className="max-w-5xl font-display text-[2.5rem] leading-[1.12] tracking-normal text-foreground md:text-[3.5rem] lg:text-[4.5rem]">We don't track the person. We track the money.</WordReveal>
           </div>
         </section>
 
-        <LazyOnView minHeight={700} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
+        <LazyOnView minHeight={1120} intrinsicSize={{ mobile: 1190, tablet: 1100, desktop: 1120 }} rootMargin="900px" contentVisibilityAuto>
+          <>
             <DonationFlow />
-          </Suspense>
+          </>
         </LazyOnView>
 
-        <LazyOnView minHeight={300} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
+        <LazyOnView minHeight={980} intrinsicSize={{ mobile: 980, tablet: 840, desktop: 530 }} rootMargin="900px" contentVisibilityAuto>
+          <>
             <SecurityBadges />
-          </Suspense>
+          </>
         </LazyOnView>
 
-        <LazyOnView minHeight={500} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
+        <LazyOnView minHeight={845} intrinsicSize={{ mobile: 845, tablet: 885, desktop: 810 }} rootMargin="900px" contentVisibilityAuto>
+          <>
             <TestimonialsSection />
-          </Suspense>
+          </>
         </LazyOnView>
 
-        <LazyOnView minHeight={400} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
+        <LazyOnView minHeight={1180} intrinsicSize={{ mobile: 1180, tablet: 1170, desktop: 1120 }} rootMargin="900px" contentVisibilityAuto>
+          <>
             <ImpactDashboard />
-          </Suspense>
+          </>
         </LazyOnView>
 
-        <LazyOnView minHeight={300} rootMargin="900px" contentVisibilityAuto>
-          <Suspense fallback={null}>
+        <LazyOnView minHeight={800} intrinsicSize={{ mobile: 800, tablet: 890, desktop: 580 }} rootMargin="900px" contentVisibilityAuto>
+          <>
             <CTASection />
-          </Suspense>
+          </>
         </LazyOnView>
       </main>
-      <LazyOnView minHeight={300} rootMargin="900px" contentVisibilityAuto>
-        <Suspense fallback={null}>
+      <LazyOnView minHeight={2320} intrinsicSize={{ mobile: 2320, tablet: 1890, desktop: 1810 }} rootMargin="900px" contentVisibilityAuto>
+        <>
           <Footer />
-        </Suspense>
+        </>
       </LazyOnView>
     </div>
   );

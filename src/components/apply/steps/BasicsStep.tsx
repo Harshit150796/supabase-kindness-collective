@@ -1,173 +1,89 @@
-import {
-  ShoppingCart,
-  Heart,
-  GraduationCap,
-  Shirt,
-  Car,
-  Zap,
-  Check,
-  User,
-  Users,
-  Building2,
-  ShieldCheck,
-  Siren,
-  Package,
-} from "lucide-react";
+import { Check } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { cn } from "@/lib/utils";
+import { NeedsAndStores } from "../NeedsAndStores";
+import { BENEFICIARY_OPTIONS } from "../applyOptions";
 
 interface BasicsStepProps {
-  category: string;
-  setCategory: (value: string) => void;
   beneficiaryType: string;
   setBeneficiaryType: (value: string) => void;
+  needs: string[];
+  setNeeds: (value: string[]) => void;
+  stores: string[];
+  setStores: (value: string[]) => void;
+  similarOk: boolean;
+  setSimilarOk: (value: boolean) => void;
 }
 
-const categories = [
-  { id: "food", label: "Food & Groceries", icon: ShoppingCart },
-  { id: "healthcare", label: "Healthcare", icon: Heart },
-  { id: "education", label: "Education", icon: GraduationCap },
-  { id: "clothing", label: "Clothing", icon: Shirt },
-  { id: "transportation", label: "Transportation", icon: Car },
-  { id: "utilities", label: "Utilities", icon: Zap },
-  { id: "emergency", label: "Emergency", icon: Siren },
-  { id: "essentials", label: "Essentials", icon: Package },
-];
 
-const beneficiaryOptions = [
-  {
-    id: "yourself",
-    icon: User,
-    title: "Yourself",
-    description: "Coupons are delivered to your account for your own use",
-  },
-  {
-    id: "family",
-    icon: Users,
-    title: "My Family",
-    description: "You're applying on behalf of your household",
-  },
-  {
-    id: "organization",
-    icon: Building2,
-    title: "Community Organization",
-    description: "Vouchers are issued to verified recipients referred by your organization",
-  },
-];
-
+/** Step 1: who the request is for, what it's for (several needs), and the stores that would help. */
 export const BasicsStep = ({
-  category,
-  setCategory,
   beneficiaryType,
   setBeneficiaryType,
+  needs,
+  setNeeds,
+  stores,
+  setStores,
+  similarOk,
+  setSimilarOk,
 }: BasicsStepProps) => {
   return (
-    <div className="space-y-10 stagger-children">
-      {/* Beneficiary Section */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-foreground">Who needs help?</h2>
-
-        <div className="space-y-3">
-          {beneficiaryOptions.map((option) => {
+    <div className="space-y-12">
+      <section aria-labelledby="who-heading">
+        <h2 id="who-heading" className="font-display text-[1.75rem] font-normal leading-tight text-foreground sm:text-[2rem]">Who is this request for?</h2>
+        <div role="radiogroup" aria-labelledby="who-heading" className="mt-5 grid gap-2.5 sm:grid-cols-3 sm:gap-3">
+          {BENEFICIARY_OPTIONS.map((option) => {
             const Icon = option.icon;
-            const isSelected = beneficiaryType === option.id;
-
+            const selected = beneficiaryType === option.id;
             return (
               <button
                 key={option.id}
+                type="button"
+                role="radio"
+                aria-checked={selected}
                 onClick={() => setBeneficiaryType(option.id)}
-                className={`
-                  selection-card w-full p-4 rounded-2xl border-2 text-left
-                  flex items-start gap-4 group
-                  ${isSelected ? "selected" : "bg-card border-border/60"}
-                `}
+                data-who={option.id}
+                className={cn(
+                  "relative flex items-start gap-3.5 rounded-2xl p-4 text-left outline-none transition-[background-color,box-shadow,transform] duration-200 sm:flex-col sm:gap-4 sm:p-5",
+                  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[.98]",
+                  selected
+                    ? "bg-[hsl(var(--primary-97))] shadow-[inset_0_0_0_2px_hsl(var(--primary))] dark:bg-primary/15"
+                    : "bg-muted/70 hover:bg-muted",
+                )}
               >
-                <div
-                  className={`
-                    w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0
-                    transition-all duration-300
-                    ${isSelected
-                      ? "bg-primary shadow-lg shadow-primary/20"
-                      : "bg-secondary group-hover:bg-primary/10"
-                    }
-                  `}
-                >
-                  <Icon
-                    className={`w-5 h-5 transition-all duration-300 ${
-                      isSelected
-                        ? "text-primary-foreground scale-110"
-                        : "text-muted-foreground group-hover:text-primary"
-                    }`}
-                  />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground mb-0.5">{option.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {option.description}
-                  </p>
-                </div>
-
-                <div
-                  className={`
-                    w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5
-                    transition-all duration-300
-                    ${isSelected
-                      ? "border-primary bg-primary"
-                      : "border-border/80 group-hover:border-primary/50"
-                    }
-                  `}
-                >
-                  {isSelected && (
-                    <Check className="w-3.5 h-3.5 text-primary-foreground animate-check-pop" />
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Category Section */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-foreground">
-          What kind of help do you need?
-        </h2>
-
-        <div className="flex flex-wrap gap-3 stagger-fast">
-          {categories.map((cat) => {
-            const Icon = cat.icon;
-            const isSelected = category === cat.id;
-
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setCategory(cat.id)}
-                className={`
-                  pill-chip inline-flex items-center gap-2.5 px-5 py-3 rounded-full border-2 font-medium
-                  ${isSelected
-                    ? "selected"
-                    : "bg-card border-border/60 text-muted-foreground hover:text-foreground"
-                  }
-                `}
-              >
-                <span className={`transition-transform duration-300 ${isSelected ? "scale-110" : ""}`}>
-                  <Icon className={`w-4 h-4 ${isSelected ? "text-primary-foreground" : ""}`} />
+                <Icon className={cn("mt-0.5 h-6 w-6 shrink-0 transition-colors sm:mt-0", selected ? "text-primary" : "text-foreground/70")} strokeWidth={1.75} aria-hidden="true" />
+                <span className="min-w-0 pr-7 sm:pr-0">
+                  <span className="block text-base font-medium text-foreground">{option.title}</span>
+                  <span className="mt-0.5 block text-sm leading-relaxed text-muted-foreground">{option.description}</span>
                 </span>
-                <span>{cat.label}</span>
-                {isSelected && <Check className="w-4 h-4 ml-1 animate-check-pop" />}
+                <AnimatePresence>
+                  {selected && (
+                    <motion.span
+                      aria-hidden="true"
+                      className="absolute right-3 top-3 grid h-6 w-6 place-items-center rounded-full bg-primary text-primary-foreground"
+                      initial={{ scale: 0.3, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.3, opacity: 0, transition: { duration: 0.12 } }}
+                      transition={{ type: "spring", stiffness: 640, damping: 30 }}
+                    >
+                      <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </button>
             );
           })}
         </div>
-      </div>
+      </section>
 
-      {/* Reassurance */}
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-secondary/50 border border-border/30">
-        <ShieldCheck className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-        <p className="text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">Free to apply.</span> You receive retail
-          coupons only — never cash.
-        </p>
-      </div>
+      <NeedsAndStores
+        needs={needs}
+        onNeeds={setNeeds}
+        stores={stores}
+        onStores={setStores}
+        similarOk={similarOk}
+        onSimilarOk={setSimilarOk}
+      />
     </div>
   );
 };

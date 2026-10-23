@@ -1,78 +1,171 @@
-import { Quote, CheckCircle2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useCMSTestimonials } from '@/hooks/useCMSContent';
 import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
+import { ReservedSectionState } from './ReservedSectionState';
+import { photoUrl } from '@/lib/responsivePhotos';
+import { tidy, tidyLabel, voiceRows, type VoiceLine } from '@/lib/testimonialLines';
+import { useMotionPreference } from '@/hooks/useMotionPreference';
 
-const roleColors: Record<string, string> = {
-  donor: 'bg-primary/10 text-primary',
-  recipient: 'bg-verify/10 text-verify',
-  partner: 'bg-blue-500/10 text-blue-600'
-};
+type Voice = { id: string; quote: string; name: string; roleLabel: string; location: string; image: string };
+type CmsTestimonial = { id: string; quote: string | null; name: string | null; role_label: string | null; location: string | null; image_url: string | null };
 
-export function TestimonialsSection() {
-  const { data: cmsTestimonials } = useCMSTestimonials(true);
+/** Speed of the drifting rows in px per second: calm enough to read on every screen size. */
+const DRIFT_SPEED = { phone: 34, wide: 44 };
+const FEATURE_EVERY_MS = 9000;
 
-  const displayTestimonials = (cmsTestimonials || []).map((t: any) => ({
-        id: t.id,
-        quote: t.quote,
-        name: t.name,
-        role: t.role as 'donor' | 'recipient' | 'partner',
-        roleLabel: t.role_label,
-        location: t.location || '',
-        image: t.image_url || '',
-        verified: t.verified,
-      }));
+/**
+ * Stock-photo hosts. An account pictured with a stock photo isn't a real person's account (the early
+ * seeded placeholders were), so it is never shown, whatever the CMS says. FTC rule 16 CFR 465.
+ */
+const STOCK_PHOTO = /(^|\/\/|\.)(unsplash\.com|pexels\.com|pravatar\.cc|randomuser\.me|istockphoto\.com|shutterstock\.com)/i;
 
-  if (displayTestimonials.length === 0) return null;
+function initials(name: string) {
+  return name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+}
+
+function Face({ voice, size, className }: { voice: Voice; size: number; className: string }) {
+  if (!voice.image) return <span aria-hidden="true" className={`${className} flex items-center justify-center bg-secondary text-sm font-semibold text-muted-foreground`}>{initials(voice.name)}</span>;
+  return <img src={photoUrl(voice.image, size * 2)} width={size} height={size} loading="lazy" decoding="async" alt="" className={className} />;
+}
+
+/**
+ * One drifting row of lines. The lines repeat until the strip is long enough, then the strip is
+ * doubled so it can loop seamlessly; only the first copy is exposed to assistive technology and the
+ * keyboard. Its loop time comes from its measured width, so every row moves at the same speed.
+ */
+function VoiceRow({ lines, voices, active, reverse, onPick }: {
+  lines: VoiceLine[];
+  voices: Voice[];
+  active: number;
+  reverse?: boolean;
+  onPick: (person: number, event: MouseEvent<HTMLButtonElement>) => void;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const base = useMemo(() => {
+    const filled: VoiceLine[] = [];
+    while (lines.length && filled.length < 6) filled.push(...lines);
+    return filled;
+  }, [lines]);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track || typeof ResizeObserver === 'undefined') return;
+    const measure = () => {
+      const speed = window.innerWidth < 640 ? DRIFT_SPEED.phone : DRIFT_SPEED.wide;
+      const loop = track.scrollWidth / 2;
+      if (loop > 0) track.style.setProperty('--voices-loop', `${(loop / speed).toFixed(1)}s`);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(track);
+    return () => observer.disconnect();
+  }, [base]);
 
   return (
-    <section className="bg-secondary/45 py-24 md:py-36">
-      <div className="container mx-auto px-4">
-        <div className="mx-auto mb-12 max-w-3xl text-center md:mb-16">
-          <LineReveal><h2 className="font-display text-5xl font-normal leading-none text-foreground md:text-6xl">In their own words.</h2></LineReveal>
-          <Reveal delay={0.1} className="mt-5"><p className="text-lg text-muted-foreground">Published accounts from people who have used or supported CouponDonation.</p></Reveal>
-        </div>
+    <div className="voices-row" data-direction={reverse ? 'back' : 'forward'}>
+      <div ref={trackRef} className="voices-track">
+        {[0, 1].map((copy) => base.map((line, index) => {
+          const voice = voices[line.person];
+          const echo = copy === 1 || index >= lines.length;
+          return (
+            <div key={`${copy}-${index}-${line.key}`} className="voices-cell" aria-hidden={echo || undefined}>
+              <button type="button" className="voices-item" data-active={line.person === active || undefined} tabIndex={echo ? -1 : undefined} onClick={(event) => onPick(line.person, event)}>
+                <Face voice={voice} size={46} className="voices-face" />
+                <span className="flex min-w-0 flex-col gap-1.5">
+                  <q className="voices-line">{line.text}</q>
+                  <span className="voices-name">{voice.name}</span>
+                </span>
+              </button>
+              <span className="voices-sep" aria-hidden="true" />
+            </div>
+          );
+        }))}
+      </div>
+    </div>
+  );
+}
 
-        <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2 lg:grid-cols-4">
-          {displayTestimonials.map((testimonial, index) => (
-            <Reveal
-              key={testimonial.id} 
-              delay={index * 0.07}
-              className="rounded-[1.5rem] bg-background p-7 transition-transform duration-500 hover:-translate-y-1"
-            >
-                <Quote className="w-8 h-8 text-primary/20 mb-4" />
-                <p className="text-foreground text-sm leading-relaxed mb-6">
-                  "{testimonial.quote}"
-                </p>
-                
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    {testimonial.image && (
-                      <img 
-                        src={testimonial.image}
-                        alt={testimonial.name}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    )}
-                    {testimonial.verified && (
-                      <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center bg-primary">
-                        <CheckCircle2 className="w-3 h-3 text-primary-foreground" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-foreground truncate">{testimonial.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">{testimonial.location}</div>
+export function TestimonialsSection() {
+  const { data: cmsTestimonials, isLoading, isError, refetch } = useCMSTestimonials(true);
+  const featureRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+  const still = useMotionPreference() === 'gentle';
+
+  const voices = useMemo<Voice[]>(() => ((cmsTestimonials || []) as CmsTestimonial[]).map((t) => ({
+    id: t.id,
+    quote: tidy(t.quote || ''),
+    name: tidyLabel(t.name || ''),
+    roleLabel: tidyLabel(t.role_label || ''),
+    location: tidyLabel(t.location || ''),
+    image: t.image_url || '',
+  })).filter((voice) => voice.quote && voice.name && !STOCK_PHOTO.test(voice.image)), [cmsTestimonials]);
+  const rows = useMemo(() => voiceRows(voices.map((voice) => voice.quote)), [voices]);
+
+  // The featured account keeps turning over while both rows drift continuously.
+  useEffect(() => {
+    if (voices.length < 2 || still) return;
+    const timer = window.setInterval(() => setActive((current) => (current + 1) % voices.length), FEATURE_EVERY_MS);
+    return () => window.clearInterval(timer);
+  }, [voices.length, still]);
+
+  const pick = useCallback((person: number, event: MouseEvent<HTMLButtonElement>) => {
+    setActive(person);
+    const feature = featureRef.current;
+    if (!feature) return;
+    // Keyboard users land on the account they chose; on small screens it is brought into view.
+    if (event.detail === 0) feature.focus({ preventScroll: true });
+    const box = feature.getBoundingClientRect();
+    if (box.bottom > window.innerHeight || box.top < 0) feature.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, []);
+
+  if (voices.length === 0) return <section className="flex min-h-[var(--lazy-reserved-height,590px)] flex-col bg-secondary/45 py-14 lg:py-28">
+    <ReservedSectionState title={isLoading ? 'Gathering their words.' : isError ? 'Their stories are taking longer to arrive.' : 'Every story starts with someone.'}
+      description={isLoading ? 'Published accounts will appear here when they arrive.' : isError ? 'Please try again to read published accounts from our community.' : 'There are no published accounts here yet. Explore the fundraisers and stories behind this community.'}
+      onRetry={isError ? () => refetch() : undefined} />
+  </section>;
+
+  const current = Math.min(active, voices.length - 1);
+
+  return (
+    <section data-voices className="voices min-h-[var(--lazy-reserved-height,0px)] overflow-hidden bg-secondary/45 py-14 lg:py-24">
+      <div className="container mx-auto grid gap-5 px-4 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,28rem)] lg:items-center lg:gap-12">
+        <LineReveal><h2 className="font-display text-5xl font-normal leading-none text-foreground md:text-6xl">In their own words.</h2></LineReveal>
+        <Reveal delay={0.08} className="max-w-md lg:justify-self-end">
+          <p className="text-base leading-relaxed text-muted-foreground md:text-lg">Published accounts from people who have used or supported CouponDonation. Choose a line to read it in full.</p>
+        </Reveal>
+      </div>
+
+      <div className="mt-7 flex flex-col gap-1 md:mt-10 md:gap-2.5">
+        <VoiceRow lines={rows[0]} voices={voices} active={current} onPick={pick} />
+        <VoiceRow lines={rows[1]} voices={voices} active={current} onPick={pick} reverse />
+      </div>
+
+      <div className="container mx-auto mt-8 px-4 md:mt-12">
+        {/* Every account sits in the same grid cell, so the panel is always as tall as the longest
+            one and the page below never shifts when the featured account changes. */}
+        <div ref={featureRef} tabIndex={-1} data-voices-feature className="grid rounded-[1.5rem] bg-background p-6 outline-none focus-visible:ring-2 focus-visible:ring-ring md:p-10">
+          {voices.map((voice, index) => {
+            const shown = index === current;
+            const long = voice.quote.length > 200;
+            return (
+              <div key={voice.id} aria-hidden={!shown || undefined} className={`[grid-area:1/1] grid content-center gap-5 md:grid-cols-[96px_minmax(0,1fr)] md:gap-8 ${shown ? 'voices-feature' : 'invisible'}`}>
+                <div className="flex items-center gap-4 md:block">
+                  <Face voice={voice} size={96} className="h-14 w-14 shrink-0 rounded-full object-cover md:h-24 md:w-24" />
+                  <div className="min-w-0 md:hidden">
+                    <p className="font-semibold text-foreground">{voice.name}</p>
+                    {voice.location && <p className="text-sm text-muted-foreground">{voice.location}</p>}
                   </div>
                 </div>
-                
-                <div className="mt-3">
-                  <span className={`inline-flex items-center gap-1 border-l-2 border-current pl-2 text-xs font-medium ${roleColors[testimonial.role] || roleColors.donor}`}>
-                    <CheckCircle2 className="w-3 h-3" />
-                    {testimonial.roleLabel}
-                  </span>
-                </div>
-            </Reveal>
-          ))}
+                <figure className="m-0 min-w-0">
+                  <blockquote className={`m-0 font-display text-foreground ${long ? 'text-xl leading-snug md:text-[1.6rem]' : 'text-[1.375rem] leading-snug md:text-[1.75rem]'}`}>“{voice.quote}”</blockquote>
+                  <figcaption className="mt-4 text-sm leading-relaxed text-muted-foreground md:mt-5 md:text-[0.95rem]">
+                    <span className="hidden font-semibold text-foreground md:inline">{voice.name}</span>
+                    {voice.roleLabel && <><span className="hidden md:inline"> · </span>{voice.roleLabel}</>}
+                    {voice.location && <span className="hidden md:inline"> · {voice.location}</span>}
+                  </figcaption>
+                </figure>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

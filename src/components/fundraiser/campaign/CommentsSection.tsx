@@ -79,7 +79,7 @@ export function CommentsSection({ fundraiserId, isTeam, slug }: { fundraiserId: 
         </div>
       ) : (
         <p className="mt-6 text-sm text-muted-foreground">
-          {user ? 'Donate to this fundraiser to leave words of support.' : <><Link to={signInPath(`/f/${slug}`)} className="underline underline-offset-4">Sign in</Link> after donating to leave words of support.</>}
+          {user ? 'Donate to this fundraiser to leave words of support.' : <><Link to={signInPath(`/f/${slug}`)} className="inline-flex min-h-11 items-center underline underline-offset-4">Sign in</Link> after donating to leave words of support.</>}
         </p>
       )}
       <ul className="mt-8 divide-y divide-border">

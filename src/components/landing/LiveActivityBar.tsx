@@ -1,8 +1,7 @@
 import { brandList } from '@/data/brandLogos';
-import { MotionDebug, useMotionPreference } from '@/hooks/useMotionPreference';
+import { MotionDebug } from '@/hooks/useMotionPreference';
 
 export const LiveActivityBar = () => {
-  const gentle = useMotionPreference() === 'gentle';
   return (
     <section
       aria-labelledby="redeemable-at-heading"
@@ -14,7 +13,7 @@ export const LiveActivityBar = () => {
             <h2 id="redeemable-at-heading" className="text-sm font-semibold text-foreground md:text-base">
               Every dollar, redeemable at
             </h2>
-            <p className="mt-0.5 text-[11px] text-muted-foreground md:text-xs">
+            <p className="mt-0.5 text-[13px] text-muted-foreground">
               Pick the familiar brands where your kindness is spent.
             </p>
           </div>
@@ -28,8 +27,8 @@ export const LiveActivityBar = () => {
           >
             <MotionDebug />
             <div
-              className="flex w-max animate-marquee lg:[animation-duration:48s] hover:[animation-play-state:paused] active:[animation-play-state:paused]"
-              style={gentle ? { animationDuration: '64s' } : undefined}
+              data-brand-marquee
+              className="flex w-max animate-marquee [animation-duration:48s]"
             >
               {[0, 1].map((group) => (
                 <div
@@ -40,14 +39,16 @@ export const LiveActivityBar = () => {
                   {brandList.map((brand) => (
                     <div
                       key={`${group}-${brand.name}`}
-                      className="flex h-14 w-16 shrink-0 items-center justify-center transition-transform duration-300 hover:scale-105 md:h-16 md:w-20"
+                      className="flex h-14 w-16 shrink-0 items-center justify-center transition-transform duration-300 hover:scale-105 active:scale-105 md:h-16 md:w-20"
                       title={brand.name}
                     >
                       <img
                         src={brand.logo}
                         alt={group === 0 ? brand.name : ''}
                         className="h-9 w-10 object-contain md:h-11 md:w-12"
-                        loading="eager"
+                        loading={group === 0 ? 'eager' : 'lazy'}
+                        decoding="async"
+                        width={48} height={44}
                       />
                     </div>
                   ))}

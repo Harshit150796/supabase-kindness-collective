@@ -1,0 +1,77 @@
+/* The garden under the tree (NameMoment, HillLife). Drawn at the 1440×666 hero's scale; drei <Html>
+   rescales it with the scene. Nothing here takes the pointer. One name moment runs 7.6s
+   (MOMENT_SECONDS in gardenMoments.ts); its keyframe percentages below follow that timeline. */
+
+.gm,.hl{position:relative;width:0;height:0;pointer-events:none;font-family:"Instrument Sans","Instrument Sans Fallback",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.gm *,.hl *{pointer-events:none}
+
+/* The name tag: frosted ivory, the name in serif italic. Readable over grass, trunk or sky, day or night. */
+.gm-tag{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:9px 15px 10px;border-radius:15px;background:rgba(247,250,247,.86);-webkit-backdrop-filter:blur(10px) saturate(1.3);backdrop-filter:blur(10px) saturate(1.3);box-shadow:inset 0 0 0 1px rgba(255,255,255,.6),0 12px 26px -16px rgba(4,18,8,.6);white-space:nowrap}
+.gm-name{font-family:"Instrument Serif","Instrument Serif Fallback",Georgia,serif;font-style:italic;font-size:24px;line-height:1;letter-spacing:-.005em;color:#10281A}
+.gm-amt{font-size:12.5px;line-height:1.2;letter-spacing:.01em;color:#3D5442}
+.gm-amt b{font-weight:600;color:#14301A}
+
+/* Dandelion wish: the tag appears beside the seed head (outward, away from the trunk); at 3.6s the
+   seeds lift toward the canopy and the tag rises with them and fades. */
+.gm-dandelion .gm-tagwrap{position:absolute;top:0;left:calc(var(--side) * 32px);transform:translate(calc((var(--side) - 1) * 50%),-50%)}
+.gm-side-l .gm-tag{align-items:flex-end}
+.gm-dandelion .gm-tag{animation:gm-d-tag 7.6s cubic-bezier(.4,0,.2,1) both}
+@keyframes gm-d-tag{0%,15%{opacity:0;transform:translateY(8px)}22%,49%{opacity:1;transform:none}82%,100%{opacity:0;transform:translate(calc(var(--toward) * 40px),-72px)}}
+.gm-seed{position:absolute;width:14px;height:19px;margin:-10px 0 0 -7px;opacity:0;filter:drop-shadow(0 0 1px rgba(10,30,15,.45));animation:gm-seed 7.6s cubic-bezier(.3,.1,.4,1) both}
+.gm-seed svg{display:block;width:100%;height:100%}
+@keyframes gm-seed{0%,46%{opacity:0;transform:translate(0,0) rotate(0)}49%{opacity:1}84%{opacity:.9;transform:translate(var(--dx),var(--dy)) rotate(var(--r))}92%,100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--r))}}
+
+/* Butterfly: flies down from the tree's side carrying the tag, lands on the bloom (44%), rests with
+   slow wings, the tag fades (80%), then it lifts away. */
+.gm-exit{position:absolute;left:0;top:0;animation:gm-b-exit 7.6s cubic-bezier(.5,0,.75,0) both}
+@keyframes gm-b-exit{0%,82%{transform:none;opacity:1}100%{transform:translate(calc(var(--toward) * -36px),-120px);opacity:0}}
+.gm-flyer{position:absolute;left:0;top:0;width:44px;height:37px;offset-rotate:0deg;offset-anchor:50% 50%;animation:gm-fly 7.6s cubic-bezier(.42,.05,.3,1) both}
+@keyframes gm-fly{0%,10%{offset-distance:0%;opacity:0}14%{opacity:1}44%,100%{offset-distance:100%;opacity:1}}
+.gm-fly{display:block;width:44px;height:37px;overflow:visible;animation:gm-bob .9s ease-in-out infinite}
+@keyframes gm-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+.gm-wings-fast,.gm-wings-slow{transform-box:view-box;transform-origin:17px 14px}
+.gm-wings-fast{animation:gm-flap .22s ease-in-out infinite,gm-fast-on 7.6s linear both}
+.gm-wings-slow{animation:gm-flap-slow 1.7s ease-in-out infinite,gm-slow-on 7.6s linear both}
+@keyframes gm-flap{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.22)}}
+@keyframes gm-flap-slow{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.55)}}
+@keyframes gm-fast-on{0%,43.9%{opacity:1}44%,81.9%{opacity:0}82%,100%{opacity:1}}
+@keyframes gm-slow-on{0%,43.9%{opacity:0}44%,81.9%{opacity:1}82%,100%{opacity:0}}
+.gm-hang{position:absolute;left:22px;top:30px;width:0;height:0;transform-origin:0 0;animation:gm-swing 7.6s ease-out both}
+.gm-hang i{position:absolute;left:-.5px;top:0;width:1px;height:30px;background:rgba(20,48,26,.5)}
+.gm-hang .gm-tag{position:absolute;left:0;top:30px;align-items:center;transform:translateX(-50%);animation:gm-b-tag 7.6s ease both}
+/* Near a screen edge the hanging tag opens inward rather than centring under the butterfly. */
+.gm-edge-l .gm-hang .gm-tag{align-items:flex-start;transform:translateX(-18px)}
+.gm-edge-r .gm-hang .gm-tag{align-items:flex-end;transform:translateX(calc(-100% + 18px))}
+@keyframes gm-swing{0%,42%{transform:rotate(14deg)}49%{transform:rotate(-7deg)}55%{transform:rotate(3deg)}61%,100%{transform:rotate(0)}}
+@keyframes gm-b-tag{0%,12%{opacity:0}18%,74%{opacity:1}80%,100%{opacity:0}}
+
+/* The site's gentle-motion setting: the tag alone, in place. */
+.gm-still .gm-exit,.gm-still .gm-flyer,.gm-still .gm-hang{animation:none}
+.gm-still .gm-flyer{offset-path:none}
+.gm-still .gm-tag{animation:gm-still 7.6s ease both}
+@keyframes gm-still{0%,6%{opacity:0}12%,84%{opacity:1}92%,100%{opacity:0}}
+
+/* Life on the hill: each actor stands on its anchor (the anchor is its feet). */
+.hl-actor{position:absolute;display:block;overflow:visible}
+.hl-deer{animation:hl-deer 30s linear infinite}
+@keyframes hl-deer{0%{transform:translate(-90px,10px);opacity:0}5%{opacity:1}60%{transform:translate(95px,-16px);opacity:1}64%,100%{transform:translate(100px,-17px);opacity:0}}
+.hl-legf,.hl-legr{transform-box:fill-box;transform-origin:50% 0}
+.hl-legf{animation:hl-legf .9s ease-in-out infinite}
+.hl-legr{animation:hl-legr .9s ease-in-out infinite}
+@keyframes hl-legf{0%,100%{transform:rotate(12deg)}50%{transform:rotate(-12deg)}}
+@keyframes hl-legr{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}}
+.hl-hop{animation:hl-hop 9s ease-in-out infinite}
+@keyframes hl-hop{0%,70%,100%{transform:translate(0,0)}76%{transform:translate(-14px,-12px)}82%,88%{transform:translate(-28px,0)}94%{transform:translate(-14px,-10px)}}
+.hl-graze{transform-box:view-box;transform-origin:16px 18px;animation:hl-graze 7s ease-in-out infinite}
+@keyframes hl-graze{0%,35%,100%{transform:rotate(0)}45%,85%{transform:rotate(22deg)}}
+.hl-peck{transform-box:view-box;transform-origin:9px 9px;animation:hl-peck 3.4s ease-in-out infinite}
+@keyframes hl-peck{0%,40%,100%{transform:rotate(0)}48%,62%{transform:rotate(38deg)}56%,70%{transform:rotate(0)}}
+.hl-kite{transform-origin:50% 100%;animation:hl-kite 4s ease-in-out infinite}
+@keyframes hl-kite{0%,100%{transform:translate(0,0) rotate(-8deg)}50%{transform:translate(10px,-8px) rotate(6deg)}}
+.hl-ktail{transform-origin:13px 36px;animation:hl-ktail 1.4s ease-in-out infinite alternate}
+@keyframes hl-ktail{from{transform:skewX(-8deg)}to{transform:skewX(8deg)}}
+.hl-arm{transform-box:view-box;transform-origin:26px 20px;animation:hl-arm 4s ease-in-out infinite}
+@keyframes hl-arm{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+.hl-bfly{position:absolute;left:0;top:0;offset-rotate:0deg;animation:hl-loop 11s linear infinite}
+@keyframes hl-loop{from{offset-distance:0%}to{offset-distance:100%}}
+.hl-wings{transform-box:view-box;transform-origin:17px 14px;animation:gm-flap .26s ease-in-out infinite}

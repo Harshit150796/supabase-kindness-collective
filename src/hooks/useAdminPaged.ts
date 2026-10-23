@@ -1,5 +1,8 @@
-import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useRef, useState }
+ from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { sb, cleanSearch } from '@/lib/adminApi';
 
 interface Opts {
@@ -15,14 +18,22 @@ interface Opts {
 
 /** Server-side paginated, sorted, searchable list for admin tables (never loads whole tables). */
 export function useAdminPaged<T = any>({ table, select = '*', searchCols = [], defaultSort, pageSize = 25, filter, deps = [] }: Opts) {
-  const [page, setPage] = useState(0);
-  const [search, setSearch] = useState('');
-  const [dq, setDq] = useState('');
-  const [sort, setSort] = useState(defaultSort);
-  useEffect(() => { const t = setTimeout(() => { setDq(search); setPage(0); }, 300); return () => clearTimeout(t); }, [search]);
-  useEffect(() => { setPage(0); }, deps); // eslint-disable-line react-hooks/exhaustive-deps
+  const { user } = useAuth();
+  const [params, setParams] = useSearchParams();
+  const prefix = table + '-';
+  const [page, setPage] = useState(Number(params.get(prefix + 'page')) || 0);
+  const [search, setSearch] = useState(params.get(prefix + 'q') ?? '');
+  const [dq, setDq] = useState(search);
+  const initialSearch = useRef(true);
+  const initialDeps = useRef(true);
+  const [sort, setSort] = useState({ key: params.get(prefix + 'sort') || defaultSort.key, dir: (params.get(prefix + 'dir') === 'asc' ? 'asc' : params.get(prefix + 'dir') === 'desc' ? 'desc' : defaultSort.dir) as 'asc' | 'desc' });
+  useEffect(() => { setParams((p) => { p.set(prefix + 'page', String(page)); p.set(prefix + 'sort', sort.key); p.set(prefix + 'dir', sort.dir); if (search) p.set(prefix + 'q', search); else p.delete(prefix + 'q'); return p; }, { replace: true }); }, [page, sort.key, sort.dir, search]);
+  useEffect(() => { if (initialSearch.current) { initialSearch.current = false; return; } const t = setTimeout(() => { setDq(search); setPage(0); }, 300); return () => clearTimeout(t); }, [search]);
+  useEffect(() => { if (initialDeps.current) { initialDeps.current = false; return; } setPage(0); }, deps); // eslint-disable-line react-hooks/exhaustive-deps
   const q = useQuery({
-    queryKey: ['adm-paged', table, select, dq, page, sort, pageSize, ...deps],
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
+    queryKey: ['adm-paged', table, user?.id, select, dq, page, sort, pageSize, ...deps],
     queryFn: async () => {
       let b = sb.from(table).select(select, { count: 'exact' });
       if (filter) b = filter(b);

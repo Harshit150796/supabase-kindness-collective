@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/admin/AdminLayout';
@@ -9,9 +11,19 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 import { ArrowRight } from 'lucide-react';
 
 export default function AdminDashboard() {
+  const { user } = useAuth();
+  const [params, setParams] = useSearchParams();
+  const personal = params.get('scope') !== 'team';
+  const profile = useQuery({ queryKey: ['adm-my-profile', user?.id], enabled: !!user, queryFn: async () => { const { data, error } = await sb.from('profiles').select('full_name').eq('user_id', user?.id).maybeSingle(); if (error) throw error; return data; } });
+  const firstName = profile.data?.full_name?.trim().split(' ')[0] || 'there';
   const k = useQuery({ queryKey: ['adm-kpis'], queryFn: () => rpc<any>('admin_overview_kpis'), refetchInterval: 60_000 });
   const feed = useQuery({ queryKey: ['adm-feed'], queryFn: async () => (await sb.from('admin_notifications').select('id,title,link,created_at').order('created_at', { ascending: false }).limit(12)).data ?? [] });
-  const tasks = useQuery({ queryKey: ['adm-attn'], queryFn: async () => (await sb.from('admin_tasks').select('id,title,priority,due_date,linked_type').neq('status', 'done').in('priority', ['urgent', 'high']).order('created_at', { ascending: false }).limit(8)).data ?? [] });
+  const tasks = useQuery({ queryKey: ['adm-attn', user?.id, personal], enabled: !!user, queryFn: async () => {
+    let query = sb.from('admin_tasks').select('id,title,priority,due_date,linked_type', { count: 'exact' }).neq('status', 'done');
+    if (personal) query = query.eq('assignee_id', user?.id);
+    const { data, error, count } = await query.order('due_date', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false }).range(0, 7);
+    if (error) throw error; return { rows: data ?? [], total: count ?? 0 };
+  } });
   const d = k.data;
 
   const tiles = [
@@ -30,7 +42,7 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout>
-      <PageHeader title="Overview" description="Live figures from completed donations. Refreshes every minute." />
+      <PageHeader title={`Hello, ${firstName}`} actions={<div className="flex gap-1"><Button size="sm" variant={personal ? 'default' : 'outline'} onClick={() => setParams({ scope: 'mine' })}>My work</Button><Button size="sm" variant={!personal ? 'default' : 'outline'} onClick={() => setParams({ scope: 'team' })}>Team overview</Button></div>} />
       {k.error && <p className="mb-4 rounded-md bg-destructive/5 p-3 text-sm text-destructive">Couldn't load figures: {(k.error as Error).message} <Button size="sm" variant="link" onClick={() => k.refetch()}>Retry</Button></p>}
       <div className="grid grid-cols-2 gap-3 tabular-nums md:grid-cols-4">
         {tiles.map(([l, v, to]) => (
@@ -42,7 +54,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <section className="rounded-lg bg-background p-4 lg:col-span-2">
+        <section className="lg:col-span-2">
           <p className="mb-3 text-sm font-medium">Raised per day · last 30 days</p>
           <div className="h-56">
             {k.isLoading ? <Skeleton className="h-full w-full" /> : (
@@ -58,18 +70,20 @@ export default function AdminDashboard() {
             )}
           </div>
         </section>
-        <section className="rounded-lg bg-background p-4">
-          <p className="mb-3 text-sm font-medium">Needs attention</p>
-          {!attention.length && !tasks.data?.length ? <p className="text-sm text-muted-foreground">Nothing waiting. All clear.</p> : (
+        <section className="">
+          <p className="mb-3 text-sm font-medium">{personal ? 'Assigned to you' : 'Needs attention'}</p>
+          {!(personal ? [] : attention).length && !tasks.data?.rows.length ? <p className="text-sm text-muted-foreground">Nothing waiting. All clear.</p> : (
             <ul className="divide-y divide-border text-sm">
-              {attention.map((a) => <li key={a.label}><Link to={a.to} className="flex items-center justify-between py-2 hover:text-primary">{a.label}<ArrowRight className="h-3.5 w-3.5" /></Link></li>)}
-              {(tasks.data ?? []).map((t: any) => <li key={t.id}><Link to={`/admin/tasks`} className="block py-2 hover:text-primary"><span className="mr-1.5 text-xs capitalize text-destructive">{t.priority}</span>{t.title}</Link></li>)}
+              {(personal ? [] : attention).map((a) => <li key={a.label}><Link to={a.to} className="flex items-center justify-between py-2 hover:text-primary">{a.label}<ArrowRight className="h-3.5 w-3.5" /></Link></li>)}
+              {(tasks.data?.rows ?? []).map((t: any) => <li key={t.id}><Link to={`/admin/tasks?id=${t.id}`} className="block py-2 hover:text-primary"><span className="mr-1.5 text-xs capitalize text-destructive">{t.priority}</span>{t.title}</Link></li>)}
             </ul>
           )}
+          {tasks.error && <Button size="sm" variant="outline" onClick={() => tasks.refetch()}>Retry tasks</Button>}
+          <Button size="sm" variant="link" asChild><Link to={`/admin/tasks?scope=${personal ? 'mine' : 'open'}`}>View {tasks.data?.total ?? 0} {personal ? 'assigned' : 'open'} tasks</Link></Button>
         </section>
       </div>
 
-      <section className="mt-6 rounded-lg bg-background p-4">
+      <section className="mt-6">
         <p className="mb-3 text-sm font-medium">Recent activity</p>
         {!feed.data?.length ? <p className="text-sm text-muted-foreground">Activity appears here as fundraisers, donations, reports and applications come in.</p> : (
           <ul className="divide-y divide-border text-sm">{feed.data.map((n: any) => <li key={n.id} className="flex justify-between gap-3 py-2"><Link to={n.link ?? '/admin'} className="hover:text-primary">{n.title}</Link><span className="shrink-0 text-xs text-muted-foreground">{fmtDate(n.created_at)}</span></li>)}</ul>

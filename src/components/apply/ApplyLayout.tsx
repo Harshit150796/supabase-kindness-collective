@@ -1,218 +1,194 @@
 import { Link } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.png";
-import { ArrowLeft } from "lucide-react";
+import { MenuButton } from "@/components/navigation/MenuButton";
+import { signInPath } from "@/lib/serverActions";
+import { cn } from "@/lib/utils";
+import { SPRING } from "@/components/landing/donate/tokens";
+import { APPLY_STEPS } from "./applyOptions";
+
 
 interface ApplyLayoutProps {
   step: number;
-  totalSteps: number;
+  /** The furthest step reached; earlier steps are clickable in the track. */
+  reached: number;
+  onGoTo: (step: number) => void;
   headline: string;
   subtext?: string;
   children: React.ReactNode;
   onBack?: () => void;
   onContinue: () => void;
   continueDisabled?: boolean;
+  /** Why Continue is off, shown beside it ("Choose at least one store"). */
+  blockedReason?: string | null;
   continueLabel?: string;
+  busy?: boolean;
   showBack?: boolean;
-  progress: number;
   direction?: "forward" | "backward";
-  showSkip?: boolean;
-  onSkip?: () => void;
-  skipLabel?: string;
-  hideStepIndicator?: boolean;
   isAuthenticated?: boolean;
   userEmail?: string;
+  /** The live "Your request" panel for wide screens. */
+  panel?: React.ReactNode;
 }
 
+const stepMotion = {
+  enter: (dir: number) => ({ opacity: 0, x: dir * 28 }),
+  center: { opacity: 1, x: 0 },
+  exit: (dir: number) => ({ opacity: 0, x: dir * -20, transition: { duration: 0.16 } }),
+};
+
+/**
+ * The recipient application's frame: a quiet header, the step track, the step itself and a pinned
+ * action bar, with the deep-green "Your request" panel beside it on wide screens.
+ */
 export const ApplyLayout = ({
   step,
-  totalSteps,
+  reached,
+  onGoTo,
   headline,
   subtext,
   children,
   onBack,
   onContinue,
   continueDisabled = false,
+  blockedReason,
   continueLabel = "Continue",
+  busy = false,
   showBack = true,
-  progress,
   direction = "forward",
-  showSkip = false,
-  onSkip,
-  skipLabel = "Skip for now",
-  hideStepIndicator = false,
   isAuthenticated = false,
   userEmail,
+  panel,
 }: ApplyLayoutProps) => {
+  const dir = direction === "forward" ? 1 : -1;
   return (
-    <div className="min-h-dvh flex flex-col lg:flex-row animate-fade-in">
-      {/* Left Panel - Info Section with gradient and decorative elements */}
-      <div className="lg:w-[42%] relative overflow-hidden bg-gradient-to-br from-secondary via-secondary/80 to-primary/5 p-6 lg:p-10 flex flex-col">
-        {/* Decorative floating shapes */}
-        <div className="absolute top-20 right-10 w-32 h-32 rounded-full bg-primary/5 float-slow" />
-        <div className="absolute bottom-32 left-5 w-24 h-24 rounded-full bg-accent/10 float-slow-reverse" />
-        <div className="absolute top-1/2 right-0 w-40 h-40 rounded-full bg-gradient-to-br from-primary/5 to-accent/5 blur-2xl" />
-        <div className="absolute bottom-20 right-20 w-16 h-16 rounded-xl bg-primary/5 rotate-12 float-slow" />
-        
-        {/* Subtle dot pattern overlay */}
-        <div 
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)`,
-            backgroundSize: '24px 24px'
-          }}
-        />
-
-        <div className="flex-1 relative z-10 stagger-children">
-          {/* Logo */}
-          <Link 
-            to="/" 
-            className="inline-flex items-center gap-3 mb-10 lg:mb-14 group hover-lift"
-          >
-            <div className="relative">
-              <img src={logo} alt="CouponDonation" className="w-11 h-11 transition-transform group-hover:scale-105" />
-              <div className="absolute inset-0 rounded-full bg-primary/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-            <span className="font-bold text-xl"><span className="text-[#2e7d32]">Coupon</span><span className="text-[#1565c0]">Donation</span></span>
+    <div className="min-h-dvh bg-background lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(22rem,30rem)] xl:grid-cols-[minmax(0,1fr)_32rem]">
+      <div className="flex min-h-dvh min-w-0 flex-col">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 bg-background/90 px-4 backdrop-blur-md sm:px-8 lg:px-12 xl:px-16">
+          <Link to="/" className="inline-flex min-h-11 min-w-0 items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="CouponDonation home">
+            <img src={logo} alt="" className="h-9 w-9 shrink-0" width={36} height={36} />
+            <span className="truncate text-[17px] font-bold"><span className="text-[#2e7d32]">Coupon</span><span className="text-[#1565c0]">Donation</span></span>
           </Link>
-
-          {/* Step Indicator with animation */}
-          {!hideStepIndicator && (
-            <div className="flex items-center gap-3 mb-6">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold animate-scale-in">
-                {step}
-              </div>
-              <p className="text-muted-foreground text-sm font-medium">
-                of {totalSteps}
-              </p>
-            </div>
-          )}
-
-          {/* Headline with gradient text option */}
-          <h1 
-            key={headline}
-            className={`text-3xl lg:text-[2.5rem] font-bold text-foreground leading-tight mb-4 ${
-              direction === "forward" ? "animate-slide-in-right" : "animate-slide-in-left"
-            }`}
-          >
-            {headline}
-          </h1>
-
-          {/* Subtext with fade animation */}
-          {subtext && (
-            <p 
-              key={subtext}
-              className={`text-muted-foreground text-lg leading-relaxed ${
-                direction === "forward" ? "animate-slide-in-right" : "animate-slide-in-left"
-              }`}
-              style={{ animationDelay: "0.1s" }}
-            >
-              {subtext}
-            </p>
-          )}
-        </div>
-
-        {/* Progress Bar - Desktop - Enhanced */}
-        <div className="hidden lg:block mt-8 relative z-10">
-          <div className="flex justify-between text-xs text-muted-foreground mb-2">
-            <span>Progress</span>
-            <span className="font-medium">{Math.round(progress)}%</span>
-          </div>
-          <div className="h-2 bg-border/50 rounded-full overflow-hidden backdrop-blur-sm">
-            <div 
-              className="h-full bg-gradient-to-r from-primary to-primary rounded-full transition-all duration-700 ease-out relative"
-              style={{ width: `${progress}%` }}
-            >
-              {/* Glowing edge */}
-              <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-r from-transparent to-white/30 rounded-full" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Panel - Form Section */}
-      <div className="lg:w-[58%] bg-card flex flex-col min-h-[60vh] lg:min-h-dvh shadow-[-10px_0_40px_-15px_rgba(0,0,0,0.05)]">
-        {/* Auth Status */}
-        <div className="p-6 lg:p-10 flex justify-end">
-          {isAuthenticated ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground truncate max-w-[200px]">{userEmail}</span>
-              <Link 
-                to="/profile" 
-                className="text-primary hover:text-primary/80 font-medium transition-all hover:translate-x-1 inline-flex items-center gap-1"
-              >
-                My Account
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+          <div className="flex shrink-0 items-center gap-1 sm:gap-3">
+            {isAuthenticated ? (
+              <Link to="/profile" className="hidden min-h-11 max-w-[14rem] items-center truncate rounded-md px-2 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex" title={userEmail}>
+                {userEmail}
               </Link>
+            ) : (
+              <Link to={signInPath("/apply")} className="inline-flex min-h-11 items-center rounded-md px-2 text-sm font-medium text-foreground outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring">
+                Sign in
+              </Link>
+            )}
+            <MenuButton />
+          </div>
+        </header>
+
+        <main className="flex flex-1 flex-col px-4 sm:px-8 lg:px-12 xl:px-16">
+          <div className="mx-auto w-full max-w-[46rem] flex-1 pb-10 pt-4 sm:pt-6 lg:pt-8">
+            <ol className="grid grid-cols-4 gap-2 sm:gap-3" aria-label="Application steps">
+              {APPLY_STEPS.map((label, i) => {
+                const n = i + 1;
+                const current = n === step;
+                const done = n < step;
+                const canGo = n !== step && n <= reached;
+                return (
+                  <li key={label} className="min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => canGo && onGoTo(n)}
+                      disabled={!canGo}
+                      aria-current={current ? "step" : undefined}
+                      className="group block w-full rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 disabled:cursor-default"
+                    >
+                      <span className="relative block h-[3px] overflow-hidden rounded-full bg-border">
+                        <motion.span
+                          className="absolute inset-y-0 left-0 rounded-full bg-primary"
+                          initial={false}
+                          animate={{ width: done || current ? "100%" : "0%" }}
+                          transition={SPRING}
+                        />
+                      </span>
+                      <span className={cn(
+                        "mt-2 hidden truncate text-[13px] tabular-nums transition-colors sm:block",
+                        current ? "font-medium text-foreground" : done ? "text-muted-foreground group-hover:text-foreground" : "text-muted-foreground/70",
+                      )}>
+                        <span className="mr-1.5">{n}</span>{label}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+            <p className="mt-2.5 flex items-baseline justify-between text-[13px] sm:hidden" aria-hidden="true">
+              <span className="font-medium text-foreground">{APPLY_STEPS[step - 1]}</span>
+              <span className="tabular-nums text-muted-foreground">{step} of {APPLY_STEPS.length}</span>
+            </p>
+
+            <AnimatePresence mode="wait" initial={false} custom={dir}>
+              <motion.div
+                key={step}
+                custom={dir}
+                variants={stepMotion}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={SPRING}
+              >
+                <h1 className="mt-8 font-display text-[2.5rem] font-normal leading-[1.04] text-ink dark:text-foreground sm:mt-10 sm:text-[3.25rem] lg:text-[3.5rem]">
+                  {headline}
+                </h1>
+                {subtext && <p className="mt-3 max-w-[36rem] text-[17px] leading-relaxed text-muted-foreground">{subtext}</p>}
+                <div className="mt-10 sm:mt-12">{children}</div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          <div className="sticky bottom-0 z-20 -mx-4 mt-auto bg-background/90 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12 xl:-mx-16 xl:px-16">
+            <div className="mx-auto flex w-full max-w-[46rem] items-center justify-between gap-3 border-t border-border/70 pt-3">
+              {showBack && onBack ? (
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl px-3 text-[15px] font-medium text-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  Back
+                </button>
+              ) : <span />}
+              <div className="flex min-w-0 items-center gap-3">
+                <AnimatePresence initial={false}>
+                  {continueDisabled && blockedReason && (
+                    <motion.p
+                      key={blockedReason}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, transition: { duration: 0.1 } }}
+                      className="hidden min-w-0 truncate text-sm text-muted-foreground sm:block"
+                      aria-live="polite"
+                    >
+                      {blockedReason}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+                <button
+                  type="button"
+                  onClick={onContinue}
+                  disabled={continueDisabled || busy}
+                  data-apply-continue
+                  className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-7 text-[15px] font-semibold text-primary-foreground outline-none transition-[background-color,opacity,transform] hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
+                >
+                  {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+                  {continueLabel}
+                </button>
+              </div>
             </div>
-          ) : (
-            <Link 
-              to="/auth" 
-              className="text-primary hover:text-primary/80 font-medium transition-all hover:translate-x-1 inline-flex items-center gap-1"
-            >
-              Sign in
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          )}
-        </div>
-
-        {/* Form Content with animation */}
-        <div 
-          key={step}
-          className={`flex-1 px-6 lg:px-12 pb-6 ${
-            direction === "forward" ? "animate-slide-in-right" : "animate-slide-in-left"
-          }`}
-        >
-          {children}
-        </div>
-
-        {/* Navigation Buttons - Enhanced */}
-        <div className="p-6 lg:px-12 lg:py-8 border-t border-border/50 flex items-center justify-between bg-gradient-to-t from-secondary/30 to-transparent">
-          <div>
-            {showBack && onBack && (
-              <button
-                onClick={onBack}
-                className="w-12 h-12 rounded-xl border border-border/80 flex items-center justify-center hover:bg-secondary/80 hover:border-primary/30 transition-all duration-200 group press-effect"
-                aria-label="Go back"
-              >
-                <ArrowLeft className="w-5 h-5 text-foreground transition-transform group-hover:-translate-x-0.5" />
-              </button>
-            )}
+            {continueDisabled && blockedReason && <p className="mx-auto mt-2 max-w-[46rem] text-right text-[13px] text-muted-foreground sm:hidden">{blockedReason}</p>}
           </div>
-          
-          <div className="flex items-center gap-4">
-            {showSkip && onSkip && (
-              <button
-                onClick={onSkip}
-                className="text-muted-foreground hover:text-foreground font-medium transition-colors"
-              >
-                {skipLabel}
-              </button>
-            )}
-            
-            <button
-              onClick={onContinue}
-              disabled={continueDisabled}
-              className="bg-primary text-primary-foreground font-semibold px-10 py-3.5 rounded-full hover:bg-primary/90 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 press-effect"
-            >
-              {continueLabel}
-            </button>
-          </div>
-        </div>
-
-        {/* Progress Bar - Mobile - Enhanced */}
-        <div className="lg:hidden px-6 pb-6">
-          <div className="h-1.5 bg-border/50 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-primary to-primary rounded-full transition-all duration-700 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
+        </main>
       </div>
+
+      {panel && <div className="hidden lg:block"><div className="sticky top-0 h-dvh overflow-y-auto">{panel}</div></div>}
     </div>
   );
 };

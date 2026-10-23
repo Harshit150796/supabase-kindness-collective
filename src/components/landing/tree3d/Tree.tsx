@@ -3,9 +3,11 @@ import { useGLTF } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useInteraction } from './InteractionContext';
+import { useMotionPreference } from '@/hooks/useMotionPreference';
 
 const MODEL_URL = '/models/tree.glb';
-useGLTF.preload(MODEL_URL);
+const DRACO_PATH = '/draco/';
+useGLTF.preload(MODEL_URL, DRACO_PATH);
 
 export interface BranchTip {
   tip: THREE.Vector3;
@@ -116,14 +118,25 @@ export function getBranchTips(count = 18): BranchTip[] {
   return tips;
 }
 
-export function Tree(_props: { leafCount?: number; lowPower?: boolean }) {
-  const { scene } = useGLTF(MODEL_URL) as unknown as { scene: THREE.Group };
+/** True for getBranchTips(18) slots that face away from the opening camera. */
+export function isRearBranchSlot(slot: number): boolean {
+  let start = 0;
+  for (const band of CANOPY_BANDS) {
+    if (slot < start + band.count) return slot - start >= band.frontCount;
+    start += band.count;
+  }
+  return false;
+}
+
+export function Tree(_props: { lowPower?: boolean }) {
+  const { scene } = useGLTF(MODEL_URL, DRACO_PATH) as unknown as { scene: THREE.Group };
   const gl = useThree((s) => s.gl);
   const rootRef = useRef<THREE.Group>(null);
   const uTime = useRef({ value: 0 });
   const uWind = useRef({ value: 0 });
   const { shakeEvent, windRef } = useInteraction();
   const lowPower = !!_props.lowPower;
+  const gentle = useMotionPreference() === 'gentle';
 
   // Renderer capabilities — read once, never assumed.
   const caps = useMemo(() => {
@@ -172,6 +185,9 @@ export function Tree(_props: { leafCount?: number; lowPower?: boolean }) {
       shader.vertexShader = `uniform float uTime;\nuniform float uWind;\n` + shader.vertexShader;
       shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', WIND_VERTEX_SNIPPET);
     };
+
+    // The red canopy fruit (Material.004) is stripped from tree.glb itself, so it is never downloaded.
+
 
     root.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
@@ -250,14 +266,14 @@ export function Tree(_props: { leafCount?: number; lowPower?: boolean }) {
   }, [scene, caps]);
 
   useFrame((_, dt) => {
-    uTime.current.value += dt;
+    uTime.current.value += Math.min(dt, 0.05) * (gentle ? 0.35 : 1);
 
     // Wind decays
     windRef.current.value = Math.max(0, windRef.current.value - dt * 1.2);
-    uWind.current.value = windRef.current.value;
+    uWind.current.value = gentle ? 0 : windRef.current.value;
 
     // Shake wobble on root
-    if (rootRef.current && shakeEvent) {
+    if (!gentle && rootRef.current && shakeEvent) {
       const elapsed = performance.now() / 1000 - shakeEvent.time;
       if (elapsed < 1.4) {
         const decay = Math.exp(-elapsed * 2.5);

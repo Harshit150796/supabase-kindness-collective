@@ -6,6 +6,24 @@ export const getSuggestedTitles = (category: string): string[] => {
         "Groceries for Those in Need",
         "Supporting Families with Food Coupons",
       ];
+    case "meals":
+      return [
+        "Warm Meals for My Family",
+        "Help Us Through a Hard Month",
+        "Meals While We Get Back on Our Feet",
+      ];
+    case "childcare":
+      return [
+        "Diapers and Formula for My Baby",
+        "Help With My Kids' Everyday Needs",
+        "Support for a Growing Family",
+      ];
+    case "emergency":
+      return [
+        "Help Us Recover After an Emergency",
+        "Starting Over After a Crisis",
+        "Urgent Help With the Basics",
+      ];
     case "healthcare":
       return [
         "Help Cover My Medical Expenses",

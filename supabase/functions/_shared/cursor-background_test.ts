@@ -1,0 +1,125 @@
+import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
+import { cursorColour, CURSOR_QUERY, NATIVE_DOT_IMAGES } from '../../../src/lib/cursorBackground.ts';
+Deno.test('dark backgrounds including night and forest map to white first', () => {
+  assertEquals(cursorColour({r:10,g:20,b:35}), 'white');
+  assertEquals(cursorColour({r:25,g:65,b:30}), 'white');
+});
+Deno.test('bright foliage/grass and mint map to blue', () => {
+  assertEquals(cursorColour({r:110,g:180,b:75}), 'blue');
+  assertEquals(cursorColour({r:225,g:242,b:226}), 'blue');
+});
+Deno.test('day sky maps to brand green', () => assertEquals(cursorColour({r:150,g:205,b:235}), 'green'));
+Deno.test('photos default white after dark and hue checks', () => {
+  assertEquals(cursorColour({r:220,g:190,b:160}, true), 'white');
+  assertEquals(cursorColour({r:150,g:205,b:235}, true), 'green');
+});
+Deno.test('cream sunset red and yellow backgrounds default blue', () => {
+  for (const rgb of [{r:246,g:245,b:239},{r:240,g:165,b:100},{r:250,g:140,b:140},{r:255,g:240,b:0}]) assertEquals(cursorColour(rgb), 'blue');
+});
+Deno.test('the cursor stays blue over the live tree and its sky, with no pixel read-back', async () => {
+  const trail = await Deno.readTextFile('src/components/CursorTrail.tsx');
+  assertEquals(CURSOR_QUERY, '(hover: hover) and (pointer: fine)');
+  assert(trail.includes("paint('blue');"));
+  for (const gone of ['cd:cursor-bg', 'stableColour', 'setInterval(']) assert(!trail.includes(gone));
+  // Reading WebGL pixels back makes the page wait for the GPU to finish the frame.
+  const stack = ['src'];
+  while (stack.length) {
+    const dir = stack.pop();
+    if (!dir) break;
+    for await (const entry of Deno.readDir(dir)) {
+      const path = `${dir}/${entry.name}`;
+      if (entry.isDirectory) stack.push(path);
+      else if (/\.(ts|tsx)$/.test(entry.name)) assert(!(await Deno.readTextFile(path)).includes('readPixels'), path);
+    }
+  }
+});
+Deno.test('over the live tree the lead dot is a system pointer image of the same blue dot', async () => {
+  const css = await Deno.readTextFile('src/index.css');
+  const trail = await Deno.readTextFile('src/components/CursorTrail.tsx');
+  for (const src of NATIVE_DOT_IMAGES) assert((await Deno.stat(`public${src}`)).size > 500, src);
+  assert(css.includes('html.cd-cursor-active.cd-native-zone.cd-native-dot :is(.hero-stage,[data-site-header])'));
+  assert(css.includes('cursor: image-set(url(/cursor/dot.png) 1x, url(/cursor/dot@2x.png) 2x) 16 16, auto !important;'));
+  assert(css.includes('html.cd-cursor-active.cd-native-zone.cd-native-dot-webkit'));
+  assert(css.includes('.cursor-native > span:first-child { opacity: 0; }'));
+  // Only where the browser understands the syntax, only on the canvas, and the DOM dot resumes at the pointer.
+  assert(trail.includes("CSS.supports?.('cursor'"));
+  assert(trail.includes('on &&= !!nativeClass;'));
+  // The whole hero and header (not only the canvas) use the OS lead dot, except over links/buttons.
+  assert(trail.includes("setNative(!!target.closest(NATIVE_ZONE_SELECTOR) && !root.classList.contains('cursor-hover'))"));
+  assert(trail.includes("pos[0].x = x; pos[0].y = y; write(0); }"));
+});
+import { trailFactor, TRAIL_TAU, TRAIL_MAX_DT } from '../../../src/lib/cursorBackground.ts';
+Deno.test('all dots retain 20/170/340ms smoothing with full delayed-frame catch-up', () => {
+  assertEquals(TRAIL_TAU, [20, 170, 340]);
+  assertEquals(TRAIL_MAX_DT, 1000);
+  assertEquals(trailFactor(-1, 20), 0);
+  assertEquals(trailFactor(0, 20), 0);
+  assert(Math.abs(trailFactor(25, TRAIL_TAU[0]) - (1 - Math.exp(-25 / 20))) < 1e-12);
+  assert(Math.abs(trailFactor(170, 170) - (1 - Math.exp(-1))) < 1e-12);
+  assert(Math.abs(trailFactor(16, 170) - (1 - Math.exp(-16 / 170))) < 1e-12);
+  assert(trailFactor(16, 340) < trailFactor(16, 170));
+});
+Deno.test('lead dot has no transition and trail loop is rAF-only', async () => {
+  const css = await Deno.readTextFile('src/index.css');
+  const trail = await Deno.readTextFile('src/components/CursorTrail.tsx');
+  assert(!/\.cursor-trail > span[^{]*\{[^}]*transition/.test(css));
+  assert(trail.includes('requestAnimationFrame(tick)'));
+  assert(!trail.includes("style.transition"));
+});
+Deno.test('cursor dt uses performance.now at callback start, with 16ms first frame and lead included in settlement', async () => {
+  const trail = await Deno.readTextFile('src/components/CursorTrail.tsx');
+  assert(/const tick = \(ts: number\) => \{\s*const now = performance\.now\(\);/.test(trail));
+  assert(trail.includes('const dt = lastTs ? frameDt(ts - lastTs, now - lastNow) : 16'));
+  assert(trail.includes('trailFactor(dt, TRAIL_TAU[0])'));
+  assert(trail.includes('.animate(['));
+  assert(trail.includes('let settled = !hadMove'));
+  assert(trail.includes('TRAIL_SETTLE_PX'));
+});
+import { frameDt } from '../../../src/lib/cursorBackground.ts';
+Deno.test('frameDt trusts rAF unless it disagrees with the clock by more than 6ms', () => {
+  assertEquals(frameDt(16.67, 18.2), 16.67);
+  assertEquals(frameDt(33.3, 25), 25);
+  assertEquals(frameDt(400, 400), 400);
+  assertEquals(frameDt(-5, -4), 0);
+});
+Deno.test('following dots settle in the same real time at 60fps and delayed 90ms frames', () => {
+  for (const tau of TRAIL_TAU) {
+    let smooth = 0, delayed = 0;
+    for (let i = 0; i < 54; i++) smooth += (600 - smooth) * trailFactor(900 / 54, tau);
+    for (let i = 0; i < 10; i++) delayed += (600 - delayed) * trailFactor(90, tau);
+    assert(Math.abs(smooth - delayed) < 1e-9);
+    assert(Math.abs(delayed - 600 * (1 - Math.exp(-900 / tau))) < 1e-9);
+  }
+});
+Deno.test('reversals catch up without overshoot after a delayed frame', () => {
+  for (const tau of TRAIL_TAU) {
+    const outward = 600 * trailFactor(90, tau);
+    const reversed = outward + (-200 - outward) * trailFactor(180, tau);
+    assert(reversed > -200 && reversed < outward);
+    assert(Math.abs(reversed - (-200 + (outward + 200) * Math.exp(-180 / tau))) < 1e-9);
+  }
+});
+Deno.test('long interruptions reset at one second and invalid timing cannot corrupt positions', () => {
+  for (const tau of TRAIL_TAU) {
+    assertEquals(trailFactor(1000, tau), 1);
+    assertEquals(trailFactor(5000, tau), 1);
+    assertEquals(trailFactor(NaN, tau), 0);
+  }
+  assertEquals(frameDt(5000, 5000), 1000);
+  assertEquals(frameDt(NaN, NaN), 0);
+});
+
+import { followProgress, followEasing, FOLLOW_SPAN, NATIVE_ZONE_SELECTOR } from '../../../src/lib/cursorBackground.ts';
+Deno.test('compositor glides keep 170/340ms exponential follow and end exactly at the pointer', () => {
+  assertEquals(FOLLOW_SPAN, 5);
+  assertEquals(NATIVE_ZONE_SELECTOR, '.hero-stage,[data-site-header]');
+  for (const tau of [170, 340]) {
+    assertEquals(followProgress(0, tau), 0);
+    assertEquals(followProgress(5 * tau, tau), 1);
+    const k = followProgress(tau, tau);
+    assert(Math.abs(k - (1 - Math.exp(-1)) / (1 - Math.exp(-5))) < 1e-12);
+    assert(followProgress(tau / 2, tau) < k);
+  }
+  const e = followEasing();
+  assert(e.startsWith('linear(0.0000,') && e.endsWith(',1.0000)'));
+});

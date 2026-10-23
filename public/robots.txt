@@ -1,36 +1,30 @@
-# Sitemap location
-Sitemap: https://coupondonation.com/sitemap.xml
+# CouponDonation robots.txt
+# One group for every crawler: a crawler named in its own group ignores the rules for "*",
+# so don't add per-bot groups unless they repeat every Disallow below.
+# Search engines and AI assistants (Googlebot, Bingbot, GPTBot, ClaudeBot, PerplexityBot and others)
+# may read all public pages: fundraisers, help pages, ways to give and policies.
 
-# Allow all crawlers access to public pages
 User-agent: *
 Allow: /
-Allow: /f/
-
-# Block protected/authenticated pages
-Disallow: /donor/
-Disallow: /recipient/
-Disallow: /admin/
-Disallow: /profile
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /auth
 Disallow: /settings
+Disallow: /profile
+Disallow: /messages
 Disallow: /my-fundraisers
 Disallow: /my-impact
+Disallow: /impact/
 Disallow: /fundraiser/
+Disallow: /team/
+Disallow: /donor/
+Disallow: /recipient/
+Disallow: /overlay/
 Disallow: /donation-success
 Disallow: /donation-cancelled
 Disallow: /reset-password
+Disallow: /unsubscribe
 
-# Block streaming overlays (for OBS only)
-Disallow: /overlay/
-
-# Allow specific social/search crawlers
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+# Pages, plus every open fundraiser (served live from our backend, updated hourly)
+Sitemap: https://coupondonation.com/sitemap.xml
+Sitemap: https://vbnbacowuoeeojjdrzzp.supabase.co/functions/v1/sitemap

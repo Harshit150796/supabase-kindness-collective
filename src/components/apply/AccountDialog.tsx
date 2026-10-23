@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { AgreementNotice } from "@/components/legal/AgreementNotice";
 
 interface AccountDialogProps {
   open: boolean;
@@ -122,6 +123,7 @@ export const AccountDialog = ({
         </svg>
         <span className="font-medium text-foreground">Continue with Google</span>
       </button>
+      <AgreementNotice google className="-mt-2 text-center text-[13px]" />
 
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-border/60" />
@@ -237,6 +239,7 @@ export const AccountDialog = ({
           )}
         </div>
 
+        <AgreementNotice action={intent === "submit" ? "Create account & submit" : "Create account & continue"} className="text-[13px]" />
         <button
           type="submit"
           disabled={!canSubmit}
@@ -253,17 +256,6 @@ export const AccountDialog = ({
         Already have an account? Enter the same email above and we'll take you to sign in.
       </p>
 
-      <p className="text-xs text-muted-foreground text-center">
-        By creating an account, you agree to our{" "}
-        <a href="/terms" className="text-primary hover:underline">
-          Terms of Service
-        </a>{" "}
-        and{" "}
-        <a href="/privacy" className="text-primary hover:underline">
-          Privacy Policy
-        </a>
-        .
-      </p>
     </div>
   );
 

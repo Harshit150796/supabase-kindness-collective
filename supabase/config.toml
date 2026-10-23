@@ -78,3 +78,15 @@ verify_jwt = false
 
 [functions.confirm-donation]
 verify_jwt = false
+
+[functions.followup-guard]
+verify_jwt = false
+
+[functions.email-unsubscribe]
+verify_jwt = false
+
+[functions.sitemap]
+verify_jwt = false
+
+[functions.indexnow]
+verify_jwt = false

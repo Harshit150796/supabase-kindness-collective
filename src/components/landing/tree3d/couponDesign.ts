@@ -37,6 +37,19 @@ type LogoEntry = {
   resolveSettled: () => void;
 };
 const logos = new Map<string, LogoEntry>();
+// Rasterising all 18 SVGs back to back blocked the main thread for seconds on
+// slower devices, right while the opening and the app's first render run.
+// Each logo now rasterises in its own task, one after another.
+let rasterQueue: Promise<void> = Promise.resolve();
+// Normal priority on purpose: background tasks can starve while the tree renders on slow devices.
+const nextTask = () => new Promise<void>((resolve) => { setTimeout(resolve, 0); });
+function inOwnTask<T>(work: () => T): Promise<T> {
+  const run = rasterQueue
+    .then(nextTask)
+    .then(work);
+  rasterQueue = run.then(() => undefined, () => undefined);
+  return run;
+}
 
 function finish(entry: LogoEntry, status: 'ready' | 'error') {
   entry.status = status;
@@ -67,7 +80,7 @@ function loadLogo(slug: string): LogoEntry {
   img.src = `/brand-logos/${slug}.svg`;
   img
     .decode()
-    .then(() => {
+    .then(() => inOwnTask(() => {
       const sourceAspect = Math.max(0.08, img.naturalWidth / Math.max(1, img.naturalHeight));
       // Measure alpha on a small probe, then perform the final raster at 1024px.
       // This removes millions of first-load pixel iterations without lowering
@@ -136,7 +149,7 @@ function loadLogo(slug: string): LogoEntry {
        entry.alphaCoverage = alphaSum / Math.max(1, w * h);
        entry.luminance = luminanceSum / Math.max(1, alphaSum);
       finish(entry, 'ready');
-    })
+    }))
     .catch(() => finish(entry, 'error'));
   return entry;
 }
@@ -217,9 +230,25 @@ function paintLogo(canvas: HTMLCanvasElement, data: CouponData) {
   }
 }
 
+// Opening coupons are painted ahead, one per task while the model downloads, so the
+// 18 fruits mount by uploading finished canvases instead of painting 18 keylines in
+// one frame. Each canvas is handed out once.
+const prepainted = new Map<CouponData, HTMLCanvasElement>();
+
+function prepaint(data: CouponData): Promise<void> {
+  return inOwnTask(() => {
+    if (prepainted.has(data) || loadLogo(data.logo).status !== 'ready') return;
+    const canvas = document.createElement('canvas');
+    paintLogo(canvas, data);
+    prepainted.set(data, canvas);
+  });
+}
+
 export function drawCouponTexture(data: CouponData): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  paintLogo(canvas, data);
+  const ready = prepainted.get(data);
+  prepainted.delete(data);
+  const canvas = ready ?? document.createElement('canvas');
+  if (!ready) paintLogo(canvas, data);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.anisotropy = 16;
@@ -248,14 +277,13 @@ export const COUPON_FRUITS: CouponData[] = [
   { brand: 'Lyft', logo: 'lyft', color: '#EA0B8C', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Starbucks', logo: 'starbucks', color: '#006241', amount: 5, mark: 'emblem', scale: 0.94, sizeFactor: 0.825, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Amazon', logo: 'amazon', color: '#000000', amount: 10, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 7 },
-  { brand: 'Grubhub', logo: 'grubhub', color: '#FF5500', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
+  { brand: 'Grubhub', logo: 'grubhub', color: '#FF5500', amount: 5, mark: 'wordmark', scale: 1.12, sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
   { brand: "McDonald's", logo: 'mcdonalds', color: '#FFCC00', amount: 10, mark: 'emblem', scale: 0.94, sizeFactor: 0.825, edgeTone: 'dark', edgeRadius: 6 },
   { brand: 'Aldi', logo: 'aldi', color: '#00529B', amount: 10, mark: 'emblem', scale: 0.96, sizeFactor: 0.825, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Kroger', logo: 'kroger', color: '#0468B3', amount: 10, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Whole Foods', logo: 'whole-foods', color: '#006F46', amount: 5, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Publix', logo: 'publix', color: '#649441', amount: 10, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Uber Eats', logo: 'uber-eats', color: '#06C167', amount: 10, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 7 },
-  { brand: 'Seamless', logo: 'seamless', color: '#C90117', amount: 10, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
   { brand: "Domino's", logo: 'dominos', color: '#006491', amount: 5, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Taco Bell', logo: 'taco-bell', color: '#38096C', amount: 10, mark: 'emblem', sizeFactor: 0.8, edgeTone: 'light', edgeRadius: 6 },
   { brand: 'Subway', logo: 'subway', color: '#008938', amount: 5, mark: 'wordmark', sizeFactor: 0.85, edgeTone: 'light', edgeRadius: 6 },
@@ -277,9 +305,14 @@ export interface CouponLogoDiagnostics {
  * proportions or received its brand-specific fallback proportions. The tree
  * can render immediately, while fruit meshes wait for this one shared gate.
  */
-export async function preloadCouponLogos(): Promise<CouponLogoDiagnostics> {
-  const entries = COUPON_FRUITS.map((fruit) => ({ fruit, entry: loadLogo(fruit.logo) }));
-  await Promise.all(entries.map(({ entry }) => entry.settled));
+export async function preloadCouponLogos(
+  fruits: readonly CouponData[] = COUPON_FRUITS,
+  { paintAhead = false }: { paintAhead?: boolean } = {},
+): Promise<CouponLogoDiagnostics> {
+  const entries = fruits.map((fruit) => ({ fruit, entry: loadLogo(fruit.logo) }));
+  await Promise.all(entries.map(({ fruit, entry }) => (
+    paintAhead ? entry.settled.then(() => prepaint(fruit)).catch(() => undefined) : entry.settled
+  )));
 
   const ready: string[] = [];
   const failed: string[] = [];
@@ -301,6 +334,3 @@ export async function preloadCouponLogos(): Promise<CouponLogoDiagnostics> {
   });
   return { ready, failed, invalid };
 }
-
-// Preload + decode the complete local brand set once at module initialisation.
-if (typeof window !== 'undefined') COUPON_FRUITS.forEach((f) => loadLogo(f.logo));

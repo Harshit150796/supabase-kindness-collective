@@ -7,6 +7,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@3';
 import { validateSecret, type CredType, type PlainSecret } from '../_shared/coupon-validate.ts';
 import { flushOwnerAlerts } from '../_shared/owner-alerts.ts';
+import { renderOutsideCouponEmail } from '../_shared/outside-coupon-email.ts';
+import { NOTIFY_SENDER } from '../_shared/email-layout.ts';
 
 const json = (d: unknown, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 const S = z.string().max(200).optional();
@@ -24,6 +26,14 @@ const Body = z.discriminatedUnion('action', [
     topup: z.object({ amount: z.number().positive(), reason: z.string().max(300) }).optional().nullable() }),
   z.object({ action: z.literal('owner_reveal'), coupon_id: z.string().uuid() }),
   z.object({ action: z.literal('admin_reveal'), coupon_id: z.string().uuid() }),
+  z.object({ action: z.literal('admin_add_outside'), fundraiser_id: z.string().uuid(), brand: z.string().max(80).optional().nullable(),
+    value: z.number().positive().max(100000).optional().nullable(), stock_id: z.string().uuid().optional().nullable(),
+    code: S.nullable(), pin: S.nullable(), redemption_url: z.string().max(1000).optional().nullable(),
+    value_expires_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(), instructions: z.string().max(500).optional().nullable(),
+    source_label: z.string().max(120).optional().nullable(),
+    donor: z.object({ name: z.string().max(120).optional().nullable(), email: z.string().email().max(254).optional().nullable(), user_id: z.string().uuid().optional().nullable(), anonymous: z.boolean().default(false) }).default({}),
+    email_donor: z.boolean().default(true), email_organizer: z.boolean().default(true) }),
+  z.object({ action: z.literal('resend_outside_confirmation'), source_id: z.string().uuid() }),
 ]);
 
 const clean = (s: PlainSecret) => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, (v ?? '').trim()]).filter(([, v]) => v)) as PlainSecret;
@@ -89,9 +99,58 @@ Deno.serve(async (req) => {
         _after: { type: row.credential_type ?? 'code', credential: row.card_last4 ? `•••• ${row.card_last4}` : null } });
       return json({ code: row.code, redemption_url: row.redemption_url, type: row.credential_type ?? 'code', secrets: secretsOf(row.credential_type, row.code, row.code_pin) });
     }
+    if (p.action === 'admin_add_outside') {
+      if (!(await isStaff())) return json({ error: 'Staff access required' }, 403);
+      const url = p.redemption_url?.trim() || null;
+      if (!p.stock_id && url && !/^https:\/\//i.test(url)) return json({ error: 'The redemption link must start with https://' }, 400);
+      const { data, error } = await admin.rpc('admin_add_outside_coupon', { _actor: uid, _fundraiser: p.fundraiser_id, _brand: p.brand ?? null, _value: p.value ?? null,
+        _stock: p.stock_id ?? null, _code: p.code ?? null, _pin: p.pin ?? null, _url: url, _expiry: p.value_expires_on || null, _instructions: p.instructions ?? null,
+        _source_label: p.source_label ?? null, _donor_name: p.donor.name ?? null, _donor_email: p.donor.email ?? null, _donor_user: p.donor.user_id ?? null, _anon: p.donor.anonymous });
+      if (error) return json({ error: error.message }, 400);
+      const r = data as { source_id: string; fundraiser_id: string };
+      const owner = p.email_organizer ? await flushOwnerAlerts(admin, r.fundraiser_id) : { emailed: 0, notified: 0 };
+      const donor = p.email_donor ? await sendOutsideConfirmation(admin, r.source_id, uid, false) : { sent: false };
+      return json({ ...r, organizer_emailed: owner.emailed, donor_emailed: donor.sent, donor_error: (donor as { error?: string }).error });
+    }
+
+    if (p.action === 'resend_outside_confirmation') {
+      if (!(await isStaff())) return json({ error: 'Staff access required' }, 403);
+      const r = await sendOutsideConfirmation(admin, p.source_id, uid, true);
+      if (!r.sent) return json({ error: r.error ?? 'Could not send' }, 400);
+      return json(r);
+    }
   } catch (e) {
     console.error('coupon-secrets failure', (e as Error).name);
     return json({ error: 'Could not process the coupon.' }, 500);
   }
   return json({ error: 'Unknown action' }, 400);
 });
+
+// Sends the donor confirmation once per source; `resend` lets staff deliberately send it again. Never includes codes.
+// deno-lint-ignore no-explicit-any
+async function sendOutsideConfirmation(admin: any, sourceId: string, actor: string, resend: boolean): Promise<{ sent: boolean; error?: string }> {
+  const { data: s } = await admin.from('coupon_sources').select('id, fundraiser_id, donor_name, donor_email, confirmation_sent_at, confirmation_count').eq('id', sourceId).maybeSingle();
+  if (!s) return { sent: false, error: 'Not found' };
+  if (!s.donor_email) return { sent: false, error: 'This donor has no email address' };
+  if (s.confirmation_sent_at && !resend) return { sent: false, error: 'Already sent' };
+  // claim: only one concurrent sender wins
+  let claim = admin.from('coupon_sources').update({ confirmation_sent_at: new Date().toISOString(), confirmation_count: (s.confirmation_count ?? 0) + 1 })
+    .eq('id', sourceId).eq('confirmation_count', s.confirmation_count ?? 0);
+  if (!resend) claim = claim.is('confirmation_sent_at', null);
+  const { data: won } = await claim.select('id');
+  if (!won?.length) return { sent: false, error: 'Already sent' };
+  const key = Deno.env.get('RESEND_API_KEY');
+  if (!key) return { sent: false, error: 'Email is not configured' };
+  const { data: f } = await admin.from('fundraisers').select('title, unique_slug, id').eq('id', s.fundraiser_id).maybeSingle();
+  const { data: c } = await admin.from('coupons').select('store_name, issued_brand').eq('source_id', sourceId).limit(1).maybeSingle();
+  const mail = renderOutsideCouponEmail({ donorName: s.donor_name, fundraiserTitle: f?.title ?? 'a fundraiser', brand: c?.issued_brand || c?.store_name || 'coupon',
+    fundraiserUrl: `https://coupondonation.com/f/${f?.unique_slug ?? f?.id ?? ''}` });
+  const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: NOTIFY_SENDER.from, reply_to: NOTIFY_SENDER.replyTo, to: [s.donor_email], ...mail }) });
+  await admin.rpc('svc_admin_log', { _actor: actor, _action: resend ? 'coupon.outside_confirmation_resend' : 'coupon.outside_confirmation', _table: 'coupon_sources', _record: sourceId, _after: { ok: res.ok } });
+  if (!res.ok) {
+    if (!resend) await admin.from('coupon_sources').update({ confirmation_sent_at: null }).eq('id', sourceId);
+    return { sent: false, error: 'The email provider refused the message' };
+  }
+  return { sent: true };
+}

@@ -15,6 +15,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { US_STATES } from '@/data/usStates';
 
 export interface FundraiserFilters {
   category: string;
@@ -40,25 +41,6 @@ export const FUNDRAISER_CATEGORIES: CategoryDef[] = [
   { value: 'other', label: 'Other', Icon: MoreHorizontal },
 ];
 
-const US_STATES: { code: string; name: string }[] = [
-  { code: 'AL', name: 'Alabama' }, { code: 'AK', name: 'Alaska' }, { code: 'AZ', name: 'Arizona' },
-  { code: 'AR', name: 'Arkansas' }, { code: 'CA', name: 'California' }, { code: 'CO', name: 'Colorado' },
-  { code: 'CT', name: 'Connecticut' }, { code: 'DE', name: 'Delaware' }, { code: 'FL', name: 'Florida' },
-  { code: 'GA', name: 'Georgia' }, { code: 'HI', name: 'Hawaii' }, { code: 'ID', name: 'Idaho' },
-  { code: 'IL', name: 'Illinois' }, { code: 'IN', name: 'Indiana' }, { code: 'IA', name: 'Iowa' },
-  { code: 'KS', name: 'Kansas' }, { code: 'KY', name: 'Kentucky' }, { code: 'LA', name: 'Louisiana' },
-  { code: 'ME', name: 'Maine' }, { code: 'MD', name: 'Maryland' }, { code: 'MA', name: 'Massachusetts' },
-  { code: 'MI', name: 'Michigan' }, { code: 'MN', name: 'Minnesota' }, { code: 'MS', name: 'Mississippi' },
-  { code: 'MO', name: 'Missouri' }, { code: 'MT', name: 'Montana' }, { code: 'NE', name: 'Nebraska' },
-  { code: 'NV', name: 'Nevada' }, { code: 'NH', name: 'New Hampshire' }, { code: 'NJ', name: 'New Jersey' },
-  { code: 'NM', name: 'New Mexico' }, { code: 'NY', name: 'New York' }, { code: 'NC', name: 'North Carolina' },
-  { code: 'ND', name: 'North Dakota' }, { code: 'OH', name: 'Ohio' }, { code: 'OK', name: 'Oklahoma' },
-  { code: 'OR', name: 'Oregon' }, { code: 'PA', name: 'Pennsylvania' }, { code: 'RI', name: 'Rhode Island' },
-  { code: 'SC', name: 'South Carolina' }, { code: 'SD', name: 'South Dakota' }, { code: 'TN', name: 'Tennessee' },
-  { code: 'TX', name: 'Texas' }, { code: 'UT', name: 'Utah' }, { code: 'VT', name: 'Vermont' },
-  { code: 'VA', name: 'Virginia' }, { code: 'WA', name: 'Washington' }, { code: 'WV', name: 'West Virginia' },
-  { code: 'WI', name: 'Wisconsin' }, { code: 'WY', name: 'Wyoming' }, { code: 'DC', name: 'Washington, D.C.' },
-];
 
 interface Props {
   filters: FundraiserFilters;
@@ -87,7 +69,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="shrink-0 snap-start inline-flex items-center gap-2 rounded-full border border-border bg-background hover:bg-muted transition-colors px-4 py-2 text-sm font-semibold text-foreground"
+              className="touch-control min-h-11 shrink-0 snap-start inline-flex items-center gap-2 rounded-full border border-border bg-background hover:bg-muted transition-colors px-4 py-2.5 text-sm font-semibold text-foreground"
             >
               <activeCategory.Icon className="w-4 h-4" />
               {activeCategory.label}
@@ -103,7 +85,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
                     key={c.value}
                     onClick={() => onChange({ ...filters, category: c.value })}
                     className={cn(
-                      'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm text-left transition-colors',
+                      'touch-control min-h-11 w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm text-left transition-colors',
                       active ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted text-foreground'
                     )}
                   >
@@ -122,7 +104,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="shrink-0 snap-start inline-flex items-center gap-2 rounded-full border border-border bg-background hover:bg-muted transition-colors px-4 py-2 text-sm font-semibold text-foreground"
+              className="touch-control min-h-11 shrink-0 snap-start inline-flex items-center gap-2 rounded-full border border-border bg-background hover:bg-muted transition-colors px-4 py-2.5 text-sm font-semibold text-foreground"
             >
               {activeState ? activeState.name : 'All states'}
               <ChevronDown className="w-4 h-4 opacity-60" />
@@ -142,7 +124,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
               <button
                 onClick={() => onChange({ ...filters, state: 'all' })}
                 className={cn(
-                  'w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-sm text-left transition-colors',
+                  'touch-control min-h-11 w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-sm text-left transition-colors',
                   filters.state === 'all' ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted text-foreground'
                 )}
               >
@@ -156,7 +138,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
                     key={s.code}
                     onClick={() => onChange({ ...filters, state: s.code })}
                     className={cn(
-                      'w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-sm text-left transition-colors',
+                      'touch-control min-h-11 w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-sm text-left transition-colors',
                       active ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted text-foreground'
                     )}
                   >
@@ -185,7 +167,7 @@ export function FundraiserFilterBar({ filters, onChange, className }: Props) {
                 onChange({ ...filters, category: active ? 'all' : c.value })
               }
               className={cn(
-                'shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium transition-colors',
+                'touch-control min-h-11 shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full px-3.5 py-2.5 text-sm font-medium transition-colors',
                 active
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-foreground hover:bg-muted/70'

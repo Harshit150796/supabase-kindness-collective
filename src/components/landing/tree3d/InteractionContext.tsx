@@ -1,7 +1,8 @@
-import { createContext, useContext, useRef, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback, ReactNode } from 'react';
+import { getSky, subscribeSky, toggleSky } from '@/lib/sky';
 import type { FallingDonation } from '@/hooks/useFallingDonations';
 
-export type TimeOfDay = 'day' | 'sunset' | 'night';
+export type TimeOfDay = 'day' | 'night';
 
 export interface ShakeEvent {
   id: number;
@@ -23,6 +24,8 @@ export interface PlantEvent {
   id: string; // donation id
   position: [number, number, number];
   amount: number;
+  /** The donor's display name, shown in the garden's name moment where the coupon landed. */
+  donorName: string;
   accentColor: string;
 }
 
@@ -63,25 +66,31 @@ export interface InteractionState {
 
   // Plant spawn (coupon landed)
   plantEvent: PlantEvent | null;
-  spawnPlant: (donation: { id: string; amount: number }, position: [number, number, number], accentColor: string) => void;
+  spawnPlant: (donation: { id: string; amount: number; donorName: string }, position: [number, number, number], accentColor: string) => void;
 }
 
 const Ctx = createContext<InteractionState | null>(null);
 
-function getTimeOfDayFromClock(): TimeOfDay {
-  if (typeof window !== 'undefined') {
+/**
+ * One sky per page load: night 70% of the time, blue day 30% (founder decision).
+ * The inline opening script draws it into <html data-sky> for every page so the
+ * hero backdrop, cursor and live tree agree; ?time3d=day|night forces one for QA.
+ */
+function getTimeOfDayForLoad(): TimeOfDay {
+  if (typeof document !== 'undefined') {
     const forced = new URLSearchParams(window.location.search).get('time3d');
-    if (forced === 'day' || forced === 'sunset' || forced === 'night') return forced;
+    if (forced === 'day' || forced === 'night') return forced;
+    const chosen = document.documentElement.dataset.sky;
+    if (chosen === 'day' || chosen === 'night') return chosen;
+    const picked: TimeOfDay = Math.random() < 0.7 ? 'night' : 'day';
+    document.documentElement.dataset.sky = picked;
+    return picked;
   }
-  const h = new Date().getHours();
-  if (h >= 6 && h < 17) return 'day';
-  if (h >= 17 && h < 20) return 'sunset';
   return 'night';
 }
 
 export function InteractionProvider({ children }: { children: ReactNode }) {
-  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(() => getTimeOfDayFromClock());
-  const userOverrodeRef = useRef(false);
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(() => getTimeOfDayForLoad());
   const [shakeEvent, setShakeEvent] = useState<ShakeEvent | null>(null);
   const [ripples, setRipples] = useState<RippleEvent[]>([]);
   const [birdEvent, setBirdEvent] = useState<BirdEvent | null>(null);
@@ -93,20 +102,13 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
   const lastBirdRef = useRef(0);
   const idRef = useRef(1);
 
-  const cycleTimeOfDay = useCallback(() => {
-    userOverrodeRef.current = true;
-    setTimeOfDay((p) => (p === 'day' ? 'sunset' : p === 'sunset' ? 'night' : 'day'));
-  }, []);
-
+  // The sky stays as chosen for the visit; tapping it (or the header's sky switch) toggles
+  // between night and day. Both write <html data-sky>, and the scene follows that attribute.
+  const cycleTimeOfDay = useCallback(() => toggleSky(), []);
   useEffect(() => {
-    const id = setInterval(() => {
-      if (userOverrodeRef.current) return;
-      setTimeOfDay((prev) => {
-        const next = getTimeOfDayFromClock();
-        return next === prev ? prev : next;
-      });
-    }, 5 * 60 * 1000);
-    return () => clearInterval(id);
+    const sync = () => setTimeOfDay(getSky());
+    sync();
+    return subscribeSky(sync);
   }, []);
 
   const bumpWind = useCallback((v: number) => {
@@ -144,12 +146,13 @@ export function InteractionProvider({ children }: { children: ReactNode }) {
 
   const [plantEvent, setPlantEvent] = useState<PlantEvent | null>(null);
   const spawnPlant = useCallback(
-    (donation: { id: string; amount: number }, position: [number, number, number], accentColor: string) => {
+    (donation: { id: string; amount: number; donorName: string }, position: [number, number, number], accentColor: string) => {
       setPlantEvent({
         uid: idRef.current++,
         id: donation.id,
         position,
         amount: donation.amount,
+        donorName: donation.donorName,
         accentColor,
       });
     },
