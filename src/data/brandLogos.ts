@@ -37,7 +37,7 @@ export const brandLogos: Record<string, BrandInfo> = {
   // Pharmacy
   CVS: { name: 'CVS', logo: '/brand-logos/cvs.svg', color: '#CC0000', category: 'pharmacy' },
   Walgreens: { name: 'Walgreens', logo: logo('walgreens.com.png'), color: '#E31837', category: 'pharmacy' },
-  RiteAid: { name: 'Rite Aid', logo: logo('riteaid.com.png'), color: '#00539B', category: 'pharmacy' },
+  // Rite Aid closed its last stores in October 2025, so its gift cards are no longer offered.
   // Coffee/Restaurant
   Dunkin: { name: "Dunkin'", logo: logo('dunkindonuts.com.png'), color: '#FF671F', category: 'coffee' },
   Chipotle: { name: 'Chipotle', logo: logo('chipotle.com.png'), color: '#441500', category: 'restaurant' },
