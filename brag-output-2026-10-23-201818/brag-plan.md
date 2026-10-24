@@ -1,6 +1,6 @@
 # /brag plan: the new coupondonation.com (launch film)
 
-**Format:** landscape 1920×1080, 30 fps, **76.8 s** (32 bars at 100 BPM). This is a long-form cut on purpose: the brief is a long launch / PR film for the new website, so it runs past brag's usual 15–25 s and earns the length chapter by chapter.
+**Format:** landscape 1920×1080, 30 fps, **79.2 s** (33 bars at 100 BPM). This is a long-form cut on purpose: the brief is a long launch / PR film for the new website, so it runs past brag's usual 15–25 s and earns the length chapter by chapter.
 **Tone:** cinematic and polished. Big serif type and slow camera on the real site, then confident product moments, all earnest. Tonal reference: the site's own opening lockup and the "Every dollar" band.
 **Built from:** the updated site on `main` (merged at `780cf7a`). The live site and backend are blocked from this machine, so every scene reuses the repo's real code, CSS, fonts, captured markup and the homepage's own 3D tree, rendered locally.
 
@@ -25,7 +25,7 @@ CouponDonation turns a gift into store coupons and gift cards for families who a
 **A promise, then the proof.** The film opens on the site's boldest line over the live tree. Every chapter after that shows the real website keeping that promise, step by step, in the order a visitor meets it. It ends on the site's own two-way call to action.
 
 ## Hook (0–4.8 s)
-Night sky. The real homepage tree slowly pushes in, with coupons glinting in the canopy. A huge serif line sets in word by word: **"Every dollar you give reaches a family."** On the bar line comes **"All of it."**, and its hand-drawn underline draws, as on the site.
+Night sky with the real homepage tree, dimmed far back behind drifting stars. A huge serif line sets in word by word (already rising on the first frame): **"Every dollar you give reaches a family."** On the bar line comes **"All of it."**, and its hand-drawn underline draws, as on the site.
 
 ## Highlights
 1. **The new site, opening for real.** The founder-approved opening lockup (logo, "Coupon Donation", "Transforming Giving", sheen) flies onto the navbar as the night hero fades in. Then the kicker word slides and the Donate now | Apply as Recipient halves meet around the heart.
@@ -42,8 +42,8 @@ Night sky. The real homepage tree slowly pushes in, with coupons glinting in the
    - "Free to apply. Help arrives as store coupons, never cash."
 7. **Security without shortcuts.** Encrypted connection · Coupons, never cash · Payments by Square.
 
-## Punchline / outro (67.2–76.8 s)
-Back to the tree. "Help someone this week. Or ask for help yourself." with **Start donating** and **Apply for support**, then the logo lockup, the two-colour wordmark and coupondonation.com. The site's own trademark disclaimer sits as fine print.
+## Punchline / outro (67.2–79.2 s)
+An iris opens on the tree by daylight. The site's deep-green CTA wipes up over it: "Help someone this week. Or ask for help yourself." with **Start donating** and **Apply for support**. Then the logo lockup, the two-colour wordmark and coupondonation.com, with the site footer's full disclaimer as fine print (trademarks, no affiliation, "CouponDonation Inc. is not a registered charity, and gifts are not tax-deductible.").
 
 ## Copy rules for this cut (from the research pass)
 - **Verbatim site copy only** for claims, each traced to a file (see `work/research/flows/` and `work/research/sections/`).
@@ -54,8 +54,9 @@ Back to the tree. "Help someone this week. Or ask for help yourself." with **Sta
   - timing promises ("about 3 minutes", "within a few minutes");
   - verification or approval promises;
   - any live numbers, fundraiser cards, testimonials or donor names. They are real user data or blocked here.
-- **Illustrative UI values are labelled stand-ins and show the product in use, not claims:** the $50 demo gift, the chosen stores, and the apply example (category, stores, "Help Feed My Family This Month", Dayton, OH). Story text and photos appear only as grey bars or a coupon/receipt visual, never people.
-- **Store logos** appear as the site shows them. The site's disclaimer goes in the end card: "Store names and logos shown on CouponDonation are trademarks of their owners. Those stores are not affiliated with, and do not sponsor or endorse, CouponDonation." Postmates and Seamless are left out (tree rules).
+- **Illustrative UI values show the product in use, not claims:** the $50 demo gift split $17/$17/$16 (the same split on the ledger and the review), the chosen stores, and the apply example (My family; Food & groceries and Health & pharmacy; Walmart, Kroger, CVS). No story text, photos or people appear.
+- **Review card:** the tip picker shows the site's default 15% selection, but its "Most donors leave about 15%" sentence is trimmed, and the "100%" band hides the tip column for the same reason.
+- **Store logos** appear as the site shows them. The site footer's disclaimer goes in the end card, in full (Footer.tsx). The homepage marquee, which carries Postmates, is kept below the frame (tree rules).
 
 ## Visual identity (from the codebase)
 - **Colours:**
@@ -72,19 +73,21 @@ Back to the tree. "Help someone this week. Or ask for help yourself." with **Sta
 
 | # | Time | Bars | Scene | On screen | Sound |
 |---|---|---|---|---|---|
-| 1 | 0.0–4.8 | 1–2 | **Hook** | Night tree push-in (real capture). Serif "Every dollar you give reaches a family." word by word, then "All of it." with the underline drawing at 2.4 s. | Low piano and a pad, with a soft pulse. Bell on "All of it." |
-| 2 | 4.8–9.6 | 3–4 | **The new site** | Real opening: paper cover, logo mark, "Coupon Donation", "Transforming Giving", sheen. A small line under it: "Introducing the new coupondonation.com". The lockup flies onto the navbar as the night hero fades in. | Sheen shimmer, a whoosh into the nav. Pad opens up. |
-| 3 | 9.6–14.4 | 5–6 | **The tree** | Night hero (real capture): the kicker word slides, the Donate now / Apply as Recipient halves meet, the heart pops, the coupons sway. Slow push. | Strings swell, heartbeat thump on the heart pop, and a riser. |
-| 4 | 14.4–24.0 | 7–10 | **Give what people need.** | Heading, then the subhead "…so it arrives as food, medicine or transport, never as cash." The four cards deal and flip on beats, each title holding. | Groove enters (kick, clap, plucks), with a card "flip" tick on each deal. |
-| 5 | 24.0–36.0 | 11–15 | **Donate** | "Choose where your help can be used." Taps on Walmart, Target and DoorDash ("3 of 5 chosen"), "Choose amount", $50. The "Your gift" ledger slides open with the split bar. Review: "Gift for families (100%)" and "Square's fee is added on top, so nothing comes out of the gift." | UI ticks in key on each tap. Bass walks up and the ledger lands on a downbeat. |
-| 6 | 36.0–43.2 | 16–18 | **100%** | Blue band: "Every dollar you give reaches a family. All of it." The outlined 100% fills. "Nothing taken out" / "We take no platform fee." | Lift: drums drop to a pulse, and the fill rides a riser to the bar. |
-| 7 | 43.2–52.8 | 19–22 | **We track the money.** | "We don't track the person. We track the money." Then the journey: Donation · Allocation · Coupon · Use, with a coupon marker travelling the dotted path. "The receipt closes the trail." | Groove back, with a pluck on each stop. |
-| 8 | 52.8–62.4 | 23–26 | **For people who need help** | "Start your request": taps on "My family", a need and stores. The "Your request" panel fills in. "Free to apply. Help arrives as store coupons, never cash." | Warmer piano lead, the same groove. |
-| 9 | 62.4–67.2 | 27–28 | **Security without shortcuts.** | Forest band. Three badges set in: Encrypted connection · Coupons, never cash · Payments by Square. | Build: snare roll and riser. |
-| 10 | 67.2–76.8 | 29–32 | **Finale** | Tree (real capture), then the forest end card: "Help someone this week. Or ask for help yourself." Start donating · Apply for support, the logo lockup, coupondonation.com and the disclaimer as fine print. | Full chorus, then the final chord on bar 31 and a tail. |
+| 1 | 0.0–4.8 | 1–2 | **Hook** | Dimmed night tree under drifting stars. Serif "Every dollar you give reaches a family." word by word, then "All of it." with the underline drawing at 2.4 s. | Low piano and a pad. Bell on "All of it.", shimmer on the underline, riser into the paper wipe. |
+| 2 | 4.8–9.6 | 3–4 | **The new site** | Real opening: paper cover, logo mark, wordmark, "Transforming Giving", sheen, with "Introducing the new coupondonation.com" under it. Slow push while it reads, then the lockup flies onto the navbar as the night hero opens. | Sheen shimmer, a whoosh into the nav, a tick on landing. |
+| 3 | 9.6–14.4 | 5–6 | **The tree** | Night hero (real capture), punched in past the navbar: the kicker word slides, the coupon drops, the dandelion grows. Slow push onto the tree. | Mallets on the drop and the kicker, riser. |
+| 4 | 14.4–24.0 | 7–10 | **Give what people need.** | Page scroll to the soft-green band. Heading and subhead ("…so it arrives as food, medicine or transport, never as cash."), then the four cards deal and flip on beats: You donate · It becomes a coupon · They get what they needed · You get the receipt. | Groove enters, a paper flip on each deal. |
+| 5 | 24.0–36.0 | 11–15 | **Donate** | "Choose where your help can be used." Taps on Walmart, Target and DoorDash ("3 of 5 chosen"), "Choose amount", $50. The "Your gift" ledger slides open and splits it $17/$17/$16. Review gift, then a lean-in on the fee box and the summary: "Gift for families (100%)", with a marker drawn under it. | UI ticks in key on each tap, bells as the ledger opens. |
+| 6 | 36.0–43.2 | 16–18 | **100%** | Blue band wipes up: "Every dollar you give / reaches a family. All of it." The outlined 100% fills. "100% of your gift goes to the family as store coupons and gift cards. We take no platform fee." (FAQ), then "Nothing taken out" and "The card fee is covered". | Riser on the fill, a bell as it lands, ticks on the two promises. |
+| 7 | 43.2–52.8 | 19–22 | **We track the money.** | Scroll to "We don't track the person. / We track the money." The line lifts and the journey draws: Donation · Allocation · Coupon · Use, with a green coupon riding the line from stop to stop. | Boom on the bar, a mallet and paper on each stop. |
+| 8 | 52.8–62.4 | 23–26 | **For people who need help** | The apply page slides in: "Start your request", My family already chosen. Taps on Food & groceries and Health & pharmacy, a scroll, then Walmart, Kroger and CVS ("3 of 8 chosen"). The deep-green "Your request" panel fills row by row as each tap lands, then the camera leans in on it. The panel's own footer takes the frame: "Free to apply. Help arrives as store coupons, never cash." | Ticks on each tap, bells under "Free to apply." |
+| 9 | 62.4–67.2 | 27–28 | **Security without shortcuts.** | Match cut on the same deep green: the words rise out, the security band's heading rises in. Three badges set in: Encrypted connection · Coupons, never cash · Payments by Square. | Ticks on the badges, a riser into the finale. |
+| 10 | 67.2–69.6 | 29 | **Daylight** | An iris opens on the tree by day (real capture). | Swoosh on the iris, boom on the bar. |
+| 11 | 69.6–74.4 | 30–31 | **Call to action** | The site's deep-green CTA wipes up: "Help someone this week. / Or ask for help yourself." Start donating · Apply for support, and the coupon card rises. | Ticks on the buttons, the final chord on bar 31. |
+| 12 | 74.4–79.2 | 32–33 | **End card** | Paper wipe: the logo lockup, coupondonation.com, then the footer disclaimer as fine print. | A bell on the URL, the chord tail. |
 
 ## Music cue guidance
 An original score, synthesized in `work/music.py` (piano, pads, plucks, bass, drums, bells, risers). It is in D major at 100 BPM, I–V–vi–IV with a lift on vi–IV–I–V in chapter 6. The sound effects share its key, reverb and beat grid: UI ticks on the taps, shimmer on the sheen, a whoosh into the nav, flips on the card deal, plucks on the journey stops. Scene cuts land on bar lines counted from frame 0.
 
-## Share caption (draft)
-The new coupondonation.com is live. Every dollar you give reaches a family as store coupons, never cash, and you can follow the money from donation to use. Help someone this week, or ask for help yourself.
+## Share caption
+See `share-copy.txt`. The poster (frame 0 and `brag.jpg`) is the hook at 4.3 s: "Every dollar you give reaches a family. All of it." over the night tree.

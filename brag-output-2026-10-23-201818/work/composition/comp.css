@@ -1,7 +1,7 @@
 /* Launch film stage. Sizes are design px at 1920x1080. */
 html, body { margin: 0; background: #000; overflow: hidden; }
 #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: hsl(var(--background)); }
-.layer { position: absolute; inset: 0; overflow: hidden; display: none; }
+.layer { position: absolute; inset: 0; overflow: hidden; display: none; isolation: isolate; }
 .abs { position: absolute; }
 .serif { font-family: 'Instrument Serif', serif; font-weight: 400; letter-spacing: 0; }
 .sans { font-family: 'Instrument Sans', system-ui, sans-serif; letter-spacing: 0; }
@@ -35,5 +35,5 @@ canvas.seq { position: absolute; inset: 0; width: 1920px; height: 1080px; }
 .lockup .wm { font-family: 'Instrument Sans', sans-serif; font-weight: 700; font-size: 86px; line-height: 1; letter-spacing: 0; }
 .lockup .wm .c { color: #2e7d32; } .lockup .wm .d { color: #1565c0; }
 .lockup .tag { font-family: 'Instrument Sans', sans-serif; font-size: 34px; color: #576b58; margin-top: 10px; }
-.fine { position: absolute; left: 0; right: 0; text-align: center; font-size: 19px; line-height: 1.5; color: hsl(123 10% 38%); }
+.fine { position: absolute; left: 0; right: 0; text-align: center; font-size: 22px; line-height: 1.5; color: hsl(123 10% 38%); }
 .marker { position: absolute; height: 6px; border-radius: 3px; background: hsl(123 46% 34%); transform-origin: 0 50%; }

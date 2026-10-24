@@ -173,12 +173,12 @@ swoosh(4.65, 0.5, 300, 5200, 0.7)                     # paper wipes up
 fx.add(boom(0.35), 4.8)
 # opening: lockup sheen, the caption, the fly onto the navbar and its landing
 for i, m in enumerate([93, 97, 100, 105]):
-    tt = 5.35 + i * 0.06
+    tt = 5.22 + i * 0.06
     s = mallet(m, 1.2, 0.12); fx.add(s, tt, pan=0.3 - i * 0.2); rev.add(s, tt, 0.7)
 tick(T['introCap'] + 0.1, 81, 0.35)
-swoosh(7.75, 0.9, 260, 3800, 0.75, -0.3)              # lockup flies to the nav
-tick(8.27, 86, 0.5, -0.5)                             # lands on the nav brand
-s = mallet(88, 1.0, 0.3); fx.add(s, 8.74); rev.add(s, 8.74, 0.6)   # kicker word slides
+swoosh(7.55, 0.7, 260, 3800, 0.75, -0.3)              # lockup flies to the nav
+tick(7.93, 86, 0.5, -0.5)                             # lands on the nav brand
+s = mallet(88, 1.0, 0.3); fx.add(s, 8.4); rev.add(s, 8.4, 0.6)   # kicker word slides
 # tree: coupon drop, plant grows, kicker words
 s = mallet(93, 1.2, 0.28); fx.add(s, 10.07, pan=0.2); rev.add(s, 10.07, 0.6)
 fx.add(paper(0.8), 11.0, pan=0.4)
@@ -189,7 +189,7 @@ for tt, m in [(11.4, 85), (13.0, 88)]:
     s = mallet(m, 1.0, 0.24); fx.add(s, tt); rev.add(s, tt, 0.6)
 fx.add(riser(1.8), 12.6, gain=0.6)
 # scroll / wipe transitions
-for tt, pan in [(14.4, 0.0), (24.0, 0.0), (36.0, 0.0), (43.2, 0.0), (52.8, 0.4), (62.3, 0.0), (67.05, 0.0), (69.9, 0.0), (74.3, 0.0)]:
+for tt, pan in [(14.4, 0.0), (24.0, 0.0), (36.0, 0.0), (43.2, 0.0), (52.8, 0.4), (62.2, 0.0), (67.05, 0.0), (69.5, 0.0), (74.3, 0.0)]:
     swoosh(tt, 0.6, 260, 4000, 0.65, pan)
 # give: four cards deal and flip
 for i, tt in enumerate(T['deal']):
@@ -204,7 +204,7 @@ for i, m in enumerate([74, 78, 81, 86]):
     s = bell(m + 12, 2.2, 0.16); fx.add(s, T['ledger'] + 0.1 + i * 0.07, pan=0.3); rev.add(s, T['ledger'] + 0.1 + i * 0.07, 0.6)
 tick(T['toReview'], 88, 0.8)
 for i, m in enumerate([86, 88, 90, 93, 95, 98]):
-    tt = T['summary'] + 0.2 + i * 0.08
+    tt = T['summary'] + 1.0 + i * 0.08
     s = mallet(m + 12, 0.8, 0.12); fx.add(s, tt, pan=-0.3 + i * 0.12); rev.add(s, tt, 0.6)
 # 100%: riser as it fills, ticks on the two promises, hit into the money line
 fx.add(riser(T['fill'][1] - T['fill'][0] + 0.2), T['fill'][0], gain=0.7)

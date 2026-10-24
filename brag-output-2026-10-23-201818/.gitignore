@@ -1,4 +1,7 @@
-work/captures/
+work/captures/*
+!work/captures/hero/
+work/captures/hero/*
+!work/captures/hero/scripts/
 work/stills*/
 work/node_modules
 work/*.mp4

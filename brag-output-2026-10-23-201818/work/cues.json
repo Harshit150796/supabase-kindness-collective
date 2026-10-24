@@ -50,19 +50,19 @@
   ]
  },
  "T": {
-  "hookWords": 0.2,
+  "hookWords": -0.35,
   "allOf": 2.4,
   "underline": 2.7,
   "introCap": 5.45,
-  "giveHead": 14.75,
-  "giveSub": 15.3,
+  "giveHead": 14.35,
+  "giveSub": 14.9,
   "deal": [
    16.8,
    17.4,
    18,
    18.6
   ],
-  "donHead": 24.25,
+  "donHead": 23.95,
   "taps": [
    25.2,
    25.8,
@@ -73,19 +73,19 @@
   "ledger": 28.35,
   "toReview": 31.2,
   "summary": 33,
-  "everyHead": 36.3,
+  "everyHead": 36.1,
   "fill": [
    37.4,
    39.8
   ],
   "noFee": 38.6,
-  "promises": 40.4,
-  "trackLine": 43.45,
-  "journey": 48,
+  "promises": 39.8,
+  "trackLine": 43.15,
+  "journey": 46.2,
   "stops": [
-   48.6,
+   46.8,
+   48,
    49.2,
-   49.8,
    50.4
   ],
   "applyIn": 52.8,
@@ -94,22 +94,22 @@
    54.3
   ],
   "stores": [
-   55.2,
-   55.8,
-   56.4
+   55.5,
+   56.1,
+   56.7
   ],
   "freeLine": 58.2,
-  "secHead": 62.6,
+  "secHead": 62.45,
   "badges": [
-   63.2,
-   63.6,
-   64
+   63.1,
+   63.5,
+   63.9
   ],
-  "ctaHead": 70.4,
-  "ctaBtns": 71.4,
-  "endLock": 74.7,
-  "endUrl": 75.6,
-  "endFine": 76.2
+  "ctaHead": 69.95,
+  "ctaBtns": 71,
+  "endLock": 74.25,
+  "endUrl": 75,
+  "endFine": 75.6
  },
  "DUR": 79.2,
  "BEAT": 0.6,

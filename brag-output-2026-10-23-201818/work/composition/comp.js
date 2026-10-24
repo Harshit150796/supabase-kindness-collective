@@ -35,22 +35,23 @@ const SC = {
 };
 const DUR = 79.2;
 const T = {
-  hookWords: 0.2, allOf: 2.4, underline: 2.7,
+  hookWords: -0.35, allOf: 2.4, underline: 2.7,
   introCap: 5.45,
-  giveHead: 14.75, giveSub: 15.3, deal: [16.8, 17.4, 18.0, 18.6],
-  donHead: 24.25, taps: [25.2, 25.8, 26.4], toAmount: 27.0, amt50: 28.2, ledger: 28.35, toReview: 31.2, summary: 33.0,
-  everyHead: 36.3, fill: [37.4, 39.8], noFee: 38.6, promises: 40.4,
-  trackLine: 43.45, journey: 48.0, stops: [48.6, 49.2, 49.8, 50.4],
-  applyIn: 52.8, needs: [53.7, 54.3], stores: [55.2, 55.8, 56.4], freeLine: 58.2,
-  secHead: 62.6, badges: [63.2, 63.6, 64.0],
-  ctaHead: 70.4, ctaBtns: 71.4,
-  endLock: 74.7, endUrl: 75.6, endFine: 76.2,
+  giveHead: 14.35, giveSub: 14.9, deal: [16.8, 17.4, 18.0, 18.6],
+  donHead: 23.95, taps: [25.2, 25.8, 26.4], toAmount: 27.0, amt50: 28.2, ledger: 28.35, toReview: 31.2, summary: 33.0,
+  everyHead: 36.1, fill: [37.4, 39.8], noFee: 38.6, promises: 39.8,
+  trackLine: 43.15, journey: 46.2, stops: [46.8, 48.0, 49.2, 50.4],
+  applyIn: 52.8, needs: [53.7, 54.3], stores: [55.5, 56.1, 56.7], freeLine: 58.2,
+  secHead: 62.45, badges: [63.1, 63.5, 63.9],
+  ctaHead: 69.95, ctaBtns: 71.0,
+  endLock: 74.25, endUrl: 75.0, endFine: 75.6,
 };
 window.compT = { SC, T, DUR, BEAT, BAR };
 
 // ------------------------------------------------------------------ stage + helpers
 const stage = $('#stage');
-const layer = (name) => { const d = document.createElement('div'); d.className = `layer scene-${name}`; stage.appendChild(d); return d; };
+// layers stack in story order, whatever order they are built in
+const layer = (name) => { const d = document.createElement('div'); d.className = `layer scene-${name}`; d.style.zIndex = Object.keys(SC).indexOf(name) + 1; stage.appendChild(d); return d; };
 const div = (cls, parent, html = '') => { const d = document.createElement('div'); if (cls) d.className = cls; if (html) d.innerHTML = html; if (parent) parent.appendChild(d); return d; };
 const box = (el, x, y, w, h) => { el.style.left = x + 'px'; el.style.top = y + 'px'; if (w != null) el.style.width = w + 'px'; if (h != null) el.style.height = h + 'px'; return el; };
 async function frag(name) {
@@ -71,9 +72,10 @@ async function frag(name) {
   $$('.line-reveal-active', el).forEach((h) => h.classList.remove('line-reveal-active'));
   return el;
 }
+// word-by-word mask reveal; a '|' in the text forces a line break there
 function words(el, text) {
   el.classList.add('words');
-  el.innerHTML = text.split(' ').map((w) => `<span class="w"><span>${w}</span></span>`).join(' ');
+  el.innerHTML = text.split(' ').map((w) => (w === '|' ? '<br>' : `<span class="w"><span>${w}</span></span>`)).join(' ');
   return $$('.w > span', el);
 }
 function rise(spans, t, t0, step = 0.09, dur = 0.7) {
@@ -110,6 +112,8 @@ const L = {}; const U = {};
 function buildHook() {
   const s = L.hook = layer('hook');
   div('sky', s);
+  // the grown night tree, dimmed far back behind the words
+  U.hookTree = seqImg(s); U.hookTree.style.filter = 'brightness(.27) saturate(.8)';
   const r = rng(11);
   U.stars = [];
   for (let i = 0; i < 140; i++) {
@@ -137,16 +141,19 @@ function buildDay() { const s = L.day = layer('day'); s.style.background = 'rgb(
 
 async function buildGive() {
   const s = L.give = layer('give');
+  s.style.background = 'hsl(var(--primary-97))'; // soft-green band after the night hero
   const sec = await frag('whatwedo');
   sec.style.minHeight = '1080px';
   const host = div('site', s); host.appendChild(sec);
   // laptop deal only (the phone list is hidden by the site's own lg: classes); hide the receipt band and doors below
   [...$('.container', sec).children].slice(3).forEach((n) => n.remove());
   // card bodies stay out: the first one says "Any amount", which the $10-per-store minimum contradicts
-  $$('[data-deal-face] p', sec).forEach((p) => { p.style.visibility = 'hidden'; });
-  $$('[data-deal-face] .mt-6', sec).forEach((h) => { h.style.fontSize = '25px'; h.style.lineHeight = '1.15'; });
+  $$('[data-deal-face] p', sec).forEach((p) => { p.style.display = 'none'; });
+  $$('[data-deal-face] h3', sec).forEach((h) => { h.style.fontSize = '30px'; h.style.lineHeight = '1.1'; });
+  $$('[data-deal-face] .mt-6 > span', sec).forEach((n) => { n.style.fontSize = '18px'; });
   U.giveHost = host; U.giveSec = sec;
   U.giveH = $('h2', sec); U.giveP = $('p', $('.max-w-3xl', sec).children[1]);
+  U.giveP.style.fontSize = '32px'; U.giveP.style.lineHeight = '1.35';
   U.dealList = $('ol.giving-deal', sec);
   U.dealList.dataset.deal = 'dealing';
   U.deal = $$('[data-deal-card]', sec).map((c) => ({ face: $('[data-deal-face]', c), back: $('[data-deal-back]', c), li: c.parentElement }));
@@ -181,9 +188,31 @@ async function buildDonate() {
   U.segs = $$('[data-split-segment]', U.cards.ledger).map((sg) => ({ el: sg, grow: parseFloat(sg.style.flexGrow || '1') }));
   U.ledgerRows = $$('[data-gift-ledger] li', U.cards.ledger);
   U.reviewBtn = $$('button', U.cards.ledger).find((b) => /Review gift/.test(b.textContent));
+  // the review card was captured with a different split: carry the ledger's $17/$17/$16 through
+  $('[data-ledger-panel]', U.cards.review).replaceWith(U.ledgerPanel.cloneNode(true));
+  $('[data-ledger-panel]', U.cards.review).style.width = '400px';
+  // tip copy: keep the first sentence; the "most donors leave" figure differs between pages
+  const tipP = $$('[data-tip-picker] p', U.cards.review).find((p) => /Most donors/.test(p.textContent));
+  if (tipP) tipP.textContent = tipP.textContent.replace(/\s*Most donors[^.]*\./, '');
   U.summary = $('[data-charge-summary]', U.cards.review);
   U.feeBox = $('[data-cover-fee]', U.cards.review);
   U.marker = div('marker', s); U.marker.style.zIndex = 5;
+}
+// the donate card keeps one white shell across steps; only its height and inner content move
+function measureDonate() {
+  U.cardH = {}; U.local = {};
+  vis(L.donate, true);
+  U.ledgerPanel.style.width = '400px';
+  for (const [n, host] of Object.entries(U.cards)) {
+    vis(host, true); host.style.transform = 'none'; host.style.opacity = 1;
+    U.cardH[n] = $('[data-donate-card]', host).offsetHeight;
+    vis(host, false);
+  }
+  vis(U.cards.review, true);
+  const cr = U.cards.review.getBoundingClientRect();
+  const loc = (el) => { const r = el.getBoundingClientRect(); return { x: r.left - cr.left, y: r.top - cr.top, w: r.width, h: r.height }; };
+  U.local.summary = loc(U.summary); U.local.fee = loc(U.feeBox);
+  vis(U.cards.review, false); vis(L.donate, false);
 }
 
 async function buildEvery() {
@@ -192,13 +221,13 @@ async function buildEvery() {
   const sec = await frag('everydollar');
   const host = div('site', s); host.appendChild(sec);
   sec.style.minHeight = '1080px';
-  host.style.transformOrigin = '960px 0px'; host.style.transform = 'translateY(-232px) scale(1.35)';
+  host.style.transformOrigin = '960px 0px'; host.style.transform = 'translateY(-190px) scale(1.3)';
   U.everySec = sec;
   const h2 = $('h2', sec); U.everyH = h2;
   // headline words rise in; "All of it." keeps its hand-drawn underline
   const ul = $('[data-promise-underline]', h2);
   const ulHtml = ul.outerHTML; ul.remove();
-  const txt = h2.textContent.trim();
+  const txt = h2.textContent.trim().replace(/ give /, ' give | ');
   h2.innerHTML = '';
   U.everyWords = words(h2, txt);
   h2.insertAdjacentHTML('beforeend', ' ' + ulHtml);
@@ -212,8 +241,9 @@ async function buildEvery() {
   const p = $('[data-fill-number]', sec).parentElement.querySelector('p');
   p.textContent = '100% of your gift goes to the family as store coupons and gift cards. We take no platform fee.';
   U.noFee = p; p.style.fontSize = '23px'; p.style.maxWidth = '34rem';
-  const cols = [...$('.md\\:grid-cols-3', sec).children];
-  cols[1].style.visibility = 'hidden'; // tip column: the site gives two different "most donors" figures
+  const grid3 = $('.md\\:grid-cols-3', sec), cols = [...grid3.children];
+  cols[1].style.display = 'none'; // tip column: the site gives two different "most donors" figures
+  grid3.style.gridTemplateColumns = '1fr 1fr';
   U.promises = [cols[0], cols[2]];
   // journey row moves to the next scene
   const journey = $('.md\\:grid-cols-4', sec); U.journeyHtml = journey.outerHTML; journey.remove();
@@ -223,19 +253,22 @@ async function buildTrack() {
   const s = L.track = layer('track');
   s.style.background = 'hsl(var(--background))';
   const line = div('abs serif', s); line.style.cssText += 'left:180px;right:180px;top:330px;font-size:118px;line-height:1.08;color:hsl(var(--foreground));';
-  U.trackWords = words(line, "We don't track the person. We track the money.");
+  U.trackWords = words(line, "We don't track the person. | We track the money.");
   U.trackLine = line;
-  const jhost = div('abs', s); box(jhost, 180, 620, 1560); jhost.innerHTML = U.journeyHtml;
-  const j = jhost.firstElementChild; j.style.marginTop = '0';
+  const jhost = div('abs', s); box(jhost, 180, 600, 1560); jhost.innerHTML = U.journeyHtml;
+  const j = jhost.firstElementChild; j.style.marginTop = '0'; j.style.borderTop = '0';
   U.jhost = jhost; U.jline = $('[data-journey-line]', j);
+  // larger stop icons, sitting on the line (the coupon then rides the line between them)
+  $$('[data-journey-step]', j).forEach((ic) => { ic.style.width = ic.style.height = '36px'; ic.style.background = 'hsl(var(--background))'; const sv = $('svg', ic); sv.style.width = sv.style.height = '36px'; });
+  U.jline.style.top = '50px'; // through the icon centres (row padding 32px + half of 36px)
   U.jsteps = $$('[data-reveal]', j);
   U.jsvg = $('svg[data-journey-stop]', j); if (U.jsvg) U.jsvg.style.display = 'none';
   // coupon marker that travels between the four icons (the site's journey coupon)
   U.jcoupon = div('abs', jhost, `<svg viewBox="0 0 44 30" width="44" height="30"><rect x="1.5" y="1.5" width="41" height="27" rx="6" fill="hsl(123 46% 34%)"/><circle cx="1.5" cy="15" r="4.5" fill="hsl(var(--background))"/><circle cx="42.5" cy="15" r="4.5" fill="hsl(var(--background))"/><path d="M14 15.5 l5 5 10-11" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`);
   U.jcoupon.style.zIndex = 5;
-  $$('h3', j).forEach((h) => { h.style.fontSize = '44px'; });
-  $$('p', j).forEach((p) => { p.style.fontSize = '24px'; });
-  $$('span.text-sm', j).forEach((p) => { p.style.fontSize = '20px'; });
+  $$('h3', j).forEach((h) => { h.style.fontSize = '54px'; });
+  $$('p', j).forEach((p) => { p.style.fontSize = '28px'; p.style.paddingRight = '24px'; });
+  $$('span.text-sm', j).forEach((p) => { p.style.fontSize = '22px'; });
 }
 
 async function buildApply() {
@@ -244,6 +277,7 @@ async function buildApply() {
   const main = await frag('apply-step1');
   const host = div('abs', s); box(host, 150, 0, 1060); host.style.transformOrigin = '0 0'; host.appendChild(main);
   U.applyHost = host; U.applyMain = main;
+  U.storeCount = $$('*', main).find((n) => n.childElementCount === 0 && /^\d+ of 8 chosen$/.test(n.textContent.trim()));
   $$('p', main).filter((p) => /about 3 minutes/.test(p.textContent)).forEach((p) => { p.style.visibility = 'hidden'; }); // timing promise stays off screen
   // the sticky Continue bar sits at the viewport bottom on the site; here it would cover the store tiles
   const contBar = $$('button', main).find((b) => /^Continue/.test(b.textContent.trim()));
@@ -251,10 +285,11 @@ async function buildApply() {
   const pEmpty = await frag('apply-panel-empty'); const pFull = await frag('apply-panel-step1');
   const ph = div('abs', s); box(ph, 1300, 0, 620, 1080); ph.appendChild(pFull); pFull.style.height = '1080px';
   U.panelHost = ph; U.panelFull = pFull;
-  // panel rows fill in as the taps land: map each row in the filled panel to its empty twin
-  const rowsF = $$('dl > div, ul > li, [data-request-row]', pFull);
-  U.panelRows = rowsF;
-  U.panelEmptyHtml = pEmpty.innerHTML; U.panelFullHtml = pFull.innerHTML;
+  // panel rows fill in as the taps land ("For" is already chosen on this step)
+  const row = (root, label) => $$('dl > div', root).find((r) => $('dt', r).textContent.trim() === label);
+  U.pNeeds = $('dd', row(pFull, 'Needs')); U.pNeedsEmpty = $('dd', row(pEmpty, 'Needs')).innerHTML; U.pNeedsFull = U.pNeeds.innerHTML;
+  U.pStores = $('dd', row(pFull, 'Stores')); U.pStoresEmpty = $('dd', row(pEmpty, 'Stores')).innerHTML; U.pStoresFull = U.pStores.innerHTML;
+  U.pState = {};
   // need + store tiles: unselected look borrowed from an unselected sibling of the same grid
   const btn = (re) => $$('button, label', main).find((b) => re.test(b.textContent.replace(/\s+/g, ' ').trim()));
   U.needTiles = [btn(/^Food & groceries/), btn(/^Health & pharmacy/)];
@@ -262,6 +297,8 @@ async function buildApply() {
   const offFor = (el, re) => { const sib = $$(el.tagName, el.parentElement).find((b) => re.test(b.textContent.trim())); return sib ? sib.className : el.className; };
   U.needTiles.forEach((el) => { el.dataset.on = el.className; el.dataset.off = offFor(el, /^Meals|^Baby|^Clothing/); });
   U.storeTiles.forEach((el) => { el.dataset.on = el.className; el.dataset.off = offFor(el, /^Aldi|^Costco|^Publix|^Safeway|^Walgreens/); });
+  // the check badge and the need icon's green belong to the chosen look only
+  [...U.needTiles, ...U.storeTiles].forEach((el) => { el._badge = $(':scope > span.absolute', el); el._icon = $(':scope > svg', el); });
   // the panel's own footer line, set large as the panel grows to fill the frame
   const fc = div('abs', s); fc.style.cssText += 'inset:0;background:hsl(var(--primary-20));z-index:4;';
   const f1 = div('abs serif', fc); f1.style.cssText += 'left:200px;right:200px;top:330px;font-size:150px;line-height:1;color:hsl(120 8% 98.5%);';
@@ -276,7 +313,7 @@ async function buildSecure() {
   s.style.background = 'hsl(var(--primary-20))';
   const sec = await frag('security');
   const host = div('site', s); host.appendChild(sec); sec.style.minHeight = '1080px';
-  host.style.transformOrigin = '960px 540px'; host.style.transform = 'scale(1.24)';
+  host.style.transformOrigin = '960px 540px'; host.style.transform = 'scale(1.3)';
   U.secH = $('h2', sec); U.secP = $('p', sec);
   U.badges = $$('.rounded-\\[1\\.5rem\\]', sec);
 }
@@ -290,8 +327,11 @@ async function buildCta() {
   host.style.transformOrigin = '960px 540px'; host.style.transform = 'scale(1.15)';
   U.ctaSec = sec; U.ctaWipe = $('.cta-wipe', sec);
   U.ctaH = $('h2', sec);
-  const txt = U.ctaH.textContent.trim(); U.ctaH.innerHTML = ''; U.ctaWords = words(U.ctaH, txt);
+  const txt = U.ctaH.textContent.trim().replace('week. ', 'week. | '); U.ctaH.innerHTML = ''; U.ctaWords = words(U.ctaH, txt);
   U.ctaBtns = [...$('.mt-10.flex', sec).children];
+  $('.container', sec).style.gridTemplateColumns = '1.6fr 1fr';
+  U.ctaH.style.whiteSpace = 'nowrap'; U.ctaH.style.maxWidth = 'none';
+  const btnRow = $('.mt-10.flex', sec); btnRow.style.transformOrigin = '0 0'; btnRow.style.transform = 'scale(1.3)';
   U.ctaCard = $('.relative.overflow-hidden.rounded-\\[1\\.5rem\\]', sec);
 }
 
@@ -302,8 +342,9 @@ function buildEnd() {
   U.lock = lock;
   const url = div('abs sans', s, 'coupondonation.com'); url.style.cssText += 'left:0;right:0;top:640px;text-align:center;font-size:44px;font-weight:600;color:hsl(var(--foreground));';
   U.url = url;
-  const fine = div('fine sans', s, 'Store names and logos shown on CouponDonation are trademarks of their owners.<br>Those stores are not affiliated with, and do not sponsor or endorse, CouponDonation.');
-  box(fine, 0, 960); U.fine = fine;
+  // the site footer's own disclaimer (Footer.tsx), in full
+  const fine = div('fine sans', s, 'Store names and logos shown on CouponDonation are trademarks of their owners.<br>Those stores are not affiliated with, and do not sponsor or endorse, CouponDonation.<br>CouponDonation Inc. is not a registered charity, and gifts are not tax-deductible.');
+  box(fine, 0, 920); U.fine = fine;
 }
 
 // ------------------------------------------------------------------ transitions
@@ -328,19 +369,20 @@ function cursorPlan() {
   P.push({ t: 24.6, at: off(1700, 1140) });
   T.taps.forEach((tt, i) => { const f = c(() => U.tiles[i].el, 0.42, 0.5); P.push({ t: tt - 0.22, at: f }, { t: tt + 0.12, at: f }); });
   { const f = c(() => U.contBtn, 0.6, 0.55); P.push({ t: T.toAmount - 0.25, at: f }, { t: T.toAmount + 0.1, at: f }); }
-  { const f = c(() => U.chip50(U.cards.amount), 0.5, 0.6); P.push({ t: T.amt50 - 0.35, at: f }, { t: T.amt50 + 0.35, at: f }); }
-  { const f = c(() => U.reviewBtn, 0.55, 0.6); P.push({ t: T.toReview - 0.4, at: f }, { t: T.toReview + 0.15, at: f }); }
+  // pointer tips sit low and right on each target, so the label stays readable
+  P.push({ t: T.amt50 - 0.35, at: c(() => U.chip50(U.cards.amount), 0.75, 0.95) }, { t: T.amt50 + 0.35, at: c(() => U.chip50(U.cards.ledger), 0.75, 0.95) });
+  { const f = c(() => U.reviewBtn, 0.9, 0.6); P.push({ t: T.toReview - 0.4, at: f }, { t: T.toReview + 0.15, at: f }); }
   P.push({ t: T.toReview + 0.75, at: off(1980, 1160) });
   // apply
   P.push({ t: 53.2, at: off(1500, 1150) });
   [...T.needs.map((tt, i) => [tt, () => U.needTiles[i]]), ...T.stores.map((tt, i) => [tt, () => U.storeTiles[i]])].forEach(([tt, fn]) => {
-    const f = c(fn, 0.45, 0.55); P.push({ t: tt - 0.25, at: f }, { t: tt + 0.12, at: f });
+    const f = c(fn, 0.82, 0.78); P.push({ t: tt - 0.25, at: f }, { t: tt + 0.12, at: f });
   });
-  P.push({ t: 57.2, at: off(1980, 1150) });
+  P.push({ t: 57.5, at: off(1980, 1150) });
   PATH = P;
   TAPS = [...T.taps, T.toAmount, T.amt50, T.toReview, ...T.needs, ...T.stores];
 }
-const CURSOR_ON = [[24.6, 31.95], [53.2, 57.2]];
+const CURSOR_ON = [[24.6, 31.95], [53.2, 57.5]];
 function setCursor(t) {
   const on = CURSOR_ON.find(([a, b]) => t >= a && t < b);
   vis(cursor, !!on);
@@ -363,6 +405,7 @@ const press = (t, tt, amt = 0.05) => { const d = t - tt; return d > -0.06 && d <
 function renderFrame(t) {
   // ---- hook
   if (scene('hook', t, 0, 0.3)) {
+    setSeq(U.hookTree, SEQ.night, SEQ.night.n - 1, 1.45, 960, 447, 870);
     U.stars.forEach((s) => { s.el.style.opacity = (s.a * (0.65 + 0.35 * Math.sin(t * 1.7 + s.ph))).toFixed(3); s.el.style.transform = `translate(${(-t * 6 * s.z).toFixed(1)}px, ${(t * 2 * s.z).toFixed(1)}px)`; });
     rise(U.hook1, t, T.hookWords, 0.11, 0.75);
     rise(U.hook2, t, T.hookWords + 0.44, 0.11, 0.75);
@@ -378,18 +421,18 @@ function renderFrame(t) {
     wipeUp(L.brand, t, 4.45, 0.4);
     // time remap of the capture: build (f2-40) at speed, hold the finished lockup in slow motion while the
     // caption reads and the camera pushes in, then the fly onto the navbar (f47 iris, f76 landed) at speed
-    const f = t < 6.07 ? 2 + (t - 4.8) * 30 : t < 7.27 ? 40 + (t - 6.07) * 5 : 46 + (t - 7.27) * 30;
+    const f = t < 6.07 ? 8 + (t - 4.8) * (32 / 1.27) : t < 7.27 ? 40 + (t - 6.07) * 5 : t < 7.6 ? 46 + (t - 7.27) * 60 : 66 + (t - 7.6) * 30;
     const zq = k(t, 6.15, 7.3, E.inOutSine), zs = lerp(1, 1.25, zq);
     setSeq(U.open, SEQ.opening, f, zs, 960, lerp(540, 455, zq), lerp(1080, 870, zq));
     const cp = k(t, T.introCap, T.introCap + 0.5, E.site), co = k(t, 6.95, 7.2);
     U.introCap.style.top = (640 + (zs - 1) * 380).toFixed(1) + 'px'; U.introCap.style.fontSize = (30 * zs).toFixed(2) + 'px';
     U.introCap.style.opacity = cp * (1 - co); U.introCap.style.transform = `translateY(${((1 - cp) * 14).toFixed(1)}px)`;
   }
-  // ---- tree: the live homepage hero, slow push-in (marquee kept below the frame)
+  // ---- tree: the live homepage hero, punched in past the navbar, slow push onto the tree
   if (scene('tree', t, 0, 0.3)) {
     const f = 16 + (t - 9.6) * 30;
-    const s = lerp(1.25, 1.42, E.inOutSine(cl((t - 9.6) / 5.0)));
-    setSeq(U.night, SEQ.night, f, s, 960, 455, 870);
+    const q = E.inOutSine(cl((t - 9.6) / 5.0));
+    setSeq(U.night, SEQ.night, f, lerp(1.45, 1.6, q), 960, lerp(447, 400, q), 870);
   }
   // ---- give: scroll from the hero to "Give what people need."
   if (scene('give', t, 0.3, 0.3)) {
@@ -437,20 +480,23 @@ function renderFrame(t) {
     const wantC = nChosen > 0 ? 'on' : 'off';
     if (U.contState !== wantC) { const tmp = document.createElement('template'); tmp.innerHTML = wantC === 'on' ? U.contOn : U.contOff; const n = tmp.content.firstElementChild; U.contBtn.replaceWith(n); U.contBtn = n; U.contState = wantC; }
     U.contBtn.style.transform = `scale(${press(t, T.toAmount, 0.06)})`;
-    const cardIn = k(t, 24.45, 25.0, E.site);
-    // step slides (the site slides steps ±28px with a fade)
-    const s12 = k(t, T.toAmount + 0.1, T.toAmount + 0.45, E.outCubic);
+    const cardIn = k(t, 23.9, 24.45, E.site);
     vis(U.cards.empty, step === 1); vis(U.cards.chosen, false);
     vis(U.cards.amount, step === 2 && t < T.amt50); vis(U.cards.ledger, step === 2 && t >= T.amt50); vis(U.cards.review, step === 3);
     place(U.cards.empty, 1024, 230 + (1 - cardIn) * 60); U.cards.empty.style.opacity = cardIn;
+    // one white shell across the steps: its height eases while the step body slides 28px with a fade, as on the site
+    const setH = (host, h) => { $('[data-donate-card]', host).style.height = h.toFixed(1) + 'px'; };
+    const body = (host, p, dir = 1) => { const b = $('[data-donate-card] > div', host).children[1]; b.style.opacity = p.toFixed(3); b.style.transform = `translateX(${((1 - p) * 28 * dir).toFixed(1)}px)`; };
+    const s12 = k(t, T.toAmount + 0.15, T.toAmount + 0.5, E.outCubic);
+    if (step === 1) body(U.cards.empty, 1 - k(t, T.toAmount, T.toAmount + 0.15, E.inCubic), -1);
     if (step === 2) {
       const host = t < T.amt50 ? U.cards.amount : U.cards.ledger;
       place(host, 1024, 230);
-      host.style.opacity = s12;
-      $('[data-donate-card] > div', host).style.transform = `translateX(${((1 - s12) * 28).toFixed(1)}px)`;
       const chip = U.chip50(host); if (chip) chip.style.transform = `scale(${press(t, T.amt50, 0.08)})`;
-      if (t >= T.amt50) {
+      if (t < T.amt50) { setH(host, lerp(U.cardH.empty, U.cardH.amount, s12)); body(host, s12); } else {
         const lp = k(t, T.ledger, T.ledger + 0.6, E.outQuart);
+        setH(host, lerp(U.cardH.amount, U.cardH.ledger, lp));
+        body(host, 1 - k(t, T.toReview, T.toReview + 0.2, E.inCubic), -1);
         U.ledgerPanel.style.width = (400 * lp).toFixed(1) + 'px';
         U.segs.forEach((sg, i) => { const g = k(t, T.ledger + 0.35 + i * 0.08, T.ledger + 0.9 + i * 0.08, E.outCubic); sg.el.style.flexGrow = (sg.grow * Math.max(0.0001, g)).toFixed(4); });
         U.ledgerRows.forEach((r, i) => fadeUp(r, t, T.ledger + 0.5 + i * 0.1, 0.45, 10));
@@ -460,18 +506,21 @@ function renderFrame(t) {
     if (step === 3) {
       const rp = k(t, T.toReview + 0.2, T.toReview + 0.55, E.outCubic);
       const card = U.cards.review;
-      // the review card is taller than the frame: glide down to the "Gift for families (100%)" summary
-      const sr = U.summary.getBoundingClientRect(), cr = card.getBoundingClientRect();
-      const sumY = (sr.top - cr.top) / 1.2; // unscaled offset of the summary in the card
+      setH(card, lerp(U.cardH.ledger, U.cardH.review, rp)); body(card, rp);
+      // the review card is taller than the frame: glide down to the fee box and charge summary,
+      // then lean in on them (1.2 -> 1.7) so the figures read
+      const sm = U.local.summary, fe = U.local.fee;
       const scroll = k(t, T.toReview + 0.9, T.summary, E.inOutCubic);
-      const y = 230 - scroll * (sumY * 1.2 - 470);
-      place(card, 1024, y.toFixed(1)); card.style.opacity = rp;
-      $('[data-donate-card] > div', card).style.transform = `translateX(${((1 - rp) * 28).toFixed(1)}px)`;
+      const y0 = 230 - scroll * (sm.y * 1.2 - 470), x0 = (1920 - 1024 * 1.2) / 2;
+      const z = k(t, T.summary, T.summary + 0.9, E.inOutCubic), S2 = lerp(1.2, 1.7, z);
+      const fx = fe.x + fe.w / 2, fy = (fe.y + sm.y + sm.h) / 2;
+      const px = lerp(x0 + fx * 1.2, 960, z), py = lerp(y0 + fy * 1.2, 590, z);
+      card.style.transform = `translate(${(px - fx * S2).toFixed(1)}px, ${(py - fy * S2).toFixed(1)}px) scale(${S2.toFixed(4)})`;
       const hd = k(t, T.toReview + 0.9, T.toReview + 1.6);
       U.donHead.style.opacity = U.donSub.style.opacity = (1 - hd).toFixed(3);
       // a hand-drawn marker under the first summary row once it has landed
       const row = U.summary.firstElementChild, rr = row.getBoundingClientRect();
-      const mp = k(t, T.summary + 0.2, T.summary + 0.75, E.inOutCubic);
+      const mp = k(t, T.summary + 1.0, T.summary + 1.55, E.inOutCubic);
       vis(U.marker, mp > 0); box(U.marker, rr.left, rr.bottom + 3, rr.width); U.marker.style.transform = `scaleX(${mp.toFixed(4)})`;
     } else vis(U.marker, false);
   }
@@ -493,20 +542,20 @@ function renderFrame(t) {
     rise(U.trackWords, t, T.trackLine, 0.075, 0.7);
     // the line lifts to make room for the journey
     const up = k(t, T.journey - 0.3, T.journey + 0.4, E.inOutCubic);
-    U.trackLine.style.transform = `translateY(${(-up * 210).toFixed(1)}px) scale(${lerp(1, 0.78, up).toFixed(4)})`;
+    U.trackLine.style.transform = `translateY(${(-up * 170).toFixed(1)}px) scale(${lerp(1, 0.78, up).toFixed(4)})`;
     U.trackLine.style.transformOrigin = '0 0';
     U.jhost.style.opacity = k(t, T.journey, T.journey + 0.4);
     U.jline.style.transform = `scaleX(${k(t, T.journey + 0.1, T.journey + 1.3, E.site).toFixed(4)})`; U.jline.style.transformOrigin = '0 50%';
     U.jsteps.forEach((st, i) => fadeUp(st, t, T.stops[i], 0.6, 18));
-    // coupon travels icon to icon, landing on each stop
+    // the coupon rides the line, parking just past each stop as it lights up
     const icons = U.jsteps.map((st) => $('[data-journey-step]', st));
     const hr = U.jhost.getBoundingClientRect();
-    const pos = icons.map((ic) => { const r = ic.getBoundingClientRect(); return { x: r.left - hr.left + r.width / 2, y: r.top - hr.top + r.height / 2 }; });
+    const pos = icons.map((ic) => { const r = ic.getBoundingClientRect(); return { x: r.right - hr.left + 40, y: r.top - hr.top + r.height / 2 }; });
     let seg = 0, f = 0;
-    for (let i = 0; i < 4; i++) if (t >= T.stops[i] - 0.35) { seg = i; f = k(t, T.stops[i] - 0.35, T.stops[i], E.inOutCubic); }
+    for (let i = 0; i < 4; i++) if (t >= T.stops[i] - 0.45) { seg = i; f = k(t, T.stops[i] - 0.45, T.stops[i], E.inOutCubic); }
     const a = pos[Math.max(0, seg - 1)], b = pos[seg];
-    const x = seg === 0 ? b.x - 60 * (1 - f) : lerp(a.x, b.x, f), y = seg === 0 ? b.y : lerp(a.y, b.y, f) - Math.sin(Math.PI * f) * 26;
-    box(U.jcoupon, x - 22, y - 15 - 52);
+    const x = seg === 0 ? b.x - 60 * (1 - f) : lerp(a.x, b.x, f), y = b.y;
+    box(U.jcoupon, x - 22, y - 15);
     U.jcoupon.style.opacity = k(t, T.stops[0] - 0.4, T.stops[0] - 0.1);
   }
   // ---- apply: slides in like a new page
@@ -515,22 +564,54 @@ function renderFrame(t) {
     if (t < 53.0) { L.apply.style.transform = `translateX(${((1 - ip) * 1920).toFixed(1)}px)`; L.track.style.transform = `translateX(${(-ip * 640).toFixed(1)}px)`; } else { L.apply.style.transform = ''; }
     const S = 1.18;
     if (U.storeOffset == null) { const a = U.applyMain.getBoundingClientRect(), b = U.storeTiles[0].getBoundingClientRect(); if (b.height) U.storeOffset = (b.top - a.top) / S; }
-    const sc = k(t, T.needs[1] + 0.35, T.stores[0] - 0.3, E.inOutCubic);
-    const scrollY = lerp(108, (U.storeOffset || 900) * S - 520, sc);
+    const sc = k(t, 54.5, 55.2, E.inOutCubic);
+    const scrollY = lerp(108, (U.storeOffset || 900) * S - 520 + 60, sc);
     U.applyHost.style.transform = `translate(0px, ${(-scrollY).toFixed(1)}px) scale(${S})`;
-    U.needTiles.forEach((el, i) => { el.className = t >= T.needs[i] ? el.dataset.on : el.dataset.off; el.style.transform = `scale(${press(t, T.needs[i], 0.05)})`; });
-    U.storeTiles.forEach((el, i) => { el.className = t >= T.stores[i] ? el.dataset.on : el.dataset.off; el.style.transform = `scale(${press(t, T.stores[i], 0.05)})`; });
-    const full = t >= T.stores[2] + 0.2;
-    if (U.panelState !== full) { U.panelFull.innerHTML = full ? U.panelFullHtml : U.panelEmptyHtml; U.panelState = full; }
+    const tileState = (el, on, tt) => {
+      el.className = on ? el.dataset.on : el.dataset.off; el.style.transform = `scale(${press(t, tt, 0.05)})`;
+      if (el._badge) el._badge.style.display = on ? '' : 'none';
+      if (el._icon) el._icon.classList.toggle('text-primary', on), el._icon.classList.toggle('text-foreground/70', !on);
+    };
+    U.needTiles.forEach((el, i) => tileState(el, t >= T.needs[i], T.needs[i]));
+    U.storeTiles.forEach((el, i) => tileState(el, t >= T.stores[i], T.stores[i]));
+    const nStores = T.stores.filter((tt) => t >= tt).length;
+    if (U.storeCount) U.storeCount.textContent = `${nStores} of 8 chosen`;
+    // the request panel fills row by row as each tap lands
+    const nNeeds = T.needs.filter((tt) => t >= tt).length;
+    const pk = `${nNeeds}/${nStores}`;
+    if (U.pState.k !== pk) {
+      U.pState.k = pk;
+      U.pNeeds.innerHTML = nNeeds ? U.pNeedsFull : U.pNeedsEmpty;
+      if (nNeeds === 1) U.pNeeds.textContent = 'Food & groceries';
+      U.pStores.innerHTML = nStores ? U.pStoresFull : U.pStoresEmpty;
+      if (nStores) {
+        $$('li', U.pStores).forEach((li, i) => { li.style.display = i < nStores ? '' : 'none'; });
+        const names = $('p', U.pStores); if (names) names.textContent = ['Walmart', 'Kroger', 'CVS'].slice(0, nStores).join(', ');
+      }
+    }
+    const lastTap = [...T.needs, ...T.stores].filter((tt) => t >= tt).pop();
+    const rowFresh = lastTap != null ? k(t, lastTap + 0.05, lastTap + 0.4, E.site) : 1;
+    [U.pNeeds, U.pStores].forEach((dd) => { dd.style.opacity = 1; dd.style.transform = ''; });
+    const freshDd = nStores ? (T.stores.includes(lastTap) ? U.pStores : null) : nNeeds ? U.pNeeds : null;
+    if (freshDd) { freshDd.style.opacity = rowFresh.toFixed(3); freshDd.style.transform = `translateY(${((1 - rowFresh) * 8).toFixed(1)}px)`; }
+    // lean in on the filled request, then its own footer line takes the whole frame
+    const pzIn = k(t, 56.9, 58.2, E.inOutSine);
+    U.panelHost.style.transformOrigin = '56px 300px';
+    U.panelHost.style.transform = `scale(${lerp(1, 1.3, pzIn).toFixed(4)})`;
+    const po = (1 - k(t, 58.0, 58.2)).toFixed(3); // content only: the green panel itself stays under the card
+    [...U.panelFull.children].forEach((c) => { c.style.opacity = po; });
     const pz = k(t, T.freeLine, T.freeLine + 0.7, E.inOutQuart);
     vis(U.freeCard, pz > 0);
-    U.freeCard.style.clipPath = `inset(0 0 0 ${((1 - pz) * 1300).toFixed(1)}px)`;
+    U.freeCard.style.clipPath = `inset(0 0 0 ${((1 - pz) * 1283).toFixed(1)}px)`;
     rise(U.freeW1, t, T.freeLine + 0.45, 0.09, 0.7);
     rise(U.freeW2, t, T.freeLine + 0.9, 0.07, 0.7);
+    // match cut to the security band (same deep green): the words rise out before the bar line
+    const fo = k(t, 62.0, 62.35, E.inCubic);
+    [...U.freeW1, ...U.freeW2].forEach((w) => { if (fo > 0) w.style.transform = `translateY(${(-fo * 110).toFixed(1)}%)`; });
   }
   // ---- security band
-  if (scene('secure', t, 0.4, 0.3)) {
-    if (t < 62.6) wipeUp(L.secure, t, 62.05, 0.5); else L.secure.style.clipPath = 'none';
+  if (scene('secure', t, 0, 0.3)) {
+    L.secure.style.clipPath = 'none';
     const hp = k(t, T.secHead, T.secHead + 0.8, E.site);
     U.secH.style.clipPath = `inset(0 0 ${((1 - hp) * 100).toFixed(1)}% 0)`; U.secH.style.transform = `translateY(${((1 - hp) * 26).toFixed(1)}px)`;
     fadeUp(U.secP, t, T.secHead + 0.4, 0.6, 14);
@@ -540,14 +621,15 @@ function renderFrame(t) {
   if (scene('day', t, 0.45, 0.3)) {
     const ip = k(t, 66.75, 67.35, E.inOutQuart);
     L.day.style.clipPath = ip < 1 ? `circle(${(ip * 75).toFixed(2)}% at 50% 48%)` : 'none';
-    const f = (t - 66.75) * 30 + (SEQ.day.n > 100 ? 18 : 0);
-    const s = lerp(1.36, 1.26, E.inOutSine(cl((t - 66.75) / 3.2)));
-    setSeq(U.dayImg, SEQ.day, f, s, 960, 455, 870);
+    const f = (t - 66.75) * 30 + 18;
+    const s = lerp(1.55, 1.45, E.inOutSine(cl((t - 66.75) / 3.2)));
+    setSeq(U.dayImg, SEQ.day, f, s, 960, 447, 870);
   }
-  // ---- CTA: the site's own deep-green wipe from the bottom
-  if (scene('cta', t, 0.3, 0.3)) {
-    U.ctaWipe.style.clipPath = `inset(${((1 - k(t, 69.6, 70.5, E.site)) * 100).toFixed(2)}% 0 0 0)`;
-    L.cta.style.clipPath = t < 69.6 ? 'inset(100% 0 0 0)' : 'none';
+  // ---- CTA: the site's own deep-green wipe from the bottom, over the daylight tree
+  if (scene('cta', t, 0.45, 0.3)) {
+    U.ctaWipe.style.clipPath = 'none';
+    const w = k(t, 69.15, 69.95, E.site);
+    L.cta.style.clipPath = w < 1 ? `inset(${((1 - w) * 100).toFixed(2)}% 0 0 0)` : 'none';
     rise(U.ctaWords, t, T.ctaHead, 0.07, 0.75);
     U.ctaBtns.forEach((b, i) => fadeUp(b, t, T.ctaBtns + i * 0.15, 0.6, 16));
     const cp = k(t, T.ctaHead + 0.2, T.ctaHead + 1.1, E.site);
@@ -577,6 +659,10 @@ async function init() {
   await document.fonts.ready;
   await Promise.all($$('img').filter((im) => !im.dataset.src && im.src).map((im) => (im.complete ? im.decode().catch(() => {}) : new Promise((r) => { im.onload = im.onerror = r; }))));
   // warm every cursor waypoint while its target is on screen (stills render out of order)
+  measureDonate();
+  vis(L.cta, true);
+  for (let fs = 96; fs >= 56; fs -= 2) { U.ctaH.style.fontSize = fs + 'px'; if (U.ctaH.scrollWidth <= U.ctaH.parentElement.parentElement.clientWidth) break; }
+  vis(L.cta, false);
   for (const p of PATH) { renderFrame(p.t); p.at(); }
   window.compDuration = DUR;
   window.compReady = true;
