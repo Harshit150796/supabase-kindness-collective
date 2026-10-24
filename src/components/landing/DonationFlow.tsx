@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
@@ -18,6 +17,7 @@ import { AnimatedHeight } from './donate/motion';
 import { PRESET_AMOUNTS, SPRING, amountProblem, type SplitMode } from './donate/tokens';
 import { findRetailer, retailerId, usd, type Retailer } from './donate/retailers';
 import { brandList } from '@/data/brandLogos';
+import { DonateCardPromo } from './donate/DonateCardPromo';
 
 const MAX_RETRIES = 2;
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
@@ -374,11 +374,8 @@ export function DonationFlow() {
           </AnimatePresence>
         </div></Reveal>
 
-        {/* Founder request: people can also give a gift card or coupon they already have (/donate-a-card). */}
-        <p data-donate-card-link className="mx-auto mt-8 max-w-3xl text-center text-[16px] leading-relaxed text-muted-foreground md:text-[17px]">
-          Have an unused gift card, coupon or promo code?{' '}
-          <Link to="/donate-a-card" className="font-medium text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">Donate it to a family</Link>
-        </p>
+        {/* Founder request: people can also give a gift card or coupon they already have (to="/donate-a-card"). */}
+        <DonateCardPromo />
 
         <BrandSelectorModal
           open={browse}
