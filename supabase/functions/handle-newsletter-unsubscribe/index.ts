@@ -36,7 +36,7 @@ serve(async (req: Request) => {
       .single();
 
     if (error || !data) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), {
+      return new Response(JSON.stringify({ error: "This unsubscribe link didn't work. Visit https://coupondonation.com/unsubscribe to stop our emails." }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
