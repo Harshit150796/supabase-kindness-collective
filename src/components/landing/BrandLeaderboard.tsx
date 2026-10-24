@@ -42,17 +42,6 @@ function CustomLabel({ x = 0, y = 0, width = 0, value = 0 }: { x?: number; y?: n
   return <text x={x + width / 2} y={y - 8} textAnchor="middle" fontSize={12} fontWeight={700} className="fill-foreground">${value.toLocaleString()}</text>;
 }
 
-function DonationAvatar({ donation }: { donation: RecentDonation }) {
-  const [failed, setFailed] = useState(false);
-  const brand = firstRecognizedBrand(donation.brand);
-  const initial = donation.name.trim().charAt(0).toUpperCase();
-  return <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-secondary md:h-10 md:w-10">
-    {brand && !failed ? <img width={48} height={48} loading="lazy" decoding="async" src={brand.logo} alt="" className="h-5 w-5 object-contain md:h-6 md:w-6" onError={() => setFailed(true)} />
-      : initial ? <span className="text-xs font-semibold text-primary md:text-sm" aria-hidden="true">{initial}</span>
-      : <Heart className="h-4 w-4 text-primary" aria-hidden="true" />}
-  </div>;
-}
-
 export function BrandLeaderboard() {
   const stats = useLandingStats();
   const chartRef = useRef<HTMLDivElement>(null);
