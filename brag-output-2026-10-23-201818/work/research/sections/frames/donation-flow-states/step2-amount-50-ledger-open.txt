@@ -1,0 +1,46 @@
+1
+Retailers
+2
+Amount
+3
+Review
+How much would you like to give?
+
+Shared between your 2 retailers. You can set each one's dollars below.
+
+$10
+$25
+$50
+$100
+$250
+Other
+
+At least $10 for each retailer, so $20 or more.
+
+How it's shared
+Evenly
+I'll choose
+Walmart
+$25
+$25
+Target
+$25
+$25
+
+Shared evenly, $10 or more each. Choose "I'll choose" to set your own amounts.
+
+Back
+Review gift
+
+Your gift
+
+$50
+$50
+Walmart
+$25
+$25
+Target
+$25
+$25
+
+All of it reaches families as coupons for these stores, sized by our team for what is needed. Nothing is taken out for fees.

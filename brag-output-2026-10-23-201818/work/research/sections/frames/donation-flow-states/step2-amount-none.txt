@@ -1,0 +1,21 @@
+1
+Retailers
+2
+Amount
+3
+Review
+How much would you like to give?
+
+Shared between your 2 retailers. You can set each one's dollars below.
+
+$10
+$25
+$50
+$100
+$250
+Other
+
+At least $10 for each retailer, so $20 or more.
+
+Back
+Review gift

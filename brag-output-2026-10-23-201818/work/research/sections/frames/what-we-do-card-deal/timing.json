@@ -1,0 +1,6 @@
+{
+  "frames": 23,
+  "stepMs": 100,
+  "totalMs": 2250,
+  "source": "src/lib/cardDealTiming.ts {hold:180,duration:750,stagger:500}; easing cubic-bezier(.2,.85,.25,1); WAAPI transform-only"
+}

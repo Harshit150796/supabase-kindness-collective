@@ -7,3 +7,4 @@ work/*.log
 work/research/*.png
 work/research/**/*.png
 work/research/**/_scripts/*.png
+work/__pycache__/

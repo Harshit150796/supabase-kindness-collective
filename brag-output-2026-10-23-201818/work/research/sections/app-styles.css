@@ -2907,9 +2907,11 @@ html.site-menu-open { overflow: hidden; padding-right: var(--site-menu-gap,0px);
 .hl-wings { transform-box: view-box; transform-origin: 17px 14px; animation: 0.26s ease-in-out 0s infinite normal none running gm-flap; }
 
 /* inline */
-nav[data-site-header] { visibility: hidden !important; }
 .cursor-trail { display: none !important; }
 [data-sonner-toaster] { display: none !important; }
+
+/* inline */
+nav[data-site-header] { visibility: hidden !important; }
 
 /* inline */
 #cd-intro { display: none; position: fixed; inset: 0px; z-index: 99; align-items: center; justify-content: center; touch-action: none; }

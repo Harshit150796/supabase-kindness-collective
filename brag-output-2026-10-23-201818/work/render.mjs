@@ -7,7 +7,8 @@ import fs from 'node:fs';
 
 const [mode, a1, a2, a3, a4] = process.argv.slice(2);
 const W = 1920, H = 1080;
-const URL = 'http://127.0.0.1:5173/brag-output-2026-10-23-201818/work/composition/index.html';
+const ORIGIN = process.env.ORIGIN || 'http://127.0.0.1:5173'; // the delivery render uses a no-HMR server
+const URL = `${ORIGIN}/brag-output-2026-10-23-201818/work/composition/index.html`;
 // grayscale text antialiasing: LCD subpixel AA would put orange/blue fringes on every glyph
 const browser = await chromium.launch({ args: ['--disable-lcd-text'] });
 const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });

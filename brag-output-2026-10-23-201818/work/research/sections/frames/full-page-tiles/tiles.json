@@ -1,0 +1,49 @@
+{
+  "height": 11775,
+  "tiles": [
+    {
+      "file": "/home/user/supabase-kindness-collective/brag-output-2026-10-23-201818/work/research/sections/frames/full-page-tiles/tile-00-y0.png",
+      "y": 0
+    },
+    {
+      "file": "/home/user/supabase-kindness-collective/brag-output-2026-10-23-201818/work/research/sections/frames/full-page-tiles/tile-01-y1080.png",
+      "y": 1080
+    },
+    {
+      "file": "/home/user/supabase-kindness-collective/brag-output-2026-10-23-201818/work/research/sections/frames/full-page-tiles/tile-02-y2160.png",
+      "y": 2160
+    },
+    {
+      "file": "/home/user/supabase-kindness-collective/brag-output-2026-10-23-201818/work/research/sections/frames/full-page-tiles/tile-03-y3240.png",
+      "y": 3240
+    },
+    {
+      "file": "/home/user/supabase-kindness-collective/brag-output-2026-10-23-201818/work/research/sections/frames/full-page-tiles/tile-04-y4320.png",
+      "y": 4320
+    },
+    {
+      "file": "/home/user/supabase-kindness-collective/brag-output-2026-10-23-201818/work/research/sections/frames/full-page-tiles/tile-05-y5400.png",
+      "y": 5400
+    },
+    {
+      "file": "/home/user/supabase-kindness-collective/brag-output-2026-10-23-201818/work/research/sections/frames/full-page-tiles/tile-06-y6480.png",
+      "y": 6480
+    },
+    {
+      "file": "/home/user/supabase-kindness-collective/brag-output-2026-10-23-201818/work/research/sections/frames/full-page-tiles/tile-07-y7560.png",
+      "y": 7560
+    },
+    {
+      "file": "/home/user/supabase-kindness-collective/brag-output-2026-10-23-201818/work/research/sections/frames/full-page-tiles/tile-08-y8640.png",
+      "y": 8640
+    },
+    {
+      "file": "/home/user/supabase-kindness-collective/brag-output-2026-10-23-201818/work/research/sections/frames/full-page-tiles/tile-09-y9720.png",
+      "y": 9720
+    },
+    {
+      "file": "/home/user/supabase-kindness-collective/brag-output-2026-10-23-201818/work/research/sections/frames/full-page-tiles/tile-10-y10695.png",
+      "y": 10695
+    }
+  ]
+}

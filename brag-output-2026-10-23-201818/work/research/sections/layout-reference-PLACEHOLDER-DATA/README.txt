@@ -1,0 +1,1 @@
+LAYOUT REFERENCE ONLY. Every title, name, line and number in these images is a bracketed or artificial placeholder injected by scripts/capture-layout-reference.mjs in place of blocked Supabase responses. Not real data. Do not use on screen; use only to understand layout and motion, then re-render with real, verified data.

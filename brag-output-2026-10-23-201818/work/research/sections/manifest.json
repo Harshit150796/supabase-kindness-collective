@@ -1,0 +1,242 @@
+{
+  "url": "http://127.0.0.1:5173/?intro=0&time3d=night",
+  "viewport": "1920x1080",
+  "state": "real (Supabase aborted)",
+  "fullPageHeight": 11775,
+  "rootInfo": {
+    "htmlAttrs": [
+      "lang=en",
+      "data-sky=night",
+      "class=cd-native-dot cd-cursor-active"
+    ],
+    "fonts": [
+      "Instrument Sans 400 700 normal",
+      "Instrument Serif 400 normal"
+    ]
+  },
+  "blockedSupabasePaths": [
+    "/rest/v1/donations",
+    "/rest/v1/fundraisers",
+    "/rest/v1/rpc/get_completed_fundraisers",
+    "/rest/v1/payment_settings",
+    "/rest/v1/cms_testimonials",
+    "/rest/v1/rpc/get_landing_stats",
+    "/functions/v1/create-donation-checkout"
+  ],
+  "sections": [
+    {
+      "key": "01-live-activity-bar",
+      "rendered": true,
+      "top": 871,
+      "height": 113,
+      "width": 1920,
+      "canvases": 0,
+      "runningAnimations": [
+        {
+          "kind": "CSSAnimation",
+          "name": "marquee",
+          "state": "running",
+          "target": "flex w-max animate-marquee [animation-duration:48s]"
+        }
+      ],
+      "revealWrappers": 0,
+      "images": [
+        "/brands/doordash.com.png",
+        "/brands/walmart.com.png",
+        "/brands/ubereats.com.png",
+        "/brands/amazon.com.png",
+        "/brands/target.com.png",
+        "/brands/starbucks.com.png",
+        "/brands/kroger.com.png",
+        "/brands/wholefoodsmarket.com.png",
+        "/brand-logos/costco.svg",
+        "/brands/safeway.com.png",
+        "/brand-logos/publix.svg",
+        "/brands/aldi.us.png",
+        "/brand-logos/grubhub.svg",
+        "/brand-logos/instacart.svg",
+        "/brand-logos/postmates.svg",
+        "/brand-logos/best-buy.svg",
+        "/brands/homedepot.com.png",
+        "/brand-logos/lowes.svg",
+        "/brand-logos/cvs.svg",
+        "/brands/walgreens.com.png",
+        "/brands/dunkindonuts.com.png",
+        "/brands/chipotle.com.png",
+        "/brands/panerabread.com.png",
+        "/brand-logos/subway.svg",
+        "/brands/mcdonalds.com.png",
+        "/brands/wendys.com.png"
+      ]
+    },
+    {
+      "key": "02-what-we-do",
+      "rendered": true,
+      "top": 984,
+      "height": 1327,
+      "width": 1920,
+      "canvases": 0,
+      "runningAnimations": [
+        {
+          "kind": "CSSTransition",
+          "name": "",
+          "state": "running",
+          "target": "heading-line"
+        },
+        {
+          "kind": "CSSTransition",
+          "name": "",
+          "state": "running",
+          "target": "heading-line"
+        }
+      ],
+      "revealWrappers": 4,
+      "images": []
+    },
+    {
+      "key": "03a-impact-stories",
+      "rendered": true,
+      "top": 2311,
+      "height": 1900,
+      "width": 1920,
+      "canvases": 0,
+      "runningAnimations": [
+        {
+          "kind": "CSSTransition",
+          "name": "",
+          "state": "running",
+          "target": "heading-line"
+        },
+        {
+          "kind": "CSSTransition",
+          "name": "",
+          "state": "running",
+          "target": "heading-line"
+        }
+      ],
+      "revealWrappers": 2,
+      "images": []
+    },
+    {
+      "key": "03b-completed-campaigns",
+      "rendered": false
+    },
+    {
+      "key": "04-trust-transparency-every-dollar",
+      "rendered": true,
+      "top": 4211,
+      "height": 1100,
+      "width": 1920,
+      "canvases": 0,
+      "runningAnimations": [
+        {
+          "kind": "Animation",
+          "name": "",
+          "state": "running",
+          "target": ""
+        }
+      ],
+      "revealWrappers": 4,
+      "images": []
+    },
+    {
+      "key": "05-track-the-money-line",
+      "rendered": true,
+      "top": 5311,
+      "height": 273,
+      "width": 1920,
+      "canvases": 0,
+      "runningAnimations": [],
+      "revealWrappers": 1,
+      "images": []
+    },
+    {
+      "key": "06-donation-flow",
+      "rendered": true,
+      "top": 5584,
+      "height": 1089,
+      "width": 1920,
+      "canvases": 0,
+      "runningAnimations": [],
+      "revealWrappers": 3,
+      "images": [
+        "/brand-logos/doordash.svg",
+        "/brand-logos/walmart.svg",
+        "/brands/ubereats.com.png",
+        "/brands/amazon.com.png",
+        "/brand-logos/target.svg",
+        "/brand-logos/starbucks.svg"
+      ]
+    },
+    {
+      "key": "07-security-badges",
+      "rendered": true,
+      "top": 6704,
+      "height": 530,
+      "width": 1920,
+      "canvases": 0,
+      "runningAnimations": [],
+      "revealWrappers": 5,
+      "images": []
+    },
+    {
+      "key": "08-testimonials-voices",
+      "rendered": true,
+      "top": 7234,
+      "height": 810,
+      "width": 1920,
+      "canvases": 0,
+      "runningAnimations": [],
+      "revealWrappers": 0,
+      "images": []
+    },
+    {
+      "key": "09-impact-dashboard-leaderboard",
+      "rendered": true,
+      "top": 8044,
+      "height": 1120,
+      "width": 1920,
+      "canvases": 0,
+      "runningAnimations": [
+        {
+          "kind": "CSSTransition",
+          "name": "",
+          "state": "running",
+          "target": "heading-line"
+        },
+        {
+          "kind": "CSSTransition",
+          "name": "",
+          "state": "running",
+          "target": "heading-line"
+        }
+      ],
+      "revealWrappers": 2,
+      "images": []
+    },
+    {
+      "key": "10-cta",
+      "rendered": true,
+      "top": 9164,
+      "height": 608,
+      "width": 1920,
+      "canvases": 0,
+      "runningAnimations": [],
+      "revealWrappers": 4,
+      "images": []
+    },
+    {
+      "key": "11-footer",
+      "rendered": true,
+      "top": 9772,
+      "height": 2003,
+      "width": 1920,
+      "canvases": 0,
+      "runningAnimations": [],
+      "revealWrappers": 2,
+      "images": [
+        "/src/assets/logo.png"
+      ]
+    }
+  ]
+}
