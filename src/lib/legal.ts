@@ -5,8 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
  * change materially: people then accept the new version at their next sign-in, and it is recorded in
  * public.legal_acceptances.
  */
-export const LEGAL_VERSION = '2026-10-22';
-export const LEGAL_UPDATED = 'October 22, 2026';
+export const LEGAL_VERSION = '2026-10-24';
+export const LEGAL_UPDATED = 'October 24, 2026';
 export const COMPANY = 'CouponDonation Inc.';
 export const COMPANY_FORM = 'a Delaware corporation';
 export const LEGAL_EMAIL = 'support@coupondonation.com';
@@ -14,7 +14,7 @@ export const LEGAL_PHONE = '+1 (315) 898-6745';
 /** The company's postal address for legal notices. Add it here and every legal page shows it. */
 export const MAILING_ADDRESS: string | null = null;
 
-export type AgreementContext = 'sign-up' | 'sign-in' | 'google' | 'apply-account' | 'fundraiser-submit';
+export type AgreementContext = 'sign-up' | 'sign-in' | 'google' | 'apply-account' | 'fundraiser-submit' | 'card-donation';
 
 const PENDING_KEY = 'cd_pending_agreement';
 

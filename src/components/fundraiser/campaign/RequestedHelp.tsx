@@ -69,6 +69,12 @@ export function RequestedHelp({ fundraiserId, needs, stores, similarOk, closed }
           <p className="mt-4 text-sm text-muted-foreground">
             {similarOk ? "Gifts to other stores are welcome too." : "Please give to one of these stores if you can."}
           </p>
+          {!closed && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Have an unused gift card for one of these stores?{" "}
+              <Link to={`/donate-a-card?fundraiser=${fundraiserId}`} className="font-medium text-primary underline-offset-2 hover:underline">Donate it here</Link>
+            </p>
+          )}
         </>
       )}
     </section>

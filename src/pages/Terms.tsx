@@ -86,6 +86,17 @@ const sections: LegalSection[] = [
     ]} />,
   },
   {
+    id: 'donated-cards',
+    title: 'Donated cards',
+    body: <Bullets items={[
+      <>You can donate an unused digital gift card, store coupon or promo code on the Donate a card page. We accept digital codes only, and never pay for or buy cards.</>,
+      <>By submitting a card, you confirm it's yours to give, unused, not tied to your name or account, transferable under its own terms, and not bought because someone asked you to.</>,
+      <>We check every card before it's given and may decline any card. If we decline it or you withdraw it before we review it, we delete its code.</>,
+      <>Once we accept a card, it belongs to the person who receives it or to our shared pool, and it can't be returned. If the family you chose is no longer accepting gifts, we may give it to another family or the shared pool.</>,
+      <>Donated cards aren't tax-deductible, and we can't guarantee a store will honour a card or its balance.</>,
+    ]} />,
+  },
+  {
     id: 'rewards',
     title: 'Gold Coins and loyalty rewards',
     body: <p>Gold Coins, badges and loyalty card rewards have no cash value, can't be sold or transferred, and aren't property. We may change, pause or end these programs at any time.</p>,

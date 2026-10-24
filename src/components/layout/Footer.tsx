@@ -31,7 +31,7 @@ export function Footer({ contact = true }: { contact?: boolean } = {}) {
         <div className="md:col-span-3 lg:col-span-2">
           <SectionLabel className="mb-2 md:mb-4 text-primary-foreground/65">Take part</SectionLabel>
           <ul className="text-[15px] leading-[23px] text-primary-foreground/85">
-            <li><Link to="/donate" className={linkClass}>Give support</Link></li><li><Link to="/donate-gift-cards" className={linkClass}>Donate gift cards</Link></li><li><Link to="/buy-groceries-for-a-family" className={linkClass}>Buy groceries for a family</Link></li><li><Link to="/holiday-giving" className={linkClass}>Holiday giving</Link></li><li><Link to="/apply" className={linkClass}>Start a fundraiser</Link></li><li><Link to="/partners" className={linkClass}>Partner with us</Link></li><li><Link to="/auth?mode=signup" className={linkClass}>Create an account</Link></li>
+            <li><Link to="/donate" className={linkClass}>Give support</Link></li><li><Link to="/donate-gift-cards" className={linkClass}>Donate gift cards</Link></li><li><Link to="/donate-a-card" className={linkClass}>Donate a card you have</Link></li><li><Link to="/buy-groceries-for-a-family" className={linkClass}>Buy groceries for a family</Link></li><li><Link to="/holiday-giving" className={linkClass}>Holiday giving</Link></li><li><Link to="/apply" className={linkClass}>Start a fundraiser</Link></li><li><Link to="/partners" className={linkClass}>Partner with us</Link></li><li><Link to="/auth?mode=signup" className={linkClass}>Create an account</Link></li>
           </ul>
         </div>
         <div className="col-span-2 md:col-span-3 lg:col-span-2">

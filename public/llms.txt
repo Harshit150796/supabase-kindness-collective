@@ -20,6 +20,7 @@ CouponDonation Inc. is a US company (a Delaware corporation), not a registered 5
 - [Donate](https://coupondonation.com/donate): Choose stores and an amount; give to a request or the shared pool.
 - [Open requests](https://coupondonation.com/stories): Live requests with totals from completed donations.
 - [Donate gift cards](https://coupondonation.com/donate-gift-cards): Give a gift card to someone who asked for one.
+- [Donate a card you have](https://coupondonation.com/donate-a-card): Give an unused digital gift card, store coupon or promo code to a family or the shared pool; the team checks every card first.
 - [Buy groceries for a family](https://coupondonation.com/buy-groceries-for-a-family): Grocery gift cards for families who asked for help with food.
 - [Holiday giving](https://coupondonation.com/holiday-giving): Sponsor a family's holiday meal or gifts.
 - [CouponDonation vs GoFundMe](https://coupondonation.com/gofundme-alternative): A sourced, side-by-side comparison of fees and how help is delivered.
