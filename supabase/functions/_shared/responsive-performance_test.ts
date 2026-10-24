@@ -87,7 +87,8 @@ Deno.test('card and stat formatting reuse one Intl formatter instead of building
   assert(live.includes("const dateFormat = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });"));
   assert(!live.includes('.toLocaleDateString(') && !live.includes('.toLocaleString('));
   assert(stats.includes("const enUS = new Intl.NumberFormat('en-US');") && !stats.includes(".toLocaleString('en-US')"));
-  assert(board.includes("const shortDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });") && !board.includes('.toLocaleDateString('));
+  // The leaderboard no longer shows dates (its donor row was cut on phones), so there is no date formatter to reuse.
+  assert(!board.includes('.toLocaleDateString('));
   // A reused formatter prints exactly what the per-call helpers printed.
   const whole = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
   const cents = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });

@@ -55,6 +55,9 @@
 - public/robots.txt keeps one `User-agent: *` group (a bot named in its own group ignores the Disallow lines). Open, real fundraisers and blog posts are listed by the `sitemap` edge function named in robots.txt (plain-text format, because Supabase serves function responses as text/plain); new or edited fundraisers ping IndexNow through the `indexnow` function, whose key file public/88cc93917332877d9126bf9574635250.txt must never be removed.
 - The share image is public/og-image.png (1200×630, with the logo).
 
+## Homepage fundraisers on phones
+- Below md, "Fundraisers open now" (ImpactStories) shows FundraiserMosaic: panels of up to four fundraisers (one tall tile, two small, one wide; every other panel mirrored) that swipe sideways, ending with "See all" and "Start a fundraiser" tiles, then a full-width "See all fundraisers" button. Founder's choice (Oct 2026); keep it rather than going back to one card per screen. Example fundraisers keep their "Example campaign" label. Desktop is unchanged.
+
 ## Donated cards
 - /donate-a-card takes unused digital gift cards, store coupons and promo codes (no physical cards), signed in, at most 5 a day, to a chosen open request or the shared pool. It is linked under the donate card in DonationFlow (homepage and /donate), from the site menu (Donate a coupon), /donate-gift-cards, fundraiser pages (RequestedHelp) and the footer.
 - Submissions go through submit_card_donation into card_donations; codes sit in card_donation_secrets, which no browser role can read. Staff see a code only through admin_card_donation_secret (audited) at /admin/card-donations, then admin_review_card_donation accepts it (to a family through admin_add_outside_coupon, or to coupon stock for the pool) or declines it with a reason; the secret row is deleted either way. Screenshots live in the private card-donations bucket.
