@@ -9,7 +9,8 @@ Deno.test('Donate a card has its page, admin queue and links, including the home
   assert(read('src/pages/admin/adminPages.ts').includes("'/admin/card-donations'"));
   assert(read('src/components/layout/Footer.tsx').includes('to="/donate-a-card"'));
   // The donate section (homepage and /donate) and the site menu both offer it (founder request).
-  assert(read('src/components/landing/DonationFlow.tsx').includes('to="/donate-a-card"'));
+  assert(read('src/components/landing/DonationFlow.tsx').includes('<DonateCardPromo />'));
+  assert(read('src/components/landing/donate/DonateCardPromo.tsx').includes('to="/donate-a-card"'));
   assert(read('src/components/navigation/siteLinks.ts').includes("to: '/donate-a-card'"));
   assert(read('src/components/fundraiser/campaign/RequestedHelp.tsx').includes('/donate-a-card?fundraiser='));
   assert(read('public/sitemap.xml').includes('https://coupondonation.com/donate-a-card'));
