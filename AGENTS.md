@@ -54,3 +54,8 @@
 - Landing pages: /help/:need (src/data/needs.ts), the ways to give (src/data/givePages.ts) and /gofundme-alternative (sourced; recheck GoFundMe's facts before editing). Add one only with real, specific content: no city, store or keyword pages generated in bulk (Google's scaled-content policy). New pages go in public/sitemap.xml, the footer and public/llms.txt.
 - public/robots.txt keeps one `User-agent: *` group (a bot named in its own group ignores the Disallow lines). Open, real fundraisers and blog posts are listed by the `sitemap` edge function named in robots.txt (plain-text format, because Supabase serves function responses as text/plain); new or edited fundraisers ping IndexNow through the `indexnow` function, whose key file public/88cc93917332877d9126bf9574635250.txt must never be removed.
 - The share image is public/og-image.png (1200×630, with the logo).
+
+## Donated cards
+- /donate-a-card takes unused digital gift cards, store coupons and promo codes (no physical cards), signed in, at most 5 a day, to a chosen open request or the shared pool. It is linked from the Donate page, /donate-gift-cards, fundraiser pages (RequestedHelp) and the footer, never the homepage (founder decision).
+- Submissions go through submit_card_donation into card_donations; codes sit in card_donation_secrets, which no browser role can read. Staff see a code only through admin_card_donation_secret (audited) at /admin/card-donations, then admin_review_card_donation accepts it (to a family through admin_add_outside_coupon, or to coupon stock for the pool) or declines it with a reason; the secret row is deleted either way. Screenshots live in the private card-donations bucket.
+- We never buy or pay for cards, and the page keeps its scam warning.

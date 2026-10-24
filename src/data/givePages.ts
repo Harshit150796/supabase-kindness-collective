@@ -56,7 +56,7 @@ export const GIVE_PAGES: GivePage[] = [
     storesIntro: 'Choose a store to start a gift there. Store names are trademarks of their owners; the stores don’t sponsor CouponDonation.',
     steps: GIVE_STEPS,
     faq: [
-      { q: 'Can I donate a gift card I already have?', a: 'No. We buy each gift card new for the store you choose, so it has never been used and the balance is right.' },
+      { q: 'Can I donate a gift card I already have?', a: 'Yes, if it’s a digital code you haven’t used. Use the Donate a card page: our team checks the balance before it goes to the family you choose or our shared pool.' },
       { q: 'Which gift cards can I give?', a: 'Grocery stores such as Walmart, Kroger, Aldi, Costco and Publix; pharmacies such as CVS and Walgreens; meal and ride services such as DoorDash and Uber; and retailers such as Target, Amazon and Best Buy.' },
       { q: 'Do I choose who receives it?', a: 'Yes. Give from a request’s page to help that person. If you give from the Donate page without choosing a request, your gift cards go to a shared pool that people who asked for help can claim.' },
     ],

@@ -468,6 +468,125 @@ export type Database = {
         }
         Relationships: []
       }
+      card_donation_secrets: {
+        Row: {
+          card_donation_id: string
+          code: string | null
+          pin: string | null
+          redemption_url: string | null
+        }
+        Insert: {
+          card_donation_id: string
+          code?: string | null
+          pin?: string | null
+          redemption_url?: string | null
+        }
+        Update: {
+          card_donation_id?: string
+          code?: string | null
+          pin?: string | null
+          redemption_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_donation_secrets_card_donation_id_fkey"
+            columns: ["card_donation_id"]
+            isOneToOne: true
+            referencedRelation: "card_donations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      card_donations: {
+        Row: {
+          accepted_value: number | null
+          card_type: string
+          code_hint: string | null
+          coupon_id: string | null
+          created_at: string
+          decline_reason: string | null
+          discount_text: string | null
+          donor_email: string | null
+          donor_name: string | null
+          donor_user_id: string | null
+          expires_on: string | null
+          fundraiser_id: string | null
+          id: string
+          is_anonymous: boolean
+          note: string | null
+          photo_path: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          store_name: string
+          terms: string | null
+          value: number | null
+        }
+        Insert: {
+          accepted_value?: number | null
+          card_type: string
+          code_hint?: string | null
+          coupon_id?: string | null
+          created_at?: string
+          decline_reason?: string | null
+          discount_text?: string | null
+          donor_email?: string | null
+          donor_name?: string | null
+          donor_user_id?: string | null
+          expires_on?: string | null
+          fundraiser_id?: string | null
+          id?: string
+          is_anonymous?: boolean
+          note?: string | null
+          photo_path?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          store_name: string
+          terms?: string | null
+          value?: number | null
+        }
+        Update: {
+          accepted_value?: number | null
+          card_type?: string
+          code_hint?: string | null
+          coupon_id?: string | null
+          created_at?: string
+          decline_reason?: string | null
+          discount_text?: string | null
+          donor_email?: string | null
+          donor_name?: string | null
+          donor_user_id?: string | null
+          expires_on?: string | null
+          fundraiser_id?: string | null
+          id?: string
+          is_anonymous?: boolean
+          note?: string | null
+          photo_path?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          store_name?: string
+          terms?: string | null
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_donations_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "card_donations_fundraiser_id_fkey"
+            columns: ["fundraiser_id"]
+            isOneToOne: false
+            referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -3620,6 +3739,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_card_donation_secret: { Args: { _id: string }; Returns: Json }
       admin_code_usage: {
         Args: {
           _limit?: number
@@ -3884,6 +4004,17 @@ export type Database = {
         Returns: undefined
       }
       admin_reveal_code: { Args: { _id: string }; Returns: string }
+      admin_review_card_donation: {
+        Args: {
+          _accept: boolean
+          _fundraiser: string
+          _id: string
+          _reason: string
+          _to_pool: boolean
+          _value: number
+        }
+        Returns: Json
+      }
       admin_save_coupon_group: {
         Args: { _brand: string; _donation_id: string; _items: Json }
         Returns: string[]
@@ -4238,6 +4369,24 @@ export type Database = {
         Returns: undefined
       }
       short_display_name: { Args: { _name: string }; Returns: string }
+      submit_card_donation: {
+        Args: {
+          _anon: boolean
+          _code: string
+          _discount: string
+          _expires: string
+          _fundraiser: string
+          _note: string
+          _photo_path: string
+          _pin: string
+          _store: string
+          _terms: string
+          _type: string
+          _url: string
+          _value: number
+        }
+        Returns: string
+      }
       svc_admin_log: {
         Args: {
           _action: string
@@ -4253,6 +4402,7 @@ export type Database = {
         Returns: number
       }
       svc_purge_cvv: { Args: never; Returns: number }
+      withdraw_card_donation: { Args: { _id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "donor" | "recipient"

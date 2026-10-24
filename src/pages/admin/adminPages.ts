@@ -10,6 +10,7 @@ export const ADMIN_LOADERS: Record<string, () => Promise<{ default: React.Compon
   '/admin/monthly': () => import('./AdminMonthly'),
   '/admin/verifications': () => import('./AdminVerifications'),
   '/admin/coupons': () => import('./AdminCoupons'),
+  '/admin/card-donations': () => import('./AdminCardDonations'),
   '/admin/procurement': () => import('./AdminProcurement'),
   '/admin/gold-coins': () => import('./AdminGoldCoins'),
   '/admin/partners': () => import('./AdminPartners'),

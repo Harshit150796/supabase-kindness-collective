@@ -34,6 +34,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     { label: 'Monthly gifts', path: '/admin/monthly', icon: Repeat },
     { label: 'Recipients', path: '/admin/verifications', icon: ShieldCheck },
     { label: 'Coupons', path: '/admin/coupons', icon: Gift },
+    { label: 'Donated cards', path: '/admin/card-donations', icon: Gift },
     { label: 'Procurement', path: '/admin/procurement', icon: Package },
     { label: 'Gold Coins', path: '/admin/gold-coins', icon: Gift },
     { label: 'Partner inquiries', path: '/admin/partners', icon: Contact },
