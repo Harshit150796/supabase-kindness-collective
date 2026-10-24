@@ -56,6 +56,6 @@
 - The share image is public/og-image.png (1200×630, with the logo).
 
 ## Donated cards
-- /donate-a-card takes unused digital gift cards, store coupons and promo codes (no physical cards), signed in, at most 5 a day, to a chosen open request or the shared pool. It is linked from the Donate page, /donate-gift-cards, fundraiser pages (RequestedHelp) and the footer, never the homepage (founder decision).
+- /donate-a-card takes unused digital gift cards, store coupons and promo codes (no physical cards), signed in, at most 5 a day, to a chosen open request or the shared pool. It is linked under the donate card in DonationFlow (homepage and /donate), from the site menu (Donate a coupon), /donate-gift-cards, fundraiser pages (RequestedHelp) and the footer.
 - Submissions go through submit_card_donation into card_donations; codes sit in card_donation_secrets, which no browser role can read. Staff see a code only through admin_card_donation_secret (audited) at /admin/card-donations, then admin_review_card_donation accepts it (to a family through admin_add_outside_coupon, or to coupon stock for the pool) or declines it with a reason; the secret row is deleted either way. Screenshots live in the private card-donations bucket.
 - We never buy or pay for cards, and the page keeps its scam warning.

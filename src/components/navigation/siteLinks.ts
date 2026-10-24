@@ -33,6 +33,7 @@ export const PRIMARY_LINKS: SiteLink[] = [
 ];
 
 export const SECONDARY_LINKS: SiteLink[] = [
+  { label: 'Donate a coupon', to: '/donate-a-card' },
   { label: 'Partners', to: '/partners' },
   { label: 'Blog', to: '/blog' },
   { label: 'FAQ', to: '/faq' },
