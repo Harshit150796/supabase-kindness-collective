@@ -1,3 +1,11 @@
-Read-only check complete. No changes are planned.
+# Redeploy the follow-up sender
 
-Optional next step: re-run Q3 using pg_class.relacl or has_table_privilege(), since information_schema returned 0 rows, which conflicts with the earlier audit.
+Redeploy only the `followup-dispatch` server function so it picks up the newly connected HubSpot key.
+
+- No code, database or other function changes.
+- Payment functions are not touched.
+- Nothing is published.
+
+## Check afterwards
+- Confirm the deployment succeeded.
+- Review the function's recent logs for any startup or HubSpot key errors.
