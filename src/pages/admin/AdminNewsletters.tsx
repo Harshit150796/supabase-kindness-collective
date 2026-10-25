@@ -492,7 +492,8 @@ export default function AdminNewsletters() {
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Preview: {form.subject}</DialogTitle></DialogHeader>
-          <div className="border rounded-lg p-4 bg-white"><div dangerouslySetInnerHTML={{ __html: form.html_content }} /></div>
+          {/* A sandboxed frame: scripts in campaign HTML can't run in the admin's signed-in session. */}
+          <iframe title="Newsletter preview" sandbox="" srcDoc={form.html_content} className="h-[65vh] w-full rounded-lg border bg-white" />
         </DialogContent>
       </Dialog>
 

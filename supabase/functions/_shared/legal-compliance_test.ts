@@ -77,7 +77,7 @@ Deno.test('stock-photo testimonials never show', () => {
 });
 
 Deno.test('retired functions refuse every request', () => {
-  for (const name of ['import-subscribers', 'stripe-account-diagnose', 'backfill-stripe-donations']) {
+  for (const name of ['import-subscribers', 'stripe-account-diagnose', 'backfill-stripe-donations', 'create-stripe-checkout']) {
     const source = read(`supabase/functions/${name}/index.ts`);
     assert(source.includes('410'), name);
     assert(!source.includes('createClient'), name);

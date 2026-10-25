@@ -99,7 +99,8 @@ Deno.test('a tiny share still gets a percentage of at least 1', () => {
 });
 
 Deno.test('checkouts and webhooks use the shared split, not their own arithmetic', async () => {
-  for (const fn of ['create-donation-checkout', 'create-stripe-checkout', 'create-square-payment']) {
+  // Stripe checkout is retired (Square takes every payment); the two live checkouts are checked.
+  for (const fn of ['create-donation-checkout', 'create-square-payment']) {
     const src = await Deno.readTextFile(`supabase/functions/${fn}/index.ts`);
     assert(src.includes("from '../_shared/brand-split.ts'"), fn);
     assert(src.includes('normalizeSplit(') && src.includes('encodeSplit(shares)'), fn);

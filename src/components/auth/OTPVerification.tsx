@@ -7,7 +7,8 @@ import { toast } from 'sonner';
 
 interface OTPVerificationProps {
   email: string;
-  onVerified: () => void;
+  /** Called with the verified code, which account creation needs. */
+  onVerified: (code: string) => void;
   onBack: () => void;
 }
 
@@ -91,7 +92,7 @@ export function OTPVerification({ email, onVerified, onBack }: OTPVerificationPr
 
       if (data.success) {
         toast.success('Email verified successfully!');
-        onVerified();
+        onVerified(code);
       } else {
         toast.error(data.error || 'Invalid verification code');
       }

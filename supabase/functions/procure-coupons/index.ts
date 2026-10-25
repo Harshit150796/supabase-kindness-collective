@@ -4,6 +4,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { serviceOrStaff } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,6 +31,10 @@ serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, serviceKey);
+
+  // Buying gift cards spends real money: only the payment webhook (service key) and signed-in staff
+  // may start it. It used to accept any caller.
+  if (!(await serviceOrStaff(req, supabase))) return json({ error: "Staff access required" }, 403);
 
   const apiKey = Deno.env.get("TREMENDOUS_API_KEY");
   const fundingSourceId = Deno.env.get("TREMENDOUS_FUNDING_SOURCE_ID");
@@ -59,9 +64,10 @@ serve(async (req) => {
     .in("status", ["pending_procurement", "procurement_failed"])
     .lt("procurement_attempts", 5);
 
-  if (body.donation_id) query = query.eq("donation_id", body.donation_id);
-  if (body.coupon_ids?.length) query = query.in("id", body.coupon_ids);
-  query = query.order("created_at", { ascending: true }).limit(body.limit ?? 100);
+  if (typeof body.donation_id === "string") query = query.eq("donation_id", body.donation_id);
+  if (Array.isArray(body.coupon_ids) && body.coupon_ids.length) query = query.in("id", body.coupon_ids.slice(0, 100));
+  const limit = Math.min(Math.max(Math.floor(Number(body.limit) || 100), 1), 100);
+  query = query.order("created_at", { ascending: true }).limit(limit);
 
   const { data: pending, error: fetchErr } = await query;
   if (fetchErr) return json({ error: fetchErr.message }, 500);

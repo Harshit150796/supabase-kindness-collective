@@ -206,7 +206,7 @@ export default function Auth() {
   };
 
 
-  const handleOTPVerified = async () => {
+  const handleOTPVerified = async (code: string) => {
     if (!pendingSignupData) return;
 
     const { email: signupEmail, password: signupPassword, fullName: signupFullName } = pendingSignupData;
@@ -217,7 +217,8 @@ export default function Auth() {
       const { error: signupError } = await signUp(
         signupEmail,
         signupPassword,
-        signupFullName
+        signupFullName,
+        code
       );
 
 

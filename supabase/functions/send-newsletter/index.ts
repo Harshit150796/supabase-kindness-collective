@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 import { suppressedSet, withoutSuppressed, UNSUB_FUNCTION_URL } from "../_shared/suppression.ts";
+import { serviceOrStaff } from "../_shared/auth.ts";
+import { linkSig } from "../_shared/link-sign.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,13 +29,21 @@ function applyTokens(html: string, sub: any) {
     .replaceAll("{{email}}", escapeHtml(sub.email));
 }
 
-function rewriteLinks(html: string, campaignId: string, sub: any) {
+const LINK_RE = /<a\s+([^>]*?)href=["']([^"']+)["']([^>]*)>/gi;
+
+// Each tracked link carries a signature, so the click tracker only forwards to links that really
+// were in this campaign (it used to forward to any address, an open redirect).
+async function rewriteLinks(html: string, campaignId: string, sub: any) {
   const sParam = sub.id ? `&s=${sub.id}` : "";
   const eParam = `&e=${encodeURIComponent(sub.email)}`;
+  const hrefs = new Set<string>();
+  html.replace(LINK_RE, (m, _pre, href) => { hrefs.add(href); return m; });
+  const sigs = new Map<string, string>();
+  for (const href of hrefs) sigs.set(href, await linkSig(campaignId, href));
   // Don't rewrite unsubscribe / mailto / tracking links
-  return html.replace(/<a\s+([^>]*?)href=["']([^"']+)["']([^>]*)>/gi, (m, pre, href, post) => {
+  return html.replace(LINK_RE, (m, pre, href, post) => {
     if (/^mailto:/i.test(href) || href.includes("/email-track-") || href.includes("/unsubscribe")) return m;
-    const tracked = `${FN_BASE}/email-track-click?c=${campaignId}${sParam}${eParam}&u=${encodeURIComponent(href)}`;
+    const tracked = `${FN_BASE}/email-track-click?c=${campaignId}${sParam}${eParam}&u=${encodeURIComponent(href)}&k=${sigs.get(href)}`;
     return `<a ${pre}href="${tracked}"${post}>`;
   });
 }
@@ -68,14 +78,20 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const supabase = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    // Only the scheduler (service key) and signed-in staff may send a campaign. It used to send for
+    // anyone who knew a campaign id.
+    if (!(await serviceOrStaff(req, supabase))) {
+      return new Response(JSON.stringify({ error: "Staff access required" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const { campaign_id } = await req.json();
     if (!campaign_id) {
       return new Response(JSON.stringify({ error: "campaign_id required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const supabase = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const { data: campaign, error: campErr } = await supabase
       .from("email_campaigns").select("*").eq("id", campaign_id).single();
@@ -126,7 +142,7 @@ serve(async (req) => {
         : `${SITE_URL}/unsubscribe`;
 
       let body = applyTokens(htmlBase, sub);
-      if (tracking) body = rewriteLinks(body, campaign_id, sub);
+      if (tracking) body = await rewriteLinks(body, campaign_id, sub);
 
       const fullHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
 <body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;line-height:1.6;">
