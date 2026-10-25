@@ -12,7 +12,7 @@ Deno.test('short windows can reach the card visibility gate', () => {
   assertEquals(cardDealEligible(0, 0, 400), false);
 });
 Deno.test('four cards have distinct beats after the visibility hold', () => {
-  assertEquals(CARD_DEAL_TIMING.hold, 180);
-  assertEquals(Array.from({ length: 4 }, (_, i) => i * CARD_DEAL_TIMING.stagger), [0, 500, 1000, 1500]);
-  assertEquals(CARD_DEAL_TIMING.duration, 750);
+  assertEquals(CARD_DEAL_TIMING.hold, 120);
+  assertEquals(Array.from({ length: 4 }, (_, i) => i * CARD_DEAL_TIMING.stagger), [0, 300, 600, 900]);
+  assertEquals(CARD_DEAL_TIMING.duration, 520);
 });
