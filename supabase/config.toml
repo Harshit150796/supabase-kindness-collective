@@ -93,3 +93,6 @@ verify_jwt = false
 
 [functions.create-account]
 verify_jwt = false
+
+[functions.storage-bucket-limits]
+verify_jwt = false
