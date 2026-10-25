@@ -186,6 +186,7 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
     const t = performance.now() / 1000;
 
     if (state.phase === 'hanging') {
+      if (materialRef.current) materialRef.current.opacity = 1;
       // Pendulum sway with mixed sines (perlin-ish)
       const sway = gentle ? 0 : Math.sin(t * 0.7 + index * 1.3) * 0.14 + Math.sin(t * 1.7 + index) * 0.04;
       const swayZ = gentle ? 0 : Math.cos(t * 0.5 + index * 0.7) * 0.07;
@@ -266,6 +267,7 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
       if (materialRef.current) materialRef.current.opacity = 1 - fade;
       if (elapsed > LANDED_SECONDS) onRegrown(index);
     } else if (state.phase === 'regrowing') {
+      if (materialRef.current) materialRef.current.opacity = 1;
       const elapsed = t - state.startTime;
       const dur = 0.9;
       const k = Math.min(1, elapsed / dur);
@@ -294,7 +296,6 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
     <>
       <group
         ref={groupRef}
-        visible={state.phase !== 'landed'}
         onPointerDown={handlePointer}
         onPointerOver={(e) => {
           e.stopPropagation();
@@ -309,6 +310,7 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
         <mesh castShadow>
           <planeGeometry args={[dimensions.width, dimensions.height]} />
           <meshBasicMaterial
+            ref={materialRef}
             map={texture}
             transparent
             alphaTest={0.12}
