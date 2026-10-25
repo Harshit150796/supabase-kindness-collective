@@ -29,6 +29,10 @@ interface Props {
 }
 
 const HANG_DROP = 0.34;
+/** The logo shivers on its branch this long before it lets go. */
+const LOOSEN_SECONDS = 0.5;
+/** It rests on the grass, then sinks and fades, before a new brand buds on the branch. */
+const LANDED_SECONDS = 1.6;
 // Keep the fruit attached to its branch-relative slot while placing its face
 // just beyond the nearest leaf layer, reducing partial foliage occlusion.
 function logoSize(aspect: number, alphaCoverage: number, mark: CouponData['mark']) {
@@ -103,33 +107,40 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
   const fallKey = `fall:${index}`;
   useEffect(() => () => releaseSpot(fallKey), [fallKey]);
 
+  // A drop starts with the logo loosening on its branch; only then does it leave (launch).
+  const launchedRef = useRef(false);
+  const flightRef = useRef({ start: 0, duration: 1, swayX: 1, swayZ: 0 });
+  const materialRef = useRef<THREE.MeshBasicMaterial>(null);
+
   useEffect(() => {
     if (state.phase === 'falling') {
       caughtRef.current = false;
       plantSpawnedRef.current = false;
-      const target = pickGardenSpot(camera, fallKey) ?? scatterTarget;
-      targetRef.current = target;
-      const startY = hangingPosition.y;
-      const landY = groundY + dimensions.height / 2;
-      const dx = target.x - hangingPosition.x;
-      const dz = target.z - hangingPosition.z;
-      // A gentle arc: farther spots get a little more lift, and the flight time is solved so the
-      // coupon meets the grass exactly at its spot.
-      const vy = Math.min(3.2, 0.4 + 0.32 * Math.hypot(dx, dz));
-      const drop = Math.max(0.1, startY - landY);
-      const tFall = (vy + Math.sqrt(vy * vy + 19.6 * drop)) / 9.8;
-      velocityRef.current = {
-        y: vy,
-        x: dx / tFall,
-        z: dz / tFall,
-        rotX: (Math.random() - 0.5) * 5,
-        rotY: (Math.random() - 0.5) * 3,
-        rotZ: (Math.random() - 0.5) * 5,
-      };
-      posRef.current.copy(hangingPosition);
-      rotRef.current.set(0, 0, 0);
+      launchedRef.current = false;
+      targetRef.current = pickGardenSpot(camera, fallKey) ?? scatterTarget;
     }
-  }, [state.phase, groundY, hangingPosition, scatterTarget, isMobile, camera, fallKey, dimensions.height]);
+  }, [state.phase, scatterTarget, camera, fallKey]);
+
+  const launch = (t: number) => {
+    launchedRef.current = true;
+    const target = targetRef.current;
+    const startY = hangingPosition.y;
+    const landY = groundY + dimensions.height / 2;
+    const dx = target.x - hangingPosition.x;
+    const dz = target.z - hangingPosition.z;
+    // A gentle arc: farther spots get a little more lift, and the flight time is solved so the
+    // coupon meets the grass exactly at its spot.
+    const vy = Math.min(2.4, 0.3 + 0.28 * Math.hypot(dx, dz));
+    const drop = Math.max(0.1, startY - landY);
+    const tFall = (vy + Math.sqrt(vy * vy + 19.6 * drop)) / 9.8;
+    velocityRef.current = { y: vy, x: dx / tFall, z: dz / tFall, rotX: 0, rotY: 0, rotZ: 0 };
+    // Side-to-side flutter runs across the view (camera right), like a falling leaf.
+    const fx = camera.position.z, fz = -camera.position.x;
+    const fl = Math.hypot(fx, fz) || 1;
+    flightRef.current = { start: t, duration: tFall, swayX: fx / fl, swayZ: fz / fl };
+    posRef.current.copy(hangingPosition);
+    rotRef.current.set(0, groupRef.current?.rotation.y ?? 0, 0);
+  };
 
   const tryPlant = (pos: THREE.Vector3) => {
     if (plantSpawnedRef.current) return;
@@ -148,7 +159,7 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
     if (gentle) return;
     if (state.phase === 'hanging') {
       onClickHanging(index);
-    } else if (state.phase === 'falling' && !caughtRef.current) {
+    } else if (state.phase === 'falling' && launchedRef.current && !caughtRef.current) {
       caughtRef.current = true;
       velocityRef.current = { y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 };
       setSparkle({ pos: posRef.current.clone(), time: performance.now() / 1000 });
@@ -175,6 +186,7 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
     const t = performance.now() / 1000;
 
     if (state.phase === 'hanging') {
+      if (materialRef.current) materialRef.current.opacity = 1;
       // Pendulum sway with mixed sines (perlin-ish)
       const sway = gentle ? 0 : Math.sin(t * 0.7 + index * 1.3) * 0.14 + Math.sin(t * 1.7 + index) * 0.04;
       const swayZ = gentle ? 0 : Math.cos(t * 0.5 + index * 0.7) * 0.07;
@@ -192,13 +204,46 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
       const breathe = gentle ? 1 : 1 + Math.sin(t * 1.2 + index) * 0.02;
       groupRef.current.scale.setScalar(breathe * opticalScale);
     } else if (state.phase === 'falling') {
+      if (materialRef.current) materialRef.current.opacity = 1;
+      if (!launchedRef.current) {
+        // Loosen: the logo shivers and dips on its branch before it lets go.
+        const e = t - state.startTime;
+        groupRef.current.position.copy(hangingPosition);
+        if (e < LOOSEN_SECONDS) {
+          const k = Math.max(0, e) / LOOSEN_SECONDS;
+          const shiver = Math.sin(e * 46) * 0.09 * k;
+          groupRef.current.position.y -= 0.07 * k * k;
+          groupRef.current.rotation.z = hangingTilt.z + shiver;
+          groupRef.current.rotation.x = hangingTilt.x + shiver * 0.4;
+          groupRef.current.scale.setScalar(opticalScale);
+          return;
+        }
+        launch(t);
+      }
       velocityRef.current.y -= 9.8 * dt;
       posRef.current.y += velocityRef.current.y * dt;
       posRef.current.x += velocityRef.current.x * dt;
       posRef.current.z += velocityRef.current.z * dt;
-      rotRef.current.x += velocityRef.current.rotX * dt;
-      rotRef.current.y += velocityRef.current.rotY * dt;
-      rotRef.current.z += velocityRef.current.rotZ * dt;
+      const flight = flightRef.current;
+      const e = t - flight.start;
+      const p = Math.min(1, e / flight.duration);
+      // Leaf-like flutter: sideways drift and rocking that calm as it nears the grass, with the
+      // face turned toward the visitor for most of the way down so the brand stays readable.
+      const flutter = Math.sin(p * Math.PI * 2.4) * 0.28 * (1 - p);
+      const yaw = Math.atan2(camera.position.x - posRef.current.x, camera.position.z - posRef.current.z);
+      const yawDelta = Math.atan2(Math.sin(yaw - rotRef.current.y), Math.cos(yaw - rotRef.current.y));
+      rotRef.current.y += yawDelta * (1 - Math.exp(-6 * dt));
+      groupRef.current.position.set(
+        posRef.current.x + flight.swayX * flutter,
+        posRef.current.y,
+        posRef.current.z + flight.swayZ * flutter,
+      );
+      groupRef.current.rotation.set(
+        Math.sin(e * 3.1 + index) * 0.42 * (1 - p * 0.5) - p * 0.5,
+        rotRef.current.y + Math.sin(e * 2.2) * 0.35,
+        Math.sin(e * 2.6 + index * 0.7) * 0.5 * (1 - p * 0.6),
+      );
+      groupRef.current.scale.setScalar(opticalScale);
 
       if (posRef.current.y <= groundY + dimensions.height / 2) {
         // Settle exactly on its garden spot.
@@ -210,19 +255,19 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
         tryPlant(restPos);
         onLanded(index, restPos);
       }
-      groupRef.current.position.copy(posRef.current);
-      groupRef.current.rotation.copy(rotRef.current);
-      groupRef.current.scale.setScalar(opticalScale);
     } else if (state.phase === 'landed') {
       const elapsed = t - state.landTime;
-      // Squash & settle
-      const settle = Math.min(1, elapsed / 0.4);
-      const squash = 1 - Math.sin(settle * Math.PI) * 0.1;
-      groupRef.current.position.copy(state.restPos);
-      groupRef.current.rotation.set(-Math.PI / 2.1, rotRef.current.y * 0.4, rotRef.current.z * 0.5);
+      // Soft bounce, lie on the grass, then sink and fade as the plant opens beneath it.
+      const bounce = elapsed < 0.4 ? Math.sin((elapsed / 0.4) * Math.PI) * 0.12 : 0;
+      const squash = elapsed < 0.4 ? 1 - Math.sin((elapsed / 0.4) * Math.PI) * 0.12 : 1;
+      const fade = THREE.MathUtils.clamp((elapsed - 0.5) / (LANDED_SECONDS - 0.5), 0, 1);
+      groupRef.current.position.set(state.restPos.x, state.restPos.y + bounce - fade * 0.06, state.restPos.z);
+      groupRef.current.rotation.set(-Math.PI / 2.1, rotRef.current.y, 0);
       groupRef.current.scale.set(opticalScale, squash * opticalScale, opticalScale);
-      if (elapsed > 5) onRegrown(index);
+      if (materialRef.current) materialRef.current.opacity = 1 - fade;
+      if (elapsed > LANDED_SECONDS) onRegrown(index);
     } else if (state.phase === 'regrowing') {
+      if (materialRef.current) materialRef.current.opacity = 1;
       const elapsed = t - state.startTime;
       const dur = 0.9;
       const k = Math.min(1, elapsed / dur);
@@ -251,7 +296,6 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
     <>
       <group
         ref={groupRef}
-        visible={state.phase !== 'landed'}
         onPointerDown={handlePointer}
         onPointerOver={(e) => {
           e.stopPropagation();
@@ -266,6 +310,7 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
         <mesh castShadow>
           <planeGeometry args={[dimensions.width, dimensions.height]} />
           <meshBasicMaterial
+            ref={materialRef}
             map={texture}
             transparent
             alphaTest={0.12}

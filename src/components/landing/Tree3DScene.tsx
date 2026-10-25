@@ -28,6 +28,7 @@ import { prewarmTreeTextures } from './tree3d/textures';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { SLOW_TREE_FPS, shouldReduceQuality } from '@/lib/treeQuality';
 import { createRefreshTracker, pacingDivisor } from '@/lib/framePacing';
+import { facing, pickDropSlot } from './tree3d/dropChoice';
 import { useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
 
 /** The tree lets one coupon fall every 9s (see the auto-drop timer below). */
@@ -661,15 +662,26 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
     [donations]
   );
 
+  // When each slot last started hanging (regrowth finished), and the last slot that fell.
+  const hungAtRef = useRef<number[]>(Array.from({ length: visibleFruitCount }, () => -100));
+  const lastDropRef = useRef(-1);
+  const dropSlots = useCallback((prev: CouponState[]) => prev.map((s, i) => ({
+    x: branchTips[i]?.tip.x ?? 0,
+    z: branchTips[i]?.tip.z ?? 0,
+    hanging: s.phase === 'hanging',
+    hungAt: hungAtRef.current[i] ?? -100,
+  })), [branchTips]);
+
   // Auto drops on timer: one coupon every 9s, a little longer than its donor's name moment
   // (MOMENT_SECONDS), so one name plays at a time (founder request: fewer, calmer moments).
+  // The logo facing the visitor falls (dropChoice), so every name follows a fall they can see.
   useEffect(() => {
     if (gentle || !logosReady || donations.length === 0) return;
     const interval = setInterval(() => {
       setStates((prev) => {
-        const hangingIdx = prev.map((s, i) => (s.phase === 'hanging' ? i : -1)).filter((i) => i >= 0);
-        if (hangingIdx.length === 0) return prev;
-        const pick = hangingIdx[Math.floor(Math.random() * hangingIdx.length)];
+        const pick = pickDropSlot(dropSlots(prev), camera.position, lastDropRef.current, performance.now() / 1000);
+        if (pick < 0) return prev;
+        lastDropRef.current = pick;
         const donation = donations[donationIdxRef.current % donations.length];
         donationIdxRef.current++;
         const next = [...prev];
@@ -678,16 +690,21 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
       });
     }, AUTO_DROP_MS);
     return () => clearInterval(interval);
-  }, [donations, logosReady, gentle]);
+  }, [donations, logosReady, gentle, dropSlots, camera]);
 
-  // Shake event → cascade drop 3-5 hanging coupons
+  // Shake event → cascade drop 3-5 hanging coupons, front-facing ones first
   useEffect(() => {
     if (gentle || !logosReady || !shakeEvent) return;
     setStates((prev) => {
       const hangingIdx = prev.map((s, i) => (s.phase === 'hanging' ? i : -1)).filter((i) => i >= 0);
       if (hangingIdx.length === 0) return prev;
       const count = Math.min(hangingIdx.length, 3 + Math.floor(Math.random() * 3));
-      const shuffled = [...hangingIdx].sort(() => Math.random() - 0.5).slice(0, count);
+      const slots = dropSlots(prev);
+      const shuffled = [...hangingIdx]
+        .map((i) => ({ i, k: facing(slots[i], camera.position) + Math.random() * 0.6 }))
+        .sort((a, b) => b.k - a.k)
+        .slice(0, count)
+        .map(({ i }) => i);
       const next = [...prev];
       shuffled.forEach((idx, n) => {
         const donation = donations[donationIdxRef.current % Math.max(1, donations.length)];
@@ -701,7 +718,7 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
       return next;
     });
     bumpWind(0.5);
-  }, [shakeEvent, donations, bumpWind, logosReady, gentle]);
+  }, [shakeEvent, donations, bumpWind, logosReady, gentle, dropSlots, camera]);
 
   const handleLanded = useCallback((idx: number, restPos: THREE.Vector3) => {
     setStates((prev) => {
@@ -732,6 +749,7 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
         });
         next[idx] = { phase: 'regrowing', startTime: performance.now() / 1000 };
       } else if (cur.phase === 'regrowing') {
+        hungAtRef.current[idx] = performance.now() / 1000;
         next[idx] = { phase: 'hanging' };
       }
       return next;
