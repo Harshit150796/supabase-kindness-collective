@@ -28,6 +28,7 @@ import { prewarmTreeTextures } from './tree3d/textures';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { SLOW_TREE_FPS, shouldReduceQuality } from '@/lib/treeQuality';
 import { createRefreshTracker, pacingDivisor } from '@/lib/framePacing';
+import { facing, pickDropSlot } from './tree3d/dropChoice';
 import { useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
 
 /** The tree lets one coupon fall every 9s (see the auto-drop timer below). */
