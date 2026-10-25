@@ -399,6 +399,21 @@ export type Database = {
         }
         Relationships: []
       }
+      allowed_signups: {
+        Row: {
+          created_at: string
+          email: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+        }
+        Relationships: []
+      }
       blocked_attempts: {
         Row: {
           context: string
@@ -2929,6 +2944,7 @@ export type Database = {
       }
       otp_codes: {
         Row: {
+          attempts: number
           code: string
           created_at: string | null
           email: string
@@ -2937,6 +2953,7 @@ export type Database = {
           verified: boolean | null
         }
         Insert: {
+          attempts?: number
           code: string
           created_at?: string | null
           email: string
@@ -2945,6 +2962,7 @@ export type Database = {
           verified?: boolean | null
         }
         Update: {
+          attempts?: number
           code?: string
           created_at?: string | null
           email?: string
@@ -4359,7 +4377,17 @@ export type Database = {
         }
         Returns: undefined
       }
+      otp_check: { Args: { _code: string; _emails: string[] }; Returns: string }
       owner_reveal_coupon: { Args: { _coupon_id: string }; Returns: Json }
+      rate_limit_take: {
+        Args: {
+          _bucket: string
+          _key_hash: string
+          _max: number
+          _window_seconds: number
+        }
+        Returns: boolean
+      }
       recompute_fundraiser_totals: {
         Args: { _fundraiser_id: string }
         Returns: undefined
