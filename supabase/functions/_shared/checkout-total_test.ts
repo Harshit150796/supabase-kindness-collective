@@ -55,7 +55,8 @@ Deno.test('the webhook splits what was paid back into gift, tip and fee', () => 
 });
 
 Deno.test('checkouts charge through the shared calculation and webhooks record gift, tip and fee', async () => {
-  for (const fn of ['create-donation-checkout', 'create-stripe-checkout', 'create-square-payment']) {
+  // Stripe checkout is retired (Square takes every payment); the two live checkouts are checked.
+  for (const fn of ['create-donation-checkout', 'create-square-payment']) {
     const src = await Deno.readTextFile(`supabase/functions/${fn}/index.ts`);
     assert(src.includes("from '../_shared/checkout-total.ts'") && src.includes('computeCharge({ gift:') && src.includes('...chargeMetadata(charge)'), fn);
     assert(src.includes('Tip to CouponDonation') && src.includes('Card processing fee (you covered it)'), fn);

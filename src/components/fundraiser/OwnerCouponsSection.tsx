@@ -12,6 +12,7 @@ import { callFn } from '@/lib/serverActions';
 import { exportRedacted, loadReceipt, type Box } from '@/lib/receiptImage';
 import { ReceiptRedactor } from '@/components/fundraiser/ReceiptRedactor';
 import type { OwnerCoupon } from '@/components/fundraiser/DonationCouponList';
+import { safeHref } from '@/lib/safeUrl';
 
 const CATEGORIES = ['Groceries', 'Meals', 'Baby supplies', 'Household', 'Transportation', 'Health', 'Other'];
 const logoFor = (brand: string) => brandLogoFor(brand);
@@ -128,7 +129,7 @@ function RevealedDetails({ r, copied, onCopy, idPrefix, onHide }: { r: Revealed;
       {r.value_expires_on && <p className="text-xs text-muted-foreground">Use by {format(new Date(r.value_expires_on + 'T12:00:00'), 'MMM d, yyyy')}</p>}
       {r.instructions && <p className="text-sm text-foreground">{r.instructions}</p>}
       <div className="flex flex-wrap gap-2">
-        {r.redemption_url && <Button size="sm" variant="ghost" asChild><a href={r.redemption_url} target="_blank" rel="noopener noreferrer">{r.type === 'prepaid_link' ? 'Open your card' : 'Redeem'} <ExternalLink className="ml-1 h-3.5 w-3.5" /></a></Button>}
+        {safeHref(r.redemption_url) && <Button size="sm" variant="ghost" asChild><a href={safeHref(r.redemption_url)} target="_blank" rel="noopener noreferrer">{r.type === 'prepaid_link' ? 'Open your card' : 'Redeem'} <ExternalLink className="ml-1 h-3.5 w-3.5" /></a></Button>}
         <Button size="sm" variant="ghost" onClick={onHide}><EyeOff className="mr-1 h-3.5 w-3.5" />Hide</Button>
       </div>
     </div>

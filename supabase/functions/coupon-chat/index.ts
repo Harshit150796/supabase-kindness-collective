@@ -43,10 +43,20 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { messages } = (await req.json()) as { messages: UIMessage[] };
-    if (!Array.isArray(messages)) {
+    const { messages: allMessages } = (await req.json()) as { messages: UIMessage[] };
+    if (!Array.isArray(allMessages)) {
       return new Response(JSON.stringify({ error: "messages required" }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Only the recent conversation goes to the model, and a request can't be padded with huge text:
+    // every message is paid for, so this keeps the cost of one request small.
+    const messages = allMessages.slice(-20);
+    if (JSON.stringify(messages).length > 24_000) {
+      return new Response(JSON.stringify({ error: "That conversation is too long. Please start a new chat." }), {
+        status: 413,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -55,7 +65,9 @@ Deno.serve(async (req) => {
 
     // At most 40 messages an hour from one network, so the assistant can't run up AI costs.
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (SERVICE_KEY && await overLimit(createClient(SUPABASE_URL, SERVICE_KEY), "coupon-chat-ip", clientIp(req), 40, HOUR)) {
+    const limiter = SERVICE_KEY ? createClient(SUPABASE_URL, SERVICE_KEY) : null;
+    // Plus a ceiling for everyone together, which holds even if many networks are used at once.
+    if (limiter && (await overLimit(limiter, "coupon-chat-ip", clientIp(req), 40, HOUR) || await overLimit(limiter, "coupon-chat-all", "all", 1500, HOUR))) {
       return new Response(JSON.stringify({ error: "You've sent a lot of messages. Please try again in a little while." }), {
         status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -139,13 +151,15 @@ Deno.serve(async (req) => {
       system: SYSTEM_PROMPT,
       messages: await convertToModelMessages(messages),
       tools,
-      stopWhen: stepCountIs(6),
+      // Short answers and at most four model steps per message keep each request's cost bounded.
+      stopWhen: stepCountIs(4),
+      maxOutputTokens: 1024,
     });
 
     return result.toUIMessageStreamResponse({ headers: corsHeaders });
   } catch (err) {
     console.error("coupon-chat error", err);
-    return new Response(JSON.stringify({ error: String(err) }), {
+    return new Response(JSON.stringify({ error: "The assistant is unavailable right now. Please try again." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

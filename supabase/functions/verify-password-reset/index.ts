@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { findAuthUserByEmail } from "../_shared/email-exists.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,7 +20,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { token, password }: VerifyPasswordResetRequest = await req.json();
 
-    if (!token || !password) {
+    if (!token || !password || typeof token !== "string" || typeof password !== "string" || token.length > 200) {
       return new Response(
         JSON.stringify({ error: "Token and password are required" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -27,9 +28,9 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Validate password strength
-    if (password.length < 8) {
+    if (password.length < 8 || password.length > 72) {
       return new Response(
-        JSON.stringify({ error: "Password must be at least 8 characters" }),
+        JSON.stringify({ error: "Password must be 8 to 72 characters" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -55,15 +56,14 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Find the user by email
-    const { data: userData } = await supabase.auth.admin.listUsers();
-    const user = userData?.users?.find(u => u.email?.toLowerCase() === tokenData.email.toLowerCase());
+    // Find the user by email (every page of users; the first page alone missed most accounts)
+    const user = await findAuthUserByEmail(supabase, tokenData.email);
 
     if (!user) {
-      console.error("User not found for email:", tokenData.email);
+      console.error("No account for a valid reset token");
       return new Response(
-        JSON.stringify({ error: "User not found" }),
-        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        JSON.stringify({ error: "Invalid or expired reset link. Please request a new one." }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
@@ -92,7 +92,7 @@ const handler = async (req: Request): Promise<Response> => {
       .delete()
       .eq("email", tokenData.email);
 
-    console.log("Password reset successful for:", tokenData.email);
+    console.log("Password reset successful");
 
     return new Response(
       JSON.stringify({ success: true, message: "Password updated successfully", email: tokenData.email }),
@@ -101,7 +101,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error in verify-password-reset function:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Failed to reset password" }),
+      JSON.stringify({ error: "Failed to reset password" }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }

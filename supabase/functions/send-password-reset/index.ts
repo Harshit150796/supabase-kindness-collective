@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { renderPasswordResetEmail, EMAIL_SENDER } from "../_shared/email-layout.ts";
+import { findAuthUserByEmail } from "../_shared/email-exists.ts";
+import { HOUR, clientIp, overLimit } from "../_shared/rate-limit.ts";
 
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -26,7 +28,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email }: SendPasswordResetRequest = await req.json();
+    const { email: rawEmail }: SendPasswordResetRequest = await req.json();
+    const email = typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : "";
 
     if (!email) {
       return new Response(
@@ -46,12 +49,23 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const generic = () => new Response(
+      JSON.stringify({ success: true, message: "If this email is registered, you will receive a reset link" }),
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+
+    // At most 10 requests an hour from one network and 3 an hour for one address, so the form can't
+    // flood someone's inbox. The answer is the same either way, so it reveals nothing.
+    if (await overLimit(supabase, "reset-ip", clientIp(req), 10, HOUR)) {
+      return new Response(JSON.stringify({ error: "Too many requests. Please try again in an hour." }), { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    if (await overLimit(supabase, "reset-email", email, 3, HOUR)) return generic();
 
     // Rate limiting: Check if user has requested reset in the last 60 seconds
     const { data: recentRequest } = await supabase
       .from("password_reset_tokens")
       .select("created_at")
-      .eq("email", email.toLowerCase())
+      .eq("email", email)
       .gte("created_at", new Date(Date.now() - 60000).toISOString())
       .order("created_at", { ascending: false })
       .limit(1)
@@ -65,13 +79,13 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if user exists (but don't reveal this to the client)
-    const { data: userData } = await supabase.auth.admin.listUsers();
-    const userExists = userData?.users?.some(u => u.email?.toLowerCase() === email.toLowerCase());
+    // Check if user exists (but don't reveal this to the client). Looks through every page of
+    // users; the first page alone missed most accounts.
+    const userExists = (await findAuthUserByEmail(supabase, email)) !== null;
 
     if (!userExists) {
       // Return success anyway to prevent email enumeration
-      console.log("Password reset requested for non-existent email:", email);
+      console.log("Password reset requested for an address with no account");
       return new Response(
         JSON.stringify({ success: true, message: "If this email is registered, you will receive a reset link" }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -83,11 +97,11 @@ const handler = async (req: Request): Promise<Response> => {
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     // Delete any existing tokens for this email
-    await supabase.from("password_reset_tokens").delete().eq("email", email.toLowerCase());
+    await supabase.from("password_reset_tokens").delete().eq("email", email);
 
     // Store token
     const { error: insertError } = await supabase.from("password_reset_tokens").insert({
-      email: email.toLowerCase(),
+      email,
       token,
       expires_at: expiresAt.toISOString(),
     });
@@ -131,12 +145,12 @@ const handler = async (req: Request): Promise<Response> => {
       }
       console.error("Resend API error:", errorData ?? { status: emailResponse.status });
       return new Response(
-        JSON.stringify({ error: errorData?.message || "Failed to send reset email" }),
+        JSON.stringify({ error: "We couldn't send the reset email. Please try again in a few minutes." }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    console.log("Password reset email sent to:", email);
+    console.log("Password reset email sent");
 
     return new Response(
       JSON.stringify({ success: true, message: "If this email is registered, you will receive a reset link" }),

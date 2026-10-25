@@ -1,5 +1,7 @@
 // One shared "unsubscribed" list for every optional email (newsletters, follow-ups, impact updates).
 // Account emails (receipts, sign-in codes, password resets, fundraiser notices) never check it.
+import { whereEmail } from './email-exists.ts';
+
 // deno-lint-ignore no-explicit-any
 type Db = any;
 
@@ -29,8 +31,9 @@ export async function suppress(db: Db, email: string, source: string) {
   const e = norm(email);
   const now = new Date().toISOString();
   await db.from('email_suppressions').upsert({ email: e, source }, { onConflict: 'email', ignoreDuplicates: true });
-  await db.from('email_subscribers').update({ subscribed: false, unsubscribed_at: now }).ilike('email', e).eq('subscribed', true);
-  await db.from('visitor_consents').update({ consent_status: 'opted_out', opted_out_at: now, updated_at: now }).ilike('email', e).is('opted_out_at', null);
+  // Exact matches only: an address with % _ or * must never unsubscribe anyone else.
+  await whereEmail(db.from('email_subscribers').update({ subscribed: false, unsubscribed_at: now }), 'email', e).eq('subscribed', true);
+  await whereEmail(db.from('visitor_consents').update({ consent_status: 'opted_out', opted_out_at: now, updated_at: now }), 'email', e).is('opted_out_at', null);
   await db.from('impact_email_optouts').upsert({ email: e }, { onConflict: 'email', ignoreDuplicates: true });
 }
 

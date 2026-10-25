@@ -1,10 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { renderOtpEmail, EMAIL_SENDER } from "../_shared/email-layout.ts";
-import { emailExists } from "../_shared/email-exists.ts";
+import { isEmail, signupBlocked } from "../_shared/email-exists.ts";
 import { HOUR, clientIp, overLimit } from "../_shared/rate-limit.ts";
-
-
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -18,9 +16,11 @@ interface SendOTPRequest {
   purpose?: "signup" | "verify";
 }
 
-const generateOTP = (): string => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...corsHeaders } });
+
+// Six digits from the cryptographic random generator (Math.random is predictable).
+const generateOTP = (): string => String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -29,54 +29,41 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, purpose }: SendOTPRequest = await req.json();
+    const { email: rawEmail, purpose }: SendOTPRequest = await req.json();
 
-    if (!email) {
-      return new Response(
-        JSON.stringify({ error: "Email is required" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
+    if (!rawEmail || typeof rawEmail !== "string") return json({ error: "Email is required" }, 400);
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid email format" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
+    // The same address rule as the sign-up form, so a code is never sent for an address the
+    // account step would then refuse.
+    const email = rawEmail.trim().toLowerCase();
+    if (!isEmail(email)) return json({ error: "Invalid email format" }, 400);
 
     // Initialize Supabase client with service role
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // At most 10 codes an hour from one network, so the form can't be used to flood inboxes.
-    if (await overLimit(supabase, "otp-send-ip", clientIp(req), 10, HOUR)) {
-      return new Response(
-        JSON.stringify({ error: "Too many codes requested. Please try again in an hour." }),
-        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    // At most 30 codes an hour from one network (a campus or event Wi-Fi shares one address) and 5
+    // an hour to one address, so the form can't be used to flood an inbox.
+    if (await overLimit(supabase, "otp-send-ip", clientIp(req), 30, HOUR)) {
+      return json({ error: "Too many codes requested. Please try again in an hour." }, 429);
     }
 
     // Signup guard: never send a verification code to an address that already
-    // has an account — the caller should route the person to sign in instead.
+    // has an account — the caller should route the person to sign in instead. (An unconfirmed
+    // account nobody has signed in to doesn't count; create-account replaces it.)
     if (purpose === "signup") {
-      const exists = await emailExists(supabase, email);
-      if (exists) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            code: "email_exists",
-            error: "This email is already registered. Please sign in instead.",
-          }),
-          { status: 409, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
+      const { blocked } = await signupBlocked(supabase, email);
+      if (blocked) {
+        return json({
+          success: false,
+          code: "email_exists",
+          error: "This email is already registered. Please sign in instead.",
+        }, 409);
       }
     }
 
-    // Rate limiting: Check if user has requested OTP in the last 60 seconds
+    // One code a minute per address (the address is lower-cased, so letter case can't get around it).
     const { data: recentOTP } = await supabase
       .from("otp_codes")
       .select("created_at")
@@ -86,19 +73,18 @@ const handler = async (req: Request): Promise<Response> => {
       .limit(1)
       .maybeSingle();
 
-    if (recentOTP) {
-      return new Response(
-        JSON.stringify({ error: "Please wait 60 seconds before requesting another OTP" }),
-        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    if (recentOTP) return json({ error: "Please wait 60 seconds before requesting another OTP" }, 429);
+
+    if (await overLimit(supabase, "otp-send-email", email, 5, HOUR)) {
+      return json({ error: "Too many codes requested for this email. Please try again in an hour." }, 429);
     }
 
     // Generate OTP
     const otp = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
 
-    // Delete any existing OTPs for this email
-    await supabase.from("otp_codes").delete().eq("email", email);
+    // Delete any existing OTPs for this email (older rows may hold the address as it was typed)
+    await supabase.from("otp_codes").delete().in("email", [...new Set([email, rawEmail.trim()])]);
 
     // Store OTP in database
     const { error: insertError } = await supabase.from("otp_codes").insert({
@@ -109,10 +95,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (insertError) {
       console.error("Failed to store OTP:", insertError);
-      return new Response(
-        JSON.stringify({ error: "Failed to generate OTP" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return json({ error: "Failed to generate OTP" }, 500);
     }
 
     // Send email with OTP using Resend API
@@ -133,41 +116,18 @@ const handler = async (req: Request): Promise<Response> => {
       }),
     });
 
-
     if (!emailResponse.ok) {
-      let errorData: any = null;
-      try {
-        errorData = await emailResponse.json();
-      } catch {
-        // ignore json parse errors
-      }
-
-      const message =
-        errorData?.message ||
-        errorData?.error ||
-        `Resend API request failed (status ${emailResponse.status})`;
-
-      console.error("Resend API error:", errorData ?? { status: emailResponse.status, message });
-
-      return new Response(JSON.stringify({ error: message }), {
-        status: typeof errorData?.statusCode === "number" ? errorData.statusCode : emailResponse.status || 502,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      const errorData = await emailResponse.json().catch(() => null);
+      console.error("Resend API error:", errorData ?? { status: emailResponse.status });
+      // The email provider's details stay in the logs.
+      return json({ error: "We couldn't send the code. Please check the address and try again." }, 502);
     }
 
-    const emailData = await emailResponse.json();
-    console.log("OTP email sent successfully:", emailData);
-
-    return new Response(
-      JSON.stringify({ success: true, message: "OTP sent successfully" }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
-  } catch (error: any) {
+    console.log("OTP email sent");
+    return json({ success: true, message: "OTP sent successfully" });
+  } catch (error: unknown) {
     console.error("Error in send-otp function:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || "Failed to send OTP" }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
+    return json({ error: "Failed to send OTP" }, 500);
   }
 };
 

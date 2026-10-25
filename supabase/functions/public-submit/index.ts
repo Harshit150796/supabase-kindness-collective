@@ -6,7 +6,8 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@3';
 import { NOTIFY_SENDER, type RenderedEmail } from '../_shared/email-layout.ts';
-import { suppress, unsuppress } from '../_shared/suppression.ts';
+import { isSuppressed, suppress, unsuppress } from '../_shared/suppression.ts';
+import { HOUR, clientIp, overLimit } from '../_shared/rate-limit.ts';
 import {
   CONTACT_TOPIC_VALUES, MESSAGE_MAX, MESSAGE_MIN, MIN_FILL_MS, PER_EMAIL_PER_DAY, PER_IP_PER_HOUR, SUPPORT_EMAIL, US_REGIONS,
   cleanLine, cleanMessage, normalizeUsPhone, renderContactConfirmation, renderSupportEmail,
@@ -82,7 +83,7 @@ Deno.serve(async (req) => {
 
   if (b.action === 'partner') {
     if (b.website) return json({ ok: true }); // honeypot: silently accept, store nothing
-    const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
+    const ip = clientIp(req);
     const ipHash = await sha256(`partner:${ip}`);
     const hourAgo = new Date(Date.now() - 3600_000).toISOString();
     const { count } = await admin.from('partner_rate_limits').select('id', { count: 'exact', head: true }).eq('ip_hash', ipHash).gte('created_at', hourAgo);
@@ -112,7 +113,7 @@ Deno.serve(async (req) => {
     if (message.length < MESSAGE_MIN) fieldErrors.message = ['Write a little more so we can help.'];
     if (Object.keys(fieldErrors).length) return json({ error: 'Please check the form fields.', details: fieldErrors }, 400);
 
-    const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
+    const ip = clientIp(req);
     const ipHash = await sha256(`contact:${ip}`);
     const hourAgo = new Date(Date.now() - 3600_000).toISOString();
     const dayAgo = new Date(Date.now() - 86400_000).toISOString();
@@ -152,6 +153,22 @@ Deno.serve(async (req) => {
     const { data: who } = token ? await admin.auth.getUser(token).catch(() => ({ data: { user: null } })) : { data: { user: null } };
     const userId = who?.user?.email?.toLowerCase() === email ? who.user!.id : null;
     const { data: existing } = await admin.from('visitor_consents').select('id, user_id, posthog_distinct_id').eq('email', email).maybeSingle();
+    if (!userId) {
+      // Without a signed-in match nothing shows the address belongs to the sender. Only a first-time
+      // opt-in is recorded; an existing choice or an earlier unsubscribe is never changed, so nobody
+      // can sign someone else back up for emails.
+      if (await overLimit(admin, 'consent-ip', clientIp(req), 10, HOUR)) return json({ ok: true });
+      if (existing || await isSuppressed(admin, email)) return json({ ok: true });
+      // And a ceiling on new addresses for the whole site, so many networks together can't add
+      // strangers in bulk.
+      if (await overLimit(admin, 'consent-all', 'all', 200, HOUR)) return json({ ok: true });
+      const { error } = await admin.from('visitor_consents').insert({
+        email, email_source: b.source, consent_status: 'opted_in', consent_time: new Date().toISOString(), opted_out_at: null,
+        user_id: null, posthog_distinct_id: b.distinct_id || null, updated_at: new Date().toISOString(),
+      });
+      if (error) { console.error('consent save failed', error.message); return json({ error: 'Could not save your choice.' }, 500); }
+      return json({ ok: true });
+    }
     const patch = {
       email, email_source: b.source, consent_status: 'opted_in', consent_time: new Date().toISOString(), opted_out_at: null,
       user_id: userId ?? existing?.user_id ?? null,

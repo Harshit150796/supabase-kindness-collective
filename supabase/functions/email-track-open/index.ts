@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { UUID_RE } from "../_shared/auth.ts";
 
 // 1x1 transparent GIF
 const PIXEL = Uint8Array.from(atob("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"), c => c.charCodeAt(0));
@@ -11,7 +12,8 @@ serve(async (req) => {
     const s = url.searchParams.get("s"); // subscriber_id
     const e = url.searchParams.get("e"); // recipient_email
 
-    if (c && (s || e)) {
+    // Only well-formed ids are recorded, so the pixel can't be used to fill the events table with junk.
+    if (c && UUID_RE.test(c) && (s || e) && (!s || UUID_RE.test(s))) {
       const supabase = createClient(
         Deno.env.get("SUPABASE_URL")!,
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -19,7 +21,7 @@ serve(async (req) => {
       await supabase.from("email_events").insert({
         campaign_id: c,
         subscriber_id: s || null,
-        recipient_email: e || null,
+        recipient_email: e ? e.slice(0, 320) : null,
         event_type: "opened",
       });
       if (s) {

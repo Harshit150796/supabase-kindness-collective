@@ -13,7 +13,7 @@ const json = (data: unknown, status = 200) =>
 
 const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('comment'), fundraiser_id: z.string().uuid(), body: z.string().min(1).max(1000) }),
-  z.object({ action: z.literal('update'), fundraiser_id: z.string().uuid(), title: z.string().min(1).max(140), body: z.string().min(1).max(5000), image_url: z.string().url().max(1000).optional().nullable(), notify_donors: z.boolean().default(false) }),
+  z.object({ action: z.literal('update'), fundraiser_id: z.string().uuid(), title: z.string().min(1).max(140), body: z.string().min(1).max(5000), image_url: z.string().url().max(1000).refine((u) => u.startsWith('https://'), 'Use an https link').optional().nullable(), notify_donors: z.boolean().default(false) }),
   z.object({ action: z.literal('invite'), fundraiser_id: z.string().uuid(), email: z.string().email().max(255) }),
   z.object({ action: z.literal('resend_invite'), team_id: z.string().uuid() }),
   z.object({ action: z.literal('accept'), token: z.string().min(20).max(200) }),

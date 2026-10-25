@@ -5,6 +5,12 @@ import { SQUARE_PAYMENT_METHODS } from '../_shared/square-payment-methods.ts';
 import { MONTHLY_CONSENT, monthlyPlanBody } from '../_shared/square-recurring.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { EXAMPLE_CLOSED_MESSAGE, isExampleFundraiser } from '../_shared/example-guard.ts';
+import { UUID_RE, requestUser, returnOrigin } from '../_shared/auth.ts';
+import { HOUR, clientIp, overLimit } from '../_shared/rate-limit.ts';
+import { isEmail } from '../_shared/email-exists.ts';
+
+/** A message meant for the donor; anything else is logged and replaced by a general one. */
+class DonorError extends Error {}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,7 +42,22 @@ serve(async (req) => {
       `${Deno.env.get("SUPABASE_URL")}/rest/v1/payment_settings?id=eq.1&select=square_enabled`,
       { headers: { apikey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` } },
     ).catch(() => null);
-    const { amount, tipAmount, coverFee, brandName, brandId, brandAllocations, userId, userEmail, fundraiserId } = body;
+    const { amount, tipAmount, coverFee, brandName, brandId, brandAllocations, userEmail, fundraiserId } = body;
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    // Checkout links are free to make, so one network gets 30 an hour (stops scripted abuse).
+    if (await overLimit(admin, "checkout-ip", clientIp(req), 30, HOUR)) {
+      return new Response(JSON.stringify({ error: "Too many checkout attempts. Please try again in a little while." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (fundraiserId != null && fundraiserId !== "" && (typeof fundraiserId !== "string" || !UUID_RE.test(fundraiserId))) {
+      return new Response(JSON.stringify({ error: "That fundraiser link isn't valid." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    // The donor is whoever is signed in. A user id sent in the request body is ignored, so nobody
+    // can file a donation under someone else's account.
+    const signedUser = await requestUser(req, admin);
+    const userId = signedUser?.id ?? null;
+    const guestEmail = isEmail(userEmail) ? userEmail.trim() : null;
+    const donorEmail = signedUser?.email ?? guestEmail;
 
     if (await isExampleFundraiser(fundraiserId)) {
       return new Response(JSON.stringify({ error: EXAMPLE_CLOSED_MESSAGE }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -44,7 +65,7 @@ serve(async (req) => {
 
     // Validate amount
     if (!amount || amount < 5 || amount > 10000) {
-      throw new Error("Invalid donation amount. Must be between $5 and $10,000.");
+      throw new DonorError("Invalid donation amount. Must be between $5 and $10,000.");
     }
 
     // The donor's dollar split, checked again here (each retailer's share becomes one coupon slot).
@@ -71,7 +92,7 @@ serve(async (req) => {
       brandCount: shares.length,
       split: describeSplit(shares),
       userId: userId || 'anonymous',
-      userEmail: userEmail ? 'provided' : 'guest',
+      userEmail: donorEmail ? 'provided' : 'guest',
     });
 
     // Respect the admin on/off switch
@@ -94,7 +115,8 @@ serve(async (req) => {
       throw new Error("Missing SQUARE_LOCATION_ID. Add it in Supabase → Project Settings → Functions → Secrets.");
     }
 
-    const origin = req.headers.get("origin") || "https://coupondonation.com";
+    // Back to our own site only; a made-up Origin header can't turn checkout into a redirect elsewhere.
+    const origin = returnOrigin(req);
     const mealsProvided = amount * 2;
 
     // Metadata carried on the Square order — the square-webhook function reads
@@ -106,7 +128,7 @@ serve(async (req) => {
     if (shares[0]?.brand) metadata.brand_name = shares[0].brand;
     if (shares.length > 0) metadata.brand_allocations = encodeSplit(shares);
     if (userId) metadata.donor_id = userId;
-    if (userEmail) metadata.donor_email = userEmail;
+    if (donorEmail) metadata.donor_email = donorEmail;
     if (fundraiserId) metadata.fundraiser_id = fundraiserId;
 
     const idempotencyKey = crypto.randomUUID();
@@ -115,17 +137,17 @@ serve(async (req) => {
     // Monthly gift: only when the donor ticked the box themselves. Guests are allowed; the gift is
     // linked to an account later by the email they pay with (the webhook does this).
     if (body.recurring === true) {
-      const jwt = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
-      const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-      const { data: who } = await admin.auth.getUser(jwt).catch(() => ({ data: null }));
-      const signedUser = who?.user ?? null; // the anon key is not a user, so guests land here as null
-      const email = signedUser?.email ?? (typeof userEmail === "string" && userEmail.includes("@") ? userEmail : null);
+      // Each monthly checkout creates a Square plan and a database row, so at most 10 an hour per network.
+      if (await overLimit(admin, "monthly-ip", clientIp(req), 10, HOUR)) {
+        throw new DonorError("Too many monthly gift attempts. Please try again in a little while.");
+      }
+      const email = donorEmail;
       const planRes = await fetch(`${squareBaseUrl()}/v2/catalog/object`, { method: "POST", headers: squareHeaders, body: JSON.stringify(monthlyPlanBody(charge, crypto.randomUUID())) });
       const plan = await planRes.json();
       const variationId = plan?.id_mappings?.find((m: { client_object_id: string }) => m.client_object_id === "#variation")?.object_id;
       if (!planRes.ok || !variationId) {
         console.error("Square plan error:", planRes.status, JSON.stringify(plan?.errors ?? plan));
-        throw new Error("Could not set up the monthly gift. Please try again or give once.");
+        throw new DonorError("Could not set up the monthly gift. Please try again or give once.");
       }
       const { error: rowErr } = await admin.from("recurring_donations").insert({
         user_id: signedUser?.id ?? null, donor_email: email, square_plan_variation_id: variationId,
@@ -133,7 +155,7 @@ serve(async (req) => {
         brand_allocations: shares.length ? encodeSplit(shares) : null, brand_name: shares[0]?.brand ?? null,
         fundraiser_id: fundraiserId || null, consent_text: MONTHLY_CONSENT,
       });
-      if (rowErr) { console.error("Monthly row error:", rowErr.message); throw new Error("Could not save the monthly gift."); }
+      if (rowErr) { console.error("Monthly row error:", rowErr.message); throw new DonorError("Could not save the monthly gift."); }
       const who2 = { user: { email } };
       const linkRes = await fetch(`${squareBaseUrl()}/v2/online-checkout/payment-links`, {
         method: "POST", headers: squareHeaders,
@@ -147,7 +169,7 @@ serve(async (req) => {
       const link = await linkRes.json();
       if (!linkRes.ok || !link.payment_link?.url) {
         console.error("Square monthly link error:", linkRes.status, JSON.stringify(link?.errors ?? link));
-        throw new Error("Could not open the monthly gift checkout. Please try again or give once.");
+        throw new DonorError("Could not open the monthly gift checkout. Please try again or give once.");
       }
       console.log("Square monthly link created:", link.payment_link.id, "methods:", JSON.stringify(link.payment_link.checkout_options?.accepted_payment_methods));
       return new Response(JSON.stringify({ url: link.payment_link.url }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
@@ -191,8 +213,8 @@ serve(async (req) => {
         ask_for_shipping_address: false,
         accepted_payment_methods: SQUARE_PAYMENT_METHODS,
       },
-      ...(userEmail && {
-        pre_populated_data: { buyer_email: userEmail },
+      ...(donorEmail && {
+        pre_populated_data: { buyer_email: donorEmail },
       }),
     };
 
@@ -231,8 +253,9 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     console.error("Error creating Square checkout:", error);
+    // Square and configuration details stay in the logs; the donor sees a plain message.
+    const errorMessage = error instanceof DonorError ? error.message : "Checkout did not open. Please try again in a moment.";
 
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

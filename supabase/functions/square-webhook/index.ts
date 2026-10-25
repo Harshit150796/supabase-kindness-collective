@@ -5,6 +5,18 @@ import { readPayment } from '../_shared/checkout-total.ts';
 import { monthlyMetadata } from '../_shared/square-recurring.ts';
 import { cardRow } from '../_shared/saved-card.ts';
 import { isExampleFundraiser } from '../_shared/example-guard.ts';
+import { timingSafeEqual } from '../_shared/auth.ts';
+import { whereEmail } from '../_shared/email-exists.ts';
+
+// The account a guest gift belongs to: same email (matched exactly, no wildcards), and only an
+// account that confirmed it owns that address.
+// deno-lint-ignore no-explicit-any
+async function confirmedUserByEmail(supabase: any, email: string): Promise<string | null> {
+  const { data: p } = await whereEmail(supabase.from("profiles").select("user_id"), "email", email).maybeSingle();
+  if (!p?.user_id) return null;
+  const { data } = await supabase.auth.admin.getUserById(p.user_id);
+  return data?.user?.email_confirmed_at ? (p.user_id as string) : null;
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,7 +51,7 @@ async function verifySquareSignature(
     encoder.encode(notificationUrl + rawBody)
   );
   const expected = btoa(String.fromCharCode(...new Uint8Array(signed)));
-  return expected === signature;
+  return signature.length > 0 && timingSafeEqual(expected, signature);
 }
 
 serve(async (req) => {
@@ -184,8 +196,8 @@ async function handleMonthlyInvoice(supabase: any, accessToken: string, invoice:
   const { data: existing } = await supabase.from("donations").select("id").eq("stripe_session_id", invoice.order_id).maybeSingle();
   if (existing) return;
   if (!row.user_id && row.donor_email) {
-    const { data: p } = await supabase.from("profiles").select("user_id").ilike("email", row.donor_email).maybeSingle();
-    if (p?.user_id) { row.user_id = p.user_id; await supabase.from("recurring_donations").update({ user_id: p.user_id }).eq("id", row.id); }
+    const uid = await confirmedUserByEmail(supabase, row.donor_email);
+    if (uid) { row.user_id = uid; await supabase.from("recurring_donations").update({ user_id: uid }).eq("id", row.id); }
   }
   const order = (await (await fetch(`${squareBaseUrl()}/v2/orders/${invoice.order_id}`, { headers })).json())?.order;
   const paymentId = order?.tenders?.[0]?.payment_id;
@@ -416,11 +428,14 @@ async function syncSubscription(supabase: any, accessToken: string, sub: any) {
     if (email) patch.donor_email = email;
   }
   if (!row.user_id && email) {
-    const { data: p } = await supabase.from("profiles").select("user_id").ilike("email", email).maybeSingle();
-    if (p?.user_id) patch.user_id = p.user_id;
+    const uid = await confirmedUserByEmail(supabase, email);
+    if (uid) patch.user_id = uid;
   }
   await supabase.from("recurring_donations").update(patch).eq("id", row.id);
-  const uid = (patch.user_id ?? row.user_id) as string | null;
+  // The card is saved to an account only when the donor was signed in at checkout. A guest gift is
+  // matched to an account by the email typed at checkout, which proves nothing, so it never puts
+  // a card or a Square customer on someone's account.
+  const uid = row.user_id as string | null;
   if (uid && sub.customer_id && sub.card_id) {
     await supabase.from("donor_payment_profiles").upsert({ user_id: uid, square_customer_id: sub.customer_id }, { onConflict: "user_id", ignoreDuplicates: true });
     const c = await (await fetch(`${squareBaseUrl()}/v2/cards/${encodeURIComponent(sub.card_id)}`, { headers: sqHeaders })).json().catch(() => null);

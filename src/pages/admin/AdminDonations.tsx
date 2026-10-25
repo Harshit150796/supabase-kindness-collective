@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Download, Search, ExternalLink } from 'lucide-react';
+import { safeHref } from '@/lib/safeUrl';
 
 const PAGE = 25;
 const clean = (s: string) => s.trim().replace(/[%,()]/g, '');
@@ -115,7 +116,7 @@ function DonationDrawer({ id, onClose }: { id: string | null; onClose: () => voi
                 <div key={k as string}><dt className="text-xs text-muted-foreground">{k}</dt><dd className="break-words">{v}</dd></div>))}
             </dl>
             {x.fundraiser_id && <Button size="sm" variant="outline" asChild><Link to={`/admin/fundraisers?id=${x.fundraiser_id}&tab=coupons`}>Open fundraiser coupons</Link></Button>}
-            {x.receipt_url && <a className="inline-flex items-center gap-1 text-sm text-primary" href={x.receipt_url} target="_blank" rel="noreferrer">Provider receipt <ExternalLink className="h-3 w-3" /></a>}
+            {safeHref(x.receipt_url) && <a className="inline-flex items-center gap-1 text-sm text-primary" href={safeHref(x.receipt_url)} target="_blank" rel="noreferrer">Provider receipt <ExternalLink className="h-3 w-3" /></a>}
             <div><p className="mb-1 text-sm font-medium">Retailer split</p>
               {d.data?.brands?.length ? <ul className="divide-y divide-border text-sm">{d.data?.brands.map((b: any) => <li key={b.id} className="flex justify-between py-1.5"><span>{b.brand_name} · {b.allocation_percent}%</span><span>{usd(b.allocated_amount)}</span></li>)}</ul> : <p className="text-sm text-muted-foreground">{x.brand_partner || 'No split recorded.'}</p>}</div>
             <div><p className="mb-1 text-sm font-medium">Coupon trail</p>

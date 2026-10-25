@@ -540,7 +540,7 @@ const ApplyRecipient = () => {
     }
   };
 
-  const handleOTPVerified = async () => {
+  const handleOTPVerified = async (code: string) => {
     setIsSubmitting(true);
 
     try {
@@ -548,7 +548,8 @@ const ApplyRecipient = () => {
       const { error: signUpError } = await signUp(
         email,
         password,
-        fullName
+        fullName,
+        code
       );
 
 

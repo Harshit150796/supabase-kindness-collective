@@ -13,7 +13,7 @@ interface AuthContextType {
   loading: boolean;
   roles: AppRole[];
   rolesLoaded: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null; user?: any }>;
+  signUp: (email: string, password: string, fullName: string, code: string) => Promise<{ error: Error | null; user?: any }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   hasRole: (role: AppRole) => boolean;
@@ -100,38 +100,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [applySession, queryClient]);
 
-  // One generic account: every user can both give and receive. Roles are
-  // capabilities, not account types, so both are always written.
+  // One generic account: every user can both give and receive (the database gives every new account
+  // both roles). Accounts are created on the server, and only for an email whose sign-up code was
+  // just verified, so nobody can open an account for an address they can't read.
   const signUp = useCallback(async (
     email: string,
     password: string,
-    fullName: string
+    fullName: string,
+    code: string
   ) => {
-    const redirectUrl = `${window.location.origin}/`;
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: { full_name: fullName }
-      }
+    const { data, error } = await supabase.functions.invoke('create-account', {
+      body: { email, password, full_name: fullName, code },
     });
-
-    if (!error && data.user) {
-      await supabase.from('user_roles').insert([
-        { user_id: data.user.id, role: 'donor' as AppRole },
-        { user_id: data.user.id, role: 'recipient' as AppRole },
-      ]);
-
-      const cardNumber = `CD${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-      await supabase.from('loyalty_cards').insert({
-        user_id: data.user.id,
-        card_number: cardNumber
-      });
-    }
-
-    return { error: error as Error | null, user: data?.user };
+    if (!error) return { error: null, user: data };
+    let message = 'We could not create your account. Please try again.';
+    let reason = '';
+    try {
+      const body = await (error as { context?: Response }).context?.json();
+      if (typeof body?.error === 'string') message = body.error;
+      if (typeof body?.code === 'string') reason = body.code;
+    } catch { /* not JSON */ }
+    // Callers already route "already registered" to sign-in.
+    const err = new Error(reason === 'email_exists' ? 'User already registered' : message) as Error & { code?: string };
+    if (reason === 'email_exists') err.code = 'user_already_exists';
+    return { error: err };
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {

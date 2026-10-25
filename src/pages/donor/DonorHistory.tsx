@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Gift, DollarSign, Calendar, CreditCard, Receipt, ExternalLink, ChevronDown, ChevronUp, RefreshCw, Ticket } from 'lucide-react';
 import { format } from 'date-fns';
 import { DonationCouponsModal } from '@/components/donor/DonationCouponsModal';
+import { safeHref } from '@/lib/safeUrl';
 
 interface Donation {
   id: string;
@@ -304,7 +305,7 @@ export default function DonorHistory() {
                             size="sm"
                             asChild
                           >
-                            <a href={donation.receipt_url} target="_blank" rel="noopener noreferrer">
+                            <a href={safeHref(donation.receipt_url)} target="_blank" rel="noopener noreferrer">
                               <Receipt className="w-4 h-4 mr-1" />
                               Receipt
                               <ExternalLink className="w-3 h-3 ml-1" />

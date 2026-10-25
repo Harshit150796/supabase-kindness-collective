@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { CARD_PHOTO_BUCKET, cardStatusText, cardTypeLabel, type CardDonation, type CardStatus } from '@/lib/cardDonations';
+import { safeHref } from '@/lib/safeUrl';
 
 type Filter = CardStatus | 'all';
 const FILTERS: { value: Filter; label: string }[] = [
@@ -138,7 +139,7 @@ function CardReview({ card, canWrite, onDone }: { card: CardDonation; canWrite: 
         <dt className="text-muted-foreground">For</dt><dd>{card.fundraisers?.title ?? 'Shared pool'}</dd>
         <dt className="text-muted-foreground">From</dt><dd>{card.donor_name ?? '—'} · {card.donor_email}{card.is_anonymous ? ' (anonymous to the family)' : ''}</dd>
         <dt className="text-muted-foreground">Code</dt>
-        <dd>{secret ? <span className="font-mono break-all">{secret.code ?? '—'}{secret.pin ? ` · PIN ${secret.pin}` : ''}{secret.redemption_url ? <><br /><a href={secret.redemption_url} target="_blank" rel="noopener noreferrer" className="text-primary underline">{secret.redemption_url}</a></> : null}</span>
+        <dd>{secret ? <span className="font-mono break-all">{secret.code ?? '—'}{secret.pin ? ` · PIN ${secret.pin}` : ''}{secret.redemption_url ? <><br /><a href={safeHref(secret.redemption_url)} target="_blank" rel="noopener noreferrer" className="text-primary underline">{secret.redemption_url}</a></> : null}</span>
           : pending && canWrite ? <Button size="sm" variant="outline" onClick={reveal}><Eye aria-hidden="true" />Show code (logged)</Button> : <span className="text-muted-foreground">{card.code_hint}{pending ? '' : ' (moved or deleted after review)'}</span>}</dd>
       </dl>
       {card.terms && <div><p className="text-sm font-medium">Rules and terms</p><p className="mt-1 whitespace-pre-wrap rounded-md bg-muted/60 p-3 text-sm">{card.terms}</p></div>}

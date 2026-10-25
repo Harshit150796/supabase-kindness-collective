@@ -90,3 +90,6 @@ verify_jwt = false
 
 [functions.indexnow]
 verify_jwt = false
+
+[functions.create-account]
+verify_jwt = false

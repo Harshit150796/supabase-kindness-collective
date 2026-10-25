@@ -3,6 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Security baseline the hosting can't add as headers: no <base> hijacking, no plugins, forms post
+         only to this site, and any http:// asset is fetched over https. -->
+    <meta http-equiv="Content-Security-Policy" content="base-uri 'self'; object-src 'none'; form-action 'self'; upgrade-insecure-requests" />
     
     <!-- Default tags for crawlers that don't run JavaScript. Pages replace them through react-helmet-async
          (data-rh marks them as Helmet's own). Keep them true for any page: no canonical or og:url here,

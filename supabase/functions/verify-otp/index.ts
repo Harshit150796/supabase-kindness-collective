@@ -12,6 +12,12 @@ interface VerifyOTPRequest {
   code: string;
 }
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...corsHeaders } });
+
+// How long a verified code stays usable for creating the account (create-account consumes it).
+const VERIFIED_WINDOW_MS = 15 * 60 * 1000;
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -21,12 +27,10 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, code }: VerifyOTPRequest = await req.json();
 
-    if (!email || !code) {
-      return new Response(
-        JSON.stringify({ error: "Email and code are required" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    if (!email || !code || typeof email !== "string" || typeof code !== "string") {
+      return json({ error: "Email and code are required" }, 400);
     }
+    if (!/^\d{6}$/.test(code.trim())) return json({ error: "Invalid or expired OTP code" }, 400);
 
     // Initialize Supabase client with service role
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -34,75 +38,69 @@ const handler = async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Guessing limits: 5 wrong codes per email in 15 minutes, 30 tries an hour per network.
-    const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
     if ((await recentCount(supabase, "otp-fail", normalizedEmail, QUARTER_HOUR)) >= 5) {
-      return new Response(
-        JSON.stringify({ error: "Too many wrong codes. Wait 15 minutes, then request a new code." }),
-        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return json({ error: "Too many wrong codes. Wait 15 minutes, then request a new code." }, 429);
     }
     if (await overLimit(supabase, "otp-verify-ip", clientIp(req), 30, HOUR)) {
-      return new Response(
-        JSON.stringify({ error: "Too many attempts. Please try again later." }),
-        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return json({ error: "Too many attempts. Please try again later." }, 429);
     }
 
-    // Find the OTP record
+    // Codes are stored lower-cased; older ones may hold the address as it was typed.
+    const addresses = [...new Set([normalizedEmail, email.trim()])];
+
+    // One locked database call counts the try and then checks the code, so no code gets more than
+    // five guesses, even from requests sent all at once. A verified code stays usable for 15
+    // minutes so create-account can open the account.
+    const { data: outcome, error: checkError } = await supabase.rpc("otp_check", { _emails: addresses, _code: code.trim() });
+    if (!checkError && typeof outcome === "string") {
+      if (outcome === "ok") return json({ success: true, verified: true });
+      await recordEvent(supabase, "otp-fail", normalizedEmail);
+      if (outcome === "locked") return json({ error: "Too many wrong codes. Please request a new code." }, 429);
+      return json({ error: "Invalid or expired OTP code" }, 400);
+    }
+
+    // Before the database has otp_check: the same check in separate steps.
     const { data: otpRecord, error: fetchError } = await supabase
       .from("otp_codes")
-      .select("*")
-      .eq("email", email)
-      .eq("code", code)
+      .select("id, email")
+      .in("email", addresses)
+      .eq("code", code.trim())
       .eq("verified", false)
       .gt("expires_at", new Date().toISOString())
+      .limit(1)
       .maybeSingle();
 
     if (fetchError) {
       console.error("Error fetching OTP:", fetchError);
-      return new Response(
-        JSON.stringify({ error: "Failed to verify OTP" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return json({ error: "Failed to verify OTP" }, 500);
     }
 
     if (!otpRecord) {
       await recordEvent(supabase, "otp-fail", normalizedEmail);
-      return new Response(
-        JSON.stringify({ error: "Invalid or expired OTP code" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return json({ error: "Invalid or expired OTP code" }, 400);
     }
 
-    // Mark OTP as verified
+    // Mark it verified and keep it for a short while: create-account needs it to open the account
+    // (a verified code can't be verified again, and it is deleted once the account exists).
     const { error: updateError } = await supabase
       .from("otp_codes")
-      .update({ verified: true })
+      .update({ verified: true, expires_at: new Date(Date.now() + VERIFIED_WINDOW_MS).toISOString() })
       .eq("id", otpRecord.id);
 
     if (updateError) {
       console.error("Error updating OTP:", updateError);
-      return new Response(
-        JSON.stringify({ error: "Failed to verify OTP" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return json({ error: "Failed to verify OTP" }, 500);
     }
 
-    // Clean up - delete all OTPs for this email
-    await supabase.from("otp_codes").delete().eq("email", email);
+    // Clean up any other codes for this address
+    await supabase.from("otp_codes").delete().in("email", addresses).neq("id", otpRecord.id);
 
     console.log("OTP verified");
-
-    return new Response(
-      JSON.stringify({ success: true, verified: true }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
-  } catch (error: any) {
+    return json({ success: true, verified: true });
+  } catch (error: unknown) {
     console.error("Error in verify-otp function:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || "Failed to verify OTP" }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
+    return json({ error: "Failed to verify OTP" }, 500);
   }
 };
 
