@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { HeroSky } from '@/lib/heroBackdrop';
+import { PHONE_BREAKPOINT, type HeroSky } from '@/lib/heroBackdrop';
+import { HeroSignpost } from '@/components/landing/hero/HeroSignpost';
 import { planStarTree, starTreeMarkup, STAR_TREE_SECONDS } from '@/lib/starTree';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 
@@ -54,7 +55,9 @@ export function HeroStarTree({ play }: { play: boolean }) {
   }, [phase, layoutKey]);
   useEffect(() => { if (gentle && phase === 'play') setPhase('done'); }, [gentle, phase]);
 
-  const plan = useMemo(() => planStarTree(size[0], size[1], sky), [size, sky]);
+  // Phones get the still signpost instead (founder decision, Oct 2026): no firefly moment there.
+  const phone = size[0] > 0 && size[0] < PHONE_BREAKPOINT;
+  const plan = useMemo(() => (phone ? null : planStarTree(size[0], size[1], sky)), [phone, size, sky]);
   const markup = useMemo(() => (plan && phase !== 'wait' ? starTreeMarkup(plan, sky, phase === 'play') : ''), [plan, sky, phase]);
 
   // SMIL clocks start with the document: restart this one when the moment begins.
@@ -64,7 +67,8 @@ export function HeroStarTree({ play }: { play: boolean }) {
   }, [phase, markup]);
 
   return (
-    <div ref={ref} className="absolute inset-0 z-20 pointer-events-none" data-star-tree={plan?.layout ?? 'none'}>
+    <div ref={ref} className="absolute inset-0 z-20 pointer-events-none" data-star-tree={phone ? 'signpost' : plan?.layout ?? 'none'}>
+      {phone && <HeroSignpost width={size[0]} height={size[1]} />}
       {markup && (
         <svg ref={svgRef} width={size[0]} height={size[1]} viewBox={`0 0 ${size[0]} ${size[1]}`} className="absolute inset-0 overflow-visible" aria-hidden="true" dangerouslySetInnerHTML={{ __html: markup }} />
       )}
