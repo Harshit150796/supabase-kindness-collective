@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { HeroHeadline } from '@/components/landing/hero/HeroHeadline';
 import { AITreeLauncher } from '@/components/landing/hero/AITreeLauncher';
 import { HeroBackdrop } from '@/components/landing/hero/HeroBackdrop';
+import { HeroStarTree } from '@/components/landing/hero/HeroStarTree';
 const AITreeChat = lazy(() => import('@/components/landing/hero/AITreeChat').then(m => ({ default: m.AITreeChat })));
 import { Tree3DErrorBoundary } from '@/components/landing/Tree3DErrorBoundary';
 import { announceTreeReady } from '@/lib/treeReady';
@@ -84,6 +85,7 @@ export function HeroSection() {
 
       {/* Overlay layer — pointer-events isolated so 3D scene stays interactive */}
       <div data-hero-overlay className="absolute inset-0 pointer-events-none transition-opacity duration-700" style={{ opacity: visible ? 1 : 0 }}>
+        <HeroStarTree play={visible} />
         <HeroHeadline play={visible} />
         <AITreeLauncher onClick={() => setChatOpen(true)} hidden={chatOpen} />
         <MotionPauseButton className="absolute bottom-[max(12px,env(safe-area-inset-bottom))] left-[max(12px,env(safe-area-inset-left))] z-30 md:bottom-4 md:left-4" />
