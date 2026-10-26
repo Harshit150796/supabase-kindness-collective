@@ -95,6 +95,16 @@ export function orbX(sky: HeroSky, width: number, height: number, phone: boolean
   return Math.max(orb.at[0], Math.min(clear, inFrame));
 }
 
+/** Where the moon (or sun) sits in a hero of this size: centre and radius in px from the hero's top-left. */
+export function orbScreen(sky: HeroSky, width: number, height: number, phone: boolean): { x: number; y: number; r: number } {
+  const { position: c, forward: f, up: u, tanHalf } = heroCamera(width, height, phone);
+  const orb = ORBS[sky];
+  const rel: Vec = [orbX(sky, width, height, phone) - c[0], orb.at[1] - c[1], orb.at[2] - c[2]];
+  const z = dot(rel, f);
+  const focal = height / 2 / tanHalf;
+  return { x: width / 2 + (rel[0] / z) * focal, y: height / 2 - (dot(rel, u) / z) * focal, r: (orb.radius / z) * focal };
+}
+
 function groundBase(stops: readonly Stop[], angle: number): Vec {
   if (angle <= stops[0][0]) return [...stops[0][1]] as Vec;
   for (let i = 1; i < stops.length; i++) {
