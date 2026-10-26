@@ -95,6 +95,13 @@ export function orbX(sky: HeroSky, width: number, height: number, phone: boolean
   return Math.max(orb.at[0], Math.min(clear, inFrame));
 }
 
+/** Where the trunk meets the grass (the scene's origin), in px from the hero's top. */
+export function trunkBasePx(width: number, height: number, phone: boolean): number {
+  const { position: c, forward: f, up: u, tanHalf } = heroCamera(width, height, phone);
+  const rel: Vec = [-c[0], -c[1], -c[2]];
+  return height / 2 - (dot(rel, u) / dot(rel, f)) * (height / 2 / tanHalf);
+}
+
 /** Where the moon (or sun) sits in a hero of this size: centre and radius in px from the hero's top-left. */
 export function orbScreen(sky: HeroSky, width: number, height: number, phone: boolean): { x: number; y: number; r: number } {
   const { position: c, forward: f, up: u, tanHalf } = heroCamera(width, height, phone);
