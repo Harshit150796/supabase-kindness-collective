@@ -102,6 +102,26 @@ export function trunkBasePx(width: number, height: number, phone: boolean): numb
   return height / 2 - (dot(rel, u) / dot(rel, f)) * (height / 2 / tanHalf);
 }
 
+/**
+ * The far edge of the grass (the horizon) at a given screen x, in px from the hero's top: the
+ * highest point of the ground disc's outline seen in that column.
+ */
+export function horizonPx(x: number, width: number, height: number, phone: boolean): number {
+  const { position: c, forward: f, up: u, tanHalf } = heroCamera(width, height, phone);
+  const focal = height / 2 / tanHalf;
+  let best = height;
+  for (let n = 0; n <= 720; n++) {
+    const a = (n / 720) * Math.PI * 2;
+    const p: Vec = [GROUND_RADIUS * Math.cos(a) - c[0], GROUND_Y - c[1], GROUND_RADIUS * Math.sin(a) - c[2]];
+    const z = dot(p, f);
+    if (z <= 0) continue;
+    const sx = width / 2 + (p[0] / z) * focal;
+    const sy = height / 2 - (dot(p, u) / z) * focal;
+    if (Math.abs(sx - x) < 3 && sy < best) best = sy;
+  }
+  return best;
+}
+
 /** Where the moon (or sun) sits in a hero of this size: centre and radius in px from the hero's top-left. */
 export function orbScreen(sky: HeroSky, width: number, height: number, phone: boolean): { x: number; y: number; r: number } {
   const { position: c, forward: f, up: u, tanHalf } = heroCamera(width, height, phone);
