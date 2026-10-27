@@ -99,7 +99,7 @@ export const ApplyLayout = ({
                       onClick={() => canGo && onGoTo(n)}
                       disabled={!canGo}
                       aria-current={current ? "step" : undefined}
-                      className="group block w-full rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 disabled:cursor-default"
+                      className="group -my-3 block w-full rounded-sm py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 disabled:cursor-default sm:my-0 sm:py-0"
                     >
                       <span className="relative block h-[3px] overflow-hidden rounded-full bg-border">
                         <motion.span
