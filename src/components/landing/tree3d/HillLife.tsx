@@ -23,7 +23,8 @@ const DESKTOP = {
   flyB: [2.7, 1.3, 1.8] as Spot,
 };
 const PHONE = {
-  rabbitHop: [-2.3, 0, 3.9] as Spot,
+  // Far enough right and back that its hop never reaches the Pause button on any phone.
+  rabbitHop: [-1.9, 0, 3.0] as Spot,
   birds: [2.2, 0, 4.1] as Spot,
   flyA: [-1.4, 1.3, 3.1] as Spot,
 };

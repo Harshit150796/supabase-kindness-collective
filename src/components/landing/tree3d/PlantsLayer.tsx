@@ -5,7 +5,7 @@ import { useInteraction } from './InteractionContext';
 import { PlantSprout, type PlantArchetype } from './PlantSprout';
 import { NameMoment } from './NameMoment';
 import { MOMENT_LIFETIME_MS, MOMENT_SECONDS, nextMoment, type MomentKind } from './gardenMoments';
-import { holdSpot, releaseSpot } from './gardenSpots';
+import { holdSpot, releaseSpot, tagPlacement } from './gardenSpots';
 
 interface Plant {
   id: string;
@@ -29,7 +29,6 @@ interface Plant {
 const SAME_SPOT = 0.95;
 /** Founder request: a few plants, spread evenly (gardenSpots), never a crowd. */
 const MAX_PLANTS = { wide: 8, narrow: 6, phone: 5 };
-const ndc = new THREE.Vector3();
 
 /**
  * The garden: a landed coupon grows a plant where it fell and plays its donor's name moment,
@@ -47,6 +46,7 @@ export function PlantsLayer({ cap = 40, isMobile = false, gentle = false }: { ca
   const lastMomentRef = useRef(-Infinity);
   const camera = useThree((state) => state.camera);
   const width = useThree((state) => state.size.width);
+  const height = useThree((state) => state.size.height);
   const limit = Math.min(cap, isMobile ? MAX_PLANTS.phone : width < 1100 ? MAX_PLANTS.narrow : MAX_PLANTS.wide);
 
   useEffect(() => () => {
@@ -86,10 +86,8 @@ export function PlantsLayer({ cap = 40, isMobile = false, gentle = false }: { ca
     }
 
     const id = `${plantEvent.id}:${plantEvent.uid}`;
-    const side: 1 | -1 = px >= 0 ? 1 : -1;
-    ndc.set(px, 0, pz).project(camera);
-    const edge = Math.abs(ndc.x) > 0.42 ? (ndc.x > 0 ? 'r' : 'l') : null;
-    const tagSide: 1 | -1 = edge ? (edge === 'r' ? -1 : 1) : side;
+    // Away from the trunk, inward near the screen's edges; on phones also clear of the signpost.
+    const { side, tagSide, edge } = tagPlacement(camera, { x: px, z: pz }, isMobile ? { width, height } : null);
     holdSpot(`plant:${id}`, { x: px, z: pz });
     const next: Plant = {
       id,
@@ -133,7 +131,7 @@ export function PlantsLayer({ cap = 40, isMobile = false, gentle = false }: { ca
       setPlants((prev) => prev.map((p) => (p.id === id && p.moment ? { ...p, moment: null } : p)));
     }, MOMENT_LIFETIME_MS);
     timersRef.current.add(timer);
-  }, [plantEvent, limit, camera]);
+  }, [plantEvent, limit, camera, isMobile, width, height]);
 
   const handleFaded = (uid: string) => {
     releaseSpot(`plant:${uid}`);

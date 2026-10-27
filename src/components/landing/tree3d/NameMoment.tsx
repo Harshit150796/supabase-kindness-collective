@@ -77,7 +77,7 @@ export function NameMoment({ kind, donorName, amount, side, tagSide = side, edge
   return (
     <Html center distanceFactor={distanceFactor} zIndexRange={[20, 0]} pointerEvents="none" style={{ pointerEvents: 'none' }}>
       <div
-        className={`gm gm-${kind} gm-side-${tagSide > 0 ? 'r' : 'l'}${edge ? ` gm-edge-${edge}` : ''}${still ? ' gm-still' : ''}`}
+        className={`gm gm-${kind} gm-side-${tagSide > 0 ? 'r' : 'l'}${edge ? ` gm-edge-${edge}` : ''}${still ? ' gm-still' : ''}${isMobile ? ' gm-phone' : ''}`}
         style={{ ['--side' as string]: tagSide, ['--toward' as string]: toward } as CSSProperties}
         aria-hidden="true"
       >

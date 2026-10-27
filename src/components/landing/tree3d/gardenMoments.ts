@@ -39,5 +39,10 @@ export function nextMoment(previous: MomentKind): MomentKind {
  */
 export function useGardenDistanceFactor(isMobile: boolean): number {
   const height = useThree((state) => state.size.height);
+  return gardenDistanceFactor(height, isMobile);
+}
+
+/** The same factor outside React (gardenSpots measures where a name tag will land). */
+export function gardenDistanceFactor(height: number, isMobile: boolean): number {
   return isMobile ? Math.max((height / 78) * 1.35, 8.7) : Math.max(height / 78, 5.8);
 }

@@ -29,6 +29,8 @@ interface Props {
 }
 
 const HANG_DROP = 0.34;
+/** Phones: coupons at 86% so neighbouring marks overlap less on the small canopy. */
+const PHONE_LOGO_SCALE = 0.86;
 /** The logo shivers on its branch this long before it lets go. */
 const LOOSEN_SECONDS = 0.5;
 /** It rests on the grass, then sinks and fades, before a new brand buds on the branch. */
@@ -56,6 +58,7 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
   const groupRef = useRef<THREE.Group>(null);
   const canvas = useThree((root) => root.gl.domElement);
   const camera = useThree((root) => root.camera);
+  const canvasSize = useThree((root) => root.size);
   const velocityRef = useRef({ y: 0, x: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 });
   const posRef = useRef(new THREE.Vector3());
   const rotRef = useRef(new THREE.Euler());
@@ -86,8 +89,9 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
   useEffect(() => onLogoSettled(data.logo, () => setLogoRevision((n) => n + 1)), [data.logo]);
   const logoEntry = getLogo(data.logo);
   const dimensions = logoSize(logoEntry.aspect, logoEntry.alphaCoverage, data.mark);
-  // One shared scale drives hanging, falling, landed, and regrowing artwork.
-  const opticalScale = (data.scale ?? 1) * data.sizeFactor;
+  // One shared scale drives hanging, falling, landed, and regrowing artwork. Phones draw the
+  // coupons a little smaller so the 18 marks crowd each other less on a small canopy (founder, Oct 2026).
+  const opticalScale = (data.scale ?? 1) * data.sizeFactor * (isMobile ? PHONE_LOGO_SCALE : 1);
 
   // Stable scatter target across the grass, deterministic per coupon slot.
   // Phones frame the tree much tighter, so coupons land in a small ring around
@@ -117,9 +121,10 @@ export function CouponFruit({ branch, data, state, groundY, index, onLanded, onR
       caughtRef.current = false;
       plantSpawnedRef.current = false;
       launchedRef.current = false;
-      targetRef.current = pickGardenSpot(camera, fallKey) ?? scatterTarget;
+      // Phones also keep the plant and its name tag clear of the signpost and the Pause button.
+      targetRef.current = pickGardenSpot(camera, fallKey, isMobile ? { width: canvasSize.width, height: canvasSize.height } : null) ?? scatterTarget;
     }
-  }, [state.phase, scatterTarget, camera, fallKey]);
+  }, [state.phase, scatterTarget, camera, fallKey, isMobile, canvasSize.width, canvasSize.height]);
 
   const launch = (t: number) => {
     launchedRef.current = true;

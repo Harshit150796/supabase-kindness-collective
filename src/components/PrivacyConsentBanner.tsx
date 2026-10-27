@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
@@ -8,6 +8,19 @@ export const COOKIE_SETTINGS_EVENT = 'cd:cookie-settings';
 
 export function PrivacyConsentBanner() {
   const [visible, setVisible] = useState(false);
+  const barRef = useRef<HTMLDivElement>(null);
+
+  // While the bar is up, the page gets room below its last line so nothing ends up hidden under it.
+  useEffect(() => {
+    const el = barRef.current;
+    if (!visible || !el) return;
+    const body = document.body;
+    const make = () => body.style.setProperty('padding-bottom', `${Math.ceil(el.getBoundingClientRect().height) + 16}px`);
+    make();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(make) : null;
+    ro?.observe(el);
+    return () => { ro?.disconnect(); body.style.removeProperty('padding-bottom'); };
+  }, [visible]);
 
   useEffect(() => {
     const reopen = () => setVisible(true);
@@ -48,6 +61,7 @@ export function PrivacyConsentBanner() {
 
   return (
     <div
+      ref={barRef}
       role="dialog"
       aria-live="polite"
       aria-label="Privacy information"

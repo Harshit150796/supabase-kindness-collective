@@ -716,6 +716,7 @@ html[data-sky=night] .hero-stage:not([data-scene]) .hero-kicker-word{color:hsl(v
    the halves breathe apart and back while the heart beats. They are never hidden once shown. */
 :root{--tva-green:123 70% 58%;--tva-deep:123 55% 14%;--tva-glow:123 90% 70%;--hero-seam:#020413}
 html[data-sky=day]{--hero-seam:#6A9FD9}
+/* The words slide inside their own slot (clipped on the left), so the one leaving never crosses "CouponDonation is". */
 /* Placement: centred, resting on the canopy. HeroHeadline writes the canopy's top (--canopy, from the
    tree camera) so the buttons end 28px (phones) / 36px (wider) above it at every hero size; sizes are fixed, never scaled. */
 .hero-headline{position:absolute;inset:0;z-index:30;pointer-events:none}
@@ -725,7 +726,7 @@ html[data-sky=day]{--hero-seam:#6A9FD9}
 .hero-kicker{display:flex;align-items:baseline;justify-content:center;gap:6px;margin:0 0 8px;text-shadow:0 2px 12px rgb(0 0 0 / .18)}
 html[data-sky=day] .hero-kicker{text-shadow:none}
 .hero-kicker-lead{font-size:12.5px;line-height:1.2;letter-spacing:.01em;color:hsl(var(--foreground) / .75)}
-.hero-kicker-word{display:inline-grid;justify-items:start;font-size:18px;line-height:1;color:hsl(var(--primary))}
+.hero-kicker-word{display:inline-grid;justify-items:start;font-size:18px;line-height:1;color:hsl(var(--primary));clip-path:inset(-.6em -.4em -.6em 0)}
 @media (min-width:768px){.hero-kicker{gap:7px}.hero-kicker-lead{font-size:13px}.hero-kicker-word{font-size:20px}}
 .hero-kicker-word>span{grid-area:1/1;white-space:nowrap;transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1),color 1s ease}
 .hero-kicker-word>[data-state=next]{opacity:0;transform:translateX(18px)}
