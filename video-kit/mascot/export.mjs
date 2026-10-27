@@ -13,7 +13,9 @@ page.on('pageerror', (e) => console.log('pageerror', e.message));
 await page.goto(`${ORIGIN}/video-kit/mascot/preview.html`, { waitUntil: 'load' });
 await page.waitForFunction(() => window.ready === true);
 fs.writeFileSync(path.join(here, 'coupon-tree.svg'), (await page.evaluate(() => window.masterSvg())) + '\n');
+await (await page.$('#sheet')).screenshot({ path: path.join(here, 'poses.png') }); // the reference sheet keeps its paper background
+// the master art is transparent: the page's own background (the app's CSS sets one) has to go too, not just the default white
+await page.addStyleTag({ content: 'html,body,#solo{background:transparent !important}' });
 await (await page.$('#solo')).screenshot({ path: path.join(here, 'coupon-tree.png'), omitBackground: true });
-await (await page.$('#sheet')).screenshot({ path: path.join(here, 'poses.png') });
 await browser.close();
 console.log('wrote coupon-tree.svg, coupon-tree.png, poses.png');
