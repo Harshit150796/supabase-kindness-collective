@@ -58,6 +58,17 @@ An iris opens on the tree by daylight. The site's deep-green CTA wipes up over i
 - **Review card:** the tip picker shows the site's default 15% selection, but its "Most donors leave about 15%" sentence is trimmed, and the "100%" band hides the tip column for the same reason.
 - **Store logos** appear as the site shows them. The site footer's disclaimer goes in the end card, in full (Footer.tsx). The homepage marquee, which carries Postmates, is kept below the frame (tree rules).
 
+## Mascot: Coupon, the AI tree
+Coupon is the site's own guide ("Talk to Coupon, the AI tree") and appears in every CouponDonation video. It comes from the shared kit in `video-kit/mascot` (never redrawn).
+- **Opening:** small in the corner from the first frame (so it is on the poster). It cheers when "All of it." lands.
+- **The tree:** waves beside the live 3D tree and says: "Hi, I'm Coupon, the AI tree. Let me show you around."
+- **Donate:** watches the pointer from the left of the card and cheers as the ledger splits the gift. It points at the summary: "All $50 goes to families." (the review card's own words).
+- **We track the money:** walks the trail a step behind the coupon, then waves at "Use".
+- **Free to apply:** waves from the corner and ducks out before the match cut.
+- **End card:** waves beside the logo lockup.
+
+Coupon never covers real UI copy, the hook line or the call to action. Each entrance gets a two-note pop in the score's key, and each speech bubble gets a soft tick.
+
 ## Visual identity (from the codebase)
 - **Colours:**
   - Logo green `hsl(123 46% 34%)` is primary.

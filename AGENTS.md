@@ -11,6 +11,7 @@
 - Motion is full on every device; the OS reduced-motion setting is not consulted (founder decision lives in memory). The visitor's own Pause animations control is the only exception.
 - Public photos stay local; without people-photo consent use coupon/receipt/trace visuals. Only transform managed Supabase hosts or local variants (contain, never crop at delivery).
 - Module-level Intl formatters only (toLocale* per render is slow).
+- Every video (launch, social, explainer, comic) features the mascot Coupon, the AI tree (the site's "Talk to Coupon" guide): reuse `video-kit/mascot` (module and master art, see its README), never redraw it; its lines follow the claim rules below.
 
 ## Data, Privacy & Dispatch Rules
 - Messages, comments, updates, invites and blocks are written only by the `send-message` and `fundraiser-actions` edge functions after server moderation (`_shared/moderation.ts`); clients have read-only access, so safety rules hold server-side.

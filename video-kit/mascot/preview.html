@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Coupon, the AI tree: pose sheet</title>
+<!-- the app's fonts and tokens (served by the repo's Vite dev server): npx vite, then open /video-kit/mascot/preview.html -->
+<script type="module">import '/src/index.css';</script>
+<style>
+  html, body { margin: 0; background: hsl(120 8% 98.5%); font-family: 'Instrument Sans', system-ui, sans-serif; }
+  #sheet { position: relative; width: 1920px; height: 620px; }
+  #solo { position: relative; width: 680px; height: 820px; }
+  .lbl { position: absolute; top: 560px; width: 320px; text-align: center; font-size: 22px; color: hsl(123 20% 7%); }
+</style>
+</head>
+<body>
+<div id="sheet"></div>
+<div id="solo"></div>
+<script type="module">
+import { couponTree, setCouponTree, WAVE, MASTER } from './coupon-tree.js';
+const poses = [
+  ['Resting', { armL: 40, armR: 40, gaze: [0, 0.1] }],
+  ['Wave (signature)', WAVE(0.17)],
+  ['Master art', MASTER],
+  ['Pointing', { armL: 40, armR: 118, gaze: [0.8, 0], brows: 0.3 }],
+  ['Cheer', { armL: 150, armR: 150, mouth: 0.7, brows: 0.4 }],
+  ['Talking', { armL: 40, armR: 95, mouth: 0.6, brows: 0.5, gaze: [-0.5, 0] }],
+];
+const sheet = document.getElementById('sheet');
+poses.forEach(([name, s], i) => {
+  const m = couponTree(sheet);
+  setCouponTree(m, { x: 160 + i * 320, y: 540, scale: 1.25 * 0.95, ...s });
+  const l = document.createElement('div'); l.className = 'lbl'; l.style.left = i * 320 + 'px'; l.textContent = name; sheet.appendChild(l);
+});
+// the master art: one waving Coupon on a transparent 680 x 820 box (2x; the canopy rises past the art box)
+const solo = couponTree(document.getElementById('solo'));
+setCouponTree(solo, { x: 340, y: 796, scale: 2, ...MASTER });
+await document.fonts.ready;
+window.masterSvg = () => {
+  const svg = solo.svg.cloneNode(true);
+  svg.removeAttribute('style'); svg.removeAttribute('class');
+  svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg'); svg.setAttribute('viewBox', '-10 -22 340 410'); svg.setAttribute('width', '340'); svg.setAttribute('height', '410');
+  return svg.outerHTML;
+};
+window.ready = true;
+</script>
+</body>
+</html>
