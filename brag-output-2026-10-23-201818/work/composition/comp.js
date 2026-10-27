@@ -3,6 +3,8 @@
 // from the running site (./markup/*.frag), and frame sequences of the homepage opening and live 3D
 // hero captured deterministically from the dev server (../captures/hero/*).
 // 100 BPM: beat 0.6 s, bar 2.4 s; every scene cut sits on a bar line.
+// Coupon, the AI tree (the site's own "Talk to Coupon" guide), is the film's mascot: /video-kit/mascot.
+import { couponTree, setCouponTree, WAVE, talk, blinkAt } from '/video-kit/mascot/coupon-tree.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -45,6 +47,9 @@ const T = {
   secHead: 62.45, badges: [63.1, 63.5, 63.9],
   ctaHead: 69.95, ctaBtns: 71.0,
   endLock: 74.25, endUrl: 75.0, endFine: 75.6,
+  // Coupon: in the corner of the opening (cheers on "All of it."), hello by the 3D tree, watches the donation, walks the money trail, waves at "Free to apply." and the end card
+  cp: { hookCheer: [2.45, 3.75], tree: 10.4, treeSay: [10.9, 14.3], donate: 24.7, cheer: [29.0, 30.1], point: 34.0, donSay: [34.1, 35.55], donOut: 35.55,
+    trail: 46.35, free: 59.2, freeOut: 62.0, end: 74.95 },
 };
 window.compT = { SC, T, DUR, BEAT, BAR };
 
@@ -358,6 +363,85 @@ function scrollPair(outEl, inEl, t, t0, dur = 0.55) {
 }
 const wipeUp = (el, t, t0, dur = 0.5) => { const p = k(t, t0, t0 + dur, E.inOutQuart); el.style.clipPath = p < 1 ? `inset(${((1 - p) * 100).toFixed(2)}% 0 0 0)` : 'none'; return p; };
 
+// the journey coupon's x (in the journey row) at time t: it hops stop to stop
+function trailX(t) {
+  const pos = U.jpos; let seg = 0, f = 0;
+  for (let i = 0; i < 4; i++) if (t >= T.stops[i] - 0.45) { seg = i; f = k(t, T.stops[i] - 0.45, T.stops[i], E.inOutCubic); }
+  const a = pos[Math.max(0, seg - 1)], b = pos[seg];
+  return seg === 0 ? b.x - 60 * (1 - f) : lerp(a.x, b.x, f);
+}
+
+// ------------------------------------------------------------------ Coupon, the mascot
+// one Coupon per scene it appears in, living inside that scene's layer so it moves and clips with it
+function buildCoupons() {
+  const mk = (parent) => { const w = div('abs cp-host', parent); w.style.left = '0'; w.style.top = '0'; w.style.zIndex = 20; return couponTree(w); };
+  U.cp = { hook: mk(L.hook), tree: mk(L.tree), donate: mk(L.donate), trail: mk(L.track), free: mk(U.freeCard), end: mk(L.end) };
+  const bubble = (parent, html, tail) => { const b = div(`cp-bubble sans tail-${tail}`, parent, html); b.style.zIndex = 21; return b; };
+  U.cpSay = {
+    tree: bubble(L.tree, "Hi, I'm Coupon, the AI tree.<br>Let me show you around.", 'right'),
+    donate: bubble(L.donate, 'All $50 goes<br>to families.', 'left'),
+  };
+  box(U.cpSay.tree, 1395, 452); box(U.cpSay.donate, 104, 646);
+}
+// pop in (scale from the feet, small landing squash), pop out
+function cpPresence(t, tin, tout = 1e9) {
+  const pin = k(t, tin, tin + 0.5, E.outBack), pout = k(t, tout, tout + 0.3, E.inCubic);
+  return { s: pin * (1 - pout), squash: Math.max(0, 1 - Math.abs(t - tin - 0.32) / 0.12) * 0.45 };
+}
+const gazeAt = (x, y, s, tx, ty) => [cl((tx - x) / 260 + 0.5) * 2 - 1, cl((ty - (y - 252 * s)) / 260 + 0.5) * 2 - 1];
+function sayBubble(el, t, [a, b]) {
+  const p = k(t, a, a + 0.35, E.outBack), q = k(t, b - 0.25, b, E.inCubic), v = p * (1 - q);
+  vis(el, v > 0.001); el.style.transform = `scale(${v.toFixed(4)})`;
+}
+function poseCoupons(t) {
+  const C = T.cp, idle = (seed) => ({ sway: Math.sin(t * 2.1 + seed) * 2.5, blink: blinkAt(t, seed) });
+  // opening: already on screen at frame 0, below the line; cheers when "All of it." lands
+  if (L.hook.style.display !== 'none') {
+    const cheer = t >= C.hookCheer[0] && t < C.hookCheer[1];
+    setCouponTree(U.cp.hook, { x: 1715, y: 1052, scale: 0.6, squash: Math.max(0, 1 - Math.abs(t - C.hookCheer[0] - 0.05) / 0.12) * 0.35, ...idle(0),
+      ...(cheer ? { armL: 150 + Math.sin(t * 11) * 10, armR: 150 + Math.sin(t * 11 + 1) * 10, mouth: 0.6, brows: 0.4 } : WAVE(t)), gaze: [-0.8, -0.7] });
+  }
+  // tree: hello beside the live 3D tree
+  if (L.tree.style.display !== 'none') {
+    const pr = cpPresence(t, C.tree), x = 1730, y = 1012, s = 0.85 * pr.s;
+    vis(U.cp.tree.svg, pr.s > 0.001);
+    setCouponTree(U.cp.tree, { x, y, scale: s, squash: pr.squash, ...idle(1), ...WAVE(t), mouth: talk(t, C.treeSay[0] + 0.1, C.treeSay[0] + 2.6, 7.5), brows: 0.3, gaze: [-0.35, -0.2] });
+    sayBubble(U.cpSay.tree, t, C.treeSay);
+  }
+  // donate: watches the pointer, cheers as the ledger splits the gift, then points at the summary
+  if (L.donate.style.display !== 'none') {
+    const pr = cpPresence(t, C.donate, C.donOut), x = 190, y = 1066, s = 0.68 * pr.s;
+    vis(U.cp.donate.svg, pr.s > 0.001);
+    const cheer = t >= C.cheer[0] && t < C.cheer[1], point = t >= C.point;
+    const tap = [...T.taps, T.toAmount, T.amt50, T.toReview].reduce((m, tt) => Math.max(m, 1 - Math.abs(t - tt - 0.08) / 0.12), 0);
+    const look = U.cursorXY ? gazeAt(x, y, 0.68, U.cursorXY.x, U.cursorXY.y) : [0.9, 0.1];
+    setCouponTree(U.cp.donate, { x, y, scale: s, squash: pr.squash + Math.max(0, tap) * 0.25, ...idle(2), gaze: look, smile: 1,
+      armL: cheer ? 150 + Math.sin(t * 11) * 10 : 40, armR: cheer ? 150 + Math.sin(t * 11 + 1) * 10 : point ? 112 : 40,
+      mouth: cheer ? 0.6 : talk(t, C.donSay[0] + 0.1, C.donSay[0] + 1.3, 7.5), brows: cheer || point ? 0.4 : 0.15 });
+    sayBubble(U.cpSay.donate, t, C.donSay);
+  }
+  // journey: walks the trail a step behind the coupon
+  if (L.track.style.display !== 'none' && U.jpos) {
+    const pr = cpPresence(t, C.trail), lag = 0.3, s = 0.45 * pr.s;
+    const xa = 180 + trailX(t - lag) - 40, xb = 180 + trailX(t - lag - 1 / 60) - 40, moving = Math.abs(xa - xb) > 0.4;
+    vis(U.cp.trail.svg, pr.s > 0.001);
+    setCouponTree(U.cp.trail, { x: xa, y: 1070, scale: s, squash: pr.squash, ...idle(3), gaze: [0.6, -0.8], smile: 1,
+      legPhase: moving ? t * 22 : 0, armL: moving ? 60 : 40, armR: moving ? 60 : t > T.stops[3] + 0.3 ? 138 + Math.sin(t * 9) * 12 : 40, rot: moving ? 4 : 0 });
+  }
+  // "Free to apply.": waves from the corner, ducks out before the match cut
+  if (U.freeCard.style.display !== 'none') {
+    const pr = cpPresence(t, C.free, C.freeOut);
+    vis(U.cp.free.svg, pr.s > 0.001);
+    setCouponTree(U.cp.free, { x: 1690, y: 1040, scale: 0.95 * pr.s, squash: pr.squash, ...idle(4), ...WAVE(t), gaze: [-0.5, -0.1] });
+  }
+  // end card: waves beside the lockup
+  if (L.end.style.display !== 'none') {
+    const pr = cpPresence(t, C.end);
+    vis(U.cp.end.svg, pr.s > 0.001);
+    setCouponTree(U.cp.end, { x: U.endCpX || 1500, y: 712, scale: 0.85 * pr.s, squash: pr.squash, ...idle(5), ...WAVE(t), gaze: [-0.3, 0.1] });
+  }
+}
+
 // ------------------------------------------------------------------ cursor plan
 const center = (el, fx = 0.5, fy = 0.55) => { const r = el.getBoundingClientRect(); return r.width ? { x: r.left + r.width * fx, y: r.top + r.height * fy } : null; };
 let PATH = [], TAPS = [];
@@ -386,6 +470,7 @@ const CURSOR_ON = [[24.6, 31.95], [53.2, 57.5]];
 function setCursor(t) {
   const on = CURSOR_ON.find(([a, b]) => t >= a && t < b);
   vis(cursor, !!on);
+  U.cursorXY = null;
   if (!on) return;
   let p = PATH[0].at();
   for (let i = 0; i < PATH.length - 1; i++) {
@@ -395,6 +480,7 @@ function setCursor(t) {
   }
   const tp = TAPS.find((tt) => t >= tt && t < tt + 0.45);
   const pr = TAPS.reduce((m, tt) => Math.max(m, 1 - Math.abs(t - tt) / 0.08), 0);
+  U.cursorXY = p;
   cursor.style.transform = `translate(${(p.x - 3).toFixed(1)}px, ${(p.y - 2).toFixed(1)}px) scale(${(1 - 0.12 * Math.max(0, pr)).toFixed(3)})`;
   const ring = $('.ring', cursor);
   if (tp != null) { const q = k(t, tp, tp + 0.45, E.outCubic); ring.style.opacity = (1 - q) * 0.85; ring.style.transform = `scale(${lerp(0.4, 1.6, q)})`; } else ring.style.opacity = 0;
@@ -551,10 +637,8 @@ function renderFrame(t) {
     const icons = U.jsteps.map((st) => $('[data-journey-step]', st));
     const hr = U.jhost.getBoundingClientRect();
     const pos = icons.map((ic) => { const r = ic.getBoundingClientRect(); return { x: r.right - hr.left + 40, y: r.top - hr.top + r.height / 2 }; });
-    let seg = 0, f = 0;
-    for (let i = 0; i < 4; i++) if (t >= T.stops[i] - 0.45) { seg = i; f = k(t, T.stops[i] - 0.45, T.stops[i], E.inOutCubic); }
-    const a = pos[Math.max(0, seg - 1)], b = pos[seg];
-    const x = seg === 0 ? b.x - 60 * (1 - f) : lerp(a.x, b.x, f), y = b.y;
+    U.jpos = pos;
+    const x = trailX(t), y = pos[0].y;
     box(U.jcoupon, x - 22, y - 15);
     U.jcoupon.style.opacity = k(t, T.stops[0] - 0.4, T.stops[0] - 0.1);
   }
@@ -639,19 +723,23 @@ function renderFrame(t) {
   if (scene('end', t, 0.4, 0)) {
     wipeUp(L.end, t, 74.05, 0.45);
     const lp = k(t, T.endLock, T.endLock + 0.8, E.site);
-    const lw = U.lock.offsetWidth || 900;
-    U.lock.style.left = ((1920 - lw) / 2).toFixed(1) + 'px'; U.lock.style.top = '380px';
+    const lw = U.lock.offsetWidth || 900, cpw = 320 * 0.85, gap = 70, x0 = (1920 - (lw + gap + cpw)) / 2;
+    U.lock.style.left = x0.toFixed(1) + 'px'; U.lock.style.top = '380px';
+    U.url.style.left = x0.toFixed(1) + 'px'; U.url.style.right = 'auto'; U.url.style.width = lw + 'px';
+    U.endCpX = x0 + lw + gap + cpw / 2;
     U.lock.style.opacity = lp; U.lock.style.transform = `translateY(${((1 - lp) * 30).toFixed(1)}px)`;
     fadeUp(U.url, t, T.endUrl, 0.6, 16);
     U.fine.style.opacity = k(t, T.endFine, T.endFine + 0.6);
   }
   setCursor(t);
+  poseCoupons(t);
 }
 
 // ------------------------------------------------------------------ boot
 async function init() {
   buildHook(); buildBrand(); buildTree(); buildDay();
   await buildGive(); await buildDonate(); await buildEvery(); await buildTrack(); await buildApply(); await buildSecure(); await buildCta(); buildEnd();
+  buildCoupons();
   cursorPlan();
   await document.fonts.load('400 100px "Instrument Serif"');
   await document.fonts.load('600 40px "Instrument Sans"');

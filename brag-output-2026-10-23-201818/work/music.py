@@ -234,6 +234,17 @@ for m in (74, 78, 81, 86):
     s = bell(m, 4.5, 0.4); fx.add(s, bt(31), pan=(m - 80) / 14); rev.add(s, bt(31), 0.7)
 fx.add(boom(0.55), bt(31))
 s = bell(90, 3.2, 0.28); fx.add(s, T['endUrl']); rev.add(s, T['endUrl'], 0.7)
+# Coupon, the mascot: a two-note pop as it appears, a soft tick as each speech bubble opens (all in D major)
+def pop(tt, m=93, v=0.8, pan=0.3):
+    for dt, mm, g in [(0.0, m, 0.22), (0.06, m + 7, 0.16)]:
+        s = mallet(mm, 0.45, g * v); fx.add(s, tt + dt, pan=pan); rev.add(s, tt + dt, 0.4)
+    fx.add(click(m + 12, 0.4 * v), tt, pan=pan)
+CP = T['cp']
+for key, m, pan in [('tree', 93, 0.5), ('donate', 90, -0.5), ('trail', 88, -0.3), ('free', 93, 0.5), ('end', 98, 0.3)]:
+    pop(CP[key] + 0.05, m, 0.8, pan)
+s = mallet(98, 0.6, 0.18); fx.add(s, CP['hookCheer'][0] + 0.05, pan=0.5); rev.add(s, CP['hookCheer'][0] + 0.05, 0.5)   # cheers on "All of it."
+for key, m in [('treeSay', 86), ('donSay', 88)]:
+    tick(CP[key][0] + 0.05, m, 0.4)
 
 # ------------------------------------------------------------------ mix
 t = np.arange(N) / SR

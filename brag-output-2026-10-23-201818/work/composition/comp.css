@@ -37,3 +37,9 @@ canvas.seq { position: absolute; inset: 0; width: 1920px; height: 1080px; }
 .lockup .tag { font-family: 'Instrument Sans', sans-serif; font-size: 34px; color: #576b58; margin-top: 10px; }
 .fine { position: absolute; left: 0; right: 0; text-align: center; font-size: 22px; line-height: 1.5; color: hsl(123 10% 38%); }
 .marker { position: absolute; height: 6px; border-radius: 3px; background: hsl(123 46% 34%); transform-origin: 0 50%; }
+
+/* Coupon's speech bubble: white card, ink hairline, tail toward Coupon (no glow) */
+.cp-bubble { position: absolute; display: none; padding: 18px 26px; background: #fff; border: 3px solid hsl(123 20% 7%); border-radius: 26px; font-size: 32px; font-weight: 600; line-height: 1.25; color: hsl(123 20% 7%); white-space: nowrap; box-shadow: 0 6px 0 rgb(0 0 0 / .12); }
+.cp-bubble::after { content: ''; position: absolute; bottom: -15px; width: 26px; height: 26px; background: #fff; border-right: 3px solid hsl(123 20% 7%); border-bottom: 3px solid hsl(123 20% 7%); transform: rotate(45deg); }
+.cp-bubble.tail-right { transform-origin: 88% 100%; } .cp-bubble.tail-right::after { right: 64px; }
+.cp-bubble.tail-left { transform-origin: 18% 100%; } .cp-bubble.tail-left::after { left: 48px; }
