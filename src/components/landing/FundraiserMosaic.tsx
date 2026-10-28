@@ -105,7 +105,7 @@ function MosaicTile({ fundraiser, kind, place }: { fundraiser: Fundraiser } & Sl
   );
 }
 
-export function FundraiserMosaic({ fundraisers, total }: { fundraisers: Fundraiser[]; total?: number }) {
+export function FundraiserMosaic({ fundraisers }: { fundraisers: Fundraiser[] }) {
   const strip = useRef<HTMLDivElement>(null);
   const [bar, setBar] = useState({ width: 100, left: 0 });
   const measure = useCallback(() => {
@@ -144,7 +144,7 @@ export function FundraiserMosaic({ fundraisers, total }: { fundraisers: Fundrais
         <div className="flex w-[150px] shrink-0 snap-start flex-col gap-2">
           <Link to="/stories" className="flex min-h-[168px] flex-1 flex-col justify-between rounded-md bg-primary/10 p-3.5 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
             <span className="font-display text-[23px] leading-[1.05]">Every open fundraiser in one place</span>
-            <span className="text-sm font-semibold text-primary">See all {total ?? fundraisers.length}</span>
+            <span className="text-sm font-semibold text-primary">See all fundraisers</span>
           </Link>
           <Link to="/apply" className="flex h-[148px] flex-col justify-between rounded-md border border-border p-3.5 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
             <span className="font-display text-[21px] leading-[1.05]">Need help yourself?</span>

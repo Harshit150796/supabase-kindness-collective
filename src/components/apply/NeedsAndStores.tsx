@@ -1,26 +1,17 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import {
-  Baby, Car, Check, GraduationCap, HeartPulse, Package, Search, Shirt, ShoppingCart, Siren, UtensilsCrossed, Zap, type LucideIcon,
-} from 'lucide-react';
+import { Check, Search } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { HELP_NEEDS, MAX_PREFERRED_STORES, needById, storesByNeed } from '@/lib/helpNeeds';
+import { HELP_NEEDS, MAX_PREFERRED_STORES, storesByNeed } from '@/lib/helpNeeds';
 import { brandList } from '@/data/brandLogos';
 import { BrandSelectorModal } from '@/components/landing/BrandSelectorModal';
 import { RetailerLogo } from '@/components/landing/donate/GiftLedger';
 import { findRetailer, retailerId } from '@/components/landing/donate/retailers';
 import { SPRING } from '@/components/landing/donate/tokens';
+import { NeedIcon } from '@/components/needs/NeedIcon';
 
-const ICONS: Record<string, LucideIcon> = {
-  food: ShoppingCart, meals: UtensilsCrossed, healthcare: HeartPulse, childcare: Baby, clothing: Shirt,
-  education: GraduationCap, transportation: Car, utilities: Zap, essentials: Package, emergency: Siren,
-};
-
-export function NeedIcon({ id, className }: { id: string; className?: string }) {
-  const Icon = ICONS[needById(id)?.id ?? ''] ?? Package;
-  return <Icon className={className} aria-hidden="true" strokeWidth={1.75} />;
-}
+export { NeedIcon };
 
 const POP = { type: 'spring', stiffness: 640, damping: 30 } as const;
 
