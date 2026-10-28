@@ -23,13 +23,13 @@ const LINES: [string, string[]][] = [
   ['left', ['S2', 'S3', 'S4', 'S5', 'S6', 'S7']], ['right', ['S2', 'S11', 'S10', 'S9', 'S8', 'S7']],
 ];
 /** Seconds from the start: the stars light from the root upward, then the lines draw. */
-const LIGHT: Record<string, number> = { S2: 4.1, S12: 4.38, S13: 4.38, S3: 4.66, S11: 4.66, S4: 4.94, S10: 4.94, S5: 5.22, S9: 5.22, S6: 5.5, S8: 5.5, S7: 5.78 };
-const DRAW: Record<string, [number, number]> = { trunk: [5.9, 6.4], b1: [6.3, 6.9], b2: [6.3, 6.9], left: [6.8, 8.2], right: [6.8, 8.2] };
-const LEAD: [number, number] = [0.3, 4.0];
-const WRITE: [number, number] = [8.3, 10.6];
-const CAPTION_AT = 10.6;
+const LIGHT: Record<string, number> = { S2: 2.0, S12: 2.15, S13: 2.15, S3: 2.3, S11: 2.3, S4: 2.45, S10: 2.45, S5: 2.6, S9: 2.6, S6: 2.75, S8: 2.75, S7: 2.9 };
+const DRAW: Record<string, [number, number]> = { trunk: [2.95, 3.2], b1: [3.15, 3.45], b2: [3.15, 3.45], left: [3.4, 4.1], right: [3.4, 4.1] };
+const LEAD: [number, number] = [0.2, 1.9];
+const WRITE: [number, number] = [4.15, 5.2];
+const CAPTION_AT = 5.2;
 /** Total length of the moment in seconds (the caption is in by then). */
-export const STAR_TREE_SECONDS = 11.4;
+export const STAR_TREE_SECONDS = 5.6;
 
 /** Caveat Bold advance of "a tree for every $10", in em (public/fonts/caveat-700-tree.woff2). */
 const LINE_EM = 6.845;
@@ -39,7 +39,7 @@ const CAPTION = 'We plant one for every $10 you give.';
 const REF_PX_PER_UNIT = 60;
 
 const PALETTE = {
-  night: { fly: '#f6eda8', star: '#eef2ff', line: 'rgba(232, 236, 214, 0.42)', ink: '#f6eda8', caption: '#c9d1bd', glow: true },
+  night: { fly: '#eef2ff', star: '#eef2ff', line: 'rgba(232, 236, 214, 0.42)', ink: '#eef2ff', caption: 'rgba(238, 242, 255, 0.82)', glow: true },
   day: { fly: '#2e7d32', star: '#1f5e24', line: 'rgba(31, 94, 36, 0.4)', ink: '#1f5e24', caption: '#14361d', glow: false },
 } as const;
 
@@ -244,7 +244,7 @@ export function starTreeMarkup(plan: Plan, sky: HeroSky, animate: boolean): stri
   out.push(`<circle cx="${n(rx)}" cy="${n(ry)}" r="${n(rr)}" fill="${p.star}">${animate
     ? `<animateMotion dur="${STAR_TREE_SECONDS}s" fill="freeze" path="${leadPath}" keyPoints="0;0;1;1" keyTimes="${times([0, LEAD[0], LEAD[1], STAR_TREE_SECONDS], STAR_TREE_SECONDS)}" calcMode="linear"/>`
       + anim('opacity', [0, 1, 0.6, 1, 0.7, 1], [0.05, LEAD[0], 0.9, 1.5, 2.3, 3.0])
-      + anim('fill', [p.fly, p.star], [LEAD[1], LEAD[1] + 1])
+      + anim('fill', [p.fly, p.star], [LEAD[1], LEAD[1] + 0.4])
       + anim('r', [2.5, rr], [LEAD[1], LEAD[1] + 0.5])
     : ''}</circle>`);
   for (const [key, t] of Object.entries(LIGHT)) {
