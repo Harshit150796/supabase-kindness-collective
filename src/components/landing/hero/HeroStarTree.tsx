@@ -6,7 +6,7 @@ import { useMotionPreference } from '@/hooks/useMotionPreference';
 
 const readSky = (): HeroSky => (typeof document !== 'undefined' && document.documentElement.dataset.sky === 'day' ? 'day' : 'night');
 /** The halves of the headline meet first; the firefly sets off just after. */
-const START_DELAY_MS = 1600;
+const START_DELAY_MS = 600;
 
 /**
  * "One firefly plants a star tree" (src/lib/starTree.ts): plays once when the hero shows, then stays.
