@@ -85,13 +85,16 @@ export const IMAGE_SPECS = {
   cover: { width: 1500, height: 500, label: 'cover image' },
 } as const;
 export type ImageKind = keyof typeof IMAGE_SPECS;
+export const PROFILE_BUCKET = 'fundraiser-covers';
 
 /** Uploads a cropped image (already a WebP blob) to the person's own folder, then saves it on the profile. */
 export async function saveProfileImage(uid: string, kind: ImageKind, blob: Blob | null) {
   if (!blob) return profileAction<{ ok: true; url: null }>('image', { kind, path: null });
   const id = crypto.getRandomValues(new Uint32Array(3)).reduce((s, n) => s + n.toString(36), '').slice(0, 16).padEnd(8, '0');
-  const path = `${uid}/${kind}-${id}.webp`;
-  const { error } = await supabase.storage.from('profile-media').upload(path, blob, { contentType: 'image/webp', upsert: false });
+  // Profile photos sit in the person's own folder of the public fundraiser-covers bucket (the workspace
+  // doesn't allow new public buckets); the file name marks them as profile images.
+  const path = `${uid}/profile-${kind}-${id}.webp`;
+  const { error } = await supabase.storage.from(PROFILE_BUCKET).upload(path, blob, { contentType: 'image/webp', upsert: false });
   if (error) return { error: 'Could not upload the image. Please try a smaller JPG, PNG or WebP.' };
   return profileAction<{ ok: true; url: string }>('image', { kind, path });
 }

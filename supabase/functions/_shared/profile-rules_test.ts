@@ -45,10 +45,11 @@ Deno.test('Links: handles for social sites, https for websites, never payment ap
 
 Deno.test('Photos must be in the person’s own folder with a generated name', () => {
   const uid = '00000000-0000-0000-0000-00000000000a';
-  assert(checkMediaPath(`${uid}/avatar-1a2b3c4d5e.webp`, uid, 'avatar').ok);
-  assert(checkMediaPath(`${uid}/cover-1a2b3c4d5e.webp`, uid, 'avatar').ok === false);
-  assert(checkMediaPath(`someone-else/avatar-1a2b3c4d5e.webp`, uid, 'avatar').ok === false);
-  assert(checkMediaPath(`${uid}/../x/avatar-1a2b3c4d5e.webp`, uid, 'avatar').ok === false);
+  assert(checkMediaPath(`${uid}/profile-avatar-1a2b3c4d5e.webp`, uid, 'avatar').ok);
+  assert(checkMediaPath(`${uid}/avatar-1a2b3c4d5e.webp`, uid, 'avatar').ok === false, 'fundraiser photos are not profile photos');
+  assert(checkMediaPath(`${uid}/profile-cover-1a2b3c4d5e.webp`, uid, 'avatar').ok === false);
+  assert(checkMediaPath(`someone-else/profile-avatar-1a2b3c4d5e.webp`, uid, 'avatar').ok === false);
+  assert(checkMediaPath(`${uid}/../x/profile-avatar-1a2b3c4d5e.webp`, uid, 'avatar').ok === false);
 });
 
 Deno.test('Profile fields are written only by profile-actions; messages respect removals and restrictions', () => {
