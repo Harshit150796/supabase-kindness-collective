@@ -9,7 +9,8 @@ import {
   checkBio, checkCauses, checkDisplayName, checkLinks, checkMediaPath, checkUsername, REPORT_REASONS,
 } from '../_shared/profile-rules.ts';
 
-const BUCKET = 'profile-media';
+// Profile photos live in each person's own folder of the public fundraiser-covers bucket, named profile-*.
+const BUCKET = 'fundraiser-covers';
 const DAY = 24 * HOUR;
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -118,7 +119,7 @@ Deno.serve(async (req) => {
         if (error) return fail('Could not save the photo. Please try again.', 500);
         // Remove the replaced file from your own folder.
         const prefix = `${SUPA}/storage/v1/object/public/${BUCKET}/${uid}/`;
-        if (previous && previous.startsWith(prefix) && previous !== url) {
+        if (previous && previous.startsWith(`${prefix}profile-`) && previous !== url) {
           await admin.storage.from(BUCKET).remove([previous.slice(prefix.length - uid.length - 1)]).catch(() => undefined);
         }
         return json({ ok: true, url });

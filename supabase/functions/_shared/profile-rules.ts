@@ -88,10 +88,10 @@ export function checkLinks(raw: unknown): Check<Record<string, string>> {
   return { ok: true, value: out };
 }
 
-/** Our own bucket, the person's own folder, a file name the uploader makes. */
+/** The person's own folder, a profile-* file name the uploader makes. */
 export function checkMediaPath(raw: unknown, uid: string, kind: 'avatar' | 'cover'): Check<string> {
   const p = String(raw ?? '');
-  const re = new RegExp(`^${uid}/${kind}-[a-z0-9-]{8,64}\\.(webp|jpg|jpeg|png)$`);
+  const re = new RegExp(`^${uid}/profile-${kind}-[a-z0-9-]{8,64}\\.(webp|jpg|jpeg|png)$`);
   return re.test(p) ? { ok: true, value: p } : { ok: false, error: 'Upload the photo again.' };
 }
 

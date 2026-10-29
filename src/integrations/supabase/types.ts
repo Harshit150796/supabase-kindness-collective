@@ -1027,7 +1027,11 @@ export type Database = {
           fundraiser_id: string
           id: string
           last_message_at: string
+          removed_at: string | null
+          removed_by: string | null
+          removed_reason: string | null
           status: string
+          status_before_removal: string | null
           supporter_id: string
           updated_at: string
         }
@@ -1037,7 +1041,11 @@ export type Database = {
           fundraiser_id: string
           id?: string
           last_message_at?: string
+          removed_at?: string | null
+          removed_by?: string | null
+          removed_reason?: string | null
           status?: string
+          status_before_removal?: string | null
           supporter_id: string
           updated_at?: string
         }
@@ -1047,7 +1055,11 @@ export type Database = {
           fundraiser_id?: string
           id?: string
           last_message_at?: string
+          removed_at?: string | null
+          removed_by?: string | null
+          removed_reason?: string | null
           status?: string
+          status_before_removal?: string | null
           supporter_id?: string
           updated_at?: string
         }
@@ -2189,6 +2201,27 @@ export type Database = {
         }
         Relationships: []
       }
+      follows: {
+        Row: {
+          created_at: string
+          followee_id: string
+          follower_id: string
+          notify: boolean
+        }
+        Insert: {
+          created_at?: string
+          followee_id: string
+          follower_id: string
+          notify?: boolean
+        }
+        Update: {
+          created_at?: string
+          followee_id?: string
+          follower_id?: string
+          notify?: boolean
+        }
+        Relationships: []
+      }
       followup_nonces: {
         Row: {
           content_hash: string
@@ -2819,8 +2852,12 @@ export type Database = {
           ref_coupon_id: string | null
           ref_donation_id: string | null
           ref_label: string | null
+          removed_at: string | null
+          removed_by: string | null
+          removed_reason: string | null
           sender_id: string
           status: string
+          status_before_removal: string | null
         }
         Insert: {
           body: string
@@ -2831,8 +2868,12 @@ export type Database = {
           ref_coupon_id?: string | null
           ref_donation_id?: string | null
           ref_label?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
+          removed_reason?: string | null
           sender_id: string
           status?: string
+          status_before_removal?: string | null
         }
         Update: {
           body?: string
@@ -2843,8 +2884,12 @@ export type Database = {
           ref_coupon_id?: string | null
           ref_donation_id?: string | null
           ref_label?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
+          removed_reason?: string | null
           sender_id?: string
           status?: string
+          status_before_removal?: string | null
         }
         Relationships: [
           {
@@ -3107,45 +3152,114 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_notifications: {
+        Row: {
+          actor_id: string
+          created_at: string
+          id: string
+          kind: string
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
           avatar_url: string | null
+          bio: string | null
+          causes: string[]
           city: string | null
           country: string | null
+          cover_url: string | null
           created_at: string
+          display_name: string | null
           email: string
           full_name: string | null
           id: string
+          links: Json
           phone: string | null
+          pinned_fundraisers: string[]
+          profile_hidden: boolean
+          profile_hidden_reason: string | null
+          profile_visibility: string
+          restrictions: string[]
+          show_location: boolean
+          show_supported: boolean
           updated_at: string
           user_id: string
+          username: string | null
+          username_changed_at: string | null
         }
         Insert: {
           address?: string | null
           avatar_url?: string | null
+          bio?: string | null
+          causes?: string[]
           city?: string | null
           country?: string | null
+          cover_url?: string | null
           created_at?: string
+          display_name?: string | null
           email: string
           full_name?: string | null
           id?: string
+          links?: Json
           phone?: string | null
+          pinned_fundraisers?: string[]
+          profile_hidden?: boolean
+          profile_hidden_reason?: string | null
+          profile_visibility?: string
+          restrictions?: string[]
+          show_location?: boolean
+          show_supported?: boolean
           updated_at?: string
           user_id: string
+          username?: string | null
+          username_changed_at?: string | null
         }
         Update: {
           address?: string | null
           avatar_url?: string | null
+          bio?: string | null
+          causes?: string[]
           city?: string | null
           country?: string | null
+          cover_url?: string | null
           created_at?: string
+          display_name?: string | null
           email?: string
           full_name?: string | null
           id?: string
+          links?: Json
           phone?: string | null
+          pinned_fundraisers?: string[]
+          profile_hidden?: boolean
+          profile_hidden_reason?: string | null
+          profile_visibility?: string
+          restrictions?: string[]
+          show_location?: boolean
+          show_supported?: boolean
           updated_at?: string
           user_id?: string
+          username?: string | null
+          username_changed_at?: string | null
         }
         Relationships: []
       }
@@ -3597,6 +3711,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -3783,6 +3915,7 @@ export type Database = {
           value: number
         }[]
       }
+      admin_conversation_thread: { Args: { _cid: string }; Returns: Json }
       admin_delete_stock_code: { Args: { _id: string }; Returns: undefined }
       admin_edit_stock_code: {
         Args: { _id: string; _patch: Json }
@@ -3862,6 +3995,16 @@ export type Database = {
           waiting: number
         }[]
       }
+      admin_list_conversations: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _status?: string
+          _user?: string
+        }
+        Returns: Json
+      }
       admin_list_donors: {
         Args: {
           _limit?: number
@@ -3882,6 +4025,16 @@ export type Database = {
           total: number
           total_count: number
         }[]
+      }
+      admin_list_profiles: {
+        Args: {
+          _filter?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _uid?: string
+        }
+        Returns: Json
       }
       admin_list_team: {
         Args: never
@@ -3954,6 +4107,7 @@ export type Database = {
         }[]
       }
       admin_overview_kpis: { Args: never; Returns: Json }
+      admin_person: { Args: { _uid: string }; Returns: Json }
       admin_personal_view: {
         Args: {
           _id?: string
@@ -3972,6 +4126,10 @@ export type Database = {
           store_name: string
           value: number
         }[]
+      }
+      admin_profile_action: {
+        Args: { _action: string; _reason?: string; _uid: string }
+        Returns: undefined
       }
       admin_record_history: {
         Args: {
@@ -4013,10 +4171,20 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_remove_conversation: {
+        Args: { _cid: string; _reason: string }
+        Returns: undefined
+      }
+      admin_remove_message: {
+        Args: { _mid: string; _reason: string }
+        Returns: undefined
+      }
       admin_resplit_coupons: {
         Args: { _brand: string; _donation_id: string; _values: number[] }
         Returns: number
       }
+      admin_restore_conversation: { Args: { _cid: string }; Returns: undefined }
+      admin_restore_message: { Args: { _mid: string }; Returns: undefined }
       admin_returned_code_action: {
         Args: { _action: string; _id: string }
         Returns: undefined
@@ -4064,6 +4232,10 @@ export type Database = {
       admin_set_coupon_code: {
         Args: { _code: string; _coupon_id: string; _redemption_url?: string }
         Returns: Json
+      }
+      admin_set_restrictions: {
+        Args: { _reason: string; _restrictions: string[]; _uid: string }
+        Returns: undefined
       }
       admin_set_role: {
         Args: {
@@ -4164,6 +4336,10 @@ export type Database = {
           source_id: string
         }[]
       }
+      following_feed: {
+        Args: { _limit?: number; _offset?: number }
+        Returns: Json
+      }
       followup_reserve: {
         Args: {
           _attempt: string
@@ -4179,6 +4355,7 @@ export type Database = {
         Args: { _email: string; _hash: string; _nonce: string }
         Returns: string
       }
+      fundraiser_card: { Args: { _fid: string }; Returns: Json }
       generate_card_number: { Args: never; Returns: string }
       get_completed_fundraisers: {
         Args: never
@@ -4203,6 +4380,15 @@ export type Database = {
         }[]
       }
       get_donation_impact: { Args: { _donation_id: string }; Returns: Json }
+      get_follow_list: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _username: string
+          _which: string
+        }
+        Returns: Json
+      }
       get_fundraiser_cards: {
         Args: { _ids: string[] }
         Returns: {
@@ -4241,6 +4427,14 @@ export type Database = {
           message: string
         }[]
       }
+      get_fundraiser_donor_profiles: {
+        Args: { _fundraiser_id: string }
+        Returns: {
+          avatar_url: string
+          donation_id: string
+          username: string
+        }[]
+      }
       get_fundraiser_organizer: {
         Args: { _fundraiser_id: string }
         Returns: {
@@ -4252,10 +4446,12 @@ export type Database = {
       get_fundraiser_team_public: {
         Args: { _fundraiser_id: string }
         Returns: {
+          avatar_url: string
           city: string
           country: string
           display_name: string
           role: string
+          username: string
         }[]
       }
       get_fundraiser_totals: {
@@ -4305,6 +4501,11 @@ export type Database = {
         Returns: Json
       }
       get_my_fundraisers: { Args: never; Returns: Json }
+      get_profile: { Args: { _username: string }; Returns: Json }
+      get_profile_supported: {
+        Args: { _limit?: number; _offset?: number; _username: string }
+        Returns: Json
+      }
       get_proof_stats: { Args: never; Returns: Json }
       get_public_donation_stats: {
         Args: never
@@ -4345,6 +4546,7 @@ export type Database = {
       }
       is_admin_any: { Args: { _uid: string }; Returns: boolean }
       is_admin_staff: { Args: { _uid: string }; Returns: boolean }
+      is_blocked_pair: { Args: { _a: string; _b: string }; Returns: boolean }
       is_example_fundraiser: { Args: { _id: string }; Returns: boolean }
       is_fundraiser_organizer: {
         Args: { _fid: string; _uid: string }
@@ -4354,6 +4556,7 @@ export type Database = {
         Args: { _fid: string; _uid: string }
         Returns: boolean
       }
+      like_pattern: { Args: { _q: string }; Returns: string }
       list_available_coupons: {
         Args: never
         Returns: {
@@ -4377,8 +4580,17 @@ export type Database = {
         }
         Returns: undefined
       }
+      mark_profile_notifications_read: { Args: never; Returns: undefined }
+      my_blocked_people: { Args: never; Returns: Json }
+      my_profile_notifications: { Args: { _limit?: number }; Returns: Json }
       otp_check: { Args: { _code: string; _emails: string[] }; Returns: string }
       owner_reveal_coupon: { Args: { _coupon_id: string }; Returns: Json }
+      profile_public_name: {
+        Args: { _display: string; _full: string }
+        Returns: string
+      }
+      profile_row: { Args: { _uid: string; _viewer: string }; Returns: Json }
+      purge_removed_conversations: { Args: never; Returns: Json }
       rate_limit_take: {
         Args: {
           _bucket: string
@@ -4391,6 +4603,10 @@ export type Database = {
       recompute_fundraiser_totals: {
         Args: { _fundraiser_id: string }
         Returns: undefined
+      }
+      search_people: {
+        Args: { _limit?: number; _offset?: number; _q: string }
+        Returns: Json
       }
       set_comment_hidden: {
         Args: { _comment_id: string; _hidden: boolean }
@@ -4415,6 +4631,7 @@ export type Database = {
         }
         Returns: string
       }
+      suggested_people: { Args: { _limit?: number }; Returns: Json }
       svc_admin_log: {
         Args: {
           _action: string
@@ -4430,6 +4647,7 @@ export type Database = {
         Returns: number
       }
       svc_purge_cvv: { Args: never; Returns: number }
+      username_available: { Args: { _username: string }; Returns: boolean }
       withdraw_card_donation: { Args: { _id: string }; Returns: undefined }
     }
     Enums: {
