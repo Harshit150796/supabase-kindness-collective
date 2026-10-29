@@ -72,6 +72,10 @@ Deno.serve(async (req) => {
   const gc = await admin.rpc('credit_gold_coins');
   report.gold_coins = gc.error ? String(gc.error.message) : gc.data;
 
+  // 1b2) Sealed copies of conversations and messages the team removed are deleted after one year.
+  const purge = await admin.rpc('purge_removed_conversations');
+  report.purged_messages = purge.error ? String(purge.error.message) : purge.data;
+
   // 1c) Partner inquiries -> auto-task + admin email event.
   const { data: inq } = await admin.from('partner_inquiries').select('id, org_name, org_type, families_count, created_at').eq('status', 'new').limit(100);
   const inqClaims = (inq ?? []).map((i) => ({ kind: 'partner', source_id: i.id, payload: { title: `${i.org_name} (${i.org_type})`, status: `${i.families_count ?? '?'} families`, at: i.created_at } }));

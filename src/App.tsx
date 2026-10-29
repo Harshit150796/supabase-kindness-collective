@@ -69,6 +69,8 @@ const QRCodeOverlay = lazy(() => import("./pages/overlays/QRCodeOverlay"));
 const MyFundraisers = lazy(() => import("./pages/MyFundraisers"));
 const MyImpact = lazy(() => import("./pages/MyImpact"));
 const Profile = lazy(() => import("./pages/Profile"));
+const PublicProfile = lazy(() => import("./pages/PublicProfile"));
+const People = lazy(() => import("./pages/People"));
 const Settings = lazy(() => import("./pages/Settings"));
 const FundraiserDashboard = lazy(() => import("./pages/FundraiserDashboard"));
 const FundraiserEdit = lazy(() => import("./pages/FundraiserEdit"));
@@ -95,7 +97,7 @@ const GivePage = lazy(() => import("./pages/GivePage"));
 const GoFundMeAlternative = lazy(() => import("./pages/GoFundMeAlternative"));
 const DonateCard = lazy(() => import("./pages/DonateCard"));
 const Partners = lazy(() => import("./pages/Partners"));
-const ADMIN_PAGES = [['/admin', adminPage('/admin')],['/admin/analytics', adminPage('/admin/analytics')],['/admin/fundraisers', adminPage('/admin/fundraisers')],['/admin/donations', adminPage('/admin/donations')],['/admin/donors', adminPage('/admin/donors')],['/admin/monthly', adminPage('/admin/monthly')],['/admin/verifications', adminPage('/admin/verifications')],['/admin/coupons', adminPage('/admin/coupons')],['/admin/card-donations', adminPage('/admin/card-donations')],['/admin/procurement', adminPage('/admin/procurement')],['/admin/gold-coins', adminPage('/admin/gold-coins')],['/admin/partners', adminPage('/admin/partners')],['/admin/moderation', adminPage('/admin/moderation')],['/admin/contact', adminPage('/admin/contact')],['/admin/followups', adminPage('/admin/followups')],['/admin/tasks', adminPage('/admin/tasks')],['/admin/notifications', adminPage('/admin/notifications')],['/admin/content', adminPage('/admin/content')],['/admin/stories', adminPage('/admin/stories')],['/admin/testimonials', adminPage('/admin/testimonials')],['/admin/blog', adminPage('/admin/blog')],['/admin/faq', adminPage('/admin/faq')],['/admin/newsletters', adminPage('/admin/newsletters')],['/admin/team', adminPage('/admin/team')],['/admin/users', adminPage('/admin/users')],['/admin/audit', adminPage('/admin/audit')],['/admin/settings', adminPage('/admin/settings')]] as const;
+const ADMIN_PAGES = [['/admin', adminPage('/admin')],['/admin/analytics', adminPage('/admin/analytics')],['/admin/fundraisers', adminPage('/admin/fundraisers')],['/admin/donations', adminPage('/admin/donations')],['/admin/donors', adminPage('/admin/donors')],['/admin/monthly', adminPage('/admin/monthly')],['/admin/verifications', adminPage('/admin/verifications')],['/admin/coupons', adminPage('/admin/coupons')],['/admin/card-donations', adminPage('/admin/card-donations')],['/admin/procurement', adminPage('/admin/procurement')],['/admin/gold-coins', adminPage('/admin/gold-coins')],['/admin/partners', adminPage('/admin/partners')],['/admin/moderation', adminPage('/admin/moderation')],['/admin/messages', adminPage('/admin/messages')],['/admin/profiles', adminPage('/admin/profiles')],['/admin/contact', adminPage('/admin/contact')],['/admin/followups', adminPage('/admin/followups')],['/admin/tasks', adminPage('/admin/tasks')],['/admin/notifications', adminPage('/admin/notifications')],['/admin/content', adminPage('/admin/content')],['/admin/stories', adminPage('/admin/stories')],['/admin/testimonials', adminPage('/admin/testimonials')],['/admin/blog', adminPage('/admin/blog')],['/admin/faq', adminPage('/admin/faq')],['/admin/newsletters', adminPage('/admin/newsletters')],['/admin/team', adminPage('/admin/team')],['/admin/users', adminPage('/admin/users')],['/admin/audit', adminPage('/admin/audit')],['/admin/settings', adminPage('/admin/settings')]] as const;
 const ADMIN_ONLY = new Set(['/admin/audit', '/admin/moderation', '/admin/users']);
 const Messages = lazy(() => import("./pages/Messages"));
 const TeamAccept = lazy(() => import("./pages/TeamAccept"));
@@ -168,6 +170,8 @@ const AppRoutes = () => (
       <Route path="/impact/:token" element={<ImpactLink />} />
       <Route path="/fundraiser/:id" element={<Private title="Your fundraiser"><GeoGuard><FundraiserDashboard /></GeoGuard></Private>} />
       <Route path="/fundraiser/:id/edit" element={<Private title="Edit fundraiser"><GeoGuard><FundraiserEdit /></GeoGuard></Private>} />
+      <Route path="/u/:username" element={<PublicProfile />} />
+      <Route path="/people" element={<People />} />
       <Route path="/profile" element={<Private title="Your profile"><Profile /></Private>} />
       <Route path="/settings" element={<Private title="Settings"><Settings /></Private>} />
 

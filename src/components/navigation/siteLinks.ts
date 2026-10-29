@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { BadgeCheck, CreditCard, HandCoins, Heart, LayoutGrid, Megaphone, MessageCircle, Settings, ShieldCheck, UserRound, Wallet } from 'lucide-react';
+import { BadgeCheck, CreditCard, HandCoins, Heart, LayoutGrid, Megaphone, MessageCircle, Settings, ShieldCheck, UserRound, Users, Wallet } from 'lucide-react';
 
 /**
  * Every navigation item on the site lives here: the header, the full-screen menu,
@@ -54,7 +54,8 @@ export const ACCOUNT_LINKS: AccountLink[] = [
   { label: 'Voucher wallet', to: '/dashboard/wallet', icon: Wallet },
   { label: 'Your fundraisers', to: '/my-fundraisers', icon: Megaphone },
   { label: 'Messages', to: '/messages', icon: MessageCircle, unread: true },
-  { label: 'Profile', to: '/profile', icon: UserRound },
+  { label: 'Your profile', to: '/profile', icon: UserRound },
+  { label: 'Find people', to: '/people', icon: Users },
   { label: 'Settings', to: '/settings', icon: Settings },
   { label: 'Admin portal', to: '/admin', icon: ShieldCheck, team: true },
 ];

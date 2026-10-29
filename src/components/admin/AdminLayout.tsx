@@ -13,7 +13,7 @@ import {
   LayoutDashboard, Megaphone, DollarSign, Users, ShieldCheck, Gift, Package, Flag, ListTodo, Bell, FileText,
   BookOpen, MessageSquare, Newspaper, HelpCircle, Mail, UserCog, History, Settings, BarChart3, Search,
   PanelLeftClose, PanelLeftOpen, Menu, LogOut, Home, Contact, Inbox,
-  Repeat,
+  Repeat, MessagesSquare, UserRound,
 } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { SavedAdminViews } from '@/components/admin/SavedAdminViews';
@@ -39,7 +39,11 @@ const GROUPS: { title: string; items: Item[] }[] = [
     { label: 'Gold Coins', path: '/admin/gold-coins', icon: Gift },
     { label: 'Partner inquiries', path: '/admin/partners', icon: Contact },
   ] },
-  { title: 'Trust', items: [{ label: 'Moderation', path: '/admin/moderation', icon: Flag, adminOnly: true }] },
+  { title: 'Trust', items: [
+    { label: 'Moderation', path: '/admin/moderation', icon: Flag, adminOnly: true },
+    { label: 'Messages', path: '/admin/messages', icon: MessagesSquare, adminOnly: true },
+    { label: 'Profiles', path: '/admin/profiles', icon: UserRound, adminOnly: true },
+  ] },
   { title: 'Work', items: [
     { label: 'Contact messages', path: '/admin/contact', icon: Inbox, countsNew: true },
     { label: 'Follow-ups', path: '/admin/followups', icon: Mail },

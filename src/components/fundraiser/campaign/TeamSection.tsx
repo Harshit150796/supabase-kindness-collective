@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { callFn, signInPath } from '@/lib/serverActions';
 
-export interface TeamMember { display_name: string | null; role: string; city: string | null; country: string | null }
+export interface TeamMember { display_name: string | null; role: string; city: string | null; country: string | null; username?: string | null; avatar_url?: string | null }
 
 export function useFundraiserTeam(fid: string | undefined) {
   const [team, setTeam] = useState<TeamMember[]>([]);
@@ -68,9 +68,13 @@ export function TeamSection({ team, fundraiserId, allowMessages, isTeam, benefic
         {team.map((m, i) => (
           <div key={i} className="rounded-[1.25rem] bg-secondary/60 p-5">
             <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-ink text-lg text-ink-foreground">{(m.display_name ?? 'O')[0].toUpperCase()}</span>
+              {m.avatar_url
+                ? <img src={m.avatar_url} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded-full object-cover" />
+                : <span className="flex h-12 w-12 items-center justify-center rounded-full bg-ink text-lg text-ink-foreground">{(m.display_name ?? 'O')[0].toUpperCase()}</span>}
               <div className="min-w-0">
-                <p className="truncate font-medium text-foreground">{m.display_name ?? 'Organizer'}</p>
+                {m.username
+                  ? <Link to={`/u/${m.username}`} className="block truncate font-medium text-foreground underline-offset-4 hover:underline">{m.display_name ?? 'Organizer'}</Link>
+                  : <p className="truncate font-medium text-foreground">{m.display_name ?? 'Organizer'}</p>}
                 <p className="text-sm text-muted-foreground">{m.role === 'organizer' ? 'Organizer' : 'Co-organizer'}</p>
               </div>
             </div>

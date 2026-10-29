@@ -15,6 +15,7 @@ const sections: LegalSection[] = [
       <p><strong>If you ask for help:</strong> your name, email address, who the request is for, the needs and stores you choose, your story, photos and videos, your goal, your ZIP code and the city and state it belongs to. If you go through eligibility review, we also keep the kind of program you qualify under (for example income-based, disability, senior, student or veteran) and our notes. If you upload purchase receipts, we keep the copy after you've covered private details.</p>
       <p><strong>If you donate a card:</strong> the store, balance or discount, expiry date, its terms, any screenshot you add, and the code and PIN. Codes are kept where only our team can open them, every look is logged, and a code is deleted if we decline the card or you withdraw it. Accepted codes are passed to the person who receives the card.</p>
       <p><strong>If you have an account:</strong> your sign-in details (we store passwords only in hashed form), phone number if you add it, settings, messages, comments, updates, Gold Coins and loyalty records, and a record of which version of our Terms you accepted and when.</p>
+      <p><strong>If you set up a profile:</strong> the name, username, photo, cover image, bio, causes and links you add, whether your profile is private or public, who you follow, who follows you, and anyone you block.</p>
       <p><strong>When you visit:</strong> your IP address and the approximate location it shows (used to keep out sanctioned regions and to limit abuse), device and browser details, and pages visited. With your OK on the cookie bar, we also use analytics (see section 6). Drafts of an application are saved in your own browser until you submit them.</p>
       <p><strong>When you contact us or use the Coupon assistant:</strong> what you write to us, and your conversation with the assistant.</p>
       <p><strong>From emails we send:</strong> whether an email was opened and which links were clicked, so we can tell whether impact updates arrive.</p>
@@ -25,6 +26,7 @@ const sections: LegalSection[] = [
     title: 'What other people can see',
     body: <>
       <p>Fundraisers are public. Anyone can see a fundraiser's title, story, photos and videos, city and state, needs and requested stores, the organizer's first name and last initial, totals, updates, comments, and the names donors chose to show with their gifts.</p>
+      <p>Profiles start private. A private profile shows only your profile name, photo and cover image, and can't be found in search. If you make it public, people can also see your bio, causes, links, location if you turn it on, the fundraisers you run, who you follow and who follows you, and, unless you switch it off, the fundraisers you supported. Gifts you made anonymously and gift amounts never appear on a profile.</p>
       <p>Your ZIP code, email address, phone number and payment details are never shown on a public page. Recipients never see donors' email addresses or contact details, and the public never sees individual purchases.</p>
       <p>Stories often describe health, money or family difficulties. Only share what you're comfortable making public, and never include ID numbers, bank details or someone else's private information.</p>
     </>,
@@ -34,7 +36,7 @@ const sections: LegalSection[] = [
     title: 'How we use it',
     body: <Bullets items={[
       <>To run the Service: create accounts, publish fundraisers, process gifts, buy and deliver coupons, and send receipts and updates.</>,
-      <>To keep it safe: review fundraisers, prevent fraud and abuse, check messages before delivery, block sanctioned regions, and secure accounts.</>,
+      <>To keep it safe: review fundraisers, prevent fraud and abuse, check messages before delivery, block sanctioned regions, and secure accounts. Our safety team can read messages between supporters and organizers, and review profiles, to investigate reports, scams, harassment or other misuse; they can remove a conversation, a message or profile content, and turn off messaging, following or profile editing for an account. Every time the team opens a conversation, it's recorded.</>,
       <>To answer you, and to improve the Service using analytics you allowed.</>,
       <>To send news and updates you signed up for. Every one has an unsubscribe link.</>,
       <>To meet legal duties, such as keeping payment records, answering lawful requests and enforcing our <DocLink to="/terms">Terms of Use</DocLink>.</>,
@@ -66,6 +68,7 @@ const sections: LegalSection[] = [
       <>Account details: while your account is open, then deleted within 30 days of a deletion request.</>,
       <>Fundraisers: while live, and afterwards so donors can check where their gift went, unless you ask us to remove one.</>,
       <>Donation, payment and coupon records: as long as tax, accounting and anti-fraud rules require, usually seven years.</>,
+      <>Messages: while the conversation is open. If our team removes a conversation or message for safety, it disappears for both people right away, and a sealed copy only our team can open is kept for one year, then deleted.</>,
       <>Security logs and request limits: usually no more than a few months; request-limit records are cleared after a day.</>,
       <>Application drafts in your browser: until you submit, sign out or clear your browser.</>,
     ]} />,

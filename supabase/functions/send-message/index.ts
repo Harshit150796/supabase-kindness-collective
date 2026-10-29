@@ -31,6 +31,10 @@ Deno.serve(async (req) => {
   if (userErr || !userData.user) return json({ error: 'Please sign in to send messages.' }, 401);
   const uid = userData.user.id;
 
+  // A person the team restricted from messaging (Admin > Messages) can't send anything.
+  const { data: me } = await admin.from('profiles').select('restrictions').eq('user_id', uid).maybeSingle();
+  if ((me?.restrictions ?? []).includes('messaging')) return json({ error: 'Messaging is turned off for your account. Contact support@coupondonation.com.' }, 403);
+
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return json({ error: parsed.error.flatten() }, 400);
   const { body } = parsed.data;
@@ -39,19 +43,33 @@ Deno.serve(async (req) => {
   let conversationId = parsed.data.conversation_id;
   let fundraiserId = parsed.data.fundraiser_id;
   let isTeam = false;
+  let supporterId: string | null = null;
 
   if (conversationId) {
     const { data: conv } = await admin.from('conversations').select('id, fundraiser_id, supporter_id, status').eq('id', conversationId).maybeSingle();
     if (!conv) return json({ error: 'Conversation not found' }, 404);
     fundraiserId = conv.fundraiser_id;
+    supporterId = conv.supporter_id;
     const { data: team } = await admin.rpc('is_fundraiser_team', { _fid: conv.fundraiser_id, _uid: uid });
     isTeam = !!team;
     if (conv.supporter_id !== uid && !isTeam) return json({ error: 'Conversation not found' }, 404);
-    if (conv.status === 'blocked') return json({ error: 'This conversation has been closed.' }, 403);
+    if (conv.status === 'blocked' || conv.status === 'removed') return json({ error: 'This conversation has been closed.' }, 403);
   }
 
   const { data: fr } = await admin.from('fundraisers').select('id, user_id, status, allow_messages').eq('id', fundraiserId!).maybeSingle();
   if (!fr || !['active', 'pending'].includes(fr.status ?? '')) return json({ error: 'Fundraiser not found' }, 404);
+
+  // Person-level blocks (from profiles) close messages between the two people too.
+  {
+    const { data: blocks } = await admin.from('user_blocks').select('blocker_id')
+      .or(`and(blocker_id.eq.${uid},blocked_id.eq.${fr.user_id}),and(blocker_id.eq.${fr.user_id},blocked_id.eq.${uid})`).limit(1);
+    if (fr.user_id !== uid && (blocks ?? []).length) return json({ error: 'You can’t message this person.' }, 403);
+    if (supporterId && supporterId !== uid) {
+      const { data: back } = await admin.from('user_blocks').select('blocker_id')
+        .or(`and(blocker_id.eq.${uid},blocked_id.eq.${supporterId}),and(blocker_id.eq.${supporterId},blocked_id.eq.${uid})`).limit(1);
+      if ((back ?? []).length) return json({ error: 'You can’t message this person.' }, 403);
+    }
+  }
 
   if (!conversationId) {
     const { data: team } = await admin.rpc('is_fundraiser_team', { _fid: fr.id, _uid: uid });
@@ -82,7 +100,7 @@ Deno.serve(async (req) => {
   if (!conversationId) {
     const { data: existing } = await admin.from('conversations').select('id, status').eq('fundraiser_id', fr.id).eq('supporter_id', uid).maybeSingle();
     if (existing) {
-      if (existing.status === 'blocked') return json({ error: 'This conversation has been closed.' }, 403);
+      if (existing.status === 'blocked' || existing.status === 'removed') return json({ error: 'This conversation has been closed.' }, 403);
       conversationId = existing.id;
     } else {
       const { count: convCount } = await admin.from('conversations').select('id', { count: 'exact', head: true }).eq('supporter_id', uid).gte('created_at', hourAgo);

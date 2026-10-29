@@ -5,8 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
  * change materially: people then accept the new version at their next sign-in, and it is recorded in
  * public.legal_acceptances.
  */
-export const LEGAL_VERSION = '2026-10-24';
-export const LEGAL_UPDATED = 'October 24, 2026';
+export const LEGAL_VERSION = '2026-10-29';
+export const LEGAL_UPDATED = 'October 29, 2026';
 export const COMPANY = 'CouponDonation Inc.';
 export const COMPANY_FORM = 'a Delaware corporation';
 export const LEGAL_EMAIL = 'support@coupondonation.com';
