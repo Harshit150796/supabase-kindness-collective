@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Heart, Share2, CheckCircle2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
@@ -24,14 +26,33 @@ export function ProgressRing({ percent, size = 128 }: { percent: number; size?: 
   );
 }
 
-function DonationRow({ d }: { d: PublicDonation }) {
+type DonorProfile = { donation_id: string; username: string; avatar_url: string | null };
+
+/** Donors with a public profile (and a gift they didn't make anonymously) link to it. */
+function useDonorProfiles(fundraiserId: string) {
+  const [map, setMap] = useState<Map<string, DonorProfile>>(new Map());
+  useEffect(() => {
+    let live = true;
+    supabase.rpc('get_fundraiser_donor_profiles' as never, { _fundraiser_id: fundraiserId } as never).then(({ data }) => {
+      if (live) setMap(new Map(((data as unknown as DonorProfile[]) ?? []).map((r) => [r.donation_id, r])));
+    });
+    return () => { live = false; };
+  }, [fundraiserId]);
+  return map;
+}
+
+function DonationRow({ d, profile }: { d: PublicDonation; profile?: DonorProfile }) {
   return (
     <li className="flex items-start gap-3 py-3">
-      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium text-secondary-foreground">
-        {d.is_anonymous ? <Heart className="h-4 w-4" /> : (d.display_name?.[0] ?? 'S').toUpperCase()}
-      </span>
+      {profile?.avatar_url && !d.is_anonymous
+        ? <img src={profile.avatar_url} alt="" loading="lazy" className="mt-0.5 h-9 w-9 shrink-0 rounded-full object-cover" />
+        : <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium text-secondary-foreground">
+            {d.is_anonymous ? <Heart className="h-4 w-4" /> : (d.display_name?.[0] ?? 'S').toUpperCase()}
+          </span>}
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-foreground">{d.display_name}</p>
+        {profile && !d.is_anonymous
+          ? <Link to={`/u/${profile.username}`} className="block truncate font-medium text-foreground underline-offset-4 hover:underline">{d.display_name}</Link>
+          : <p className="truncate font-medium text-foreground">{d.display_name}</p>}
         <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{usd(d.amount)}</span> · {timeAgo(d.created_at)}</p>
         {d.message && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">“{d.message}”</p>}
       </div>
@@ -42,6 +63,7 @@ function DonationRow({ d }: { d: PublicDonation }) {
 export function DonationsModal({ fundraiserId, open, order, onOpenChange }: { fundraiserId: string; open: boolean; order: 'recent' | 'top'; onOpenChange: (o: boolean) => void }) {
   const [rows, setRows] = useState<PublicDonation[] | null>(null);
   const [tab, setTab] = useState(order);
+  const profiles = useDonorProfiles(fundraiserId);
   useEffect(() => setTab(order), [order]);
   useEffect(() => { if (!open) return; setRows(null); fetchFundraiserDonations(fundraiserId, tab, 100).then(setRows).catch(() => setRows([])); }, [open, tab, fundraiserId]);
   return (
@@ -54,7 +76,7 @@ export function DonationsModal({ fundraiserId, open, order, onOpenChange }: { fu
           ))}
         </div>
         <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
-          {rows === null ? <li className="py-6 text-muted-foreground">Loading…</li> : rows.length === 0 ? <li className="py-6 text-muted-foreground">No donations yet.</li> : rows.map((d) => <DonationRow key={d.id} d={d} />)}
+          {rows === null ? <li className="py-6 text-muted-foreground">Loading…</li> : rows.length === 0 ? <li className="py-6 text-muted-foreground">No donations yet.</li> : rows.map((d) => <DonationRow key={d.id} d={d} profile={profiles.get(d.id)} />)}
         </ul>
       </DialogContent>
     </Dialog>
@@ -63,6 +85,7 @@ export function DonationsModal({ fundraiserId, open, order, onOpenChange }: { fu
 
 export function DonationPanel({ live, goal, onDonate, onShare, fundraiserId, closed }: { live: FundraiserLive; goal: number; onDonate: () => void; onShare: () => void; fundraiserId: string; closed?: boolean }) {
   const [modal, setModal] = useState<null | 'recent' | 'top'>(null);
+  const profiles = useDonorProfiles(fundraiserId);
   const percent = goal > 0 ? Math.min(100, (live.totalRaised / goal) * 100) : 0;
   const funded = goal > 0 && live.totalRaised >= goal;
   return (
@@ -85,7 +108,7 @@ export function DonationPanel({ live, goal, onDonate, onShare, fundraiserId, clo
       </div>
       {live.recent.length > 0 && (
         <>
-          <ul className="mt-6 divide-y divide-border border-t border-border">{live.recent.map((d) => <DonationRow key={d.id} d={d} />)}</ul>
+          <ul className="mt-6 divide-y divide-border border-t border-border">{live.recent.map((d) => <DonationRow key={d.id} d={d} profile={profiles.get(d.id)} />)}</ul>
           <div className="mt-3 flex gap-2">
             <Button variant="outline" size="sm" className="flex-1" onClick={() => setModal('recent')}>See all</Button>
             <Button variant="outline" size="sm" className="flex-1" onClick={() => setModal('top')}>See top</Button>

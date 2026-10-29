@@ -115,7 +115,8 @@ const sections: LegalSection[] = [
     body: <Bullets items={[
       <>Lie about who you are or what you need, or raise money for anything other than what the fundraiser describes.</>,
       <>Harass, threaten or exploit anyone, or post hateful, violent, sexual or illegal content.</>,
-      <>Share contact details or payment requests in messages and comments. Messages are checked before they're delivered and may be blocked.</>,
+      <>Share contact details or payment requests in messages, comments or your profile. Messages are checked before they're delivered and may be blocked, and our safety team can read conversations to investigate misuse and remove them.</>,
+      <>Pretend to be another person or CouponDonation, or use a profile, username, photo or link that is misleading, hateful, sexual or meant to send people to payment apps.</>,
       <>Post other people's private information or photos without permission.</>,
       <>Use bots or scrapers, probe or break our security, overload the Service, or get around any limit or block.</>,
       <>Use the Service to launder money, evade sanctions or commit fraud.</>,
@@ -169,7 +170,7 @@ const sections: LegalSection[] = [
   {
     id: 'ending',
     title: 'Ending the agreement',
-    body: <p>You can stop using the Service and ask us to delete your account at any time from Settings or by writing to <SupportEmail />. We may suspend or end your access if you break these Terms. Sections that by their nature should continue, such as those on content licenses already used, payments, disclaimers, liability and disputes, continue after the agreement ends.</p>,
+    body: <p>You can stop using the Service and ask us to delete your account at any time from Settings or by writing to <SupportEmail />. We may suspend or end your access if you break these Terms, or turn off part of it, such as messaging, following or editing your profile, and we may hide a profile or remove a conversation that puts people at risk. Sections that by their nature should continue, such as those on content licenses already used, payments, disclaimers, liability and disputes, continue after the agreement ends.</p>,
   },
   {
     id: 'general',

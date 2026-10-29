@@ -11,4 +11,4 @@
 - The shared pool (claim_available_coupon) needs a verification a staff member approved in Admin > Verifications (an admin_write entry in admin_audit_log), or a live request while "Require approval" is on, plus a confirmed email; at most 2 claims a day and 5 waiting, under a per-person lock.
 - Storage buckets accept only the image and video types the site uploads, with size caps (no HTML or SVG). Links taken from user data render through safeHref (src/lib/safeUrl.ts, http and https only); the newsletter preview is a sandboxed iframe; index.html carries a CSP meta (base-uri, object-src, form-action, upgrade-insecure-requests).
 - Payment functions (create-donation-checkout, create-square-payment, square-webhook) deploy only when the site is published, webhooks first; create-stripe-checkout is retired (410).
-
+- Public-profile columns (username, display_name, bio, avatar_url, cover_url, causes, links, visibility, pins, restrictions, hidden) change only through profile-actions or admin RPCs; trg_profile_guard keeps them from browser updates. follows, user_blocks and profile_notifications have no browser writes.
