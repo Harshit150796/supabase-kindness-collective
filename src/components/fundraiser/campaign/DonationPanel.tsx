@@ -44,7 +44,9 @@ function useDonorProfiles(fundraiserId: string) {
 function DonationRow({ d, profile }: { d: PublicDonation; profile?: DonorProfile }) {
   return (
     <li className="flex items-start gap-3 py-3">
-      {profile?.avatar_url && !d.is_anonymous
+      {d.source === 'company'
+        ? <img src="/favicon-192.png" alt="" loading="lazy" className="mt-0.5 h-9 w-9 shrink-0 rounded-full bg-background object-contain" />
+        : profile?.avatar_url && !d.is_anonymous
         ? <img src={profile.avatar_url} alt="" loading="lazy" className="mt-0.5 h-9 w-9 shrink-0 rounded-full object-cover" />
         : <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium text-secondary-foreground">
             {d.is_anonymous ? <Heart className="h-4 w-4" /> : (d.display_name?.[0] ?? 'S').toUpperCase()}
@@ -53,7 +55,7 @@ function DonationRow({ d, profile }: { d: PublicDonation; profile?: DonorProfile
         {profile && !d.is_anonymous
           ? <Link to={`/u/${profile.username}`} className="block truncate font-medium text-foreground underline-offset-4 hover:underline">{d.display_name}</Link>
           : <p className="truncate font-medium text-foreground">{d.display_name}</p>}
-        <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{usd(d.amount)}</span> · {timeAgo(d.created_at)}</p>
+        <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{usd(d.amount)}</span>{d.source === 'company' || d.source === 'outside' ? ' in coupons' : ''} · {timeAgo(d.created_at)}</p>
         {d.message && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">“{d.message}”</p>}
       </div>
     </li>

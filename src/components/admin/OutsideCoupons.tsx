@@ -11,20 +11,42 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DataTable, StatusBadge } from '@/components/admin/DataTable';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { issuableBrandNames } from '@/data/brandLogos';
 
 type Outside = {
   id: string; source_id: string; store_name: string; value: number; status: string; code_hint: string | null; revealed_at: string | null; used_at: string | null;
   source_label: string | null; donor_name: string | null; donor_email: string | null; is_anonymous: boolean; confirmation_sent_at: string | null; confirmation_count: number; created_at: string;
+  public_credit: Credit;
 };
-type DonorMode = 'existing' | 'new' | 'none';
+type DonorMode = 'company' | 'existing' | 'new' | 'none';
+/** How an outside gift shows on the public fundraiser page. Shown gifts count toward the raised amount and donors. */
+type Credit = 'hidden' | 'company' | 'donor' | 'anonymous';
+const CREDIT_LABEL: Record<Credit, string> = {
+  company: 'Shown as CouponDonation', donor: 'Shown under the donor’s name', anonymous: 'Shown as Anonymous', hidden: 'Not shown on the page',
+};
+/** Matches short_display_name() on the server: first name and last initial. */
+const shortName = (n: string) => { const w = n.trim().split(/\s+/); return w.length > 1 ? `${w[0]} ${w[w.length - 1][0]}.` : w[0]; };
+const creditsFor = (r: { donor_name: string | null; is_anonymous: boolean }): Credit[] =>
+  (['company', ...(r.donor_name && !r.is_anonymous ? ['donor'] : []), 'anonymous', 'hidden'] as Credit[]);
 
 export function OutsideCoupons({ fundraiserId, canWrite }: { fundraiserId: string; canWrite: boolean }) {
   const { user } = useAuth();
   const q = useQuery({ queryKey: ['adm-outside', user?.id, fundraiserId], queryFn: () => rpc<Outside[]>('admin_outside_coupons', { _fundraiser_id: fundraiserId }) });
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+
+  const setCredit = async (r: Outside, credit: Credit) => {
+    if (credit === r.public_credit) return;
+    setBusy(r.source_id);
+    try {
+      await rpc('admin_set_coupon_source_credit', { _source: r.source_id, _credit: credit });
+      toast({ title: credit === 'hidden' ? 'Removed from the fundraiser page' : 'Shown on the fundraiser page', description: credit === 'hidden' ? 'It no longer counts toward the raised amount.' : 'It now counts toward the raised amount and donors.' });
+      await q.refetch();
+    } catch (e) { toast({ title: 'Could not save', description: (e as Error).message, variant: 'destructive' }); }
+    finally { setBusy(null); }
+  };
 
   const resend = async (r: Outside) => {
     if (!confirm(`Send the confirmation email to ${r.donor_email}${r.confirmation_count ? ' again' : ''}?`)) return;
@@ -40,7 +62,7 @@ export function OutsideCoupons({ fundraiserId, canWrite }: { fundraiserId: strin
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-semibold">From other sources</h3>
-          <p className="text-xs text-muted-foreground">Coupons received outside a site donation. They don't change the raised amount or donor count.</p>
+          <p className="text-xs text-muted-foreground">Coupons given outside a site donation, such as ones CouponDonation bought. Shown ones appear in the supporters list and count toward the raised amount and donors.</p>
         </div>
         {canWrite && <Button size="sm" onClick={() => setOpen(true)}><Plus className="mr-1 h-4 w-4" />Add outside coupon</Button>}
       </div>
@@ -52,11 +74,17 @@ export function OutsideCoupons({ fundraiserId, canWrite }: { fundraiserId: strin
               <div>
                 <div className="font-medium">{r.store_name} · {usd(r.value)} <span className="ml-1 font-mono text-xs text-muted-foreground">{r.code_hint}</span></div>
                 <div className="text-xs text-muted-foreground">
-                  {r.source_label ? `${r.source_label} · ` : ''}{r.donor_name || r.donor_email ? `${r.donor_name ?? ''}${r.donor_email ? ` <${r.donor_email}>` : ''}${r.is_anonymous ? ' (anonymous)' : ''}` : 'No donor'} · added {fmtDate(r.created_at)}
+                  {r.source_label ? `${r.source_label} · ` : ''}{r.donor_name || r.donor_email ? `${r.donor_name ?? ''}${r.donor_email ? ` <${r.donor_email}>` : ''}${r.is_anonymous ? ' (anonymous)' : ''}` : r.public_credit === 'company' ? 'CouponDonation' : 'No donor'} · added {fmtDate(r.created_at)}
                   {r.confirmation_sent_at && ` · emailed ${fmtDate(r.confirmation_sent_at)}${r.confirmation_count > 1 ? ` (${r.confirmation_count}×)` : ''}`}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {canWrite ? (
+                  <Select value={r.public_credit} onValueChange={(v) => setCredit(r, v as Credit)} disabled={busy === r.source_id}>
+                    <SelectTrigger className="h-8 w-60 text-xs" aria-label="How this gift shows on the fundraiser page"><SelectValue /></SelectTrigger>
+                    <SelectContent>{creditsFor(r).map((c) => <SelectItem key={c} value={c}>{CREDIT_LABEL[c]}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : <span className="text-xs text-muted-foreground">{CREDIT_LABEL[r.public_credit]}</span>}
                 <StatusBadge value={r.used_at ? 'used' : r.revealed_at ? 'received' : r.status} />
                 {canWrite && r.donor_email && (
                   <Button size="sm" variant="outline" disabled={busy === r.source_id} onClick={() => resend(r)}>
@@ -84,7 +112,8 @@ function AddOutsideDialog({ fundraiserId, onClose, onDone }: { fundraiserId: str
   const [link, setLink] = useState('');
   const [expiry, setExpiry] = useState('');
   const [source, setSource] = useState('');
-  const [mode, setMode] = useState<DonorMode>('new');
+  const [mode, setMode] = useState<DonorMode>('company');
+  const [showOnPage, setShowOnPage] = useState(true);
   const [existing, setExisting] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -109,6 +138,10 @@ function AddOutsideDialog({ fundraiserId, onClose, onDone }: { fundraiserId: str
     queryFn: () => rpc<{ rows: any[]; total: number }>('admin_stock_picker', { _brand: brand.trim(), _limit: 10, _offset: stockPage * 10 }) });
   const picked = selectedDonor;
   const donorEmail = mode === 'new' ? email.trim() : mode === 'existing' ? picked?.email ?? '' : '';
+  const donorName = mode === 'new' ? name.trim() : mode === 'existing' ? (picked?.name ?? '').trim() : '';
+  const credit: Credit = !showOnPage ? 'hidden' : mode === 'company' ? 'company'
+    : mode === 'none' || anon || !donorName ? 'anonymous' : 'donor';
+  const shownAs = credit === 'company' ? 'CouponDonation' : credit === 'anonymous' ? 'Anonymous' : credit === 'donor' ? shortName(donorName) : null;
 
   const save = async () => {
     if (saving) return;
@@ -123,17 +156,17 @@ function AddOutsideDialog({ fundraiserId, onClose, onDone }: { fundraiserId: str
     if (!fromStock && code.trim() && code.trim().length < 3) return setErr('Code must contain at least 3 characters.');
     if (!fromStock && !Number.isFinite(Number(value))) return setErr('Enter a valid amount.');
     setSaving(true);
-    const r = await callFn<{ organizer_emailed: number; donor_emailed: boolean; donor_error?: string }>('coupon-secrets', {
+    const r = await callFn<{ organizer_emailed: number; donor_emailed: boolean; donor_error?: string; credit_error?: string }>('coupon-secrets', {
       action: 'admin_add_outside', fundraiser_id: fundraiserId, brand: (fromStock ? selectedStock?.store_name : brand.trim()) || null,
       stock_id: fromStock ? stockId : null, value: fromStock ? null : Math.round(Number(value) * 100) / 100,
       code: fromStock ? null : code.trim() || null, pin: fromStock ? null : pin.trim() || null, redemption_url: fromStock ? null : link.trim() || null,
       value_expires_on: fromStock ? null : expiry || null, source_label: source.trim() || null,
-      donor: mode === 'none' ? {} : mode === 'new' ? { name: name.trim() || null, email: email.trim() || null, anonymous: anon } : { name: picked?.name, email: picked?.email, user_id: picked?.user_id, anonymous: anon },
-      email_donor: emailDonor && !!donorEmail, email_organizer: emailOrg,
+      donor: mode === 'none' || mode === 'company' ? {} : mode === 'new' ? { name: name.trim() || null, email: email.trim() || null, anonymous: anon } : { name: picked?.name, email: picked?.email, user_id: picked?.user_id, anonymous: anon },
+      email_donor: emailDonor && !!donorEmail, email_organizer: emailOrg, public_credit: credit,
     });
     setSaving(false);
     if (r.error) return setErr(r.error);
-    toast({ title: 'Outside coupon added', description: [r.data?.organizer_emailed ? 'Organizer emailed.' : null, r.data?.donor_emailed ? 'Donor confirmation sent.' : r.data?.donor_error && emailDonor && donorEmail ? `Donor email: ${r.data.donor_error}` : null].filter(Boolean).join(' ') || 'Saved.' });
+    toast({ title: 'Outside coupon added', description: [credit !== 'hidden' && !r.data?.credit_error ? `Shown on the fundraiser page as ${shownAs}.` : null, r.data?.credit_error ? `Not shown on the page yet: ${r.data.credit_error}` : null, r.data?.organizer_emailed ? 'Organizer emailed.' : null, r.data?.donor_emailed ? 'Donor confirmation sent.' : r.data?.donor_error && emailDonor && donorEmail ? `Donor email: ${r.data.donor_error}` : null].filter(Boolean).join(' ') || 'Saved.' });
     onDone();
   };
 
@@ -178,8 +211,8 @@ function AddOutsideDialog({ fundraiserId, onClose, onDone }: { fundraiserId: str
           <div className="space-y-2">
             <Label>Donor</Label>
             <div className="flex flex-wrap gap-2">
-              {(['new', 'existing', 'none'] as DonorMode[]).map((m) => (
-                <Button key={m} type="button" size="sm" variant={mode === m ? 'default' : 'outline'} onClick={() => setMode(m)}>{m === 'new' ? 'New donor' : m === 'existing' ? 'Existing donor' : 'No donor'}</Button>
+              {(['company', 'new', 'existing', 'none'] as DonorMode[]).map((m) => (
+                <Button key={m} type="button" size="sm" variant={mode === m ? 'default' : 'outline'} onClick={() => setMode(m)}>{m === 'company' ? 'CouponDonation (company)' : m === 'new' ? 'New donor' : m === 'existing' ? 'Existing donor' : 'No donor'}</Button>
               ))}
             </div>
             {mode === 'new' && (
@@ -193,11 +226,17 @@ function AddOutsideDialog({ fundraiserId, onClose, onDone }: { fundraiserId: str
               <DataTable columns={[{ key: 'donor', header: 'Donor', cell: (r: any) => <div>{r.name || 'Guest'}<p className="text-xs text-muted-foreground">{r.email || 'No email'}</p></div> }, { key: 'pick', header: '', cell: (r: any) => <Button size="sm" variant={existing === r.key ? 'default' : 'outline'} onClick={() => { setExisting(r.key); setSelectedDonor(r); }}>{existing === r.key ? 'Selected' : 'Select'}</Button> }]} rows={donors.data?.rows} total={donors.data?.total} loading={donors.isLoading} error={donors.error ? (donors.error as Error).message : null} onRetry={() => donors.refetch()} page={donorPage} pageSize={10} onPage={setDonorPage} rowKey={(r: any) => r.key} empty="No donors match." />
               {picked && <p className="text-xs text-primary">Selected: {picked.name || picked.email || 'Guest'}</p>}</div>
             )}
-            {mode !== 'none' && <label className="flex items-center gap-2"><Checkbox checked={anon} onCheckedChange={(v) => setAnon(!!v)} />Keep this donor anonymous</label>}
+            {mode === 'company' && <p className="text-xs text-muted-foreground">For coupons the company bought and gives to this family.</p>}
+            {(mode === 'new' || mode === 'existing') && <label className="flex items-center gap-2"><Checkbox checked={anon} onCheckedChange={(v) => setAnon(!!v)} />Keep this donor anonymous</label>}
+          </div>
+
+          <div className="space-y-1">
+            <label className="flex items-center gap-2"><Checkbox checked={showOnPage} onCheckedChange={(v) => setShowOnPage(!!v)} />Show on the fundraiser page and count toward the goal</label>
+            <p className="pl-6 text-xs text-muted-foreground">{shownAs ? `Supporters will see a ${usd(fromStock ? selectedStock?.value ?? 0 : Number(value) || 0)} gift from ${shownAs}. No codes are ever shown.` : 'Only the team and the organizer will see it.'}</p>
           </div>
 
           </>}
-          {step === 2 && <dl className="grid grid-cols-[6rem_minmax(0,1fr)] gap-2"><dt className="text-muted-foreground">Brand</dt><dd>{fromStock ? selectedStock?.store_name : brand}</dd><dt className="text-muted-foreground">Value</dt><dd>{usd(fromStock ? selectedStock?.value : Number(value))}</dd><dt className="text-muted-foreground">Credential</dt><dd>{fromStock ? 'Stock · ••••' : code ? 'Code · ••••' : 'Hosted link · hidden'}</dd><dt className="text-muted-foreground">Source</dt><dd>{source || 'Not recorded'}</dd><dt className="text-muted-foreground">Donor</dt><dd className="break-words">{mode === 'none' ? 'No donor' : mode === 'new' ? name || email || 'Unnamed donor' : picked?.name || picked?.email}{anon && ' · anonymous'}</dd></dl>}
+          {step === 2 && <dl className="grid grid-cols-[6rem_minmax(0,1fr)] gap-2"><dt className="text-muted-foreground">Brand</dt><dd>{fromStock ? selectedStock?.store_name : brand}</dd><dt className="text-muted-foreground">Value</dt><dd>{usd(fromStock ? selectedStock?.value : Number(value))}</dd><dt className="text-muted-foreground">Credential</dt><dd>{fromStock ? 'Stock · ••••' : code ? 'Code · ••••' : 'Hosted link · hidden'}</dd><dt className="text-muted-foreground">Source</dt><dd>{source || 'Not recorded'}</dd><dt className="text-muted-foreground">Donor</dt><dd className="break-words">{mode === 'company' ? 'CouponDonation (company)' : mode === 'none' ? 'No donor' : mode === 'new' ? name || email || 'Unnamed donor' : picked?.name || picked?.email}{anon && mode !== 'company' && mode !== 'none' && ' · anonymous'}</dd><dt className="text-muted-foreground">On the page</dt><dd>{shownAs ? `Shown as ${shownAs}, counts toward the goal` : 'Not shown'}</dd></dl>}
           {step > 0 && <div className="space-y-2 rounded-md bg-muted/50 p-3">
             <label className="flex items-center gap-2"><Checkbox checked={emailDonor && !!donorEmail} disabled={!donorEmail} onCheckedChange={(v) => setEmailDonor(!!v)} />Email the donor a confirmation{donorEmail ? ` (${donorEmail})` : ' — needs an email address'}</label>
             <label className="flex items-center gap-2"><Checkbox checked={emailOrg} onCheckedChange={(v) => setEmailOrg(!!v)} />Email the organizer that a coupon is ready</label>
