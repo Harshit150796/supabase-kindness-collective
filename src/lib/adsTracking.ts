@@ -18,6 +18,7 @@ export function startAds() {
   loaded = true;
   window.dataLayer = window.dataLayer || [];
   // gtag.js reads the `arguments` object, so this must stay a function declaration rather than a rest-args arrow.
+  // eslint-disable-next-line prefer-rest-params
   window.gtag = function gtag() { window.dataLayer!.push(arguments); } as Gtag;
   window.gtag('consent', 'default', { ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'denied' });
   window.gtag('js', new Date());
