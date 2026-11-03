@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { startAds, stopAds } from '@/lib/adsTracking';
 
 // PostHog loads only after the visitor pressed Okay on the cookie bar (cd_privacy_consent), and never
 // when the browser sends Global Privacy Control.
@@ -44,13 +45,13 @@ async function start() {
 
 export function VisitorAnalytics() {
   useEffect(() => {
-    const off = () => { try { instance?.opt_out_capturing(); instance?.reset(); } catch { /* not loaded */ } };
+    const off = () => { stopAds(); try { instance?.opt_out_capturing(); instance?.reset(); } catch { /* not loaded */ } };
     window.addEventListener(ANALYTICS_OFF_EVENT, off);
     return () => window.removeEventListener(ANALYTICS_OFF_EVENT, off);
   }, []);
   useEffect(() => {
-    if (hasConsent()) { void start(); return; }
-    const t = window.setInterval(() => { if (hasConsent()) { window.clearInterval(t); void start(); } }, 1500);
+    if (hasConsent()) { void start(); startAds(); return; }
+    const t = window.setInterval(() => { if (hasConsent()) { window.clearInterval(t); void start(); startAds(); } }, 1500);
     return () => window.clearInterval(t);
   }, []);
   return null;

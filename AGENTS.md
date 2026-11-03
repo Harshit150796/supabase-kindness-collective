@@ -75,3 +75,6 @@
 - /donate-a-card takes unused digital gift cards, store coupons and promo codes (no physical cards), signed in, at most 5 a day, to a chosen open request or the shared pool. It is promoted by DonateCardPromo (the forest-green gift card panel under the donate card in DonationFlow, on the homepage and /donate; founder's pick, keep it prominent), from the site menu (Donate a coupon), /donate-gift-cards, fundraiser pages (RequestedHelp) and the footer.
 - Submissions go through submit_card_donation into card_donations; codes sit in card_donation_secrets, which no browser role can read. Staff see a code only through admin_card_donation_secret (audited) at /admin/card-donations, then admin_review_card_donation accepts it (to a family through admin_add_outside_coupon, or to coupon stock for the pool) or declines it with a reason; the secret row is deleted either way. Screenshots live in the private card-donations bucket.
 - We never buy or pay for cards, and the page keeps its scam warning.
+
+## Google Ads (Nov 2026)
+- The Google tag (src/lib/adsTracking.ts) loads only with the same consent as PostHog (Okay on the cookie bar, no Global Privacy Control), only when VITE_GOOGLE_ADS_ID is set, with personalised ads off. The donation conversion fires from DonationSuccess. Ad copy and campaign plan: docs/google-ads-campaign.md; ad copy follows the Claims rules above.

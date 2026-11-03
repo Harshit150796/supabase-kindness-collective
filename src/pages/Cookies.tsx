@@ -28,14 +28,14 @@ const sections: LegalSection[] = [
   {
     id: 'analytics',
     title: 'Analytics (only with your OK)',
-    body: <p>If you select Okay on the cookie bar, we load PostHog, which sets its own cookies (named ph_…) to count visits and clicks so we can improve the site. It never records what you type into forms, doesn't record sessions, and stays off if your browser sends a Global Privacy Control or Do Not Track signal. If you choose Essential only, PostHog never loads; if you change your mind later, it stops right away.</p>,
+    body: <p>If you select Okay on the cookie bar, we load PostHog, which sets its own cookies (named ph_…) to count visits and clicks so we can improve the site. If we are running Google ads, the same choice also lets us load Google's advertising tag, which sets its own cookies to tell us when an ad led to a donation; we turn off personalised ads in it. PostHog never records what you type into forms, doesn't record sessions, and stays off if your browser sends a Global Privacy Control or Do Not Track signal. If you choose Essential only, neither PostHog nor the Google tag loads; if you change your mind later, it stops right away.</p>,
   },
   {
     id: 'third-party',
     title: 'Other companies',
     body: <Bullets items={[
       <><strong>Square</strong> sets its own cookies on its checkout page when you donate, to process the payment and prevent fraud.</>,
-      <><strong>Google</strong> sets its own cookies if you use Continue with Google.</>,
+      <><strong>Google</strong> sets its own cookies if you use Continue with Google, and, only with your OK on the cookie bar, if you reach us from a Google ad.</>,
     ]} />,
   },
   {

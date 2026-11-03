@@ -9,6 +9,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { trackDonationConversion } from '@/lib/adsTracking';
 
 export default function DonationSuccess() {
   const navigate = useNavigate();
@@ -21,6 +22,8 @@ export default function DonationSuccess() {
     // Fast path for the confirmation email: only the checkout reference is sent; the server checks everything else.
     const p = new URLSearchParams(window.location.search);
     const ref = p.get('session_id') || p.get('ref') || p.get('order_id');
+    // Counts the donation for Google Ads only if the visitor allowed it and the tag has loaded (checked again shortly in case it is still loading).
+    window.setTimeout(() => trackDonationConversion(ref), 1500);
     if (ref) supabase.functions.invoke('confirm-donation', { body: { ref } }).catch(() => { /* dispatcher retries */ });
   }, []);
 
