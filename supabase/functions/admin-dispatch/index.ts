@@ -5,6 +5,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { ADMIN_SENDER, shell } from '../_shared/email-layout.ts';
 import { processAccountEmail } from '../_shared/account-emails.ts';
+import { syncEmailLog } from '../_shared/email-log.ts';
 
 const SUPA = Deno.env.get('SUPABASE_URL')!;
 const SITE = 'https://coupondonation.com';
@@ -17,6 +18,18 @@ const shortName = (n: string | null) => {
 const usd = (n: number) => `$${Number(n).toFixed(2)}`;
 
 type Ev = { id: string; kind: string; source_id: string; payload: Record<string, string> };
+const when = (at: string) => new Date(at).toUTCString();
+
+/** One line of the team digest, its portal link, and the matching Admin > Notifications entry. */
+function describe(e: Ev): { line: string; path: string; title: string } {
+  const p = e.payload;
+  switch (e.kind) {
+    case 'partner': return { line: `Partner inquiry: ${p.title} · ${p.status} · ${when(p.at)}`, path: `/admin/partners?id=${e.source_id}`, title: `Partner inquiry: ${p.title}` };
+    case 'fundraiser': return { line: `New fundraiser: "${p.title}" (${p.status})${p.by ? ` by ${p.by}` : ''} · ${when(p.at)}`, path: `/admin/fundraisers?id=${e.source_id}`, title: `New fundraiser: ${p.title}` };
+    case 'team_reply': return { line: `${p.name} replied to the team about "${p.title}": "${p.excerpt}" · ${when(p.at)}`, path: `/admin/fundraisers?id=${p.fundraiser_id}&tab=contact`, title: `Reply from ${p.name}: ${p.title}` };
+    default: return { line: `Donation ${usd(Number(p.amount))} from ${p.name} → ${p.target} · ${when(p.at)}`, path: `/admin/donations?id=${e.source_id}`, title: `Donation ${usd(Number(p.amount))} from ${p.name}` };
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -97,8 +110,16 @@ Deno.serve(async (req) => {
   const runStart = new Date().toISOString();
   const claims: { kind: string; source_id: string; payload: Record<string, string> }[] = [];
   if (settings?.email_new_fundraiser) {
-    const { data: frs } = await admin.from('fundraisers').select('id, title, status, created_at').gte('created_at', since).limit(200);
-    for (const f of frs ?? []) claims.push({ kind: 'fundraiser', source_id: f.id, payload: { title: f.title, status: f.status ?? '', at: f.created_at } });
+    const { data: frs } = await admin.from('fundraisers').select('id, title, status, created_at, user_id').gte('created_at', since).limit(200);
+    // Who created it, so the team can reach them straight from the alert.
+    const ids = [...new Set((frs ?? []).map((f) => f.user_id).filter(Boolean))];
+    const { data: owners } = ids.length ? await admin.from('profiles').select('user_id, full_name, email').in('user_id', ids) : { data: [] };
+    const byId = new Map((owners ?? []).map((o: { user_id: string; full_name: string | null; email: string | null }) => [o.user_id, o]));
+    for (const f of frs ?? []) {
+      const o = byId.get(f.user_id);
+      const by = o ? [o.full_name?.trim(), o.email ? `(${o.email})` : ''].filter(Boolean).join(' ') : '';
+      claims.push({ kind: 'fundraiser', source_id: f.id, payload: { title: f.title, status: f.status ?? '', at: f.created_at, by } });
+    }
   }
   if (settings?.email_new_donation) {
     const { data: ds } = await admin.from('donations').select('id, amount, donor_name, is_anonymous, brand_partner, fundraiser_id, created_at, fundraisers(title)')
@@ -114,24 +135,23 @@ Deno.serve(async (req) => {
   const { data: unsent } = await admin.from('admin_email_events').select('id, kind, source_id, payload').is('sent_at', null).order('created_at').limit(100);
   const evs = (unsent ?? []) as Ev[];
   if (evs.length && key && recipients.length) {
-    const items = evs.map((e) => e.kind === 'partner'
-      ? { line: `Partner inquiry: ${e.payload.title} · ${e.payload.status} · ${new Date(e.payload.at).toUTCString()}`, link: `${SITE}/admin/partners?id=${e.source_id}` }
-      : e.kind === 'fundraiser'
-      ? { line: `New fundraiser: "${e.payload.title}" (${e.payload.status}) · ${new Date(e.payload.at).toUTCString()}`, link: `${SITE}/admin/fundraisers?id=${e.source_id}` }
-      : { line: `Donation ${usd(Number(e.payload.amount))} from ${e.payload.name} → ${e.payload.target} · ${new Date(e.payload.at).toUTCString()}`, link: `${SITE}/admin/donations?id=${e.source_id}` });
-    const nF = evs.filter((e) => e.kind === 'fundraiser').length, nP = evs.filter((e) => e.kind === 'partner').length, nD = evs.length - nF - nP;
-    const subject = evs.length === 1 ? (nP ? 'A partner inquiry needs review' : nF ? 'A fundraiser needs review' : 'New account activity')
-      : 'CouponDonation account activity';
+    const items = evs.map((e) => { const d = describe(e); return { line: d.line, link: `${SITE}${d.path}` }; });
+    const only = evs.length === 1 ? evs[0].kind : null;
+    const subject = only === 'partner' ? 'A partner inquiry needs review' : only === 'fundraiser' ? 'A fundraiser needs review'
+      : only === 'team_reply' ? `${evs[0].payload.name} replied to the CouponDonation team` : evs.length === 1 ? 'New account activity' : 'CouponDonation account activity';
     try {
       const id = await send(subject, items);
       await admin.from('admin_email_events').update({ sent_at: new Date().toISOString(), resend_id: id, last_error: null }).in('id', evs.map((e) => e.id));
-      for (const e of evs) await admin.from('admin_notifications').upsert({ kind: e.kind, title: e.kind === 'partner' ? `Partner inquiry: ${e.payload.title}` : e.kind === 'fundraiser' ? `New fundraiser: ${e.payload.title}` : `Donation ${usd(Number(e.payload.amount))} from ${e.payload.name}`, link: e.kind === 'partner' ? `/admin/partners?id=${e.source_id}` : e.kind === 'fundraiser' ? `/admin/fundraisers?id=${e.source_id}` : `/admin/donations?id=${e.source_id}`, source_key: `${e.kind}:${e.source_id}` }, { onConflict: 'source_key', ignoreDuplicates: true });
+      for (const e of evs) { const d = describe(e); await admin.from('admin_notifications').upsert({ kind: e.kind, title: d.title, link: d.path, source_key: `${e.kind}:${e.source_id}` }, { onConflict: 'source_key', ignoreDuplicates: true }); }
       report.email = { resend_id: id, events: evs.length };
     } catch (e) {
       await admin.from('admin_email_events').update({ last_error: String(e).slice(0, 500) }).in('id', evs.map((x) => x.id));
       report.email_error = String(e);
     }
   }
+
+  // 3b) Copy Resend's log of sent emails (with delivery status) into email_log for Admin > Emails.
+  report.email_log = await syncEmailLog(admin, key);
 
   // 4) Fan out to the other dispatchers with the same secret.
   for (const fn of ['notify-dispatch', 'email-scheduler', 'impact-dispatch', 'followup-dispatch']) {

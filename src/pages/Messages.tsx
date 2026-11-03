@@ -12,7 +12,8 @@ import { timeAgo } from '@/hooks/useFundraiserLive';
 import { ReportDialog } from '@/components/fundraiser/campaign/ReportDialog';
 import { SEO } from '@/components/SEO';
 
-interface Conv { id: string; fundraiser_id: string; supporter_id: string; status: string; last_message_at: string; fundraisers: { title: string; unique_slug: string | null } | null }
+/** kind 'team': the organizer's conversation with the CouponDonation team (staff write from the admin portal). */
+interface Conv { id: string; fundraiser_id: string; supporter_id: string; status: string; kind?: 'supporter' | 'team'; last_message_at: string; fundraisers: { title: string; unique_slug: string | null } | null }
 interface Msg { id: string; sender_id: string; body: string; flags: string[]; status: string; created_at: string; ref_label?: string | null }
 
 export default function Messages() {
@@ -29,7 +30,7 @@ export default function Messages() {
   const loadConvs = useCallback(async () => {
     if (!user) return;
     const [{ data }, { data: r }] = await Promise.all([
-      supabase.from('conversations').select('id,fundraiser_id,supporter_id,status,last_message_at,fundraisers(title,unique_slug)').order('last_message_at', { ascending: false }).limit(200),
+      supabase.from('conversations').select('id,fundraiser_id,supporter_id,status,kind,last_message_at,fundraisers(title,unique_slug)').order('last_message_at', { ascending: false }).limit(200),
       supabase.from('conversation_reads').select('conversation_id,last_read_at').eq('user_id', user.id),
     ]);
     setConvs((data ?? []) as unknown as Conv[]);
@@ -69,6 +70,7 @@ export default function Messages() {
 
   const conv = convs.find((c) => c.id === active);
   const iAmSupporter = conv?.supporter_id === user.id;
+  const teamThread = conv?.kind === 'team';
 
   const send = async () => {
     if (!active) return;
@@ -102,7 +104,7 @@ export default function Messages() {
                 <li key={c.id}>
                   <button onClick={() => setParams({ c: c.id })} className={`w-full rounded-[1rem] p-4 text-left transition-colors ${c.id === active ? 'bg-ink text-ink-foreground' : 'hover:bg-secondary'}`}>
                     <p className="flex items-center gap-2 truncate font-medium">{unread && c.id !== active && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-label="Unread" />}{c.fundraisers?.title ?? 'Fundraiser'}</p>
-                    <p className="text-sm opacity-70">{c.supporter_id === user.id ? 'You → organizer' : 'Supporter'} · {timeAgo(c.last_message_at)}{c.status === 'blocked' ? ' · closed' : ''}</p>
+                    <p className="text-sm opacity-70">{c.kind === 'team' ? 'CouponDonation team' : c.supporter_id === user.id ? 'You → organizer' : 'Supporter'} · {timeAgo(c.last_message_at)}{c.status === 'blocked' ? ' · closed' : ''}</p>
                   </button>
                 </li>
               );
@@ -114,12 +116,13 @@ export default function Messages() {
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
                 <div className="min-w-0">
                   <button className="mb-1 flex items-center gap-1 text-sm text-muted-foreground md:hidden" onClick={() => setParams({})}><ChevronLeft className="h-4 w-4" />All</button>
+                  {teamThread && <p className="flex items-center gap-2 text-sm text-muted-foreground"><img src="/favicon-192.png" alt="" className="h-5 w-5" />Messages from the CouponDonation team about</p>}
                   {conv.fundraisers?.unique_slug ? <Link to={`/f/${conv.fundraisers.unique_slug}`} className="font-medium underline-offset-4 hover:underline">{conv.fundraisers.title}</Link> : <span className="font-medium">Fundraiser</span>}
                 </div>
-                <div className="flex gap-1">
+                {!teamThread && <div className="flex gap-1">
                   <Button size="sm" variant="ghost" onClick={() => setReport(true)}><Flag className="mr-1 h-4 w-4" />Report</Button>
                   {!iAmSupporter && <Button size="sm" variant="ghost" onClick={toggleBlock}><Ban className="mr-1 h-4 w-4" />{conv.status === 'blocked' ? 'Unblock' : 'Block'}</Button>}
-                </div>
+                </div>}
               </div>
               <div className="min-h-0 flex-1 space-y-3 overflow-y-auto py-4" style={{ maxHeight: '55dvh' }}>
                 {msgs.map((m) => {
@@ -127,6 +130,7 @@ export default function Messages() {
                   return (
                     <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[80%] rounded-[1.25rem] px-4 py-2.5 ${mine ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'}`}>
+                        {teamThread && !mine && <p className="mb-1 text-xs font-medium opacity-80">CouponDonation team</p>}
                         {m.ref_label && <p className="mb-1 text-xs font-medium opacity-80">Re: {m.ref_label}</p>}
                         <p className="whitespace-pre-line break-words">{m.body}</p>
                         <p className="mt-1 text-xs opacity-70">{timeAgo(m.created_at)}{m.status === 'redacted' ? ' · contact details removed' : ''}</p>
@@ -145,7 +149,7 @@ export default function Messages() {
                     <Textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={2000} rows={2} placeholder="Write a message" className="min-h-0" />
                     <Button onClick={send} disabled={busy || !body.trim()} aria-label="Send"><Send className="h-4 w-4" /></Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">All support goes through CouponDonation. Payment apps, codes and bank details are blocked.</p>
+                  <p className="text-xs text-muted-foreground">{teamThread ? 'A person on the CouponDonation team reads your reply. You can also email support@coupondonation.com.' : 'All support goes through CouponDonation. Payment apps, codes and bank details are blocked.'}</p>
                 </div>
               )}
               <ReportDialog open={report} onOpenChange={setReport} targetType="conversation" targetId={conv.id} fundraiserId={conv.fundraiser_id} />

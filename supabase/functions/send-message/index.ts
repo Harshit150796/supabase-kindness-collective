@@ -44,26 +44,32 @@ Deno.serve(async (req) => {
   let fundraiserId = parsed.data.fundraiser_id;
   let isTeam = false;
   let supporterId: string | null = null;
+  // Team threads (kind 'team') are the organizer's conversation with the CouponDonation team. Staff write
+  // in them from the admin portal (admin-contact); here only the fundraiser's own team can reply.
+  let teamThread = false;
 
   if (conversationId) {
-    const { data: conv } = await admin.from('conversations').select('id, fundraiser_id, supporter_id, status').eq('id', conversationId).maybeSingle();
+    const { data: conv } = await admin.from('conversations').select('id, fundraiser_id, supporter_id, status, kind').eq('id', conversationId).maybeSingle();
     if (!conv) return json({ error: 'Conversation not found' }, 404);
     fundraiserId = conv.fundraiser_id;
-    supporterId = conv.supporter_id;
+    teamThread = conv.kind === 'team';
+    supporterId = teamThread ? null : conv.supporter_id;
     const { data: team } = await admin.rpc('is_fundraiser_team', { _fid: conv.fundraiser_id, _uid: uid });
     isTeam = !!team;
-    if (conv.supporter_id !== uid && !isTeam) return json({ error: 'Conversation not found' }, 404);
+    if (teamThread ? !isTeam : conv.supporter_id !== uid && !isTeam) return json({ error: 'Conversation not found' }, 404);
     if (conv.status === 'blocked' || conv.status === 'removed') return json({ error: 'This conversation has been closed.' }, 403);
   }
 
   const { data: fr } = await admin.from('fundraisers').select('id, user_id, status, allow_messages').eq('id', fundraiserId!).maybeSingle();
-  if (!fr || !['active', 'pending'].includes(fr.status ?? '')) return json({ error: 'Fundraiser not found' }, 404);
+  // Organizers can answer the team about any fundraiser that isn't archived (e.g. one that was paused or sent back).
+  const open = teamThread ? ['active', 'pending', 'paused', 'rejected', 'completed'] : ['active', 'pending'];
+  if (!fr || !open.includes(fr.status ?? '')) return json({ error: 'Fundraiser not found' }, 404);
 
   // Person-level blocks (from profiles) close messages between the two people too.
   {
     const { data: blocks } = await admin.from('user_blocks').select('blocker_id')
       .or(`and(blocker_id.eq.${uid},blocked_id.eq.${fr.user_id}),and(blocker_id.eq.${fr.user_id},blocked_id.eq.${uid})`).limit(1);
-    if (fr.user_id !== uid && (blocks ?? []).length) return json({ error: 'You can’t message this person.' }, 403);
+    if (!teamThread && fr.user_id !== uid && (blocks ?? []).length) return json({ error: 'You can’t message this person.' }, 403);
     if (supporterId && supporterId !== uid) {
       const { data: back } = await admin.from('user_blocks').select('blocker_id')
         .or(`and(blocker_id.eq.${uid},blocked_id.eq.${supporterId}),and(blocker_id.eq.${supporterId},blocked_id.eq.${uid})`).limit(1);
@@ -136,6 +142,16 @@ Deno.serve(async (req) => {
 
   await admin.from('conversations').update({ last_message_at: msg.created_at }).eq('id', conversationId);
   await admin.from('conversation_reads').upsert({ conversation_id: conversationId, user_id: uid, last_read_at: msg.created_at });
+
+  // A reply to the CouponDonation team goes to the team's alerts (Admin > Notifications and the team email), not a person.
+  if (teamThread) {
+    const { data: who } = await admin.from('profiles').select('full_name').eq('user_id', uid).maybeSingle();
+    await admin.from('admin_email_events').upsert({ kind: 'team_reply', source_id: msg.id, payload: {
+      title: (await admin.from('fundraisers').select('title').eq('id', fr.id).single()).data?.title ?? 'a fundraiser',
+      name: who?.full_name?.trim() || 'The organizer', at: msg.created_at, fundraiser_id: fr.id, excerpt: result.text.slice(0, 140) } },
+      { onConflict: 'kind,source_id', ignoreDuplicates: true });
+    return json({ message: msg, redacted: result.redactRules.length > 0 });
+  }
 
   // Queue throttled email notifications for the other side(s)
   const { data: conv } = await admin.from('conversations').select('supporter_id').eq('id', conversationId).single();
