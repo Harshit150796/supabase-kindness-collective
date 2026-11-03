@@ -433,3 +433,6 @@
 
 ## Cursor frame timing, poster colours, route persistence (Oct 9)
 - [x] frameDt hybrid, stage poster sampling, route-persistent setup, pointer hidden from load; verified in preview, unpublished.
+
+- [ ] Connect an ad account (platform to be chosen)
+- [ ] Plan and create the first ad campaign
