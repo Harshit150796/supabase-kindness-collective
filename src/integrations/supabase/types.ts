@@ -1283,6 +1283,7 @@ export type Database = {
           fundraiser_id: string
           id: string
           is_anonymous: boolean
+          public_credit: string
           source_label: string | null
         }
         Insert: {
@@ -1296,6 +1297,7 @@ export type Database = {
           fundraiser_id: string
           id?: string
           is_anonymous?: boolean
+          public_credit?: string
           source_label?: string | null
         }
         Update: {
@@ -1309,6 +1311,7 @@ export type Database = {
           fundraiser_id?: string
           id?: string
           is_anonymous?: boolean
+          public_credit?: string
           source_label?: string | null
         }
         Relationships: [
@@ -3837,6 +3840,10 @@ export type Database = {
         Args: { _cid: string; _reason: string }
         Returns: string
       }
+      _set_coupon_source_credit: {
+        Args: { _actor: string; _credit: string; _source: string }
+        Returns: Json
+      }
       _svc_as: { Args: { _actor: string }; Returns: undefined }
       admin_add_outside_coupon: {
         Args: {
@@ -4097,6 +4104,7 @@ export type Database = {
           donor_name: string
           id: string
           is_anonymous: boolean
+          public_credit: string
           revealed_at: string
           source_id: string
           source_label: string
@@ -4231,6 +4239,10 @@ export type Database = {
       }
       admin_set_coupon_code: {
         Args: { _code: string; _coupon_id: string; _redemption_url?: string }
+        Returns: Json
+      }
+      admin_set_coupon_source_credit: {
+        Args: { _credit: string; _source: string }
         Returns: Json
       }
       admin_set_restrictions: {
@@ -4425,6 +4437,7 @@ export type Database = {
           id: string
           is_anonymous: boolean
           message: string
+          source: string
         }[]
       }
       get_fundraiser_donor_profiles: {
@@ -4590,6 +4603,85 @@ export type Database = {
         Returns: string
       }
       profile_row: { Args: { _uid: string; _viewer: string }; Returns: Json }
+      public_fundraiser_coupons: {
+        Args: { _fid: string }
+        Returns: {
+          batch_id: string | null
+          brand_change_reason: string | null
+          card_exp: string | null
+          card_last4: string | null
+          category: string | null
+          category_id: string | null
+          claimed_at: string | null
+          code: string | null
+          code_hint: string | null
+          code_pin: string | null
+          created_at: string
+          credential_type: string | null
+          credential_version: number
+          cvv_purged_at: string | null
+          description: string | null
+          discount_percent: number | null
+          donation_id: string | null
+          donor_id: string | null
+          expected_value: number | null
+          expiry_date: string | null
+          has_credential: boolean | null
+          id: string
+          issued_brand: string | null
+          last_procurement_at: string | null
+          last_procurement_error: string | null
+          min_purchase: number | null
+          partner_id: string | null
+          procurement_attempts: number
+          recipient_instructions: string | null
+          redeemed_at: string | null
+          redeemed_by: string | null
+          redemption_url: string | null
+          reserved_at: string | null
+          reserved_by: string | null
+          returned_at: string | null
+          returned_from_coupon_id: string | null
+          returned_from_fundraiser_id: string | null
+          reveal_reminder_sent_at: string | null
+          revealed_at: string | null
+          revealed_by: string | null
+          secret_cipher: Json | null
+          source_id: string | null
+          status: Database["public"]["Enums"]["coupon_status"]
+          store_name: string
+          title: string
+          tremendous_order_id: string | null
+          tremendous_reward_id: string | null
+          updated_at: string
+          used_at: string | null
+          used_category: string | null
+          used_note: string | null
+          used_source: string | null
+          value: number | null
+          value_expires_on: string | null
+          void_reason: string | null
+          voided_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "coupons"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      public_outside_gifts: {
+        Args: { _fid: string }
+        Returns: {
+          amount: number
+          brands: string[]
+          created_at: string
+          credit: string
+          display_name: string
+          donor_key: string
+          id: string
+        }[]
+      }
       purge_removed_conversations: { Args: never; Returns: Json }
       rate_limit_take: {
         Args: {
