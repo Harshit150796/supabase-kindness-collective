@@ -32,7 +32,9 @@ const Body = z.discriminatedUnion('action', [
     value_expires_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(), instructions: z.string().max(500).optional().nullable(),
     source_label: z.string().max(120).optional().nullable(),
     donor: z.object({ name: z.string().max(120).optional().nullable(), email: z.string().email().max(254).optional().nullable(), user_id: z.string().uuid().optional().nullable(), anonymous: z.boolean().default(false) }).default({}),
-    email_donor: z.boolean().default(true), email_organizer: z.boolean().default(true) }),
+    email_donor: z.boolean().default(true), email_organizer: z.boolean().default(true),
+    // How the gift shows on the public fundraiser page; shown gifts count toward the raised amount.
+    public_credit: z.enum(['hidden', 'company', 'donor', 'anonymous']).default('hidden') }),
   z.object({ action: z.literal('resend_outside_confirmation'), source_id: z.string().uuid() }),
 ]);
 
@@ -108,9 +110,15 @@ Deno.serve(async (req) => {
         _source_label: p.source_label ?? null, _donor_name: p.donor.name ?? null, _donor_email: p.donor.email ?? null, _donor_user: p.donor.user_id ?? null, _anon: p.donor.anonymous });
       if (error) return json({ error: error.message }, 400);
       const r = data as { source_id: string; fundraiser_id: string };
+      let credit_error: string | undefined;
+      if (p.public_credit !== 'hidden') {
+        const { error: ce } = await admin.rpc('_set_coupon_source_credit', { _actor: uid, _source: r.source_id, _credit: p.public_credit });
+        if (ce) credit_error = ce.message;
+      }
       const owner = p.email_organizer ? await flushOwnerAlerts(admin, r.fundraiser_id) : { emailed: 0, notified: 0 };
       const donor = p.email_donor ? await sendOutsideConfirmation(admin, r.source_id, uid, false) : { sent: false };
-      return json({ ...r, organizer_emailed: owner.emailed, donor_emailed: donor.sent, donor_error: (donor as { error?: string }).error });
+      return json({ ...r, organizer_emailed: owner.emailed, donor_emailed: donor.sent, donor_error: (donor as { error?: string }).error,
+        public_credit: credit_error ? 'hidden' : p.public_credit, credit_error });
     }
 
     if (p.action === 'resend_outside_confirmation') {

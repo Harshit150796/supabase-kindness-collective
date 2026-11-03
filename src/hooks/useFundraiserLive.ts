@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export interface PublicDonation { id: string; display_name: string; is_anonymous: boolean; amount: number; message: string | null; created_at: string }
+/** source: a site donation, a gift from CouponDonation itself, or another outside gift the team chose to show. */
+export interface PublicDonation { id: string; display_name: string; is_anonymous: boolean; amount: number; message: string | null; created_at: string; source?: 'donation' | 'company' | 'outside' }
 export interface StoreRow { brand_name: string; total_value: number; coupons_count: number; used_count: number }
 export interface FundraiserLive {
   totalRaised: number; donationsCount: number; retailers: string[];
