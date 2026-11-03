@@ -23,11 +23,13 @@ Deno.serve(async (req) => {
     const email = prof?.email;
     if (!email || pref?.email_notifications === false || !key) { await mark(); skipped++; continue; }
     const { data: fr } = await admin.from('fundraisers').select('title, unique_slug').eq('id', n.fundraiser_id).maybeSingle();
-    const isMsg = n.kind === 'message';
+    const isTeam = n.kind === 'team_message';
+    const isMsg = n.kind === 'message' || isTeam;
     const mail = renderNoticeEmail({
-      subject: isMsg ? 'A new message is waiting' : 'A fundraiser posted an update',
-      heading: isMsg ? 'You have a new message' : 'A fundraiser you support posted an update',
-      intro: isMsg ? 'Someone sent you a message on CouponDonation. For your safety, the message is only shown on the site.' : `The organizer of "${fr?.title}" shared a new update.`,
+      subject: isTeam ? 'A message from the CouponDonation team' : isMsg ? 'A new message is waiting' : 'A fundraiser posted an update',
+      heading: isTeam ? 'The CouponDonation team sent you a message' : isMsg ? 'You have a new message' : 'A fundraiser you support posted an update',
+      intro: isTeam ? `We sent you a message about your fundraiser "${fr?.title ?? ''}". Open your messages on CouponDonation to read it and reply.`
+        : isMsg ? 'Someone sent you a message on CouponDonation. For your safety, the message is only shown on the site.' : `The organizer of "${fr?.title}" shared a new update.`,
       ctaLabel: isMsg ? 'Open messages' : 'Read the update',
       ctaUrl: isMsg ? `${SITE}/messages?c=${n.ref_id}` : `${SITE}/f/${fr?.unique_slug ?? ''}`,
       footerNote: 'You can turn account notification emails off in Settings.',

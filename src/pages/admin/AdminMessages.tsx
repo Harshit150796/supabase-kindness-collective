@@ -14,9 +14,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { rpc, fmtDate } from '@/lib/adminApi';
 import { toast } from '@/hooks/use-toast';
 
-type Person = { user_id: string; name: string | null; email: string | null; username: string | null; restrictions?: string[] } | null;
+type Person = { user_id: string; name: string | null; email: string | null; username: string | null; restrictions?: string[]; team?: boolean } | null;
 type Row = {
-  id: string; status: string; created_at: string; last_message_at: string; removed_at: string | null; removed_reason: string | null;
+  id: string; kind?: 'supporter' | 'team'; status: string; created_at: string; last_message_at: string; removed_at: string | null; removed_reason: string | null;
   fundraiser: { id: string; title: string; unique_slug: string | null }; supporter: Person; organizer: Person;
   message_count: number; flagged_count: number; removed_count: number;
 };
@@ -88,8 +88,8 @@ export default function AdminMessages() {
     { key: 'when', header: 'Last message', cell: (r) => <span className="whitespace-nowrap">{fmtDate(r.last_message_at)}</span> },
     { key: 'between', header: 'Who messaged whom', cell: (r) => (
       <div className="grid max-w-xl grid-cols-[1fr_auto_1fr] items-start gap-2">
-        <PersonCell p={r.supporter} label="Supporter" /><ArrowRight className="mt-5 h-4 w-4 text-muted-foreground" aria-label="and" /><PersonCell p={r.organizer} label="Organizer" />
-        <Link className="col-span-3 truncate text-xs text-primary" to={`/admin/fundraisers?id=${r.fundraiser.id}`}>{r.fundraiser.title}</Link>
+        <PersonCell p={r.supporter} label={r.kind === 'team' ? 'Team' : 'Supporter'} /><ArrowRight className="mt-5 h-4 w-4 text-muted-foreground" aria-label="and" /><PersonCell p={r.organizer} label="Organizer" />
+        <Link className="col-span-3 truncate text-xs text-primary" to={`/admin/fundraisers?id=${r.fundraiser.id}${r.kind === 'team' ? '&tab=contact' : ''}`}>{r.fundraiser.title}{r.kind === 'team' ? ' · reply from Contact & emails' : ''}</Link>
       </div>
     ) },
     { key: 'count', header: 'Messages', cell: (r) => (
@@ -103,13 +103,13 @@ export default function AdminMessages() {
 
   return (
     <DashboardLayout>
-      <PageHeader title="Messages" description="Every conversation between supporters and organizers. Opening one is recorded in the audit log." />
+      <PageHeader title="Messages" description="Every conversation between supporters and organizers, and the team's own threads with organizers. Opening one is recorded in the audit log." />
       {!isAdmin ? <p className="text-sm text-muted-foreground">Administrator access is required to read messages.</p> : <>
         <div className="mb-3 flex flex-wrap gap-2">
           <Input className="max-w-sm" aria-label="Search conversations" placeholder="Name, email, @username or fundraiser" value={search} onChange={(e) => set('q', e.target.value)} />
           <Select value={status} onValueChange={(v) => set('status', v)}>
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-            <SelectContent>{[['all', 'All conversations'], ['open', 'Open'], ['flagged', 'With redacted messages'], ['blocked', 'Closed by organizer'], ['removed', 'Removed by team']].map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
+            <SelectContent>{[['all', 'All conversations'], ['open', 'Open'], ['flagged', 'With redacted messages'], ['blocked', 'Closed by organizer'], ['removed', 'Removed by team'], ['team', 'With the CouponDonation team']].map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
           </Select>
           {user && <Button variant="ghost" onClick={() => set('user', null)}>Clear person filter</Button>}
         </div>
@@ -128,7 +128,7 @@ export default function AdminMessages() {
               {([['Supporter', thread.supporter], ['Organizer', thread.organizer]] as const).map(([label, p]) => (
                 <div key={label} className="flex items-start justify-between gap-2">
                   <PersonCell p={p} label={label} />
-                  {p && (p.restrictions?.includes('messaging')
+                  {p && !p.team && (p.restrictions?.includes('messaging')
                     ? <Button size="sm" variant="outline" onClick={() => allowMessaging(p)}>Allow messaging</Button>
                     : <Button size="sm" variant="outline" onClick={() => setPending({ kind: 'restrict', id: p.user_id, person: p })}>Turn off messaging</Button>)}
                 </div>

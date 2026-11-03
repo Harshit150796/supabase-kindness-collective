@@ -1026,6 +1026,7 @@ export type Database = {
           created_at: string
           fundraiser_id: string
           id: string
+          kind: string
           last_message_at: string
           removed_at: string | null
           removed_by: string | null
@@ -1040,6 +1041,7 @@ export type Database = {
           created_at?: string
           fundraiser_id: string
           id?: string
+          kind?: string
           last_message_at?: string
           removed_at?: string | null
           removed_by?: string | null
@@ -1054,6 +1056,7 @@ export type Database = {
           created_at?: string
           fundraiser_id?: string
           id?: string
+          kind?: string
           last_message_at?: string
           removed_at?: string | null
           removed_by?: string | null
@@ -1921,6 +1924,89 @@ export type Database = {
           recipient_email?: string | null
           subscriber_id?: string | null
           url?: string | null
+        }
+        Relationships: []
+      }
+      email_log: {
+        Row: {
+          body: string | null
+          category: string
+          conversation_id: string | null
+          from_email: string | null
+          fundraiser_id: string | null
+          id: string
+          last_event: string | null
+          resend_id: string | null
+          sent_at: string
+          sent_by: string | null
+          subject: string | null
+          to_email: string
+          to_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          category?: string
+          conversation_id?: string | null
+          from_email?: string | null
+          fundraiser_id?: string | null
+          id?: string
+          last_event?: string | null
+          resend_id?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          subject?: string | null
+          to_email: string
+          to_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          category?: string
+          conversation_id?: string | null
+          from_email?: string | null
+          fundraiser_id?: string | null
+          id?: string
+          last_event?: string | null
+          resend_id?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          subject?: string | null
+          to_email?: string
+          to_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_log_fundraiser_id_fkey"
+            columns: ["fundraiser_id"]
+            isOneToOne: false
+            referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_log_sync: {
+        Row: {
+          backfill_after: string | null
+          backfill_done: boolean
+          id: number
+          last_error: string | null
+          last_run_at: string | null
+        }
+        Insert: {
+          backfill_after?: string | null
+          backfill_done?: boolean
+          id: number
+          last_error?: string | null
+          last_run_at?: string | null
+        }
+        Update: {
+          backfill_after?: string | null
+          backfill_done?: boolean
+          id?: number
+          last_error?: string | null
+          last_run_at?: string | null
         }
         Relationships: []
       }
@@ -3928,6 +4014,18 @@ export type Database = {
         Args: { _id: string; _patch: Json }
         Returns: undefined
       }
+      admin_email_log: {
+        Args: {
+          _category?: string
+          _fundraiser?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _status?: string
+          _user?: string
+        }
+        Returns: Json
+      }
       admin_email_stats: { Args: never; Returns: Json }
       admin_fill_from_stock: {
         Args: { _brand: string; _limit?: number; _value: number }
@@ -3957,6 +4055,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_fundraiser_contact: { Args: { _fid: string }; Returns: Json }
       admin_fundraiser_coupons: {
         Args: { _fundraiser_id: string }
         Returns: {
@@ -4348,6 +4447,7 @@ export type Database = {
           source_id: string
         }[]
       }
+      email_log_upsert: { Args: { _rows: Json }; Returns: number }
       following_feed: {
         Args: { _limit?: number; _offset?: number }
         Returns: Json
@@ -4739,6 +4839,7 @@ export type Database = {
         Returns: number
       }
       svc_purge_cvv: { Args: never; Returns: number }
+      team_inbox_id: { Args: never; Returns: string }
       username_available: { Args: { _username: string }; Returns: boolean }
       withdraw_card_donation: { Args: { _id: string }; Returns: undefined }
     }

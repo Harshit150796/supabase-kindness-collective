@@ -18,6 +18,7 @@ export const ADMIN_LOADERS: Record<string, () => Promise<{ default: React.Compon
   '/admin/messages': () => import('./AdminMessages'),
   '/admin/profiles': () => import('./AdminProfiles'),
   '/admin/contact': () => import('./AdminContactMessages'),
+  '/admin/emails': () => import('./AdminEmails'),
   '/admin/followups': () => import('./AdminFollowups'),
   '/admin/tasks': () => import('./AdminTasks'),
   '/admin/notifications': () => import('./AdminNotifications'),

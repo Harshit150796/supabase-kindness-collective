@@ -21,7 +21,9 @@ import { RecordWork } from '@/components/admin/RecordWork';
 import { useAuth } from '@/hooks/useAuth';
 import { FundraiserImagesTab } from '@/components/admin/FundraiserImagesTab';
 import { FundraiserCouponsTab } from '@/components/admin/FundraiserCouponsTab';
+import { FundraiserContactTab } from '@/components/admin/FundraiserContactTab';
 
+type Organizer = { user_id: string; full_name: string | null; email: string | null; phone?: string | null };
 const STATUSES = ['all', 'pending', 'active', 'paused', 'completed', 'rejected', 'archived'] as const;
 const PAGE = 25;
 
@@ -52,13 +54,19 @@ export default function AdminFundraisers() {
       if (dq.trim()) b = b.or(`title.ilike.%${dq.trim().replace(/[%,()]/g, '')}%,unique_slug.ilike.%${dq.trim().replace(/[%,()]/g, '')}%`);
       const { data, error, count } = await b.order(sort.key, { ascending: sort.dir === 'asc', nullsFirst: false }).range(page * PAGE, page * PAGE + PAGE - 1);
       if (error) throw error;
-      return { rows: data ?? [], total: count ?? 0 };
+      // Who created each one (name and email), for the Organizer column.
+      const rows = (data ?? []) as Array<Record<string, unknown> & { user_id: string }>;
+      const ids = [...new Set(rows.map((r) => r.user_id).filter(Boolean))];
+      const { data: people } = ids.length ? await sb.from('profiles').select('user_id,full_name,email').in('user_id', ids) : { data: [] };
+      const byId = new Map(((people ?? []) as Organizer[]).map((p) => [p.user_id, p]));
+      return { rows: rows.map((r) => ({ ...r, organizer: byId.get(r.user_id) ?? null })), total: count ?? 0 };
     },
   });
 
   const cols: Column<any>[] = [
     ...(canWrite ? [{ key: 'select', header: 'Select', cell: (r: any) => <span onClick={(e) => e.stopPropagation()}><Checkbox aria-label={`Select ${r.title}`} checked={!!selected[r.id]} onCheckedChange={(v) => setSelected((old) => { const next = { ...old }; if (v) next[r.id] = r.title; else delete next[r.id]; return next; })} /></span> }] : []),
     { key: 'title', header: 'Fundraiser', sortable: true, cell: (r) => <div className="max-w-[320px]"><p className="truncate font-medium text-foreground">{r.title}</p><p className="truncate text-xs text-muted-foreground">/{r.unique_slug}</p></div> },
+    { key: 'organizer', header: 'Created by', cell: (r) => <div className="max-w-[240px]"><p className="truncate text-foreground">{r.organizer?.full_name || 'No name'}</p><p className="truncate text-xs text-muted-foreground">{r.organizer?.email || '—'}</p></div> },
     { key: 'status', header: 'Status', sortable: true, cell: (r) => <StatusBadge value={r.status} /> },
     { key: 'featured_order', header: 'Featured', sortable: true, cell: (r) => r.featured_order != null ? `#${r.featured_order}` : '—' },
     { key: 'category', header: 'Category', cell: (r) => <span className="capitalize">{r.category}</span> },
@@ -67,8 +75,14 @@ export default function AdminFundraisers() {
   ];
 
   const exportCsv = async () => {
-    try { const rows = await fetchAllChunks((f, t) => { let b = sb.from('fundraisers').select('id,title,unique_slug,status,category,country,monthly_goal,created_at'); if (status !== 'all') b = b.eq('status', status); const search = dq.trim().replace(/[%,()]/g, ''); if (search) b = b.or(`title.ilike.%${search}%,unique_slug.ilike.%${search}%`); return b.order(sort.key, { ascending: sort.dir === 'asc' }).order('id').range(f, t); });
-    downloadCsv('fundraisers', rows); toast({ title: `${rows.length} fundraisers exported` }); } catch (e) { toast({ title: 'Export failed', description: (e as Error).message, variant: 'destructive' }); }
+    try { const rows = await fetchAllChunks((f, t) => { let b = sb.from('fundraisers').select('id,title,unique_slug,status,category,country,monthly_goal,created_at,user_id'); if (status !== 'all') b = b.eq('status', status); const search = dq.trim().replace(/[%,()]/g, ''); if (search) b = b.or(`title.ilike.%${search}%,unique_slug.ilike.%${search}%`); return b.order(sort.key, { ascending: sort.dir === 'asc' }).order('id').range(f, t); });
+    // Add who created each fundraiser (name and email), looked up in batches.
+    const list = rows as Array<Record<string, unknown> & { user_id: string }>;
+    const ids = [...new Set(list.map((r) => r.user_id).filter(Boolean))];
+    const people = new Map<string, Organizer>();
+    for (let i = 0; i < ids.length; i += 200) { const { data } = await sb.from('profiles').select('user_id,full_name,email,phone').in('user_id', ids.slice(i, i + 200)); for (const p of (data ?? []) as Organizer[]) people.set(p.user_id, p); }
+    const out = list.map(({ user_id, ...r }) => ({ ...r, organizer_name: people.get(user_id)?.full_name ?? '', organizer_email: people.get(user_id)?.email ?? '', organizer_phone: people.get(user_id)?.phone ?? '' }));
+    downloadCsv('fundraisers', out); toast({ title: `${rows.length} fundraisers exported` }); } catch (e) { toast({ title: 'Export failed', description: (e as Error).message, variant: 'destructive' }); }
   };
 
   return (
@@ -136,7 +150,7 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
   });
   const f = d.data?.f;
   useEffect(() => { setFeatureOrder(f?.featured_order == null ? '' : String(f.featured_order)); }, [f?.id, f?.featured_order]);
-  const organizer = useQuery({ queryKey: ['adm-fr-organizer', id, user?.id], enabled: !!f?.user_id, queryFn: async () => { const { data, error } = await sb.from('profiles').select('full_name,email').eq('user_id', f?.user_id).maybeSingle(); if (error) throw error; return data; } });
+  const organizer = useQuery({ queryKey: ['adm-fr-organizer', id, user?.id], enabled: !!f?.user_id, queryFn: async () => { const { data, error } = await sb.from('profiles').select('full_name,email,phone').eq('user_id', f?.user_id).maybeSingle(); if (error) throw error; return data; } });
 
   const act = async (action: string, extra: Record<string, unknown> = {}) => {
     if (['approve', 'pause', 'resume', 'restore'].includes(action) && !window.confirm(`${action === 'approve' || action === 'resume' ? 'Make this fundraiser active' : action === 'pause' ? 'Pause this fundraiser' : 'Restore this fundraiser as paused'}?`)) return;
@@ -179,7 +193,9 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
               <SheetTitle className="pr-6 text-left font-serif text-2xl font-normal">{f.title}</SheetTitle>
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><StatusBadge value={f.status} /><span>Created {fmtDate(f.created_at)}</span>
                 {f.unique_slug && <a href={`/f/${f.unique_slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary">Public page <ExternalLink className="h-3 w-3" /></a>}</div>
-              <p className="break-words text-left text-xs text-muted-foreground">Organizer: {organizer.data?.full_name || organizer.data?.email || (organizer.isLoading ? 'Loading…' : organizer.error ? 'Could not load organizer' : 'Not recorded')}</p>
+              <p className="break-words text-left text-xs text-muted-foreground">Created by {organizer.isLoading ? 'Loading…' : organizer.error ? 'Could not load organizer' : !organizer.data ? 'Not recorded'
+                : <>{organizer.data.full_name || 'No name'}{organizer.data.email && <> · <a href={`mailto:${organizer.data.email}`} className="text-primary underline-offset-4 hover:underline">{organizer.data.email}</a></>}{organizer.data.phone && <> · {organizer.data.phone}</>}
+                  {canWrite && <> · <button className="text-primary underline-offset-4 hover:underline" onClick={() => changeTab('contact')}>Message them</button></>}</>}</p>
             </SheetHeader>
 
             {canWrite && (
@@ -197,8 +213,9 @@ function FundraiserDrawer({ id, onClose }: { id: string | null; onClose: () => v
 
             <Tabs value={tab} onValueChange={changeTab} className="mt-5">
               <TabsList className="flex h-auto flex-wrap justify-start">
-                {['overview', 'work', 'coupons', 'images', 'donations', 'updates', 'comments', 'team', 'conversations', 'reports', ...(isAdmin ? ['history'] : [])].map((t) => <TabsTrigger key={t} value={t} className="capitalize">{t === 'work' ? 'Notes & follow-ups' : t}</TabsTrigger>)}
+                {['overview', ...(canWrite ? ['contact'] : []), 'work', 'coupons', 'images', 'donations', 'updates', 'comments', 'team', 'conversations', 'reports', ...(isAdmin ? ['history'] : [])].map((t) => <TabsTrigger key={t} value={t} className="capitalize">{t === 'work' ? 'Notes & follow-ups' : t === 'contact' ? 'Contact & emails' : t}</TabsTrigger>)}
               </TabsList>
+              {canWrite && <TabsContent value="contact"><FundraiserContactTab key={f.id} fundraiserId={f.id} title={f.title} canWrite={canWrite} /></TabsContent>}
               <TabsContent value="work"><RecordWork key={f.id} type="fundraiser" recordKey={f.id} title={f.title} /></TabsContent>
               <TabsContent value="coupons"><FundraiserCouponsTab fundraiserId={f.id} canWrite={canWrite} onDirtyChange={(v) => markCouponDirty('all', v)} /></TabsContent>
               <TabsContent value="images"><FundraiserImagesTab fundraiser={f} canWrite={canWrite} /></TabsContent>

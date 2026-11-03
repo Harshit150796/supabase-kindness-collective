@@ -13,7 +13,7 @@ import {
   LayoutDashboard, Megaphone, DollarSign, Users, ShieldCheck, Gift, Package, Flag, ListTodo, Bell, FileText,
   BookOpen, MessageSquare, Newspaper, HelpCircle, Mail, UserCog, History, Settings, BarChart3, Search,
   PanelLeftClose, PanelLeftOpen, Menu, LogOut, Home, Contact, Inbox,
-  Repeat, MessagesSquare, UserRound,
+  Repeat, MessagesSquare, UserRound, MailCheck,
 } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { SavedAdminViews } from '@/components/admin/SavedAdminViews';
@@ -46,6 +46,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
   ] },
   { title: 'Work', items: [
     { label: 'Contact messages', path: '/admin/contact', icon: Inbox, countsNew: true },
+    { label: 'Emails sent', path: '/admin/emails', icon: MailCheck },
     { label: 'Follow-ups', path: '/admin/followups', icon: Mail },
     { label: 'Tasks', path: '/admin/tasks', icon: ListTodo },
     { label: 'Notifications', path: '/admin/notifications', icon: Bell },
