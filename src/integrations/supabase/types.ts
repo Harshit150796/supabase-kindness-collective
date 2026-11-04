@@ -1366,6 +1366,7 @@ export type Database = {
           returned_at: string | null
           returned_from_coupon_id: string | null
           returned_from_fundraiser_id: string | null
+          reveal_reminder_resend_id: string | null
           reveal_reminder_sent_at: string | null
           revealed_at: string | null
           revealed_by: string | null
@@ -1424,6 +1425,7 @@ export type Database = {
           returned_at?: string | null
           returned_from_coupon_id?: string | null
           returned_from_fundraiser_id?: string | null
+          reveal_reminder_resend_id?: string | null
           reveal_reminder_sent_at?: string | null
           revealed_at?: string | null
           revealed_by?: string | null
@@ -1482,6 +1484,7 @@ export type Database = {
           returned_at?: string | null
           returned_from_coupon_id?: string | null
           returned_from_fundraiser_id?: string | null
+          reveal_reminder_resend_id?: string | null
           reveal_reminder_sent_at?: string | null
           revealed_at?: string | null
           revealed_by?: string | null
@@ -1931,49 +1934,64 @@ export type Database = {
         Row: {
           body: string | null
           category: string
+          clicked_at: string | null
           conversation_id: string | null
+          delivered_at: string | null
           from_email: string | null
           fundraiser_id: string | null
           id: string
           last_event: string | null
+          opened_at: string | null
+          problem_at: string | null
           resend_id: string | null
           sent_at: string
           sent_by: string | null
           subject: string | null
           to_email: string
           to_user_id: string | null
+          topic: string | null
           updated_at: string
         }
         Insert: {
           body?: string | null
           category?: string
+          clicked_at?: string | null
           conversation_id?: string | null
+          delivered_at?: string | null
           from_email?: string | null
           fundraiser_id?: string | null
           id?: string
           last_event?: string | null
+          opened_at?: string | null
+          problem_at?: string | null
           resend_id?: string | null
           sent_at?: string
           sent_by?: string | null
           subject?: string | null
           to_email: string
           to_user_id?: string | null
+          topic?: string | null
           updated_at?: string
         }
         Update: {
           body?: string | null
           category?: string
+          clicked_at?: string | null
           conversation_id?: string | null
+          delivered_at?: string | null
           from_email?: string | null
           fundraiser_id?: string | null
           id?: string
           last_event?: string | null
+          opened_at?: string | null
+          problem_at?: string | null
           resend_id?: string | null
           sent_at?: string
           sent_by?: string | null
           subject?: string | null
           to_email?: string
           to_user_id?: string | null
+          topic?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3106,6 +3124,57 @@ export type Database = {
         }
         Relationships: []
       }
+      outside_gift_events: {
+        Row: {
+          coupon_id: string
+          created_at: string
+          emailed_at: string | null
+          id: string
+          kind: string
+          last_error: string | null
+          resend_id: string | null
+          skipped_reason: string | null
+          source_id: string
+        }
+        Insert: {
+          coupon_id: string
+          created_at?: string
+          emailed_at?: string | null
+          id?: string
+          kind: string
+          last_error?: string | null
+          resend_id?: string | null
+          skipped_reason?: string | null
+          source_id: string
+        }
+        Update: {
+          coupon_id?: string
+          created_at?: string
+          emailed_at?: string | null
+          id?: string
+          kind?: string
+          last_error?: string | null
+          resend_id?: string | null
+          skipped_reason?: string | null
+          source_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outside_gift_events_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outside_gift_events_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "coupon_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_inquiries: {
         Row: {
           city_state: string | null
@@ -3967,6 +4036,10 @@ export type Database = {
         Returns: Json
       }
       admin_analytics: { Args: { _days?: number }; Returns: Json }
+      admin_ask_metric: {
+        Args: { _from: string; _metric: string; _status?: string; _to: string }
+        Returns: Json
+      }
       admin_assign_stock_code: {
         Args: { _stock: string; _target: string }
         Returns: string
@@ -4009,6 +4082,15 @@ export type Database = {
         }[]
       }
       admin_conversation_thread: { Args: { _cid: string }; Returns: Json }
+      admin_coupon_followups: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _status?: string
+        }
+        Returns: Json
+      }
       admin_delete_stock_code: { Args: { _id: string }; Returns: undefined }
       admin_edit_stock_code: {
         Args: { _id: string; _patch: Json }
@@ -4017,11 +4099,13 @@ export type Database = {
       admin_email_log: {
         Args: {
           _category?: string
+          _days?: number
           _fundraiser?: string
           _limit?: number
           _offset?: number
           _search?: string
           _status?: string
+          _topic?: string
           _user?: string
         }
         Returns: Json
@@ -4438,6 +4522,7 @@ export type Database = {
         Args: { _coupon_id: string }
         Returns: undefined
       }
+      coupon_fundraiser: { Args: { _coupon_id: string }; Returns: string }
       credit_gold_coins: { Args: never; Returns: Json }
       dispatch_secret_ok: { Args: { _s: string }; Returns: boolean }
       due_account_emails: {
@@ -4448,6 +4533,11 @@ export type Database = {
         }[]
       }
       email_log_upsert: { Args: { _rows: Json }; Returns: number }
+      email_status: { Args: { _resend_id: string }; Returns: Json }
+      email_topic: {
+        Args: { _category: string; _subject: string }
+        Returns: string
+      }
       following_feed: {
         Args: { _limit?: number; _offset?: number }
         Returns: Json
@@ -4743,6 +4833,7 @@ export type Database = {
           returned_at: string | null
           returned_from_coupon_id: string | null
           returned_from_fundraiser_id: string | null
+          reveal_reminder_resend_id: string | null
           reveal_reminder_sent_at: string | null
           revealed_at: string | null
           revealed_by: string | null
@@ -4783,6 +4874,7 @@ export type Database = {
         }[]
       }
       purge_removed_conversations: { Args: never; Returns: Json }
+      queue_outside_gift_events: { Args: { _since?: string }; Returns: number }
       rate_limit_take: {
         Args: {
           _bucket: string
