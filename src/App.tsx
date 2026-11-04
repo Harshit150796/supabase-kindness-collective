@@ -17,6 +17,7 @@ import { adminPage } from "./pages/admin/adminPages";
 const Index = lazy(() => import("./pages/Index"));
 import { PrivacyConsentBanner } from "./components/PrivacyConsentBanner";
 import { VisitorAnalytics } from "./components/VisitorAnalytics";
+import { AdTags } from "./components/AdTags";
 import { CursorTrail } from './components/CursorTrail';
 import { SiteMenuProvider } from './components/navigation/SiteMenuProvider';
 import { signInPath } from './lib/serverActions';

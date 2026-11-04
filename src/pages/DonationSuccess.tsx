@@ -9,6 +9,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { reportCompletedGift } from '@/lib/adTracking';
 
 export default function DonationSuccess() {
   const navigate = useNavigate();
