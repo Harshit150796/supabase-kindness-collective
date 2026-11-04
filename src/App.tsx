@@ -233,6 +233,7 @@ const App = () => (
                   <PageChoreography />
                   <PrivacyConsentBanner />
                   <VisitorAnalytics />
+                  <AdTags />
                 </SiteMenuProvider>
               </SessionSecurityProvider>
             </AuthProvider>
