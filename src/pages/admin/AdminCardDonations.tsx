@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Eye, Loader2, Search } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -42,6 +43,10 @@ export default function AdminCardDonations() {
   const { canWrite } = useTeamRole();
   const [filter, setFilter] = useState<Filter>('pending');
   const [open, setOpen] = useState<CardDonation | null>(null);
+  // ?id= comes from the admin search.
+  const [params] = useSearchParams();
+  const linked = params.get('id');
+  useEffect(() => { if (linked) sb.from('card_donations').select('*, fundraisers(title, unique_slug)').eq('id', linked).maybeSingle().then(({ data }: { data: CardDonation | null }) => { if (data) { setFilter('all'); setOpen(data); } }); }, [linked]);
   const t = useAdminPaged<CardDonation>({
     table: 'card_donations', select: '*, fundraisers(title, unique_slug)', searchCols: ['store_name', 'donor_name', 'donor_email'],
     defaultSort: { key: 'created_at', dir: 'desc' }, filter: (b) => (filter === 'all' ? b : b.eq('status', filter)), deps: [filter],

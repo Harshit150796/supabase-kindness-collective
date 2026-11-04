@@ -7,7 +7,7 @@ import { sb, rpc, fmtDate } from '@/lib/adminApi';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { AdminSearch } from '@/components/admin/AdminSearch';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, Megaphone, DollarSign, Users, ShieldCheck, Gift, Package, Flag, ListTodo, Bell, FileText,
@@ -90,13 +90,10 @@ function AdminFrame({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('admin-sidebar') === '1');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [q, setQ] = useState('');
-  const [debounced, setDebounced] = useState('');
 
   useEffect(() => { localStorage.setItem('admin-sidebar', collapsed ? '1' : '0'); }, [collapsed]);
-  useEffect(() => { const t = setTimeout(() => setDebounced(q), 250); return () => clearTimeout(t); }, [q]);
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
-  useEffect(() => { setQ(''); setDebounced(''); setPaletteOpen(false); }, [user?.id]);
+  useEffect(() => { setPaletteOpen(false); }, [user?.id]);
 
   // Keyboard: Cmd/Ctrl+K palette, "/" search, g+letter navigation
   useEffect(() => {
@@ -118,11 +115,6 @@ function AdminFrame({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [navigate]);
 
-  const { data: results } = useQuery({
-    queryKey: ['admin-search', user?.id, debounced],
-    enabled: paletteOpen && debounced.trim().length >= 2,
-    queryFn: () => rpc<any[]>('admin_search', { _q: debounced.trim() }),
-  });
 
   const { data: notifs } = useQuery({
     queryKey: ['admin-notifs-bell', user?.id],
@@ -205,7 +197,7 @@ function AdminFrame({ children }: { children: ReactNode }) {
             {crumbs.map((c, i) => <span key={i}>{i > 0 && <span className="mx-1.5">/</span>}<span className={i === crumbs.length - 1 ? 'text-foreground' : ''}>{c}</span></span>)}
           </nav>
           <button onClick={() => setPaletteOpen(true)} className="ml-auto flex h-9 w-full max-w-xs items-center gap-2 rounded-md border border-border bg-muted/40 px-3 text-sm text-muted-foreground hover:bg-muted">
-            <Search className="h-4 w-4" /><span className="flex-1 text-left">Search…</span><kbd className="hidden rounded border border-border px-1.5 text-[10px] sm:inline">⌘K</kbd>
+            <Search className="h-4 w-4" /><span className="flex-1 text-left">Search or ask…</span><kbd className="hidden rounded border border-border px-1.5 text-[10px] sm:inline">⌘K</kbd>
           </button>
           <SavedAdminViews />
           <Popover>
@@ -247,27 +239,7 @@ function AdminFrame({ children }: { children: ReactNode }) {
         <main className="flex-1 p-4 md:p-6"><div className="mx-auto max-w-[1400px]">{children}</div></main>
       </div>
 
-      <CommandDialog open={paletteOpen} onOpenChange={setPaletteOpen}>
-        <CommandInput placeholder="Search fundraisers, donations, users, tasks…" value={q} onValueChange={setQ} />
-        <CommandList>
-          <CommandEmpty>{q.trim().length < 2 ? 'Type at least 2 characters.' : 'No results.'}</CommandEmpty>
-          {!!results?.length && (
-            <CommandGroup heading="Results">
-              {results.map((r: any) => (
-                <CommandItem key={r.kind + r.id} value={`${r.kind} ${r.label} ${r.id}`} onSelect={() => { setPaletteOpen(false); navigate(r.link); }}>
-                  <span className="mr-2 w-20 text-xs capitalize text-muted-foreground">{r.kind}</span><span className="truncate">{r.label}</span>
-                  <span className="ml-auto text-xs text-muted-foreground">{r.sub}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
-          <CommandGroup heading="Go to">
-            {ALL.filter((i) => isAdmin || !i.adminOnly).map((i) => (
-              <CommandItem key={i.path} value={`go ${i.label}`} onSelect={() => { setPaletteOpen(false); navigate(i.path); }}><i.icon className="mr-2 h-4 w-4" />{i.label}</CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
+      <AdminSearch open={paletteOpen} onOpenChange={setPaletteOpen} nav={ALL} isAdmin={isAdmin} />
     </div>
   );
 }

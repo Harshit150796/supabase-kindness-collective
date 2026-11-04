@@ -1,5 +1,6 @@
 import { AdminRecordDrawer } from '@/components/admin/AdminRecordDrawer';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/admin/AdminLayout';
@@ -14,8 +15,10 @@ interface Row { user_id: string; email: string; full_name: string | null; city: 
 
 export default function AdminUsers() {
   const [selected, setSelected] = useState<Row | null>(null);
-  const [search, setSearch] = useState('');
-  const [dq, setDq] = useState('');
+  // ?q= comes from the admin search (a person's email).
+  const [params] = useSearchParams();
+  const [search, setSearch] = useState(params.get('q') ?? '');
+  const [dq, setDq] = useState(params.get('q') ?? '');
   const [role, setRole] = useState('all');
   const [page, setPage] = useState(0);
   useEffect(() => { const t = setTimeout(() => { setDq(search); setPage(0); }, 300); return () => clearTimeout(t); }, [search]);

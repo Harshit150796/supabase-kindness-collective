@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/admin/AdminLayout';
@@ -19,8 +20,9 @@ const monthly = (r: any) => (r.gift_cents + r.tip_cents + r.fee_cents) / 100;
 
 // Every monthly gift, its next charge and history. Actions go through recurring-actions (audited).
 export default function AdminMonthly() {
-  const [q, setQ] = useState('');
-  const [dq, setDq] = useState('');
+  const [params] = useSearchParams();
+  const [q, setQ] = useState(params.get('q') ?? '');
+  const [dq, setDq] = useState(params.get('q') ?? '');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(0);
   const [sel, setSel] = useState<any>(null);

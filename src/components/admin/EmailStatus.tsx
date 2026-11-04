@@ -1,19 +1,21 @@
 import { Badge } from '@/components/ui/badge';
-
-export type EmailRow = {
-  id: string; sent_at: string; to_email: string; to: { user_id: string; name?: string | null; email?: string | null } | null; from_email: string | null;
-  subject: string | null; category: 'site' | 'team' | 'outreach'; last_event: string | null; fundraiser: { id: string; title: string } | null;
-  sent_by: { name?: string | null; email?: string | null } | null; body: string | null;
-};
+import type { EmailRow } from '@/lib/emailTopics';
+export type { EmailRow } from '@/lib/emailTopics';
 
 /** Resend's last event for an email, in plain words. */
 const LABEL: Record<string, string> = {
-  delivered: 'Delivered', opened: 'Opened', clicked: 'Link clicked', bounced: 'Bounced', complained: 'Marked as spam', suppressed: 'Not sent (blocked address)',
+  delivered: 'Delivered, not opened', opened: 'Opened', clicked: 'Opened, link clicked', bounced: 'Bounced', complained: 'Marked as spam', suppressed: 'Not sent (blocked address)',
   failed: 'Failed', canceled: 'Canceled', delivery_delayed: 'Delayed', sent: 'Sent', queued: 'Queued', scheduled: 'Scheduled',
 };
 const PROBLEM = new Set(['bounced', 'complained', 'suppressed', 'failed', 'canceled']);
 
-export function EmailStatus({ row }: { row: Pick<EmailRow, 'last_event'> }) {
+/** Open tracking was switched on for site emails at this time (Resend, Nov 4, 2026). */
+export const OPENS_TRACKED_SINCE = '2026-11-04T16:40:00Z';
+
+export function EmailStatus({ row, short }: { row: Pick<EmailRow, 'last_event'> & Partial<Pick<EmailRow, 'sent_at' | 'category'>>; short?: boolean }) {
   const e = row.last_event ?? 'sent';
-  return <Badge variant={PROBLEM.has(e) ? 'destructive' : ['delivered', 'opened', 'clicked'].includes(e) ? 'default' : 'secondary'}>{LABEL[e] ?? e}</Badge>;
+  // "Not opened" only means something where opens are tracked.
+  const untracked = row.category === 'outreach' || (!!row.sent_at && row.sent_at < OPENS_TRACKED_SINCE);
+  const label = (short || untracked) && e === 'delivered' ? 'Delivered' : LABEL[e] ?? e;
+  return <Badge className="whitespace-nowrap" variant={PROBLEM.has(e) ? 'destructive' : ['opened', 'clicked'].includes(e) ? 'default' : 'secondary'}>{label}</Badge>;
 }

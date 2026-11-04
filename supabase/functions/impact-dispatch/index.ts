@@ -3,7 +3,7 @@
 // ONE email per donation per run: all pending events of a donation are grouped; received+used combine.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { renderImpactEmail, renderUseReminderEmail, type ImpactItem } from '../_shared/impact-email.ts';
+import { renderImpactEmail, renderOutsideGiftEmail, renderUseReminderEmail, type ImpactItem } from '../_shared/impact-email.ts';
 import { NOTIFY_SENDER } from '../_shared/email-layout.ts';
 import { flushOwnerAlerts, renderOwnerCouponEmail } from '../_shared/owner-alerts.ts';
 import { z } from 'npm:zod@3';
@@ -107,21 +107,52 @@ Deno.serve(async (req) => {
   }
   report.impact = { planned: plan.length, sent, skipped, failed };
 
+  // 1b) The same follow-ups for outside coupons (company gifts, donated cards, gifts handed over): the
+  //     giver hears when the family opened it and when they used it.
+  await admin.rpc('queue_outside_gift_events');
+  const { data: outs } = await admin.from('outside_gift_events').select('id, source_id, coupon_id, kind').is('emailed_at', null).is('skipped_reason', null).order('created_at').limit(100);
+  let oSent = 0, oSkipped = 0;
+  for (const ev of outs ?? []) {
+    const mark = (patch: Record<string, unknown>) => admin.from('outside_gift_events').update(patch).eq('id', ev.id);
+    const { data: src } = await admin.from('coupon_sources').select('donor_email, donor_name, fundraiser_id').eq('id', ev.source_id).maybeSingle();
+    const email = src?.donor_email?.trim();
+    if (!src || !email) { await mark({ skipped_reason: 'no_email' }); oSkipped++; continue; }
+    const { data: opt } = await admin.from('impact_email_optouts').select('email').eq('email', email.toLowerCase()).maybeSingle();
+    if (opt || await isSuppressed(admin, email)) { await mark({ skipped_reason: 'impact_optout' }); oSkipped++; continue; }
+    const { data: c } = await admin.from('coupons').select('store_name, issued_brand, value, revealed_at, used_at, used_category, status').eq('id', ev.coupon_id).maybeSingle();
+    const at = ev.kind === 'used' ? c?.used_at : c?.revealed_at;
+    if (!c || !at || ['void', 'returned'].includes(c.status)) { await mark({ skipped_reason: 'coupon_not_live' }); oSkipped++; continue; }
+    const { data: fr } = await admin.from('fundraisers').select('title, unique_slug, status, user_id').eq('id', src.fundraiser_id).maybeSingle();
+    if (!fr) { await mark({ skipped_reason: 'no_fundraiser' }); oSkipped++; continue; }
+    const { data: org } = await admin.rpc('get_fundraiser_organizer', { _fundraiser_id: src.fundraiser_id });
+    const organizer = (Array.isArray(org) ? org[0]?.display_name : null) || 'The organizer';
+    if (!key) { report.error = 'Missing Resend key'; break; }
+    const mail = renderOutsideGiftEmail({ kind: ev.kind, brand: c.issued_brand || c.store_name, value: Number(c.value ?? 0), fundraiserTitle: fr.title,
+      fundraiserUrl: fr.unique_slug && fr.status === 'active' ? `${SITE}/f/${fr.unique_slug}` : null, organizer, at, category: c.used_category,
+      firstName: (src.donor_name || '').trim().split(/\s+/)[0] || null });
+    try { const id = await sendResend(key, email, mail); await mark({ emailed_at: new Date().toISOString(), resend_id: id, last_error: null }); oSent++; }
+    catch (e) { await mark({ last_error: String(e).slice(0, 500) }); }
+  }
+  report.outside_followups = { sent: oSent, skipped: oSkipped };
+
   // 2) One gentle reminder per coupon: revealed 7+ days ago, not used.
   const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
-  const { data: due } = await admin.from('coupons').select('id, store_name, donation_id, revealed_by').lte('revealed_at', weekAgo).is('used_at', null).is('reveal_reminder_sent_at', null).not('status', 'in', '(void,returned)').limit(100);
+  const { data: due } = await admin.from('coupons').select('id, store_name, issued_brand, donation_id, source_id, revealed_by').lte('revealed_at', weekAgo).is('used_at', null).is('reveal_reminder_sent_at', null).not('status', 'in', '(void,returned)').limit(100);
   let reminded = 0;
   for (const c of due ?? []) {
+    // Donation coupons and outside coupons (company gifts, donated cards) alike.
+    const { data: fid } = await admin.rpc('coupon_fundraiser', { _coupon_id: c.id });
+    const { data: fr } = fid ? await admin.from('fundraisers').select('title, user_id').eq('id', fid).maybeSingle() : { data: null };
+    if (!fr) continue;
     const { data: claimed } = await admin.from('coupons').update({ reveal_reminder_sent_at: new Date().toISOString() }).eq('id', c.id).is('reveal_reminder_sent_at', null).select('id');
     if (!claimed?.length) continue;
-    const { data: dn } = await admin.from('donations').select('fundraiser_id, fundraisers(title, user_id)').eq('id', c.donation_id).maybeSingle();
-    // deno-lint-ignore no-explicit-any
-    const fr = (dn as any)?.fundraisers; if (!fr) continue;
+    const dn = { fundraiser_id: fid as string };
     const { data: prof } = await admin.from('profiles').select('id, email, full_name').eq('user_id', fr.user_id).maybeSingle();
     if (prof) await admin.from('notifications').insert({ user_id: prof.id, title: `Did you use your ${c.store_name} coupon?`, message: `If you used your ${c.store_name} coupon, tap Used — your donor would love to know. It's optional.` });
     const { data: pref } = await admin.from('messaging_preferences').select('email_notifications').eq('user_id', fr.user_id).maybeSingle();
     if (prof?.email && key && pref?.email_notifications !== false) {
-      try { await sendResend(key, prof.email, renderUseReminderEmail({ brand: c.store_name, fundraiserTitle: fr.title, firstName: prof.full_name?.trim().split(/\s+/)[0], dashboardUrl: `${SITE}/fundraiser/${dn!.fundraiser_id}#coupons` })); } catch (e) { console.error('reminder failed', c.id, String(e)); }
+      try { const rid = await sendResend(key, prof.email, renderUseReminderEmail({ brand: c.issued_brand || c.store_name, fundraiserTitle: fr.title, firstName: prof.full_name?.trim().split(/\s+/)[0], dashboardUrl: `${SITE}/fundraiser/${dn.fundraiser_id}#coupons` }));
+        await admin.from('coupons').update({ reveal_reminder_resend_id: rid }).eq('id', c.id); } catch (e) { console.error('reminder failed', c.id, String(e)); }
     }
     reminded++;
   }
