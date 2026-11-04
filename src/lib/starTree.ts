@@ -67,7 +67,7 @@ export function planStarTree(width: number, height: number, sky: HeroSky): Plan 
   const k = clamp(ppu / REF_PX_PER_UNIT, 0.75, 1.5);
   const kt = clamp(k, 0.85, 1.3);
   const canopyHalf = 190 * (ppu / REF_PX_PER_UNIT);
-  const size = 38 * kt;
+  const size = 27 * kt;
   const lineW = LINE_EM * size;
   const labelHalf = lineW / 2 + 12;
   // The kicker's top: buttons end 28px (phones) / 36px above the canopy, then 36/38px buttons, 8px gap, ~18px kicker.
@@ -80,7 +80,7 @@ export function planStarTree(width: number, height: number, sky: HeroSky): Plan 
       layout: dir === 1 ? 'right' : 'left',
       stars: placeStars(1.05 * k, cx, s1y, 1.05 * clamp(k, 0.9, 1.3)),
       text: { x: cx, y: baseline, anchor: 'middle', size, width: lineW, rot: [cx, baseline - 4] },
-      caption: { x: cx, y: baseline + 30 * kt, anchor: 'middle', size: 13 * kt },
+      caption: { x: cx, y: baseline + 24 * kt, anchor: 'middle', size: 13 * kt },
       glow: 2.2,
     };
   };
@@ -107,7 +107,7 @@ export function planStarTree(width: number, height: number, sky: HeroSky): Plan 
   const withCaption = bandH >= 44;
   const treeW = 42.5 * s;
   const gap = 12 * s;
-  const tSize = 30 * s;
+  const tSize = 21 * s;
   const tW = LINE_EM * tSize;
   const total = treeW + gap + tW;
   if (total > width - 24) return null;
@@ -137,7 +137,7 @@ function groundPlan(width: number, height: number, c: number[], f: number[], tan
   const z = rel[0] * f[0] + rel[1] * f[1] + rel[2] * f[2];
   const base = height / 2 - ((rel[0] * up[0] + rel[1] * up[1] + rel[2] * up[2]) / z) * (height / 2 / tanHalf);
   const s = 0.62;
-  const treeW = 42.5 * s, gap = 10 * s, tSize = 30 * s, tW = LINE_EM * tSize;
+  const treeW = 42.5 * s, gap = 10 * s, tSize = 21 * s, tW = LINE_EM * tSize;
   const total = treeW + gap + tW;
   // Between the Pause button (left) and Ask Coupon (right), above both.
   const x0 = 60 + Math.max(0, (width - 200 - total) / 2);
