@@ -65,4 +65,4 @@ export function toLogRows(items: ResendListItem[]) {
 }
 
 /** How far back each 5-minute run re-reads the newest emails to refresh their delivery status. */
-export const REFRESH_DAYS = 3;
+export const REFRESH_DAYS = 14;

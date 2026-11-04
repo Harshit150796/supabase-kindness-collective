@@ -66,6 +66,31 @@ export function renderImpactEmail(o: ImpactEmailInput): RenderedEmail {
   return { subject, html, text, headers: { 'List-Unsubscribe': `<${o.stopUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } };
 }
 
+/** Follow-up to the giver of an outside coupon (a company gift, a donated card, a gift handed over):
+ *  when the family received it, and when they used it. Never contains the code. */
+export function renderOutsideGiftEmail(o: {
+  kind: 'received' | 'used'; brand: string; value: number; fundraiserTitle: string; fundraiserUrl: string | null; organizer: string;
+  at: string; category?: string | null; firstName?: string | null;
+}): RenderedEmail {
+  const used = o.kind === 'used';
+  const subject = used ? 'Your gift made an impact' : 'Your gift reached the organizer';
+  const what = `${usd(o.value)} ${o.brand} card`;
+  const intro = used
+    ? `${o.organizer} used the ${what} you gave to “${o.fundraiserTitle}” on ${etTime(o.at)}.${o.category ? ` It went toward ${o.category.toLowerCase()}.` : ''} Thank you.`
+    : `${o.organizer} opened the ${what} you gave to “${o.fundraiserTitle}” on ${etTime(o.at)}. It's ready for them to use.`;
+  const html = shell({
+    preheader: used ? 'Your gift was used.' : 'Your gift was received.', greeting: `Hi ${o.firstName || 'there'}`, status: used ? 'Gift used' : 'Gift received',
+    headline: used ? 'Your gift made an impact' : 'Your gift reached the organizer', paragraphs: [intro],
+    valueCard: { label: 'Fundraiser', value: o.fundraiserTitle, details: [what] },
+    timeline: [{ label: 'Gift added', complete: true }, { label: 'Received by the organizer', complete: true }, { label: 'Used', complete: used }],
+    link: o.fundraiserUrl ? { label: 'See the fundraiser', url: o.fundraiserUrl } : undefined,
+    footer: "Codes and card details are never included in email. Don't want these updates? Reply to this email and we'll stop them.",
+  });
+  const text = [`Hi ${o.firstName || 'there'},`, '', intro, ...(o.fundraiserUrl ? ['', `See the fundraiser: ${o.fundraiserUrl}`] : []), '', '— The CouponDonation team', '',
+    "Don't want these updates? Reply to this email and we'll stop them.", SUPPORT_LINE].join('\n');
+  return { subject, html, text };
+}
+
 export function renderUseReminderEmail(o: { brand: string; fundraiserTitle: string; dashboardUrl: string; firstName?: string | null; sample?: boolean }) {
   const intro = `A ${o.brand} card for “${o.fundraiserTitle}” was revealed seven days ago. If you used it, you may mark it used; adding a note or receipt is optional and never affects your help.`;
   const subject = 'A quick note about your fundraiser';

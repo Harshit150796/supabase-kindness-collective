@@ -1,7 +1,7 @@
 // Copies Resend's log of sent emails into email_log (admin-dispatch, every 5 minutes), so the admin
 // portal can show every email the site sent and whether it arrived. Two passes per run:
-//   1. the newest emails, back REFRESH_DAYS, so new ones appear and recent statuses (delivered, opened,
-//      bounced) stay current;
+//   1. the newest emails, back REFRESH_DAYS (two weeks), so new ones appear and later opens, clicks and
+//      bounces are caught;
 //   2. older history, a few pages per run, until Resend has nothing older (email_log_sync.backfill_done).
 // Only metadata is copied (to, from, subject, status, time), never an email's body.
 import { REFRESH_DAYS, toLogRows, type ResendListItem } from './team-contact.ts';
@@ -23,7 +23,7 @@ async function listPage(key: string, after: string | null): Promise<Page> {
 
 export async function syncEmailLog(db: Db, key: string | undefined, opts: { headPages?: number; backfillPages?: number } = {}) {
   if (!key) return { skipped: 'no key' };
-  const headPages = opts.headPages ?? 3;
+  const headPages = opts.headPages ?? 6;
   const backfillPages = opts.backfillPages ?? 4;
   const { data: st } = await db.from('email_log_sync').select('*').eq('id', 1).maybeSingle();
   const cutoff = Date.now() - REFRESH_DAYS * 86_400_000;

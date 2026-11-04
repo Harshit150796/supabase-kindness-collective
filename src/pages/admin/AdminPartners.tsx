@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { RecordWork } from '@/components/admin/RecordWork';
-import { fmtDate } from '@/lib/adminApi';
+import { fmtDate, sb } from '@/lib/adminApi';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/admin/AdminLayout';
 import { DataTable, StatusBadge, Column } from '@/components/admin/DataTable';
@@ -10,6 +11,10 @@ import { Input } from '@/components/ui/input';
 
 export default function AdminPartners() {
   const [open, setOpen] = useState<any>(null);
+  // ?id= comes from the admin search.
+  const [params] = useSearchParams();
+  const linked = params.get('id');
+  useEffect(() => { if (linked) sb.from('partner_inquiries').select('*').eq('id', linked).maybeSingle().then(({ data }: { data: unknown }) => data && setOpen(data)); }, [linked]);
   const t = useAdminPaged({ table: 'partner_inquiries', searchCols: ['org_name', 'contact_name', 'email', 'city_state'], defaultSort: { key: 'created_at', dir: 'desc' } });
   const cols: Column<any>[] = [
     { key: 'org_name', header: 'Organization', sortable: true, cell: (r) => <div><p className="font-medium">{r.org_name}</p><p className="text-xs text-muted-foreground">{r.org_type}</p></div> },
