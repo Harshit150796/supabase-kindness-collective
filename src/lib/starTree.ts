@@ -1,8 +1,8 @@
 /**
- * "One firefly plants a star tree" (founder-chosen, Oct 2026): after the hero's halves meet, a firefly
- * leaves the canopy, flies a dotted trail through the sky, and where it lands a constellation tree lights
- * up from the root, then "a tree for every $10" writes itself under it with "We plant one for every $10
+ * The star tree (founder-chosen, Oct 2026): after the hero's halves meet, a constellation tree lights up
+ * from its root star, then "a tree for every $10" writes itself under it with "We plant one for every $10
  * you give." It plays once, then stays; gentle motion (Pause animations) shows the finished picture.
+ * The firefly that used to fly a dotted trail in and write the line was removed (founder request, Nov 2026).
  *
  * Placement follows the live scene (heroCamera / canopyTopPx / orbScreen): beside the moon on wide
  * screens ("right"), left of the canopy when the moon side is too narrow ("left"), and in the strip of
@@ -23,13 +23,12 @@ const LINES: [string, string[]][] = [
   ['left', ['S2', 'S3', 'S4', 'S5', 'S6', 'S7']], ['right', ['S2', 'S11', 'S10', 'S9', 'S8', 'S7']],
 ];
 /** Seconds from the start: the stars light from the root upward, then the lines draw. */
-const LIGHT: Record<string, number> = { S2: 2.0, S12: 2.15, S13: 2.15, S3: 2.3, S11: 2.3, S4: 2.45, S10: 2.45, S5: 2.6, S9: 2.6, S6: 2.75, S8: 2.75, S7: 2.9 };
-const DRAW: Record<string, [number, number]> = { trunk: [2.95, 3.2], b1: [3.15, 3.45], b2: [3.15, 3.45], left: [3.4, 4.1], right: [3.4, 4.1] };
-const LEAD: [number, number] = [0.2, 1.9];
-const WRITE: [number, number] = [4.15, 5.2];
-const CAPTION_AT = 5.2;
+const LIGHT: Record<string, number> = { S1: 0.2, S2: 0.35, S12: 0.5, S13: 0.5, S3: 0.65, S11: 0.65, S4: 0.8, S10: 0.8, S5: 0.95, S9: 0.95, S6: 1.1, S8: 1.1, S7: 1.25 };
+const DRAW: Record<string, [number, number]> = { trunk: [1.3, 1.55], b1: [1.5, 1.8], b2: [1.5, 1.8], left: [1.75, 2.45], right: [1.75, 2.45] };
+const WRITE: [number, number] = [2.5, 3.55];
+const CAPTION_AT = 3.55;
 /** Total length of the moment in seconds (the caption is in by then). */
-export const STAR_TREE_SECONDS = 5.6;
+export const STAR_TREE_SECONDS = 3.95;
 
 /** Caveat Bold advance of "a tree for every $10", in em (public/fonts/caveat-700-tree.woff2). */
 const LINE_EM = 6.845;
@@ -39,18 +38,16 @@ const CAPTION = 'We plant one for every $10 you give.';
 const REF_PX_PER_UNIT = 60;
 
 const PALETTE = {
-  night: { fly: '#eef2ff', star: '#eef2ff', line: 'rgba(232, 236, 214, 0.42)', ink: '#eef2ff', caption: 'rgba(238, 242, 255, 0.82)', glow: true },
-  day: { fly: '#2e7d32', star: '#1f5e24', line: 'rgba(31, 94, 36, 0.4)', ink: '#1f5e24', caption: '#14361d', glow: false },
+  night: { star: '#eef2ff', line: 'rgba(232, 236, 214, 0.42)', ink: '#eef2ff', caption: 'rgba(238, 242, 255, 0.82)', glow: true },
+  day: { star: '#1f5e24', line: 'rgba(31, 94, 36, 0.4)', ink: '#1f5e24', caption: '#14361d', glow: false },
 } as const;
 
 type Pt = [number, number];
 interface Plan {
   layout: StarTreeLayout;
   stars: Record<string, [number, number, number]>;
-  trail: { start: Pt; c1: Pt; c2: Pt; mid: Pt; q2: Pt; end: Pt };
   text: { x: number; y: number; anchor: 'middle' | 'start'; size: number; width: number; rot: Pt };
   caption: { x: number; y: number; anchor: 'middle' | 'start'; size: number } | null;
-  dot: number;
   glow: number;
   /** Drawn on the grass (short phones): deep green ink whatever the sky. */
   ground?: boolean;
@@ -78,19 +75,12 @@ export function planStarTree(width: number, height: number, sky: HeroSky): Plan 
 
   const side = (dir: 1 | -1, cx: number): Plan => {
     const s1y = canopy + 59 * k;
-    const sx = width / 2 + dir * 132 * k;
-    const sy = canopy - 3 * k;
-    // The reference trail (1440 x 666), mapped onto this start and root star.
-    const fx = (x: number) => sx + dir * ((x - 852) * Math.abs(cx - sx)) / 333;
-    const fy = (y: number) => sy + ((y - 166) * (s1y - sy)) / 62;
     const baseline = s1y + 44 * k;
     return {
       layout: dir === 1 ? 'right' : 'left',
       stars: placeStars(1.05 * k, cx, s1y, 1.05 * clamp(k, 0.9, 1.3)),
-      trail: { start: [sx, sy], c1: [fx(930), fy(128)], c2: [fx(1010), fy(143)], mid: [fx(1060), fy(173)], q2: [fx(1140), fy(228)], end: [cx, s1y] },
       text: { x: cx, y: baseline, anchor: 'middle', size, width: lineW, rot: [cx, baseline - 4] },
       caption: { x: cx, y: baseline + 30 * kt, anchor: 'middle', size: 13 * kt },
-      dot: 15 * k,
       glow: 2.2,
     };
   };
@@ -113,7 +103,7 @@ export function planStarTree(width: number, height: number, sky: HeroSky): Plan 
   const bandH = kickerTop - 6 - bandTop;
   // Small phones (about 30px of sky) get a compact one-line version: smaller tree, no caption.
   const s = clamp(bandH / 56, 0.6, 1.3);
-  if (bandH < 24) return phone ? groundPlan(width, height, canopyHalf, c, f, tanHalf) : null;
+  if (bandH < 24) return phone ? groundPlan(width, height, c, f, tanHalf) : null;
   const withCaption = bandH >= 44;
   const treeW = 42.5 * s;
   const gap = 12 * s;
@@ -127,24 +117,20 @@ export function planStarTree(width: number, height: number, sky: HeroSky): Plan 
   const s1y = top + 52 * s;
   const lx = x0 + treeW + gap;
   const baseline = withCaption ? top + 30 * s : top + 36 * s;
-  const start: Pt = [width / 2 - 0.8 * canopyHalf, canopy + 0.25 * canopyHalf];
-  const edge = Math.max(10, Math.min(18, x0 - 26));
   return {
     layout: 'band',
     stars: placeStars(0.36 * s, cx, s1y, 0.62 * s),
-    trail: { start, c1: [edge, start[1] - 40], c2: [edge, s1y + 70], mid: [edge + 4, s1y + 46], q2: [cx - 22, s1y + 2], end: [cx, s1y] },
     text: { x: lx, y: baseline, anchor: 'start', size: tSize, width: tW, rot: [lx, baseline - 4] },
     caption: withCaption ? { x: lx + 1, y: top + 48 * s, anchor: 'start', size: 10.5 * s } : null,
-    dot: 11 * s,
     glow: 1.6,
   };
 }
 
 /**
- * Short phones (no sky between the header and the headline): the firefly drops from the canopy and
- * plants the star tree on the grass below the trunk, left of the Ask Coupon button.
+ * Short phones (no sky between the header and the headline): the star tree stands on the grass below
+ * the trunk, left of the Ask Coupon button.
  */
-function groundPlan(width: number, height: number, canopyHalf: number, c: number[], f: number[], tanHalf: number): Plan | null {
+function groundPlan(width: number, height: number, c: number[], f: number[], tanHalf: number): Plan | null {
   // The trunk's foot (world origin) on screen.
   const up = [0, -f[2], f[1]];
   const rel = [-c[0], -c[1], -c[2]];
@@ -159,14 +145,11 @@ function groundPlan(width: number, height: number, canopyHalf: number, c: number
   const s1y = Math.min(base + 26, height - 62);
   const cx = x0 + treeW / 2;
   const lx = x0 + treeW + gap;
-  const start: Pt = [width / 2 - 0.7 * canopyHalf, base - 0.45 * canopyHalf];
   return {
     layout: 'ground',
     stars: placeStars(0.36 * s, cx, s1y, 0.62 * s),
-    trail: { start, c1: [start[0] - 24, start[1] + 18], c2: [cx - 34, s1y - 40], mid: [cx - 22, s1y - 16], q2: [cx - 8, s1y], end: [cx, s1y] },
     text: { x: lx, y: s1y - 12 * s, anchor: 'start', size: tSize, width: tW, rot: [lx, s1y - 16 * s] },
     caption: null,
-    dot: 9,
     glow: 1.4,
     ground: true,
   };
@@ -189,25 +172,12 @@ function anim(attr: string, values: (number | string)[], at: number[]) {
   return `<animate attributeName="${attr}" dur="${STAR_TREE_SECONDS}s" fill="freeze" values="${vals.map((v) => (typeof v === 'number' ? n(v) : v)).join(';')}" keyTimes="${times(kt, STAR_TREE_SECONDS)}"/>`;
 }
 
-function cubic(p0: Pt, p1: Pt, p2: Pt, p3: Pt, t: number): Pt {
-  const m = 1 - t;
-  return [m ** 3 * p0[0] + 3 * m * m * t * p1[0] + 3 * m * t * t * p2[0] + t ** 3 * p3[0], m ** 3 * p0[1] + 3 * m * m * t * p1[1] + 3 * m * t * t * p2[1] + t ** 3 * p3[1]];
-}
-
 /**
  * The SVG's inner markup. `animate` false gives the finished picture (gentle motion, or after it played).
  * All numbers come from planStarTree; there is no outside text in it.
  */
 export function starTreeMarkup(plan: Plan, sky: HeroSky, animate: boolean): string {
   const p = plan.ground ? PALETTE.day : PALETTE[sky];
-  const { start, c1, c2, mid, q2, end } = plan.trail;
-  const q1: Pt = [2 * mid[0] - c2[0], 2 * mid[1] - c2[1]];
-  const pts: Pt[] = [];
-  for (let i = 0; i <= 400; i++) pts.push(cubic(start, c1, c2, mid, i / 400));
-  for (let i = 1; i <= 400; i++) pts.push(cubic(mid, q1, q2, end, i / 400));
-  const lens = [0];
-  for (let i = 1; i < pts.length; i++) lens.push(lens[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
-  const total = lens[lens.length - 1];
   const out: string[] = [];
   const glow = p.glow ? ' filter="url(#cd-st-glow)"' : '';
 
@@ -224,46 +194,17 @@ export function starTreeMarkup(plan: Plan, sky: HeroSky, animate: boolean): stri
   }
   out.push('</g>');
 
-  // The trail: older dots dimmer, newest at the root star.
-  out.push(`<g fill="${p.fly}"${glow}>`);
-  for (let s = 8; s < total - 14; s += plan.dot) {
-    let j = 0;
-    while (lens[j] < s) j++;
-    const frac = s / total;
-    const op = (sky === 'day' ? 0.2 : 0.25) + 0.6 * frac;
-    const t = LEAD[0] + frac * (LEAD[1] - LEAD[0]);
-    out.push(`<circle cx="${n(pts[j][0])}" cy="${n(pts[j][1])}" r="${n((1 + 0.9 * frac) * (plan.layout === 'band' || plan.layout === 'ground' ? 0.8 : 1))}" opacity="${n(op)}">${animate ? anim('opacity', [0, op], [t, t + 0.12]) : ''}</circle>`);
-  }
-  out.push('</g>');
-
-  // The firefly that becomes the root star, then the rest of the stars.
+  // The stars, lighting from the root star upward.
   out.push(`<g${glow}>`);
-  const [rx, ry, rr] = plan.stars.S1;
-  const rel = (q: Pt) => `${n(q[0] - rx)} ${n(q[1] - ry)}`;
-  const leadPath = `M ${rel(start)} C ${rel(c1)}, ${rel(c2)}, ${rel(mid)} S ${rel(q2)}, 0 0`;
-  out.push(`<circle cx="${n(rx)}" cy="${n(ry)}" r="${n(rr)}" fill="${p.star}">${animate
-    ? `<animateMotion dur="${STAR_TREE_SECONDS}s" fill="freeze" path="${leadPath}" keyPoints="0;0;1;1" keyTimes="${times([0, LEAD[0], LEAD[1], STAR_TREE_SECONDS], STAR_TREE_SECONDS)}" calcMode="linear"/>`
-      + anim('opacity', [0, 1, 0.6, 1, 0.7, 1], [0.05, LEAD[0], 0.9, 1.5, 2.3, 3.0])
-      + anim('fill', [p.fly, p.star], [LEAD[1], LEAD[1] + 0.4])
-      + anim('r', [2.5, rr], [LEAD[1], LEAD[1] + 0.5])
-    : ''}</circle>`);
   for (const [key, t] of Object.entries(LIGHT)) {
     const [x, y, r] = plan.stars[key];
     out.push(`<circle cx="${n(x)}" cy="${n(y)}" r="${n(r)}" fill="${p.star}">${animate ? anim('opacity', [0, 1], [t, t + 0.15]) + anim('r', [0, 1.8 * r, r], [t, t + 0.12, t + 0.4]) : ''}</circle>`);
   }
   out.push('</g>');
 
-  // The line, written by a firefly, and the caption.
+  // The line, written from left to right, and the caption.
   const { x, y, anchor, size, width, rot } = plan.text;
   out.push(`<g transform="rotate(-3 ${n(rot[0])} ${n(rot[1])})"><g clip-path="url(#cd-st-write)"><text x="${n(x)}" y="${n(y)}" text-anchor="${anchor}" font-family="'Caveat Tree', 'Segoe Print', cursive" font-size="${n(size)}" font-weight="700" fill="${p.ink}"${p.glow ? ' filter="url(#cd-st-ink)"' : ''}${plan.ground ? ' stroke="rgba(236, 246, 226, 0.7)" stroke-width="3" stroke-linejoin="round" paint-order="stroke"' : ''}>${LINE.replace('$', '&#36;')}</text></g>`);
-  if (animate) {
-    const lx = anchor === 'middle' ? x - width / 2 : x;
-    const py = y - size * 0.26;
-    const a = size * 0.21;
-    const step = width / 4;
-    const pen = `M ${n(lx)} ${n(py)} C ${n(lx + step * 0.4)} ${n(py - a)}, ${n(lx + step * 0.6)} ${n(py + a)}, ${n(lx + step)} ${n(py)} S ${n(lx + step * 1.6)} ${n(py - a)}, ${n(lx + step * 2)} ${n(py)} S ${n(lx + step * 2.6)} ${n(py + a)}, ${n(lx + step * 3)} ${n(py)} S ${n(lx + step * 3.6)} ${n(py - a)}, ${n(lx + width)} ${n(py - a * 0.6)}`;
-    out.push(`<circle r="${plan.layout === 'band' || plan.layout === 'ground' ? 2 : 2.6}" fill="${p.fly}" opacity="0"${glow}><animateMotion dur="${STAR_TREE_SECONDS}s" fill="freeze" path="${pen}" keyPoints="0;0;1;1" keyTimes="${times([0, WRITE[0], WRITE[1], STAR_TREE_SECONDS], STAR_TREE_SECONDS)}" calcMode="linear"/>${anim('opacity', [0, 1, 1, 0], [WRITE[0] - 0.15, WRITE[0], WRITE[1], WRITE[1] + 0.35])}</circle>`);
-  }
   out.push('</g>');
   if (plan.caption) {
     const cpt = plan.caption;

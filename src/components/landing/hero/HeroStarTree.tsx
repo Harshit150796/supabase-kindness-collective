@@ -5,11 +5,11 @@ import { planStarTree, starTreeMarkup, STAR_TREE_SECONDS } from '@/lib/starTree'
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 
 const readSky = (): HeroSky => (typeof document !== 'undefined' && document.documentElement.dataset.sky === 'day' ? 'day' : 'night');
-/** The halves of the headline meet first; the firefly sets off just after. */
+/** The halves of the headline meet first; the stars start lighting just after. */
 const START_DELAY_MS = 600;
 
 /**
- * "One firefly plants a star tree" (src/lib/starTree.ts): plays once when the hero shows, then stays.
+ * The star tree (src/lib/starTree.ts): plays once when the hero shows, then stays.
  * Pause animations, a later resize or a sky switch show the finished picture.
  */
 export function HeroStarTree({ play }: { play: boolean }) {
@@ -55,7 +55,7 @@ export function HeroStarTree({ play }: { play: boolean }) {
   }, [phase, layoutKey]);
   useEffect(() => { if (gentle && phase === 'play') setPhase('done'); }, [gentle, phase]);
 
-  // Phones get the still signpost instead (founder decision, Oct 2026): no firefly moment there.
+  // Phones get the still signpost instead (founder decision, Oct 2026): no star tree there.
   const phone = size[0] > 0 && size[0] < PHONE_BREAKPOINT;
   const plan = useMemo(() => (phone ? null : planStarTree(size[0], size[1], sky)), [phone, size, sky]);
   const markup = useMemo(() => (plan && phase !== 'wait' ? starTreeMarkup(plan, sky, phase === 'play') : ''), [plan, sky, phase]);
