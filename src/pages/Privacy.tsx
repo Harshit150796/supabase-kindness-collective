@@ -46,9 +46,10 @@ const sections: LegalSection[] = [
     id: 'share',
     title: 'Who we share it with',
     body: <>
-      <p>We don't sell personal information, and we don't share it for targeted advertising. We share it only with:</p>
+      <p>We don't sell personal information. We share it only with:</p>
       <Bullets items={[
         <><strong>Service providers</strong> that run parts of CouponDonation for us under contract: Supabase (database, sign-in and file storage), Lovable (website hosting), Square (payments), Resend (email delivery), PostHog (analytics, only after you allow it), Google (only if you use Google sign-in), the AI service that powers the Coupon assistant, and Zippopotam.us, which looks up the city for a ZIP code you type.</>,
+        <><strong>Ad measurement</strong>: Google Ads and Meta receive a small measurement signal (that a visit or a completed gift happened, with a checkout reference but never gift amounts, messages or card details) so we can tell whether our own ads led to a gift. These tags load only after you select Okay on the cookie bar, and stay off when your browser sends a Global Privacy Control signal.</>,
         <><strong>Stores and gift card sellers</strong>, only what's needed to buy coupons. We don't send them recipients' stories.</>,
         <><strong>Donors and recipients</strong>, as described in section 3, and purchase receipts with private details covered, shared with the donors whose gift paid for them.</>,
         <><strong>Authorities</strong>, when the law requires it, or to protect people from harm or fraud.</>,
@@ -59,7 +60,7 @@ const sections: LegalSection[] = [
   {
     id: 'cookies',
     title: 'Cookies and analytics',
-    body: <p>We use essential cookies and browser storage to keep you signed in and remember your choices. Analytics (PostHog) runs only after you select Okay on the cookie bar, never records what you type into forms, and stays off when your browser sends a Global Privacy Control or Do Not Track signal. You can change your choice at any time with Cookie settings at the bottom of every page. Our <DocLink to="/cookies">Cookie Policy</DocLink> lists what we store.</p>,
+    body: <p>We use essential cookies and browser storage to keep you signed in and remember your choices. Analytics (PostHog) runs only after you select Okay on the cookie bar, never records what you type into forms, and stays off when your browser sends a Global Privacy Control or Do Not Track signal. The same Okay also allows our ad measurement tags (Google Ads and Meta), which tell us whether someone who saw one of our ads later made a gift; they stay off otherwise. You can change your choice at any time with Cookie settings at the bottom of every page. Our <DocLink to="/cookies">Cookie Policy</DocLink> lists what we store.</p>,
   },
   {
     id: 'keep',
