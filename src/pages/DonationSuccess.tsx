@@ -9,6 +9,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { reportCompletedGift } from '@/lib/adTracking';
 
 export default function DonationSuccess() {
   const navigate = useNavigate();
@@ -21,7 +22,15 @@ export default function DonationSuccess() {
     // Fast path for the confirmation email: only the checkout reference is sent; the server checks everything else.
     const p = new URLSearchParams(window.location.search);
     const ref = p.get('session_id') || p.get('ref') || p.get('order_id');
-    if (ref) supabase.functions.invoke('confirm-donation', { body: { ref } }).catch(() => { /* dispatcher retries */ });
+    if (ref) {
+      supabase.functions.invoke('confirm-donation', { body: { ref } })
+        .then(({ data }) => {
+          // The server confirmed the donation is completed: report the gift to the ad platforms
+          // (only when the cookie bar allows it). 'not_ready' means not completed yet.
+          if (data?.result === 'done' || data?.result === 'pending') reportCompletedGift(ref);
+        })
+        .catch(() => { /* dispatcher retries */ });
+    }
   }, []);
 
   // Auto-redirect for logged-in users
