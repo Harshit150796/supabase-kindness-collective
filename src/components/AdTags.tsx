@@ -5,8 +5,8 @@ import { initAdTags } from '@/lib/adTracking';
 // VisitorAnalytics). Renders nothing.
 export function AdTags() {
   useEffect(() => {
-    initAdTags();
-    const t = window.setInterval(initAdTags, 1500);
+    if (initAdTags()) return;
+    const t = window.setInterval(() => { if (initAdTags()) window.clearInterval(t); }, 1500);
     return () => window.clearInterval(t);
   }, []);
   return null;

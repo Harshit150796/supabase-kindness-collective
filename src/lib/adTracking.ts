@@ -67,11 +67,12 @@ function loadMetaPixel() {
   window.fbq!('track', 'PageView');
 }
 
-/** Loads the base ad tags when the cookie bar allows it. Safe to call repeatedly. */
+/** Loads the base ad tags when the cookie bar allows it. Safe to call repeatedly; returns true once loaded. */
 export function initAdTags() {
-  if (!hasConsent()) return;
+  if (!hasConsent()) return false;
   loadGoogleTag();
   loadMetaPixel();
+  return googleLoaded && metaLoaded;
 }
 
 /** Reports one completed gift to Google Ads and Meta, once per checkout reference. */
