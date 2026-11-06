@@ -31,7 +31,7 @@ export function DriveBar() {
         type="button"
         className="drive-bar-main"
         aria-haspopup="dialog"
-        aria-label={`${DRIVE.name}: the top ${DRIVE.goldCoins.count} donors each win a gold coin. Ends ${DRIVE.endLabel}. See the prizes and terms.`}
+        aria-label={`${DRIVE.name}: the top ${DRIVE.goldCoins.count} donors each win a ${DRIVE.goldCoins.name}. Ends ${DRIVE.endLabel}. See the prizes and terms.`}
         onClick={openDriveTerms}
         onPointerEnter={prefetchDriveTerms}
         onFocus={prefetchDriveTerms}
@@ -39,8 +39,8 @@ export function DriveBar() {
       >
         <span className="drive-coin-turn" aria-hidden="true"><GoldCoin className="drive-coin" /></span>
         <span className="drive-bar-text" aria-hidden="true">
-          <span className="drive-bar-long"><strong>{DRIVE.name}:</strong> the top {DRIVE.goldCoins.count} donors each win a gold coin<span className="drive-star">*</span></span>
-          <span className="drive-bar-short">Top {DRIVE.goldCoins.count} donors win a gold coin<span className="drive-star">*</span></span>
+          <span className="drive-bar-long"><strong>{DRIVE.name}:</strong> the top {DRIVE.goldCoins.count} donors each win a {DRIVE.goldCoins.name}<span className="drive-star">*</span></span>
+          <span className="drive-bar-short">Top {DRIVE.goldCoins.count} donors win a {DRIVE.goldCoins.name}<span className="drive-star">*</span></span>
           <span className="drive-bar-ends">Ends {DRIVE.endShort}</span>
         </span>
         <span className="drive-bar-link" aria-hidden="true"><span className="drive-bar-link-long">Prizes and terms</span><span className="drive-bar-link-short">Details</span></span>
