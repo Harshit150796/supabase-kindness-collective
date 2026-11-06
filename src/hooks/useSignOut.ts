@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { isAccountPath } from '@/components/navigation/siteLinks';
+import { forgetGate } from '@/lib/adminGate';
 
 /**
  * The one sign-out action for every menu, sidebar and settings page. It always
@@ -20,6 +21,7 @@ export function useSignOut() {
     busy.current = true;
     try {
       await signOut();
+      forgetGate();
       toast.success('Signed out', { description: 'You are signed out on this device.' });
       if (isAccountPath(location.pathname)) navigate('/', { replace: true });
     } finally {

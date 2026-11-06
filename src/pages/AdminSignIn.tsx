@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { GoogleSignIn } from '@/components/auth/GoogleSignIn';
 import { TEAM_ROLES } from '@/components/navigation/siteLinks';
-import { rememberGate, takeAdminNext, teamSessionFresh } from '@/lib/adminGate';
+import { markGatePassed, rememberGate, takeAdminNext, teamSessionFresh, TEAM_MFA_REQUIRED } from '@/lib/adminGate';
 
 type Step = 'signin' | 'checking' | 'not-team' | 'enroll' | 'challenge' | 'error';
 type Enrollment = { id: string; qr: string; secret: string };
@@ -18,8 +18,8 @@ const CODE_RE = /^\d{6}$/;
 
 /**
  * The hidden team sign-in (src/lib/adminGate.ts). Step 1: sign in as usual (email and password, or
- * Google). Step 2: a code from an authenticator app; the first visit sets the app up with a QR code.
- * Only a session that passed step 2 opens the admin portal, and the database enforces the same rule.
+ * Google). Step 2, only when TEAM_MFA_REQUIRED is on: a code from an authenticator app (the first visit
+ * sets it up with a QR code). While it is off, a team sign-in made here opens the admin portal.
  */
 export default function AdminSignIn() {
   const { user, roles, loading, rolesLoaded, signIn } = useAuth();
@@ -49,6 +49,13 @@ export default function AdminSignIn() {
     started.current = user.id;
     (async () => {
       setStep('checking');
+      if (!TEAM_MFA_REQUIRED) {
+        // Authenticator step off (founder's call): this sign-in came through the link, so it opens the portal.
+        const { data } = await supabase.auth.getSession();
+        markGatePassed(user.id, data.session?.access_token);
+        finish();
+        return;
+      }
       if (await teamSessionFresh()) { finish(); return; }
       const { data, error } = await supabase.auth.mfa.listFactors();
       if (error) { setMessage('Could not load your authenticator. Refresh and try again.'); setStep('error'); return; }
@@ -122,7 +129,7 @@ export default function AdminSignIn() {
             </form>
             <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />or<span className="h-px flex-1 bg-border" /></div>
             <GoogleSignIn />
-            <p className="mt-5 text-xs leading-relaxed text-muted-foreground">After signing in you'll be asked for a code from your authenticator app.</p>
+            {TEAM_MFA_REQUIRED && <p className="mt-5 text-xs leading-relaxed text-muted-foreground">After signing in you'll be asked for a code from your authenticator app.</p>}
           </>
         )}
 
