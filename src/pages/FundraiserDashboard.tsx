@@ -273,7 +273,7 @@ const FundraiserDashboard = () => {
       <Navbar />
 
       {/* Mobile section nav */}
-      <nav aria-label="Dashboard sections" className="sticky top-16 z-30 border-b border-border bg-card lg:hidden">
+      <nav aria-label="Dashboard sections" className="sticky top-[calc(4rem+var(--drive-bar-h))] z-30 border-b border-border bg-card lg:hidden">
         <div className="flex gap-1 overflow-x-auto px-4 py-2.5">
           {SECTIONS.map((s) => (
             <button key={s.id} onClick={() => goTo(s.id)}
@@ -288,7 +288,7 @@ const FundraiserDashboard = () => {
       <div className="mx-auto grid max-w-6xl gap-8 px-4 pb-24 pt-8 sm:px-6 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-12 lg:pt-16">
         {/* Desktop side nav with the fundraiser's own identity */}
         <aside className="hidden lg:block">
-          <div className="sticky top-24 space-y-7">
+          <div className="sticky top-[calc(6rem+var(--drive-bar-h))] space-y-7">
             <div className="space-y-2">
               <p className="font-sans text-[15px] font-semibold leading-snug text-foreground">{fundraiser.title}</p>
               <div className="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">

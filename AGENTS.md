@@ -54,6 +54,12 @@
 - The database enforces it: is_admin_any, is_admin_staff and has_role (team roles) require team_session_ok, which needs aal2 with a TOTP check in the last team_mfa_max_age_hours, while security_settings.require_team_mfa is on. Service-role code is trusted, so edge functions check team roles only through teamRpc (as the person, _shared/auth.ts), never with a service-role rpc of those functions; _svc_as carries the step over for staff actions that server code already checked.
 - Lost authenticator: the team can remove that person's factor (auth.mfa_factors) so they set it up again on the next sign-in.
 
+## Holiday Giving Drive (founder request, Nov 2026)
+- A prize drive runs until January 15, 2027, 11:59 PM ET: 100 gifts worth $1,000 and 5 $500 gift cards drawn at random, and a gold coin for each of the 5 donors who give the most. Every fact lives in src/lib/givingDrive.ts (DRIVE); the bar, the sticker and the pop-up read it, so change prizes or dates there only. Everything disappears by itself after DRIVE.endsAt; `?drive=1` / `?drive=0` force it on or off.
+- Placements are the founder's picks from ten options: the green bar that is the site header's first row on every page (DriveBar, talks about the gold coin; × hides it for the visit) and a white "Win $1,000*" sticker on the hero's Donate half (HeroHeadline). Both open one pop-up mounted at app level (DriveTermsHost, lazy DriveTermsDialog): the prizes, Donate now, the free way to enter and the terms in small print. Pages that pin things under the header add `--drive-bar-h`.
+- Legal shape (keep it): no donation necessary, with a free entry by email to support@coupondonation.com; one entry per person however often they give, so giving more never improves the odds of a random prize; US residents 18+, void where prohibited; random draw within 7 days of the end; CouponDonation Inc. pays for every prize, never from donations. Copy and terms must stay true to DRIVE; a lawyer should review before any change to the prizes or rules.
+- The gold coin drawing (PrizeArt GoldCoin) is prize artwork, the one warm colour allowed in the UI, like the 3D art.
+
 ## Scoped rules
 - Read supabase/AGENTS.md before changing authentication, permissions, payments, messaging, email, coupon claims, storage or security; its October audit rules also constrain frontend callers.
 - Read src/AGENTS.md before changing frontend files; it owns public-page SEO rules. Other subdirectories have their own AGENTS.md to read before edits, as listed above.
