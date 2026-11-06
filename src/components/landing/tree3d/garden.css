@@ -77,3 +77,18 @@
 .hl-bfly{position:absolute;left:0;top:0;offset-rotate:0deg;animation:hl-loop 11s linear infinite}
 @keyframes hl-loop{from{offset-distance:0%}to{offset-distance:100%}}
 .hl-wings{transform-box:view-box;transform-origin:17px 14px;animation:gm-flap .26s ease-in-out infinite}
+
+/* Halloween marshmallows (HalloweenMarshmallows): the anchor is where the group stands. Night light is
+   plain alpha (no blend modes: drei Html isolates each group in its own stacking context). */
+.mm-art{position:absolute;left:0;top:0;transform-origin:0 0}
+.mm-halo,.mm-pool{position:absolute;display:block;border-radius:50%}
+.mm-warm{background:radial-gradient(circle,rgba(255,214,120,.9) 0%,rgba(255,176,64,.5) 28%,rgba(255,150,40,.16) 52%,rgba(255,150,40,0) 70%)}
+.mm-cool{background:radial-gradient(circle,rgba(236,255,246,.85) 0%,rgba(206,246,232,.42) 30%,rgba(190,236,222,.12) 52%,rgba(190,236,222,0) 70%)}
+.mm-pool{background:radial-gradient(closest-side,rgba(255,214,130,.85),rgba(255,184,90,.42) 50%,rgba(255,184,90,0))}
+.mm-flicker{animation:mm-flicker 3.4s ease-in-out infinite}
+@keyframes mm-flicker{0%,100%{opacity:1}14%{opacity:.78}24%{opacity:.95}46%{opacity:.68}58%{opacity:.9}70%{opacity:1}86%{opacity:.82}}
+.mm-float{animation:mm-float 3.8s ease-in-out infinite}
+@keyframes mm-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+.mm-wobble{transform-box:view-box;transform-origin:11px 29px;animation:mm-wobble 4.6s ease-in-out infinite}
+@keyframes mm-wobble{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
+.mm-still *{animation:none!important}

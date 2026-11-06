@@ -22,6 +22,7 @@ import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
 import { TransparencyPopover } from './tree3d/TransparencyPopover';
 import { PlantsLayer } from './tree3d/PlantsLayer';
 import { HillLife } from './tree3d/HillLife';
+import { HalloweenMarshmallows } from './tree3d/HalloweenMarshmallows';
 import { PlantSprout } from './tree3d/PlantSprout';
 import { SparkleBurst } from './tree3d/SparkleBurst';
 import { prewarmTreeTextures } from './tree3d/textures';
@@ -775,6 +776,7 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
           (seeds or a butterfly, taking turns); life on the hill moves quietly behind it. */}
       <PlantsLayer cap={plantCap} isMobile={isMobile} gentle={gentle} />
       {!gentle && <HillLife isMobile={isMobile} lowPower={settings.tier === 'low'} />}
+      <HalloweenMarshmallows isMobile={isMobile} lowPower={settings.tier === 'low'} gentle={gentle} />
       {/* Never drawn: puts the effects that appear later (a sprout where a coupon lands, the sparkle
           of a tap) into the first parallel compile, so their first appearance never stalls a frame. */}
       <group visible={false} position={[0, -40, 0]}>
