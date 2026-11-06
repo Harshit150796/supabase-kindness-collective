@@ -1,4 +1,5 @@
 // Shared request checks for edge functions (October 2026 security audit).
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 // deno-lint-ignore no-explicit-any
 type Admin = any;
@@ -37,16 +38,29 @@ export async function requestUser(req: Request, admin: Admin): Promise<{ id: str
   }
 }
 
-export async function isStaff(admin: Admin, uid: string): Promise<boolean> {
-  const { data } = await admin.rpc('is_admin_staff', { _uid: uid });
-  return !!data;
+/**
+ * A team-role check (is_admin_staff, is_admin_any, has_role) run as the signed-in person, not the
+ * service role, so the database applies the team sign-in's authenticator rule (team_session_ok,
+ * founder request Nov 2026). Every admin or staff check in an edge function goes through this;
+ * a service-role rpc of these functions would skip the rule.
+ */
+export async function teamRpc(req: Request, fn: 'is_admin_staff' | 'is_admin_any' | 'has_role', args: Record<string, unknown>): Promise<boolean> {
+  const token = bearerToken(req);
+  if (!token) return false;
+  const client = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data, error } = await client.rpc(fn, args);
+  if (error) console.error('team check failed', fn, error.message);
+  return data === true;
 }
 
-/** Service-role callers, or signed-in staff (admin or staff role). */
+/** Service-role callers, or signed-in staff (admin or staff role) who passed the team sign-in. */
 export async function serviceOrStaff(req: Request, admin: Admin): Promise<boolean> {
   if (isServiceCall(req)) return true;
   const user = await requestUser(req, admin);
-  return !!user && (await isStaff(admin, user.id));
+  return !!user && (await teamRpc(req, 'is_admin_staff', { _uid: user.id }));
 }
 
 const SITE = 'https://coupondonation.com';

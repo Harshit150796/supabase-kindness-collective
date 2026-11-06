@@ -114,9 +114,13 @@ Deno.test('every landing page has a route, footer links reach the giving pages, 
 
 Deno.test('private and example pages stay out of search', () => {
   const app = read('src/App.tsx');
-  for (const path of ['/auth', '/dashboard', '/settings', '/donation-success', '/fundraiser/:id', '*']) {
+  for (const path of ['/auth', '/dashboard', '/settings', '/donation-success', '/fundraiser/:id']) {
     assert(new RegExp(`path="${path.replace(/[*]/g, '\\*')}" element=\\{<Private `).test(app), path);
   }
+  // Unknown addresses (and the hidden team sign-in among them) are never indexed.
+  assert(app.includes('<Route path="*" element={<AdminGateRoute />} />'), '*');
+  const gate = read('src/components/admin/AdminGateRoute.tsx');
+  assert(gate.includes('<NoIndex title="Sign in" /><AdminSignIn />') && gate.includes('<NoIndex title="Page not found" /><NotFound />'));
   const fundraiser = read('src/pages/PublicFundraiser.tsx');
   assert(fundraiser.includes('noindex={!!fundraiser.is_example}'));
   assert(fundraiser.includes('title="Fundraiser not found"'));

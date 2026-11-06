@@ -6,6 +6,7 @@ import { z } from 'npm:zod@3';
 import { moderate, maskedExcerpt, BLOCKED_EXPLANATION } from '../_shared/moderation.ts';
 import { renderNoticeEmail, NOTIFY_SENDER } from '../_shared/email-layout.ts';
 import { flushOwnerAlerts } from '../_shared/owner-alerts.ts';
+import { teamRpc } from '../_shared/auth.ts';
 
 const SITE = 'https://coupondonation.com';
 const json = (data: unknown, status = 200) =>
@@ -66,8 +67,7 @@ Deno.serve(async (req) => {
 
   if (p.action === 'admin_notify_rejection') {
     // Role re-checked server-side; status must already be rejected via the audited admin RPC.
-    const { data: staff } = await admin.rpc('is_admin_staff', { _uid: uid });
-    if (!staff) return json({ error: 'Staff access required' }, 403);
+    if (!(await teamRpc(req, 'is_admin_staff', { _uid: uid }))) return json({ error: 'Staff access required' }, 403);
     const { data: f } = await admin.from('fundraisers').select('title, status, user_id').eq('id', p.fundraiser_id).maybeSingle();
     if (!f || f.status !== 'rejected') return json({ error: 'Fundraiser is not rejected' }, 409);
     const { data: prof } = await admin.from('profiles').select('email, full_name').eq('user_id', f.user_id).maybeSingle();
@@ -84,8 +84,7 @@ Deno.serve(async (req) => {
 
   if (p.action === 'notify_coupon_ready') {
     // Same queue as the coupon editor: one alert per coupon + credential version, so repeats never re-notify.
-    const { data: staff } = await admin.rpc('is_admin_staff', { _uid: uid });
-    if (!staff) return json({ error: 'Staff access required' }, 403);
+    if (!(await teamRpc(req, 'is_admin_staff', { _uid: uid }))) return json({ error: 'Staff access required' }, 403);
     const { data: n, error } = await admin.rpc('svc_enqueue_owner_alerts', { _fundraiser_id: p.fundraiser_id, _ids: p.coupon_ids });
     if (error) return json({ error: 'Could not queue the alert' }, 400);
     const r = await flushOwnerAlerts(admin, p.fundraiser_id);

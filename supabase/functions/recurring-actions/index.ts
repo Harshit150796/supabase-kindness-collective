@@ -3,6 +3,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@3';
+import { teamRpc } from '../_shared/auth.ts';
 
 const json = (d: unknown, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 const Body = z.object({ action: z.enum(['cancel', 'pause', 'resume']), id: z.string().uuid() });
@@ -19,7 +20,7 @@ Deno.serve(async (req) => {
   if (!parsed.success) return json({ error: 'Invalid request' }, 400);
   const { action, id } = parsed.data;
   const { data: row } = await admin.from('recurring_donations').select('id, user_id, square_subscription_id, status').eq('id', id).maybeSingle();
-  const { data: isAdmin } = await admin.rpc('has_role', { _user_id: u.user.id, _role: 'admin' });
+  const isAdmin = await teamRpc(req, 'has_role', { _user_id: u.user.id, _role: 'admin' });
   if (!row || (row.user_id !== u.user.id && !isAdmin)) return json({ error: 'Not found' }, 404);
   if (row.status === 'canceled') return json({ ok: true });
 

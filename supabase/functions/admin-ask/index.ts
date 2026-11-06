@@ -4,7 +4,7 @@
 // open with its filters. It never sees a record, and every number in the answer comes from the database.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { requestUser } from '../_shared/auth.ts';
+import { requestUser, teamRpc } from '../_shared/auth.ts';
 import { overLimit, HOUR } from '../_shared/rate-limit.ts';
 import { buildLink, describeMetric, etStart, METRICS, PAGES, PARAM_VALUES, type AskPlan } from '../_shared/admin-ask.ts';
 
@@ -73,8 +73,7 @@ Deno.serve(async (req) => {
   const admin = createClient(SUPA, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const user = await requestUser(req, admin);
   if (!user) return json({ error: 'Please sign in first.' }, 401);
-  const { data: team } = await admin.rpc('is_admin_any', { _uid: user.id });
-  if (!team) return json({ error: 'Team access required' }, 403);
+  if (!(await teamRpc(req, 'is_admin_any', { _uid: user.id }))) return json({ error: 'Team access required' }, 403);
   const body = await req.json().catch(() => ({})) as { q?: unknown };
   const question = String(body.q ?? '').replace(/\s+/g, ' ').trim().slice(0, 300);
   if (question.length < 3) return json({ error: 'Type a question.' }, 400);

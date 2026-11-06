@@ -29,7 +29,7 @@ Deno.test('Reminders and donor follow-ups cover company and outside coupons', ()
 
 Deno.test('AI search only picks from a fixed list and never sees records', () => {
   const f = read('supabase/functions/admin-ask/index.ts');
-  assert(f.includes("rpc('is_admin_any'"), 'team only');
+  assert(f.includes("teamRpc(req, 'is_admin_any'"), 'team only, checked as the person (team sign-in rule)');
   assert(f.includes('overLimit('), 'rate-limited');
   assert(f.includes("rpc('admin_ask_metric'"), 'numbers come from the database, not the model');
   assert(!/admin_search|from\('(donations|profiles|fundraisers|email_log)'\)/.test(f), 'no records are read or sent to the model');

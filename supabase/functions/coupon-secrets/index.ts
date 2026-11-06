@@ -9,6 +9,7 @@ import { validateSecret, type CredType, type PlainSecret } from '../_shared/coup
 import { flushOwnerAlerts } from '../_shared/owner-alerts.ts';
 import { renderOutsideCouponEmail } from '../_shared/outside-coupon-email.ts';
 import { NOTIFY_SENDER } from '../_shared/email-layout.ts';
+import { teamRpc } from '../_shared/auth.ts';
 
 const json = (d: unknown, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 const S = z.string().max(200).optional();
@@ -58,7 +59,7 @@ Deno.serve(async (req) => {
   const parsed = Body.safeParse(raw);
   if (!parsed.success) return json({ error: 'Please check the coupon details.' }, 400);
   const p = parsed.data;
-  const isStaff = async () => !!(await admin.rpc('is_admin_staff', { _uid: uid })).data;
+  const isStaff = () => teamRpc(req, 'is_admin_staff', { _uid: uid });
 
   try {
     if (p.action === 'admin_save') {

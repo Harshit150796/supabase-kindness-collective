@@ -42,7 +42,7 @@ function signInErrorMessage(error: Error & { status?: number; code?: string }) {
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, signIn, signUp, hasRole, loading: authLoading, rolesLoaded } = useAuth();
+  const { user, signIn, signUp, loading: authLoading, rolesLoaded } = useAuth();
 
   const modeParam = searchParams.get('mode') === 'signup' ? 'signup' : 'signin';
   const [mode, setMode] = useState<'signin' | 'signup'>(modeParam);
@@ -94,12 +94,11 @@ export default function Auth() {
     if (user && !authLoading && rolesLoaded) {
       // Back to the page that asked for sign-in first; otherwise the right home.
       if (nextPath) navigate(nextPath, { replace: true });
-      else if (hasRole('admin')) navigate('/admin', { replace: true });
       else if (intent === 'recipient') navigate('/apply', { replace: true });
       else if (intent === 'donor') navigate('/dashboard/donate', { replace: true });
       else navigate('/dashboard', { replace: true });
     }
-  }, [user, authLoading, rolesLoaded, hasRole, navigate, intent, nextPath]);
+  }, [user, authLoading, rolesLoaded, navigate, intent, nextPath]);
 
 
   const validateForm = () => {

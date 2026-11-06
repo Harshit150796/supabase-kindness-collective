@@ -1,5 +1,8 @@
 import { Component, ReactNode, Suspense, useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { AdminNotFound } from '@/components/admin/AdminGateRoute';
+import { useTeamSession } from '@/hooks/useTeamSession';
+import { gatePath, rememberAdminNext } from '@/lib/adminGate';
 import { useIsFetching } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { GeoGuard } from '@/components/auth/GeoGuard';
@@ -8,7 +11,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ADMIN_LOADERS, prefetchAdminPage } from '@/pages/admin/adminPages';
 import { prefetchWhenIdle } from '@/lib/idlePrefetch';
-import { signInPath } from '@/lib/serverActions';
 
 const TEAM = ['admin', 'staff', 'viewer'];
 
@@ -65,12 +67,22 @@ function Frame() {
   );
 }
 
-/** One persistent admin frame: access is checked once, and only the middle area changes between sections. */
+/**
+ * One persistent admin frame: access is checked once, and only the middle area changes between sections.
+ * The portal opens only for a team member whose session passed the authenticator step on the hidden
+ * sign-in (useTeamSession); everyone else gets the site's ordinary "page not found", never a sign-in
+ * prompt. A team member whose check ran out is sent back to the hidden link if this tab came through it.
+ */
 export function AdminShell() {
-  const { user, roles, loading, rolesLoaded } = useAuth();
+  const { user, roles } = useAuth();
+  const access = useTeamSession();
   const location = useLocation();
-  if (loading || (user && !rolesLoaded)) return <div className="flex min-h-dvh items-center justify-center bg-background text-muted-foreground">Loading…</div>;
-  if (!user) return <Navigate to={signInPath(`${location.pathname}${location.search}`)} replace />;
-  if (!TEAM.some((r) => roles.includes(r as any))) return <Navigate to="/" replace />;
+  const wanted = `${location.pathname}${location.search}`;
+  useEffect(() => { if (access === 'denied') rememberAdminNext(wanted); }, [access, wanted]);
+  if (access === 'loading') return <div className="flex min-h-dvh items-center justify-center bg-background text-muted-foreground">Loading…</div>;
+  if (access === 'denied') {
+    const gate = user && TEAM.some((r) => (roles as readonly string[]).includes(r)) ? gatePath() : null;
+    return gate ? <Navigate to={gate} replace /> : <AdminNotFound />;
+  }
   return <GeoGuard mode="strict"><Frame /></GeoGuard>;
 }
