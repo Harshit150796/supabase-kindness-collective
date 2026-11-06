@@ -15,8 +15,11 @@ export const DRIVE = {
   endLabel: 'January 15, 2027',
   endShort: 'Jan 15',
   minGift: 10,
+  /** Residents of these states can't win (sweepstakes registration and bond rules; founder's choice). */
+  excludedStates: ['New York', 'Florida'],
   gifts: { count: 100, value: 1000 },
-  goldCoins: { count: 5 },
+  /** A real (physical) gold coin, founder-confirmed Nov 6, 2026; not the site's Gold Coins points. */
+  goldCoins: { count: 5, name: 'real gold coin' },
   giftCards: { count: 5, value: 500 },
   /** Draws happen within this many days after the drive ends; winners hear within as many days again. */
   drawWithinDays: 7,

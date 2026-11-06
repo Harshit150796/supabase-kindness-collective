@@ -829,6 +829,7 @@ html[data-drive-bar]{--drive-bar-h:36px}
 @media (min-width:768px){html[data-drive-bar]{--drive-bar-h:40px}}
 @media (max-height:500px){html[data-drive-bar]{--drive-bar-h:32px}}
 .drive-bar{position:relative;display:flex;align-items:center;justify-content:center;height:36px;padding:0 40px;background:hsl(123 46% 34%);color:#fff;font-size:13px;line-height:1.2;letter-spacing:.005em}
+@media (max-width:339px){.drive-bar{font-size:12.5px}}
 @media (min-width:768px){.drive-bar{height:40px;padding:0 56px;font-size:14px}}
 @media (max-height:500px){.drive-bar{height:32px}}
 .drive-bar-main{display:inline-flex;align-items:center;gap:8px;min-width:0;max-width:100%;height:100%;padding:0 6px;border:0;background:none;color:inherit;font:inherit;letter-spacing:inherit;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent}

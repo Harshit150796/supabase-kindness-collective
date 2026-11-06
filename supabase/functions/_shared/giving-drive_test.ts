@@ -14,6 +14,10 @@ Deno.test('the Holiday Giving Drive ends at 11:59 PM Eastern on January 15, 2027
   assert(drive.includes("if (forced === '1') return true;") && drive.includes("if (forced === '0') return false;"));
   // The free entry goes to the support inbox.
   assert(drive.includes("freeEntry: { email: LEGAL_EMAIL, subject: 'Giving Drive entry' }"));
+  // Founder-confirmed facts (Nov 6, 2026): 100 gifts of $1,000, a real gold coin for the top 5, no NY or FL.
+  assert(drive.includes('gifts: { count: 100, value: 1000 }') && drive.includes('giftCards: { count: 5, value: 500 }'));
+  assert(drive.includes("goldCoins: { count: 5, name: 'real gold coin' }"));
+  assert(drive.includes("excludedStates: ['New York', 'Florida']"));
 });
 
 Deno.test('the drive bar is the header\'s first row, the sticker sits on Donate, and one pop-up serves both', async () => {
@@ -24,6 +28,9 @@ Deno.test('the drive bar is the header\'s first row, the sticker sits on Donate,
   assert(hero.indexOf('hero-half-give') < hero.indexOf('hero-sticker') && hero.indexOf('hero-sticker') < hero.indexOf('hero-half-ask'));
   const bar = await read('src/components/drive/DriveBar.tsx');
   assert(bar.includes('onClick={openDriveTerms}') && bar.includes('closeDriveBar()') && bar.includes('data-nosnippet'));
+  // "Real gold coin" everywhere, so nobody confuses the prize with the site's Gold Coins points.
+  assert(!/win a gold coin/.test(bar));
+  for (const text of ['each win a ${DRIVE.goldCoins.name}', 'each win a {DRIVE.goldCoins.name}<span', 'donors win a {DRIVE.goldCoins.name}<span']) assert(bar.includes(text), text);
   const app = await read('src/App.tsx');
   assertEquals(app.split('<DriveTermsHost />').length - 1, 1);
   assert(app.indexOf('<SiteMenuProvider>') < app.indexOf('<DriveTermsHost />'));
@@ -42,8 +49,9 @@ Deno.test('the drive terms keep their legal shape: free entry, one entry per per
     "giving more doesn't improve your chances of winning one",
     'One entry per person, however many times you give or email.',
     'No prize is guaranteed for any donation',
-    'Void where prohibited.',
-    'who are 18 or older',
+    'who are 18 or older, except residents of {excluded}. Void in {excluded} and wherever else prohibited.',
+    'Open to US residents 18 and older, except in {excluded}.',
+    "and a {goldCoins.name} for each of the {goldCoins.count} donors",
     '{COMPANY} pays for every prize. Nothing comes out of donations, so 100% of each gift still reaches the family. Gifts are not tax-deductible.',
     'To enter without giving, email <FreeEmail />',
     'No donation is needed to enter.',
