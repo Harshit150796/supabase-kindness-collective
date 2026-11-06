@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { canopyTopPx, PHONE_BREAKPOINT } from "@/lib/heroBackdrop";
 import { useMotionPreference } from "@/hooks/useMotionPreference";
+import { Gift } from "lucide-react";
+import { DRIVE, DRIVE_LIVE, driveMoney, openDriveTerms, prefetchDriveTerms } from "@/lib/givingDrive";
 
 const ROTATING_WORDS = ["transparent", "trackable", "real-time"];
 const WORD_MS = 3000;
@@ -21,7 +23,9 @@ function openingUncovered() {
  * fixed (no scaling with the window); only the position follows the canopy, whose top comes from the
  * tree camera (canopyTopPx), so the buttons always rest right on top of the tree. The moon and sun
  * move right of them (orbX). When the scene arrives the halves slide in and meet, a heart pops into
- * the seam, then every 9s they breathe apart and back. Nothing ever hides them.
+ * the seam, then every 9s they breathe apart and back. Nothing ever hides them. While the Holiday
+ * Giving Drive runs, a white sticker ("Win $1,000*") is slapped on Donate's lower-left corner just
+ * after they meet (founder request, Nov 2026); it opens the drive's prizes and terms.
  */
 export function HeroHeadline({ play = true }: { play?: boolean }) {
   const [idx, setIdx] = useState(0);
@@ -84,6 +88,21 @@ export function HeroHeadline({ play = true }: { play?: boolean }) {
           </p>
           <div className="hero-pair">
             <Link to="/donate" className="hero-half hero-half-give">Donate now</Link>
+            {DRIVE_LIVE && (
+              <button
+                type="button"
+                className="hero-sticker"
+                aria-haspopup="dialog"
+                aria-label={`${DRIVE.name}: give ${driveMoney(DRIVE.minGift)} or more for a chance to win a ${driveMoney(DRIVE.gifts.value)} gift. See the prizes and terms.`}
+                onClick={openDriveTerms}
+                onPointerEnter={prefetchDriveTerms}
+                onFocus={prefetchDriveTerms}
+                onTouchStart={prefetchDriveTerms}
+              >
+                <Gift aria-hidden="true" />
+                <span>Win {driveMoney(DRIVE.gifts.value)}<span className="hero-sticker-star">*</span></span>
+              </button>
+            )}
             <span className="hero-seam" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <path d="M12 20.5s-8-4.9-8-10.6A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 8 2.6c0 5.7-8 10.6-8 10.6z" />

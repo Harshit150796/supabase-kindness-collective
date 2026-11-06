@@ -20,6 +20,7 @@ import { PrivacyConsentBanner } from "./components/PrivacyConsentBanner";
 import { VisitorAnalytics } from "./components/VisitorAnalytics";
 import { AdTags } from "./components/AdTags";
 import { CursorTrail } from './components/CursorTrail';
+import { DriveTermsHost } from './components/drive/DriveTermsHost';
 import { SiteMenuProvider } from './components/navigation/SiteMenuProvider';
 import { signInPath } from './lib/serverActions';
 import { PageChoreography } from './components/PageChoreography';
@@ -234,6 +235,7 @@ const App = () => (
                   <CursorTrail />
                   <PageChoreography />
                   <PrivacyConsentBanner />
+                  <DriveTermsHost />
                   <VisitorAnalytics />
                   <AdTags />
                 </SiteMenuProvider>

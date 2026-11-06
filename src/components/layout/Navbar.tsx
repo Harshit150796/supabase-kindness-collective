@@ -6,6 +6,7 @@ import { BrandLockup } from '@/components/navigation/BrandLockup';
 import { MenuButton } from '@/components/navigation/MenuButton';
 import { useSiteMenu } from '@/components/navigation/menuContext';
 import { signInHref } from '@/components/navigation/siteLinks';
+import { DriveBar } from '@/components/drive/DriveBar';
 
 const quietLink = 'nav-quiet-link';
 const DONATE = 'Donate'.split('');
@@ -15,7 +16,8 @@ const DONATE = 'Donate'.split('');
  * switch (homepage), Sign in or the account, and two serif words, Donate and Menu, on the right.
  * At the top of the homepage it sits on the hero's own sky in light ink (night) or dark ink (day);
  * once the page moves it becomes a frosted light bar. Every page renders it; the menu itself lives
- * once at app level (SiteMenuProvider), so it works the same on every page and size.
+ * once at app level (SiteMenuProvider), so it works the same on every page and size. While the
+ * Holiday Giving Drive runs, its green bar (DriveBar) is the header's first row on every page.
  */
 export function Navbar({ autoHide = true }: { autoHide?: boolean } = {}) {
   const { user, loading } = useAuth();
@@ -67,6 +69,7 @@ export function Navbar({ autoHide = true }: { autoHide?: boolean } = {}) {
 
   return (
     <nav ref={navRef} data-site-header data-over-sky={overSky || undefined} aria-label="Main" className={`site-header sticky top-0 z-50 ${hidden ? '-translate-y-full' : 'translate-y-0'}`}>
+      <DriveBar />
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-3 py-3 lg:h-[4.5rem] [@media(max-height:500px)]:h-[52px] [@media(max-height:500px)]:py-1">
           <BrandLockup navBrand />
