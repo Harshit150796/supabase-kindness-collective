@@ -140,11 +140,11 @@ export function MarshmallowGroupArt({ id, lit }: { id: GroupId; lit: boolean }) 
   );
 }
 
-function Group({ id, spot, lit, still, distanceFactor }: { id: GroupId; spot: [number, number, number]; lit: boolean; still: boolean; distanceFactor: number }) {
+function Group({ id, spot, lit, still, distanceFactor, scale }: { id: GroupId; spot: [number, number, number]; lit: boolean; still: boolean; distanceFactor: number; scale: number }) {
   return (
     <Html position={spot} center distanceFactor={distanceFactor} zIndexRange={[19, 0]} pointerEvents="none" style={{ pointerEvents: 'none' }}>
       <div className={`hl mm${still ? ' mm-still' : ''}`} aria-hidden="true">
-        <div className="mm-art" style={{ transform: `scale(${MM_SCALE})` }}>
+        <div className="mm-art" style={{ transform: `scale(${scale})` }}>
           <MarshmallowGroupArt id={id} lit={lit} />
         </div>
       </div>
@@ -170,7 +170,7 @@ export function HalloweenMarshmallows({ isMobile, lowPower, gentle }: { isMobile
   return (
     <>
       {groups.map((g) => (
-        <Group key={g.id} id={g.id} spot={[g.at.x, 0, g.at.z]} lit={lit} still={gentle} distanceFactor={distanceFactor} />
+        <Group key={g.id} id={g.id} spot={[g.at.x, 0, g.at.z]} lit={lit} still={gentle} distanceFactor={distanceFactor} scale={isMobile ? MM_SCALE.phone : MM_SCALE.wide} />
       ))}
     </>
   );
