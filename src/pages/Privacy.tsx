@@ -1,5 +1,5 @@
 import { Bullets, DocLink, LegalPage, SupportEmail, type LegalSection } from '@/components/legal/LegalPage';
-import { COMPANY, COMPANY_FORM } from '@/lib/legal';
+import { COMPANY, COMPANY_FORM, PRIVACY_UPDATED } from '@/lib/legal';
 
 const sections: LegalSection[] = [
   {
@@ -104,6 +104,11 @@ const sections: LegalSection[] = [
     body: <p>Every connection to CouponDonation is encrypted. Our database rules limit each person to their own records, coupon codes can be revealed only by their owner or through a logged staff action, and card numbers never reach our systems. Sign-up forms have request limits to stop abuse. No system is perfectly secure; if a breach affects your information, we'll tell you and the authorities as the law requires.</p>,
   },
   {
+    id: 'sms',
+    title: 'Text messages and phone numbers',
+    body: <p>We do not share your SMS consent or phone number with third parties or affiliates for marketing purposes. Your contact information is used only for the purposes outlined here.</p>,
+  },
+  {
     id: 'changes',
     title: 'Changes to this policy',
     body: <p>When we change this policy, we update the date at the top. For important changes, we'll tell you by email or on the site before they take effect.</p>,
@@ -118,6 +123,7 @@ export default function Privacy() {
       description="What CouponDonation collects, what's public on a fundraiser, who we share data with, and how to see, correct or delete yours."
       intro={<p>This policy explains what personal information CouponDonation collects, what other people can see, who we share it with and the choices you have. We don't sell your information.</p>}
       sections={sections}
+      updated={PRIVACY_UPDATED}
     />
   );
 }

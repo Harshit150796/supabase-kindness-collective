@@ -11,7 +11,9 @@ export interface LegalSection { id: string; title: string; body: ReactNode }
  * Shared frame for the legal pages: title, last-updated date, a contents list, numbered sections and
  * the company's contact block. Plain language, one column, at reading width.
  */
-export function LegalPage({ title, path, description, intro, sections }: {
+export function LegalPage({ title, path, description, intro, sections, updated = LEGAL_UPDATED }: {
+  /** A page's own last-updated date, when it changed after the shared one. */
+  updated?: string;
   title: string;
   path: string;
   description: string;
@@ -25,7 +27,7 @@ export function LegalPage({ title, path, description, intro, sections }: {
       <main className="container mx-auto px-4 pb-20 pt-28 md:pt-32">
         <article className="mx-auto max-w-3xl">
           <h1 className="font-display text-5xl font-normal leading-[1.05] text-foreground md:text-6xl">{title}</h1>
-          <p className="mt-4 text-sm text-muted-foreground">Last updated {LEGAL_UPDATED}</p>
+          <p className="mt-4 text-sm text-muted-foreground">Last updated {updated}</p>
           <div className="mt-8 space-y-4 text-[17px] leading-[1.7] text-foreground/90">{intro}</div>
 
           <nav aria-label="On this page" className="mt-10 rounded-2xl bg-muted/50 p-5 sm:p-6">
