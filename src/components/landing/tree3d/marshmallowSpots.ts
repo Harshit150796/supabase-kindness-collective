@@ -10,6 +10,17 @@ import { gardenDistanceFactor } from './gardenMoments';
  * the walking deer and the other group is used. A group with no clear spot is left out.
  */
 export interface Spot { x: number; z: number }
+
+/**
+ * Halloween season (founder's choice, Nov 2026): October 1 to November 15 by the visitor's own date,
+ * back every October. `?halloween=1` or `?halloween=0` forces them on or off for checks.
+ */
+export function isHalloweenSeason(now: Date, search = ''): boolean {
+  const forced = new URLSearchParams(search).get('halloween');
+  if (forced === '1' || forced === '0') return forced === '1';
+  const month = now.getMonth();
+  return month === 9 || (month === 10 && now.getDate() <= 15);
+}
 export type GroupId = 'trio-a' | 'trio-b' | 'pair' | 'single';
 export interface PlacedGroup { id: GroupId; at: Spot }
 
