@@ -24,8 +24,12 @@ export function isHalloweenSeason(now: Date, search = ''): boolean {
 export type GroupId = 'trio-a' | 'trio-b' | 'pair' | 'single';
 export interface PlacedGroup { id: GroupId; at: Spot }
 
-/** HalloweenMarshmallows draws each group at this size over the garden's scale. */
-export const MM_SCALE = 1.3;
+/**
+ * HalloweenMarshmallows draws each group at this size over the garden's scale (founder asked for
+ * them bigger, Nov 6, 2026). Phones stay at 1.3: they already look big against a small screen, and
+ * any bigger the ghost no longer fits beside the canopy on common phones (390x664 in Safari).
+ */
+export const MM_SCALE = { wide: 1.6, phone: 1.3 };
 /** Drawn art around a group's anchor at the garden's scale 1 (HalloweenMarshmallows draws to these). */
 const ART_BOX: Record<GroupId, Box> = {
   'trio-a': { x1: -42, y1: -46, x2: 42, y2: 3 },
@@ -33,7 +37,8 @@ const ART_BOX: Record<GroupId, Box> = {
   pair: { x1: -31, y1: -44, x2: 23, y2: 3 },
   single: { x1: -15, y1: -30, x2: 15, y2: 3 },
 };
-const GROUP_BOX = Object.fromEntries(Object.entries(ART_BOX).map(([k, b]) => [k, { x1: b.x1 * MM_SCALE, y1: b.y1 * MM_SCALE, x2: b.x2 * MM_SCALE, y2: b.y2 * MM_SCALE }])) as Record<GroupId, Box>;
+const scaled = (k: number) => Object.fromEntries(Object.entries(ART_BOX).map(([id, b]) => [id, { x1: b.x1 * k, y1: b.y1 * k, x2: b.x2 * k, y2: b.y2 * k }])) as Record<GroupId, Box>;
+const GROUP_BOX = { wide: scaled(MM_SCALE.wide), phone: scaled(MM_SCALE.phone) };
 
 /** Phone spots, best first (scanned over 320-430px phones: the small ones fit only the pair or one). */
 const PHONE_LEFT: Spot[] = [{ x: -3.0, z: -1.4 }, { x: -3.2, z: -2.2 }, { x: -3.6, z: -2.6 }, { x: -4.4, z: -2.2 }, { x: -2.8, z: -2.6 }];
@@ -121,7 +126,7 @@ export function fitter(width: number, height: number, phone: boolean, deer: bool
   for (const a of phone ? HILL_PHONE : HILL_WIDE) keepOut.push(placedBox(width, height, phone, a, a.box));
 
   return (at: Spot, id: GroupId, taken: Box[]): Box | null => {
-    const b = placedBox(width, height, phone, at, GROUP_BOX[id]);
+    const b = placedBox(width, height, phone, at, GROUP_BOX[phone ? 'phone' : 'wide'][id]);
     if (b.x1 < EDGE || b.x2 > width - EDGE || b.y2 > height - MARGIN) return null;
     // Art behind the tree would be drawn over it (it is a page layer, not part of the 3D scene).
     if (at.z < 0.5 && tree.some((t) => hit(b, t))) return null;
