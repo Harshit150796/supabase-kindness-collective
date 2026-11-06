@@ -7,6 +7,7 @@ import { z } from 'npm:zod@3';
 import { moderate, maskedExcerpt, BLOCKED_EXPLANATION } from '../_shared/moderation.ts';
 import { inspectImage } from '../_shared/image-meta.ts';
 import { suppress } from '../_shared/suppression.ts';
+import { teamRpc } from '../_shared/auth.ts';
 
 const SUPA = Deno.env.get('SUPABASE_URL')!;
 const BUCKET = 'coupon-receipts';
@@ -74,8 +75,9 @@ Deno.serve(async (req) => {
     let allowed = false, isStaff = false;
     if (p.token) allowed = (await tokenDonation(p.token)) === c.donation_id;
     if (!allowed && uid) {
-      allowed = !!(await admin.rpc('can_view_coupon_receipts', { _coupon_id: c.id, _uid: uid })).data;
-      isStaff = !!(await admin.rpc('is_admin_staff', { _uid: uid })).data;
+      // Staff count only after the team sign-in (teamRpc); the organizer and donors as before.
+      isStaff = await teamRpc(req, 'is_admin_staff', { _uid: uid });
+      allowed = isStaff || !!(await admin.rpc('can_view_coupon_receipts_as_party', { _coupon_id: c.id, _uid: uid })).data;
     }
     if (!allowed) return json({ error: 'Not allowed' }, 403);
     let q = admin.from('coupon_receipts').select('id, storage_path, hidden_at, created_at').eq('coupon_id', c.id).order('created_at');

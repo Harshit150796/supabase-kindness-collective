@@ -43,7 +43,7 @@ Deno.test('Resend list rows keep metadata only, first recipient, skip broken row
 
 Deno.test('Contact paths stay staff-only, audited and kept apart from supporter threads', () => {
   const contact = read('supabase/functions/admin-contact/index.ts');
-  assert(contact.includes("rpc('is_admin_staff'"), 'staff only');
+  assert(contact.includes("teamRpc(req, 'is_admin_staff'"), 'staff only, checked as the person (team sign-in rule)');
   assert(contact.includes('overLimit('), 'rate-limited');
   assert(contact.includes("action: 'organizer.contact'"), 'audited');
   assert(contact.includes("category: 'team'"), 'team emails are logged with their text');

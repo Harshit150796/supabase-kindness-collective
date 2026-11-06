@@ -7,4 +7,5 @@
 - Shared RecordWork attaches private notes and audited follow-ups to exact record identities; AdminRecordDrawer reads paginated exact-match histories so guest/outside donors never require fabricated accounts.
 - Notification counts and read actions use useAdminNotifications with the owner-scoped admin_notification_state RPC; list rows never determine unread totals.
 - Saved personal views store only non-sensitive list preferences; never persist search text, credentials or donor record identifiers.
+- Access: AdminShell opens only for a team session that passed the hidden team sign-in's authenticator step (see the root AGENTS.md, Admin sign-in); everyone else gets the 404. Don't add a sign-in prompt or a link to /admin anywhere public.
 - Admin portal pages render inside one nested AdminShell route (guards + persistent frame + Suspense in content); pages must not add their own route guards or lazy imports outside adminPages.ts.

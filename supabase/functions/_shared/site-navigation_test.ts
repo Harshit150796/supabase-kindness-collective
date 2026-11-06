@@ -13,8 +13,9 @@ Deno.test('every menu item comes from one list and points at a real route', asyn
   // Removed duplicates and dead ends stay removed.
   assert(!links.includes("'/dashboard/donate'"));
   assert(!links.includes("'/dashboard/impact'"));
-  // Added: dashboard, giving, messages, contact, team portal.
-  for (const to of ["'/dashboard'", "'/dashboard/giving'", "'/messages'", "'/admin'"]) assert(links.includes(to), to);
+  // Added: dashboard, giving, messages, contact. The admin portal is never in a menu (hidden team sign-in, Nov 2026).
+  for (const to of ["'/dashboard'", "'/dashboard/giving'", "'/messages'"]) assert(links.includes(to), to);
+  assert(!links.includes("to: '/admin'"));
   assert(links.includes("to: `mailto:${SUPPORT_EMAIL}`") && links.includes("SUPPORT_EMAIL = 'support@coupondonation.com'"));
 });
 
@@ -115,7 +116,9 @@ Deno.test('signing in returns people to where they were, and only to this site',
   assert(app.includes('<Navigate to={signInPath(`${location.pathname}${location.search}`)} replace />'));
   const authPage = await read('src/pages/Auth.tsx');
   assert(authPage.includes("rawNext.startsWith('/') && !rawNext.startsWith('//')"));
-  assert(authPage.indexOf('if (nextPath) navigate(nextPath') < authPage.indexOf("else if (hasRole('admin'))"));
+  assert(authPage.includes('if (nextPath) navigate(nextPath'));
+  // The admin portal opens only through the hidden team sign-in, never from the ordinary sign-in.
+  assert(!authPage.includes("navigate('/admin'"));
   assert(authPage.includes("return 'That email and password do not match.';"));
   const links = await read('src/components/navigation/siteLinks.ts');
   // On the sign-in page the links keep its return path and only switch the tab, which follows ?mode=.

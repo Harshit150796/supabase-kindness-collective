@@ -4,7 +4,7 @@
 // rate-limited, written to the audit log, and emails go into email_log with their text.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { requestUser, UUID_RE } from '../_shared/auth.ts';
+import { requestUser, UUID_RE, teamRpc } from '../_shared/auth.ts';
 import { overLimit, HOUR } from '../_shared/rate-limit.ts';
 import { checkTeamMessage, renderTeamEmail, SITE, TEAM_INBOX_ID, TEAM_SENDER } from '../_shared/team-contact.ts';
 
@@ -18,8 +18,7 @@ Deno.serve(async (req) => {
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const user = await requestUser(req, admin);
   if (!user) return fail('Please sign in first.', 401);
-  const { data: staff } = await admin.rpc('is_admin_staff', { _uid: user.id });
-  if (!staff) return fail('Staff access required', 403);
+  if (!(await teamRpc(req, 'is_admin_staff', { _uid: user.id }))) return fail('Staff access required', 403);
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   if (body.action !== 'send') return fail('Unknown action');
 

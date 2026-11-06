@@ -3815,6 +3815,27 @@ export type Database = {
         }
         Relationships: []
       }
+      security_settings: {
+        Row: {
+          id: boolean
+          require_team_mfa: boolean
+          team_mfa_max_age_hours: number
+          updated_at: string
+        }
+        Insert: {
+          id?: boolean
+          require_team_mfa?: boolean
+          team_mfa_max_age_hours?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: boolean
+          require_team_mfa?: boolean
+          team_mfa_max_age_hours?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trial_coupons: {
         Row: {
           brand_name: string
@@ -4507,6 +4528,10 @@ export type Database = {
         Args: { _coupon_id: string; _uid: string }
         Returns: boolean
       }
+      can_view_coupon_receipts_as_party: {
+        Args: { _coupon_id: string; _uid: string }
+        Returns: boolean
+      }
       claim_account_email: {
         Args: { _by: string; _kind: string; _source: string }
         Returns: boolean
@@ -4932,6 +4957,8 @@ export type Database = {
       }
       svc_purge_cvv: { Args: never; Returns: number }
       team_inbox_id: { Args: never; Returns: string }
+      team_mfa_required: { Args: never; Returns: boolean }
+      team_session_ok: { Args: { _uid: string }; Returns: boolean }
       username_available: { Args: { _username: string }; Returns: boolean }
       withdraw_card_donation: { Args: { _id: string }; Returns: undefined }
     }

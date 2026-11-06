@@ -48,6 +48,12 @@
 - Public edge functions that send codes or reveal account existence are rate-limited through `_shared/rate-limit.ts` (hashed keys in request_rate_limits). Retired admin/import functions return 410; don't revive them without authentication.
 - Account deletion and data copies are requests to support@coupondonation.com (Settings), answered within 45 days; deletion within 30 days apart from records the law requires.
 
+## Admin sign-in (founder request, Nov 2026)
+- The admin portal opens only through a hidden team sign-in link. The code keeps only its SHA-256 (ADMIN_GATE_HASH in src/lib/adminGate.ts); AdminGateRoute (the `*` route) shows AdminSignIn for that path and the ordinary 404 for everything else. Never add the link to menus, sitemaps, robots.txt, emails or docs, and never redirect anyone to /admin from the ordinary sign-in.
+- AdminSignIn: email and password or Google, then an authenticator-app code (Supabase TOTP; set up with a QR code on the first visit). AdminShell (useTeamSession) opens /admin only for a team role whose session passed that code (aal2) within 12 hours; anyone else sees the site's 404, and a team member whose check ran out is sent back to the link if the tab came through it.
+- The database enforces it: is_admin_any, is_admin_staff and has_role (team roles) require team_session_ok, which needs aal2 with a TOTP check in the last team_mfa_max_age_hours, while security_settings.require_team_mfa is on. Service-role code is trusted, so edge functions check team roles only through teamRpc (as the person, _shared/auth.ts), never with a service-role rpc of those functions; _svc_as carries the step over for staff actions that server code already checked.
+- Lost authenticator: the team can remove that person's factor (auth.mfa_factors) so they set it up again on the next sign-in.
+
 ## Scoped rules
 - Read supabase/AGENTS.md before changing authentication, permissions, payments, messaging, email, coupon claims, storage or security; its October audit rules also constrain frontend callers.
 - Read src/AGENTS.md before changing frontend files; it owns public-page SEO rules. Other subdirectories have their own AGENTS.md to read before edits, as listed above.

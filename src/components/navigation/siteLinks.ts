@@ -57,7 +57,6 @@ export const ACCOUNT_LINKS: AccountLink[] = [
   { label: 'Your profile', to: '/profile', icon: UserRound },
   { label: 'Find people', to: '/people', icon: Users },
   { label: 'Settings', to: '/settings', icon: Settings },
-  { label: 'Admin portal', to: '/admin', icon: ShieldCheck, team: true },
 ];
 
 /** Recipient tools that only the dashboard sidebar lists. */

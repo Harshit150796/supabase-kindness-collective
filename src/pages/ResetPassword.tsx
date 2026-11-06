@@ -50,11 +50,8 @@ export default function ResetPassword() {
   // Redirect to dashboard after successful login
   useEffect(() => {
     if (success && user && rolesLoaded && roles.length > 0) {
-      if (roles.includes('admin')) {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
+      // The admin portal opens only through the hidden team sign-in.
+      navigate('/dashboard');
     }
 
   }, [success, user, roles, rolesLoaded, navigate]);

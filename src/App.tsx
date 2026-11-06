@@ -11,6 +11,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SessionSecurityProvider } from "@/components/auth/SessionSecurityProvider";
 import { GeoGuard } from "@/components/auth/GeoGuard";
 import { AdminShell, AdminOnly } from "@/components/admin/AdminShell";
+import { AdminGateRoute } from "@/components/admin/AdminGateRoute";
 import { adminPage } from "./pages/admin/adminPages";
 
 
@@ -213,7 +214,7 @@ const AppRoutes = () => (
       <Route path="/blog/:slug" element={<BlogPost />} />
       <Route path="/unsubscribe" element={<Private title="Unsubscribe"><Unsubscribe /></Private>} />
 
-      <Route path="*" element={<Private title="Page not found"><NotFound /></Private>} />
+      <Route path="*" element={<AdminGateRoute />} />
     </Routes>
   </Suspense>
 );
