@@ -7,6 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export const LEGAL_VERSION = '2026-11-04';
 export const LEGAL_UPDATED = 'November 4, 2026';
+/** The Privacy Policy's own date when it changes without a new version (Nov 6, 2026: the text message section). */
+export const PRIVACY_UPDATED = 'November 6, 2026';
 export const COMPANY = 'CouponDonation Inc.';
 export const COMPANY_FORM = 'a Delaware corporation';
 export const LEGAL_EMAIL = 'support@coupondonation.com';
