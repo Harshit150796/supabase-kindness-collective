@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The List (20 s)</title>
+<link rel="stylesheet" href="../lib/stage.css">
+</head>
+<body>
+<div id="stage"></div>
+<script src="list.timeline.js"></script>
+<script src="../lib/stage.js"></script>
+<script src="../lib/cast.js"></script>
+<script src="../lib/sets.js"></script>
+<script src="../lib/shots.js"></script>
+<script>
+// "The List": a father crosses things off the grocery list at night and hides it from his daughter.
+// A donor gives through CouponDonation; next week the list has check marks. Illustrated dramatization.
+const { el, SKIN, HAIR, CLOTH } = CD;
+const DAD = { skin: SKIN.tan, hair: HAIR.black, hairStyle: 'short', top: CLOTH.steel, style: 'sweater', seed: 11 };
+const KID = { kid: true, skin: SKIN.tan, hair: HAIR.black, hairStyle: 'pigtails', top: CLOTH.mint, style: 'pajama', accent: CLOTH.blue, seed: 12 };
+const KID_DAY = Object.assign({}, KID, { top: CLOTH.blue, style: 'tee', print: CLOTH.mint });
+const DONOR = { skin: SKIN.fair, hair: HAIR.silver, hairStyle: 'bun', top: CLOTH.moss, style: 'cardigan', glasses: true, seed: 13 };
+const ITEMS = ['milk', 'eggs', 'apples', 'cereal', 'rice', 'chicken'];
+const DAD_X = 70, DAD_Y = 60, KID_S = 1.08;
+const put = (...a) => CD.put(...a);
+const dL = (x, y) => [x - DAD_X, y - DAD_Y];
+
+/** A writing hand seen from above; tip = pen tip in world coordinates. */
+function penHand(g, skin, sleeve) {
+  const h = el('g', {}, g);
+  el('line', { x1: 95, y1: 125, x2: 640, y2: 860, stroke: sleeve, 'stroke-width': 84, 'stroke-linecap': 'round' }, h);
+  el('line', { x1: 0, y1: 0, x2: 58, y2: 78, stroke: '#1d3557', 'stroke-width': 10, 'stroke-linecap': 'round' }, h);
+  el('ellipse', { cx: 70, cy: 96, rx: 40, ry: 50, fill: skin, transform: 'rotate(-36 70 96)' }, h);
+  el('ellipse', { cx: 36, cy: 58, rx: 14, ry: 18, fill: skin, transform: 'rotate(-36 36 58)' }, h);
+  el('ellipse', { cx: 52, cy: 46, rx: 12, ry: 16, fill: CD.shade(skin, -0.08), transform: 'rotate(-60 52 46)' }, h);
+  return (tip) => h.setAttribute('transform', `translate(${tip[0].toFixed(1)} ${tip[1].toFixed(1)})`);
+}
+
+const shots = {
+  list: {
+    bg: '#2f4239',
+    build(g) {
+      this.paper = CD.sets.listPaper(g, ITEMS, { rot: -4 });
+      this.hand = penHand(g, DAD.skin, DAD.top);
+      const P = this.paper;
+      const up = (p) => [p[0] + 30, p[1] - 40];
+      this.keys = [[0, up(P.tip(2, 0))], [0.75, P.tip(2, 0)], [0.85, P.tip(2, 0)], [1.3, P.tip(2, 1)], [1.75, P.tip(3, 0)], [1.85, P.tip(3, 0)], [2.3, P.tip(3, 1)],
+        [2.65, P.tip(5, 0)], [2.75, P.tip(5, 0)], [3.2, P.tip(5, 1)], [3.6, up(P.tip(5, 1))]];
+    },
+    update(t, lt) {
+      const P = this.paper;
+      P.strike(2, CD.eio(CD.prog(lt, 0.85, 1.3)));
+      P.strike(3, CD.eio(CD.prog(lt, 1.85, 2.3)));
+      P.strike(5, CD.eio(CD.prog(lt, 2.75, 3.2)));
+      this.hand(CD.track(this.keys, lt));
+    },
+    cam: CD.cam({ landscape: [[0, [10, 0, 600, 660]], [3.6, [20, 20, 540, 600]]], portrait: [[0, [10, 10, 480, 660]], [3.6, [20, 20, 440, 610]]] }),
+  },
+  table: {
+    bg: '#223440',
+    build(g) {
+      CD.sets.kitchen(g);
+      this.kid = CD.person(KID); g.appendChild(this.kid.g);
+      this.dad = CD.person(DAD).place(DAD_X, DAD_Y, 1); g.appendChild(this.dad.g);
+      CD.sets.table(g);
+      this.paper = el('rect', { x: -60, y: -4, width: 120, height: 7, rx: 2, fill: '#f4f7f5' }, g);
+      this.mug = CD.prop('mug', { color: '#1565c0' }); this.mug.setAttribute('transform', 'translate(250 -212) scale(1.5)'); g.appendChild(this.mug);
+    },
+    update(t, lt) {
+      const walk = lt > 0.9 && lt < 2.0;
+      const ph = lt * Math.PI * 4;
+      const kx = CD.lerp(-560, -130, CD.eo(CD.prog(lt, 0.9, 2.0)));
+      this.kid.place(kx, 0, KID_S);
+      this.kidA = this.kidA || CD.animate(this.kid, [
+        [0, { ex: 'neutral', gx: 0.6, turn: 0.2 }],
+        [2.0, { ex: 'hopeful', gx: 0.8, gy: -0.5, turn: 0.3, tilt: 4 }],
+        [2.3, { ex: 'hopeful', gx: 0.8, gy: -0.5, turn: 0.3, tilt: 4, rh: [(-30 - -130) / KID_S, -236 / KID_S] }],
+        [3.2, { ex: 'smile', gx: 0.8, gy: -0.6, turn: 0.3, tilt: 6, rh: [(-30 - -130) / KID_S, -236 / KID_S] }],
+        [4.0, { ex: 'smile', gx: 0.8, gy: -0.6, turn: 0.3, tilt: 6, rh: [(-30 - -130) / KID_S, -236 / KID_S] }],
+      ]);
+      this.kidA(lt, t);
+      if (walk) {
+        const p = this.kid.P({ ex: 'neutral', gx: 0.6, turn: 0.2, bob: -Math.abs(Math.sin(ph)) * 7, liftL: Math.max(0, Math.sin(ph)) * 18, liftR: Math.max(0, -Math.sin(ph)) * 18,
+          lh: [this.kid.restL[0] + Math.sin(ph) * 10, this.kid.restL[1]], rh: [this.kid.restR[0] - Math.sin(ph) * 10, this.kid.restR[1]] });
+        this.kid.set(p, t);
+      }
+      this.dadA = this.dadA || CD.animate(this.dad, [
+        [0, { ex: 'closed', tilt: 6, nod: 4, rh: dL(86, -318), lh: dL(-30, -230) }],
+        [1.7, { ex: 'closed', tilt: 7, nod: 5, rh: dL(86, -318), lh: dL(-30, -230) }],
+        [2.05, { ex: 'shock', gx: -0.8, turn: -0.35, tilt: -2, rh: dL(150, -250), lh: dL(-30, -230) }],
+        [2.3, { ex: 'worried', gx: -0.8, gy: 0.3, turn: -0.35, rh: dL(176, -222), lh: dL(-30, -230) }],
+        [2.75, { ex: 'worried', gx: -0.6, gy: 0.5, turn: -0.3, rh: dL(176, -222), lh: dL(-20, -150) }],
+        [3.1, { ex: 'smile', brow: 9, gx: -0.8, gy: 0.2, turn: -0.35, tilt: -4, rh: dL(176, -222), lh: dL(-10, -150) }],
+        [4.0, { ex: 'smile', brow: 10, gx: -0.8, gy: 0.2, turn: -0.35, tilt: -5, rh: dL(176, -222), lh: dL(-10, -150) }],
+      ]);
+      this.dadA(lt, t);
+      // the list rests on the table edge until his hand slides it away (2.3 to 2.75)
+      if (lt < 2.3) put(this.paper, -30, -216);
+      else { const h = this.dad.handWorld('l'); put(this.paper, h[0], Math.min(-150, h[1]) , 0, lt > 2.75 ? 0 : 1); }
+    },
+    cam: CD.cam({ landscape: [[0, [-20, -300, 450, 280]], [4.0, [-24, -304, 410, 260]]], portrait: [[0, [-20, -300, 390, 320]], [4.0, [-24, -304, 360, 300]]] }),
+  },
+  donor: CD.shots.donor(DONOR, { window: 300, lampX: -300 }),
+  phone: CD.shots.phone({ need: 'Food & groceries', tile: 0, skin: DONOR.skin, taps: TL.taps }),
+  list2: {
+    bg: '#7f998b',
+    build(g) {
+      this.paper = CD.sets.listPaper(g, ITEMS, { rot: 3, day: true });
+      const ap = el('g', { transform: 'translate(330 210)' }, g);
+      el('circle', { cx: 0, cy: 0, r: 48, fill: '#5d9f55' }, ap); el('circle', { cx: -14, cy: -16, r: 12, fill: '#fff', opacity: 0.3 }, ap);
+      el('path', { d: 'M 2 -10 q 18 -20 34 -6 q -18 12 -34 6 Z', fill: '#2e7d32' }, ap);
+    },
+    update(t, lt) { ITEMS.forEach((_, i) => this.paper.check(i, CD.eo(CD.prog(lt, 0.3 + i * 0.25, 0.55 + i * 0.25)))); },
+    cam: CD.cam({ landscape: [[0, [0, 0, 600, 660]], [1.8, [10, 10, 560, 620]]], portrait: [[0, [0, 10, 480, 660]], [1.8, [10, 10, 450, 620]]] }),
+  },
+  family: {
+    bg: '#e4ecf0',
+    build(g) {
+      CD.sets.kitchen(g, { day: true });
+      this.kid = CD.person(KID_DAY).place(-130, 0, KID_S); g.appendChild(this.kid.g);
+      this.dad = CD.person(DAD).place(DAD_X, DAD_Y, 1); g.appendChild(this.dad.g);
+      CD.sets.table(g, { day: true });
+      this.tote = CD.prop('tote'); this.tote.setAttribute('transform', 'translate(-40 -212) scale(1.2)'); g.appendChild(this.tote);
+      this.milk = CD.prop('milk'); this.milk.setAttribute('transform', 'translate(230 -212) scale(1.3)'); g.appendChild(this.milk);
+      this.cereal = CD.prop('cereal'); g.appendChild(this.cereal);
+      this.apple = CD.prop('apple'); g.appendChild(this.apple);
+    },
+    update(t, lt) {
+      this.kidA = this.kidA || CD.animate(this.kid, [
+        [0, { ex: 'happy', gx: 0.7, gy: -0.4, turn: 0.3, rh: [60 / KID_S, -300 / KID_S] }],
+        [0.5, { ex: 'happy', gx: 0.5, gy: -0.6, turn: 0.2, bob: -10, rh: [70 / KID_S, -360 / KID_S] }],
+        [0.8, { ex: 'happy', gx: 0.6, gy: -0.6, turn: 0.25, bob: 0, rh: [70 / KID_S, -360 / KID_S] }],
+        [5.4, { ex: 'happy', gx: 0.7, gy: -0.6, turn: 0.3, tilt: 6, rh: [66 / KID_S, -350 / KID_S] }],
+      ]);
+      this.kidA(lt, t);
+      this.dadA = this.dadA || CD.animate(this.dad, [
+        [0, { ex: 'smile', gx: -0.5, gy: 0.2, turn: -0.2, lh: dL(-10, -250), rh: dL(190, -220) }],
+        [0.7, { ex: 'happy', gx: -0.7, gy: -0.1, turn: -0.3, tilt: -4, lh: dL(10, -300), rh: dL(190, -220) }],
+        [5.4, { ex: 'happy', gx: -0.7, gy: -0.1, turn: -0.3, tilt: -5, lh: dL(12, -296), rh: dL(190, -220) }],
+      ]);
+      this.dadA(lt, t);
+      const a = this.kid.handWorld('r');
+      put(this.apple, a[0], a[1] + 14, 0, 1, 1.5);
+      const c = this.dad.handWorld('l');
+      put(this.cereal, c[0] - 4, Math.min(-212, c[1] + 64), 0, 1, 1.15);
+    },
+    cam: CD.cam({ landscape: [[0, [-20, -300, 450, 280]], [2.0, [-24, -304, 420, 265]]], portrait: [[0, [-20, -300, 390, 320]], [2.0, [-24, -304, 365, 300]]] }),
+  },
+};
+
+CD.run({
+  duration: TL.duration,
+  shots: Object.entries(TL.shots).map(([k, [t0, t1]]) => Object.assign(shots[k], { t0, t1, name: k, shake: k === 'phone' ? 0 : 1.4 })),
+  captions: TL.captions,
+  end: { t: TL.end, headline: TL.headline, fine: TL.fine },
+  disclosure: { range: [0, TL.end], dark: (t) => t < 7.6 || (t >= 12.8 && t < 14.6) },
+  vignette: [[0, 0.45], [7.5, 0.45], [7.6, 0.08], [20, 0.08]],
+  flashes: [[7.6, 0.45, '#0a120e', 'dip'], [12.8, 0.4, '#ffffff', 'dip', 0.7]],
+});
+</script>
+</body>
+</html>

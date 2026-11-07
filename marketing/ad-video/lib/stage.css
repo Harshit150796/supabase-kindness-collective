@@ -1,0 +1,57 @@
+@font-face { font-family: 'IS'; src: url(../../../public/fonts/instrument-serif-400.woff2) format('woff2'); }
+@font-face { font-family: 'ISi'; src: url(../../../public/fonts/instrument-serif-400-italic.woff2) format('woff2'); }
+@font-face { font-family: 'IN'; src: url(../../../public/fonts/instrument-sans-variable.woff2) format('woff2'); font-weight: 100 900; }
+@font-face { font-family: 'Hand'; src: url(../fonts/caveat-latin-700-normal.woff2) format('woff2'); } /* Caveat, SIL OFL 1.1 (fonts/OFL-Caveat.txt) */
+
+:root { --green: #2e7d32; --blue: #1565c0; --ink: #142019; --bg: #f4f6f2; --mint: #a5d6a7; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100vw; height: 100vh; overflow: hidden; background: var(--bg); color: var(--ink); font-family: 'IN', sans-serif; }
+#stage { position: absolute; inset: 0; overflow: hidden; }
+#world { position: absolute; inset: 0; display: block; }
+
+/* Captions */
+.caps { position: absolute; z-index: 5; pointer-events: none; }
+.cap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center;
+  font-family: 'IN', sans-serif; font-weight: 720; font-size: var(--fs); line-height: 1.1; letter-spacing: -0.018em; }
+.cap .txt { width: 100%; }
+.cap .w { display: inline-block; white-space: pre; will-change: transform; }
+.cap.light { color: var(--ink); }
+.cap.light .hl { color: var(--green); }
+.cap.dark { color: #fff; text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35); }
+.cap.dark .hl { color: var(--mint); }
+html[data-mode='portrait'] .caps { left: 6%; right: 6%; top: 2.5%; height: 22%; }
+html[data-mode='landscape'] .caps { left: 4.6%; width: 29%; top: 8%; bottom: 8%; }
+html[data-mode='landscape'] .cap { justify-content: flex-start; text-align: left; }
+html[data-mode='square'] .caps { left: 6%; right: 6%; bottom: 2.5%; height: 18.5%; }
+
+.scrim { position: absolute; z-index: 4; pointer-events: none; opacity: 0; }
+html[data-mode='portrait'] .scrim { left: 0; right: 0; top: 0; height: 34%; }
+html[data-mode='portrait'] .scrim.light { background: linear-gradient(to bottom, rgba(244, 246, 242, 0.94) 0%, rgba(244, 246, 242, 0.86) 62%, rgba(244, 246, 242, 0) 100%); }
+html[data-mode='portrait'] .scrim.dark { background: linear-gradient(to bottom, rgba(8, 16, 12, 0.82) 0%, rgba(8, 16, 12, 0.66) 62%, rgba(8, 16, 12, 0) 100%); }
+html[data-mode='landscape'] .scrim { left: 0; top: 0; bottom: 0; width: 41%; }
+html[data-mode='landscape'] .scrim.light { background: linear-gradient(to right, rgba(244, 246, 242, 0.95) 0%, rgba(244, 246, 242, 0.9) 66%, rgba(244, 246, 242, 0) 100%); }
+html[data-mode='landscape'] .scrim.dark { background: linear-gradient(to right, rgba(8, 16, 12, 0.84) 0%, rgba(8, 16, 12, 0.7) 60%, rgba(8, 16, 12, 0) 100%); }
+html[data-mode='square'] .scrim { left: 0; right: 0; bottom: 0; height: 32%; }
+html[data-mode='square'] .scrim.light { background: linear-gradient(to top, rgba(244, 246, 242, 0.95) 0%, rgba(244, 246, 242, 0.86) 58%, rgba(244, 246, 242, 0) 100%); }
+html[data-mode='square'] .scrim.dark { background: linear-gradient(to top, rgba(8, 16, 12, 0.84) 0%, rgba(8, 16, 12, 0.68) 58%, rgba(8, 16, 12, 0) 100%); }
+
+.vig { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
+  background: radial-gradient(ellipse at 50% 55%, rgba(0, 0, 0, 0) 38%, rgba(6, 12, 9, 0.62) 100%); }
+.flash { position: absolute; inset: 0; z-index: 8; pointer-events: none; opacity: 0; }
+
+.disc { position: absolute; z-index: 6; font-weight: 550; letter-spacing: 0.01em; pointer-events: none; }
+html[data-mode='portrait'] .disc { bottom: 1.6%; left: 0; right: 0; text-align: center; font-size: 2.3vw; }
+html[data-mode='landscape'] .disc { bottom: 3%; left: 4.6%; font-size: 1.15vw; }
+html[data-mode='square'] .disc { top: 2.2%; right: 3%; font-size: 1.9vw; }
+
+/* End card */
+.end { position: absolute; inset: 0; z-index: 7; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 2.4vmin; padding: 0 7%; }
+.end .logo { width: 30vmin; height: auto; }
+.end .wm { font-weight: 760; font-size: 8.6vmin; letter-spacing: -0.025em; }
+.end .wm .c { color: #2e7d32; }
+.end .wm .d { color: #1565c0; }
+.end .eh { font-family: 'IS', serif; font-size: 10.6vmin; line-height: 1.02; color: var(--ink); max-width: 92vmin; }
+.end .btn { margin-top: 1.4vmin; background: var(--green); color: #fff; font-weight: 720; font-size: 5.2vmin; padding: 3.2vmin 8vmin; border-radius: 999px; }
+.end .fine { font-size: 3.2vmin; font-weight: 560; color: rgba(20, 32, 25, 0.7); }
+html[data-mode='landscape'] .end { gap: 2vmin; }
+html[data-mode='landscape'] .end .logo { width: 24vmin; }

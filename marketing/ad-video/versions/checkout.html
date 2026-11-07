@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Checkout (30 s)</title>
+<link rel="stylesheet" href="../lib/stage.css">
+</head>
+<body>
+<div id="stage"></div>
+<script src="checkout.timeline.js"></script>
+<script src="../lib/stage.js"></script>
+<script src="../lib/cast.js"></script>
+<script src="../lib/sets.js"></script>
+<script>
+// "Checkout": a mother's card is declined, she puts things back, her son puts back his cereal.
+// A donor gives through CouponDonation; next time the card reader says approved. Illustrated dramatization.
+const { el, SKIN, HAIR, CLOTH } = CD;
+const MOM = { skin: SKIN.deep, hair: HAIR.black, hairStyle: 'puff', top: CLOTH.forest, style: 'coat', scarf: CLOTH.blue, accent: CLOTH.blue, seed: 1 };
+const SON = { kid: true, skin: SKIN.brown, hair: HAIR.black, hairStyle: 'curly', top: CLOTH.sky, style: 'hoodie', seed: 2 };
+const DONOR = { skin: SKIN.medium, hair: HAIR.dark, hairStyle: 'short', top: CLOTH.slate, style: 'hoodie', seed: 3 };
+const SON_X = -190, SON_S = 1.22, BELT = -224, BOX_X = -262;
+const ITEMS = [['milk', -60], ['eggs', 2], ['diapers', 62], ['formula', 122], ['apples', 182]];
+
+/** The checkout counter scene, rebuilt for each shot that uses it. */
+function storeScene(g) {
+  CD.sets.store(g);
+  const people = el('g', {}, g);
+  const son = CD.person(SON).place(SON_X, 0, SON_S); people.appendChild(son.g);
+  const mom = CD.person(MOM).place(0, 0, 1); people.appendChild(mom.g);
+  const belt = CD.sets.counter(el('g', {}, g));
+  const reader = CD.sets.reader(g, 252, -214);
+  const front = el('g', {}, g);
+  const items = {};
+  for (const [k, x] of ITEMS) { const p = CD.prop(k); front.appendChild(p); items[k] = p; put(p, x, BELT); }
+  items.cereal = CD.prop('cereal'); front.appendChild(items.cereal); put(items.cereal, BOX_X, BELT);
+  const card = CD.prop('card'); front.appendChild(card);
+  const phone = CD.prop('phone', { barcode: true, screen: '#ffffff' }); front.appendChild(phone);
+  card.style.display = 'none'; phone.style.display = 'none';
+  return { mom, son, belt, reader, items, card, phone };
+}
+function put(p, x, y, rot = 0, op = 1, s = 1) {
+  p.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot.toFixed(2)}) scale(${s})`);
+  p.setAttribute('opacity', op.toFixed(3));
+}
+const sonL = (x, y) => [(x - SON_X) / SON_S, y / SON_S];
+const ON_BOX = sonL(BOX_X + 4, -294); // the boy's hand resting on his cereal box
+const RESTR = [112, -262];
+
+const shots = {
+  reader: {
+    build(g) { this.sc = storeScene(g); this.sc.card.style.display = ''; },
+    update(t, lt) {
+      const { mom, son, reader, card, belt } = this.sc;
+      belt(t);
+      son.set(son.P({ ex: 'neutral', gx: 0.6, gy: -0.6, turn: 0.3, lh: ON_BOX }), t);
+      mom.set(mom.P({ ex: lt < 0.75 ? 'neutral' : 'shock', gx: 0.6, turn: 0.25, rh: lt < 0.8 ? [214, -398] : [206, -392] }), t);
+      reader.set(lt < 0.72 ? 'processing' : 'declined', t);
+      const h = mom.handWorld('r');
+      put(card, h[0] + 6, h[1] - 4, -20);
+    },
+    cam: CD.cam({ landscape: [[0, [252, -330, 230, 250]], [1.9, [252, -334, 205, 222]]], portrait: [[0, [252, -332, 200, 290]], [1.9, [252, -334, 182, 262]]] }),
+  },
+  wait: {
+    build(g) { this.sc = storeScene(g); this.sc.card.style.display = ''; },
+    update(t, lt) {
+      const { mom, son, reader, card, belt } = this.sc;
+      belt(t);
+      reader.set('declined', t);
+      this.mom = this.mom || CD.animate(mom, [
+        [0, { ex: 'shock', gx: 0.6, turn: 0.25, rh: [206, -392] }],
+        [0.9, { ex: 'worried', gx: 0.1, gy: 0.5, rh: [150, -300] }],
+        [1.6, { ex: 'worried', gy: 0.85, nod: 5, rh: RESTR }],
+        [3.2, { ex: 'sad', gy: 0.9, nod: 7, tilt: -3, rh: RESTR }],
+      ]);
+      this.mom(lt, t);
+      this.son = this.son || CD.animate(son, [
+        [0, { ex: 'neutral', gx: 0.7, gy: -0.7, turn: 0.3, tilt: 4, lh: ON_BOX }],
+        [1.4, { ex: 'worried', gx: 0.7, gy: -0.75, turn: 0.35, tilt: 6, lh: ON_BOX }],
+        [3.2, { ex: 'worried', gx: 0.75, gy: -0.6, turn: 0.35, tilt: 6, lh: ON_BOX }],
+      ]);
+      this.son(lt, t);
+      const h = mom.handWorld('r');
+      card.style.display = lt < 1.5 ? '' : 'none';
+      put(card, h[0] + 6, h[1] - 4, -20 + lt * 30);
+    },
+    cam: CD.cam({ landscape: [[0, [-50, -332, 640, 340]], [3.2, [-40, -334, 560, 300]]], portrait: [[0, [-60, -326, 440, 390]], [3.2, [-50, -330, 400, 355]]] }),
+  },
+  putback: {
+    build(g) { this.sc = storeScene(g); },
+    update(t, lt) {
+      const { mom, son, reader, items, belt } = this.sc;
+      belt(t);
+      reader.set('declined', t);
+      const tremble = lt > 2.2 && lt < 3.0 ? Math.sin(lt * 40) * 2.2 : 0;
+      this.mom = this.mom || CD.animate(mom, [
+        [0, { ex: 'sad', gy: 0.9, nod: 7, rh: RESTR }],
+        [0.45, { ex: 'sad', gy: 0.9, gx: 0.6, nod: 7, turn: 0.2, rh: [182, -262] }],
+        [0.6, { ex: 'sad', gy: 0.9, gx: 0.6, nod: 7, turn: 0.2, rh: [182, -262] }],
+        [1.25, { ex: 'sad', gy: 0.8, gx: 0.8, nod: 6, turn: 0.3, rh: [300, -276] }],
+        [1.7, { ex: 'sad', gy: 0.9, nod: 7, rh: RESTR }],
+        [2.2, { ex: 'worried', gy: 0.9, nod: 7, rh: [64, -300] }],
+        [2.95, { ex: 'hurt', gy: 0.95, nod: 8, rh: [66, -302] }],
+        [3.15, { ex: 'hurt', gy: 0.9, nod: 7, rh: [96, -306] }],
+        [3.5, { ex: 'sad', gy: 0.9, gx: -0.2, nod: 7, rh: [4, -258] }],
+        [3.62, { ex: 'sad', gy: 0.9, gx: -0.2, nod: 7, rh: [4, -258] }],
+        [4.2, { ex: 'sad', gy: 0.8, gx: 0.6, nod: 6, turn: 0.2, rh: [262, -266] }],
+      ]);
+      this.mom(lt, t);
+      if (tremble) { /* hand hovering over the diapers shakes a little */ const p = mom.P({ ex: 'hurt', gy: 0.95, nod: 8, rh: [65 + tremble, -301] }); if (lt > 2.3 && lt < 2.9) mom.set(p, t); }
+      this.son = this.son || CD.animate(son, [
+        [0, { ex: 'worried', gx: 0.8, gy: 0.1, turn: 0.35, lh: ON_BOX }],
+        [2.2, { ex: 'worried', gx: 0.7, gy: 0.2, turn: 0.35, lh: ON_BOX }],
+        [3.4, { ex: 'sad', gx: 0.5, gy: 0.4, turn: 0.3, nod: 2, lh: ON_BOX }],
+      ]);
+      this.son(lt, t);
+      const h = mom.handWorld('r');
+      // apples: picked up at 0.6, handed back at 1.25, slide away to the cashier
+      if (lt < 0.6) put(items.apples, 182, BELT);
+      else if (lt < 1.25) put(items.apples, h[0] - 2, h[1] + 30);
+      else { const k = CD.eo(CD.prog(lt, 1.25, 1.9)); put(items.apples, CD.lerp(300, 430, k), CD.lerp(-246, BELT, CD.prog(lt, 1.25, 1.4)), 0, 1 - k); }
+      // eggs: picked up at 3.62, handed back at 4.2
+      if (lt < 3.62) put(items.eggs, 2, BELT);
+      else if (lt < 4.2) put(items.eggs, h[0] - 2, h[1] + 16);
+      else { const k = CD.eo(CD.prog(lt, 4.2, 4.3)); put(items.eggs, CD.lerp(262, 300, k), -250, 0, 1 - k * 0.3); }
+    },
+    cam: CD.cam({ landscape: [[0, [-20, -300, 640, 310]], [4.3, [0, -300, 600, 290]]], portrait: [[0, [60, -300, 410, 380]], [4.3, [75, -302, 380, 350]]] }),
+  },
+  cereal: {
+    build(g) { this.sc = storeScene(g); this.sc.items.apples.style.display = 'none'; this.sc.items.eggs.style.display = 'none'; },
+    update(t, lt) {
+      const { mom, son, reader, items, belt } = this.sc;
+      belt(t);
+      reader.set('declined', t);
+      this.son = this.son || CD.animate(son, [
+        [0, { ex: 'sad', gx: -0.5, gy: 0.6, turn: -0.2, nod: 3, lh: ON_BOX }],
+        [0.7, { ex: 'sad', gx: -0.5, gy: 0.7, turn: -0.2, nod: 4, lh: ON_BOX }],
+        [1.1, { ex: 'brave', gx: 0.7, gy: -0.7, turn: 0.3, tilt: 5, lh: ON_BOX }],
+        [1.5, { ex: 'brave', gx: 0.2, gy: 0.4, turn: 0.1, lh: ON_BOX }],
+        [2.15, { ex: 'brave', gx: 0.4, gy: 0.4, turn: 0.15, lh: sonL(-146, -292) }],
+        [2.6, { ex: 'brave', gx: 0.7, gy: -0.7, turn: 0.3, tilt: 6 }],
+        [3.6, { ex: 'brave', gx: 0.75, gy: -0.75, turn: 0.32, tilt: 7 }],
+      ]);
+      this.son(lt, t);
+      this.mom = this.mom || CD.animate(mom, [
+        [0, { ex: 'sad', gy: 0.9, nod: 7, rh: RESTR }],
+        [1.4, { ex: 'sad', gy: 0.9, nod: 7, rh: RESTR }],
+        [1.9, { ex: 'hurt', gx: -0.7, gy: 0.55, turn: -0.3, tilt: -4, rh: RESTR }],
+        [2.7, { ex: 'hurt', gx: -0.7, gy: 0.6, turn: -0.3, tilt: -5, rh: RESTR, lh: [-142, -240] }],
+        [3.6, { ex: 'hurt', gx: -0.7, gy: 0.6, turn: -0.3, tilt: -6, rh: RESTR, lh: [-140, -242], tear: 0.55 }],
+      ]);
+      this.mom(lt, t);
+      // he slides his box over to the things going back (1.5 to 2.15), then it glides a little further
+      const h = son.handWorld('l');
+      if (lt < 1.5) put(items.cereal, BOX_X, BELT);
+      else if (lt < 2.15) put(items.cereal, h[0] - 4, BELT);
+      else put(items.cereal, CD.lerp(h[0] - 4, -118, CD.eo(CD.prog(lt, 2.15, 2.45))), BELT);
+    },
+    cam: CD.cam({ landscape: [[0, [-112, -298, 470, 300]], [3.6, [-104, -300, 420, 270]]], portrait: [[0, [-122, -300, 330, 360]], [3.6, [-112, -302, 300, 330]]] }),
+  },
+  face: {
+    build(g) { this.sc = storeScene(g); this.sc.items.apples.style.display = 'none'; this.sc.items.eggs.style.display = 'none'; put(this.sc.items.cereal, -118, BELT); },
+    update(t, lt) {
+      const { mom, son, reader, belt } = this.sc;
+      belt(t);
+      reader.set('declined', t);
+      son.set(son.P({ ex: 'brave', gx: 0.75, gy: -0.75, turn: 0.32, tilt: 7 }), t);
+      this.mom = this.mom || CD.animate(mom, [
+        [0, { ex: 'closed', tilt: -5, nod: 4, rh: RESTR, lh: [-140, -242], tear: 0.55 }],
+        [1.3, { ex: 'closed', tilt: -6, nod: 5, rh: RESTR, lh: [-140, -242], tear: 0.95 }],
+        [1.75, { ex: 'brave', gx: -0.6, gy: 0.6, turn: -0.3, tilt: -4, nod: 3, rh: RESTR, lh: [-140, -242], tear: 1 }],
+        [2.6, { ex: 'brave', gx: -0.6, gy: 0.6, turn: -0.3, tilt: -4, nod: 3, rh: RESTR, lh: [-140, -242], tear: 1 }],
+      ]);
+      this.mom(lt, t);
+    },
+    cam: CD.cam({ landscape: [[0, [-6, -392, 180, 175]], [2.6, [-4, -392, 158, 152]]], portrait: [[0, [-6, -388, 176, 250]], [2.6, [-4, -390, 156, 222]]] }),
+  },
+  donor: {
+    bg: '#e6edf1',
+    build(g) {
+      CD.sets.home(g, { mugX: -230 });
+      this.p = CD.person(DONOR).place(0, 0, 1); g.appendChild(this.p.g);
+      // island in front again so it covers his legs
+      const isl = el('g', {}, g);
+      el('rect', { x: -1600, y: -212, width: 3200, height: 18, fill: '#f3f5f4', rx: 3 }, isl);
+      el('rect', { x: -1600, y: -196, width: 3200, height: 1200, fill: CD.vgrad('#355046', '#283d34') }, isl);
+      const mug = CD.prop('mug', { color: '#1565c0' }); mug.setAttribute('transform', 'translate(-230 -212) scale(1.6)'); isl.appendChild(mug);
+      this.ph = CD.prop('phone', { screen: '#f7f9f6' }); g.appendChild(this.ph);
+    },
+    update(t, lt) {
+      const p = this.p;
+      const scroll = Math.sin(lt * 6) * 2;
+      this.a = this.a || CD.animate(p, [
+        [0, { ex: 'neutral', gy: 0.95, nod: 6, lh: [-16, -276], rh: [18, -284] }],
+        [0.9, { ex: 'worried', gy: 0.95, nod: 7, lh: [-16, -276], rh: [18, -284] }],
+        [1.6, { ex: 'hopeful', gy: 0.9, nod: 6, lh: [-16, -278], rh: [18, -286] }],
+        [2.0, { ex: 'hopeful', gy: 0.9, nod: 6, lh: [-16, -278], rh: [18, -286] }],
+      ]);
+      this.a(lt, t);
+      const h = p.handWorld('l'), h2 = p.handWorld('r');
+      put(this.ph, (h[0] + h2[0]) / 2, (h[1] + h2[1]) / 2 - 12 + scroll * 0.2, 0, 1, 1.3);
+    },
+    cam: CD.cam({ landscape: [[0, [0, -330, 400, 310]], [2.0, [0, -334, 360, 280]]], portrait: [[0, [0, -326, 320, 390]], [2.0, [0, -330, 290, 355]]] }),
+  },
+  phone: {
+    bg: '#dfe8ee',
+    build(g) { this.u = CD.sets.phone(g, { need: 'Food & groceries', tile: 0, skin: DONOR.skin, taps: TL.taps }); },
+    update(t, lt) { this.u(lt); },
+    cam: CD.cam({ landscape: [[0, [0, 30, 560, 860]], [4.0, [0, 10, 520, 800]]], portrait: [[0, [0, 40, 470, 840]], [4.0, [0, 20, 440, 790]]] }),
+  },
+  approved: {
+    build(g) { this.sc = storeScene(g); this.sc.phone.style.display = ''; },
+    update(t, lt) {
+      const { mom, son, reader, items, phone, belt } = this.sc;
+      belt(t);
+      reader.set(lt < 0.7 ? 'idle' : lt < 1.3 ? 'processing' : 'approved', t);
+      this.mom = this.mom || CD.animate(mom, [
+        [0, { ex: 'worried', gx: 0.5, turn: 0.2, rh: [150, -300] }],
+        [0.7, { ex: 'worried', gx: 0.65, gy: -0.1, turn: 0.3, rh: [212, -400] }],
+        [1.3, { ex: 'worried', gx: 0.65, gy: -0.1, turn: 0.3, rh: [212, -400] }],
+        [1.6, { ex: 'relief', tilt: 3, shrug: -1, rh: [205, -392] }],
+        [2.3, { ex: 'happy', gx: -0.6, gy: 0.5, turn: -0.3, tilt: -5, rh: [140, -290], lh: [-120, -250] }],
+        [5.0, { ex: 'happy', gx: -0.6, gy: 0.55, turn: -0.3, tilt: -6, rh: [140, -290], lh: [-140, -244] }],
+      ]);
+      this.mom(lt, t);
+      this.son = this.son || CD.animate(son, [
+        [0, { ex: 'hopeful', gx: 0.8, gy: -0.3, turn: 0.35, rh: sonL(-116, -292) }],
+        [1.3, { ex: 'hopeful', gx: 0.85, gy: -0.3, turn: 0.35, rh: sonL(-116, -292) }],
+        [1.6, { ex: 'happy', gx: 0.5, gy: -0.6, turn: 0.2, bob: -14, rh: sonL(-112, -360) }],
+        [1.85, { ex: 'happy', gx: 0.5, gy: -0.6, turn: 0.2, bob: 0, rh: sonL(-112, -360) }],
+        [2.1, { ex: 'happy', gx: 0.6, gy: -0.7, turn: 0.25, bob: -10, rh: sonL(-112, -360) }],
+        [2.4, { ex: 'happy', gx: 0.7, gy: -0.7, turn: 0.3, tilt: 6, bob: 0, rh: sonL(-114, -340) }],
+        [5.0, { ex: 'happy', gx: 0.7, gy: -0.7, turn: 0.3, tilt: 7, rh: sonL(-114, -340) }],
+      ]);
+      this.son(lt, t);
+      const sh = son.handWorld('r');
+      put(items.cereal, sh[0] - 2, Math.min(BELT, sh[1] + 66));
+      const h = mom.handWorld('r');
+      put(phone, h[0] + 4, h[1] - 8, -12, 1, 1.3);
+    },
+    cam: CD.cam({ landscape: [[0, [130, -336, 500, 310]], [1.6, [140, -340, 460, 290]], [2.6, [-20, -312, 700, 380]], [5, [-20, -314, 660, 360]]],
+      portrait: [[0, [120, -330, 380, 380]], [1.6, [130, -334, 350, 350]], [2.6, [-40, -310, 470, 430]], [5, [-40, -312, 440, 400]]] }),
+  },
+};
+
+CD.run({
+  duration: TL.duration,
+  shots: Object.entries(TL.shots).map(([k, [t0, t1]]) => Object.assign(shots[k], { t0, t1, name: k, shake: k === 'phone' ? 0 : 1.5 })),
+  captions: TL.captions,
+  end: { t: TL.end, headline: TL.headline, fine: TL.fine },
+  disclosure: { range: [0, TL.end], dark: (t) => t >= 13 && t < 15.6 },
+  vignette: [[0, 0.12], [12.6, 0.2], [13.0, 0.8], [15.5, 0.8], [15.6, 0], [30, 0]],
+  flashes: [[15.6, 0.5, '#0a120e', 'dip'], [22.9, 0.5, '#ffffff', 'hit', 0.35]],
+});
+</script>
+</body>
+</html>
