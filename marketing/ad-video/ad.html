@@ -1,0 +1,149 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<title>CouponDonation ad</title>
+<style>
+@font-face{font-family:IS;src:url(../../public/fonts/instrument-serif-400.woff2) format('woff2')}
+@font-face{font-family:ISi;src:url(../../public/fonts/instrument-serif-400-italic.woff2) format('woff2')}
+@font-face{font-family:IN;src:url(../../public/fonts/instrument-sans-variable.woff2) format('woff2');font-weight:100 900}
+:root{--green:hsl(123 46% 34%);--blue:hsl(212 80% 42%);--ink:#142019;--paper:#ffffff;--bg:#f4f6f2;--forest:hsl(123 40% 16%);--u:calc(min(100vw,100vh)/100)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100vw;height:100vh;overflow:hidden;background:var(--bg);color:var(--ink);font-family:IN,sans-serif}
+#stage{position:absolute;inset:0}
+.layer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+/* captions */
+#caps{position:absolute;left:0;right:0;top:9%;text-align:center;padding:0 7%;z-index:5}
+.cap{position:absolute;left:7%;right:7%;font-family:IS,serif;font-size:calc(var(--u)*10.5);line-height:1.04;letter-spacing:-.01em}
+.cap em{font-family:ISi,serif;font-style:normal;color:var(--green)}
+.cap.mid{top:calc(50vh - 18vh)}
+.sub{font-family:IN;font-weight:600;font-size:calc(var(--u)*5.2);top:calc(var(--u)*26)}
+/* receipt */
+#receipt{position:absolute;width:calc(var(--u)*80);left:50%;top:31%;background:var(--paper);padding:calc(var(--u)*5) calc(var(--u)*5.5) calc(var(--u)*7);
+  font-family:ui-monospace,'DejaVu Sans Mono',monospace;font-size:calc(var(--u)*4.3);color:#1d2620;box-shadow:0 calc(var(--u)*1.5) calc(var(--u)*5) rgba(20,32,25,.13);
+  -webkit-mask:linear-gradient(#000,#000) top/100% calc(100% - var(--u)*2) no-repeat,radial-gradient(circle at 50% 0,transparent calc(var(--u)*1.1),#000 calc(var(--u)*1.2)) bottom/calc(var(--u)*3.2) calc(var(--u)*2.2) repeat-x}
+.rh{text-align:center;letter-spacing:.2em;font-weight:700;margin-bottom:calc(var(--u)*1)}
+.rs{text-align:center;opacity:.55;font-size:.85em;margin-bottom:calc(var(--u)*3)}
+.line{display:flex;justify-content:space-between;padding:calc(var(--u)*.9) 0;position:relative}
+.line i{position:absolute;left:-2%;right:-2%;top:52%;height:calc(var(--u)*.55);background:var(--ink);transform-origin:left;transform:scaleX(0)}
+.rule{border-top:calc(var(--u)*.35) dashed #9aa59d;margin:calc(var(--u)*2.2) 0}
+.tot{display:flex;justify-content:space-between;font-weight:800;font-size:1.2em}
+.stamp{position:absolute;left:50%;top:55%;border:calc(var(--u)*1) solid var(--ink);color:var(--ink);font-family:IN;font-weight:800;letter-spacing:.08em;
+  font-size:calc(var(--u)*7.5);padding:calc(var(--u)*1.2) calc(var(--u)*3);white-space:nowrap;background:rgba(255,255,255,.88);border-radius:calc(var(--u)*1.4)}
+.stamp.ok{border-color:var(--green);color:var(--green)}
+.illus{position:absolute;bottom:3%;left:0;right:0;text-align:center;font-size:calc(var(--u)*2.6);opacity:.5;font-weight:500}
+/* needs + coupon */
+#needs{position:absolute;left:8%;right:8%;top:38%;display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--u)*2.6)}
+.chip{background:#fff;border-radius:calc(var(--u)*2);padding:calc(var(--u)*3.4) calc(var(--u)*3);font-weight:650;font-size:calc(var(--u)*4.3);display:flex;align-items:center;gap:calc(var(--u)*2)}
+.chip b{width:calc(var(--u)*3);height:calc(var(--u)*3);border-radius:50%;border:calc(var(--u)*.5) solid #b8c2ba;flex:none}
+.chip.on{background:var(--green);color:#fff}.chip.on b{border-color:#fff;background:#fff}
+#coupon{position:absolute;left:50%;top:83%;width:calc(var(--u)*76);height:calc(var(--u)*30);background:var(--green);color:#fff;border-radius:calc(var(--u)*3);
+  display:flex;align-items:center;padding:0 calc(var(--u)*6);gap:calc(var(--u)*5);
+  -webkit-mask:radial-gradient(circle at 0 50%,transparent calc(var(--u)*3.2),#000 calc(var(--u)*3.3)) left/51% 100% no-repeat,radial-gradient(circle at 100% 50%,transparent calc(var(--u)*3.2),#000 calc(var(--u)*3.3)) right/51% 100% no-repeat}
+#coupon .amt{font-family:IS;font-size:calc(var(--u)*17);line-height:1}
+#coupon .perf{align-self:stretch;border-left:calc(var(--u)*.6) dashed rgba(255,255,255,.55);margin:calc(var(--u)*4) 0}
+#coupon .t1{font-weight:700;font-size:calc(var(--u)*4.6)}#coupon .t2{opacity:.85;font-size:calc(var(--u)*3.4);margin-top:calc(var(--u)*1)}
+/* end card */
+#end{flex-direction:column;gap:calc(var(--u)*4);text-align:center}
+#end img{width:calc(var(--u)*30);height:auto}
+.wm{font-family:IN;font-weight:750;font-size:calc(var(--u)*9);letter-spacing:-.02em}
+.wm .c{color:#2e7d32}.wm .d{color:#1565c0}
+.eh{font-family:IS;font-size:calc(var(--u)*11);line-height:1.02}
+.btn{background:var(--green);color:#fff;font-weight:700;font-size:calc(var(--u)*5.2);padding:calc(var(--u)*3.6) calc(var(--u)*8);border-radius:999px}
+.fine{font-size:calc(var(--u)*3.4);opacity:.65;font-weight:550}
+/* landscape: captions left, receipt/visuals right */
+@media (min-aspect-ratio:1/1){
+  #caps{top:0;bottom:0;right:50%}
+  .cap{top:34%;left:9%;right:2%;text-align:left}
+  .sub{top:auto;bottom:24%}
+  #receipt{left:72%;top:16%;width:calc(var(--u)*58);font-size:calc(var(--u)*3.1)}
+  .stamp{left:72%;top:54%}
+  #needs{left:52%;right:5%;top:8%}
+  #coupon{left:73%;top:80%;width:calc(var(--u)*70);height:calc(var(--u)*24)}
+  .cap.mid{top:40%}
+}
+</style></head>
+<body><div id="stage">
+<div id="caps"></div>
+<div id="receipt">
+  <div class="rh">THANK YOU</div><div class="rs">STORE 0412 · LANE 3</div>
+  <div id="lines"></div>
+  <div class="rule"></div>
+  <div class="tot"><span>TOTAL</span><span id="total">$0.00</span></div>
+</div>
+<div id="stamp" class="stamp">DECLINED</div>
+<div id="needs"></div>
+<div id="coupon"><div class="amt">$10</div><div class="perf"></div><div><div class="t1">Groceries</div><div class="t2">from your gift</div></div></div>
+<div id="end" class="layer">
+  <img src="../../public/brand/logo-256.webp" alt="">
+  <div class="wm"><span class="c">Coupon</span><span class="d">Donation</span></div>
+  <div class="eh">Help someone today.</div>
+  <div class="btn">coupondonation.com</div>
+  <div class="fine">Give from $10 · No platform fee on your gift</div>
+</div>
+<div class="illus" id="illus">Illustration. Not a real receipt.</div>
+</div>
+<script>
+const ITEMS=[['MILK 1 GAL',4.29],['BREAD',3.49],['EGGS 12CT',5.19],['BABY FORMULA',18.99],['DIAPERS',24.99],['APPLES 3LB',3.99]];
+const PRINT=[0.6,1.0,1.4,1.8,2.2,2.6];
+// strike times (S2) and unstrike times (S5) by item index
+const STRIKE={5:7.4,0:8.6,2:9.6,4:10.6}, UNSTRIKE={4:23.8,2:24.2,0:24.6,5:25.0};
+const NEEDS=['Groceries','Baby & kids','Pharmacy','Getting around','School','Home & bills'];
+const CAPS=[
+ [0.15,4.4,'Imagine you’re at the register.'],
+ [4.75,6.45,'Your card is <em>declined.</em>'],
+ [6.6,12.0,'What do you put back?'],
+ [12.7,14.5,'For some families, this is real.','w'],
+ [14.6,16.3,'And they’re <em>asking for help.</em>','w'],
+ [16.6,23.0,'You choose what they need.'],
+ [23.3,27.4,'Everything stays <em>in the cart.</em>'],
+];
+const SUBS=[[7.4,8.5,'The apples?'],[8.6,9.5,'The milk?'],[9.6,10.5,'The eggs?'],[10.6,12.0,'The diapers?'],[19.1,20.5,'Give from $10.'],[20.6,23.0,'100% of your gift reaches them. No platform fee.']];
+const $=id=>document.getElementById(id);
+const lines=$('lines');ITEMS.forEach(([n,p])=>{const d=document.createElement('div');d.className='line';d.innerHTML=`<span>${n}</span><span>${p.toFixed(2)}</span><i></i>`;lines.appendChild(d)});
+NEEDS.forEach(n=>{const d=document.createElement('div');d.className='chip';d.innerHTML=`<b></b>${n}`;$('needs').appendChild(d)});
+const caps=$('caps');const capEls=CAPS.map(c=>{const d=document.createElement('div');d.className='cap';d.innerHTML=c[2];caps.appendChild(d);return d});
+const subEls=SUBS.map(c=>{const d=document.createElement('div');d.className='cap sub';d.innerHTML=c[2];caps.appendChild(d);return d});
+const cl=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const p=(t,a,b)=>cl((t-a)/(b-a));
+const eo=x=>1-Math.pow(1-x,3), eio=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const back=x=>{const c=1.7;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const mix=(a,b,k)=>a.map((v,i)=>Math.round(v+(b[i]-v)*k));
+const BG=[244,246,242],FOREST=[25,57,28];
+function fade(t,a,b,d=.35){return Math.min(eo(p(t,a,a+d)),1-eo(p(t,b-d,b)))}
+window.render=function(t){
+  // background: forest during 12.0-16.4
+  const f=Math.min(eio(p(t,11.9,12.7)),1-eio(p(t,16.0,16.7)));
+  const bg=mix(BG,FOREST,f);document.body.style.background=`rgb(${bg})`;
+  CAPS.forEach((c,i)=>{const o=fade(t,c[0],c[1]);const e=capEls[i];e.style.opacity=o;e.style.transform=`translateY(${(1-eo(p(t,c[0],c[0]+.6)))*30}px)`;e.style.color=c[3]?'#fff':'';e.classList.toggle('mid',!!c[3]);if(c[3])e.querySelectorAll('em').forEach(m=>m.style.color='#bfe3c1')});
+  SUBS.forEach((c,i)=>{const o=fade(t,c[0],c[1],.2);subEls[i].style.opacity=o;subEls[i].style.transform=`translateY(${(1-eo(p(t,c[0],c[0]+.4)))*18}px)`});
+  // receipt visible 0-12.2 and 23.0-27.6
+  const rv=Math.max(Math.min(eo(p(t,0.1,0.6)),1-eio(p(t,11.7,12.3))),Math.min(eo(p(t,23.0,23.5)),1-eio(p(t,27.2,27.7))));
+  const r=$('receipt'),ls=document.landscape;
+  r.style.opacity=rv;r.style.transform=`translate(-50%,${(1-rv)*60}px)`;
+  let total=0;[...lines.children].forEach((d,i)=>{
+    const o=eo(p(t,PRINT[i],PRINT[i]+.25));d.style.opacity=o;d.style.transform=`translateY(${(1-o)*-10}px)`;
+    let s=0;if(STRIKE[i]!==undefined){s=eo(p(t,STRIKE[i],STRIKE[i]+.35));if(UNSTRIKE[i]!==undefined&&t>=UNSTRIKE[i])s=1-eo(p(t,UNSTRIKE[i],UNSTRIKE[i]+.3));}
+    d.querySelector('i').style.transform=`scaleX(${s})`;d.style.color=s>.5?'#8b958e':'';
+    if(o>.5&&s<.5)total+=ITEMS[i][1];
+  });
+  const tv=eo(p(t,3.0,3.3));$('total').textContent='$'+total.toFixed(2);$('total').parentElement.style.opacity=tv;
+  // stamp: declined 4.6-12.1, covered 25.3-27.6
+  const st=$('stamp');
+  const dIn=p(t,4.55,4.85),cIn=p(t,25.3,25.6);
+  let so,sc,k;
+  if(t<18){k=dIn;so=Math.min(eo(dIn),1-eio(p(t,11.7,12.2)));st.textContent='DECLINED';st.className='stamp'}
+  else{k=cIn;so=Math.min(eo(cIn),1-eio(p(t,27.2,27.7)));st.textContent='COVERED';st.className='stamp ok'}
+  const shake=(t>4.85&&t<5.25)?Math.sin(t*90)*6*(1-p(t,4.85,5.25)):0;
+  sc=1.8-.8*eo(k);st.style.opacity=so;st.style.transform=`translate(calc(-50% + ${shake}px),-50%) rotate(-11deg) scale(${sc})`;
+  // needs chips 16.9+
+  const nv=1-eio(p(t,22.6,23.0));
+  [...$('needs').children].forEach((c,i)=>{const o=eo(p(t,16.9+i*.12,17.4+i*.12))*nv;c.style.opacity=o;c.style.transform=`translateY(${(1-o)*24}px) scale(${i===0?1+.06*Math.sin(Math.PI*p(t,17.9,18.4)):1})`;c.className='chip'+(t>18.0&&i===0?' on':'')});
+  // coupon flies in 18.9
+  const cv=back(p(t,18.9,19.6));const co=Math.min(p(t,18.9,19.2),1-eio(p(t,22.6,23.0)));
+  $('coupon').style.opacity=co;$('coupon').style.transform=`translate(calc(-50% + ${(1-cv)*700}px),-50%) rotate(${(1-cv)*8-2}deg)`;
+  // end card 27.6+
+  const ev=eo(p(t,27.6,28.3));const end=$('end');end.style.opacity=ev;
+  const kids=[...end.children];kids.forEach((c,i)=>{const o=eo(p(t,27.6+i*.16,28.2+i*.16));c.style.opacity=o;c.style.transform=`translateY(${(1-o)*26}px)${i===0?` scale(${.85+.15*back(p(t,27.6,28.3))})`:''}`});
+  $('illus').style.opacity=Math.max(rv,0)*.5;
+};
+window.render(0);
+</script></body></html>

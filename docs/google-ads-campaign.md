@@ -46,3 +46,6 @@ Descriptions: "Have an unused digital gift card? Give it to a family who asked f
 
 ## Review after 14 days
 Clicks, CTR, search terms (add negatives), donations during the test (admin dashboard), cost per donation. Then scale, point at a specific `/f/` fundraiser, or try Meta.
+
+## Video ad
+"What do you put back?" (30 s, 9:16 and 16:9): marketing/ad-video/README.md.
