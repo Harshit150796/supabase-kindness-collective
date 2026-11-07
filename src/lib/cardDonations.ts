@@ -1,7 +1,8 @@
 /**
  * Donated cards: unused digital gift cards, store coupons and promo codes people give to a family or the
- * shared pool. Submissions go through submit_card_donation and sit in card_donations until the team
- * checks the balance; codes live in card_donation_secrets, which no browser can read.
+ * shared pool. Signed-in donors submit through submit_card_donation and guests (no account, optionally
+ * anonymous) through public-submit; both sit in card_donations until the team checks the balance, and
+ * codes live in card_donation_secrets, which no browser can read.
  */
 export type CardType = 'gift_card' | 'store_coupon' | 'promo_code';
 export type CardStatus = 'pending' | 'accepted' | 'declined' | 'withdrawn';
@@ -24,6 +25,9 @@ export interface CardDonation {
   is_anonymous: boolean;
   donor_name: string | null;
   donor_email: string | null;
+  /** Null for guests, who can donate without an account (founder request, Nov 2026). */
+  donor_user_id?: string | null;
+  terms_version?: string | null;
   created_at: string;
   reviewed_at: string | null;
   fundraisers?: { title: string; unique_slug: string | null } | null;
@@ -41,6 +45,13 @@ export const cardTypeLabel = (type: string) => CARD_TYPES.find((t) => t.id === t
 export const CARD_DAILY_LIMIT = 5;
 export const CARD_PHOTO_BUCKET = 'card-donations';
 export const CARD_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+
+/** Who gave the card, for the team: guests may leave no name at all. */
+export function donorLabel(card: Pick<CardDonation, 'donor_name' | 'donor_user_id' | 'is_anonymous'>) {
+  if (card.donor_name) return card.donor_name;
+  if (card.donor_user_id) return '—';
+  return card.is_anonymous ? 'Anonymous guest (no account)' : 'Guest (no account)';
+}
 
 export function cardStatusText(card: Pick<CardDonation, 'status' | 'fundraiser_id' | 'decline_reason' | 'fundraisers'>) {
   if (card.status === 'pending') return 'We’re checking it';
