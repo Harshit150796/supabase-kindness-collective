@@ -1,5 +1,10 @@
 # Backend security architecture
 
+## Function grants (November 2026 review)
+- Supabase grants EXECUTE on every new public function to anon AND authenticated, so a function meant for server code only must be closed with `revoke all on function … from public, anon, authenticated` and granted to service_role. Revoking only from public and anon left public_fundraiser_coupons (whole coupon rows with codes and PINs), admin_person (any email), public_outside_gifts and others callable by any signed-in account until the November lockdown. function-grants_test.ts replays every migration and fails if this happens again.
+- Never trust a user id passed in by the caller for permission (an `_actor` or `_uid` argument): only service-role code may call such a function. Browser-callable functions check auth.uid() themselves (has_completed_donation answers only about the caller, or for the service role).
+- A password reset (verify-password-reset) claims the link in one update and ends every session of the account (svc_end_user_sessions); index.html hides coupondonation.com when another site frames it (clickjacking).
+
 ## Security rules (October 2026 audit; don't loosen these)
 - Browsers never write money, status or review fields. Donations are inserted only by the payment webhooks and service-role code (no INSERT for anon/authenticated). Trigger guards keep server-side: fundraiser status, totals, featured_order, is_example, archive and rejection fields, owner and slug (trg_fundraiser_owner_guard, staff and security-definer RPCs pass); profiles.email and user_id (trg_profile_guard); verification review fields (trg_verification_guard); Gold Coin balances (trg_loyalty_card_guard, no browser UPDATE on loyalty_cards). Change these through admin RPCs or edge functions, never a client update.
 - Team rows are invited, accepted and resent through fundraiser-actions; from the browser an organizer can only delete or revoke a co-organizer and a co-organizer can only leave (trg_fundraiser_team_guard stops moving a row to another fundraiser). Fundraiser updates are posted and screened through fundraiser-actions; browsers can only delete them.
