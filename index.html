@@ -7,8 +7,9 @@
          only to this site, and any http:// asset is fetched over https. -->
     <meta http-equiv="Content-Security-Policy" content="base-uri 'self'; object-src 'none'; form-action 'self'; upgrade-insecure-requests" />
     <!-- Security review (Nov 2026): coupondonation.com never runs inside another site's frame, so nobody can
-         lay a page over the real buttons (clickjacking). Lovable editor previews use other addresses. -->
-    <script data-frame-guard>(function(){if(window.top===window.self||!/(^|\.)coupondonation\.com$/.test(location.hostname))return;document.documentElement.style.visibility="hidden";try{window.top.location.replace(location.href)}catch(e){}})();</script>
+         lay a page over the real buttons (clickjacking). The one exception is the organizers' website widget
+         (ShareModal: /f/<slug>?embed=true). Lovable editor previews use other addresses. -->
+    <script data-frame-guard>(function(){if(window.top===window.self||!/(^|\.)coupondonation\.com\.?$/.test(location.hostname))return;if(/^\/f\/[^/]+\/?$/.test(location.pathname)&&new URLSearchParams(location.search).get("embed")==="true")return;document.documentElement.style.visibility="hidden";try{window.top.location.replace(location.href)}catch(e){}})();</script>
     
     <!-- Default tags for crawlers that don't run JavaScript. Pages replace them through react-helmet-async
          (data-rh marks them as Helmet's own). Keep them true for any page: no canonical or og:url here,
