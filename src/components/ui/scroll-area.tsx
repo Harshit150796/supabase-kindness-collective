@@ -6,9 +6,12 @@ import { cn } from "@/lib/utils";
 const ScrollArea = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>
->(({ className, children, ...props }, ref) => (
-  <ScrollAreaPrimitive.Root ref={ref} className={cn("relative overflow-hidden", className)} {...props}>
-    <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">{children}</ScrollAreaPrimitive.Viewport>
+>(({ className, children, type = "auto", ...props }, ref) => (
+  // Scrolling fix (founder report, Nov 2026): the root is a flex column, so the viewport takes the
+  // root's height even when only a parent flexbox or a max-height sets it (with h-full alone it grew to
+  // its content and nothing scrolled). type="auto" keeps the bar visible whenever there is more to see.
+  <ScrollAreaPrimitive.Root ref={ref} type={type} className={cn("relative flex flex-col overflow-hidden", className)} {...props}>
+    <ScrollAreaPrimitive.Viewport className="h-full min-h-0 w-full flex-1 rounded-[inherit]">{children}</ScrollAreaPrimitive.Viewport>
     <ScrollBar />
     <ScrollAreaPrimitive.Corner />
   </ScrollAreaPrimitive.Root>
@@ -30,7 +33,7 @@ const ScrollBar = React.forwardRef<
     )}
     {...props}
   >
-    <ScrollAreaPrimitive.ScrollAreaThumb className="relative flex-1 rounded-full bg-border" />
+    <ScrollAreaPrimitive.ScrollAreaThumb className="relative flex-1 rounded-full bg-foreground/25 transition-colors hover:bg-foreground/40" />
   </ScrollAreaPrimitive.ScrollAreaScrollbar>
 ));
 ScrollBar.displayName = ScrollAreaPrimitive.ScrollAreaScrollbar.displayName;
