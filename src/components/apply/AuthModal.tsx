@@ -38,7 +38,7 @@ export const AuthModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 rounded-3xl overflow-hidden border-0 shadow-2xl">
+      <DialogContent className="sm:max-w-md p-0 rounded-3xl overflow-y-auto border-0 shadow-2xl">
         {/* Header gradient */}
         <div className="bg-gradient-to-br from-primary/10 via-secondary to-accent/5 px-8 pt-8 pb-6">
           <div className="text-center animate-fade-in">

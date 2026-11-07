@@ -54,7 +54,7 @@ export function BrandSelectorModal({ open, onOpenChange, selectedBrands = [], on
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] flex-col gap-5 sm:max-h-[85vh] sm:max-w-2xl sm:rounded-[1.5rem]">
+      <DialogContent className="flex max-h-[90dvh] flex-col gap-5 sm:max-h-[85dvh] sm:max-w-2xl sm:rounded-[1.5rem]">
         <DialogHeader className="shrink-0 text-left">
           <DialogTitle className="font-display text-3xl font-normal leading-tight">All retailers</DialogTitle>
           <DialogDescription className="tabular-nums">
@@ -92,7 +92,7 @@ export function BrandSelectorModal({ open, onOpenChange, selectedBrands = [], on
           ))}
         </div>
 
-        <ScrollArea className="-mx-6 min-h-0 flex-1 px-6">
+        <ScrollArea className="-mx-6 min-h-0 flex-1 px-6" data-retailer-list>
           <div className="grid grid-cols-2 gap-2.5 py-1 sm:grid-cols-3">
             {shown.map((r) => {
               const selected = picked.includes(r.id);
