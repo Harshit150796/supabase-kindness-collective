@@ -39,14 +39,17 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find the token
+    // Claim the link in one step (security review, Nov 2026), so two requests sent at once with the
+    // same link can't both set a password. It is released again if the reset can't finish.
     const { data: tokenData, error: tokenError } = await supabase
       .from("password_reset_tokens")
-      .select("*")
+      .update({ used_at: new Date().toISOString() })
       .eq("token", token)
       .is("used_at", null)
       .gt("expires_at", new Date().toISOString())
+      .select("id, email")
       .maybeSingle();
+    const release = () => supabase.from("password_reset_tokens").update({ used_at: null }).eq("id", tokenData!.id);
 
     if (tokenError || !tokenData) {
       console.log("Invalid or expired token attempted");
@@ -61,6 +64,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!user) {
       console.error("No account for a valid reset token");
+      await release();
       return new Response(
         JSON.stringify({ error: "Invalid or expired reset link. Please request a new one." }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -74,17 +78,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (updateError) {
       console.error("Failed to update password:", updateError);
+      await release();
       return new Response(
         JSON.stringify({ error: "Failed to update password" }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // Mark token as used
-    await supabase
-      .from("password_reset_tokens")
-      .update({ used_at: new Date().toISOString() })
-      .eq("id", tokenData.id);
+    // A new password signs the account out everywhere, so a session someone else may hold ends too.
+    const { error: endError } = await supabase.rpc("svc_end_user_sessions", { _uid: user.id });
+    if (endError) console.error("Could not end the account's sessions:", endError.message);
 
     // Delete all tokens for this email
     await supabase
