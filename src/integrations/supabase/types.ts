@@ -4951,6 +4951,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      svc_end_user_sessions: { Args: { _uid: string }; Returns: number }
       svc_enqueue_owner_alerts: {
         Args: { _fundraiser_id: string; _ids: string[] }
         Returns: number
