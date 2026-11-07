@@ -17,8 +17,7 @@ Deno.test('the Holiday Giving Drive ends at 11:59 PM Eastern on January 15, 2027
   // Founder-confirmed facts (Nov 6, 2026): 100 gifts of $1,000, a real gold coin for the top 5, no NY or FL.
   assert(drive.includes('gifts: { count: 100, value: 1000 }') && drive.includes('giftCards: { count: 5, value: 500 }'));
   assert(drive.includes("goldCoins: { count: 5, name: 'real gold coin' }"));
-  // The bar's "110 chances to win" is the sum of every prize (100 + 5 + 5).
-  assert(drive.includes('export const DRIVE_PRIZES = DRIVE.gifts.count + DRIVE.goldCoins.count + DRIVE.giftCards.count;'));
+  assert(drive.includes('minGift: 10,'));
   assert(drive.includes("excludedStates: ['New York', 'Florida']"));
 });
 
@@ -32,13 +31,15 @@ Deno.test('the drive bar is the header\'s first row, the sticker sits on Donate,
   assert(bar.includes('onClick={openDriveTerms}') && bar.includes('closeDriveBar()') && bar.includes('data-nosnippet'));
   // "Real gold coin" everywhere, so nobody confuses the prize with the site's Gold Coins points.
   assert(!/win a gold coin/i.test(bar));
-  // Founder's wording (Nov 6, 2026): all three prizes, the star, then "110 chances to win" counted from DRIVE.
+  // Founder's wording (Nov 6, 2026): "Donate $10 today and stand a chance to win" all three prizes, with the star.
+  // He dropped the prize count ("110 chances to win"), so it stays out.
   for (const text of [
-    'Win a <strong>{DRIVE.goldCoins.name}</strong>, a <strong>{GIFT} gift</strong>',
-    'or a <strong>{CARD} gift card</strong><span className="drive-bar-when"> this holiday</span><span className="drive-star">*</span>',
-    '<span className="drive-bar-chances">{DRIVE_PRIZES} chances to win</span>',
-    'win a ${DRIVE.goldCoins.name}, a ${GIFT} gift or a ${CARD} gift card this holiday. ${DRIVE_PRIZES} chances to win.',
+    'const MIN = driveMoney(DRIVE.minGift);',
+    '<span className="drive-bar-l1"><strong>Donate {MIN} today</strong> and stand a chance to win</span>',
+    'a <strong>{DRIVE.goldCoins.name}</strong>, <span className="drive-bar-a">a </span><strong>{GIFT}<span className="drive-bar-gift"> gift</span></strong> or a <strong>{CARD} gift card</strong><span className="drive-bar-when"> this holiday</span><span className="drive-star">*</span>',
+    'donate ${MIN} today and stand a chance to win a ${DRIVE.goldCoins.name}, a ${GIFT} gift or a ${CARD} gift card this holiday.',
   ]) assert(bar.includes(text), text);
+  assert(!/chances to win|DRIVE_PRIZES/.test(bar));
   const app = await read('src/App.tsx');
   assertEquals(app.split('<DriveTermsHost />').length - 1, 1);
   assert(app.indexOf('<SiteMenuProvider>') < app.indexOf('<DriveTermsHost />'));
@@ -47,8 +48,8 @@ Deno.test('the drive bar is the header\'s first row, the sticker sits on Donate,
   // Pages that pin rows under the header count the bar.
   const css = await read('src/index.css');
   assert(css.includes(':root{--drive-bar-h:0px;--site-header-h:calc(4.5rem + var(--drive-bar-h))}'));
-  // Phones set the bar on two lines (44px); one line from 680px (36px, 40px from 768px). Its height follows the variable.
-  assert(css.includes('html[data-drive-bar]{--drive-bar-h:44px}') && css.includes('@media (min-width:680px){html[data-drive-bar]{--drive-bar-h:36px}}'));
+  // Under 850px the bar is two lines (44px); one 40px line from 850px. Its height follows the variable.
+  assert(css.includes('html[data-drive-bar]{--drive-bar-h:44px}') && css.includes('@media (min-width:850px){html[data-drive-bar]{--drive-bar-h:40px}}'));
   assert(css.includes('height:var(--drive-bar-h);'));
 });
 
