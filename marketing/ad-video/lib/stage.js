@@ -94,6 +94,45 @@
 
   const norm = (w) => w.toLowerCase().replace(/[^a-z0-9$%&]/g, '');
 
+  /** Spoken lines with their real timings (window.VOICE from voice.py), or estimates if voices are missing. */
+  CD.lines = () => {
+    if (CD._lines) return CD._lines;
+    const TL = window.TL || {};
+    const V = (window.VOICE && window.VOICE.lines) || [];
+    CD._lines = (TL.lines || []).map((l) => {
+      const v = V.find((x) => x.id === l.id);
+      const words = (l.text || '').split(/\s+/).length;
+      return { ...l, t0: v ? v.t0 : l.t, t1: v ? v.t1 : l.t + 0.34 * words + 0.3, env: v ? v.env : null, fps: (window.VOICE && window.VOICE.fps) || 30 };
+    });
+    return CD._lines;
+  };
+  /** How open a speaker's mouth is at time t (0..1), from the voice's loudness. */
+  CD.talk = (who, t) => {
+    for (const l of CD.lines()) {
+      if (l.who !== who || t < l.t0 || t >= l.t1) continue;
+      if (!l.env) return 0.35 + 0.35 * Math.abs(Math.sin((t - l.t0) * 11));
+      const f = (t - l.t0) * l.fps, i = Math.floor(f), k = f - i;
+      const a = l.env[i] ?? 0, b = l.env[i + 1] ?? 0;
+      return a + (b - a) * k;
+    }
+    return 0;
+  };
+  /** Captions for the spoken lines: narrator lines as big captions, characters as labelled subtitles. */
+  CD.dialogueCaptions = (themeAt) => {
+    const TL = window.TL || {};
+    const L = CD.lines().filter((l) => !l.nocap);
+    return L.map((l, i) => {
+      const next = L[i + 1];
+      let t1 = l.t1 + 0.45;
+      if (next) t1 = Math.min(t1, next.t0 - 0.04);
+      const text = l.show || l.text;
+      const words = text.split(' ').length;
+      const narr = l.who === 'narrator';
+      const label = narr ? '' : (TL.cast && TL.cast[l.who] && TL.cast[l.who].label) || '';
+      return { t0: l.t0 - 0.06, t1, text, hl: l.hl, theme: themeAt ? themeAt(l.t0) : 'light', rate: Math.min(0.2, ((l.t1 - l.t0) * 0.85) / words), say: !narr, label };
+    });
+  };
+
   CD.run = function (cfg) {
     window.DURATION = cfg.duration;
     // make sure every face is requested now, even ones first used inside hidden shots
@@ -113,10 +152,13 @@
     const capBox = CD.html('div', 'caps', stage);
     const fs = CD.pick({ portrait: W * 0.066, landscape: H * 0.074, square: W * 0.056 });
     capBox.style.setProperty('--fs', fs + 'px');
-    const caps = (cfg.captions || []).map((c) => {
-      const box = CD.html('div', 'cap ' + (c.theme || 'light'), capBox);
+    const capList = [...(cfg.captions || []), ...(cfg.dialogue === false ? [] : CD.dialogueCaptions(cfg.themeAt))].sort((x, y) => x.t0 - y.t0);
+    const caps = capList.map((c) => {
+      const box = CD.html('div', 'cap ' + (c.theme || 'light') + (c.say ? ' say' : ''), capBox);
       if (c.size) box.style.fontSize = `calc(var(--fs) * ${c.size})`;
       const d = CD.html('div', 'txt', box);
+      if (c.label) CD.html('div', 'lab', d, c.label);
+      if (c.say) c.text = '“' + c.text + '”';
       const hl = (c.hl || []).map(norm);
       const spans = [];
       c.text.split(' ').forEach((w, i, all) => {

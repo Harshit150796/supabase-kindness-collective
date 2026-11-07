@@ -1,8 +1,10 @@
 """Synthesised score and sound effects for the video ads (numpy only, nothing to license).
 
-    python3 score.py versions/checkout.timeline.js out/checkout.wav
+    python3 score.py versions/checkout.timeline.js out/checkout.wav [voice_dir]
 
 Reads the version's timeline (duration, sound cues, ambience) and writes a 44.1 kHz stereo WAV.
+With voice_dir (from voice.py), the spoken lines are mixed in at the times in versions/<name>.voice.js
+and the music and ambience duck under them.
 """
 import json
 import sys
@@ -16,7 +18,9 @@ RNG = np.random.default_rng(2026)
 
 def load_tl(path):
     txt = open(path, encoding="utf-8").read()
-    return json.loads(txt[txt.index("{"): txt.rindex("}") + 1])
+    d = json.loads(txt[txt.index("{"): txt.rindex("}") + 1])
+    d["_path"] = path
+    return d
 
 
 class Mix:
@@ -26,6 +30,7 @@ class Mix:
         self.music = np.zeros((self.n, 2))
         self.fx = np.zeros((self.n, 2))
         self.amb = np.zeros((self.n, 2))
+        self.vox = np.zeros((self.n, 2))
 
     def add(self, bus, t0, sig, pan=0.0, gain=1.0):
         i0 = int(t0 * SR)
@@ -306,6 +311,35 @@ def music_bumper(mx):
 MUSIC = {"checkout": music_checkout, "list": music_list, "pencil": music_pencil, "bumper": music_bumper}
 
 
+def read_wav(path):
+    with wave.open(path) as w:
+        x = np.frombuffer(w.readframes(w.getnframes()), dtype="<i2").astype(np.float64) / 32768
+        if w.getnchannels() == 2:
+            x = x.reshape(-1, 2).mean(1)
+    return x
+
+
+def voices(mx, tl, voice_dir):
+    """Place each spoken line; returns a 0..1 activity curve used for ducking."""
+    js = tl["_path"].replace(".timeline.js", ".voice.js")
+    txt = open(js, encoding="utf-8").read()
+    v = json.loads(txt[txt.index("{"): txt.rindex("}") + 1])
+    pans = {"narrator": 0.0}
+    act = np.zeros(mx.n)
+    for ln in v["lines"]:
+        x = read_wav(f"{voice_dir}/{ln['id']}.wav")
+        x = np.diff(x, prepend=0) * 0.06 + lowpass(x, 2) * 0.94  # a touch of presence, no rumble
+        rms = np.sqrt(np.mean(x ** 2)) + 1e-9
+        target = 0.11 if ln["who"] == "narrator" else 0.1
+        x *= target / rms * (tl.get("gains", {}).get(ln["id"], 1.0))
+        mx.add("vox", ln["t0"], x, pan=pans.get(ln["who"], 0.05))
+        i0, i1 = int(ln["t0"] * SR), min(mx.n, int(ln["t1"] * SR))
+        act[i0:i1] = 1
+    # smooth the on/off curve so the music dips and returns gently
+    k = int(0.35 * SR)
+    return np.clip(np.convolve(act, np.ones(k) / k, mode="same") * 1.6, 0, 1)
+
+
 def reverb(x, secs=2.4, wet=0.25):
     n = int(secs * SR)
     t = np.arange(n) / SR
@@ -330,9 +364,13 @@ def main():
     if tl.get("heart"):
         heartbeat(mx, *tl["heart"])
     MUSIC[tl["music"]](mx)
+    duck = voices(mx, tl, sys.argv[3]) if len(sys.argv) > 3 else np.zeros(mx.n)
     music = reverb(mx.music, 2.6, 0.32)
     fx = reverb(mx.fx, 1.2, 0.12)
-    mix = music * 0.9 + fx + mx.amb
+    vox = reverb(mx.vox, 0.9, 0.07)
+    m_gain = (1 - 0.55 * duck)[:, None]
+    a_gain = (1 - 0.4 * duck)[:, None]
+    mix = music * 0.9 * m_gain + fx + mx.amb * a_gain + vox
     t = np.arange(mx.n) / SR
     fade = np.clip((tl["duration"] - t) / 0.8, 0, 1) * np.clip(t / 0.02, 0, 1)
     mix *= fade[:, None]

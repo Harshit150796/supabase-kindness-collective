@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>One Pencil (15 s)</title>
+<link rel="stylesheet" href="../lib/stage.css">
+</head>
+<body>
+<div id="stage"></div>
+<script src="pencil.timeline.js"></script>
+<script src="pencil.voice.js"></script>
+<script src="../lib/stage.js"></script>
+<script src="../lib/cast.js"></script>
+<script src="../lib/sets.js"></script>
+<script src="../lib/shots.js"></script>
+<script>
+// "One Pencil": the night before school a girl finds one pencil in her backpack and tells herself it's enough.
+// Her mom hears her. A donor picks School & learning; in the morning she walks in ready. Illustrated dramatization.
+const { el, SKIN, HAIR, CLOTH } = CD;
+const put = (...a) => CD.put(...a);
+const GIRL = { who: 'girl', kid: true, skin: SKIN.brown, hair: HAIR.black, hairStyle: 'braids', top: CLOTH.sky, style: 'pajama', accent: CLOTH.green, seed: 21 };
+const GIRL_DAY = Object.assign({}, GIRL, { top: CLOTH.green, style: 'tee', print: CLOTH.mint, pack: CLOTH.blue });
+const MOM = { who: 'mom', skin: SKIN.brown, hair: HAIR.dark, hairStyle: 'long', top: CLOTH.steel, style: 'cardigan', under: CLOTH.navy, seed: 22 };
+const DONOR = { skin: SKIN.light, hair: HAIR.auburn, hairStyle: 'ponytail', top: CLOTH.blue, style: 'hoodie', accent: CLOTH.green, seed: 23 };
+const GS = 1.12, PACK_X = -112, DESK = -140;
+const gL = (x, y) => [x / GS, y / GS];
+
+const shots = {
+  desk: {
+    bg: '#26384c',
+    build(g) {
+      CD.sets.kidRoom(g);
+      this.girl = CD.person(GIRL).place(0, 0, GS); g.appendChild(this.girl.g);
+      CD.sets.desk(g);
+      this.pack = CD.prop('backpack', { open: true, color: '#2e7d32' }); g.appendChild(this.pack); put(this.pack, PACK_X, DESK, 0, 1, 1.25);
+      const lamp = CD.prop('lamp'); g.appendChild(lamp); put(lamp, 170, DESK, 0, 1, 1.3);
+      el('ellipse', { cx: 140, cy: DESK - 4, rx: 150, ry: 18, fill: '#eef6f0', opacity: 0.16 }, g);
+      this.pencil = CD.prop('pencil'); g.appendChild(this.pencil);
+    },
+    update(t, lt) {
+      this.a = this.a || CD.animate(this.girl, [
+        [0, { ex: 'calm', gx: -0.5, gy: 0.7, turn: -0.2, nod: 3, lh: gL(PACK_X + 10, -176) }],
+        [0.6, { ex: 'calm', gx: -0.5, gy: 0.8, turn: -0.25, nod: 4, lh: gL(PACK_X + 6, -186) }],
+        [1.0, { ex: 'neutral', gx: -0.6, gy: 0.75, turn: -0.25, nod: 4, lh: gL(PACK_X + 4, -196) }],
+        [1.55, { ex: 'sad', gx: -0.6, gy: 0.45, turn: -0.2, tilt: -4, nod: 2, lh: gL(-78, -214) }],
+        [2.4, { ex: 'brave', gx: -0.6, gy: 0.45, turn: -0.2, tilt: -6, nod: 2, lh: gL(-80, -216) }],
+        [3.2, { ex: 'brave', gx: -0.6, gy: 0.75, turn: -0.25, tilt: -5, nod: 4, lh: gL(-86, -200) }],
+        [3.9, { ex: 'sad', gx: -0.6, gy: 0.8, turn: -0.25, tilt: -5, nod: 5, lh: gL(-88, -198) }],
+      ]);
+      this.a(lt, t);
+      const h = this.girl.handWorld('l');
+      if (lt < 0.95) this.pencil.style.display = 'none';
+      else { this.pencil.style.display = ''; put(this.pencil, h[0] - 2, h[1] - 30, -96 + 18 * CD.eo(CD.prog(lt, 1.0, 1.6)), 1, 1.15); }
+    },
+    cam: CD.cam({ landscape: [[0, [-30, -214, 400, 260]], [3.9, [-36, -218, 350, 228]]], portrait: [[0, [-30, -214, 320, 310]], [3.9, [-36, -218, 290, 280]]] }),
+  },
+  door: {
+    bg: '#22334a',
+    build(g) { CD.sets.doorway(g); this.mom = CD.person(MOM).place(96, 0, 1); g.appendChild(this.mom.g); },
+    update(t, lt) {
+      this.a = this.a || CD.animate(this.mom, [
+        [0, { ex: 'worried', gx: -0.7, gy: 0.3, turn: -0.3, tilt: -3, rh: [100, -336], lh: [-40, -300] }],
+        [0.9, { ex: 'hurt', gx: -0.7, gy: 0.35, turn: -0.3, tilt: -6, rh: [100, -338], lh: [-14, -312] }],
+        [1.9, { ex: 'hurt', gx: -0.7, gy: 0.4, turn: -0.3, tilt: -7, rh: [100, -338], lh: [-14, -314], tear: 0.4 }],
+      ]);
+      this.a(lt, t);
+    },
+    cam: CD.cam({ landscape: [[0, [60, -380, 420, 400]], [1.9, [70, -384, 360, 340]]], portrait: [[0, [60, -370, 360, 460]], [1.9, [70, -376, 320, 410]]] }),
+  },
+  donor: CD.shots.donor(DONOR, { window: -560, lampX: 260 }),
+  phone: CD.shots.phone({ need: 'School & learning', tile: 2, skin: DONOR.skin, taps: TL.taps }),
+  walk: {
+    bg: '#cfd6db',
+    build(g) {
+      CD.sets.street(g);
+      this.girl = CD.person(GIRL_DAY); g.appendChild(this.girl.g);
+    },
+    update(t, lt) {
+      const k = CD.prog(lt, 0, 2.6);
+      const s = CD.lerp(0.82, 1.16, CD.sine(k)), y = CD.lerp(-70, 20, CD.sine(k));
+      this.girl.place(CD.lerp(-40, 10, k), y, s);
+      const ph = lt * Math.PI * 3.6, walking = lt < 2.6;
+      const wave = Math.sin(lt * 11) * 14;
+      const p = this.girl.P({
+        ex: lt < 1.3 ? 'smile' : 'happy', gx: lt < 1.4 ? -0.4 : 0, gy: -0.1, turn: lt < 1.4 ? -0.25 : 0, tilt: lt < 1.4 ? -4 : 3,
+        bob: walking ? -Math.abs(Math.sin(ph)) * 8 : 0,
+        liftL: walking ? Math.max(0, Math.sin(ph)) * 16 : 0, liftR: walking ? Math.max(0, -Math.sin(ph)) * 16 : 0,
+        rh: [62 + wave, -300], lh: [this.girl.restL[0] + (walking ? Math.sin(ph) * 9 : 0), this.girl.restL[1]],
+      });
+      this.girl.set(p, t);
+    },
+    cam: CD.cam({ landscape: [[0, [0, -180, 560, 420]], [4.9, [0, -170, 500, 380]]], portrait: [[0, [0, -190, 430, 500]], [4.9, [0, -180, 390, 460]]] }),
+  },
+};
+
+CD.run({
+  duration: TL.duration,
+  shots: Object.entries(TL.shots).map(([k, [t0, t1]]) => Object.assign(shots[k], { t0, t1, name: k, shake: k === 'phone' ? 0 : 1.2 })),
+  captions: TL.captions,
+  themeAt: (t) => (t < TL.shots.donor[0] ? 'dark' : 'light'),
+  end: { t: TL.end, headline: TL.headline, fine: TL.fine },
+  disclosure: { range: [0, TL.end], dark: (t) => t < TL.shots.donor[0], text: 'Dramatization · illustrated characters · synthetic voices' },
+  vignette: [[0, 0.5], [TL.shots.donor[0] - 0.1, 0.5], [TL.shots.donor[0], 0.05], [15, 0.05]],
+  flashes: [[TL.shots.donor[0], 0.45, '#0a120e', 'dip'], [TL.shots.walk[0], 0.45, '#ffffff', 'dip', 0.8]],
+});
+</script>
+</body>
+</html>

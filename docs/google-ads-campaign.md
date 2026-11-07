@@ -47,5 +47,8 @@ Descriptions: "Have an unused digital gift card? Give it to a family who asked f
 ## Review after 14 days
 Clicks, CTR, search terms (add negatives), donations during the test (admin dashboard), cost per donation. Then scale, point at a specific `/f/` fundraiser, or try Meta.
 
-## Video ad
-"What do you put back?" (30 s, 9:16 and 16:9): marketing/ad-video/README.md.
+## Video ads
+Illustrated, voiced dramatizations in 9:16, 16:9 and 1:1 (marketing/ad-video/README.md, script in SCRIPT.md):
+"Checkout" (30 s hero), "The List" (20 s), "One Pencil" (15 s, School & learning) and "Milk or Diapers?"
+(6 s bumper), plus the earlier receipt-only "What do you put back?". Start a Video campaign with the 30 s and
+15 s in-stream and the bumper, about $5/day each for a week, and keep the one with the lowest cost per donation.

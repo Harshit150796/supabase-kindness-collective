@@ -310,7 +310,8 @@
         shoeL.setAttribute('cx', -D.lx - 4); shoeL.setAttribute('cy', ayL + 6);
         shoeR.setAttribute('cx', D.lx + 4); shoeR.setAttribute('cy', ayR + 6);
 
-        const hyy = D.headY + p.nod + breath * 0.5 + p.shrug * 4;
+        const tk = o.who && CD.talk ? CD.talk(o.who, t) : 0;
+        const hyy = D.headY + p.nod + breath * 0.5 + p.shrug * 4 + tk * 1.6;
         lastHead = [p.hx, hyy + lastTy];
         const htf = `translate(${p.hx.toFixed(2)} ${hyy.toFixed(2)}) rotate(${p.tilt.toFixed(2)} 0 ${(D.ry * 0.9).toFixed(1)})`;
         head.setAttribute('transform', htf);
@@ -335,14 +336,14 @@
           a.setAttribute('d', `M ${cx - 4.6} ${cy + 1.2} Q ${cx} ${cy - 4.2} ${cx + 4.6} ${cy + 1.2}`);
           a.setAttribute('opacity', sq.toFixed(3));
         }
-        const by = D.ry * D.browY - p.browY + (p.eye < 0.3 ? 1.5 : 0);
+        const by = D.ry * D.browY - p.browY - tk * 1.4 + (p.eye < 0.3 ? 1.5 : 0);
         bL.setAttribute('transform', `translate(${(fx - ex + gx * 0.3).toFixed(2)} ${by.toFixed(2)}) rotate(${(-p.brow).toFixed(2)})`);
         bR.setAttribute('transform', `translate(${(fx + ex + gx * 0.3).toFixed(2)} ${by.toFixed(2)}) rotate(${p.brow.toFixed(2)})`);
         nose.setAttribute('d', `M ${(fx + 1.2 + turn * 2).toFixed(2)} ${(D.ry * 0.13).toFixed(2)} q ${(2.6 + turn * 2.5).toFixed(2)} 5.6 ${(-2.2 + turn).toFixed(2)} 6.6`);
-        const my = D.ry * (kid ? 0.47 : 0.5), mw = D.rx * (kid ? 0.22 : 0.26) * (1 + 0.18 * Math.max(0, p.smile));
+        const my = D.ry * (kid ? 0.47 : 0.5), mw = D.rx * (kid ? 0.22 : 0.26) * (1 + 0.18 * Math.max(0, p.smile)) * (1 - 0.12 * tk);
         const mx = fx * 1.05;
         mouth.setAttribute('d', `M ${(mx - mw).toFixed(2)} ${my.toFixed(2)} Q ${mx.toFixed(2)} ${(my + p.smile * 7.5).toFixed(2)} ${(mx + mw).toFixed(2)} ${my.toFixed(2)}`);
-        const mo = CD.clamp(p.open);
+        const mo = CD.clamp(Math.max(p.open, tk * 0.95));
         mouthO.setAttribute('d', mo > 0.02 ? `M ${(mx - mw * 0.82).toFixed(2)} ${(my + 0.5).toFixed(2)} Q ${mx.toFixed(2)} ${(my + 2 + p.smile * 6 + mo * 9).toFixed(2)} ${(mx + mw * 0.82).toFixed(2)} ${(my + 0.5).toFixed(2)} Z` : 'M 0 0');
         const tp = p.tear;
         tear.setAttribute('opacity', (tp > 0 && tp < 1 ? CD.win(tp, 0, 1, 0.25) * 0.95 : 0).toFixed(3));

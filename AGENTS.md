@@ -78,3 +78,4 @@
 
 ## Google Ads (Nov 2026)
 - The Google tag (src/lib/adsTracking.ts) loads only with the same consent as PostHog (Okay on the cookie bar, no Global Privacy Control), only when VITE_GOOGLE_ADS_ID is set, with personalised ads off. The donation conversion fires from DonationSuccess. Ad copy and campaign plan: docs/google-ads-campaign.md; ad copy follows the Claims rules above.
+- Video ads (marketing/ad-video, founder request Nov 2026) may show illustrated, voiced dramatizations: characters drawn in code and synthetic voices, always labelled on screen "Dramatization · illustrated characters · synthetic voices", never presented as real families. No photos, likenesses or voices of real people without written consent. Spoken lines and captions follow the Claims rules above (marketing/ad-video/SCRIPT.md).

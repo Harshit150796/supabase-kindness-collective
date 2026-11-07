@@ -8,6 +8,7 @@
 <body>
 <div id="stage"></div>
 <script src="checkout.timeline.js"></script>
+<script src="checkout.voice.js"></script>
 <script src="../lib/stage.js"></script>
 <script src="../lib/cast.js"></script>
 <script src="../lib/sets.js"></script>
@@ -15,8 +16,8 @@
 // "Checkout": a mother's card is declined, she puts things back, her son puts back his cereal.
 // A donor gives through CouponDonation; next time the card reader says approved. Illustrated dramatization.
 const { el, SKIN, HAIR, CLOTH } = CD;
-const MOM = { skin: SKIN.deep, hair: HAIR.black, hairStyle: 'puff', top: CLOTH.forest, style: 'coat', scarf: CLOTH.blue, accent: CLOTH.blue, seed: 1 };
-const SON = { kid: true, skin: SKIN.brown, hair: HAIR.black, hairStyle: 'curly', top: CLOTH.sky, style: 'hoodie', seed: 2 };
+const MOM = { who: 'mom', skin: SKIN.deep, hair: HAIR.black, hairStyle: 'puff', top: CLOTH.forest, style: 'coat', scarf: CLOTH.blue, accent: CLOTH.blue, seed: 1 };
+const SON = { who: 'son', kid: true, skin: SKIN.brown, hair: HAIR.black, hairStyle: 'curly', top: CLOTH.sky, style: 'hoodie', seed: 2 };
 const DONOR = { skin: SKIN.medium, hair: HAIR.dark, hairStyle: 'short', top: CLOTH.slate, style: 'hoodie', seed: 3 };
 const SON_X = -190, SON_S = 1.22, BELT = -224, BOX_X = -262;
 const ITEMS = [['milk', -60], ['eggs', 2], ['diapers', 62], ['formula', 122], ['apples', 182]];
@@ -68,8 +69,9 @@ const shots = {
       reader.set('declined', t);
       this.mom = this.mom || CD.animate(mom, [
         [0, { ex: 'shock', gx: 0.6, turn: 0.25, rh: [206, -392] }],
-        [0.9, { ex: 'worried', gx: 0.1, gy: 0.5, rh: [150, -300] }],
-        [1.6, { ex: 'worried', gy: 0.85, nod: 5, rh: RESTR }],
+        [0.45, { ex: 'worried', gx: 0.35, gy: -0.1, turn: 0.15, rh: [180, -350] }],
+        [1.9, { ex: 'worried', brow: 16, gx: 0.3, gy: 0.1, turn: 0.12, rh: RESTR }],
+        [2.4, { ex: 'sad', gy: 0.85, nod: 6, rh: RESTR }],
         [3.2, { ex: 'sad', gy: 0.9, nod: 7, tilt: -3, rh: RESTR }],
       ]);
       this.mom(lt, t);
@@ -133,8 +135,8 @@ const shots = {
       reader.set('declined', t);
       this.son = this.son || CD.animate(son, [
         [0, { ex: 'sad', gx: -0.5, gy: 0.6, turn: -0.2, nod: 3, lh: ON_BOX }],
-        [0.7, { ex: 'sad', gx: -0.5, gy: 0.7, turn: -0.2, nod: 4, lh: ON_BOX }],
-        [1.1, { ex: 'brave', gx: 0.7, gy: -0.7, turn: 0.3, tilt: 5, lh: ON_BOX }],
+        [0.3, { ex: 'brave', gx: 0.7, gy: -0.7, turn: 0.3, tilt: 5, lh: ON_BOX }],
+        [1.25, { ex: 'brave', gx: 0.7, gy: -0.7, turn: 0.3, tilt: 6, lh: ON_BOX }],
         [1.5, { ex: 'brave', gx: 0.2, gy: 0.4, turn: 0.1, lh: ON_BOX }],
         [2.15, { ex: 'brave', gx: 0.4, gy: 0.4, turn: 0.15, lh: sonL(-146, -292) }],
         [2.6, { ex: 'brave', gx: 0.7, gy: -0.7, turn: 0.3, tilt: 6 }],
@@ -143,7 +145,8 @@ const shots = {
       this.son(lt, t);
       this.mom = this.mom || CD.animate(mom, [
         [0, { ex: 'sad', gy: 0.9, nod: 7, rh: RESTR }],
-        [1.4, { ex: 'sad', gy: 0.9, nod: 7, rh: RESTR }],
+        [0.35, { ex: 'sad', gy: 0.9, nod: 7, rh: RESTR }],
+        [0.75, { ex: 'hurt', gx: -0.7, gy: 0.55, turn: -0.3, tilt: -4, rh: RESTR }],
         [1.9, { ex: 'hurt', gx: -0.7, gy: 0.55, turn: -0.3, tilt: -4, rh: RESTR }],
         [2.7, { ex: 'hurt', gx: -0.7, gy: 0.6, turn: -0.3, tilt: -5, rh: RESTR, lh: [-142, -240] }],
         [3.6, { ex: 'hurt', gx: -0.7, gy: 0.6, turn: -0.3, tilt: -6, rh: RESTR, lh: [-140, -242], tear: 0.55 }],
@@ -246,10 +249,11 @@ CD.run({
   duration: TL.duration,
   shots: Object.entries(TL.shots).map(([k, [t0, t1]]) => Object.assign(shots[k], { t0, t1, name: k, shake: k === 'phone' ? 0 : 1.5 })),
   captions: TL.captions,
+  themeAt: (t) => (t >= 13 && t < 15.6 ? 'dark' : 'light'),
   end: { t: TL.end, headline: TL.headline, fine: TL.fine },
-  disclosure: { range: [0, TL.end], dark: (t) => t >= 13 && t < 15.6 },
+  disclosure: { range: [0, TL.end], dark: (t) => t >= 13 && t < 15.6, text: 'Dramatization · illustrated characters · synthetic voices' },
   vignette: [[0, 0.12], [12.6, 0.2], [13.0, 0.8], [15.5, 0.8], [15.6, 0], [30, 0]],
-  flashes: [[15.6, 0.5, '#0a120e', 'dip'], [22.9, 0.5, '#ffffff', 'hit', 0.35]],
+  flashes: [[15.6, 0.5, '#0a120e', 'dip'], [TL.approve, 0.5, '#ffffff', 'hit', 0.35]],
 });
 </script>
 </body>

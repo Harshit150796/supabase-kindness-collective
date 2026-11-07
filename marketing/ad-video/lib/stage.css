@@ -55,3 +55,9 @@ html[data-mode='square'] .disc { top: 2.2%; right: 3%; font-size: 1.9vw; }
 .end .fine { font-size: 3.2vmin; font-weight: 560; color: rgba(20, 32, 25, 0.7); }
 html[data-mode='landscape'] .end { gap: 2vmin; }
 html[data-mode='landscape'] .end .logo { width: 24vmin; }
+
+/* Spoken lines: a small speaker label over the quoted line */
+.cap.say { font-size: calc(var(--fs) * 0.86); font-weight: 680; }
+.cap.say .lab { display: block; font-size: 0.5em; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.72; margin-bottom: 0.45em; }
+.cap.light.say .lab { color: #2e7d32; opacity: 1; }
+.cap.dark.say .lab { color: #a5d6a7; opacity: 1; }

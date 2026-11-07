@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Milk or Diapers (6 s)</title>
+<link rel="stylesheet" href="../lib/stage.css">
+</head>
+<body>
+<div id="stage"></div>
+<script src="bumper.timeline.js"></script>
+<script src="bumper.voice.js"></script>
+<script src="../lib/stage.js"></script>
+<script src="../lib/cast.js"></script>
+<script src="../lib/sets.js"></script>
+<script src="../lib/shots.js"></script>
+<script>
+// "Milk or Diapers?": a six-second bumper. A mother in the aisle weighs one against the other. Illustrated dramatization.
+const { el, SKIN, HAIR, CLOTH } = CD;
+const put = (...a) => CD.put(...a);
+const MOM = { who: 'mom', skin: SKIN.light, hair: HAIR.brown, hairStyle: 'bob', top: CLOTH.navy, style: 'coat', scarf: CLOTH.green, seed: 31 };
+const L = [-72, -400], R = [72, -400];
+
+const shots = {
+  aisle: {
+    build(g) {
+      CD.sets.aisle(g);
+      this.mom = CD.person(MOM).place(0, 0, 1); g.appendChild(this.mom.g);
+      CD.sets.cart(g, 0);
+      this.milk = CD.prop('milk'); g.appendChild(this.milk);
+      this.diapers = CD.prop('diapers'); g.appendChild(this.diapers);
+    },
+    update(t, lt) {
+      this.a = this.a || CD.animate(this.mom, [
+        [0, { ex: 'worried', gy: 0.6, nod: 4, lh: L, rh: R }],
+        [0.25, { ex: 'worried', gx: -0.8, gy: 0.2, turn: -0.35, tilt: -3, lh: [-80, -410], rh: R }],
+        [1.0, { ex: 'worried', gx: -0.8, gy: 0.2, turn: -0.35, tilt: -3, lh: [-80, -410], rh: R }],
+        [1.25, { ex: 'worried', brow: 17, gx: 0.8, gy: 0.2, turn: 0.35, tilt: 3, lh: L, rh: [80, -412] }],
+        [1.9, { ex: 'worried', brow: 18, gx: 0.8, gy: 0.2, turn: 0.35, tilt: 3, lh: L, rh: [80, -412] }],
+        [2.25, { ex: 'hurt', gx: -0.6, gy: 0.3, turn: -0.25, tilt: -2, lh: [-78, -404], rh: R }],
+        [2.9, { ex: 'sad', gy: 0.85, nod: 7, tilt: -4, shrug: 0.6, lh: [-74, -350], rh: [74, -350] }],
+        [6.0, { ex: 'sad', gy: 0.9, nod: 8, tilt: -5, shrug: 0.7, lh: [-72, -346], rh: [72, -346] }],
+      ]);
+      this.a(lt, t);
+      const a = this.mom.handWorld('l'), b = this.mom.handWorld('r');
+      put(this.milk, a[0] - 2, a[1] + 42, -4, 1, 1.45);
+      put(this.diapers, b[0] + 2, b[1] + 46, 5, 1, 1.25);
+    },
+    cam: CD.cam({ landscape: [[0, [0, -350, 420, 300]], [3.9, [0, -356, 340, 250]]], portrait: [[0, [0, -342, 330, 370]], [3.9, [0, -350, 290, 330]]] }),
+  },
+};
+
+CD.run({
+  duration: TL.duration,
+  shots: Object.entries(TL.shots).map(([k, [t0, t1]]) => Object.assign(shots[k], { t0, t1, name: k, shake: 1.2 })),
+  captions: TL.captions,
+  themeAt: () => 'light',
+  end: { t: TL.end, headline: TL.headline, fine: TL.fine },
+  disclosure: { range: [0, TL.end], text: 'Dramatization · illustrated characters · synthetic voices' },
+  vignette: [[0, 0.15], [3.8, 0.35]],
+});
+</script>
+</body>
+</html>
