@@ -824,24 +824,34 @@ html[data-sky=day] .site-header[data-over-sky] [data-nav-brand] .text-muted-fore
 /* Holiday Giving Drive bar (founder request, Nov 2026; DriveBar.tsx): the first row of the site header
    on every page, logo green with white words and a small gold coin that turns over every 8s. The coin's
    gold is prize artwork, the one warm colour here. The whole message opens the prizes and terms; ×
-   hides it for the visit. Copy shortens with the width: phones "Top 5 donors win a gold coin*". */
-html[data-drive-bar]{--drive-bar-h:36px}
+   hides it for the visit. Founder's line (Nov 6, 2026): "Win a real gold coin, a $1,000 gift or a $500
+   gift card this holiday*", then a dot and "110 chances to win", the prizes in semibold. Phones (under
+   680px) set it on two centred lines, "Win a real gold coin, a $1,000 gift" over "or a $500 gift card*
+   · 110 chances to win", in a 44px bar; wider screens use one line and add "this holiday" (900px+),
+   then "Ends Jan 15" and "Prizes and terms" instead of "Details" (1024px+). */
+html[data-drive-bar]{--drive-bar-h:44px}
+@media (min-width:680px){html[data-drive-bar]{--drive-bar-h:36px}}
 @media (min-width:768px){html[data-drive-bar]{--drive-bar-h:40px}}
-@media (max-height:500px){html[data-drive-bar]{--drive-bar-h:32px}}
-.drive-bar{position:relative;display:flex;align-items:center;justify-content:center;height:36px;padding:0 40px;background:hsl(123 46% 34%);color:#fff;font-size:13px;line-height:1.2;letter-spacing:.005em}
-@media (max-width:339px){.drive-bar{font-size:12.5px}}
-@media (min-width:768px){.drive-bar{height:40px;padding:0 56px;font-size:14px}}
-@media (max-height:500px){.drive-bar{height:32px}}
+@media (min-width:680px) and (max-height:500px){html[data-drive-bar]{--drive-bar-h:32px}}
+.drive-bar{position:relative;display:flex;align-items:center;justify-content:center;height:var(--drive-bar-h);padding:0 40px 0 10px;background:hsl(123 46% 34%);color:#fff;font-size:13px;line-height:1.25;letter-spacing:.005em}
+@media (max-width:339px){.drive-bar{font-size:12px}}
+@media (min-width:680px){.drive-bar{padding:0 40px;line-height:1.2}}
+@media (min-width:768px){.drive-bar{padding:0 56px;font-size:14px}}
 .drive-bar-main{display:inline-flex;align-items:center;gap:8px;min-width:0;max-width:100%;height:100%;padding:0 6px;border:0;background:none;color:inherit;font:inherit;letter-spacing:inherit;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.drive-bar-text{display:inline-flex;align-items:baseline;gap:16px;min-width:0}
+.drive-bar-text{display:grid;grid-template-columns:auto auto;justify-content:center;align-items:baseline;column-gap:8px;min-width:0}
+.drive-bar-offer{display:contents}
+.drive-bar-l1{grid-column:1/-1;justify-self:center}
 .drive-bar-text strong{font-weight:600}
 .drive-star{margin-left:1px;font-weight:700}
-.drive-bar-ends{display:none}
-.drive-bar-long,.drive-bar-link-long,.drive-bar-link{display:none}
+.drive-bar-chances{font-weight:600}
+.drive-bar-chances::before{content:'';display:inline-block;width:4px;height:4px;margin-right:8px;border-radius:50%;background:rgb(255 255 255 / .75);vertical-align:.22em}
+.drive-bar-ends{color:rgb(255 255 255 / .85)}
+.drive-bar-when,.drive-bar-ends,.drive-bar-link,.drive-bar-link-long{display:none}
 .drive-bar-link{margin-left:8px;font-weight:600;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px;text-decoration-color:rgb(255 255 255 / .6);transition:text-decoration-color .2s}
-@media (min-width:380px){.drive-bar-link{display:inline}}
-@media (min-width:480px){.drive-bar-ends{display:inline}}
-@media (min-width:768px){.drive-bar-main{gap:10px}.drive-bar-long,.drive-bar-link-long{display:inline}.drive-bar-short,.drive-bar-link-short{display:none}}
+@media (min-width:680px){.drive-bar-text{display:inline-flex;gap:10px}.drive-bar-offer{display:inline}.drive-bar-link{display:inline}}
+@media (min-width:768px){.drive-bar-main{gap:10px}.drive-bar-text{gap:12px}.drive-bar-chances::before{margin-right:12px}}
+@media (min-width:900px){.drive-bar-when{display:inline}}
+@media (min-width:1024px){.drive-bar-text{gap:16px}.drive-bar-ends,.drive-bar-link-long{display:inline}.drive-bar-link-short{display:none}}
 @media (hover:hover){.drive-bar-main:hover .drive-bar-link{text-decoration-color:#fff}}
 .drive-bar-main:focus-visible,.drive-bar-close:focus-visible{outline:2px solid #fff;outline-offset:-3px;border-radius:8px}
 .drive-bar-close{position:absolute;right:2px;top:50%;display:grid;place-items:center;width:36px;height:32px;padding:0;border:0;border-radius:8px;background:none;color:rgb(255 255 255 / .9);transform:translateY(-50%);cursor:pointer;-webkit-tap-highlight-color:transparent}

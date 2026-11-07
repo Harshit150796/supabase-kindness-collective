@@ -30,6 +30,9 @@ export const DRIVE = {
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 export const driveMoney = (value: number) => money.format(value);
 
+/** Every prize in the drive (100 gifts + 5 real gold coins + 5 gift cards = 110): the bar's "110 chances to win". */
+export const DRIVE_PRIZES = DRIVE.gifts.count + DRIVE.goldCoins.count + DRIVE.giftCards.count;
+
 /**
  * True while the drive runs, by the visitor's own clock (decided once per visit). `?drive=1` or
  * `?drive=0` forces it on or off for checks.

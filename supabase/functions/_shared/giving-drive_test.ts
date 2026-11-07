@@ -17,6 +17,8 @@ Deno.test('the Holiday Giving Drive ends at 11:59 PM Eastern on January 15, 2027
   // Founder-confirmed facts (Nov 6, 2026): 100 gifts of $1,000, a real gold coin for the top 5, no NY or FL.
   assert(drive.includes('gifts: { count: 100, value: 1000 }') && drive.includes('giftCards: { count: 5, value: 500 }'));
   assert(drive.includes("goldCoins: { count: 5, name: 'real gold coin' }"));
+  // The bar's "110 chances to win" is the sum of every prize (100 + 5 + 5).
+  assert(drive.includes('export const DRIVE_PRIZES = DRIVE.gifts.count + DRIVE.goldCoins.count + DRIVE.giftCards.count;'));
   assert(drive.includes("excludedStates: ['New York', 'Florida']"));
 });
 
@@ -29,8 +31,14 @@ Deno.test('the drive bar is the header\'s first row, the sticker sits on Donate,
   const bar = await read('src/components/drive/DriveBar.tsx');
   assert(bar.includes('onClick={openDriveTerms}') && bar.includes('closeDriveBar()') && bar.includes('data-nosnippet'));
   // "Real gold coin" everywhere, so nobody confuses the prize with the site's Gold Coins points.
-  assert(!/win a gold coin/.test(bar));
-  for (const text of ['each win a ${DRIVE.goldCoins.name}', 'each win a {DRIVE.goldCoins.name}<span', 'donors win a {DRIVE.goldCoins.name}<span']) assert(bar.includes(text), text);
+  assert(!/win a gold coin/i.test(bar));
+  // Founder's wording (Nov 6, 2026): all three prizes, the star, then "110 chances to win" counted from DRIVE.
+  for (const text of [
+    'Win a <strong>{DRIVE.goldCoins.name}</strong>, a <strong>{GIFT} gift</strong>',
+    'or a <strong>{CARD} gift card</strong><span className="drive-bar-when"> this holiday</span><span className="drive-star">*</span>',
+    '<span className="drive-bar-chances">{DRIVE_PRIZES} chances to win</span>',
+    'win a ${DRIVE.goldCoins.name}, a ${GIFT} gift or a ${CARD} gift card this holiday. ${DRIVE_PRIZES} chances to win.',
+  ]) assert(bar.includes(text), text);
   const app = await read('src/App.tsx');
   assertEquals(app.split('<DriveTermsHost />').length - 1, 1);
   assert(app.indexOf('<SiteMenuProvider>') < app.indexOf('<DriveTermsHost />'));
@@ -39,7 +47,9 @@ Deno.test('the drive bar is the header\'s first row, the sticker sits on Donate,
   // Pages that pin rows under the header count the bar.
   const css = await read('src/index.css');
   assert(css.includes(':root{--drive-bar-h:0px;--site-header-h:calc(4.5rem + var(--drive-bar-h))}'));
-  assert(css.includes('html[data-drive-bar]{--drive-bar-h:36px}'));
+  // Phones set the bar on two lines (44px); one line from 680px (36px, 40px from 768px). Its height follows the variable.
+  assert(css.includes('html[data-drive-bar]{--drive-bar-h:44px}') && css.includes('@media (min-width:680px){html[data-drive-bar]{--drive-bar-h:36px}}'));
+  assert(css.includes('height:var(--drive-bar-h);'));
 });
 
 Deno.test('the drive terms keep their legal shape: free entry, one entry per person, no guaranteed prize', async () => {
