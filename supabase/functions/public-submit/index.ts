@@ -1,7 +1,9 @@
 // Server-side write path for partner inquiries (anonymous, honeypot + per-IP rate limit),
 // contact form messages (anonymous, US-only, honeypot + fill time + per-IP and per-email limits,
-// emailed to support@coupondonation.com) and testimonial submissions (signed-in, explicit consent,
-// always pending review).
+// emailed to support@coupondonation.com), testimonial submissions (signed-in, explicit consent,
+// always pending review) and guest card donations (no account needed, founder request Nov 2026:
+// honeypot + fill time, limits per network, per email and for the whole site, always checked by the
+// team before anyone receives the card).
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@3';
@@ -48,7 +50,27 @@ const Consent = z.object({
   distinct_id: z.string().max(200).optional().nullable(),
 });
 const Unsubscribe = z.object({ action: z.literal('followup_unsubscribe'), token: z.string().uuid() });
-const Body = z.discriminatedUnion('action', [Partner, Contact, Testimonial, Consent, Unsubscribe]);
+// Guest card donations. The screenshot goes up first through a one-time link (card_photo).
+const GUEST_PHOTO = /^guest\/[0-9a-f-]{36}\.(jpg|jpeg|png|webp)$/;
+const opt = (max: number) => z.string().max(max).optional().nullable();
+const CardPhoto = z.object({ action: z.literal('card_photo'), ext: z.enum(['jpg', 'jpeg', 'png', 'webp']) });
+const Card = z.object({
+  action: z.literal('card'),
+  website: z.string().max(200).optional(), // honeypot
+  elapsed_ms: z.number().int().min(0).max(864_000_000).optional(),
+  name: opt(120), email: z.union([z.string().trim().email().max(255), z.literal('')]).optional().nullable(),
+  anonymous: z.boolean(), confirmed: z.literal(true), terms_version: opt(20),
+  store: z.string().trim().min(1).max(60), type: z.enum(['gift_card', 'store_coupon', 'promo_code']),
+  value: z.number().positive().max(2000).optional().nullable(), discount: opt(140),
+  code: opt(200), pin: opt(40), url: opt(500), expires: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  terms: opt(2000), note: opt(500), photo_path: z.string().regex(GUEST_PHOTO).optional().nullable(),
+  fundraiser: z.string().uuid().optional().nullable(),
+});
+const DAY = 24 * HOUR;
+const CARD_PER_NETWORK_PER_DAY = 5;
+const CARD_PER_EMAIL_PER_DAY = 5;
+const CARD_GUESTS_PER_DAY = 60; // the whole site, so many networks together can't flood the review queue
+const Body = z.discriminatedUnion('action', [Partner, Contact, Testimonial, Consent, Unsubscribe, CardPhoto, Card]);
 
 async function sendEmail(to: string, replyTo: string, email: RenderedEmail): Promise<'sent' | 'failed' | 'skipped'> {
   const key = Deno.env.get('RESEND_API_KEY');
@@ -181,6 +203,42 @@ Deno.serve(async (req) => {
     if (error) { console.error('consent save failed', error.message); return json({ error: 'Could not save your choice.' }, 500); }
     await unsuppress(admin, email);
     return json({ ok: true });
+  }
+
+  if (b.action === 'card_photo') {
+    // A one-time upload link for a guest's screenshot, in guest/ of the private card-donations bucket
+    // (its own type and size limits apply). Only the team can open it.
+    if (await overLimit(admin, 'card-photo-ip', clientIp(req), 10, DAY)) return json({ error: 'Too many uploads today. Please try again tomorrow, or leave the screenshot out.' }, 429);
+    const path = `guest/${crypto.randomUUID()}.${b.ext}`;
+    const { data, error } = await admin.storage.from('card-donations').createSignedUploadUrl(path);
+    if (error || !data) { console.error('card photo link failed', error?.message); return json({ error: 'The screenshot couldn’t be uploaded. You can leave it out.' }, 500); }
+    return json({ path, token: data.token });
+  }
+
+  if (b.action === 'card') {
+    // Honeypot filled or sent faster than a person could: accept quietly, store nothing.
+    if (b.website || (b.elapsed_ms ?? 10_000) < 4_000) return json({ ok: true });
+    const email = (b.email ?? '').trim().toLowerCase() || null;
+    const limited = 'You’ve donated several cards today. Thank you! Please try again tomorrow.';
+    if (await overLimit(admin, 'card-ip', clientIp(req), CARD_PER_NETWORK_PER_DAY, DAY)) return json({ error: limited }, 429);
+    if (email && await overLimit(admin, 'card-email', email, CARD_PER_EMAIL_PER_DAY, DAY)) return json({ error: limited }, 429);
+    if (await overLimit(admin, 'card-guests', 'all', CARD_GUESTS_PER_DAY, DAY)) {
+      return json({ error: 'We’ve received a lot of cards today. Please try again tomorrow, or sign in to donate now.' }, 429);
+    }
+    const anonymous = b.anonymous || !clean(b.name);
+    const { data: id, error } = await admin.rpc('_card_donation_insert', {
+      _uid: null, _name: anonymous ? null : clean(b.name).slice(0, 120), _email: anonymous ? null : email, _anon: anonymous,
+      _terms_version: clean(b.terms_version) || null, _store: clean(b.store), _type: b.type, _value: b.value ?? null,
+      _discount: clean(b.discount) || null, _code: (b.code ?? '').trim() || null, _pin: (b.pin ?? '').trim() || null,
+      _url: (b.url ?? '').trim() || null, _expires: b.expires ?? null, _terms: (b.terms ?? '').trim() || null,
+      _note: clean(b.note) || null, _photo_path: b.photo_path ?? null, _fundraiser: b.fundraiser ?? null,
+    });
+    // The database's own checks ("Enter the balance on the card") are written for people; anything else stays in the logs.
+    if (error) {
+      console.error('guest card failed', error.code, error.message);
+      return json({ error: error.code === 'P0001' ? error.message : 'Your card couldn’t be submitted. Please try again.' }, 400);
+    }
+    return json({ ok: true, id });
   }
 
   if (b.action === 'followup_unsubscribe') {

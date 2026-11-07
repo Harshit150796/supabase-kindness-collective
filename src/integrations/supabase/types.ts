@@ -535,6 +535,7 @@ export type Database = {
           status: string
           store_name: string
           terms: string | null
+          terms_version: string | null
           value: number | null
         }
         Insert: {
@@ -559,6 +560,7 @@ export type Database = {
           status?: string
           store_name: string
           terms?: string | null
+          terms_version?: string | null
           value?: number | null
         }
         Update: {
@@ -583,6 +585,7 @@ export type Database = {
           status?: string
           store_name?: string
           terms?: string | null
+          terms_version?: string | null
           value?: number | null
         }
         Relationships: [
@@ -3985,6 +3988,28 @@ export type Database = {
       _brand_target: {
         Args: { _brand: string; _donation_id: string }
         Returns: Json
+      }
+      _card_donation_insert: {
+        Args: {
+          _anon: boolean
+          _code: string
+          _discount: string
+          _email: string
+          _expires: string
+          _fundraiser: string
+          _name: string
+          _note: string
+          _photo_path: string
+          _pin: string
+          _store: string
+          _terms: string
+          _terms_version: string
+          _type: string
+          _uid: string
+          _url: string
+          _value: number
+        }
+        Returns: string
       }
       _check_code: { Args: { _code: string; _url: string }; Returns: undefined }
       _cred_mask: {

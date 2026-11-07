@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { CARD_PHOTO_BUCKET, cardStatusText, cardTypeLabel, type CardDonation, type CardStatus } from '@/lib/cardDonations';
+import { CARD_PHOTO_BUCKET, cardStatusText, cardTypeLabel, donorLabel, type CardDonation, type CardStatus } from '@/lib/cardDonations';
 import { safeHref } from '@/lib/safeUrl';
 
 type Filter = CardStatus | 'all';
@@ -57,7 +57,7 @@ export default function AdminCardDonations() {
     { key: 'store_name', header: 'Card', sortable: true, cell: (r) => <div className="min-w-0"><p className="font-medium">{r.store_name}</p><p className="text-xs text-muted-foreground">{cardTypeLabel(r.card_type)} · {r.code_hint}</p></div> },
     { key: 'value', header: 'Value', sortable: true, cell: (r) => <span className="whitespace-nowrap text-sm">{r.value ? usd(r.value) : r.discount_text ?? '—'}</span> },
     { key: 'fundraiser_id', header: 'For', cell: (r) => <span className="text-sm">{r.fundraisers?.title ?? 'Shared pool'}</span> },
-    { key: 'donor_name', header: 'From', sortable: true, cell: (r) => <div className="min-w-0"><p className="truncate text-sm">{r.donor_name ?? '—'}</p><p className="truncate text-xs text-muted-foreground">{r.donor_email}</p></div> },
+    { key: 'donor_name', header: 'From', sortable: true, cell: (r) => <div className="min-w-0"><p className="truncate text-sm">{donorLabel(r)}</p><p className="truncate text-xs text-muted-foreground">{r.donor_email}</p></div> },
     { key: 'status', header: 'Status', sortable: true, cell: (r) => <StatusBadge value={r.status} /> },
     { key: 'created_at', header: 'Sent', sortable: true, cell: (r) => <span className="whitespace-nowrap text-xs">{WHEN.format(new Date(r.created_at))}</span> },
   ];
@@ -142,7 +142,7 @@ function CardReview({ card, canWrite, onDone }: { card: CardDonation; canWrite: 
         <dt className="text-muted-foreground">Value</dt><dd>{card.value ? usd(card.value) : '—'}{card.discount_text ? ` · ${card.discount_text}` : ''}</dd>
         <dt className="text-muted-foreground">Expires</dt><dd>{card.expires_on ? DAY.format(new Date(`${card.expires_on}T12:00:00`)) : 'Not given'}</dd>
         <dt className="text-muted-foreground">For</dt><dd>{card.fundraisers?.title ?? 'Shared pool'}</dd>
-        <dt className="text-muted-foreground">From</dt><dd>{card.donor_name ?? '—'} · {card.donor_email}{card.is_anonymous ? ' (anonymous to the family)' : ''}</dd>
+        <dt className="text-muted-foreground">From</dt><dd>{donorLabel(card)}{card.donor_email ? ` · ${card.donor_email}` : ''}{card.is_anonymous ? ' (anonymous to the family)' : ''}</dd>
         <dt className="text-muted-foreground">Code</dt>
         <dd>{secret ? <span className="font-mono break-all">{secret.code ?? '—'}{secret.pin ? ` · PIN ${secret.pin}` : ''}{secret.redemption_url ? <><br /><a href={safeHref(secret.redemption_url)} target="_blank" rel="noopener noreferrer" className="text-primary underline">{secret.redemption_url}</a></> : null}</span>
           : pending && canWrite ? <Button size="sm" variant="outline" onClick={reveal}><Eye aria-hidden="true" />Show code (logged)</Button> : <span className="text-muted-foreground">{card.code_hint}{pending ? '' : ' (moved or deleted after review)'}</span>}</dd>

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, ImagePlus, Loader2, X } from 'lucide-react';
 import { SEO } from '@/components/SEO';
@@ -18,8 +18,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { brandList } from '@/data/brandLogos';
 import { GIVE_PAGES } from '@/data/givePages';
 import { breadcrumbJsonLd, canonicalUrl, faqJsonLd } from '@/lib/seo';
-import { signInPath } from '@/lib/serverActions';
-import { recordAgreement } from '@/lib/legal';
+import { callFn, signInPath } from '@/lib/serverActions';
+import { LEGAL_VERSION, recordAgreement } from '@/lib/legal';
 import {
   CARD_DAILY_LIMIT, CARD_PHOTO_BUCKET, CARD_PHOTO_MAX_BYTES, CARD_TYPES, cardStatusText, cardTypeLabel,
   type CardDonation, type CardType,
@@ -55,10 +55,11 @@ const DECLINE = [
 const FAQ = [
   { q: 'What happens to my card after I submit it?', a: 'Our team checks its balance and terms. If it can be used, it goes to the family you chose or to the shared pool, and this page shows it as accepted. If not, we decline it, tell you why and delete the code.' },
   { q: 'Can I give a card to a specific family?', a: 'Yes. Choose one of the open requests in the form. If that request closes before we finish checking the card, it goes to another family who asked for the same store, or to the shared pool.' },
-  { q: 'Can I get my card back?', a: 'You can withdraw a card while it says We’re checking it. Once we accept it, it belongs to the person who receives it and can’t be returned.' },
+  { q: 'Do I need an account to donate a card?', a: 'No. Anyone can donate a card, and you can do it anonymously. If you’re signed in, you can follow each card you give on this page and withdraw it while we check it.' },
+  { q: 'Can I get my card back?', a: 'If you were signed in when you gave it, you can withdraw a card here while it says We’re checking it. Without an account, email support@coupondonation.com with the store and the day you sent it (never the code). Once we accept a card, it belongs to the person who receives it and can’t be returned.' },
   { q: 'Is a donated card tax-deductible?', a: 'No. CouponDonation Inc. is a company, not a registered charity, so donated cards aren’t tax-deductible.' },
   { q: 'Do you buy gift cards or pay for them?', a: 'Never. We only accept cards given freely. If someone asked you to buy gift cards and send the codes, it may be a scam: don’t send them to anyone, and report it at reportfraud.ftc.gov.' },
-  { q: 'Will the family know who gave the card?', a: 'Families never see your email address or other contact details. Tick Don’t show my name if you’d rather we never share your name with them.' },
+  { q: 'Will the family know who gave the card?', a: 'Families never see your email address or other contact details. Tick Give anonymously and we won’t share your name with them; without an account, we won’t even ask for it.' },
 ];
 
 type OpenRequest = { id: string; title: string; unique_slug: string | null };
@@ -91,7 +92,10 @@ function useMyCards(userId: string | undefined) {
   });
 }
 
-function CardForm({ userId, requests, preselect, onDone }: { userId: string; requests: OpenRequest[]; preselect: string | null; onDone: () => void }) {
+const GUEST_PHOTO_EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+
+/** Signed-in donors submit through submit_card_donation; guests through public-submit (founder request, Nov 2026). */
+function CardForm({ userId, requests, preselect, onDone }: { userId: string | null; requests: OpenRequest[]; preselect: string | null; onDone: () => void }) {
   const stores = useMemo(() => brandList.filter((b) => !['Visa', 'Mastercard', 'American Express'].includes(b.name)).map((b) => b.name).sort(), []);
   const [store, setStore] = useState('');
   const [otherStore, setOtherStore] = useState('');
@@ -108,8 +112,13 @@ function CardForm({ userId, requests, preselect, onDone }: { userId: string; req
   const [destination, setDestination] = useState<'pool' | 'family'>(preselect ? 'family' : 'pool');
   const [fundraiser, setFundraiser] = useState(preselect ?? '');
   const [anonymous, setAnonymous] = useState(false);
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const trapRef = useRef<HTMLInputElement>(null);
+  const shownAt = useRef(Date.now());
+  const guest = !userId;
 
   useEffect(() => {
     if (preselect && requests.some((r) => r.id === preselect)) { setDestination('family'); setFundraiser(preselect); }
@@ -126,6 +135,7 @@ function CardForm({ userId, requests, preselect, onDone }: { userId: string; req
       : url.trim() && !/^https:\/\//i.test(url.trim()) ? 'The link must start with https://'
       : expires && expires < today ? 'This card has expired'
       : destination === 'family' && !fundraiser ? 'Choose a family'
+      : guest && !anonymous && guestEmail.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(guestEmail.trim()) ? 'Check your email address, or leave it blank'
       : !confirmed ? 'Tick the confirmation'
       : null;
 
@@ -133,25 +143,53 @@ function CardForm({ userId, requests, preselect, onDone }: { userId: string; req
     e.preventDefault();
     if (missing || busy) return;
     setBusy(true);
+    const photoError = 'The photo couldn’t be uploaded. Try a smaller JPG or PNG, or leave it out.';
     try {
       let photoPath: string | null = null;
-      if (photo) {
+      if (photo && userId) {
         const ext = (photo.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
         photoPath = `${userId}/${crypto.randomUUID()}.${ext}`;
         const up = await supabase.storage.from(CARD_PHOTO_BUCKET).upload(photoPath, photo, { contentType: photo.type, upsert: false });
-        if (up.error) throw new Error('The photo couldn’t be uploaded. Try a smaller JPG or PNG, or leave it out.');
+        if (up.error) throw new Error(photoError);
+      } else if (photo) {
+        // Guests get a one-time upload link into the private bucket's guest/ folder.
+        const ext = GUEST_PHOTO_EXT[photo.type];
+        if (!ext) throw new Error('Add the screenshot as a JPG, PNG or WebP image, or leave it out.');
+        const link = await callFn<{ path: string; token: string }>('public-submit', { action: 'card_photo', ext });
+        if (link.error || !link.data?.path) throw new Error(link.error ?? photoError);
+        const up = await supabase.storage.from(CARD_PHOTO_BUCKET).uploadToSignedUrl(link.data.path, link.data.token, photo, { contentType: photo.type });
+        if (up.error) throw new Error(photoError);
+        photoPath = link.data.path;
       }
-      const { error } = await supabase.rpc('submit_card_donation' as never, {
-        _store: storeName, _type: type, _value: value ? amount : null, _discount: discount.trim() || null,
-        _code: code.trim() || null, _pin: pin.trim() || null, _url: url.trim() || null, _expires: expires || null,
-        _terms: terms.trim() || null, _note: note.trim() || null, _photo_path: photoPath,
-        _fundraiser: destination === 'family' ? fundraiser : null, _anon: anonymous,
-      } as never);
-      if (error) throw new Error(error.message);
-      void recordAgreement(userId, 'card-donation');
-      toast({ title: 'Thank you. We’ll check your card', description: 'You can follow it in Your donated cards below.' });
+      const card = {
+        store: storeName, type, value: value ? amount : null, discount: discount.trim() || null,
+        code: code.trim() || null, pin: pin.trim() || null, url: url.trim() || null, expires: expires || null,
+        terms: terms.trim() || null, note: note.trim() || null, photo_path: photoPath,
+        fundraiser: destination === 'family' ? fundraiser : null,
+      };
+      if (userId) {
+        const { error } = await supabase.rpc('submit_card_donation' as never, {
+          _store: card.store, _type: card.type, _value: card.value, _discount: card.discount, _code: card.code, _pin: card.pin,
+          _url: card.url, _expires: card.expires, _terms: card.terms, _note: card.note, _photo_path: card.photo_path,
+          _fundraiser: card.fundraiser, _anon: anonymous,
+        } as never);
+        if (error) throw new Error(error.message);
+        void recordAgreement(userId, 'card-donation');
+      } else {
+        const sent = await callFn('public-submit', {
+          action: 'card', website: trapRef.current?.value || undefined, elapsed_ms: Date.now() - shownAt.current,
+          anonymous, name: anonymous ? null : guestName.trim() || null, email: anonymous ? null : guestEmail.trim() || null,
+          confirmed: true, terms_version: LEGAL_VERSION, ...card,
+        });
+        if (sent.error) throw new Error(sent.error);
+      }
+      toast({
+        title: 'Thank you. We’ll check your card',
+        description: userId ? 'You can follow it in Your donated cards below.' : 'Our team checks every card before it reaches a family.',
+      });
       setStore(''); setOtherStore(''); setValue(''); setDiscount(''); setCode(''); setPin(''); setUrl(''); setExpires('');
       setTerms(''); setNote(''); setPhoto(null); setConfirmed(false); setAnonymous(false);
+      shownAt.current = Date.now();
       onDone();
     } catch (err) {
       toast({ title: 'Your card wasn’t submitted', description: (err as Error).message, variant: 'destructive' });
@@ -273,10 +311,31 @@ function CardForm({ userId, requests, preselect, onDone }: { userId: string; req
           <Label htmlFor="card-note">A note for our team (optional)</Label>
           <Textarea id="card-note" className="mt-2 min-h-20 text-base" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
-        <label className="flex items-start gap-3 text-[15px] leading-relaxed text-foreground">
+        <label className="flex items-start gap-3 text-[15px] leading-relaxed text-foreground" data-card-anonymous>
           <Checkbox checked={anonymous} onCheckedChange={(v) => setAnonymous(v === true)} className="mt-1" />
-          Don’t show my name to the family
+          <span>
+            Give anonymously
+            <span className="block text-sm text-muted-foreground">{guest ? 'We won’t ask who you are, and the family won’t see a name.' : 'The family won’t see your name.'}</span>
+          </span>
         </label>
+        {guest && !anonymous && (
+          <div className="grid gap-6 sm:grid-cols-2" data-card-guest>
+            <div>
+              <Label htmlFor="card-name">Your name (optional)</Label>
+              <Input id="card-name" className="mt-2 h-12" autoComplete="name" maxLength={120} value={guestName} onChange={(e) => setGuestName(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="card-email">Your email (optional)</Label>
+              <Input id="card-email" type="email" className="mt-2 h-12" autoComplete="email" maxLength={255} value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} />
+            </div>
+            <p className="-mt-3 text-sm text-muted-foreground sm:col-span-2">With an email, our team can reach you about this card. Families never see it.</p>
+          </div>
+        )}
+        {/* People never see or fill this field; automated senders often do. */}
+        <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
+          <label htmlFor="card-website">Website</label>
+          <input ref={trapRef} id="card-website" name="website" type="text" tabIndex={-1} autoComplete="off" />
+        </div>
         <label className="flex items-start gap-3 rounded-2xl bg-background p-4 text-[15px] leading-relaxed text-foreground" data-card-confirm>
           <Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} className="mt-1" />
           I confirm this card is mine to give, unused, not tied to my name or account, and that I didn’t buy it because someone asked me to. Once it’s accepted, I can’t get it back.
@@ -290,6 +349,7 @@ function CardForm({ userId, requests, preselect, onDone }: { userId: string; req
           {missing && <span className="text-sm text-muted-foreground" aria-live="polite">{missing}</span>}
         </div>
         <p className="text-sm text-muted-foreground">Up to {CARD_DAILY_LIMIT} cards a day. Never send codes by email; this form is the only safe way.</p>
+        {guest && <p className="text-sm text-muted-foreground">No account needed. <Link to={signInPath(preselect ? `${PATH}?fundraiser=${encodeURIComponent(preselect)}` : PATH)} className="font-medium text-primary underline underline-offset-2">Sign in</Link> if you’d like to follow your card on this page.</p>}
       </div>
     </form>
   );
@@ -325,7 +385,6 @@ function MyCards({ cards, onWithdraw }: { cards: CardDonation[]; onWithdraw: (id
  */
 export default function DonateCard() {
   const { user, loading } = useAuth();
-  const location = useLocation();
   const [params] = useSearchParams();
   const qc = useQueryClient();
   const preselect = params.get('fundraiser');
@@ -387,13 +446,8 @@ export default function DonateCard() {
             <div className="mt-8 rounded-[1.5rem] p-5 sm:p-8" style={{ backgroundColor: 'hsl(var(--primary-97))' }}>
               {loading ? (
                 <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
-              ) : user ? (
-                <CardForm userId={user.id} requests={requests.data ?? []} preselect={preselect} onDone={() => qc.invalidateQueries({ queryKey: ['my-card-donations'] })} />
               ) : (
-                <div className="space-y-4">
-                  <p className="text-[17px] leading-relaxed text-foreground">Sign in to donate a card, so we can tell you when it’s checked and keep its code safe. It takes a minute, and you can follow every card you give.</p>
-                  <Button asChild size="lg"><Link to={signInPath(`${PATH}${location.search}`)}>Sign in to donate a card</Link></Button>
-                </div>
+                <CardForm userId={user?.id ?? null} requests={requests.data ?? []} preselect={preselect} onDone={() => qc.invalidateQueries({ queryKey: ['my-card-donations'] })} />
               )}
             </div>
             {user && <MyCards cards={mine.data ?? []} onWithdraw={withdraw} />}
