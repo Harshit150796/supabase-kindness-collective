@@ -49,7 +49,7 @@ Deno.test('every public list uses the ranked order', () => {
   assert(hook.includes('rankFundraisers(') && hook.includes('featured_order'), 'the shared loader ranks after live numbers arrive');
   assert(hook.includes('ranked.slice(0, options.limit)'), 'limits apply after ranking');
   const home = read('src/components/landing/ImpactStories.tsx');
-  assert(home.includes("useState<Sort>('trending')") && home.includes('<option value="trending">Trending</option>'));
+  assert(home.includes("collection: 'trending'") && home.includes('<CollectionSwitcher'), 'the homepage opens on Trending (src/lib/fundraiserCollections.ts)');
   assert(!home.includes('Real campaigns, completed donations'), 'the subtitle stays true when examples lead');
   assert(home.includes('.map(needKey)'), 'health and healthcare make one filter');
   assert(!read('src/components/seo/HelpSections.tsx').includes('Number(!!a.is_example) - Number(!!b.is_example)'));
