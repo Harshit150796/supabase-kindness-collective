@@ -945,6 +945,14 @@ html[data-drive-bar]{--drive-bar-h:44px}
   .contact-sheet{max-width:45rem;margin-inline:0;padding-bottom:4.5rem}
 }
 
+/* Homepage fundraiser collections (ImpactStories, founder request Nov 2026), switched like GoFundMe's:
+   the old cards slide left and fade one after another (--i staggers them), then the new ones slide in
+   from the right. When the visitor presses Pause, ImpactStories swaps them at once (useMotionPreference). */
+[data-collection-phase] .collection-item { transition: opacity 170ms ease-in, transform 170ms ease-in; transition-delay: calc(var(--i, 0) * 28ms); }
+[data-collection-phase='out'] .collection-item { opacity: 0; transform: translateX(-18px); }
+[data-collection-phase='in'] .collection-item { animation: collection-in 400ms cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: calc(var(--i, 0) * 45ms); }
+@keyframes collection-in { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+
 /* ---------- Site menu ---------------------------------------------------------------
    Menu button: the label rolls between "Menu" and "Close"; the two lines turn into a cross. */
 .site-menu-button{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:.6rem;min-width:2.75rem;min-height:2.75rem;padding:0 .55rem 0 .8rem;border-radius:var(--radius);font-size:.9375rem;font-weight:600;line-height:1;color:hsl(var(--foreground));-webkit-tap-highlight-color:transparent;transition:background-color .2s}
