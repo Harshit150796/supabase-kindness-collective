@@ -21,7 +21,10 @@ import logo from "@/assets/logo.png";
 interface ShareModalProps {
   open: boolean;
   onClose: () => void;
+  /** The link to share (share.coupondonation.com: previews show the fundraiser's own photo and title). */
   shareUrl: string;
+  /** The fundraiser page itself, for the website widget and QR codes. Defaults to shareUrl. */
+  pageUrl?: string;
   title: string;
   slug?: string;
   amountRaised?: number;
@@ -32,6 +35,7 @@ export const ShareModal = ({
   open, 
   onClose, 
   shareUrl, 
+  pageUrl = shareUrl,
   title,
   slug,
   amountRaised = 0,
@@ -66,7 +70,7 @@ export const ShareModal = ({
     }
   };
 
-  const embedCode = `<iframe src="${shareUrl}?embed=true" width="350" height="420" frameborder="0" scrolling="no"></iframe>`;
+  const embedCode = `<iframe src="${pageUrl}?embed=true" width="350" height="420" frameborder="0" scrolling="no"></iframe>`;
 
   const handleCopyEmbed = async () => {
     try {
@@ -97,7 +101,7 @@ export const ShareModal = ({
   };
 
   const handleDownloadQR = () => {
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(shareUrl)}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(pageUrl)}`;
     const link = document.createElement('a');
     link.href = qrUrl;
     link.download = `${title.replace(/\s+/g, '-')}-qr-code.png`;
@@ -110,7 +114,7 @@ export const ShareModal = ({
   const progress = Math.min((amountRaised / goalAmount) * 100, 100);
 
   // Generate QR code URL using a free QR code API
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pageUrl)}`;
 
   const shareOptions = [
     {

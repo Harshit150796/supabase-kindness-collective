@@ -4,7 +4,7 @@ import { Share2, Edit2, Copy, Check, ExternalLink, Users, Trash2, Camera, ArrowL
 import { OwnerCouponsSection } from "@/components/fundraiser/OwnerCouponsSection";
 import { Button } from "@/components/ui/button";
 import { ProductSkeleton as Skeleton, PageHeader, CardSurface, SectionLabel, Stat, StatusChip } from "@/components/ui/organizer";
-import { fundraiserPublicUrl } from "@/lib/fundraiserSharing";
+import { fundraiserPublicUrl, fundraiserShareUrl } from "@/lib/fundraiserSharing";
 import { DonationCouponList, type OwnerCoupon } from "@/components/fundraiser/DonationCouponList";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -228,7 +228,8 @@ const FundraiserDashboard = () => {
     }
   };
 
-  const shareUrl = fundraiserPublicUrl(fundraiser?.unique_slug ?? null, id ?? "");
+  const shareUrl = fundraiserShareUrl(fundraiser?.unique_slug ?? null, id ?? "");
+  const pageUrl = fundraiserPublicUrl(fundraiser?.unique_slug ?? null, id ?? "");
 
   const handleCopyLink = async () => {
     try {
@@ -320,7 +321,7 @@ const FundraiserDashboard = () => {
           {/* Overview */}
           <section id="overview" className="scroll-mt-32 space-y-6">
             <PageHeader title={fundraiser.title} subtitle={`Started ${formatDate(fundraiser.created_at)} · ${fundraiser.category}`} action={<div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => window.open(shareUrl, "_blank", "noopener")}><ExternalLink className="mr-2 h-4 w-4" />Public page</Button>
+              <Button variant="outline" size="sm" onClick={() => window.open(pageUrl, "_blank", "noopener")}><ExternalLink className="mr-2 h-4 w-4" />Public page</Button>
               <Button size="sm" className="bg-ink text-ink-foreground hover:bg-ink/90" onClick={() => setShowShareModal(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
             </div>} />
 
@@ -425,7 +426,7 @@ const FundraiserDashboard = () => {
         </main>
       </div>
 
-      <ShareModal open={showShareModal} onClose={() => setShowShareModal(false)} shareUrl={shareUrl} title={fundraiser.title}
+      <ShareModal open={showShareModal} onClose={() => setShowShareModal(false)} shareUrl={shareUrl} pageUrl={pageUrl} title={fundraiser.title}
         slug={fundraiser.unique_slug || undefined} amountRaised={ledger?.total ?? fundraiser.amount_raised} goalAmount={fundraiser.monthly_goal} />
 
       <ImageUploadModal open={showImageModal} onClose={() => setShowImageModal(false)} fundraiserId={fundraiser.id} existingImages={images} onImagesUpdated={fetchImages} />
