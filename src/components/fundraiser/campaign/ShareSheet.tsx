@@ -6,14 +6,11 @@ import { useToast } from '@/hooks/use-toast';
 import { ProgressRing } from './DonationPanel';
 import { usd } from '@/hooks/useFundraiserLive';
 import { FundraiserImageFallback, transformedFundraiserImage } from '@/lib/fundraiserImages';
+import { fundraiserPublicUrl, fundraiserShareUrl } from '@/lib/fundraiserSharing';
 
-/**
- * Public share URL. Stays on coupondonation.com — never the raw backend function URL (AGENTS.md).
- * When a branded preview host is live, set VITE_SHARE_HOST (e.g. https://share.coupondonation.com).
- */
+/** The link to share: share.coupondonation.com shows this fundraiser's own photo and title in link previews. */
 export function publicShareUrl(slug: string) {
-  const host = (import.meta.env.VITE_SHARE_HOST as string | undefined)?.replace(/\/$/, '');
-  return host ? `${host}/f/${slug}` : `https://coupondonation.com/f/${slug}`;
+  return fundraiserShareUrl(slug, slug);
 }
 
 export function ShareCardPreview({ title, cover, raised, goal, organizer }: { title: string; cover: string | null; raised: number; goal: number; organizer: string }) {
@@ -35,6 +32,8 @@ export function ShareCardPreview({ title, cover, raised, goal, organizer }: { ti
 export function ShareSheet({ open, onOpenChange, slug, title, cover, raised, goal, organizer }: { open: boolean; onOpenChange: (o: boolean) => void; slug: string; title: string; cover: string | null; raised: number; goal: number; organizer: string }) {
   const { toast } = useToast(); const [copied, setCopied] = useState(false);
   const url = publicShareUrl(slug);
+  // QR codes open the page directly (one less hop for a phone camera).
+  const page = fundraiserPublicUrl(slug, slug);
   const text = `Help support "${title}" on CouponDonation`;
   const e = encodeURIComponent;
   const channels = [
@@ -46,7 +45,7 @@ export function ShareSheet({ open, onOpenChange, slug, title, cover, raised, goa
   ];
   const copy = async () => { await navigator.clipboard.writeText(url); setCopied(true); toast({ title: 'Link copied' }); setTimeout(() => setCopied(false), 2000); };
   const native = async () => { try { await navigator.share({ title, text, url }); } catch { /* dismissed */ } };
-  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=16&data=${e(url)}`;
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=16&data=${e(page)}`;
   const downloadQR = async () => {
     try {
       const blob = await (await fetch(qrSrc)).blob();
@@ -69,7 +68,7 @@ export function ShareSheet({ open, onOpenChange, slug, title, cover, raised, goa
         </div>
         <Button variant="outline" asChild><a href={`sms:?&body=${e(`${text} ${url}`)}`}><MessageSquare className="mr-2 h-4 w-4" />Text message</a></Button>
         <div className="flex items-center gap-4 rounded-[1rem] bg-secondary/60 p-4">
-          <img width={160} height={160} decoding="async" src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${e(url)}`} alt="QR code for this fundraiser" className="h-24 w-24 rounded-lg bg-background" loading="lazy" />
+          <img width={160} height={160} decoding="async" src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${e(page)}`} alt="QR code for this fundraiser" className="h-24 w-24 rounded-lg bg-background" loading="lazy" />
           <div><p className="font-medium">QR code</p><p className="text-sm text-muted-foreground">For posters and flyers.</p><Button size="sm" variant="link" className="px-0" onClick={downloadQR}><Download className="mr-1 h-4 w-4" />Download</Button></div>
         </div>
       </DialogContent>

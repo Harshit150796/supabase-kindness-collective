@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Users, CalendarDays, Share2, ArrowUpRight, Ticket, ArrowRight } from "lucide-react";
 import { resolveFundraiserImage, transformedFundraiserImage, FundraiserImageFallback, type FundraiserImageLike } from "@/lib/fundraiserImages";
-import { fundraiserPublicUrl, shareFundraiser } from "@/lib/fundraiserSharing";
+import { fundraiserShareUrl, shareFundraiser } from "@/lib/fundraiserSharing";
 import { SEO } from "@/components/SEO";
 
 interface Fundraiser {
@@ -29,7 +29,7 @@ function FundraiserHomeCard({ fundraiser: f, index }: { fundraiser: Fundraiser; 
   const days = Math.max(1, Math.ceil((Date.now() - new Date(f.created_at).getTime()) / 86400000));
   const share = async () => {
     try {
-      const result = await shareFundraiser(f.title, fundraiserPublicUrl(f.unique_slug, f.id));
+      const result = await shareFundraiser(f.title, fundraiserShareUrl(f.unique_slug, f.id));
       if (result === "copied") toast({ title: "Public link copied", description: "Ready to share with your supporters." });
     } catch { toast({ title: "Could not share the link", description: "Please try again.", variant: "destructive" }); }
   };
