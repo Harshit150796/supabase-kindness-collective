@@ -22,6 +22,7 @@
 - Gold Coins are credited only by credit_gold_coins() from the scheduled dispatcher into the append-only gold_coin_ledger (unique per donation and entry type); payment tables stay read-only.
 - Anonymous public submissions (partner inquiries, contact messages, testimonials) go through the public-submit edge function, never direct table inserts. US footer contacts use contact_messages, email support@coupondonation.com with the sender as Reply-To, and read by the team at /admin/contact.
 - Production is Lovable hosting (vercel.json, api/share inert).
+- Link previews (founder request, Nov 2026): Lovable serves one index.html to every link-preview bot, so coupondonation.com/f/<slug> always shows the generic card. Share links use share.coupondonation.com/f/<slug>, served by a separate Lovable project ("CouponDonation Share Links", b1f6ce1c-d651-47f3-9517-e395179fc703): bots get the share-fundraiser function's page (GoFundMe-style "Donate to <title>, organized by <organizer>", story start, the main photo as a JPEG at /f/<slug>/photo.jpg 4:3 and photo-wide.jpg 16:9, og:url = the share link), people get a 302 to coupondonation.com/f/<slug>. Text and image rules: `_shared/share-preview.ts`.
 
 ## Coupon System Rules
 - Coupon writes go only through security-definer RPCs; no client writes. Codes/PINs are stored plainly but column-locked: owners reveal via owner_reveal_coupon, staff only through an audited reveal, and prepaid is a hosted link only.
