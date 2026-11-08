@@ -85,7 +85,7 @@ function MosaicTile({ fundraiser, kind, place }: { fundraiser: Fundraiser } & Sl
     >
       {image && <ResponsivePhoto src={image} alt="" sizes={kind === 'wide' ? '86vw' : '45vw'} className="absolute inset-0 h-full w-full object-cover transition-transform duration-350 group-hover:scale-[1.03]" onError={(event) => { event.currentTarget.style.visibility = 'hidden'; }} />}
       <span className={`absolute bottom-1.5 flex flex-col rounded bg-background ${BOX[kind]}`}>
-        {fundraiser.is_example && <span className="text-[11px] leading-none text-muted-foreground">Example campaign</span>}
+        {fundraiser.is_example && <span className="text-[11px] leading-none text-muted-foreground">{"\n"}</span>}
         <span className={`font-display leading-[1.05] text-foreground group-hover:underline decoration-1 underline-offset-4 ${TITLE[kind]}`}>{fundraiser.title}</span>
         {kind === 'tall' ? (
           <>
