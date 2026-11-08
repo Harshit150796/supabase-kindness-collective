@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fundraiserRetryPolicy } from '@/lib/landingPresentation';
+import { rankFundraisers } from '@/lib/fundraiserRanking';
 
 interface FundraiserImage {
   id: string;
@@ -24,12 +25,16 @@ export interface Fundraiser {
   status: string;
   created_at: string;
   is_example?: boolean;
+  featured_order?: number | null;
   fundraiser_images?: FundraiserImage[];
   organizer_name?: string;
   live_raised: number;
   live_donations_count: number;
   latest_donation_at?: string | null;
 }
+
+/** How many open fundraisers are read before ranking, so a well-supported older one isn't cut off by a limit. */
+const RANK_POOL = 300;
 
 /** Category ids, old and new, are plain words; anything else is dropped before it reaches a filter. */
 const cleanIds = (ids: string[]) => ids.filter((id) => /^[a-z_]+$/.test(id));
@@ -49,7 +54,7 @@ export function useFundraisers(options?: { limit?: number; category?: string; ne
         .from('fundraisers')
         .select(`
           id, title, story, category, monthly_goal, amount_raised, donors_count, 
-          unique_slug, cover_photo_url, country, zip_code, status, created_at, is_example,
+          unique_slug, cover_photo_url, country, zip_code, status, created_at, is_example, featured_order,
           fundraiser_images (id, image_url, is_primary, display_order)
         `)
         .eq('status', 'active')
@@ -65,9 +70,8 @@ export function useFundraisers(options?: { limit?: number; category?: string; ne
         query = query.or(`category.in.(${needs.join(',')}),help_categories.ov.{${needs.join(',')}}`);
       }
 
-      if (options?.limit) {
-        query = query.limit(options.limit);
-      }
+      // Ranking happens after the live numbers arrive; the limit applies to the ranked list.
+      query = query.limit(Math.max(RANK_POOL, options?.limit ?? 0));
 
       const { data, error } = await query;
 
@@ -84,7 +88,7 @@ export function useFundraisers(options?: { limit?: number; category?: string; ne
         .abortSignal(controller.signal);
       if (cards.error) throw cards.error;
       const byId = new Map(((cards.data as Array<{ fundraiser_id: string; total_raised: number; donations_count: number; organizer_name: string | null; latest_donation_at: string | null }> | null) ?? []).map(c => [c.fundraiser_id, c]));
-      return rows.map((row) => {
+      const ranked = rankFundraisers(rows.map((row) => {
         const c = byId.get(row.id);
         return {
           ...row,
@@ -93,7 +97,8 @@ export function useFundraisers(options?: { limit?: number; category?: string; ne
           organizer_name: c?.organizer_name ?? undefined,
           latest_donation_at: c?.latest_donation_at ?? null,
         } as Fundraiser;
-      });
+      }));
+      return options?.limit ? ranked.slice(0, options.limit) : ranked;
       } finally { window.clearTimeout(timeout); signal.removeEventListener('abort', cancel); }
     },
     retry: fundraiserRetryPolicy.retry,
