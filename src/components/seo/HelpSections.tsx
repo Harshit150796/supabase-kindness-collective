@@ -45,10 +45,10 @@ export function PageHero({ h1, lead, primary, secondary, children }: { h1: strin
   );
 }
 
-/** Live requests for one or more needs; real requests first, examples labelled on the card. */
+/** Live requests for one or more needs, in the site's ranked order (src/lib/fundraiserRanking.ts); examples are labelled on the card. */
 export function OpenRequests({ id = 'open-requests', title, needs, limit = 6, emptyText }: { id?: string; title: string; needs: string[]; limit?: number; emptyText: string }) {
-  const { data, isLoading, isError, refetch } = useFundraisers({ needs, limit: limit + 6 });
-  const list = [...(data ?? [])].sort((a, b) => Number(!!a.is_example) - Number(!!b.is_example)).slice(0, limit);
+  const { data, isLoading, isError, refetch } = useFundraisers({ needs, limit });
+  const list = data ?? [];
   return (
     <section id={id} aria-labelledby={`${id}-heading`} className="scroll-mt-24 py-16 md:py-24" style={{ backgroundColor: 'hsl(var(--primary-97))' }}>
       <div className="container mx-auto max-w-6xl px-4">
