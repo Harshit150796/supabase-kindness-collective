@@ -4,7 +4,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { ADMIN_SENDER, shell } from '../_shared/email-layout.ts';
-import { processAccountEmail } from '../_shared/account-emails.ts';
+import { dueChecklistEmails, processAccountEmail, type AccountEmailKind } from '../_shared/account-emails.ts';
 import { syncEmailLog } from '../_shared/email-log.ts';
 
 const SUPA = Deno.env.get('SUPABASE_URL')!;
@@ -98,11 +98,21 @@ Deno.serve(async (req) => {
   // 1d) Donor confirmations + "fundraiser is live" emails (polling; exactly once via claim_account_email).
   const { data: dueMail } = await admin.rpc('due_account_emails');
   const acct: Record<string, number> = {};
-  for (const m of (dueMail ?? []) as { kind: 'donation_confirmation' | 'fundraiser_live'; source_id: string }[]) {
+  for (const m of (dueMail ?? []) as { kind: AccountEmailKind; source_id: string }[]) {
     const r = await processAccountEmail(admin, key, m.kind, m.source_id, 'dispatcher');
     acct[`${m.kind}:${r}`] = (acct[`${m.kind}:${r}`] ?? 0) + 1;
   }
   report.account_emails = acct;
+
+  // 1e) The first-gifts checklist, once, for fundraisers that were live before it existed (founder request,
+  // Nov 9, 2026). Up to 10 a run, spaced out for Resend's rate limit; nothing is due once all are sent.
+  const checklist: Record<string, number> = {};
+  for (const id of await dueChecklistEmails(admin)) {
+    const r = await processAccountEmail(admin, key, 'fundraiser_checklist', id, 'dispatcher');
+    checklist[r] = (checklist[r] ?? 0) + 1;
+    await new Promise((done) => setTimeout(done, 700));
+  }
+  report.checklist_emails = checklist;
 
   // 2) Claim new events since watermark (2h look-back overlap; unique markers prevent duplicates).
   const { data: st } = await admin.from('admin_dispatch_state').select('*').eq('id', 1).single();
