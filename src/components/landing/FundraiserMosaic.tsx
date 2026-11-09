@@ -85,7 +85,7 @@ function MosaicTile({ fundraiser, kind, place, label }: { fundraiser: Fundraiser
     >
       {image && <ResponsivePhoto src={image} alt="" sizes={kind === 'wide' ? '86vw' : '45vw'} className="absolute inset-0 h-full w-full object-cover transition-transform duration-350 group-hover:scale-[1.03]" onError={(event) => { event.currentTarget.style.visibility = 'hidden'; }} />}
       {/* The collection's label (src/lib/fundraiserCollections.ts); example campaigns always say so. */}
-      {(label || fundraiser.is_example) && <span data-photo-label className="absolute left-1.5 top-1.5 max-w-[calc(100%-12px)] truncate rounded-full bg-black/55 px-2 py-[3px] text-[11px] font-medium leading-none text-white backdrop-blur-sm">{fundraiser.is_example ? `${kind === 'wide' ? 'Example campaign' : 'Example'}${label ? ` · ${label}` : ''}` : label}</span>}
+      {(label || fundraiser.is_example) && <span data-photo-label className="absolute left-1.5 top-1.5 max-w-[calc(100%-12px)] truncate rounded-full bg-black/55 px-2 py-[3px] text-[11px] font-medium leading-none text-white backdrop-blur-sm">{fundraiser.is_example ? `${kind === 'wide' ? '' : 'Example'}${label ? ` · ${label}` : ''}` : label}</span>}
       <span className={`absolute bottom-1.5 flex flex-col rounded bg-background ${BOX[kind]}`}>
         <span className={`font-display leading-[1.05] text-foreground group-hover:underline decoration-1 underline-offset-4 ${TITLE[kind]}`}>{fundraiser.title}</span>
         {kind === 'tall' ? (
