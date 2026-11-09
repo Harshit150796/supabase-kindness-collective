@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowDown, ArrowUp, Eye, EyeOff, ExternalLink, GripVertical, Plus, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Eye, EyeOff, ExternalLink, GripVertical, Pin, PinOff, Plus, Shuffle, X } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -8,15 +8,15 @@ import { toast } from '@/hooks/use-toast';
 import { sb, rpc, usd } from '@/lib/adminApi';
 import { cn } from '@/lib/utils';
 import { useFundraisers, type Fundraiser } from '@/hooks/useFundraisers';
-import { useHomepageLineup } from '@/hooks/useHomepageLineup';
-import { HOMEPAGE_LIMIT, splitLineup } from '@/lib/homepageLineup';
+import { HOMEPAGE_LIMIT, shuffleLineup, splitLineup, type Placement } from '@/lib/homepageLineup';
 import { resolveFundraiserImage, transformedFundraiserImage } from '@/lib/fundraiserImages';
 
 /**
  * Admin → Homepage (founder request, Nov 9, 2026): which open campaigns lead "Fundraisers open now" on the
  * homepage, in what order, and which are kept off it. Placed campaigns come first in the Trending view;
  * the rest follow in the site's ranked order; hidden ones never show on the homepage. Saved in one audited
- * call (admin_set_homepage_lineup); rules in src/lib/homepageLineup.ts.
+ * call (admin_set_homepage_lineup); rules in src/lib/homepageLineup.ts. Shuffle gives every open, not-hidden
+ * campaign a random position; pinned ones keep theirs.
  */
 type Closed = { id: string; title: string; status: string };
 
@@ -39,9 +39,19 @@ export default function AdminHomepage() {
   const { canWrite } = useTeamRole();
   const qc = useQueryClient();
   const open = useFundraisers();
-  const lineup = useHomepageLineup({ fresh: true });
+  // The admin view of the lineup includes pins (visitors' reads don't).
+  const lineup = useQuery({
+    queryKey: ['adm-homepage-lineup'],
+    queryFn: async (): Promise<Array<Placement & { pinned: boolean }>> => {
+      const { data, error } = await sb.from('homepage_placements').select('fundraiser_id, position, hidden, pinned');
+      if (error) throw error;
+      return data ?? [];
+    },
+    staleTime: 0,
+  });
   const [order, setOrder] = useState<string[]>([]);
   const [hidden, setHidden] = useState<string[]>([]);
+  const [pinned, setPinned] = useState<string[]>([]);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -51,7 +61,7 @@ export default function AdminHomepage() {
   // Start from what's saved (again after a save or Discard).
   const reset = () => {
     const { order: o, hidden: h } = splitLineup(lineup.data ?? []);
-    setOrder(o); setHidden([...h]); setDirty(false);
+    setOrder(o); setHidden([...h]); setPinned((lineup.data ?? []).filter((p) => p.pinned && !p.hidden).map((p) => p.fundraiser_id)); setDirty(false);
   };
   useEffect(() => { if (lineup.data && (!loaded.current || !dirty)) { loaded.current = true; reset(); } }, [lineup.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -70,7 +80,10 @@ export default function AdminHomepage() {
   const closedById = useMemo(() => new Map((closed.data ?? []).map((c) => [c.id, c])), [closed.data]);
   const automatic = useMemo(() => (open.data ?? []).filter((f) => !order.includes(f.id) && !hidden.includes(f.id)), [open.data, order, hidden]);
 
-  const edit = (o: string[], h: string[]) => { setOrder(o); setHidden(h); setDirty(true); };
+  // Pins belong to placed campaigns only, so anything that leaves the lineup loses its pin.
+  const edit = (o: string[], h: string[], p: string[] = pinned) => { setOrder(o); setHidden(h); setPinned(p.filter((id) => o.includes(id))); setDirty(true); };
+  const togglePin = (id: string) => edit(order, hidden, pinned.includes(id) ? pinned.filter((x) => x !== id) : [...pinned, id]);
+  const shuffle = () => edit(shuffleLineup(order, new Set(pinned), (open.data ?? []).map((f) => f.id).filter((id) => !hidden.includes(id))), hidden);
   const move = (id: string, to: number) => {
     const rest = order.filter((x) => x !== id);
     rest.splice(Math.max(0, Math.min(rest.length, to)), 0, id);
@@ -101,9 +114,9 @@ export default function AdminHomepage() {
   const save = async () => {
     setSaving(true);
     try {
-      await rpc('admin_set_homepage_lineup', { _order: order, _hidden: hidden });
+      await rpc('admin_set_homepage_lineup', { _order: order, _hidden: hidden, _pinned: pinned });
       setDirty(false);
-      await qc.invalidateQueries({ queryKey: ['homepage-lineup'] });
+      await Promise.all([qc.invalidateQueries({ queryKey: ['homepage-lineup'] }), qc.invalidateQueries({ queryKey: ['adm-homepage-lineup'] })]);
       toast({ title: 'Homepage lineup saved', description: 'The homepage shows it right away.' });
     } catch (error) {
       toast({ title: 'Could not save the lineup', description: (error as Error).message, variant: 'destructive' });
@@ -130,8 +143,14 @@ export default function AdminHomepage() {
       ) : (
         <div className="grid gap-8 xl:grid-cols-[1.15fr_1fr]">
           <section aria-labelledby="lineup-placed">
-            <h2 id="lineup-placed" className="text-base font-semibold">On the homepage, in this order</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Drag to reorder, or use the arrows. Position 1 is the big card at the top.</p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 id="lineup-placed" className="text-base font-semibold">On the homepage, in this order</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Drag to reorder, or use the arrows. Position 1 is the big card at the top. Pin a campaign to keep its position when you shuffle.</p>
+              </div>
+              {canWrite && <Button variant="outline" size="sm" onClick={shuffle} disabled={!open.data?.length} title="Give every open campaign a random position. Pinned ones stay where they are; hidden ones stay hidden."><Shuffle className="mr-1.5 h-4 w-4" />Shuffle</Button>}
+            </div>
+            {canWrite && <p className="mt-2 text-xs text-muted-foreground">Shuffle gives every open campaign that isn't hidden a random position{pinned.length ? `, except the ${pinned.length} pinned` : ''}. Nothing changes on the site until you save.</p>}
             <ol className="mt-3 space-y-2" onDragOver={(e) => { if (dragId && !order.length) { e.preventDefault(); setDropAt(0); } }} onDrop={onDrop}>
               {order.length === 0 && (
                 <li className={cn('rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground', dropAt === 0 && 'border-primary bg-primary/5')}>
@@ -148,10 +167,10 @@ export default function AdminHomepage() {
                     onDragStart={(e) => { setDragId(id); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id); }}
                     onDragEnd={() => { setDragId(null); setDropAt(null); }}
                     onDragOver={(e) => onDragOver(e, index)}
-                    className={cn('relative flex items-center gap-3 rounded-lg border bg-card p-2.5', dragId === id && 'opacity-50', dropAt === index && 'before:absolute before:-top-[5px] before:left-0 before:right-0 before:h-0.5 before:rounded before:bg-primary', dropAt === index + 1 && index === order.length - 1 && 'after:absolute after:-bottom-[5px] after:left-0 after:right-0 after:h-0.5 after:rounded after:bg-primary')}
+                    className={cn('relative flex items-center gap-3 rounded-lg border bg-card p-2.5', pinned.includes(id) && 'border-primary/50 bg-primary/5', dragId === id && 'opacity-50', dropAt === index && 'before:absolute before:-top-[5px] before:left-0 before:right-0 before:h-0.5 before:rounded before:bg-primary', dropAt === index + 1 && index === order.length - 1 && 'after:absolute after:-bottom-[5px] after:left-0 after:right-0 after:h-0.5 after:rounded after:bg-primary')}
                   >
                     {canWrite && <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground" aria-hidden="true" />}
-                    <span className="w-7 shrink-0 text-center text-sm font-semibold tabular-nums">{index + 1}</span>
+                    <span className="flex w-7 shrink-0 flex-col items-center text-sm font-semibold tabular-nums">{index + 1}{pinned.includes(id) && <Pin className="mt-0.5 h-3 w-3 text-primary" aria-label="Pinned" />}</span>
                     <Thumb f={f} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{title(id)}</span>
@@ -161,6 +180,7 @@ export default function AdminHomepage() {
                       <span className="flex shrink-0 items-center gap-1">
                         <Button size="icon" variant="ghost" className="h-8 w-8" disabled={index === 0} onClick={() => move(id, index - 1)} aria-label={`Move ${title(id)} up`}><ArrowUp className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" className="h-8 w-8" disabled={index === order.length - 1} onClick={() => move(id, index + 1)} aria-label={`Move ${title(id)} down`}><ArrowDown className="h-4 w-4" /></Button>
+                        <Button size="icon" variant={pinned.includes(id) ? 'secondary' : 'ghost'} className="h-8 w-8" onClick={() => togglePin(id)} aria-pressed={pinned.includes(id)} aria-label={`${pinned.includes(id) ? 'Unpin' : 'Pin'} ${title(id)} at position ${index + 1}`} title={pinned.includes(id) ? 'Unpin: Shuffle can move it again' : 'Pin at this position: Shuffle won’t move it'}>{pinned.includes(id) ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}</Button>
                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => hide(id)} aria-label={`Hide ${title(id)} from the homepage`} title="Hide from the homepage"><EyeOff className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => unplace(id)} aria-label={`Remove ${title(id)} from the lineup`} title="Remove from the lineup (it goes back to the automatic order)"><X className="h-4 w-4" /></Button>
                       </span>
