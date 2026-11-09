@@ -26,8 +26,9 @@ import {
 } from '@/lib/cardDonations';
 
 const PATH = '/donate-a-card';
-const TITLE = 'Donate an Unused Gift Card to a Family in Need';
-const DESCRIPTION = 'Have a digital gift card, store coupon or promo code you won’t use? Give it to a family who asked for help, or to our shared pool. We check every card first.';
+// Search wording (founder request, Nov 9, 2026): written for people searching "donate gift cards" who have unused ones.
+const TITLE = 'Donate Unused Gift Cards to Families in Need';
+const DESCRIPTION = 'Donate unused digital gift cards, coupons and promo codes to a family who asked for help, or to our shared pool. No account needed; we check every card.';
 const OTHER_STORE = '__other';
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const shortDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -53,6 +54,8 @@ const DECLINE = [
 ];
 
 const FAQ = [
+  { q: 'How do I donate a gift card I won’t use?', a: 'Enter the store, the balance and the code in the form on this page, then choose a family who asked for that kind of help, or our shared pool. You don’t need an account, and you can give anonymously.' },
+  { q: 'Can I donate a physical or partly used gift card?', a: 'No. We take digital codes only, and only cards you haven’t used, so our team can confirm the balance before a family counts on it.' },
   { q: 'What happens to my card after I submit it?', a: 'Our team checks its balance and terms. If it can be used, it goes to the family you chose or to the shared pool, and this page shows it as accepted. If not, we decline it, tell you why and delete the code.' },
   { q: 'Can I give a card to a specific family?', a: 'Yes. Choose one of the open requests in the form. If that request closes before we finish checking the card, it goes to another family who asked for the same store, or to the shared pool.' },
   { q: 'Do I need an account to donate a card?', a: 'No. Anyone can donate a card, and you can do it anonymously. If you’re signed in, you can follow each card you give on this page and withdraw it while we check it.' },
@@ -401,7 +404,7 @@ export default function DonateCard() {
   const jsonLd = [
     { '@context': 'https://schema.org', '@type': 'WebPage', '@id': canonicalUrl(PATH), url: canonicalUrl(PATH), name: TITLE, description: DESCRIPTION, inLanguage: 'en-US',
       isPartOf: { '@id': 'https://coupondonation.com/#website' }, publisher: { '@id': 'https://coupondonation.com/#organization' } },
-    breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Donate a card', path: PATH }]),
+    breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Donate unused gift cards', path: PATH }]),
     faqJsonLd(FAQ),
   ];
 
@@ -411,8 +414,8 @@ export default function DonateCard() {
       <Navbar />
       <main>
         <PageHero
-          h1="Donate a gift card you won’t use"
-          lead="An unused gift card, store coupon or promo code can cover someone’s groceries or medicine this week. Give it to a family who asked for help, or to our shared pool, and we’ll check it before it reaches them."
+          h1="Donate gift cards you won’t use"
+          lead="Have an unused digital gift card, store coupon or promo code? It can cover someone’s groceries or medicine this week. Give it to a family who asked for help, or to our shared pool. You don’t need an account, and we check every card before it reaches them."
           primary={{ label: 'Donate a card', to: '#card-form' }}
           secondary={{ label: 'What we accept', to: '#what-we-accept' }}
         />

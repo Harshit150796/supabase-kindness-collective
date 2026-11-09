@@ -1,4 +1,4 @@
-import { assert } from 'https://deno.land/std@0.224.0/assert/mod.ts';
+import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 
 const root = new URL('../../../', import.meta.url);
 const read = (path: string) => Deno.readTextFileSync(new URL(path, root));
@@ -46,4 +46,29 @@ Deno.test('anyone can donate a card without an account, and anonymously (founder
   assert(/revoke all on function public\._card_donation_insert\([^)]*\) from public, anon, authenticated/.test(all));
   assert(all.includes("coalesce(_uid::text, 'guest') || '/%'"));
   assert(read('src/pages/Privacy.tsx').includes('Without an account, also the name and email you choose to give'));
+});
+
+Deno.test('the gift-card page offers a card you have beside its main button, and its answer links to the card page (founder request, Nov 9, 2026)', async () => {
+  const { GIVE_PAGES } = await import('../../../src/data/givePages.ts');
+  const page = GIVE_PAGES.find((g) => g.path === '/donate-gift-cards')!;
+  assertEquals(page.primary.to, '/donate');
+  assertEquals(page.secondary, { label: 'Donate a card you have', to: '/donate-a-card' });
+  assertEquals(page.heroLink?.to, '#open-requests');
+  const answer = page.faq.find((f) => f.q === 'Can I donate a gift card I already have?')!;
+  assertEquals(answer.link?.to, '/donate-a-card');
+  assert(answer.a.includes(answer.link!.text), 'the linked words are in the answer');
+  const sections = read('src/components/seo/HelpSections.tsx');
+  assert(sections.includes('<Answer item={item} />') && sections.includes('<Link to={item.link.to}'));
+  assert(read('src/pages/GivePage.tsx').includes('link={page.heroLink}'));
+});
+
+Deno.test('the unused-card page is worded for "donate gift cards" searches, within search sizes', () => {
+  const page = read('src/pages/DonateCard.tsx');
+  const title = page.match(/const TITLE = '([^']+)'/)![1];
+  const description = page.match(/const DESCRIPTION = '([^']+)'/)![1];
+  assertEquals(title, 'Donate Unused Gift Cards to Families in Need');
+  assert(title.length <= 60 && description.length <= 155, `${title.length} / ${description.length}`);
+  assert(/digital/.test(description), 'says digital: physical cards are not accepted');
+  assert(page.includes('h1="Donate gift cards you won’t use"'));
+  assert(page.includes("q: 'Can I donate a physical or partly used gift card?'"));
 });
