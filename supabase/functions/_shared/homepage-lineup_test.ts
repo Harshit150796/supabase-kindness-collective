@@ -1,6 +1,9 @@
 // Admin → Homepage lineup (src/lib/homepageLineup.ts, AdminHomepage, ImpactStories).
 import { assert, assertEquals } from 'jsr:@std/assert@1';
-import { applyLineup, HOMEPAGE_LIMIT, LINEUP_MAX, shuffleLineup, splitLineup, type Placement } from '../../../src/lib/homepageLineup.ts';
+import {
+  applyLineup, HOMEPAGE_LIMIT, insertWithPins, LAPTOP_SHOWN, lineupChanges, lineupPrefix, LINEUP_MAX, moveToTopWithPins, moveWithPins, reflow, removeWithPins,
+  shuffleLineup, splitLineup, swapAt, type Placement,
+} from '../../../src/lib/homepageLineup.ts';
 
 const ranked = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id }));
 const lineup: Placement[] = [
@@ -38,13 +41,62 @@ Deno.test('the homepage applies the lineup: positions in Trending only, hidden e
 Deno.test('Admin → Homepage is a portal page that saves through the audited staff-only function', () => {
   const page = read('src/pages/admin/AdminHomepage.tsx');
   assert(page.includes("rpc('admin_set_homepage_lineup', { _order: order, _hidden: hidden, _pinned: pinned })"));
-  assert(page.includes('<Shuffle ') && page.includes('aria-pressed={pinned.includes(id)}'), 'a Shuffle button and a pin on every placed row');
-  assert(page.includes('draggable={canWrite}') && page.includes('aria-label={`Move ${title(id)} up`}'), 'drag and drop, with arrows for keyboards and touch');
   assert(read('src/pages/admin/adminPages.ts').includes("'/admin/homepage': () => import('./AdminHomepage')"));
   assert(read('src/App.tsx').includes("['/admin/homepage', adminPage('/admin/homepage')]"));
   assert(read('src/components/admin/AdminLayout.tsx').includes("{ label: 'Homepage', path: '/admin/homepage', icon: LayoutTemplate }"));
   // Visitors read the lineup; nothing in the browser writes it.
-  assert(!/from\('homepage_placements'\)\s*\.(insert|update|upsert|delete)/.test(page + read('src/hooks/useHomepageLineup.ts')));
+  const parts = ['LineupList', 'LineupPreview', 'CampaignShelf', 'parts'].map((f) => read(`src/components/admin/homepage/${f}.tsx`)).join('\n');
+  assert(!/from\('homepage_placements'\)\s*\.(insert|update|upsert|delete)/.test(page + parts + read('src/hooks/useHomepageLineup.ts')));
+});
+
+Deno.test('the editor: one homepage list that drags by mouse, touch and keyboard, with a preview, undo and the other controls', () => {
+  const page = read('src/pages/admin/AdminHomepage.tsx');
+  const row = read('src/components/admin/homepage/LineupList.tsx');
+  // Placed campaigns, then the automatic ones up to position 24, all in one sortable list.
+  assert(page.includes('const list = useMemo(() => [...order, ...autoShown.map((f) => f.id)]'));
+  assert(page.includes('<SortableContext items={list.map((id) => `row:${id}`)} strategy={strategy}>'));
+  assert(page.includes('useSensor(MouseSensor') && page.includes('useSensor(TouchSensor') && page.includes('useSensor(KeyboardSensor'), 'mouse, touch and keyboard');
+  assert(page.includes('moveWithPins(list, pinSet, activeIndex, overIndex)'), 'rows make room around pinned ones while dragging');
+  assert(page.includes('<LineupPreview ') && page.includes("dispatch({ type: 'undo' })") && page.includes("event.key.toLowerCase() === 's'"));
+  assert(page.includes('<Shuffle ') && page.includes('shuffleLineup(order, pinSet,'));
+  assert(row.includes('aria-pressed={row.pinned}') && row.includes('<PositionField ') && row.includes('Swap with'));
+  for (const kind of ['laptop', 'phone', 'off', 'auto']) assert(page.includes(`<Boundary kind="${kind}" />`));
+  assertEquals(LAPTOP_SHOWN, 6);
+});
+
+Deno.test('moving a campaign: pinned ones keep their positions and the rest flow around them', () => {
+  const list = ['a', 'b', 'p', 'c', 'd'];
+  const pins = new Set(['p']);
+  assertEquals(moveWithPins(list, pins, 0, 4), ['b', 'c', 'p', 'd', 'a']);
+  assertEquals(moveWithPins(list, pins, 4, 0), ['d', 'a', 'p', 'b', 'c']);
+  // Dropped on a pinned position, it stops next to it on the side it came from.
+  assertEquals(moveWithPins(list, pins, 0, 2), ['b', 'a', 'p', 'c', 'd']);
+  assertEquals(moveWithPins(list, pins, 4, 2), ['a', 'b', 'p', 'd', 'c']);
+  // A pinned campaign that is moved takes its pin along; landing on another pin swaps the two.
+  assertEquals(moveWithPins(list, pins, 2, 0), ['p', 'a', 'b', 'c', 'd']);
+  assertEquals(moveWithPins(['q', 'a', 'p'], new Set(['p', 'q']), 2, 0), ['p', 'a', 'q']);
+  assertEquals(moveWithPins(list, new Set(), 1, 3), ['a', 'p', 'c', 'b', 'd']);
+  assertEquals(moveWithPins(list, pins, 3, 3), list);
+});
+
+Deno.test('adding, taking out, moving to the top and swapping keep pins in place', () => {
+  const pins = new Set(['p']);
+  assertEquals(insertWithPins(['a', 'p', 'b'], pins, 'n', 0), ['n', 'p', 'a', 'b']);
+  assertEquals(insertWithPins(['p', 'a'], pins, 'n', 0), ['p', 'n', 'a'], 'a pin at the top stays at the top');
+  assertEquals(insertWithPins(['a', 'p'], pins, 'n', 9), ['a', 'p', 'n']);
+  assertEquals(removeWithPins(['a', 'b', 'p', 'c'], pins, 'a'), ['b', 'c', 'p']);
+  assertEquals(removeWithPins(['a', 'p'], pins, 'a'), ['p'], 'a pin past the end moves to the nearest position');
+  assertEquals(moveToTopWithPins(['a', 'p', 'b', 'c'], pins, ['c', 'b']), ['c', 'p', 'b', 'a']);
+  assertEquals(swapAt(['a', 'b', 'c'], 0, 2), ['c', 'b', 'a']);
+  assertEquals(reflow(['x', 'y'], [['p', 0]]), ['p', 'x', 'y']);
+});
+
+Deno.test('the saved lineup runs to the last campaign that must keep its place; the rest fill in automatically', () => {
+  assertEquals(lineupPrefix(['a', 'b', 'c', 'd'], new Set(['b'])), ['a', 'b']);
+  assertEquals(lineupPrefix(['a', 'b'], new Set()), []);
+  const saved = { order: ['a', 'b', 'c'], hidden: ['h'], pinned: ['a'] };
+  assertEquals(lineupChanges(saved, { order: ['b', 'a', 'c', 'n'], hidden: [], pinned: ['a', 'b'] }), { added: 1, moved: 2, removed: 0, hidden: 0, shown: 1, pinned: 1, unpinned: 0 });
+  assertEquals(lineupChanges(saved, { order: ['a'], hidden: ['h', 'b'], pinned: [] }), { added: 0, moved: 0, removed: 1, hidden: 1, shown: 0, pinned: 0, unpinned: 1 });
 });
 
 /** A repeatable stand-in for Math.random. */
