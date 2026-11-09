@@ -230,17 +230,10 @@ const PublicFundraiser = () => {
       <Footer />
 
       {live.justDonated && (
-        <div role="status" className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] left-1/2 z-50 max-w-[calc(100vw-2rem)] -translate-x-1/2 animate-fade-in whitespace-nowrap rounded-full bg-ink px-5 py-3 text-sm text-ink-foreground shadow-lg [@media(max-height:500px)]:bottom-[calc(3.75rem+env(safe-area-inset-bottom))] lg:bottom-8">
+        <div role="status" className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-50 max-w-[calc(100vw-2rem)] -translate-x-1/2 animate-fade-in whitespace-nowrap rounded-full bg-ink px-5 py-3 text-sm text-ink-foreground shadow-lg lg:bottom-8">
           <Heart className="mr-2 inline h-4 w-4 text-primary" />{displayName(live.justDonated.display_name)} just donated {usd(live.justDonated.amount)}
         </div>
       )}
-
-      <div className="campaign-sticky-actions fixed inset-x-0 bottom-0 z-40 flex gap-3 border-t border-border bg-background/95 p-3 backdrop-blur lg:hidden">
-        <div className={`mx-auto flex w-full max-w-md gap-3 ${fundraiser.is_example ? 'justify-center' : ''}`}>
-          {!fundraiser.is_example && <Button className="h-12 flex-1 text-base font-semibold" onClick={donate}><Heart className="mr-2 h-4 w-4" />Donate</Button>}
-          <Button className={`h-12 bg-verify text-verify-foreground hover:bg-verify/90 ${fundraiser.is_example ? 'w-full max-w-[12.5rem]' : 'flex-1'}`} onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
-        </div>
-      </div>
 
       <ShareSheet open={share} onOpenChange={setShare} slug={fundraiser.unique_slug!} title={fundraiser.title} cover={resolvedCover} raised={live.totalRaised} goal={Number(fundraiser.monthly_goal)} organizer={organizer} />
       <ReportDialog open={report} onOpenChange={setReport} targetType="fundraiser" targetId={fundraiser.id} fundraiserId={fundraiser.id} />

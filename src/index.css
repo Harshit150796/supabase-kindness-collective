@@ -654,8 +654,6 @@ html[data-motion="paused"] .animate-marquee, html[data-motion="paused"] .voices-
 }
 @media (max-height: 500px) {
   .hero-stage { height: 330px; }
-  .campaign-sticky-actions { padding: 4px 12px max(4px, env(safe-area-inset-bottom)); gap: 8px; }
-  .campaign-sticky-actions > * { height: 44px; min-height: 44px; }
 }
 
 .lazy-responsive-region { --lazy-reserved-height: var(--lazy-mobile); }
