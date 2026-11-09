@@ -47,23 +47,24 @@ export function FundraiserGallery({
     // Check for legacy cover_photo_url fallback
     if (coverPhotoUrl) {
       return (
-      <div className="relative w-full h-64 lg:h-80 bg-muted/30">
+      <div className="relative w-full aspect-[4/3] overflow-hidden bg-muted/30">
+        <img aria-hidden="true" alt="" src={transformedFundraiserImage(coverPhotoUrl, 160) ?? coverPhotoUrl} className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-2xl" />
         <img
           src={transformedFundraiserImage(coverPhotoUrl, 960) ?? coverPhotoUrl}
           srcSet={[
             [480, transformedFundraiserImage(coverPhotoUrl, 480)],
             [768, transformedFundraiserImage(coverPhotoUrl, 768)],
             [1200, transformedFundraiserImage(coverPhotoUrl, 1200)],
+            [1600, transformedFundraiserImage(coverPhotoUrl, 1600)],
           ].filter((entry): entry is [number, string] => typeof entry[1] === 'string').map(([width, url]) => `${url} ${width}w`).join(', ') || undefined}
           sizes="(max-width: 767px) 100vw, (max-width: 1023px) calc(100vw - 2rem), min(760px, calc(100vw - 28rem))"
           width={1200}
-          height={600}
+          height={900}
           alt={fundraiserTitle}
-          className="w-full h-full object-cover"
+          className="relative w-full h-full object-contain"
           loading="eager"
           decoding="async"
         />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
           
           {isOwner && (
             <Button
@@ -135,20 +136,20 @@ export function FundraiserGallery({
 
     // Visitor view - branded category fallback
     return (
-      <div className="h-64 w-full lg:h-80"><FundraiserImageFallback category={category} /></div>
+      <div className="aspect-[4/3] w-full"><FundraiserImageFallback category={category} /></div>
     );
   }
 
   // Single image
   if (sortedImages.length === 1) {
     return (
-      <div className="relative w-full h-64 lg:h-80 bg-muted/30">
-        <ResponsivePhoto sizes="(max-width: 1023px) calc(100vw - 2rem), 760px" width={1200} height={600} loading="eager"
+      <div className="relative w-full aspect-[4/3] overflow-hidden bg-muted/30">
+        <img aria-hidden="true" alt="" src={transformedFundraiserImage(sortedImages[0].image_url, 160) ?? sortedImages[0].image_url} className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-2xl" />
+        <ResponsivePhoto sizes="(max-width: 1023px) calc(100vw - 2rem), 760px" width={1200} height={900} loading="eager"
           src={sortedImages[0].image_url}
           alt={fundraiserTitle}
-          className="w-full h-full object-cover"
+          className="relative w-full h-full object-contain"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
         
         {isOwner && (
           <Button
@@ -169,25 +170,25 @@ export function FundraiserGallery({
   return (
     <div className="relative">
       {/* Main image */}
-      <div className="relative w-full h-64 lg:h-80 overflow-hidden bg-muted/30">
-        <ResponsivePhoto sizes="(max-width: 1023px) calc(100vw - 2rem), 760px" width={1200} height={600} loading="eager"
+      <div className="relative w-full aspect-[4/3] overflow-hidden bg-muted/30">
+        <img aria-hidden="true" alt="" src={transformedFundraiserImage(sortedImages[activeIndex].image_url, 160) ?? sortedImages[activeIndex].image_url} className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-2xl" />
+        <ResponsivePhoto sizes="(max-width: 1023px) calc(100vw - 2rem), 760px" width={1200} height={900} loading="eager"
           src={sortedImages[activeIndex].image_url}
           alt={`${fundraiserTitle} - Photo ${activeIndex + 1}`}
-          className="w-full h-full object-cover transition-opacity duration-300"
+          className="relative w-full h-full object-contain transition-opacity duration-300"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
 
         {/* Navigation arrows */}
         <button
           onClick={goToPrev}
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-background/85 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
           aria-label="Previous image"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
         <button
           onClick={goToNext}
-          className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
+          className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-background/85 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
           aria-label="Next image"
         >
           <ChevronRight className="w-5 h-5" />
@@ -212,21 +213,21 @@ export function FundraiserGallery({
       </div>
 
       {/* Thumbnail strip */}
-      <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex gap-2 bg-background/90 backdrop-blur-sm p-2 rounded-xl border border-border shadow-lg">
+      <div className="flex gap-2 overflow-x-auto bg-background pt-3">
         {sortedImages.map((image, index) => (
           <button
             key={image.id}
             onClick={() => setActiveIndex(index)}
             className={cn(
-              "w-12 h-12 rounded-lg overflow-hidden transition-all",
+              "h-16 w-16 shrink-0 rounded-lg overflow-hidden transition-all",
               index === activeIndex
-                ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                ? "ring-2 ring-inset ring-primary"
                 : "opacity-70 hover:opacity-100"
             )}
           >
             <img
               src={transformedFundraiserImage(image.image_url, 160) ?? image.image_url}
-              alt={`Thumbnail ${index + 1}`} width={48} height={48} loading="lazy" decoding="async"
+              alt={`Thumbnail ${index + 1}`} width={64} height={64} loading="lazy" decoding="async"
               className="w-full h-full object-cover"
             />
           </button>
