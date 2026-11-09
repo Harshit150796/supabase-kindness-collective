@@ -49,7 +49,7 @@ function DonationRow({ d, profile }: { d: PublicDonation; profile?: DonorProfile
         ? <img src="/favicon-192.png" alt="" loading="lazy" className="mt-0.5 h-9 w-9 shrink-0 rounded-full bg-background object-contain" />
         : profile?.avatar_url && !d.is_anonymous
         ? <img src={profile.avatar_url} alt="" loading="lazy" className="mt-0.5 h-9 w-9 shrink-0 rounded-full object-cover" />
-        : <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium text-secondary-foreground">
+        : <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm bg-verify text-verify-foreground ring-2 ring-verify/20 ring-offset-2 ring-offset-background font-medium">
             {d.is_anonymous ? <Heart className="h-4 w-4" /> : (d.display_name?.[0] ?? 'S').toUpperCase()}
           </span>}
       <div className="min-w-0 flex-1">
