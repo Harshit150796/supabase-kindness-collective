@@ -14,6 +14,8 @@ export interface GivePage {
   lead: string;
   primary: { label: string; to: string };
   secondary?: { label: string; to: string };
+  /** A quieter text link after the two buttons. */
+  heroLink?: { label: string; to: string };
   /** Which requests to show: need ids from src/lib/helpNeeds.ts, or every open request when empty. */
   needs: string[];
   requestsTitle: string;
@@ -48,7 +50,9 @@ export const GIVE_PAGES: GivePage[] = [
     h1: 'Donate a gift card to someone who asked for one',
     lead: 'Every request on CouponDonation names the stores that would help most. Pick a request, choose an amount, and your gift becomes a gift card for that store, delivered to the person who asked.',
     primary: { label: 'Donate a gift card', to: '/donate' },
-    secondary: { label: 'See who asked', to: '#open-requests' },
+    // Founder request (Nov 9, 2026): giving a card you already have sits right beside the main button.
+    secondary: { label: 'Donate a card you have', to: '/donate-a-card' },
+    heroLink: { label: 'See who asked', to: '#open-requests' },
     needs: [],
     requestsTitle: 'People asking for gift cards now',
     stores: ['Walmart', 'Kroger', 'Aldi', 'Costco', 'Target', 'Amazon', 'CVS', 'Walgreens', 'DoorDash', 'Uber', 'Instacart', 'Publix'],
@@ -56,7 +60,7 @@ export const GIVE_PAGES: GivePage[] = [
     storesIntro: 'Choose a store to start a gift there. Store names are trademarks of their owners; the stores don’t sponsor CouponDonation.',
     steps: GIVE_STEPS,
     faq: [
-      { q: 'Can I donate a gift card I already have?', a: 'Yes, if it’s a digital code you haven’t used. Use the Donate a card page: our team checks the balance before it goes to the family you choose or our shared pool.' },
+      { q: 'Can I donate a gift card I already have?', a: 'Yes, if it’s a digital code you haven’t used: donate it on our page for unused gift cards. Our team checks the balance before it goes to the family you choose or our shared pool.', link: { text: 'our page for unused gift cards', to: '/donate-a-card' } },
       { q: 'Which gift cards can I give?', a: 'Grocery stores such as Walmart, Kroger, Aldi, Costco and Publix; pharmacies such as CVS and Walgreens; meal and ride services such as DoorDash and Uber; and retailers such as Target, Amazon and Best Buy.' },
       { q: 'Do I choose who receives it?', a: 'Yes. Give from a request’s page to help that person. If you give from the Donate page without choosing a request, your gift cards go to a shared pool that people who asked for help can claim.' },
     ],

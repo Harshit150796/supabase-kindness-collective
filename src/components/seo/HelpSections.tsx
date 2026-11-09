@@ -29,7 +29,8 @@ function ActionLink({ action, variant }: { action: PageAction; variant?: 'outlin
   );
 }
 
-export function PageHero({ h1, lead, primary, secondary, children }: { h1: string; lead: string; primary: PageAction; secondary?: PageAction; children?: ReactNode }) {
+/** `link` is a quieter text link after the buttons (for example, a jump to the requests below). */
+export function PageHero({ h1, lead, primary, secondary, link, children }: { h1: string; lead: string; primary: PageAction; secondary?: PageAction; link?: PageAction; children?: ReactNode }) {
   return (
     <section className="pb-14 pt-28 md:pb-20 md:pt-36">
       <div className="container mx-auto max-w-6xl px-4">
@@ -38,6 +39,9 @@ export function PageHero({ h1, lead, primary, secondary, children }: { h1: strin
         <div className="mt-8 flex flex-wrap gap-3">
           <ActionLink action={primary} />
           {secondary && <ActionLink action={secondary} variant="outline" />}
+          {link && (link.to.startsWith('#')
+            ? <a href={link.to} className="inline-flex min-h-11 items-center px-2 text-[16px] font-medium text-primary hover:underline">{link.label}</a>
+            : <Link to={link.to} className="inline-flex min-h-11 items-center px-2 text-[16px] font-medium text-primary hover:underline">{link.label}</Link>)}
         </div>
         {children}
       </div>
@@ -168,6 +172,19 @@ export function ResourceList({ title, intro, items }: { title: string; intro: st
   );
 }
 
+/** An answer as text, with its `link` words (if any) linking to their page. */
+function Answer({ item }: { item: FaqItem }) {
+  const at = item.link ? item.a.indexOf(item.link.text) : -1;
+  if (!item.link || at < 0) return <>{item.a}</>;
+  return (
+    <>
+      {item.a.slice(0, at)}
+      <Link to={item.link.to} className="font-medium text-primary underline underline-offset-2 hover:no-underline">{item.link.text}</Link>
+      {item.a.slice(at + item.link.text.length)}
+    </>
+  );
+}
+
 /** Questions with their answers shown in full, so people and search engines read the same thing. */
 export function FaqList({ title = 'Questions people ask', items, children }: { title?: string; items: FaqItem[]; children?: ReactNode }) {
   return (
@@ -179,7 +196,7 @@ export function FaqList({ title = 'Questions people ask', items, children }: { t
           {items.map((item) => (
             <div key={item.q}>
               <dt className="font-sans text-lg font-semibold text-foreground">{item.q}</dt>
-              <dd className="mt-2 text-[16px] leading-relaxed text-muted-foreground">{item.a}</dd>
+              <dd className="mt-2 text-[16px] leading-relaxed text-muted-foreground"><Answer item={item} /></dd>
             </div>
           ))}
         </dl>

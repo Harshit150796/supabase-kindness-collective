@@ -14,6 +14,8 @@ export interface HelpResource {
 export interface FaqItem {
   q: string;
   a: string;
+  /** Words in the answer that link to another page (they must appear in `a` exactly). */
+  link?: { text: string; to: string };
 }
 
 export interface NeedPage {

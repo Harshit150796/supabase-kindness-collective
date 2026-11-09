@@ -40,7 +40,7 @@ export default function GivePage() {
       <SEO title={page.title} description={page.description} path={page.path} jsonLd={jsonLd} />
       <Navbar />
       <main>
-        <PageHero h1={page.h1} lead={page.lead} primary={page.primary} secondary={page.secondary} />
+        <PageHero h1={page.h1} lead={page.lead} primary={page.primary} secondary={page.secondary} link={page.heroLink} />
         <OpenRequests
           title={page.requestsTitle}
           needs={page.needs}
