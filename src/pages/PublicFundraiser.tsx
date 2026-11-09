@@ -119,7 +119,7 @@ const PublicFundraiser = () => {
   const seoTitle = place ? `${fundraiser.title} — ${place}` : fundraiser.title;
 
   return (
-    <div className="min-h-dvh bg-background pb-24 lg:pb-0">
+    <div className="min-h-dvh bg-background">
       <SEO
         title={seoTitle}
         description={snippet(`${asking} ${fundraiser.story ?? ""}`)}
