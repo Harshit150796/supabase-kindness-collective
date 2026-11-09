@@ -28,3 +28,32 @@ export function applyLineup<T extends { id: string }>(list: T[], placements: Pla
   const placedIds = new Set(placed.map((f) => f.id));
   return [...placed, ...visible.filter((f) => !placedIds.has(f.id))];
 }
+
+/** The most campaigns a lineup can place (admin_set_homepage_lineup). */
+export const LINEUP_MAX = 100;
+
+/**
+ * Shuffle in Admin → Homepage: every open campaign that isn't hidden gets a random position, except pinned
+ * ones, which keep the position they have. `order` is the current lineup, `pool` the open, not-hidden ids.
+ */
+export function shuffleLineup(order: string[], pinned: ReadonlySet<string>, pool: string[], random: () => number = Math.random): string[] {
+  const kept = order.map((id, index) => ({ id, index })).filter((x) => pinned.has(x.id));
+  const keptIds = new Set(kept.map((x) => x.id));
+  const rest = [...new Set(pool)].filter((id) => !keptIds.has(id));
+  for (let i = rest.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [rest[i], rest[j]] = [rest[j], rest[i]];
+  }
+  const size = Math.min(LINEUP_MAX, kept.length + rest.length);
+  const slots: (string | undefined)[] = new Array(size).fill(undefined);
+  // Pinned campaigns stay at their position (or the nearest free one before it if the list got shorter).
+  for (const { id, index } of kept) {
+    let at = Math.min(index, size - 1);
+    while (at > 0 && slots[at] !== undefined) at--;
+    while (at < size && slots[at] !== undefined) at++;
+    if (at < size) slots[at] = id;
+  }
+  let next = 0;
+  for (let i = 0; i < size; i++) if (slots[i] === undefined) slots[i] = rest[next++];
+  return slots.filter((id): id is string => !!id);
+}
