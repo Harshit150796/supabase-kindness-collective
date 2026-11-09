@@ -137,7 +137,7 @@ const PublicFundraiser = () => {
 
       <main className="container mx-auto px-4 pt-24 md:pt-28">
         <Link to="/stories" className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ChevronLeft className="h-4 w-4" />All fundraisers</Link>
-        <Reveal><h1 className="mt-4 max-w-4xl font-display text-4xl font-normal leading-[1.05] text-ink md:text-6xl dark:text-foreground">{fundraiser.title}</h1>{place && <p className="mt-3 flex items-center gap-1.5 text-[15px] text-muted-foreground"><MapPin className="h-4 w-4" aria-hidden="true" />{place}</p>}{fundraiser.is_example && <p className="mt-3 text-sm text-muted-foreground">Example campaign · Giving is closed on example campaigns.</p>}</Reveal>
+        <Reveal><h1 className="mt-4 max-w-4xl font-display text-4xl font-normal leading-[1.05] text-ink md:text-6xl dark:text-foreground">{fundraiser.title}</h1>{place && <p className="mt-3 flex items-center gap-1.5 text-[15px] text-muted-foreground"><MapPin className="h-4 w-4" aria-hidden="true" />{place}</p>}{fundraiser.is_example && <p className="mt-3 text-sm text-muted-foreground"></p>}</Reveal>
 
         <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-14">
           <div className="min-w-0 space-y-12">
