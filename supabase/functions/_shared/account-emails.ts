@@ -1,6 +1,7 @@
 // Donation confirmations and "fundraiser is live" emails. Exactly once per source via
 // claim_account_email (unique kind+source_id). Reads payment tables only; never writes them.
 import { shell, escapeHtml, NOTIFY_SENDER, SUPPORT_LINE, type RenderedEmail } from './email-layout.ts';
+import { SHARE_HOST } from './share-preview.ts';
 
 const SITE = 'https://coupondonation.com';
 const TOKEN_DAYS = 30;
@@ -47,16 +48,89 @@ export function renderDonationConfirmation(o: {
   return { subject, html, text };
 }
 
-export function renderFundraiserLive(o: { firstName?: string; title: string; slug: string; test?: boolean }): RenderedEmail {
-  const url = `${SITE}/f/${o.slug}`;
+/** Who a fundraiser is for (apply flow): it decides how the organizer's ready-made message reads. */
+export type Beneficiary = 'yourself' | 'family' | 'organization' | string | null | undefined;
+
+/**
+ * The message an organizer sends friends, family and their church: what the fundraiser is, what a gift becomes
+ * and the share link (which shows the fundraiser's photo and title in chats). Every line is true of every
+ * fundraiser: gifts become gift cards for the stores asked for, and the smallest gift is $10.
+ */
+export function liveShareMessage(o: { title: string; stores?: string[]; beneficiary?: Beneficiary }, shareUrl: string) {
+  const shops = (o.stores ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 2).join(' or ');
+  const becomes = o.beneficiary === 'organization'
+    ? `Every gift becomes a store gift card${shops ? ` (like ${shops})` : ''} for the people our group helps`
+    : `Every gift becomes a gift card for ${o.beneficiary === 'family' ? 'a store my family needs' : 'a store I need'}${shops ? `, like ${shops}` : ''}`;
+  return {
+    becomes,
+    chat: `Hi! I’ve started a fundraiser on CouponDonation: “${o.title}”. ${becomes}, and gifts start at $10. Could you take a look, and pass it on if you can?\n${shareUrl}`,
+  };
+}
+
+/**
+ * "Your fundraiser is live" (founder request, Nov 9, 2026): sent once when a fundraiser is approved, with the
+ * checklist that gets first gifts: send it to five people, post it in the family group chat, ask your church or
+ * community group. Each step has one-tap links that open a text, WhatsApp, Facebook or an email draft with the
+ * message already written, and the message itself is in the email to copy.
+ */
+export function renderFundraiserLive(o: { firstName?: string; title: string; slug: string; id?: string; stores?: string[]; beneficiary?: Beneficiary; test?: boolean }): RenderedEmail {
+  const url = `${SITE}/f/${encodeURIComponent(o.slug)}`;
+  const shareUrl = `${SHARE_HOST}/f/${encodeURIComponent(o.slug)}`;
+  const dashboardUrl = o.id ? `${SITE}/fundraiser/${o.id}` : `${SITE}/dashboard`;
   const greeting = o.firstName ? `Hi ${o.firstName}` : 'Hi there';
-  const p1 = `Your fundraiser “${o.title}” is approved and now visible to donors.`;
-  const p2 = 'You can manage it any time from your dashboard.';
-  const html = shell({ preheader: 'Your fundraiser is now visible to donors.', greeting, status: 'Fundraiser live', headline: 'Your fundraiser is ready to share', paragraphs: [p1, p2],
-    valueCard: { label: 'Fundraiser', value: o.title, details: ['Approved and visible to donors'] },
-    link: { label: 'View your fundraiser', url }, footer: o.test ? 'This is a test message.' : undefined, sample: o.test });
-  const text = [`${greeting},`, '', p1, '', `View your fundraiser: ${url}`, '', p2, '', '— The CouponDonation team', ...(o.test ? ['', 'This is a test message.'] : []), '', SUPPORT_LINE].join('\n');
-  return { subject: 'Your fundraiser is live', html, text };
+  const { becomes, chat } = liveShareMessage(o, shareUrl);
+  const enc = encodeURIComponent;
+  const churchNote = [
+    'Hello,', '',
+    `I’ve started a fundraiser on CouponDonation: “${o.title}”. Would you be willing to share it with our community, in the bulletin, a newsletter or a group chat?`, '',
+    `${becomes}, and gifts start at $10. Here’s the link:`, shareUrl, '',
+    'Thank you,', o.firstName ?? '',
+  ].join('\n').trim();
+  const steps = [
+    {
+      title: 'Send it to five people who know you',
+      detail: 'Family, close friends, a coworker you trust. Send it to each one yourself, with a line about why it matters to you. A personal message is harder to miss than a post.',
+      actions: [
+        { label: 'Text message', url: `sms:?&body=${enc(chat)}` },
+        { label: 'WhatsApp', url: `https://wa.me/?text=${enc(chat)}` },
+        { label: 'Email', url: `mailto:?subject=${enc(`“${o.title}” on CouponDonation`)}&body=${enc(chat)}` },
+      ],
+    },
+    {
+      title: 'Post it in your family group chat',
+      detail: 'Paste the message below into your family’s group chat and ask everyone to pass it on.',
+      actions: [
+        { label: 'WhatsApp', url: `https://wa.me/?text=${enc(chat)}` },
+        { label: 'Facebook', url: `https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}` },
+      ],
+    },
+    {
+      title: 'Ask your church or community group',
+      detail: 'Ask your pastor, faith leader or group organizer to share it in the bulletin, a newsletter or the group chat. We’ve written the note for you.',
+      actions: [{ label: 'Email your church or group', url: `mailto:?subject=${enc('Could you share my fundraiser?')}&body=${enc(churchNote)}` }],
+    },
+  ];
+  const p1 = `Good news: “${o.title}” is approved and live on CouponDonation.`;
+  const p2 = 'First gifts usually come from people who already know you, and once someone gives, your fundraiser is shown ahead of ones with no gifts yet in the lists donors browse. These three steps help most:';
+  const hint = 'Your link shows your fundraiser’s photo and title when you paste it into a chat or a post.';
+  const after = 'After your first gift, post an update from your dashboard to thank the people who gave. It also gives everyone a reason to share it again.';
+  const html = shell({
+    preheader: 'Send it to five people, post it in your family chat and ask your church. We’ve written the message for you.',
+    greeting, status: 'Fundraiser live', headline: 'Three steps to your first gifts', paragraphs: [p1, p2],
+    checklist: steps, copyBox: { label: 'A message you can copy', body: chat, hint }, closing: [after],
+    link: { label: 'See your fundraiser', url }, secondaryLink: { label: 'Share it from your dashboard', url: dashboardUrl },
+    footer: o.test ? 'This is a test message.' : undefined, sample: o.test,
+  });
+  const text = [
+    `${greeting},`, '', p1, '', p2, '',
+    ...steps.flatMap((step, i) => [`[ ] ${i + 1}. ${step.title}`, `    ${step.detail}`, '']),
+    'A message you can copy:', '', chat, '', hint, '',
+    'A note for your church or group:', '', churchNote, '',
+    after, '',
+    `See your fundraiser: ${url}`, `Share it from your dashboard: ${dashboardUrl}`, '',
+    '— The CouponDonation team', ...(o.test ? ['', 'This is a test message.'] : []), '', SUPPORT_LINE,
+  ].join('\n');
+  return { subject: 'Your fundraiser is live: 3 steps to your first gifts', html, text };
 }
 
 export async function sendAccountMail(key: string, to: string, mail: RenderedEmail) {
@@ -104,10 +178,10 @@ async function buildDonation(admin: any, id: string): Promise<{ to: string | nul
 
 // deno-lint-ignore no-explicit-any
 async function buildLive(admin: any, id: string) {
-  const { data: f } = await admin.from('fundraisers').select('title, unique_slug, user_id').eq('id', id).maybeSingle();
+  const { data: f } = await admin.from('fundraisers').select('id, title, unique_slug, user_id, preferred_brands, beneficiary_type').eq('id', id).maybeSingle();
   if (!f?.unique_slug) return { to: null, mail: null };
   const { data: p } = await admin.from('profiles').select('email, full_name').eq('user_id', f.user_id).maybeSingle();
-  return { to: p?.email ?? null, mail: renderFundraiserLive({ firstName: first(p?.full_name), title: f.title, slug: f.unique_slug }) };
+  return { to: p?.email ?? null, mail: renderFundraiserLive({ firstName: first(p?.full_name), title: f.title, slug: f.unique_slug, id: f.id, stores: f.preferred_brands ?? [], beneficiary: f.beneficiary_type }) };
 }
 
 /** Claim then send. Returns 'sent' | 'not_due' | 'no_recipient' | 'failed'. */
