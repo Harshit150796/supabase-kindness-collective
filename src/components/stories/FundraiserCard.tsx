@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/personName";
 import { Link } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 import { ImageReveal } from '@/components/ui/editorial-motion';

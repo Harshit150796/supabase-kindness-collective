@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/personName";
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2, Search } from 'lucide-react';
@@ -37,7 +38,7 @@ function FeedEntry({ item }: { item: FeedItem }) {
       <div className="flex items-start gap-3">
         <ProfileAvatar src={who.avatar_url} name={who.display_name} className="h-11 w-11 text-lg" />
         <p className="pt-1.5 text-foreground">
-          {who.username ? <Link to={profilePath(who.username)} className="font-semibold underline-offset-4 hover:underline">{who.display_name}</Link> : <span className="font-semibold">{who.display_name}</span>}
+          {who.username ? <Link to={profilePath(who.username)} className="font-semibold underline-offset-4 hover:underline">{displayName(who.display_name)}</Link> : <span className="font-semibold">{displayName(who.display_name)}</span>}
           {item.kind === 'fundraiser' ? ' started a fundraiser' : ' supported a fundraiser'}
           <span className="block text-sm text-muted-foreground">{ago(item.at)}</span>
         </p>
@@ -137,7 +138,7 @@ export default function People() {
                       <li key={n.id} className="flex items-center gap-3 py-3">
                         <ProfileAvatar src={n.actor.avatar_url} name={n.actor.display_name} className="h-10 w-10 text-lg" />
                         <p className="text-foreground">
-                          {n.actor.username ? <Link to={profilePath(n.actor.username)} className="font-semibold underline-offset-4 hover:underline">{n.actor.display_name}</Link> : <span className="font-semibold">{n.actor.display_name}</span>} started following you
+                          {n.actor.username ? <Link to={profilePath(n.actor.username)} className="font-semibold underline-offset-4 hover:underline">{displayName(n.actor.display_name)}</Link> : <span className="font-semibold">{displayName(n.actor.display_name)}</span>} started following you
                           <span className="block text-sm text-muted-foreground">{ago(n.at)}</span>
                         </p>
                       </li>

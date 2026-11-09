@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/personName";
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, MessageCircle } from 'lucide-react';
@@ -72,8 +73,8 @@ export function TeamSection({ team, fundraiserId, allowMessages, isTeam, benefic
                 : <span className="flex h-12 w-12 items-center justify-center rounded-full bg-ink text-lg text-ink-foreground">{(m.display_name ?? 'O')[0].toUpperCase()}</span>}
               <div className="min-w-0">
                 {m.username
-                  ? <Link to={`/u/${m.username}`} className="block truncate font-medium text-foreground underline-offset-4 hover:underline">{m.display_name ?? 'Organizer'}</Link>
-                  : <p className="truncate font-medium text-foreground">{m.display_name ?? 'Organizer'}</p>}
+                  ? <Link to={`/u/${m.username}`} className="block truncate font-medium text-foreground underline-offset-4 hover:underline">{displayName(m.display_name) ?? 'Organizer'}</Link>
+                  : <p className="truncate font-medium text-foreground">{displayName(m.display_name) ?? 'Organizer'}</p>}
                 <p className="text-sm text-muted-foreground">{m.role === 'organizer' ? 'Organizer' : 'Co-organizer'}</p>
               </div>
             </div>
@@ -94,7 +95,7 @@ export function TeamSection({ team, fundraiserId, allowMessages, isTeam, benefic
           </div>
         )}
       </div>
-      <MessageDialog open={open} onOpenChange={setOpen} fundraiserId={fundraiserId} organizerName={organizer?.display_name ?? 'the organizer'} />
+      <MessageDialog open={open} onOpenChange={setOpen} fundraiserId={fundraiserId} organizerName={displayName(organizer?.display_name) ?? 'the organizer'} />
     </section>
   );
 }
