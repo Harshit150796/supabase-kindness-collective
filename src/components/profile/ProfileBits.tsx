@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/personName";
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, BellOff, Check, Loader2, UserPlus } from 'lucide-react';
@@ -64,7 +65,7 @@ export function PersonRowView({ person, signedIn, onFollow }: { person: PersonRo
     <>
       <ProfileAvatar src={person.avatar_url} name={person.display_name} className="h-12 w-12 text-xl" />
       <span className="min-w-0">
-        <span className="block truncate font-medium text-foreground">{person.display_name}</span>
+        <span className="block truncate font-medium text-foreground">{displayName(person.display_name)}</span>
         {person.username && <span className="block truncate text-sm text-muted-foreground">@{person.username}</span>}
         {person.bio && <span className="mt-0.5 line-clamp-1 block text-sm text-muted-foreground">{person.bio}</span>}
       </span>

@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/personName";
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Flag, EyeOff, Eye } from 'lucide-react';
@@ -89,7 +90,7 @@ export function CommentsSection({ fundraiserId, isTeam, slug }: { fundraiserId: 
             <div className="flex items-start gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium text-secondary-foreground">{c.display_name[0]?.toUpperCase()}</span>
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-foreground">{c.display_name} <span className="font-normal text-sm text-muted-foreground">· {timeAgo(c.created_at)}{c.is_hidden ? ' · hidden' : ''}</span></p>
+                <p className="font-medium text-foreground">{displayName(c.display_name)} <span className="font-normal text-sm text-muted-foreground">· {timeAgo(c.created_at)}{c.is_hidden ? ' · hidden' : ''}</span></p>
                 <p className="mt-1 whitespace-pre-line text-muted-foreground">{c.body}</p>
                 <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
                   <button onClick={() => toggleLike(c.id)} disabled={!user} className="flex items-center gap-1 disabled:cursor-default" aria-label="Like">

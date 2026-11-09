@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/personName";
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Calendar, Globe, Loader2, Lock, MapPin, MoreHorizontal, Pencil, Share2 } from 'lucide-react';
@@ -105,7 +106,7 @@ export default function PublicProfile() {
           <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-end">
             <ProfileAvatar src={p.avatar_url} name={p.display_name} className="-mt-14 h-28 w-28 text-5xl ring-4 ring-background md:-mt-20 md:h-40 md:w-40 md:text-6xl" />
             <div className="min-w-0 md:pb-2">
-              <h1 className="break-words font-display text-5xl font-normal leading-none text-foreground md:text-6xl">{p.display_name}</h1>
+              <h1 className="break-words font-display text-5xl font-normal leading-none text-foreground md:text-6xl">{displayName(p.display_name)}</h1>
               <p className="mt-2 text-muted-foreground">@{p.username}</p>
             </div>
           </div>

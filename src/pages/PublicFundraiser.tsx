@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/personName";
 import { SEO, breadcrumbJsonLd } from "@/components/SEO";
 import { snippet } from "@/lib/seo";
 import { needForCategory } from "@/data/needs";
@@ -104,7 +105,7 @@ const PublicFundraiser = () => {
     );
   }
 
-  const organizer = team.find((t) => t.role === "organizer")?.display_name ?? "the organizer";
+  const organizer = displayName(team.find((t) => t.role === "organizer")?.display_name) ?? "the organizer";
   const beneficiary = fundraiser.show_beneficiary_name && fundraiser.beneficiary_display_name?.trim() ? fundraiser.beneficiary_display_name.trim() : null;
   const donate = () => navigate(`/donate?fundraiser=${fundraiser.id}`);
   const created = fundraiser.created_at ? new Date(fundraiser.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : null;
@@ -114,7 +115,7 @@ const PublicFundraiser = () => {
   const needs = requestNeeds(request?.help_categories, fundraiser.category);
   // Search and share text: who is asking, for what and where, then the start of their story.
   const helpPage = needForCategory(needs[0] ?? fundraiser.category);
-  const asking = `${team.find((t) => t.role === "organizer")?.display_name ?? "A family"} is asking for help with ${needs.length ? needs.map((n) => needLabel(n).toLowerCase()).join(", ") : "everyday needs"}${place ? ` in ${place}` : ""}.`;
+  const asking = `${displayName(team.find((t) => t.role === "organizer")?.display_name) ?? "A family"} is asking for help with ${needs.length ? needs.map((n) => needLabel(n).toLowerCase()).join(", ") : "everyday needs"}${place ? ` in ${place}` : ""}.`;
   const seoTitle = place ? `${fundraiser.title} — ${place}` : fundraiser.title;
 
   return (
@@ -230,7 +231,7 @@ const PublicFundraiser = () => {
 
       {live.justDonated && (
         <div role="status" className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] left-1/2 z-50 max-w-[calc(100vw-2rem)] -translate-x-1/2 animate-fade-in whitespace-nowrap rounded-full bg-ink px-5 py-3 text-sm text-ink-foreground shadow-lg [@media(max-height:500px)]:bottom-[calc(3.75rem+env(safe-area-inset-bottom))] lg:bottom-8">
-          <Heart className="mr-2 inline h-4 w-4 text-primary" />{live.justDonated.display_name} just donated {usd(live.justDonated.amount)}
+          <Heart className="mr-2 inline h-4 w-4 text-primary" />{displayName(live.justDonated.display_name)} just donated {usd(live.justDonated.amount)}
         </div>
       )}
 

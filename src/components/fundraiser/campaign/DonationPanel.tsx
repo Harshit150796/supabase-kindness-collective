@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/personName";
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Share2, CheckCircle2 } from 'lucide-react';
@@ -53,8 +54,8 @@ function DonationRow({ d, profile }: { d: PublicDonation; profile?: DonorProfile
           </span>}
       <div className="min-w-0 flex-1">
         {profile && !d.is_anonymous
-          ? <Link to={`/u/${profile.username}`} className="block truncate font-medium text-foreground underline-offset-4 hover:underline">{d.display_name}</Link>
-          : <p className="truncate font-medium text-foreground">{d.display_name}</p>}
+          ? <Link to={`/u/${profile.username}`} className="block truncate font-medium text-foreground underline-offset-4 hover:underline">{displayName(d.display_name)}</Link>
+          : <p className="truncate font-medium text-foreground">{displayName(d.display_name)}</p>}
         <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{usd(d.amount)}</span>{d.source === 'company' || d.source === 'outside' ? ' in coupons' : ''} · {timeAgo(d.created_at)}</p>
         {d.message && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">“{d.message}”</p>}
       </div>
