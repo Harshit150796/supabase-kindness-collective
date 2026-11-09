@@ -148,7 +148,7 @@ const PublicFundraiser = () => {
 
             <div className="space-y-4 border-b border-border pb-8">
               <p className="flex items-center gap-3 text-foreground">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink text-ink-foreground">{organizer[0]?.toUpperCase()}</span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-verify text-verify-foreground ring-2 ring-verify/20 ring-offset-2 ring-offset-background font-medium">{organizer[0]?.toUpperCase()}</span>
                 <span><span className="font-medium">{organizer}</span>{beneficiary ? <> is organizing for <span className="font-medium">{beneficiary}</span></> : " is organizing this fundraiser"}</span>
               </p>
             </div>
@@ -162,7 +162,7 @@ const PublicFundraiser = () => {
 
             <div className="flex flex-wrap gap-3">
               {!fundraiser.is_example && <Button size="lg" onClick={donate}><Heart className="mr-2 h-4 w-4" />Donate</Button>}
-              <Button size="lg" className="bg-ink text-ink-foreground hover:bg-ink/90" onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
+              <Button size="lg" className="bg-verify text-verify-foreground hover:bg-verify/90" onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
             </div>
 
             {(live.converted > 0 || live.retailers.length > 0) && (
@@ -198,7 +198,7 @@ const PublicFundraiser = () => {
             <section>
               <h2 className="font-display text-4xl font-normal text-foreground">Help spread the word</h2>
               <div className="mt-6 max-w-md"><ShareCardPreview title={fundraiser.title} cover={resolvedCover} raised={live.totalRaised} goal={Number(fundraiser.monthly_goal)} organizer={organizer} /></div>
-              <Button className="mt-4 bg-ink text-ink-foreground hover:bg-ink/90" onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
+              <Button className="mt-4 bg-verify text-verify-foreground hover:bg-verify/90" onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
             </section>
 
             <CommentsSection fundraiserId={fundraiser.id} isTeam={isTeam} slug={fundraiser.unique_slug!} />
@@ -237,7 +237,7 @@ const PublicFundraiser = () => {
 
       <div className="campaign-sticky-actions fixed inset-x-0 bottom-0 z-40 flex gap-3 border-t border-border bg-background/95 p-3 backdrop-blur lg:hidden">
         {!fundraiser.is_example && <Button className="h-12 flex-1 text-base font-semibold" onClick={donate}><Heart className="mr-2 h-4 w-4" />Donate</Button>}
-        <Button className="h-12 flex-1 bg-ink text-ink-foreground hover:bg-ink/90" onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
+        <Button className="h-12 flex-1 bg-verify text-verify-foreground hover:bg-verify/90" onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
       </div>
 
       <ShareSheet open={share} onOpenChange={setShare} slug={fundraiser.unique_slug!} title={fundraiser.title} cover={resolvedCover} raised={live.totalRaised} goal={Number(fundraiser.monthly_goal)} organizer={organizer} />

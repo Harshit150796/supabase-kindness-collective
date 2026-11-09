@@ -59,7 +59,7 @@ export function ShareSheet({ open, onOpenChange, slug, title, cover, raised, goa
         <ShareCardPreview title={title} cover={cover} raised={raised} goal={goal} organizer={organizer} />
         <div className="flex gap-2">
           <input readOnly value={url} className="min-w-0 flex-1 rounded-full bg-secondary px-4 text-sm" aria-label="Fundraiser link" />
-          <Button onClick={copy} className="bg-ink text-ink-foreground hover:bg-ink/90">{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}<span className="ml-2">Copy</span></Button>
+          <Button onClick={copy} className="bg-verify text-verify-foreground hover:bg-verify/90">{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}<span className="ml-2">Copy</span></Button>
         </div>
         {typeof navigator !== 'undefined' && 'share' in navigator && <Button variant="outline" onClick={native}><Share2 className="mr-2 h-4 w-4" />Share from this device</Button>}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">

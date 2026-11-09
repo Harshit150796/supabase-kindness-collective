@@ -88,7 +88,7 @@ export function CommentsSection({ fundraiserId, isTeam, slug }: { fundraiserId: 
         {comments.slice(0, limit).map((c) => (
           <li key={c.id} className={`py-5 ${c.is_hidden ? 'opacity-60' : ''}`}>
             <div className="flex items-start gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium text-secondary-foreground">{c.display_name[0]?.toUpperCase()}</span>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm bg-verify text-verify-foreground ring-2 ring-verify/20 ring-offset-2 ring-offset-background font-medium">{c.display_name[0]?.toUpperCase()}</span>
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-foreground">{displayName(c.display_name)} <span className="font-normal text-sm text-muted-foreground">· {timeAgo(c.created_at)}{c.is_hidden ? ' · hidden' : ''}</span></p>
                 <p className="mt-1 whitespace-pre-line text-muted-foreground">{c.body}</p>

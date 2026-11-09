@@ -49,7 +49,7 @@ function DonationRow({ d, profile }: { d: PublicDonation; profile?: DonorProfile
         ? <img src="/favicon-192.png" alt="" loading="lazy" className="mt-0.5 h-9 w-9 shrink-0 rounded-full bg-background object-contain" />
         : profile?.avatar_url && !d.is_anonymous
         ? <img src={profile.avatar_url} alt="" loading="lazy" className="mt-0.5 h-9 w-9 shrink-0 rounded-full object-cover" />
-        : <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium text-secondary-foreground">
+        : <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm bg-verify text-verify-foreground ring-2 ring-verify/20 ring-offset-2 ring-offset-background font-medium">
             {d.is_anonymous ? <Heart className="h-4 w-4" /> : (d.display_name?.[0] ?? 'S').toUpperCase()}
           </span>}
       <div className="min-w-0 flex-1">
@@ -107,7 +107,7 @@ export function DonationPanel({ live, goal, onDonate, onShare, fundraiserId, clo
         ) : (
           <Button size="lg" className="h-14 w-full text-lg font-semibold" onClick={onDonate}><Heart className="mr-2 h-5 w-5" />Donate now</Button>
         )}
-        <Button size="lg" className="h-12 w-full bg-ink text-ink-foreground hover:bg-ink/90" onClick={onShare}><Share2 className="mr-2 h-4 w-4" />Share</Button>
+        <Button size="lg" className="h-12 w-full bg-verify text-verify-foreground hover:bg-verify/90" onClick={onShare}><Share2 className="mr-2 h-4 w-4" />Share</Button>
       </div>
       {live.recent.length > 0 && (
         <>
