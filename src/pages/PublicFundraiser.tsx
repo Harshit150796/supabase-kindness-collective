@@ -192,7 +192,7 @@ const PublicFundraiser = () => {
 
             <UpdatesSection fundraiserId={fundraiser.id} />
 
-            <TeamSection team={team} fundraiserId={fundraiser.id} allowMessages={fundraiser.allow_messages} isTeam={isTeam} beneficiary={beneficiary} slug={fundraiser.unique_slug!} />
+            <TeamSection team={team} fundraiserId={fundraiser.id} allowMessages={fundraiser.allow_messages} isTeam={isTeam} beneficiary={beneficiary} slug={fundraiser.unique_slug!} place={place} />
 
             <section>
               <h2 className="font-display text-4xl font-normal text-foreground">Help spread the word</h2>
