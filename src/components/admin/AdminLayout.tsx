@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, Megaphone, DollarSign, Users, ShieldCheck, Gift, Package, Flag, ListTodo, Bell, FileText,
   BookOpen, MessageSquare, Newspaper, HelpCircle, Mail, UserCog, History, Settings, BarChart3, Search,
-  PanelLeftClose, PanelLeftOpen, Menu, LogOut, Home, Contact, Inbox,
+  PanelLeftClose, PanelLeftOpen, Menu, LogOut, Home, Contact, Inbox, LayoutTemplate,
   Repeat, MessagesSquare, UserRound, MailCheck,
 } from 'lucide-react';
 import logo from '@/assets/logo.png';
@@ -52,6 +52,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     { label: 'Notifications', path: '/admin/notifications', icon: Bell },
   ] },
   { title: 'Content', items: [
+    { label: 'Homepage', path: '/admin/homepage', icon: LayoutTemplate },
     { label: 'Site content', path: '/admin/content', icon: FileText },
     { label: 'Stories', path: '/admin/stories', icon: BookOpen },
     { label: 'Testimonials', path: '/admin/testimonials', icon: MessageSquare },

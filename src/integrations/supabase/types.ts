@@ -2869,6 +2869,38 @@ export type Database = {
         }
         Relationships: []
       }
+      homepage_placements: {
+        Row: {
+          fundraiser_id: string
+          hidden: boolean
+          position: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          fundraiser_id: string
+          hidden?: boolean
+          position?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          fundraiser_id?: string
+          hidden?: boolean
+          position?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homepage_placements_fundraiser_id_fkey"
+            columns: ["fundraiser_id"]
+            isOneToOne: true
+            referencedRelation: "fundraisers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       impact_email_optouts: {
         Row: {
           created_at: string
@@ -4473,6 +4505,10 @@ export type Database = {
       admin_set_coupon_source_credit: {
         Args: { _credit: string; _source: string }
         Returns: Json
+      }
+      admin_set_homepage_lineup: {
+        Args: { _hidden: string[]; _order: string[] }
+        Returns: undefined
       }
       admin_set_restrictions: {
         Args: { _reason: string; _restrictions: string[]; _uid: string }
