@@ -22,6 +22,7 @@ export const ADMIN_LOADERS: Record<string, () => Promise<{ default: React.Compon
   '/admin/followups': () => import('./AdminFollowups'),
   '/admin/tasks': () => import('./AdminTasks'),
   '/admin/notifications': () => import('./AdminNotifications'),
+  '/admin/homepage': () => import('./AdminHomepage'),
   '/admin/content': () => import('./AdminContent'),
   '/admin/stories': () => import('./AdminStories'),
   '/admin/testimonials': () => import('./AdminTestimonials'),

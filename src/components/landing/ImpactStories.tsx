@@ -17,6 +17,8 @@ import { CollectionSwitcher } from './CollectionSwitcher';
 import { collect, COLLECTIONS, photoLabel, type CollectionId } from '@/lib/fundraiserCollections';
 import { type Fundraiser } from '@/hooks/useFundraisers';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
+import { useHomepageLineup } from '@/hooks/useHomepageLineup';
+import { applyLineup, HOMEPAGE_LIMIT } from '@/lib/homepageLineup';
 
 /** One id per need, so old and new ids for the same need (health and healthcare) make one filter. */
 const needKey = (id: string) => needById(id)?.id ?? id;
@@ -28,7 +30,9 @@ const IN_MS = 520;
 type View = { collection: CollectionId; category: string };
 
 export function ImpactStories() {
-  const { data, isLoading, isError, isFetching, refetch } = useFundraisers({ limit: 24 });
+  const { data: open, isLoading, isError, isFetching, refetch } = useFundraisers();
+  // The team's lineup (Admin → Homepage): hidden campaigns never show here; placed ones lead Trending.
+  const lineup = useHomepageLineup();
   // `picked` follows the controls at once; `view` is what the cards show, swapped once the old cards are out.
   const [picked, setPicked] = useState<View>({ collection: 'trending', category: 'all' });
   const [view, setView] = useState<View>(picked);
@@ -48,9 +52,10 @@ export function ImpactStories() {
     timers.current.push(window.setTimeout(() => setPhase('idle'), OUT_MS + IN_MS));
   }, [motion, picked]);
   const category = picked.category;
+  const data = useMemo(() => (open ? applyLineup(open, lineup.data ?? [], false) : open), [open, lineup.data]);
   const categories = useMemo(() => ['all', ...Array.from(new Set((data ?? []).map((f) => f.category).filter(Boolean).map(needKey))).sort((a, b) => needOrder(a) - needOrder(b))], [data]);
   // Trending keeps the ranked order from useFundraisers (src/lib/fundraiserRanking.ts); the other collections pick and order their own (src/lib/fundraiserCollections.ts).
-  const shown = useMemo(() => collect((data ?? []).filter((f) => view.category === 'all' || needKey(f.category) === view.category), view.collection), [data, view]);
+  const shown = useMemo(() => collect(applyLineup((open ?? []).filter((f) => view.category === 'all' || needKey(f.category) === view.category), lineup.data ?? [], view.collection === 'trending'), view.collection).slice(0, HOMEPAGE_LIMIT), [open, lineup.data, view]);
   const labelFor = useCallback((f: Fundraiser) => photoLabel(f, view.collection), [view.collection]);
   const viewName = COLLECTIONS.find((c) => c.id === view.collection)?.label ?? 'Trending';
   const secondLead = shown.length >= 6 ? shown[5] : shown.length === 5 ? shown[1] : null;
