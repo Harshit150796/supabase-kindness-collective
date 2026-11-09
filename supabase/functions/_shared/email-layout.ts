@@ -21,6 +21,10 @@ export interface RenderedEmail {
 }
 
 export type TimelineStep = { label: string; detail?: string; complete: boolean };
+/** A to-do with one-tap links (open the phone's texts, WhatsApp, an email draft…). */
+export type ChecklistStep = { title: string; detail: string; actions?: { label: string; url: string }[] };
+/** Words the reader can copy as they are (a message to send, a note to forward). */
+export type CopyBox = { label: string; body: string; hint?: string };
 export type ValueCard = { label: string; value: string; details?: string[] };
 
 export function escapeHtml(value: string): string {
@@ -37,7 +41,8 @@ const row = (content: string, style = '') => `<tr><td style="${style}">${content
 
 export function shell(opts: {
   preheader: string; greeting?: string; status?: string; headline?: string; paragraphs: string[];
-  valueCard?: ValueCard; timeline?: TimelineStep[]; link?: { label: string; url: string };
+  valueCard?: ValueCard; timeline?: TimelineStep[]; checklist?: ChecklistStep[]; copyBox?: CopyBox; closing?: string[];
+  link?: { label: string; url: string };
   secondaryLink?: { label: string; url: string }; footer?: string; sample?: boolean; code?: string;
   recipient?: boolean; security?: boolean;
 }): string {
@@ -55,6 +60,18 @@ export function shell(opts: {
     const stem = i < (opts.timeline?.length ?? 0) - 1 ? `<div style="width:2px;height:27px;background:${step.complete ? '#9fc8a3' : LINE};margin:3px 0 0 5px;"></div>` : '';
     return `<tr><td width="24" valign="top" style="width:24px;padding:2px 0 0;">${dot}${stem}</td><td valign="top" style="padding:0 0 15px;font-family:${FONT};font-size:14px;line-height:20px;color:${step.complete ? INK : MUTED};"><strong style="font-weight:600;">${escapeHtml(step.label)}</strong>${step.detail ? `<br><span style="font-size:12px;color:${MUTED};">${escapeHtml(step.detail)}</span>` : ''}</td></tr>`;
   }).join('')), 'padding:0 4px 20px;') : '';
+  const checklist = opts.checklist?.length ? row(table(row(table(opts.checklist.map((step, i) => {
+    const box = `<div style="width:14px;height:14px;border:2px solid ${GREEN};border-radius:3px;background:#ffffff;"></div>`;
+    const actions = step.actions?.length ? `<div style="padding-top:10px;">${step.actions.map((a) => `<a href="${escapeHtml(a.url)}" style="display:inline-block;margin:0 6px 6px 0;padding:7px 12px;font-family:${FONT};font-size:13px;line-height:18px;font-weight:700;color:${GREEN};text-decoration:none;background:#ffffff;border:1px solid #b9d6bc;border-radius:4px;">${escapeHtml(a.label)}</a>`).join('')}</div>` : '';
+    const top = i ? 'padding-top:20px;' : '';
+    return `<tr><td width="30" valign="top" style="width:30px;${top}padding-right:0;"><div style="padding-top:3px;">${box}</div></td><td valign="top" style="${top}font-family:${FONT};"><div style="font-size:16px;line-height:22px;font-weight:700;color:${INK};">${escapeHtml(step.title)}</div><div style="padding-top:4px;font-size:14px;line-height:21px;color:${BODY};">${escapeHtml(step.detail)}</div>${actions}</td></tr>`;
+  }).join('')), 'padding:20px 20px 16px;'), `bgcolor="${SOFT}" style="background:${SOFT};border:1px solid ${LINE};"`), 'padding:5px 0 20px;') : '';
+  const copyBox = opts.copyBox ? row(table(
+    row(escapeHtml(opts.copyBox.label.toUpperCase()), `padding:18px 20px 8px;font-family:${FONT};font-size:10px;line-height:15px;font-weight:700;letter-spacing:1px;color:${MUTED};`) +
+    row(escapeHtml(opts.copyBox.body).replace(/\n/g, '<br>'), `padding:0 20px 14px;font-family:${FONT};font-size:15px;line-height:23px;color:${INK};`) +
+    (opts.copyBox.hint ? row(escapeHtml(opts.copyBox.hint), `padding:0 20px 18px;font-family:${FONT};font-size:12px;line-height:18px;color:${MUTED};`) : row('&nbsp;', 'height:4px;font-size:1px;line-height:1px;')),
+    `bgcolor="#ffffff" style="background:#ffffff;border:1px dashed #9fc8a3;"`), 'padding:0 0 22px;') : '';
+  const closing = (opts.closing ?? []).map((p) => row(escapeHtml(p), `padding:0 0 15px;font-family:${FONT};font-size:15px;line-height:23px;color:${BODY};`)).join('');
   const code = opts.code ? row(`<span style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace;font-size:32px;line-height:40px;letter-spacing:4px;color:${INK};">${escapeHtml(opts.code)}</span>`, 'padding:8px 0 24px;') : '';
   const cta = opts.link ? row(table(row(`<a href="${escapeHtml(opts.link.url)}" style="display:inline-block;padding:12px 20px;font-family:${FONT};font-size:14px;line-height:20px;font-weight:700;color:#ffffff;text-decoration:none;background:${GREEN};border-radius:4px;">${escapeHtml(opts.link.label)}</a>`), `bgcolor="${GREEN}" style="background:${GREEN};border-radius:4px;text-align:center;"`), 'padding:2px 0 18px;') : '';
   const secondary = opts.secondaryLink ? row(`<a href="${escapeHtml(opts.secondaryLink.url)}" style="font-family:${FONT};font-size:13px;line-height:20px;color:${INK};text-decoration:underline;">${escapeHtml(opts.secondaryLink.label)}</a>`, 'padding:0 0 18px;') : '';
@@ -64,7 +81,7 @@ export function shell(opts: {
   const supportEnd = opts.security ? ' right away.' : ' and a person will reply.';
   const support = opts.recipient === false ? '' : `${opts.footer ? '<br>' : ''}${escapeHtml(supportCopy)}<a href="mailto:${SUPPORT_EMAIL}" style="color:${MUTED};text-decoration:underline;">${SUPPORT_EMAIL}</a>${escapeHtml(supportEnd)}`;
   const footer = opts.footer || support ? row(`${opts.footer ?? ''}${support}`, `padding:24px 0 0;font-family:${FONT};font-size:11px;line-height:17px;color:${MUTED};`) : '';
-  const body = banner + row(lockup, 'padding:22px 0 34px;') + status + headline + row(escapeHtml(greeting), `padding:0 0 16px;font-family:${FONT};font-size:15px;line-height:23px;color:${INK};`) + paragraphs + code + card + timeline + cta + secondary + row('— The CouponDonation team', `padding:3px 0 0;font-family:${FONT};font-size:15px;line-height:23px;color:${INK};`) + footer;
+  const body = banner + row(lockup, 'padding:22px 0 34px;') + status + headline + row(escapeHtml(greeting), `padding:0 0 16px;font-family:${FONT};font-size:15px;line-height:23px;color:${INK};`) + paragraphs + code + card + timeline + checklist + copyBox + closing + cta + secondary + row('— The CouponDonation team', `padding:3px 0 0;font-family:${FONT};font-size:15px;line-height:23px;color:${INK};`) + footer;
   return `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"><title>CouponDonation</title></head><body bgcolor="#f4f7f5" style="margin:0;padding:0;background:#f4f7f5;">${table(row(`<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(opts.preheader)}&nbsp;&zwnj;&nbsp;&zwnj;</div>${table(row(table(body, 'style="max-width:600px;background:#ffffff;"'), 'padding:0 24px 34px;'), 'width="600" bgcolor="#ffffff" style="width:100%;max-width:600px;background:#ffffff;"')}`, 'padding:20px 0;background:#f4f7f5;',), 'bgcolor="#f4f7f5"')} </body></html>`;
 }
 
