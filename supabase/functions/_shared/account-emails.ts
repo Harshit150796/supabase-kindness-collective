@@ -2,6 +2,7 @@
 // claim_account_email (unique kind+source_id). Reads payment tables only; never writes them.
 import { shell, escapeHtml, NOTIFY_SENDER, SUPPORT_LINE, type RenderedEmail } from './email-layout.ts';
 import { SHARE_HOST } from './share-preview.ts';
+import { isSuppressed } from './suppression.ts';
 
 const SITE = 'https://coupondonation.com';
 const TOKEN_DAYS = 30;
@@ -73,7 +74,13 @@ export function liveShareMessage(o: { title: string; stores?: string[]; benefici
  * community group. Each step has one-tap links that open a text, WhatsApp, Facebook or an email draft with the
  * message already written, and the message itself is in the email to copy.
  */
-export function renderFundraiserLive(o: { firstName?: string; title: string; slug: string; id?: string; stores?: string[]; beneficiary?: Beneficiary; test?: boolean }): RenderedEmail {
+export function renderFundraiserLive(o: {
+  firstName?: string; title: string; slug: string; id?: string; stores?: string[]; beneficiary?: Beneficiary; test?: boolean;
+  /** Sent to a fundraiser that was already live before the checklist existed (no "approved" news). */
+  already?: boolean;
+  /** It already has gifts: the email is about more gifts, not the first ones. */
+  hasGifts?: boolean;
+}): RenderedEmail {
   const url = `${SITE}/f/${encodeURIComponent(o.slug)}`;
   const shareUrl = `${SHARE_HOST}/f/${encodeURIComponent(o.slug)}`;
   const dashboardUrl = o.id ? `${SITE}/fundraiser/${o.id}` : `${SITE}/dashboard`;
@@ -110,13 +117,19 @@ export function renderFundraiserLive(o: { firstName?: string; title: string; slu
       actions: [{ label: 'Email your church or group', url: `mailto:?subject=${enc('Could you share my fundraiser?')}&body=${enc(churchNote)}` }],
     },
   ];
-  const p1 = `Good news: “${o.title}” is approved and live on CouponDonation.`;
-  const p2 = 'First gifts usually come from people who already know you, and once someone gives, your fundraiser is shown ahead of ones with no gifts yet in the lists donors browse. These three steps help most:';
+  const p1 = o.already
+    ? `“${o.title}” is live on CouponDonation, and we’ve put together a short checklist to help more people see it.`
+    : `Good news: “${o.title}” is approved and live on CouponDonation.`;
+  const p2 = o.hasGifts
+    ? 'Gifts usually come from people who know you, or from the people they pass it on to, and each new gift helps your fundraiser show higher in the lists donors browse. These three steps help most:'
+    : 'First gifts usually come from people who already know you, and once someone gives, your fundraiser is shown ahead of ones with no gifts yet in the lists donors browse. These three steps help most:';
   const hint = 'Your link shows your fundraiser’s photo and title when you paste it into a chat or a post.';
-  const after = 'After your first gift, post an update from your dashboard to thank the people who gave. It also gives everyone a reason to share it again.';
+  const after = o.hasGifts
+    ? 'Post an update from your dashboard to thank the people who have given. It also gives everyone a reason to share it again.'
+    : 'After your first gift, post an update from your dashboard to thank the people who gave. It also gives everyone a reason to share it again.';
   const html = shell({
     preheader: 'Send it to five people, post it in your family chat and ask your church. We’ve written the message for you.',
-    greeting, status: 'Fundraiser live', headline: 'Three steps to your first gifts', paragraphs: [p1, p2],
+    greeting, status: 'Fundraiser live', headline: o.hasGifts ? 'Three steps to more gifts' : 'Three steps to your first gifts', paragraphs: [p1, p2],
     checklist: steps, copyBox: { label: 'A message you can copy', body: chat, hint }, closing: [after],
     link: { label: 'See your fundraiser', url }, secondaryLink: { label: 'Share it from your dashboard', url: dashboardUrl },
     footer: o.test ? 'This is a test message.' : undefined, sample: o.test,
@@ -130,7 +143,7 @@ export function renderFundraiserLive(o: { firstName?: string; title: string; slu
     `See your fundraiser: ${url}`, `Share it from your dashboard: ${dashboardUrl}`, '',
     '— The CouponDonation team', ...(o.test ? ['', 'This is a test message.'] : []), '', SUPPORT_LINE,
   ].join('\n');
-  return { subject: 'Your fundraiser is live: 3 steps to your first gifts', html, text };
+  return { subject: `Your fundraiser is live: 3 steps to ${o.hasGifts ? 'more gifts' : 'your first gifts'}`, html, text };
 }
 
 export async function sendAccountMail(key: string, to: string, mail: RenderedEmail) {
@@ -184,15 +197,57 @@ async function buildLive(admin: any, id: string) {
   return { to: p?.email ?? null, mail: renderFundraiserLive({ firstName: first(p?.full_name), title: f.title, slug: f.unique_slug, id: f.id, stores: f.preferred_brands ?? [], beneficiary: f.beneficiary_type }) };
 }
 
-/** Claim then send. Returns 'sent' | 'not_due' | 'no_recipient' | 'failed'. */
+/**
+ * One-time checklist for fundraisers that were live before the checklist email existed (founder request,
+ * Nov 9, 2026): every active, non-example fundraiser except those whose "is live" email was sent at or after
+ * CHECKLIST_SINCE (they got the checklist already). Sent once each (claim_account_email kind
+ * 'fundraiser_checklist'); people who unsubscribed from our emails are skipped.
+ */
+export const CHECKLIST_SINCE = '2026-11-09T21:08:04Z';
+type MailRow = { kind: string; source_id: string; status: string; sent_at: string | null };
+export function checklistDue(fundraisers: { id: string }[], rows: MailRow[], since = CHECKLIST_SINCE, limit = 10): string[] {
+  const has = (id: string, test: (r: MailRow) => boolean) => rows.some((r) => r.source_id === id && test(r));
+  return fundraisers.map((f) => f.id).filter((id) =>
+    !has(id, (r) => r.kind === 'fundraiser_checklist' && r.status !== 'failed') &&
+    !has(id, (r) => r.kind === 'fundraiser_live' && r.status === 'sent' && !!r.sent_at && Date.parse(r.sent_at) >= Date.parse(since)),
+  ).slice(0, limit);
+}
+
 // deno-lint-ignore no-explicit-any
-export async function processAccountEmail(admin: any, key: string | undefined, kind: 'donation_confirmation' | 'fundraiser_live', id: string, by: string) {
+export async function dueChecklistEmails(admin: any): Promise<string[]> {
+  const { data: live } = await admin.from('fundraisers').select('id').eq('status', 'active').not('is_example', 'is', true).limit(500);
+  const ids = ((live ?? []) as { id: string }[]).map((f) => f.id);
+  if (!ids.length) return [];
+  const { data: rows } = await admin.from('account_emails').select('kind, source_id, status, sent_at').in('kind', ['fundraiser_live', 'fundraiser_checklist']).in('source_id', ids);
+  return checklistDue(live ?? [], (rows ?? []) as MailRow[]);
+}
+
+// deno-lint-ignore no-explicit-any
+async function buildChecklist(admin: any, id: string): Promise<{ to: string | null; mail: RenderedEmail | null; unsubscribed?: boolean }> {
+  const { data: f } = await admin.from('fundraisers').select('id, title, unique_slug, user_id, preferred_brands, beneficiary_type, is_example').eq('id', id).maybeSingle();
+  if (!f?.unique_slug || f.is_example) return { to: null, mail: null };
+  const { data: p } = await admin.from('profiles').select('email, full_name').eq('user_id', f.user_id).maybeSingle();
+  if (!p?.email) return { to: null, mail: null };
+  if (await isSuppressed(admin, p.email)) return { to: p.email, mail: null, unsubscribed: true };
+  const { data: totals } = await admin.rpc('get_fundraiser_totals', { _fundraiser_id: id });
+  const gifts = Number((Array.isArray(totals) ? totals[0] : totals)?.donations_count ?? 0);
+  return { to: p.email, mail: renderFundraiserLive({ firstName: first(p.full_name), title: f.title, slug: f.unique_slug, id: f.id, stores: f.preferred_brands ?? [], beneficiary: f.beneficiary_type, already: true, hasGifts: gifts > 0 }) };
+}
+
+export type AccountEmailKind = 'donation_confirmation' | 'fundraiser_live' | 'fundraiser_checklist';
+
+/** Claim then send. Returns 'sent' | 'not_due' | 'no_recipient' | 'unsubscribed' | 'failed'. */
+// deno-lint-ignore no-explicit-any
+export async function processAccountEmail(admin: any, key: string | undefined, kind: AccountEmailKind, id: string, by: string) {
   const { data: claimed, error } = await admin.rpc('claim_account_email', { _kind: kind, _source: id, _by: by });
   if (error || !claimed) return 'not_due';
   const mark = (patch: Record<string, unknown>) => admin.from('account_emails').update(patch).eq('kind', kind).eq('source_id', id);
   try {
     if (kind === 'donation_confirmation') await admin.rpc('credit_gold_coins');
-    const { to, mail } = kind === 'donation_confirmation' ? await buildDonation(admin, id) : await buildLive(admin, id);
+    const built: { to: string | null; mail: RenderedEmail | null; unsubscribed?: boolean } = kind === 'donation_confirmation' ? await buildDonation(admin, id)
+      : kind === 'fundraiser_checklist' ? await buildChecklist(admin, id) : await buildLive(admin, id);
+    const { to, mail } = built;
+    if (built.unsubscribed) { await mark({ status: 'skipped', last_error: 'Unsubscribed' }); return 'unsubscribed'; }
     if (!to || !mail) { await mark({ status: 'skipped', last_error: 'No recipient email' }); return 'no_recipient'; }
     if (!key) throw new Error('Missing Resend key');
     const rid = await sendAccountMail(key, to, mail);

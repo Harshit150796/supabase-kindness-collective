@@ -49,3 +49,40 @@ Deno.test('the dispatcher fills the checklist from the fundraiser itself', () =>
   assertStringIncludes(src, "select('id, title, unique_slug, user_id, preferred_brands, beneficiary_type')");
   assertStringIncludes(src, 'stores: f.preferred_brands ?? [], beneficiary: f.beneficiary_type');
 });
+
+Deno.test('campaigns that were already live get the same checklist, worded for where they are', async () => {
+  const { checklistDue, CHECKLIST_SINCE } = await import('./account-emails.ts');
+  const none = renderFundraiserLive({ ...base, already: true });
+  assertEquals(none.subject, 'Your fundraiser is live: 3 steps to your first gifts');
+  assertStringIncludes(none.html, '“Groceries for the Ortiz family” is live on CouponDonation, and we’ve put together a short checklist');
+  assertEquals(none.html.includes('approved'), false);
+  const some = renderFundraiserLive({ ...base, already: true, hasGifts: true });
+  assertEquals(some.subject, 'Your fundraiser is live: 3 steps to more gifts');
+  assertStringIncludes(some.html, 'Three steps to more gifts');
+  assertStringIncludes(some.text, 'thank the people who have given');
+  assertEquals(some.html.includes('first gifts'), false);
+  for (const step of ['Send it to five people who know you', 'Post it in your family group chat', 'Ask your church or community group']) assertStringIncludes(some.html, step);
+  // Who gets it: once each, retried after a failure, never twice, and not those already sent the checklist at approval.
+  const after = new Date(Date.parse(CHECKLIST_SINCE) + 60_000).toISOString();
+  const before = new Date(Date.parse(CHECKLIST_SINCE) - 60_000).toISOString();
+  const rows = [
+    { kind: 'fundraiser_live', source_id: 'a', status: 'skipped', sent_at: null },
+    { kind: 'fundraiser_live', source_id: 'b', status: 'sent', sent_at: before },
+    { kind: 'fundraiser_live', source_id: 'c', status: 'sent', sent_at: after },
+    { kind: 'fundraiser_checklist', source_id: 'd', status: 'sent', sent_at: after },
+    { kind: 'fundraiser_checklist', source_id: 'e', status: 'failed', sent_at: null },
+  ];
+  assertEquals(checklistDue(['a', 'b', 'c', 'd', 'e', 'f'].map((id) => ({ id })), rows), ['a', 'b', 'e', 'f']);
+  assertEquals(checklistDue([{ id: 'a' }, { id: 'b' }], [], CHECKLIST_SINCE, 1), ['a']);
+});
+
+Deno.test('the dispatcher sends the one-time checklist only to real, live fundraisers and skips unsubscribed people', () => {
+  const src = read('supabase/functions/_shared/account-emails.ts');
+  assertStringIncludes(src, ".eq('status', 'active').not('is_example', 'is', true)");
+  assertStringIncludes(src, "if (await isSuppressed(admin, p.email)) return { to: p.email, mail: null, unsubscribed: true };");
+  assertStringIncludes(src, "rpc('get_fundraiser_totals', { _fundraiser_id: id })");
+  const dispatch = read('supabase/functions/admin-dispatch/index.ts');
+  assertStringIncludes(dispatch, "processAccountEmail(admin, key, 'fundraiser_checklist', id, 'dispatcher')");
+  const sql = [...Deno.readDirSync(new URL('supabase/migrations/', root))].map((e) => read(`supabase/migrations/${e.name}`)).join('\n');
+  assert(/ELSIF _kind = 'fundraiser_checklist' THEN\s+SELECT EXISTS \(SELECT 1 FROM fundraisers f WHERE f\.id = _source AND f\.status = 'active' AND NOT COALESCE\(f\.is_example, false\)\)/.test(sql));
+});
