@@ -2873,6 +2873,7 @@ export type Database = {
         Row: {
           fundraiser_id: string
           hidden: boolean
+          pinned: boolean
           position: number | null
           updated_at: string
           updated_by: string | null
@@ -2880,6 +2881,7 @@ export type Database = {
         Insert: {
           fundraiser_id: string
           hidden?: boolean
+          pinned?: boolean
           position?: number | null
           updated_at?: string
           updated_by?: string | null
@@ -2887,6 +2889,7 @@ export type Database = {
         Update: {
           fundraiser_id?: string
           hidden?: boolean
+          pinned?: boolean
           position?: number | null
           updated_at?: string
           updated_by?: string | null
@@ -4507,7 +4510,7 @@ export type Database = {
         Returns: Json
       }
       admin_set_homepage_lineup: {
-        Args: { _hidden: string[]; _order: string[] }
+        Args: { _hidden: string[]; _order: string[]; _pinned?: string[] }
         Returns: undefined
       }
       admin_set_restrictions: {
