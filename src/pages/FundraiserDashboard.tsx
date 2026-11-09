@@ -322,7 +322,7 @@ const FundraiserDashboard = () => {
           <section id="overview" className="scroll-mt-32 space-y-6">
             <PageHeader title={fundraiser.title} subtitle={`Started ${formatDate(fundraiser.created_at)} · ${fundraiser.category}`} action={<div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => window.open(pageUrl, "_blank", "noopener")}><ExternalLink className="mr-2 h-4 w-4" />Public page</Button>
-              <Button size="sm" className="bg-ink text-ink-foreground hover:bg-ink/90" onClick={() => setShowShareModal(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
+              <Button size="sm" className="bg-verify text-verify-foreground hover:bg-verify/90" onClick={() => setShowShareModal(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
             </div>} />
 
             <FundraiserGallery images={images} isOwner onAddPhotos={() => setShowImageModal(true)} fundraiserTitle={fundraiser.title} coverPhotoUrl={fundraiser.cover_photo_url} category={fundraiser.category} />

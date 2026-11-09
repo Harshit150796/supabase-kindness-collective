@@ -70,7 +70,7 @@ export function TeamSection({ team, fundraiserId, allowMessages, isTeam, benefic
             <div className="flex items-center gap-3">
               {m.avatar_url
                 ? <img src={m.avatar_url} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded-full object-cover" />
-                : <span className="flex h-12 w-12 items-center justify-center rounded-full bg-ink text-lg text-ink-foreground">{(m.display_name ?? 'O')[0].toUpperCase()}</span>}
+                : <span className="flex h-12 w-12 items-center justify-center rounded-full text-lg bg-verify text-verify-foreground ring-2 ring-verify/20 ring-offset-2 ring-offset-background font-medium">{(m.display_name ?? 'O')[0].toUpperCase()}</span>}
               <div className="min-w-0">
                 {m.username
                   ? <Link to={`/u/${m.username}`} className="block truncate font-medium text-foreground underline-offset-4 hover:underline">{displayName(m.display_name) ?? 'Organizer'}</Link>

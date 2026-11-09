@@ -107,7 +107,7 @@ export function DonationPanel({ live, goal, onDonate, onShare, fundraiserId, clo
         ) : (
           <Button size="lg" className="h-14 w-full text-lg font-semibold" onClick={onDonate}><Heart className="mr-2 h-5 w-5" />Donate now</Button>
         )}
-        <Button size="lg" className="h-12 w-full bg-ink text-ink-foreground hover:bg-ink/90" onClick={onShare}><Share2 className="mr-2 h-4 w-4" />Share</Button>
+        <Button size="lg" className="h-12 w-full bg-verify text-verify-foreground hover:bg-verify/90" onClick={onShare}><Share2 className="mr-2 h-4 w-4" />Share</Button>
       </div>
       {live.recent.length > 0 && (
         <>
