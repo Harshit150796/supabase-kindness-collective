@@ -56,11 +56,10 @@ export function MessageDialog({ open, onOpenChange, fundraiserId, organizerName 
   );
 }
 
-export function TeamSection({ team, fundraiserId, allowMessages, isTeam, beneficiary, slug }: { team: TeamMember[]; fundraiserId: string; allowMessages: boolean; isTeam: boolean; beneficiary: string | null; slug: string }) {
+export function TeamSection({ team, fundraiserId, allowMessages, isTeam, beneficiary, slug, place }: { team: TeamMember[]; fundraiserId: string; allowMessages: boolean; isTeam: boolean; beneficiary: string | null; slug: string; place?: string | null }) {
   const { user } = useAuth(); const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const organizer = team.find((t) => t.role === 'organizer') ?? team[0];
-  const place = (m: TeamMember) => [m.city, m.country].filter(Boolean).join(', ');
   return (
     <section>
       <h2 className="font-display text-4xl font-normal text-foreground">Organizer{beneficiary ? ' and beneficiary' : ''}</h2>
@@ -78,7 +77,7 @@ export function TeamSection({ team, fundraiserId, allowMessages, isTeam, benefic
                 <p className="text-sm text-muted-foreground">{m.role === 'organizer' ? 'Organizer' : 'Co-organizer'}</p>
               </div>
             </div>
-            {place(m) && <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />{place(m)}</p>}
+            {place && <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />{place}</p>}
             {m === organizer && allowMessages && !isTeam && (
               <Button variant="outline" className="mt-4 w-full" onClick={() => (user ? setOpen(true) : navigate(signInPath(`/f/${slug}`)))}>
                 <MessageCircle className="mr-2 h-4 w-4" />Message
