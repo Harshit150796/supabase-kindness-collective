@@ -76,7 +76,7 @@ export type PreviewText = { pageTitle: string; title: string; description: strin
 
 export function previewText(f: Pick<PreviewFundraiser, 'title' | 'story' | 'is_example'>, organizer: string | null): PreviewText {
   const name = plainText(f.title).slice(0, 140) || 'a fundraiser';
-  const who = organizer ? plainText(organizer).slice(0, 60) : '';
+  const who = organizer ? displayName(plainText(organizer)).slice(0, 60) : '';
   const start = excerpt(f.story);
   if (f.is_example) {
     return {
@@ -247,4 +247,9 @@ ${meta('name', 'twitter:image:alt', p.image.alt)}
 <script>location.replace(${JSON.stringify(p.destination).replace(/</g, '\\u003c')})</script>
 </body>
 </html>`;
+}
+
+/** Same rule as src/lib/personName.ts: capital first letter on each word, rest as typed. */
+export function displayName(name: string): string {
+  return name.trim().replace(/\s+/g, ' ').replace(/(^|[\s\-'’])(\p{Ll})/gu, (_, p: string, c: string) => p + c.toUpperCase());
 }

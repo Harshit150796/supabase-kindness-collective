@@ -22,7 +22,7 @@ export function FundraiserCard({ fundraiser, lead = false, inverse = false, show
   const count = fundraiser.live_donations_count ?? fundraiser.donors_count ?? 0;
   const progress = fundraiser.monthly_goal > 0 ? Math.min(100, raised / fundraiser.monthly_goal * 100) : 0;
   const organizerName = fundraiser.organizer_name
-    ? fundraiser.organizer_name.charAt(0).toUpperCase() + fundraiser.organizer_name.slice(1)
+    ? displayName(fundraiser.organizer_name)
     : 'a CouponDonation organizer';
   return <Link to={`/f/${fundraiser.unique_slug}`} className={`group block snap-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${lead ? '' : 'h-full'}`}><article className={`flex flex-col overflow-hidden ${lead ? '' : 'h-full'} ${inverse ? 'bg-transparent text-ink-foreground' : 'bg-background'}`}>
     <ImageReveal className={`relative ${lead ? 'aspect-[16/10]' : 'aspect-[4/3]'}`}>{image ? <ResponsivePhoto src={image} sizes={lead ? '(max-width: 767px) 86vw, 52vw' : '(max-width: 767px) 86vw, (max-width: 1023px) 25vw, 23vw'} alt={fundraiser.title} className="h-full w-full object-cover transition-transform duration-350 group-hover:scale-[1.03]" /> : <FundraiserImageFallback category={fundraiser.category} />}
