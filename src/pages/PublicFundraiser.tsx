@@ -236,8 +236,10 @@ const PublicFundraiser = () => {
       )}
 
       <div className="campaign-sticky-actions fixed inset-x-0 bottom-0 z-40 flex gap-3 border-t border-border bg-background/95 p-3 backdrop-blur lg:hidden">
-        {!fundraiser.is_example && <Button className="h-12 flex-1 text-base font-semibold" onClick={donate}><Heart className="mr-2 h-4 w-4" />Donate</Button>}
-        <Button className="h-12 flex-1 bg-verify text-verify-foreground hover:bg-verify/90" onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
+        <div className={`mx-auto flex w-full max-w-md gap-3 ${fundraiser.is_example ? 'justify-center' : ''}`}>
+          {!fundraiser.is_example && <Button className="h-12 flex-1 text-base font-semibold" onClick={donate}><Heart className="mr-2 h-4 w-4" />Donate</Button>}
+          <Button className={`h-12 bg-verify text-verify-foreground hover:bg-verify/90 ${fundraiser.is_example ? 'w-full max-w-[12.5rem]' : 'flex-1'}`} onClick={() => setShare(true)}><Share2 className="mr-2 h-4 w-4" />Share</Button>
+        </div>
       </div>
 
       <ShareSheet open={share} onOpenChange={setShare} slug={fundraiser.unique_slug!} title={fundraiser.title} cover={resolvedCover} raised={live.totalRaised} goal={Number(fundraiser.monthly_goal)} organizer={organizer} />
