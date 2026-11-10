@@ -7,6 +7,16 @@ type LineupTable = { from: (table: 'homepage_placements') => { select: (columns:
 const sb = supabase as unknown as LineupTable;
 
 /** The team's homepage lineup (src/lib/homepageLineup.ts). If it can't be read, the homepage simply uses its normal order. */
+export const homepageLineupQuery = {
+  queryKey: ['homepage-lineup'],
+  queryFn: async (): Promise<Placement[]> => {
+    const { data, error } = await sb.from('homepage_placements').select('fundraiser_id, position, hidden');
+    if (error) throw error;
+    return (data ?? []) as Placement[];
+  },
+  staleTime: 5 * 60_000,
+};
+
 export function useHomepageLineup(options?: { fresh?: boolean }) {
   return useQuery({
     queryKey: ['homepage-lineup'],
@@ -15,7 +25,7 @@ export function useHomepageLineup(options?: { fresh?: boolean }) {
       if (error) throw error;
       return (data ?? []) as Placement[];
     },
-    staleTime: options?.fresh ? 0 : 60_000,
+    staleTime: options?.fresh ? 0 : 5 * 60_000,
     retry: 1,
   });
 }

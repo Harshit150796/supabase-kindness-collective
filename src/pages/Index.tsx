@@ -1,5 +1,8 @@
 import { prefetchApply } from '@/lib/applyRoute';
 import { lazy, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { prefetchHomepageFundraisers } from '@/hooks/useFundraisers';
+import { homepageLineupQuery } from '@/hooks/useHomepageLineup';
 import { Navbar } from '@/components/layout/Navbar';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { WhatWeDo } from '@/components/landing/WhatWeDo';
@@ -34,6 +37,9 @@ const CTASection = lazy(() => sectionCode.cta().then(m => ({ default: m.CTASecti
 const Footer = lazy(() => sectionCode.footer().then(m => ({ default: m.Footer })));
 
 const Index = () => {
+  const queryClient = useQueryClient();
+  // Fetch the "Fundraisers open now" data right away, so cards are ready before the section scrolls in.
+  useEffect(() => { void prefetchHomepageFundraisers(queryClient); void queryClient.prefetchQuery(homepageLineupQuery); }, [queryClient]);
   // Page order, one module per idle period (BrandLeaderboard is ImpactDashboard's own lazy chart).
   useEffect(() => prefetchWhenIdle([...Object.values(sectionCode), prefetchApply]), []);
 
