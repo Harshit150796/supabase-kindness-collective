@@ -33,3 +33,9 @@ Deno.test('"Fundraisers open now" opens with its heading alone (founder request,
   assert(stories.includes('>Fundraisers open now.</h2>'));
   assert(!stories.includes('See what’s trending') && !stories.includes('<Link to="/apply">Start a fundraiser</Link>'));
 });
+
+Deno.test('the homepage leaves out the security band; the donate pages keep it (founder decision, Nov 10, 2026)', () => {
+  assert(!read('src/pages/Index.tsx').includes('SecurityBadges'));
+  assert(read('src/pages/Donate.tsx').includes('<SecurityBadges />'));
+  assert(read('src/pages/donor/DonorDonate.tsx').includes('<SecurityBadges />'));
+});
