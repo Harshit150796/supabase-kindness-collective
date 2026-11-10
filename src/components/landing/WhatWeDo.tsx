@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import {
   animate,
   motion,
@@ -6,13 +5,13 @@ import {
   useTransform,
   type MotionValue,
 } from 'motion/react';
-import { ArrowRight, ChevronDown } from 'lucide-react';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { useMinWidth } from '@/hooks/useMinWidth';
 import { LineReveal, Reveal, useEarlyReveal } from '@/components/ui/editorial-motion';
 import { CARD_DEAL_TIMING, cardDealEligible, cardDealThreshold } from '@/lib/cardDealTiming';
+import { TenYearBand } from './TenYearBand';
 
 const BLUE = 'hsl(var(--verify))';
 const EMERALD = 'hsl(var(--primary))';
@@ -197,56 +196,12 @@ function ReceiptIllustration({ progress, still, offset }: ArtProps) {
   );
 }
 
-function ProofReceipt({ progress, still }: { progress: MotionValue<number>; still: boolean }) {
-  const yearValue = useTransform(progress, (value) => (still || value >= 0.66 ? 2036 : 2026 + Math.min(10, Math.floor(value / 0.066))));
-  const floatY = mapValue(progress, [0, 0.25, 0.5, 0.75, 1], [0, -3, 0, 3, 0]);
-  const shimmerX = mapValue(progress, [0, 0.1, 0.28, 1], [-42, -42, 150, 150]);
-  const shimmerOpacity = mapValue(progress, [0, 0.1, 0.14, 0.26, 0.3, 1], [0, 0, 0.35, 0.35, 0, 0]);
-  const displayedYear = useTransform(yearValue, (value) => String(value));
-
-  return (
-    <motion.div className="relative mx-auto w-full max-w-[260px] overflow-hidden rounded-xl border border-verify/30 bg-card px-6 py-6 shadow-[0_16px_40px_-22px_hsl(var(--verify)/0.4)]" style={{ y: still ? 0 : floatY }}>
-      {!still && <motion.div aria-hidden="true" className="pointer-events-none absolute inset-y-0 w-10 bg-verify/10" style={{ x: shimmerX, opacity: shimmerOpacity }} />}
-      <div className="relative flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Donation receipt</p>
-          <motion.p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{displayedYear}</motion.p>
-        </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-verify/30 bg-verify/10">
-          <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-            <path d="M6.5 12.5l3.5 3.5 7.5-8" fill="none" stroke={VERIFY} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-      </div>
-      <div className="relative mt-5 space-y-2.5">
-        <div className="h-2 w-full rounded-full bg-muted" />
-        <div className="h-2 w-4/5 rounded-full bg-muted" />
-        <div className="h-2 w-3/5 rounded-full bg-muted" />
-      </div>
-      <div className="relative mt-5 flex items-center gap-2 border-t border-dashed border-border pt-4 text-sm font-semibold text-verify">
-        <span className="h-2 w-2 rounded-full bg-verify" /> Verified record
-      </div>
-      <svg className="absolute -bottom-px left-0 h-2 w-full text-background" viewBox="0 0 240 8" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0 8L6 2l6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6V8z" fill="currentColor" />
-      </svg>
-    </motion.div>
-  );
-}
-
 const steps = [
   { title: 'You donate', body: 'You pick a real need someone has posted and cover it. Any amount, toward one specific thing.', accent: BLUE, offset: 0, Art: GiveIllustration },
   { title: 'It becomes a coupon', body: 'Your money becomes a gift card or coupon for the store chosen. It can never be withdrawn as cash.', accent: EMERALD, offset: 0.12, Art: CouponIllustration },
   { title: 'They get what they needed', body: 'They redeem it at the store for groceries, medicine or a ride to work — the actual thing, not money.', accent: EMERALD, offset: 0.24, Art: DeliveryIllustration },
   { title: 'You get the receipt', body: 'A receipt comes back to you showing exactly what your money became, and when.', accent: VERIFY, offset: 0.36, Art: ReceiptIllustration },
 ];
-
-function DonateDoorIcon() {
-  return <svg viewBox="0 0 40 40" className="h-10 w-10 text-primary" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="hsl(var(--primary) / 0.1)" stroke="currentColor" strokeWidth="2" /><path d="M20 29s-9-5.5-9-12a5 5 0 0 1 9-3.2A5 5 0 0 1 29 17c0 6.5-9 12-9 12z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
-}
-
-function ApplyDoorIcon() {
-  return <svg viewBox="0 0 40 40" className="h-10 w-10 text-verify" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="hsl(var(--verify) / 0.12)" stroke="currentColor" strokeWidth="2" /><path d="M12 19h16l-2 11H14zm3 0v-3a5 5 0 0 1 10 0v3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
-}
 
 type Step = (typeof steps)[number];
 
@@ -494,28 +449,7 @@ export function WhatWeDo() {
   const laptop = useMinWidth(1024);
   const sectionRef = useRef<HTMLElement>(null);
   const mobileStepRefs = useRef<Array<HTMLLIElement | null>>([]);
-  // Phones keep the receipt on this still clock; laptops count it up once when it arrives.
-  const progress = useMotionValue(0);
-  const receiptProgress = useMotionValue(0);
-  const receiptRef = useRef<HTMLDivElement>(null);
-  const { visible: receiptVisible } = useEarlyReveal(receiptRef);
   const still = preference === 'gentle';
-  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
-
-  useEffect(() => {
-    const query = window.matchMedia('(min-width: 1024px)');
-    const update = () => setIsDesktop(query.matches);
-    query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
-  }, []);
-
-  useEffect(() => {
-    if (!isDesktop || still || !receiptVisible) return;
-    const animation = animate(receiptProgress, 1, { duration: 2.6, ease: [0.16, 1, 0.3, 1] });
-    return () => animation.stop();
-  }, [isDesktop, still, receiptVisible, receiptProgress]);
-
-  const chevronY = mapValue(progress, [0, 0.5, 1], [0, 5, 0]);
 
   const registerMobileStep = useCallback((index: number, node: HTMLLIElement | null) => {
     mobileStepRefs.current[index] = node;
@@ -526,6 +460,7 @@ export function WhatWeDo() {
   }, [still]);
 
   return (
+    <>
     <section ref={sectionRef} className="relative py-12 lg:py-24" style={{ backgroundColor: 'hsl(var(--primary-97))' }}>
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ background: 'radial-gradient(60% 40% at 12% 18%, hsl(var(--verify) / 0.04), transparent 70%), radial-gradient(60% 40% at 88% 82%, hsl(var(--primary) / 0.05), transparent 70%)' }} />
@@ -548,33 +483,11 @@ export function WhatWeDo() {
         )}
 
         {laptop && <DesktopDeal still={still} />}
-
-        <Reveal className="mt-8 overflow-hidden border-y border-primary/20 bg-primary/[0.03] px-0 py-6 lg:mt-20 lg:px-10 lg:py-12">
-          <div className="grid items-center gap-5 sm:grid-cols-[minmax(0,1fr)_220px] lg:gap-12">
-            <div className="text-center md:text-left">
-               <p className="font-display text-3xl font-normal leading-snug text-foreground md:text-5xl">Donate $10 today. Check where it went in 2036.</p>
-              <p className="mt-4 max-w-2xl text-base text-muted-foreground md:text-lg">Every donation keeps its receipt. Permanently verifiable — not a promise, a record.</p>
-            </div>
-            <div ref={receiptRef}><ProofReceipt progress={isDesktop ? receiptProgress : progress} still={still} /></div>
-          </div>
-        </Reveal>
-
-        <Reveal className="grid border-y border-border sm:grid-cols-2 sm:divide-x sm:divide-border">
-          <Link to="/donate" className="group flex min-h-24 items-center gap-4 border-b border-border p-4 transition-colors hover:bg-primary/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:border-b-0">
-            <DonateDoorIcon />
-            <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-lg font-semibold text-foreground md:text-xl">I want to help someone <ArrowRight className="h-4 w-4 shrink-0 text-primary transition-transform group-hover:translate-x-1" /></span><span className="mt-1 block text-base text-muted-foreground">Pick a real need and cover it.</span></span>
-          </Link>
-          <Link to="/apply" className="group flex min-h-24 items-center gap-4 p-4 transition-colors hover:bg-verify/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-            <ApplyDoorIcon />
-            <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-lg font-semibold text-foreground md:text-xl">I need help <ArrowRight className="h-4 w-4 shrink-0 text-verify transition-transform group-hover:translate-x-1" /></span><span className="mt-1 block text-base text-muted-foreground">Tell us what you need. U.S. residents, free to apply.</span></span>
-          </Link>
-        </Reveal>
-
-        <div className="mt-6 flex flex-col items-center gap-2 text-center">
-          <p className="text-base text-muted-foreground">Real people are asking right now. Here's who.</p>
-          <motion.span aria-hidden="true" style={{ y: still ? 0 : chevronY }}><ChevronDown className="h-5 w-5 text-primary/70" /></motion.span>
-        </div>
       </div>
     </section>
+    {/* Founder's pick (Nov 10, 2026): the ten-year band replaces the old receipt card, the two door links
+        and the scroll cue; donate and apply are offered everywhere else. */}
+    <TenYearBand still={still} />
+    </>
   );
 }
