@@ -27,3 +27,9 @@ Deno.test('the date window and the ten-year line move together once, with transf
   assert(band.includes('const done = still || seen;'));
   assert(band.includes('observer.disconnect()'));
 });
+
+Deno.test('"Fundraisers open now" opens with its heading alone (founder request, Nov 10, 2026)', () => {
+  const stories = read('src/components/landing/ImpactStories.tsx');
+  assert(stories.includes('>Fundraisers open now.</h2>'));
+  assert(!stories.includes('See what’s trending') && !stories.includes('<Link to="/apply">Start a fundraiser</Link>'));
+});
