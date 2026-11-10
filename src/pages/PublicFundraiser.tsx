@@ -92,7 +92,7 @@ const PublicFundraiser = () => {
   if (error || !fundraiser) {
     return (
       <div className="min-h-dvh bg-background">
-        <SEO title="Fundraiser not found" description="This fundraiser may have been removed or the link might be incorrect." path={`/f/${slug ?? ""}`} noindex status={404} />
+        <SEO title="Fundraiser not found" description="This fundraiser may have been removed or the link might be incorrect." path={`/f/${slug ?? ""}`} noindex />
         <Navbar />
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
           <AlertCircle className="h-10 w-10 text-destructive" />

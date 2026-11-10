@@ -55,24 +55,20 @@ Deno.test('opening has no button, Escape or pointer skip listener', async () => 
   const html = await Deno.readTextFile('index.html');
   assert(!html.includes('Skip intro'));
 });
-// Content first (founder decision, Nov 10, 2026, from the Duck.Design audit): the opening lifts after 1.2s
-// whether or not the tree has drawn; the hero shows its painted sky, headline and buttons, and the tree fades in.
-Deno.test('the lockup holds for 1200ms, then flies into the nav', async () => {
-  const o = await opening();o.advance(1199);assert(!o.classes.has('cd-iris'));o.advance(1200);
+Deno.test('the lockup holds until its drawing finishes at 1550ms, then flies into the nav', async () => {
+  const o = await opening();o.ready();o.advance(1549);assert(!o.classes.has('cd-iris'));o.advance(1550);
   assert(o.classes.has('cd-iris'));assert(o.classes.has('cd-fly'));assertEquals(o.root.dataset.introReason,'ready');
   const lock = o.nodes.get('cd-lock')!.style;assertEquals(lock['--fx'],'-384.00px');assertEquals(lock['--fy'],'-360.00px');assertEquals(lock['--fk'],'0.4174');
 });
-Deno.test('the opening no longer waits for the live tree', async () => {
-  const o = await opening();o.advance(1200);assert(o.classes.has('cd-iris'));assertEquals(o.root.dataset.introMs,'1200');
-  const html = await Deno.readTextFile('index.html');
-  assert(html.includes('L&&f&&p()&&P("ready")') && !html.includes('L&&f&&u&&p()'));
+Deno.test('a drawn lockup waits for the live tree before revealing', async () => {
+  const o = await opening();o.advance(1550);assert(!o.classes.has('cd-iris'));o.advance(4000);o.ready();assert(o.classes.has('cd-iris'));assertEquals(o.root.dataset.introMs,'4000');
 });
 Deno.test('the reveal waits for the nav logo to exist, and lands only after the flight', async () => {
   const o = await opening({nav:false});o.ready();o.advance(7999);assert(!o.classes.has('cd-iris'));
-  const p = await opening();p.advance(1200);assert(!p.classes.has('cd-landed'));p.advance(2159);assert(!p.classes.has('cd-landed'));p.advance(2160);assert(p.classes.has('cd-landed'));
+  const p = await opening();p.ready();p.advance(1550);assert(!p.classes.has('cd-landed'));p.advance(2509);assert(!p.classes.has('cd-landed'));p.advance(2510);assert(p.classes.has('cd-landed'));
 });
 Deno.test('loading hairline appears only when loading outlasts the animation, safety reveal at 15000ms', async () => {
-  const o = await opening({nav:false});o.advance(1799);assert(!o.classes.has('cd-wait'));o.advance(1800);assert(o.classes.has('cd-wait'));
+  const o = await opening();o.advance(1799);assert(!o.classes.has('cd-wait'));o.advance(1800);assert(o.classes.has('cd-wait'));
   o.advance(14999);assert(!o.classes.has('cd-iris'));o.advance(15000);assert(o.classes.has('cd-iris'));assertEquals(o.root.dataset.introReason,'cap');
   o.advance(16599);assert(o.classes.has('cd-intro'));o.advance(16600);assert(!o.classes.has('cd-intro'));assert(!o.classes.has('cd-iris'));
 });
@@ -89,7 +85,7 @@ Deno.test('live-capable opening preloads exact 18 logo URLs and model/Draco fetc
   const o = await opening();
   const links = o.head.children as { href: string; as: string; crossOrigin?: string; fetchPriority: string }[];
   assertEquals(links.length,21);
-  assertEquals(links.filter(x=>x.as==='fetch').map(x=>[x.href,x.crossOrigin,x.fetchPriority]),[['/models/tree.glb','anonymous','low'],['/draco/draco_wasm_wrapper.js','anonymous','low'],['/draco/draco_decoder.wasm','anonymous','low']]);
+  assertEquals(links.filter(x=>x.as==='fetch').map(x=>[x.href,x.crossOrigin,x.fetchPriority]),[['/models/tree.glb','anonymous','high'],['/draco/draco_wasm_wrapper.js','anonymous','high'],['/draco/draco_decoder.wasm','anonymous','high']]);
   const expected=['walmart','cvs','target','dominos','aldi','starbucks','mcdonalds','instacart','amazon','home-depot','uber','publix','doordash','walgreens','taco-bell','whole-foods','costco','lyft'];
   assertEquals(links.filter(x=>x.as==='image').map(x=>x.href),expected.map(x=>`/brand-logos/${x}.svg`));
 });
@@ -132,7 +128,7 @@ Deno.test('a homepage opened in a background tab holds its opening until someone
   assert(!o.classes.has('cd-iris'), 'neither the hold nor the safety cap runs while the tab is hidden');
   o.show();
   assert(!o.classes.has('cd-held'));
-  o.advance(21199); assert(!o.classes.has('cd-iris'));
-  o.advance(21200); assert(o.classes.has('cd-iris'));
-  assertEquals(o.root.dataset.introMs, '1200');
+  o.advance(21549); assert(!o.classes.has('cd-iris'));
+  o.advance(21550); assert(o.classes.has('cd-iris'));
+  assertEquals(o.root.dataset.introMs, '1550');
 });

@@ -10,7 +10,7 @@ const logo = '/brand/logo-256.webp';
 export function BrandLockup({ navBrand = false, onClick }: { navBrand?: boolean; onClick?: () => void }) {
   return (
     <Link to="/" data-nav-brand={navBrand ? '' : undefined} onClick={onClick} className="group flex min-h-11 shrink-0 items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-      <img src={logo} alt="" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" />
+      <img src={logo} alt="CouponDonation" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" width={48} height={48} loading="eager" decoding="async" />
       <div className="flex flex-col">
         <span className="font-bold text-base sm:text-lg leading-tight">
           <span className="brand-coupon">Coupon</span>

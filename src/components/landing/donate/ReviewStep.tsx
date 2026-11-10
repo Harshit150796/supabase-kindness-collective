@@ -238,10 +238,6 @@ export function ReviewStep(props: ReviewStepProps) {
               </>
             )}
           </motion.button>
-          {/* Key facts beside the button, not only in the footer (Duck.Design audit, Nov 2026). */}
-          <p className="mt-2.5 text-center text-xs leading-relaxed text-muted-foreground" data-donate-facts>
-            All of your gift goes to the family; tips cover our costs. CouponDonation Inc. is a company, not a registered charity, so gifts aren’t tax-deductible.
-          </p>
           </>
         )}
 

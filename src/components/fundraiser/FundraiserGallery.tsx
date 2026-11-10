@@ -63,7 +63,6 @@ export function FundraiserGallery({
           alt={fundraiserTitle}
           className="relative w-full h-full object-contain"
           loading="eager"
-          fetchPriority="high"
           decoding="async"
         />
           
@@ -146,7 +145,7 @@ export function FundraiserGallery({
     return (
       <div className="relative w-full aspect-[4/3] overflow-hidden bg-muted/30">
         <img aria-hidden="true" alt="" src={transformedFundraiserImage(sortedImages[0].image_url, 160) ?? sortedImages[0].image_url} className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-2xl" />
-        <ResponsivePhoto sizes="(max-width: 1023px) calc(100vw - 2rem), 760px" width={1200} height={900} loading="eager" fetchPriority="high"
+        <ResponsivePhoto sizes="(max-width: 1023px) calc(100vw - 2rem), 760px" width={1200} height={900} loading="eager"
           src={sortedImages[0].image_url}
           alt={fundraiserTitle}
           className="relative w-full h-full object-contain"
@@ -173,7 +172,7 @@ export function FundraiserGallery({
       {/* Main image */}
       <div className="relative w-full aspect-[4/3] overflow-hidden bg-muted/30">
         <img aria-hidden="true" alt="" src={transformedFundraiserImage(sortedImages[activeIndex].image_url, 160) ?? sortedImages[activeIndex].image_url} className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-2xl" />
-        <ResponsivePhoto sizes="(max-width: 1023px) calc(100vw - 2rem), 760px" width={1200} height={900} loading="eager" fetchPriority="high"
+        <ResponsivePhoto sizes="(max-width: 1023px) calc(100vw - 2rem), 760px" width={1200} height={900} loading="eager"
           src={sortedImages[activeIndex].image_url}
           alt={`${fundraiserTitle} - Photo ${activeIndex + 1}`}
           className="relative w-full h-full object-contain transition-opacity duration-300"

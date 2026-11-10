@@ -5,8 +5,6 @@ import { observeEarly } from '@/lib/earlyObserver';
 const pages = new Set(['/', '/about', '/how-it-works', '/stories', '/partners', '/faq', '/blog']);
 // Longest a heading waits for its web fonts before it is split with what is on screen.
 const FONT_WAIT_MS = 1000;
-// Crawlers and headless renderers read the headings as they are, with no painted copy.
-const BOT_UA = /(bot|crawler|spider|crawling|Googlebot|bingbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|Discordbot|HeadlessChrome|Lighthouse|PageSpeed)/i;
 
 /** The web-font faces a heading uses (an italic run loads its own file); fallbacks aside. */
 const facesOf = (heading: HTMLElement) => {
@@ -40,14 +38,12 @@ export function PageChoreography() {
     const saved = new Map<HTMLElement, { overlay: HTMLElement; stop: () => void }>();
     const pending = new Map<HTMLElement, () => void>();
     const waiting = new Set<HTMLElement>();
-    // Headings whose lines have landed: their own text shows again and they are never split twice.
-    const settled = new WeakSet<HTMLElement>();
     const clear = (heading: HTMLElement) => {
       const value = saved.get(heading);
       value?.stop(); value?.overlay.remove(); saved.delete(heading);
       heading.classList.remove('line-reveal-host', 'line-reveal-active');
     };
-    const eligible = (heading: HTMLElement) => !BOT_UA.test(navigator.userAgent) && !saved.has(heading) && !settled.has(heading) && !heading.classList.contains('sr-only') && !!heading.getBoundingClientRect().width
+    const eligible = (heading: HTMLElement) => !saved.has(heading) && !heading.classList.contains('sr-only') && !!heading.getBoundingClientRect().width
       && (heading.classList.contains('font-display') || heading.classList.contains('font-about-serif')) && !heading.querySelector('a,button,svg,img');
     const split = (heading: HTMLElement) => {
       if (!eligible(heading)) return;
@@ -88,18 +84,8 @@ export function PageChoreography() {
       // Original glyphs remain in layout and in the accessibility tree.
       heading.classList.add('line-reveal-host', 'line-reveal-active');
       heading.append(overlay);
-      // Once the lines have landed, the heading's own text takes over and the painted copy goes: left in
-      // place, every heading's words were in the page twice for search engines (Duck.Design audit, Nov 2026).
-      let settle = 0;
-      const stop = observeEarly(heading, () => {
-        overlay.classList.add('lines-revealed');
-        const ms = (parseFloat(getComputedStyle(overlay.lastElementChild?.firstElementChild ?? overlay).transitionDelay) || 0) * 1000 + 950;
-        settle = window.setTimeout(() => {
-          if (!active || saved.get(heading)?.overlay !== overlay) return;
-          clear(heading); settled.add(heading);
-        }, ms);
-      });
-      saved.set(heading, { overlay, stop: () => { stop(); window.clearTimeout(settle); } });
+      const stop = observeEarly(heading, () => overlay.classList.add('lines-revealed'));
+      saved.set(heading, { overlay, stop });
     };
     // Split once the heading's own faces have arrived. Measured in a fallback face, the
     // About heading's italic "black box." landed on top of "be a".

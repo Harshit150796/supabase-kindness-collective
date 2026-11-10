@@ -10,7 +10,6 @@ import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { useMinWidth } from '@/hooks/useMinWidth';
 import { LineReveal, Reveal, useEarlyReveal } from '@/components/ui/editorial-motion';
 import { CARD_DEAL_TIMING, cardDealEligible, cardDealThreshold } from '@/lib/cardDealTiming';
 
@@ -491,7 +490,6 @@ function DesktopDeal({ still }: { still: boolean }) {
 export function WhatWeDo() {
   // The founder-approved motion hook currently returns full on every device.
   const preference = useMotionPreference();
-  const laptop = useMinWidth(1024);
   const sectionRef = useRef<HTMLElement>(null);
   const mobileStepRefs = useRef<Array<HTMLLIElement | null>>([]);
   // Phones keep the receipt on this still clock; laptops count it up once when it arrives.
@@ -536,18 +534,15 @@ export function WhatWeDo() {
           <Reveal delay={0.06}><p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">CouponDonation turns your donation into coupons, gift cards and credits — so it arrives as food, medicine or transport, never as cash. And you can always see exactly where it went.</p></Reveal>
         </div>
 
-        {/* One version of the four steps at a time (laptops lg+ deal cards, phones the list). */}
-        {!laptop && (
-          <div className="relative mt-6 lg:hidden">
-            <ol className="divide-y divide-border" data-giving-steps="compact">
-              {steps.map((step, index) => (
-                <MobileInViewStep key={step.title} step={step} index={index} reduced={still} onRegister={registerMobileStep} onNavigate={jumpToStep} />
-              ))}
-            </ol>
-          </div>
-        )}
+        <div className="relative mt-6 lg:hidden">
+          <ol className="divide-y divide-border" data-giving-steps="compact">
+            {steps.map((step, index) => (
+              <MobileInViewStep key={step.title} step={step} index={index} reduced={still} onRegister={registerMobileStep} onNavigate={jumpToStep} />
+            ))}
+          </ol>
+        </div>
 
-        {laptop && <DesktopDeal still={still} />}
+        <DesktopDeal still={still} />
 
         <Reveal className="mt-8 overflow-hidden border-y border-primary/20 bg-primary/[0.03] px-0 py-6 lg:mt-20 lg:px-10 lg:py-12">
           <div className="grid items-center gap-5 sm:grid-cols-[minmax(0,1fr)_220px] lg:gap-12">
