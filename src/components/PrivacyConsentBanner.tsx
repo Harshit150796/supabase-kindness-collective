@@ -32,8 +32,13 @@ export function PrivacyConsentBanner() {
     try {
       const existing = localStorage.getItem(STORAGE_KEY);
       if (!existing) {
-        const t = setTimeout(() => setVisible(true), 400);
-        return () => clearTimeout(t);
+        // On the homepage it waits until the opening has finished, so the first view isn't covered
+        // (Duck.Design audit, Nov 2026: overlays on overlays).
+        let t = 0;
+        const show = () => { t = window.setTimeout(() => setVisible(true), 400); };
+        if (document.documentElement.classList.contains('cd-intro')) window.addEventListener('cd:intro-end', show, { once: true });
+        else show();
+        return () => { window.clearTimeout(t); window.removeEventListener('cd:intro-end', show); };
       }
     } catch {
       setVisible(true);
@@ -92,48 +97,22 @@ export function PrivacyConsentBanner() {
         </Button>
       </div>
 
-      {/* Full card on md+ where there is room beside the hero. */}
-      <div className="hidden md:block p-5 md:p-6">
-        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-bold text-foreground mb-1">
-              Privacy Information
-            </h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              We use essential cookies and similar storage to run CouponDonation
-              and keep you signed in. With your OK, we also use analytics to see
-              how the site is used and improve it. Read our{' '}
-              <Link
-                to="/privacy"
-                className="underline underline-offset-2 hover:text-foreground transition-colors"
-              >
-                Privacy Policy
-              </Link>
-              .
-            </p>
-          </div>
-          <div className="flex flex-col gap-2 md:shrink-0 md:flex-row-reverse md:items-center">
-            <Button
-              onClick={accept}
-              size="lg"
-              variant="outline"
-              className="w-full md:w-auto px-10 font-semibold"
-            >
-              Okay
-            </Button>
-            <Button onClick={essentialOnly} size="lg" variant="ghost" className="w-full md:w-auto font-medium text-muted-foreground">
-              Essential only
-            </Button>
-          </div>
-        </div>
-        <div className="mt-3">
-          <Link
-            to="/cookies"
-            onClick={() => window.scrollTo({ top: 0 })}
-            className="text-xs underline underline-offset-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            See Our Cookie Policy
-          </Link>
+      {/* One compact row on md+ too, so it doesn't sit over the hero; both choices carry the same weight. */}
+      <div className="hidden md:flex items-center gap-5 px-5 py-3">
+        <p className="flex-1 min-w-0 text-[13px] leading-snug text-muted-foreground">
+          We use essential cookies to run CouponDonation and keep you signed in. With your OK, we also use
+          analytics to improve the site.{' '}
+          <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground transition-colors">Privacy Policy</Link>
+          {' · '}
+          <Link to="/cookies" onClick={() => window.scrollTo({ top: 0 })} className="underline underline-offset-2 hover:text-foreground transition-colors">Cookie Policy</Link>
+        </p>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button onClick={essentialOnly} size="sm" variant="outline" className="h-9 px-4 font-medium">
+            Essential only
+          </Button>
+          <Button onClick={accept} size="sm" variant="outline" className="h-9 px-6 font-semibold">
+            Okay
+          </Button>
         </div>
       </div>
     </div>
