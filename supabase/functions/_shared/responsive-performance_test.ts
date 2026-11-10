@@ -64,7 +64,7 @@ Deno.test('homepage section code is fetched in idle time after the opening, not 
   const prefetch = await Deno.readTextFile('src/lib/idlePrefetch.ts');
   assert(index.includes('useEffect(() => prefetchWhenIdle(Object.values(sectionCode)), []);'));
   // Every lazy section loads through the same import the prefetch warms.
-  for (const key of ['stories', 'proof', 'transparency', 'donationFlow', 'security', 'testimonials', 'dashboard', 'cta', 'footer']) assert(index.includes(`sectionCode.${key}().then(`), key);
+  for (const key of ['stories', 'proof', 'transparency', 'donationFlow', 'testimonials', 'dashboard', 'cta', 'footer']) assert(index.includes(`sectionCode.${key}().then(`), key);
   assert(index.includes("leaderboard: () => import('@/components/landing/BrandLeaderboard')"));
   // Waits for the opening, one module per idle period, and respects Save-Data.
   assert(prefetch.includes("window.addEventListener('cd:intro-end', start, { once: true })"));

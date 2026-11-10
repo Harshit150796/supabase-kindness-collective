@@ -16,7 +16,6 @@ const sectionCode = {
   proof: () => import('@/components/proof/ProofSections'),
   transparency: () => import('@/components/landing/TrustTransparency'),
   donationFlow: () => import('@/components/landing/DonationFlow'),
-  security: () => import('@/components/landing/SecurityBadges'),
   testimonials: () => import('@/components/landing/TestimonialsSection'),
   dashboard: () => import('@/components/landing/ImpactDashboard'),
   leaderboard: () => import('@/components/landing/BrandLeaderboard'),
@@ -27,7 +26,6 @@ const ImpactStories = lazy(() => sectionCode.stories().then(m => ({ default: m.I
 const CompletedCampaigns = lazy(() => sectionCode.proof().then(m => ({ default: m.CompletedCampaigns })));
 const TrustTransparency = lazy(() => sectionCode.transparency().then(m => ({ default: m.TrustTransparency })));
 const DonationFlow = lazy(() => sectionCode.donationFlow().then(m => ({ default: m.DonationFlow })));
-const SecurityBadges = lazy(() => sectionCode.security().then(m => ({ default: m.SecurityBadges })));
 const TestimonialsSection = lazy(() => sectionCode.testimonials().then(m => ({ default: m.TestimonialsSection })));
 const ImpactDashboard = lazy(() => sectionCode.dashboard().then(m => ({ default: m.ImpactDashboard })));
 const CTASection = lazy(() => sectionCode.cta().then(m => ({ default: m.CTASection })));
@@ -77,12 +75,6 @@ const Index = () => {
         <LazyOnView minHeight={1120} intrinsicSize={{ mobile: 1190, tablet: 1100, desktop: 1120 }} rootMargin="900px" contentVisibilityAuto>
           <>
             <DonationFlow />
-          </>
-        </LazyOnView>
-
-        <LazyOnView minHeight={980} intrinsicSize={{ mobile: 980, tablet: 840, desktop: 530 }} rootMargin="900px" contentVisibilityAuto>
-          <>
-            <SecurityBadges />
           </>
         </LazyOnView>
 
