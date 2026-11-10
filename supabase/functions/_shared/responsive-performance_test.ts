@@ -48,16 +48,14 @@ Deno.test('tree model stays under its compressed budget', async () => {
   assert(size < 1_200_000, `tree.glb is ${size} bytes`);
 });
 
-Deno.test('the hero shows its painted scene, headline and buttons first, and the tree fades in over them (founder decision, Nov 10, 2026)', async () => {
+Deno.test('the hero shows the whole tree scene or nothing, and a painted scene only where the tree cannot run', async () => {
   const hero = await Deno.readTextFile('src/components/landing/HeroSection.tsx');
   const scene = await Deno.readTextFile('src/components/landing/Tree3DScene.tsx');
   assert(hero.includes("if (mode === 'fallback') announceTreeReady();") && hero.includes('<Tree3DErrorBoundary onError={fallback}>'));
   assert(hero.includes('className="hero-tree '));
   assert(scene.includes("opacity: ready ? 1 : 0, transition: instant ? 'none' : 'opacity .7s"));
-  // The tree's own sky and ground stay under the live canvas until it has faded in.
-  assert(hero.includes("{(mode === 'fallback' || (mode === 'live' && !treeFaded)) && <HeroBackdrop />}"));
-  // The headline and buttons come as the opening lifts, not with the tree.
-  assert(hero.includes("window.addEventListener('cd:intro-iris', show, { once: true });"));
+  assert(hero.includes("{mode === 'fallback' && <HeroBackdrop />}"));
+  // The headline and buttons arrive with the tree (or after 3s once nothing covers the hero).
   assert(hero.includes('style={{ opacity: visible ? 1 : 0 }}') && hero.includes('<Tree3DScene onReady={() => { setScene(true); setShown(true); }} />'));
 });
 
