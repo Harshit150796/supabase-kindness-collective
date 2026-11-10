@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type QueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fundraiserRetryPolicy } from '@/lib/landingPresentation';
 import { rankFundraisers } from '@/lib/fundraiserRanking';
@@ -39,10 +39,13 @@ const RANK_POOL = 300;
 /** Category ids, old and new, are plain words; anything else is dropped before it reaches a filter. */
 const cleanIds = (ids: string[]) => ids.filter((id) => /^[a-z_]+$/.test(id));
 
-export function useFundraisers(options?: { limit?: number; category?: string; needs?: string[] }) {
+type FundraiserOptions = { limit?: number; category?: string; needs?: string[]; cards?: boolean };
+
+/** Shared by the hook and the homepage's early prefetch. `cards` skips the full story text (cards never show it). */
+function fundraisersQuery(options?: FundraiserOptions) {
   const needs = options?.needs?.length ? cleanIds(options.needs) : [];
-  return useQuery({
-    queryKey: ['fundraisers', 'active', options?.category, options?.limit, needs.join(',')],
+  return {
+    queryKey: ['fundraisers', 'active', options?.category, options?.limit, needs.join(','), options?.cards ? 'cards' : 'full'],
     queryFn: async ({ signal }) => {
       const controller = new AbortController();
       const cancel = () => controller.abort();
@@ -52,11 +55,11 @@ export function useFundraisers(options?: { limit?: number; category?: string; ne
       try {
       let query = supabase
         .from('fundraisers')
-        .select(`
-          id, title, story, category, monthly_goal, amount_raised, donors_count, 
+        .select((`
+          id, title, ${options?.cards ? '' : 'story, '}category, monthly_goal, amount_raised, donors_count, 
           unique_slug, cover_photo_url, country, zip_code, status, created_at, is_example, featured_order,
           fundraiser_images (id, image_url, is_primary, display_order)
-        `)
+        `) as '*')
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .abortSignal(controller.signal);
@@ -103,7 +106,19 @@ export function useFundraisers(options?: { limit?: number; category?: string; ne
     },
     retry: fundraiserRetryPolicy.retry,
     retryDelay: fundraiserRetryPolicy.retryDelay,
+    staleTime: 5 * 60_000,
+  };
+}
+
+export function useFundraisers(options?: FundraiserOptions) {
+  return useQuery({
+    ...fundraisersQuery(options),
     refetchInterval: () => document.hidden ? false : 30_000,
     refetchIntervalInBackground: false,
   });
+}
+
+/** Start the homepage's list as soon as the page opens, before its section scrolls into view. */
+export function prefetchHomepageFundraisers(client: QueryClient) {
+  return client.prefetchQuery(fundraisersQuery({ cards: true }));
 }

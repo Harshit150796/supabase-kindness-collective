@@ -30,7 +30,7 @@ const IN_MS = 520;
 type View = { collection: CollectionId; category: string };
 
 export function ImpactStories() {
-  const { data: open, isLoading, isError, isFetching, refetch } = useFundraisers();
+  const { data: open, isLoading, isError, isFetching, refetch } = useFundraisers({ cards: true });
   // The team's lineup (Admin → Homepage): hidden campaigns never show here; placed ones lead Trending.
   const lineup = useHomepageLineup();
   // `picked` follows the controls at once; `view` is what the cards show, swapped once the old cards are out.
