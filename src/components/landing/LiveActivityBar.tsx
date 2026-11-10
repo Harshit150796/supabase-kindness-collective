@@ -16,6 +16,10 @@ export const LiveActivityBar = () => {
             <p className="mt-0.5 text-[13px] text-muted-foreground">
               Pick the familiar brands where your kindness is spent.
             </p>
+            {/* Logos read as endorsements unless said plainly (Duck.Design audit); same facts as the footer and Terms. */}
+            <p className="mt-1 text-[11.5px] leading-snug text-muted-foreground">
+              These stores aren’t partners or sponsors of CouponDonation.
+            </p>
           </div>
 
           <div

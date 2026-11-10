@@ -130,6 +130,8 @@ export function TrustTransparency() {
             </motion.div>
           ))}
         </div>
+        {/* Said plainly where the promise is made, not only in the footer (Duck.Design audit, Nov 2026). */}
+        <p className="mt-6 text-sm leading-relaxed text-muted-foreground">CouponDonation Inc. is a company, not a registered charity, so gifts aren’t tax-deductible.</p>
 
         <div className="relative mt-10 grid gap-6 border-t border-border pt-8 md:grid-cols-4 lg:mt-12">
           <motion.div data-journey-line aria-hidden="true" className="absolute left-2.5 top-8 bottom-4 w-px origin-top bg-foreground/20 md:bottom-auto md:left-0 md:right-0 md:top-10 md:h-px md:w-auto md:origin-left" initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: true, amount: .2 }} transition={{ duration: 1.2, ease: EASE }} />

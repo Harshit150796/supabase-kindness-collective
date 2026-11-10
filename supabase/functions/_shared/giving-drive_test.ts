@@ -37,8 +37,10 @@ Deno.test('the drive bar is the header\'s first row, the sticker sits on Donate,
     'const MIN = driveMoney(DRIVE.minGift);',
     '<span className="drive-bar-l1"><strong>Donate {MIN} today</strong> and stand a chance to win</span>',
     'a <strong>{DRIVE.goldCoins.name}</strong>, <span className="drive-bar-a">a </span><strong>{GIFT}<span className="drive-bar-gift"> gift</span></strong> or a <strong>{CARD} gift card</strong><span className="drive-bar-when"> this holiday</span><span className="drive-star">*</span>',
-    'donate ${MIN} today and stand a chance to win a ${DRIVE.goldCoins.name}, a ${GIFT} gift or a ${CARD} gift card this holiday.',
+    // The button's name is the words it shows, after the drive's name (label in name; Duck.Design audit, Nov 2026).
+    '<span className="sr-only">{DRIVE.name}: </span>',
   ]) assert(bar.includes(text), text);
+  assert(!/className="drive-bar-main"[^>]*aria-label=/.test(bar.replace(/\n\s*/g, ' ')));
   assert(!/chances to win|DRIVE_PRIZES/.test(bar));
   const app = await read('src/App.tsx');
   assertEquals(app.split('<DriveTermsHost />').length - 1, 1);

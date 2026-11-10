@@ -1,14 +1,11 @@
 import { prefetchApply } from '@/lib/applyRoute';
 import { lazy, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { prefetchHomepageFundraisers } from '@/hooks/useFundraisers';
-import { homepageLineupQuery } from '@/hooks/useHomepageLineup';
 import { Navbar } from '@/components/layout/Navbar';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { WhatWeDo } from '@/components/landing/WhatWeDo';
 import { SEO } from '@/components/SEO';
 import { LazyOnView } from '@/components/LazyOnView';
-import { WordReveal } from '@/components/ui/editorial-motion';
+import { Reveal } from '@/components/ui/editorial-motion';
 import { prefetchWhenIdle } from '@/lib/idlePrefetch';
 
 // Below-the-fold sections — lazy chunks, mounted as the user scrolls. Their code is
@@ -37,9 +34,6 @@ const CTASection = lazy(() => sectionCode.cta().then(m => ({ default: m.CTASecti
 const Footer = lazy(() => sectionCode.footer().then(m => ({ default: m.Footer })));
 
 const Index = () => {
-  const queryClient = useQueryClient();
-  // Fetch the "Fundraisers open now" data right away, so cards are ready before the section scrolls in.
-  useEffect(() => { void prefetchHomepageFundraisers(queryClient); void queryClient.prefetchQuery(homepageLineupQuery); }, [queryClient]);
   // Page order, one module per idle period (BrandLeaderboard is ImpactDashboard's own lazy chart).
   useEffect(() => prefetchWhenIdle([...Object.values(sectionCode), prefetchApply]), []);
 
@@ -75,7 +69,8 @@ const Index = () => {
 
         <section className="bg-background py-8 lg:py-14">
           <div className="container mx-auto max-w-6xl px-4">
-            <WordReveal className="max-w-5xl font-display text-[2.5rem] leading-[1.12] tracking-normal text-foreground md:text-[3.5rem] lg:text-[4.5rem]">We don't track the person. We track the money.</WordReveal>
+            {/* A heading, so this block has one for search engines and screen readers (Duck.Design audit); it looks as before. */}
+            <Reveal className="max-w-5xl font-display text-[2.5rem] leading-[1.12] tracking-normal text-foreground md:text-[3.5rem] lg:text-[4.5rem]"><h2>We don't track the person. We track the money.</h2></Reveal>
           </div>
         </section>
 
