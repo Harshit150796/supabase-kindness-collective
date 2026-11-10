@@ -1,6 +1,6 @@
 import { assert } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 
-// Founder's pick (Nov 10, 2026): "F. Ten-year bezel" replaces the receipt band and the two links under
+// Founder's pick (Nov 10, 2026): "C. Watch date window" replaces the receipt band and the two links under
 // "Give what people need." (src/components/landing/TenYearBand.tsx).
 const read = (path: string) => Deno.readTextFileSync(path);
 
@@ -12,17 +12,17 @@ Deno.test('the ten-year band follows the steps, and the receipt card, the two li
   }
 });
 
-Deno.test('the years come from the visitor clock, never a fixed year', () => {
+Deno.test('the years come from the visitor clock, never a fixed year, and screen readers hear the year', () => {
   const band = read('src/components/landing/TenYearBand.tsx');
   assert(band.includes('const from = new Date().getFullYear();') && band.includes('const to = from + 10;'));
-  assert(band.includes('Give $10 today. Check where it went in {to}.'));
+  assert(band.includes('Check where it went in<span className="sr-only"> {to}.</span>'));
   assert(!/20[2-9]\d/.test(band.replace(/Nov \d+, 2026/g, '')), 'no hard-coded year');
 });
 
-Deno.test('the line draws once with a transform, and Pause animations shows it drawn', () => {
+Deno.test('the date window rolls once with a transform, and Pause animations shows the final year', () => {
   const band = read('src/components/landing/TenYearBand.tsx');
-  assert(band.includes("transform: drawn ? 'scaleX(1)' : 'scaleX(0)'"));
+  assert(band.includes('translateY(${rolled ? -(reel.length - 1) * 1.05 : 0}em)'));
   assert(band.includes("transition: still ? 'none'"));
-  assert(band.includes('const drawn = still || seen;'));
+  assert(band.includes('const rolled = still || seen;'));
   assert(band.includes('observer.disconnect()'));
 });
