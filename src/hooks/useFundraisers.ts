@@ -55,11 +55,11 @@ function fundraisersQuery(options?: FundraiserOptions) {
       try {
       let query = supabase
         .from('fundraisers')
-        .select(`
+        .select((`
           id, title, ${options?.cards ? '' : 'story, '}category, monthly_goal, amount_raised, donors_count, 
           unique_slug, cover_photo_url, country, zip_code, status, created_at, is_example, featured_order,
           fundraiser_images (id, image_url, is_primary, display_order)
-        `)
+        `) as '*')
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .abortSignal(controller.signal);
