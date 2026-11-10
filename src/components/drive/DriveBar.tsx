@@ -38,21 +38,22 @@ export function DriveBar() {
         type="button"
         className="drive-bar-main"
         aria-haspopup="dialog"
-        aria-label={`${DRIVE.name}: donate ${MIN} today and stand a chance to win a ${DRIVE.goldCoins.name}, a ${GIFT} gift or a ${CARD} gift card this holiday. Ends ${DRIVE.endLabel}. See the prizes and terms.`}
         onClick={openDriveTerms}
         onPointerEnter={prefetchDriveTerms}
         onFocus={prefetchDriveTerms}
         onTouchStart={prefetchDriveTerms}
       >
         <span className="drive-coin-turn" aria-hidden="true"><GoldCoin className="drive-coin" /></span>
-        <span className="drive-bar-text" aria-hidden="true">
+        {/* The button's name is the words it shows (label in name), then the drive's name for context. */}
+        <span className="sr-only">{DRIVE.name}: </span>
+        <span className="drive-bar-text">
           <span className="drive-bar-offer">
             <span className="drive-bar-l1"><strong>Donate {MIN} today</strong> and stand a chance to win</span>{' '}
             <span className="drive-bar-l2">a <strong>{DRIVE.goldCoins.name}</strong>, <span className="drive-bar-a">a </span><strong>{GIFT}<span className="drive-bar-gift"> gift</span></strong> or a <strong>{CARD} gift card</strong><span className="drive-bar-when"> this holiday</span><span className="drive-star">*</span></span>
           </span>
           <span className="drive-bar-ends">Ends {DRIVE.endShort}</span>
         </span>
-        <span className="drive-bar-link" aria-hidden="true"><span className="drive-bar-link-long">Prizes and terms</span><span className="drive-bar-link-short">Details</span></span>
+        <span className="drive-bar-link"><span className="drive-bar-link-long">Prizes and terms</span><span className="drive-bar-link-short">Details</span></span>
       </button>
       <button type="button" className="drive-bar-close" aria-label="Hide the Giving Drive bar" onClick={hide}>
         <X aria-hidden="true" />

@@ -17,6 +17,8 @@ interface SEOProps {
   imageAlt?: string;
   type?: "website" | "article";
   noindex?: boolean;
+  /** A page that doesn't exist: pre-rendered copies for crawlers answer with this status (prerender-status-code). */
+  status?: 404;
   jsonLd?: JsonLd | JsonLd[];
 }
 
@@ -32,6 +34,7 @@ export function SEO({
   imageAlt = "CouponDonation logo with the line Give what people need",
   type = "website",
   noindex = false,
+  status,
   jsonLd,
 }: SEOProps) {
   const url = canonicalUrl(path);
@@ -45,6 +48,7 @@ export function SEO({
       <meta name="description" content={desc} />
       <meta name="robots" content={noindex ? "noindex, follow" : "index, follow, max-image-preview:large"} />
       {!noindex && <link rel="canonical" href={url} />}
+      {status && <meta name="prerender-status-code" content={String(status)} />}
 
       {/* Open Graph */}
       <meta property="og:type" content={type} />

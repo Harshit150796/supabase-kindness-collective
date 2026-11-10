@@ -40,8 +40,11 @@ export function HeroSection() {
     const known = knownWebGL();
     return known === undefined ? 'checking' : known ? 'live' : 'fallback';
   });
-  // The headline and buttons arrive together with the tree, so the hero is never a part-built scene.
+  // Content first (founder decision, Nov 10, 2026, from the Duck.Design audit): the tree's own sky and
+  // ground (HeroBackdrop), the headline and the buttons show as soon as the opening lifts; the tree fades
+  // in over them once it has drawn. Visitors no longer wait for the 3D model to see the page.
   const [scene, setScene] = useState(false);
+  const [treeFaded, setTreeFaded] = useState(false);
   const [shown, setShown] = useState(false);
   const fallback = useCallback(() => { setMode('fallback'); announceTreeReady(); }, []);
   useEffect(() => {
@@ -53,28 +56,38 @@ export function HeroSection() {
     const firstFrame = requestAnimationFrame(() => { secondFrame = requestAnimationFrame(check); });
     return () => { cancelAnimationFrame(firstFrame); cancelAnimationFrame(secondFrame); };
   }, [mode, fallback]);
-  // If the tree is slow once nothing covers the hero, the buttons still come within three seconds.
+  // The headline and buttons come as the opening lifts (or at once, arriving from another page).
   useEffect(() => {
     if (shown) return;
-    let timer = 0;
-    const wait = () => { timer = window.setTimeout(() => setShown(true), 3000); };
+    const show = () => setShown(true);
     const root = document.documentElement;
-    if (root.classList.contains('cd-intro')) window.addEventListener('cd:intro-end', wait, { once: true });
-    else wait();
-    return () => { window.removeEventListener('cd:intro-end', wait); window.clearTimeout(timer); };
+    if (root.classList.contains('cd-intro') && !root.classList.contains('cd-iris')) {
+      window.addEventListener('cd:intro-iris', show, { once: true });
+      window.addEventListener('cd:intro-end', show, { once: true });
+      return () => { window.removeEventListener('cd:intro-iris', show); window.removeEventListener('cd:intro-end', show); };
+    }
+    const frame = requestAnimationFrame(show);
+    return () => cancelAnimationFrame(frame);
   }, [shown]);
+  // Once the tree has faded in over it (0.7s), the painted backdrop underneath is no longer needed.
+  useEffect(() => {
+    if (!scene) return;
+    const timer = window.setTimeout(() => setTreeFaded(true), 1200);
+    return () => window.clearTimeout(timer);
+  }, [scene]);
   const visible = shown || mode === 'fallback';
 
   return (
     <section
       data-sky-backdrop
-      data-scene={scene || mode === 'fallback' || undefined}
+      data-scene={mode !== 'checking' || scene || undefined}
+      data-tree-shown={scene || undefined}
       className="hero-stage relative w-full h-[58svh] min-h-[330px] md:h-[74vh] [@media(max-height:500px)]:h-[calc(100svh-64px)] [@media(max-height:500px)]:min-h-[300px] [@media(max-height:500px)]:max-h-[480px] overflow-hidden"
       style={{ contain: 'layout paint' }}
     >
       <div className="hero-tree absolute inset-0 w-full h-full">
-        {/* Only where the tree can't run: its own sky and ground, painted once. */}
-        {mode === 'fallback' && <HeroBackdrop />}
+        {/* The tree's own sky and ground: in place of the tree where it can't run, and under it until it has faded in. */}
+        {(mode === 'fallback' || (mode === 'live' && !treeFaded)) && <HeroBackdrop />}
         {mode === 'live' && (
           <Tree3DErrorBoundary onError={fallback}>
             <Suspense fallback={null}><Tree3DScene onReady={() => { setScene(true); setShown(true); }} /></Suspense>

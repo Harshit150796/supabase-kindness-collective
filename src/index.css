@@ -914,7 +914,7 @@ html[data-drive-bar]{--drive-bar-h:44px}
 .contact-prefix{padding-right:.625rem;font-size:1rem;color:hsl(var(--muted-foreground))}
 .contact-input.contact-input-bare{margin-top:0;border-bottom:0;box-shadow:none}
 .contact-select{appearance:none;-webkit-appearance:none;padding-right:1.75rem;cursor:pointer}
-.contact-select[data-empty]{color:hsl(var(--muted-foreground) / .8)}
+.contact-select[data-empty]{color:hsl(var(--muted-foreground))}
 .contact-select option,.contact-select optgroup{color:hsl(var(--foreground))}
 .contact-textarea{min-height:7.5rem;resize:vertical}
 .contact-choice{display:flex;align-items:center;gap:.75rem;min-height:2.75rem;font-size:1rem;line-height:1.35;color:hsl(var(--foreground));cursor:pointer;-webkit-tap-highlight-color:transparent}
