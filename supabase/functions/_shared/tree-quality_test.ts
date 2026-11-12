@@ -146,6 +146,8 @@ Deno.test('phones show the four steps as one coin\'s path (founder\'s pick, Nov 
   assert(!/getBoundingClientRect|getPointAtLength|getTotalLength/.test(loop));
   // The design's S-curve from tile centre to tile centre, rows 170px apart, and its easing.
   assert(path.includes('const HANDLE = 100 / 170;') && path.includes("const EASING = 'cubic-bezier(.55,0,.35,1)';") && path.includes('min-h-[170px]'));
+  // Phones show the one-line versions; laptops keep the full sentences.
+  assert(path.includes('{step.phone}') && !path.includes('{step.body}') && story.includes("phone: 'Pick a real need. Cover it.'") && story.includes("phone: 'Proof of every dollar.'"));
   // Pause animations shows the finished picture.
   assert(path.includes("lit!.style.opacity = still ? '1' : '0'") && path.includes('if (still) return;'));
 });
