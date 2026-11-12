@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Download, Search, ExternalLink } from 'lucide-react';
 import { safeHref } from '@/lib/safeUrl';
+import { FundraiserChip, useFundraiserPhotos } from '@/components/admin/fundraisers/FundraiserChip';
 
 const PAGE = 25;
 const clean = (s: string) => s.trim().replace(/[%,()]/g, '');
@@ -51,13 +52,14 @@ export default function AdminDonations() {
     },
   });
 
+  const photos = useFundraiserPhotos((q.data?.rows ?? []).map((r: any) => r.fundraiser_id));
   const cols: Column<any>[] = [
     { key: 'created_at', header: 'Date', sortable: true, cell: (r) => fmtDate(r.created_at) },
     { key: 'donor', header: 'Donor', cell: (r) => <div><p className="text-foreground">{r.donor_name || 'Guest'}{r.is_anonymous && <span className="ml-1 text-xs text-muted-foreground">(anonymous publicly)</span>}</p><p className="text-xs text-muted-foreground">{r.donor_email}</p></div> },
     { key: 'amount', header: 'Amount', align: 'right', sortable: true, cell: (r) => <span className="font-medium">{usd(r.amount)}</span> },
     { key: 'status', header: 'Status', sortable: true, cell: (r) => <StatusBadge value={r.status} /> },
     { key: 'brand_partner', header: 'Retailers', cell: (r) => <span className="line-clamp-1 max-w-[180px] text-xs">{r.brand_partner || '—'}</span> },
-    { key: 'fundraiser', header: 'Fundraiser', cell: (r) => <span className="line-clamp-1 max-w-[200px] text-xs">{r.fundraisers?.title ?? 'General fund'}</span> },
+    { key: 'fundraiser', header: 'Fundraiser', cell: (r) => <FundraiserChip id={r.fundraiser_id} title={r.fundraisers?.title} photos={photos.data} /> },
     { key: 'payment_provider', header: 'Provider', sortable: true, cell: (r) => <span className="capitalize">{r.payment_provider ?? 'stripe'}</span> },
   ];
 
@@ -103,6 +105,8 @@ function DonationDrawer({ id, onClose }: { id: string | null; onClose: () => voi
     },
   });
   const x = d.data?.don;
+  const photos = useFundraiserPhotos([x?.fundraiser_id]);
+  const paid = x ? Number(x.amount_paid ?? x.amount) : 0;
   return (
     <Sheet open={!!id} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
@@ -111,11 +115,19 @@ function DonationDrawer({ id, onClose }: { id: string | null; onClose: () => voi
             <SheetHeader><SheetTitle className="text-left font-serif text-2xl font-normal">{usd(x.amount)} donation</SheetTitle></SheetHeader>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               {[['Status', <StatusBadge key="s" value={x.status} />], ['Date', fmtDate(x.created_at)], ['Donor', x.donor_name || 'Guest'], ['Email', x.donor_email || '—'],
-                ['Shown publicly as', x.is_anonymous ? 'Anonymous' : 'Name'], ['Provider', x.payment_provider ?? 'stripe'], ['Net', usd(x.net_amount)], ['Fee', usd(x.stripe_fee)],
-                ['Fundraiser', x.fundraisers?.title ?? 'General fund'], ['Message', x.message || '—']].map(([k, v]) => (
+                ['Shown publicly as', x.is_anonymous ? 'Anonymous' : 'Name'], ['Provider', x.payment_provider ?? 'stripe'],
+                ['Message', x.message || '—']].map(([k, v]) => (
                 <div key={k as string}><dt className="text-xs text-muted-foreground">{k}</dt><dd className="break-words">{v}</dd></div>))}
             </dl>
-            {x.fundraiser_id && <Button size="sm" variant="outline" asChild><Link to={`/admin/fundraisers?id=${x.fundraiser_id}&tab=coupons`}>Open fundraiser coupons</Link></Button>}
+            <div><p className="mb-1.5 text-sm font-medium">Fundraiser</p><FundraiserChip id={x.fundraiser_id} title={x.fundraisers?.title} photos={photos.data} size={48} />
+              {x.fundraiser_id && <div className="mt-2"><Button size="sm" variant="outline" asChild><Link to={`/admin/fundraisers?id=${x.fundraiser_id}&tab=coupons`}>Open fundraiser coupons</Link></Button></div>}</div>
+            <div><p className="mb-1 text-sm font-medium">Money</p>
+              <dl className="divide-y divide-border text-sm">
+                {[['Gift to the fundraiser', usd(x.amount), 'Goes to coupons in full'], ['Tip to CouponDonation', usd(x.tip_amount), null], ['Card fee the donor covered', usd(x.fee_covered_amount), null],
+                  ['Charged to the donor', usd(paid), x.amount_paid == null ? 'Not recorded separately (older donation)' : null], ['Processor fee', x.stripe_fee == null ? '—' : usd(x.stripe_fee), null], ['Net received', x.net_amount == null ? '—' : usd(x.net_amount), null]].map(([k, v, hint]) => (
+                  <div key={k as string} className="flex items-baseline justify-between gap-3 py-1.5"><dt>{k}{hint && <span className="block text-xs text-muted-foreground">{hint}</span>}</dt><dd className="font-medium">{v}</dd></div>))}
+              </dl></div>
+            {x.donor_email && <Button size="sm" variant="ghost" className="px-0 text-primary" asChild><Link to={`/admin/donors?q=${encodeURIComponent(x.donor_email)}`}>See everything this donor gave</Link></Button>}
             {safeHref(x.receipt_url) && <a className="inline-flex items-center gap-1 text-sm text-primary" href={safeHref(x.receipt_url)} target="_blank" rel="noreferrer">Provider receipt <ExternalLink className="h-3 w-3" /></a>}
             <div><p className="mb-1 text-sm font-medium">Retailer split</p>
               {d.data?.brands?.length ? <ul className="divide-y divide-border text-sm">{d.data?.brands.map((b: any) => <li key={b.id} className="flex justify-between py-1.5"><span>{b.brand_name} · {b.allocation_percent}%</span><span>{usd(b.allocated_amount)}</span></li>)}</ul> : <p className="text-sm text-muted-foreground">{x.brand_partner || 'No split recorded.'}</p>}</div>

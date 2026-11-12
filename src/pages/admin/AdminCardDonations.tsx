@@ -1,3 +1,4 @@
+import { FundraiserChip, useFundraiserPhotos } from '@/components/admin/fundraisers/FundraiserChip';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -52,11 +53,12 @@ export default function AdminCardDonations() {
     defaultSort: { key: 'created_at', dir: 'desc' }, filter: (b) => (filter === 'all' ? b : b.eq('status', filter)), deps: [filter],
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ['adm-paged', 'card_donations'] });
+  const photos = useFundraiserPhotos((t.rows ?? []).map((r) => r.fundraiser_id));
 
   const cols: Column<CardDonation>[] = [
     { key: 'store_name', header: 'Card', sortable: true, cell: (r) => <div className="min-w-0"><p className="font-medium">{r.store_name}</p><p className="text-xs text-muted-foreground">{cardTypeLabel(r.card_type)} · {r.code_hint}</p></div> },
     { key: 'value', header: 'Value', sortable: true, cell: (r) => <span className="whitespace-nowrap text-sm">{r.value ? usd(r.value) : r.discount_text ?? '—'}</span> },
-    { key: 'fundraiser_id', header: 'For', cell: (r) => <span className="text-sm">{r.fundraisers?.title ?? 'Shared pool'}</span> },
+    { key: 'fundraiser_id', header: 'For', cell: (r) => <FundraiserChip id={r.fundraiser_id} title={r.fundraisers?.title} photos={photos.data} fallback="Shared pool" tab="coupons" /> },
     { key: 'donor_name', header: 'From', sortable: true, cell: (r) => <div className="min-w-0"><p className="truncate text-sm">{donorLabel(r)}</p><p className="truncate text-xs text-muted-foreground">{r.donor_email}</p></div> },
     { key: 'status', header: 'Status', sortable: true, cell: (r) => <StatusBadge value={r.status} /> },
     { key: 'created_at', header: 'Sent', sortable: true, cell: (r) => <span className="whitespace-nowrap text-xs">{WHEN.format(new Date(r.created_at))}</span> },

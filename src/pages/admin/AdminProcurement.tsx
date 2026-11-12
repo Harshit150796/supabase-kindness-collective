@@ -1,3 +1,4 @@
+import { FundraiserChip, useFundraiserPhotos } from '@/components/admin/fundraisers/FundraiserChip';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -33,6 +34,7 @@ export default function AdminProcurement() {
   const [result, setResult] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const reload = () => { sum.refetch(); u.refetch(); };
+  const photos = useFundraiserPhotos((u.data ?? []).map((r) => r.fundraiser_id));
   const rows = sum.data ?? [];
   const tot = (k: keyof Summary) => rows.reduce((s, r) => s + Number(r[k]), 0);
   const val = (k: keyof Summary) => rows.reduce((s, r) => s + Number(r[k]) * Number(r.value ?? 0), 0);
@@ -84,7 +86,7 @@ export default function AdminProcurement() {
   const useCols: Column<Usage>[] = [
     { key: 'store_name', header: 'Coupon', cell: (r) => <div><p className="font-medium text-foreground">{usd(r.value)} {r.store_name}</p><p className="font-mono text-xs text-muted-foreground">{r.code_hint ?? '—'}</p></div> },
     { key: 'state', header: 'Status', cell: (r) => <StatusBadge value={LABEL[r.state] ?? r.state} /> },
-    { key: 'f', header: 'Fundraiser', cell: (r) => r.fundraiser_title ? <Link className="line-clamp-1 max-w-[220px] text-primary" to={`/admin/fundraisers?id=${r.fundraiser_id}&tab=coupons`}>{r.fundraiser_title}</Link> : <span className="text-muted-foreground">—</span> },
+    { key: 'f', header: 'Fundraiser', cell: (r) => r.fundraiser_id ? <FundraiserChip id={r.fundraiser_id} title={r.fundraiser_title} photos={photos.data} tab="coupons" /> : <span className="text-muted-foreground">—</span> },
     { key: 'batch', header: 'Bundle', cell: (r) => <span className="text-xs text-muted-foreground">{r.batch_name ?? '—'}</span> },
     { key: 'given', header: 'Given', cell: (r) => r.given_at && r.state !== 'in_stock' && r.state !== 'waiting' ? fmtDate(r.given_at) : '—' },
     { key: 'used', header: 'Used', cell: (r) => r.used_at ? fmtDate(r.used_at) : '—' },
