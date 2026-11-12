@@ -4020,6 +4020,59 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _admin_fundraiser_in_view: {
+        Args: {
+          _example: boolean
+          _gifts: number
+          _goal: number
+          _hidden: boolean
+          _photo: string
+          _position: number
+          _raised: number
+          _reports: number
+          _status: string
+          _story: number
+          _view: string
+          _waiting: number
+        }
+        Returns: boolean
+      }
+      _admin_fundraiser_rows: {
+        Args: never
+        Returns: {
+          beneficiary_type: string
+          category: string
+          city: string
+          coupons_ready: number
+          coupons_used: number
+          coupons_waiting: number
+          created_at: string
+          featured_order: number
+          gifts: number
+          help_categories: string[]
+          homepage_hidden: boolean
+          homepage_pinned: boolean
+          homepage_position: number
+          id: string
+          is_example: boolean
+          last_gift_at: string
+          monthly_goal: number
+          open_reports: number
+          organizer_email: string
+          organizer_id: string
+          organizer_name: string
+          photo_count: number
+          photo_url: string
+          preferred_brands: string[]
+          raised: number
+          state_code: string
+          status: string
+          story_length: number
+          title: string
+          unique_slug: string
+          updated_at: string
+        }[]
+      }
       _brand_target: {
         Args: { _brand: string; _donation_id: string }
         Returns: Json
@@ -4221,6 +4274,7 @@ export type Database = {
         Returns: undefined
       }
       admin_fundraiser_contact: { Args: { _fid: string }; Returns: Json }
+      admin_fundraiser_counts: { Args: { _need?: string }; Returns: Json }
       admin_fundraiser_coupons: {
         Args: { _fundraiser_id: string }
         Returns: {
@@ -4242,6 +4296,53 @@ export type Database = {
           updated_at: string
           value: number
           value_expires_on: string
+        }[]
+      }
+      admin_fundraiser_list: {
+        Args: {
+          _dir?: string
+          _ids?: string[]
+          _limit?: number
+          _need?: string
+          _offset?: number
+          _search?: string
+          _sort?: string
+          _status?: string
+          _view?: string
+        }
+        Returns: {
+          beneficiary_type: string
+          category: string
+          city: string
+          coupons_ready: number
+          coupons_used: number
+          coupons_waiting: number
+          created_at: string
+          featured_order: number
+          gifts: number
+          help_categories: string[]
+          homepage_hidden: boolean
+          homepage_pinned: boolean
+          homepage_position: number
+          id: string
+          is_example: boolean
+          last_gift_at: string
+          monthly_goal: number
+          open_reports: number
+          organizer_email: string
+          organizer_id: string
+          organizer_name: string
+          photo_count: number
+          photo_url: string
+          preferred_brands: string[]
+          raised: number
+          state_code: string
+          status: string
+          story_length: number
+          title: string
+          total_count: number
+          unique_slug: string
+          updated_at: string
         }[]
       }
       admin_hard_delete_fundraiser: {
