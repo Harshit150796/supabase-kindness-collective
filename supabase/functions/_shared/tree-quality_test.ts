@@ -133,14 +133,19 @@ Deno.test('homepage sections retain their approved motion entry points', async (
   assert(donation.includes('<Reveal className="mx-auto max-w-5xl"><div ref={cardRef} data-donate-card'));
   assert(footer.includes('<Reveal className="grid grid-cols-2'));
 });
-Deno.test('all four compact giving stories keep a visible animation loop', async () => {
+Deno.test('phones show the four steps as one coin\'s path (founder\'s pick, Nov 12, 2026), laptops keep the dealt cards', async () => {
   const story = await Deno.readTextFile('src/components/landing/WhatWeDo.tsx');
-  assertEquals((story.match(/data-mobile-step=/g) ?? []).length, 1);
-  assert(story.includes('duration: 6'));
-  assert(story.includes('repeat: Infinity'));
-  assert(story.includes('y: [0, -3, 0]'));
-  assert(story.includes('data-giving-steps="compact"'));
+  const path = await Deno.readTextFile('src/components/landing/PhoneCoinPath.tsx');
+  assert(story.includes('<PhoneCoinPath steps={steps} still={still} />') && !story.includes('MobileInViewStep'));
   assert(story.includes('data-desktop-step={index + 1}'));
+  assert(path.includes('data-giving-steps="coin-path"') && path.includes('data-coin-step={index + 1}'));
+  // Geometry is measured per layout, never per frame; the loop runs only on screen and in a visible tab.
+  assert(path.includes('new ResizeObserver(measure)') && path.includes('new IntersectionObserver('));
+  assert(path.includes("document.addEventListener('visibilitychange', sync)") && path.includes('iterations: Infinity'));
+  const loop = path.slice(path.indexOf('const sync ='), path.indexOf('const segmentsD'));
+  assert(!/getBoundingClientRect|getPointAtLength|getTotalLength/.test(loop));
+  // Pause animations shows the finished picture.
+  assert(path.includes("lit!.style.opacity = still ? '1' : '0'") && path.includes('if (still) return;'));
 });
 Deno.test('full motion on every device regardless of the OS Reduce Motion setting, unless the visitor presses Pause', async () => {
   const hook = await Deno.readTextFile('src/hooks/useMotionPreference.tsx');
