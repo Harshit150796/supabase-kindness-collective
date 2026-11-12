@@ -1,5 +1,5 @@
 /** Only non-sensitive list preferences may be stored in personal saved views. */
-export const VIEW_KEYS = ['q', 'status', 'sort', 'dir', 'page', 'role', 'scope', 'view', 'tab', 'kind', 'period'] as const;
+export const VIEW_KEYS = ['q', 'status', 'sort', 'dir', 'page', 'role', 'scope', 'view', 'tab', 'kind', 'period', 'need', 'layout'] as const;
 export function safeViewParams(params: URLSearchParams) {
   const safe = new URLSearchParams();
   for (const [key, value] of params) {

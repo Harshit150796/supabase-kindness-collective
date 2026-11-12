@@ -23,7 +23,8 @@ export default function AdminMonthly() {
   const [params] = useSearchParams();
   const [q, setQ] = useState(params.get('q') ?? '');
   const [dq, setDq] = useState(params.get('q') ?? '');
-  const [status, setStatus] = useState('');
+  // ?status= comes from the dashboard's "Needs attention" list (e.g. payment_problem).
+  const [status, setStatus] = useState(params.get('status') ?? '');
   const [page, setPage] = useState(0);
   const [sel, setSel] = useState<any>(null);
   const [busy, setBusy] = useState(false);

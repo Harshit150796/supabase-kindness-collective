@@ -1,3 +1,5 @@
+import { FundraiserThumb } from '@/components/admin/fundraisers/FundraiserThumb';
+import { useFundraiserPhotos } from '@/components/admin/fundraisers/FundraiserChip';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -59,6 +61,7 @@ export default function AdminMessages() {
     queryFn: () => rpc<{ rows: Row[]; total: number }>('admin_list_conversations', { _search: search, _status: status, _limit: 25, _offset: page * 25, _user: user }),
   });
 
+  const photos = useFundraiserPhotos((q.data?.rows ?? []).map((r) => r.fundraiser?.id));
   const open = async (cid: string) => {
     setOpening(cid);
     try { setThread(await rpc<Thread>('admin_conversation_thread', { _cid: cid })); }
@@ -89,7 +92,7 @@ export default function AdminMessages() {
     { key: 'between', header: 'Who messaged whom', cell: (r) => (
       <div className="grid max-w-xl grid-cols-[1fr_auto_1fr] items-start gap-2">
         <PersonCell p={r.supporter} label={r.kind === 'team' ? 'Team' : 'Supporter'} /><ArrowRight className="mt-5 h-4 w-4 text-muted-foreground" aria-label="and" /><PersonCell p={r.organizer} label="Organizer" />
-        <Link className="col-span-3 truncate text-xs text-primary" to={`/admin/fundraisers?id=${r.fundraiser.id}${r.kind === 'team' ? '&tab=contact' : ''}`}>{r.fundraiser.title}{r.kind === 'team' ? ' · reply from Contact & emails' : ''}</Link>
+        <Link className="col-span-3 flex min-w-0 items-center gap-2 text-xs text-primary" to={`/admin/fundraisers?id=${r.fundraiser.id}${r.kind === 'team' ? '&tab=contact' : ''}`}><FundraiserThumb url={photos.data?.get(r.fundraiser.id)?.photo_url ?? null} need={photos.data?.get(r.fundraiser.id)?.category} size={24} rounded="rounded" /><span className="truncate">{r.fundraiser.title}{r.kind === 'team' ? ' · reply from Contact & emails' : ''}</span></Link>
       </div>
     ) },
     { key: 'count', header: 'Messages', cell: (r) => (
