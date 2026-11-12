@@ -1,17 +1,17 @@
 import {
-  animate,
   motion,
   useMotionValue,
   useTransform,
   type MotionValue,
 } from 'motion/react';
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { useMinWidth } from '@/hooks/useMinWidth';
-import { LineReveal, Reveal, useEarlyReveal } from '@/components/ui/editorial-motion';
+import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
 import { CARD_DEAL_TIMING, cardDealEligible, cardDealThreshold } from '@/lib/cardDealTiming';
 import { TenYearBand } from './TenYearBand';
+import { PhoneCoinPath } from './PhoneCoinPath';
 
 const BLUE = 'hsl(var(--verify))';
 const EMERALD = 'hsl(var(--primary))';
@@ -203,66 +203,6 @@ const steps = [
   { title: 'You get the receipt', body: 'A receipt comes back to you showing exactly what your money became, and when.', accent: VERIFY, offset: 0.36, Art: ReceiptIllustration },
 ];
 
-type Step = (typeof steps)[number];
-
-function MobileInViewStep({ step, index, reduced, onRegister, onNavigate }: {
-  step: Step;
-  index: number;
-  reduced: boolean;
-  onRegister: (index: number, node: HTMLLIElement | null) => void;
-  onNavigate: (index: number) => void;
-}) {
-  const itemRef = useRef<HTMLLIElement>(null);
-  const progress = useMotionValue(step.offset);
-  const { visible: inView, instant } = useEarlyReveal(itemRef);
-  const animationRef = useRef<ReturnType<typeof animate> | null>(null);
-  const Art = step.Art;
-
-  useEffect(() => {
-    onRegister(index, itemRef.current);
-    return () => onRegister(index, null);
-  }, [index, onRegister]);
-
-  useEffect(() => {
-    animationRef.current?.stop();
-    if (reduced) {
-      progress.set(step.offset + 0.82);
-      return;
-    }
-    if (inView) {
-      progress.set(step.offset);
-      // Keep each compact story visibly alive while it is near the viewport.
-      // A one-shot 1.8s run was often over before phone users looked at the row.
-      animationRef.current = animate(progress, step.offset + 1, {
-        duration: 6,
-        ease: 'linear',
-        repeat: Infinity,
-      });
-    } else {
-      progress.set(step.offset);
-    }
-    return () => animationRef.current?.stop();
-  }, [inView, instant, progress, reduced, step.offset]);
-
-  return (
-    <li ref={itemRef} data-mobile-step={index + 1} data-in-view={inView ? 'true' : 'false'} className="grid grid-cols-[76px_minmax(0,1fr)] items-center gap-4 py-5 sm:grid-cols-[100px_minmax(0,1fr)]">
-      <motion.div
-        data-mobile-step-art
-        initial={reduced ? { opacity: 0.7 } : { opacity: 0, scale: 0.94, y: 4 }}
-        animate={inView || reduced ? (reduced ? { opacity: 1, scale: 1, y: 0 } : { opacity: 1, scale: 1, y: [0, -3, 0] }) : undefined}
-        transition={reduced ? { duration: 0.18 } : { opacity: { duration: 0.55 }, scale: { duration: 0.55, ease: [0.16, 1, 0.3, 1] }, y: { duration: 3, ease: 'easeInOut', repeat: Infinity } }}
-        className="h-[76px] w-[76px] overflow-hidden sm:h-[100px] sm:w-[100px]"
-      >
-        <Art progress={progress} still={reduced} offset={step.offset} />
-      </motion.div>
-      <motion.div initial={reduced ? { opacity: 0.7 } : { opacity: 0, y: 12 }} animate={inView || reduced ? { opacity: 1, y: 0 } : undefined} transition={{ duration: reduced ? 0.18 : 0.55, delay: reduced ? 0 : 0.12 }}>
-        <h3 className="font-sans text-lg font-semibold text-foreground"><span className="mr-2 text-sm tabular-nums text-primary">0{index + 1}</span>{step.title}</h3>
-        <p className="mt-2 text-[15px] leading-[23px] text-muted-foreground">{step.body}</p>
-      </motion.div>
-    </li>
-  );
-}
-
 // Laptops and wide screens: the four steps arrive as a dealt hand of cards, alternating logo
 // green and logo blue. They wait face down in a small deck in the middle of the row and, once
 // the row is properly on screen, deal out to their places one by one, flipping face up as they
@@ -448,16 +388,7 @@ export function WhatWeDo() {
   const preference = useMotionPreference();
   const laptop = useMinWidth(1024);
   const sectionRef = useRef<HTMLElement>(null);
-  const mobileStepRefs = useRef<Array<HTMLLIElement | null>>([]);
   const still = preference === 'gentle';
-
-  const registerMobileStep = useCallback((index: number, node: HTMLLIElement | null) => {
-    mobileStepRefs.current[index] = node;
-  }, []);
-
-  const jumpToStep = useCallback((index: number) => {
-    mobileStepRefs.current[index]?.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'center' });
-  }, [still]);
 
   return (
     <>
@@ -471,14 +402,11 @@ export function WhatWeDo() {
           <Reveal delay={0.06}><p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">CouponDonation turns your donation into coupons, gift cards and credits — so it arrives as food, medicine or transport, never as cash. And you can always see exactly where it went.</p></Reveal>
         </div>
 
-        {/* One version of the four steps at a time (laptops lg+ deal cards, phones the list). */}
+        {/* One version of the four steps at a time: laptops (lg+) deal cards; phones and tablets get
+            "One coin's path" (founder's pick, Nov 12, 2026). */}
         {!laptop && (
-          <div className="relative mt-6 lg:hidden">
-            <ol className="divide-y divide-border" data-giving-steps="compact">
-              {steps.map((step, index) => (
-                <MobileInViewStep key={step.title} step={step} index={index} reduced={still} onRegister={registerMobileStep} onNavigate={jumpToStep} />
-              ))}
-            </ol>
+          <div className="lg:hidden">
+            <PhoneCoinPath steps={steps} still={still} />
           </div>
         )}
 
