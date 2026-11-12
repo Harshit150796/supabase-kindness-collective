@@ -139,15 +139,15 @@ Deno.test('phones show the four steps as one coin\'s path (founder\'s pick, Nov 
   assert(story.includes('<PhoneCoinPath steps={steps} still={still} />') && !story.includes('MobileInViewStep'));
   assert(story.includes('data-desktop-step={index + 1}'));
   assert(path.includes('data-giving-steps="coin-path"') && path.includes('data-coin-step={index + 1}'));
-  // Geometry is measured per layout, never per frame; the loop runs only on screen and in a visible tab.
-  assert(path.includes('new ResizeObserver(measure)') && path.includes('new IntersectionObserver('));
-  assert(path.includes("document.addEventListener('visibilitychange', sync)") && path.includes('iterations: Infinity'));
-  const loop = path.slice(path.indexOf('const sync ='), path.indexOf('const curves'));
-  assert(!/getBoundingClientRect|getPointAtLength|getTotalLength/.test(loop));
-  // The design's S-curve from tile centre to tile centre, rows 170px apart, and its easing.
-  assert(path.includes('const HANDLE = 100 / 170;') && path.includes("const EASING = 'cubic-bezier(.55,0,.35,1)';") && path.includes('min-h-[170px]'));
-  // Phones show the one-line versions; laptops keep the full sentences.
-  assert(path.includes('{step.phone}') && !path.includes('{step.body}') && story.includes("phone: 'Pick a real need. Cover it.'") && story.includes("phone: 'Proof of every dollar.'"));
+  // It follows the scroll (founder request, Nov 12, 2026): no automatic loop. Layout is measured per layout,
+  // the scroll listener is attached only while the list is near, and a scroll frame never reads layout.
+  assert(path.includes('new ResizeObserver(measure)') && path.includes('resize.observe(document.body)') && path.includes('new IntersectionObserver('));
+  assert(path.includes("window.addEventListener('scroll', schedule, { passive: true })") && path.includes('requestAnimationFrame(frame)'));
+  assert(!path.includes('iterations: Infinity') && path.includes('const READ_AT = '));
+  const frame = path.slice(path.indexOf('const frame = () =>'), path.indexOf('const schedule ='));
+  assert(frame.length > 0 && !/getBoundingClientRect|getPointAtLength|getTotalLength|offsetTop|offsetHeight|innerHeight/.test(frame));
+  // The design's S-curve from tile centre to tile centre, rows 170px apart.
+  assert(path.includes('const HANDLE = 100 / 170;') && path.includes('min-h-[170px]'));
   // Pause animations shows the finished picture.
   assert(path.includes("lit!.style.opacity = still ? '1' : '0'") && path.includes('if (still) return;'));
 });

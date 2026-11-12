@@ -5,45 +5,52 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
  * as an exact replica of the design: founder request, Nov 12, 2026). The four steps zigzag down the page,
  * each beside a tile, 170px apart. One dotted S-curve runs from tile centre to tile centre, as drawn in the
  * design; each step shows its one-line phone text (founder's pick, Nov 12, 2026), which keeps the words
- * clear of the curve. A blue coin travels the curve, the curve fills in behind it, and each tile lights up in logo green or logo blue as
- * the coin arrives. The loop runs only while the list is on screen and the tab is visible.
+ * clear of the curve.
  *
- * Geometry is measured once per layout (ResizeObserver), never during the animation. The coin's route
- * is sampled from the drawn curve at that time and played as transform keyframes through
- * element.animate, so the moving parts are transform, opacity and the line's dash offset.
+ * It follows the scroll and never plays by itself (founder request, Nov 12, 2026). A blue coin rides a
+ * reading line READ_AT of the way down the screen: as the visitor scrolls, it travels the curve at that
+ * height, the curve fills in behind it, and each tile lights up in logo green or logo blue (with a small
+ * pop) the moment the line reaches its centre. Scrolling back runs it all backwards.
+ *
+ * Everything that needs layout is measured per layout (ResizeObserver on the list and the page, and once
+ * each time the list comes near): the tile centres, the list's place on the page and a table of where the
+ * curve sits at each height. A scroll frame only reads scrollY, looks the coin's place up in that table and
+ * writes a transform and the line's dash offset; the listener is attached only while the list is near.
  * Pause animations shows the finished picture: every tile lit, the curve drawn, no coin.
  */
 
 type Step = { title: string; phone: string };
 type Point = { x: number; y: number };
 type Geometry = { width: number; height: number; centers: Point[] };
+type Sample = { x: number; y: number; along: number };
 
-const CYCLE_MS = 9000;
 const COIN = 30;
-// The design's timing, as fractions of one loop: the coin leaves and reaches each tile, tiles light as it arrives.
-const TRAVEL = [[0.08, 0.25], [0.33, 0.5], [0.58, 0.75]] as const;
-const ARRIVE = [0, 0.24, 0.49, 0.74];
-const LIT_UNTIL = 0.92;
-const RESET_AT = 0.97;
-const SAMPLES = 40;
-const EASING = 'cubic-bezier(.55,0,.35,1)';
+// The coin sits this far down the screen while it travels, so it reaches each tile as that tile scrolls past
+// the middle of a phone screen.
+const READ_AT = 0.58;
+// Points per step in the height-to-distance table.
+const SAMPLES = 64;
 // The design's curve leaves each tile straight down and enters the next straight down: its handles reach
-// 100px of the 170px between rows.
+// 100px of the 170px between rows. That also keeps it always heading down, so each height has one point.
 const HANDLE = 100 / 170;
 // Logo green for steps 1 and 3, logo blue for 2 and 4.
 const TONE = ['primary', 'verify', 'primary', 'verify'] as const;
 
-// The same cubic-bezier(.55,0,.35,1) the line uses, so coin and line move together.
-function bezierEase(x: number) {
-  const [x1, y1, x2, y2] = [0.55, 0, 0.35, 1];
-  const at = (t: number, a: number, b: number) => 3 * a * t * (1 - t) ** 2 + 3 * b * t * t * (1 - t) + t ** 3;
+// Where the curve crosses a given height, from the table (sorted by height).
+function pointAtHeight(table: Sample[], y: number): Sample {
+  if (y <= table[0].y) return table[0];
+  const last = table[table.length - 1];
+  if (y >= last.y) return last;
   let lo = 0;
-  let hi = 1;
-  for (let i = 0; i < 30; i += 1) {
-    const mid = (lo + hi) / 2;
-    if (at(mid, x1, x2) < x) lo = mid; else hi = mid;
+  let hi = table.length - 1;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (table[mid].y <= y) lo = mid; else hi = mid;
   }
-  return at((lo + hi) / 2, y1, y2);
+  const a = table[lo];
+  const b = table[hi];
+  const t = b.y === a.y ? 0 : (y - a.y) / (b.y - a.y);
+  return { x: a.x + (b.x - a.x) * t, y, along: a.along + (b.along - a.along) * t };
 }
 
 // One piece of the S-curve, from one tile centre to the next.
@@ -111,14 +118,18 @@ export function PhoneCoinPath({ steps, still }: { steps: Step[]; still: boolean 
   const segmentRefs = useRef<Array<SVGPathElement | null>>([]);
   const drawRef = useRef<SVGPathElement>(null);
   const coinRef = useRef<HTMLDivElement>(null);
+  // The list's top on the page, and the scroll frame to run when it changes.
+  const topRef = useRef(0);
+  const redrawRef = useRef<(() => void) | null>(null);
   const [geometry, setGeometry] = useState<Geometry | null>(null);
 
-  // Measure the tile centres once per layout change (fonts settling, rotation, resizing).
+  // Measure once per layout change (fonts settling, rotation, resizing, anything above growing).
   useLayoutEffect(() => {
     const list = listRef.current;
     if (!list) return;
     const measure = () => {
       const box = list.getBoundingClientRect();
+      topRef.current = box.top + window.scrollY;
       const centers = tileRefs.current.map((tile) => {
         if (!tile) return null;
         const rect = tile.getBoundingClientRect();
@@ -127,14 +138,16 @@ export function PhoneCoinPath({ steps, still }: { steps: Step[]; still: boolean 
       if (centers.some((center) => !center) || box.width === 0) return;
       const next = { width: Math.round(box.width), height: Math.round(box.height), centers: centers as Point[] };
       setGeometry((prev) => (prev && JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+      redrawRef.current?.();
     };
     measure();
     const resize = new ResizeObserver(measure);
     resize.observe(list);
+    resize.observe(document.body);
     return () => resize.disconnect();
   }, []);
 
-  // Build the loop from the drawn curve, and run it only while the list is on screen.
+  // Tie the coin, the line and the tiles to the scroll.
   useEffect(() => {
     const coin = coinRef.current;
     const list = listRef.current;
@@ -152,62 +165,70 @@ export function PhoneCoinPath({ steps, still }: { steps: Step[]; still: boolean 
     coin.style.opacity = '0';
     if (still) return;
 
-    const at = (point: Point) => `translate3d(${point.x - COIN / 2}px, ${point.y - COIN / 2}px, 0)`;
-    const { centers } = geometry;
-    const coinFrames: Keyframe[] = [
-      { offset: 0, transform: at(centers[0]), opacity: 0 },
-      { offset: 0.04, transform: at(centers[0]), opacity: 1 },
-      { offset: TRAVEL[0][0], transform: at(centers[0]), opacity: 1 },
-    ];
-    TRAVEL.forEach(([start, end], index) => {
-      const path = segments[index]!;
-      for (let i = 1; i <= SAMPLES; i += 1) {
-        const t = i / SAMPLES;
-        const point = path.getPointAtLength(bezierEase(t) * lengths[index]);
-        coinFrames.push({ offset: start + t * (end - start), transform: at(point), opacity: 1 });
+    // Per layout: where the curve is at each height, so a scroll frame only looks numbers up.
+    const table: Sample[] = [];
+    let before = 0;
+    segments.forEach((path, index) => {
+      for (let i = index === 0 ? 0 : 1; i <= SAMPLES; i += 1) {
+        const along = (i / SAMPLES) * lengths[index];
+        const point = path!.getPointAtLength(along);
+        table.push({ x: point.x, y: point.y, along: before + along });
       }
-      const next = TRAVEL[index + 1];
-      if (next) coinFrames.push({ offset: next[0], transform: at(centers[index + 1]), opacity: 1 });
+      before += lengths[index];
     });
-    coinFrames.push({ offset: 0.8, transform: at(centers[3]), opacity: 0 }, { offset: 1, transform: at(centers[3]), opacity: 0 });
+    const { centers } = geometry;
+    const lit = centers.map(() => false);
+    let viewHeight = window.innerHeight;
+    let shown = -1;
+    let raf = 0;
+    coin.style.transform = `translate3d(${centers[0].x - COIN / 2}px, ${centers[0].y - COIN / 2}px, 0)`;
+    coin.style.opacity = '1';
 
-    // One line, as in the design: it fills one step at a time behind the coin, then draws back to the start.
-    const left = [total, total - lengths[0], total - lengths[0] - lengths[1], 0];
-    const lineFrames: Keyframe[] = [
-      { offset: 0, strokeDashoffset: left[0] },
-      { offset: TRAVEL[0][0], strokeDashoffset: left[0], easing: EASING },
-      { offset: TRAVEL[0][1], strokeDashoffset: left[1] },
-      { offset: TRAVEL[1][0], strokeDashoffset: left[1], easing: EASING },
-      { offset: TRAVEL[1][1], strokeDashoffset: left[2] },
-      { offset: TRAVEL[2][0], strokeDashoffset: left[2], easing: EASING },
-      { offset: TRAVEL[2][1], strokeDashoffset: left[3] },
-      { offset: LIT_UNTIL, strokeDashoffset: 0, easing: EASING },
-      { offset: RESET_AT, strokeDashoffset: total },
-      { offset: 1, strokeDashoffset: total },
-    ];
-
-    const timing = { duration: CYCLE_MS, iterations: Infinity };
-    const running: Animation[] = [coin.animate(coinFrames, timing), draw.animate(lineFrames, timing)];
-    ARRIVE.forEach((arrive, index) => {
-      const lit = [{ offset: 0, opacity: 0 }, ...(arrive > 0 ? [{ offset: arrive, opacity: 0 }] : []), { offset: arrive + 0.03, opacity: 1 }, { offset: LIT_UNTIL, opacity: 1 }, { offset: RESET_AT, opacity: 0 }, { offset: 1, opacity: 0 }];
-      running.push(lits[index]!.animate(lit, timing));
-      const pulse = [{ offset: 0, transform: 'scale(1)' }, ...(arrive > 0 ? [{ offset: arrive, transform: 'scale(1)' }] : []), { offset: arrive + 0.03, transform: 'scale(1.06)' }, { offset: arrive + 0.07, transform: 'scale(1)' }, { offset: 1, transform: 'scale(1)' }];
-      running.push(tiles[index]!.animate(pulse, timing));
-    });
-    running.forEach((animation) => animation.pause());
-
-    let onScreen = false;
-    const sync = () => {
-      const play = onScreen && !document.hidden;
-      running.forEach((animation) => (play ? animation.play() : animation.pause()));
+    const frame = () => {
+      raf = 0;
+      const line = window.scrollY + viewHeight * READ_AT - topRef.current;
+      const point = pointAtHeight(table, line);
+      if (Math.abs(point.along - shown) > 0.25) {
+        shown = point.along;
+        coin.style.transform = `translate3d(${point.x - COIN / 2}px, ${point.y - COIN / 2}px, 0)`;
+        draw.style.strokeDashoffset = `${total - point.along}`;
+      }
+      centers.forEach((center, index) => {
+        const on = line >= center.y;
+        if (on === lit[index]) return;
+        lit[index] = on;
+        lits[index]!.style.opacity = on ? '1' : '0';
+        if (on) tiles[index]!.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)', offset: 0.4 }, { transform: 'scale(1)' }], { duration: 420, easing: 'ease-out' });
+      });
     };
-    const watch = new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; sync(); }, { threshold: 0.15 });
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(frame); };
+    const onResize = () => { viewHeight = window.innerHeight; schedule(); };
+    redrawRef.current = schedule;
+
+    // Listen to the scroll only while the list is within half a screen of view; settle once on leaving.
+    let listening = false;
+    const listen = (near: boolean) => {
+      if (near === listening) return;
+      listening = near;
+      if (near) {
+        topRef.current = list.getBoundingClientRect().top + window.scrollY;
+        window.addEventListener('scroll', schedule, { passive: true });
+        window.addEventListener('resize', onResize);
+      } else {
+        window.removeEventListener('scroll', schedule);
+        window.removeEventListener('resize', onResize);
+      }
+      schedule();
+    };
+    const watch = new IntersectionObserver(([entry]) => listen(entry.isIntersecting), { rootMargin: '50% 0px' });
     watch.observe(list);
-    document.addEventListener('visibilitychange', sync);
+    schedule();
     return () => {
       watch.disconnect();
-      document.removeEventListener('visibilitychange', sync);
-      running.forEach((animation) => animation.cancel());
+      listen(false);
+      if (raf) cancelAnimationFrame(raf);
+      redrawRef.current = null;
+      coin.style.opacity = '0';
     };
   }, [geometry, still]);
 
@@ -242,7 +263,7 @@ export function PhoneCoinPath({ steps, still }: { steps: Step[]; still: boolean 
           const tile = (
             <div ref={(node) => { tileRefs.current[index] = node; }} aria-hidden="true" className="relative h-[104px] w-[104px] shrink-0 rounded-[30px] bg-card min-[360px]:h-[120px] min-[360px]:w-[120px]" data-coin-tile>
               <div className={`absolute inset-0 flex items-center justify-center rounded-[30px] ${tone === 'primary' ? 'bg-primary/10 text-primary' : 'bg-verify/10 text-verify'}`}><Art /></div>
-              <div ref={(node) => { litRefs.current[index] = node; }} className={`absolute inset-0 flex items-center justify-center rounded-[30px] text-white opacity-0 ${tone === 'primary' ? 'bg-primary' : 'bg-verify'}`}><Art /></div>
+              <div ref={(node) => { litRefs.current[index] = node; }} className={`absolute inset-0 flex items-center justify-center rounded-[30px] text-white opacity-0 transition-opacity duration-300 ${tone === 'primary' ? 'bg-primary' : 'bg-verify'}`}><Art /></div>
             </div>
           );
           return (
