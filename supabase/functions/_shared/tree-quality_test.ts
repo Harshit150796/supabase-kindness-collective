@@ -142,8 +142,10 @@ Deno.test('phones show the four steps as one coin\'s path (founder\'s pick, Nov 
   // Geometry is measured per layout, never per frame; the loop runs only on screen and in a visible tab.
   assert(path.includes('new ResizeObserver(measure)') && path.includes('new IntersectionObserver('));
   assert(path.includes("document.addEventListener('visibilitychange', sync)") && path.includes('iterations: Infinity'));
-  const loop = path.slice(path.indexOf('const sync ='), path.indexOf('const segmentsD'));
+  const loop = path.slice(path.indexOf('const sync ='), path.indexOf('const curves'));
   assert(!/getBoundingClientRect|getPointAtLength|getTotalLength/.test(loop));
+  // The design's S-curve from tile centre to tile centre, rows 170px apart, and its easing.
+  assert(path.includes('const HANDLE = 100 / 170;') && path.includes("const EASING = 'cubic-bezier(.55,0,.35,1)';") && path.includes('min-h-[170px]'));
   // Pause animations shows the finished picture.
   assert(path.includes("lit!.style.opacity = still ? '1' : '0'") && path.includes('if (still) return;'));
 });
