@@ -4,8 +4,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
  * Phones and tablets (below lg): "One coin's path" (founder's pick, Nov 12, 2026, option 05 of 10, built
  * as an exact replica of the design: founder request, Nov 12, 2026). The four steps zigzag down the page,
  * each beside a tile, 170px apart. One dotted S-curve runs from tile centre to tile centre, as drawn in the
- * design, over the words (founder accepted the crossing; copy is to be shortened instead). A blue coin
- * travels the curve, the curve fills in behind it, and each tile lights up in logo green or logo blue as
+ * design; each step shows its one-line phone text (founder's pick, Nov 12, 2026), which keeps the words
+ * clear of the curve. A blue coin travels the curve, the curve fills in behind it, and each tile lights up in logo green or logo blue as
  * the coin arrives. The loop runs only while the list is on screen and the tab is visible.
  *
  * Geometry is measured once per layout (ResizeObserver), never during the animation. The coin's route
@@ -14,7 +14,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
  * Pause animations shows the finished picture: every tile lit, the curve drawn, no coin.
  */
 
-type Step = { title: string; body: string };
+type Step = { title: string; phone: string };
 type Point = { x: number; y: number };
 type Geometry = { width: number; height: number; centers: Point[] };
 
@@ -254,7 +254,7 @@ export function PhoneCoinPath({ steps, still }: { steps: Step[]; still: boolean 
                   <span aria-hidden="true" className={`text-[13px] font-semibold tabular-nums ${tone === 'primary' ? 'text-primary' : 'text-verify'}`}>0{index + 1}</span>
                   <h3 className="font-display text-[25px] font-normal leading-[1.1] text-foreground">{step.title}</h3>
                 </div>
-                <p className="mt-1.5 text-[15px] leading-[1.5] text-muted-foreground">{step.body}</p>
+                <p className="mt-1.5 text-[15px] leading-[1.5] text-muted-foreground">{step.phone}</p>
               </div>
               {right && tile}
             </li>

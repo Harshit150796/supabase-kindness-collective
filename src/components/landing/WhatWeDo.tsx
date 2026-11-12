@@ -196,11 +196,12 @@ function ReceiptIllustration({ progress, still, offset }: ArtProps) {
   );
 }
 
+// `phone` is the one-line version for phones and tablets (founder's pick, Nov 12, 2026); laptops keep `body`.
 const steps = [
-  { title: 'You donate', body: 'You pick a real need someone has posted and cover it. Any amount, toward one specific thing.', accent: BLUE, offset: 0, Art: GiveIllustration },
-  { title: 'It becomes a coupon', body: 'Your money becomes a gift card or coupon for the store chosen. It can never be withdrawn as cash.', accent: EMERALD, offset: 0.12, Art: CouponIllustration },
-  { title: 'They get what they needed', body: 'They redeem it at the store for groceries, medicine or a ride to work — the actual thing, not money.', accent: EMERALD, offset: 0.24, Art: DeliveryIllustration },
-  { title: 'You get the receipt', body: 'A receipt comes back to you showing exactly what your money became, and when.', accent: VERIFY, offset: 0.36, Art: ReceiptIllustration },
+  { title: 'You donate', body: 'You pick a real need someone has posted and cover it. Any amount, toward one specific thing.', phone: 'Pick a real need. Cover it.', accent: BLUE, offset: 0, Art: GiveIllustration },
+  { title: 'It becomes a coupon', body: 'Your money becomes a gift card or coupon for the store chosen. It can never be withdrawn as cash.', phone: 'Store credit, never cash.', accent: EMERALD, offset: 0.12, Art: CouponIllustration },
+  { title: 'They get what they needed', body: 'They redeem it at the store for groceries, medicine or a ride to work — the actual thing, not money.', phone: 'Groceries, medicine, a ride.', accent: EMERALD, offset: 0.24, Art: DeliveryIllustration },
+  { title: 'You get the receipt', body: 'A receipt comes back to you showing exactly what your money became, and when.', phone: 'Proof of every dollar.', accent: VERIFY, offset: 0.36, Art: ReceiptIllustration },
 ];
 
 // Laptops and wide screens: the four steps arrive as a dealt hand of cards, alternating logo
