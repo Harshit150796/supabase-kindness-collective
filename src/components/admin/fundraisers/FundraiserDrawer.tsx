@@ -22,6 +22,7 @@ import { FundraiserContactTab } from '@/components/admin/FundraiserContactTab';
 import { cityState, needLabel, requestNeeds } from '@/lib/helpNeeds';
 import { fundraiserPublicUrl, fundraiserShareUrl } from '@/lib/fundraiserSharing';
 import { FundraiserThumb } from './FundraiserThumb';
+import { PhoneLink } from '@/components/admin/PhoneLink';
 import { FundraiserRow, ago, pageChecks, percent, progressOf, usdWhole } from './fundraiserList';
 
 const CATEGORIES = ['food', 'meals', 'healthcare', 'childcare', 'clothing', 'education', 'transportation', 'utilities', 'essentials', 'emergency'];
@@ -129,7 +130,7 @@ export function FundraiserDrawer({ id, onClose, onPrev, onNext, position }: {
 
   const needs = f ? requestNeeds(f.help_categories, f.category) : [];
   const place = f ? cityState(f.city, f.state_code) : null;
-  const checks = f && row ? pageChecks({ ...row, organizer_email: row.organizer_email ?? organizer.data?.email ?? null }) : [];
+  const checks = f && row ? pageChecks({ ...row, organizer_email: row.organizer_email ?? organizer.data?.email ?? null, organizer_phone: row.organizer_phone ?? organizer.data?.phone ?? null }) : [];
   const progress = row ? progressOf(row) : 0;
   const counts: Record<string, number> = { donations: d.data?.dons.length ?? 0, updates: d.data?.upd.length ?? 0, comments: d.data?.com.length ?? 0, team: d.data?.team.length ?? 0, conversations: d.data?.conv.length ?? 0, reports: row?.open_reports ?? 0, coupons: row?.coupons_waiting ?? 0, images: row?.photo_count ?? 0 };
   const tabs = ['overview', ...(canWrite ? ['contact'] : []), 'work', 'coupons', 'images', 'donations', 'updates', 'comments', 'team', 'conversations', 'reports', ...(isAdmin ? ['history'] : [])];
@@ -170,7 +171,7 @@ export function FundraiserDrawer({ id, onClose, onPrev, onNext, position }: {
                 </div>
               </div>
               <p className="break-words text-left text-xs text-muted-foreground">Created by {organizer.isLoading ? 'Loading…' : organizer.error ? 'Could not load organizer' : !organizer.data ? 'Not recorded'
-                : <>{organizer.data.full_name || 'No name'}{organizer.data.email && <> · <a href={`mailto:${organizer.data.email}`} className="text-primary underline-offset-4 hover:underline">{organizer.data.email}</a></>}{organizer.data.phone && <> · {organizer.data.phone}</>}
+                : <>{organizer.data.full_name || 'No name'}{organizer.data.email && <> · <a href={`mailto:${organizer.data.email}`} className="text-primary underline-offset-4 hover:underline">{organizer.data.email}</a></>}{organizer.data.phone && <> · <PhoneLink phone={organizer.data.phone} /></>}
                   {canWrite && <> · <button className="text-primary underline-offset-4 hover:underline" onClick={() => changeTab('contact')}>Message them</button></>}</>}</p>
             </SheetHeader>
 
@@ -226,8 +227,8 @@ export function FundraiserDrawer({ id, onClose, onPrev, onNext, position }: {
                     <ul className="grid gap-1 text-sm sm:grid-cols-2">
                       {checks.map((c) => (
                         <li key={c.id} className="flex items-start gap-1.5">
-                          {c.ok ? <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" /> : <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />}
-                          <span className={c.ok ? 'text-foreground' : 'text-destructive'}>{c.label}</span>
+                          {c.ok ? <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" /> : c.optional ? <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />}
+                          <span className={c.ok ? 'text-foreground' : c.optional ? 'text-muted-foreground' : 'text-destructive'}>{c.label}</span>
                         </li>
                       ))}
                     </ul>

@@ -7,6 +7,7 @@ import { RecordWork } from '@/components/admin/RecordWork';
 import { DataTable, StatusBadge } from '@/components/admin/DataTable';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PhoneLink, useProfilePhones } from '@/components/admin/PhoneLink';
 
 export function AdminRecordDrawer({ type, record, onClose }: { type: 'donor' | 'user'; record: any; onClose: () => void }) {
   return <Sheet open={!!record} onOpenChange={(v) => !v && onClose()}><SheetContent className="w-full overflow-y-auto sm:max-w-2xl">{record && <RecordDetails key={record.donor_key ?? record.user_id} type={type} record={record} />}</SheetContent></Sheet>;
@@ -17,8 +18,12 @@ function RecordDetails({ type, record }: { type: 'donor' | 'user'; record: any }
   const title = record.full_name || record.display_name || 'Guest donor';
   const [kind, setKind] = useState('donations');
   const [page, setPage] = useState(0);
+  // Their account's phone number, when they have an account (guests have none).
+  const accountId: string | null = type === 'user' ? record.user_id : record.donor_id ?? null;
+  const phones = useProfilePhones([accountId]);
+  const phone = accountId ? phones.data?.get(accountId) : null;
   const q = useQuery({ queryKey: ['adm-record-history', user?.id, type, key, kind, page], enabled: kind !== 'work', queryFn: () => rpc<{ rows: any[]; total: number }>('admin_record_history', { _type: type, _key: key, _kind: kind, _limit: 25, _offset: page * 25 }) });
-  return <><SheetHeader><SheetTitle className="pr-6 text-left font-serif text-2xl font-normal">{title}</SheetTitle><p className="break-words text-left text-sm text-muted-foreground">{record.email ?? 'No email recorded'}</p></SheetHeader>
+  return <><SheetHeader><SheetTitle className="pr-6 text-left font-serif text-2xl font-normal">{title}</SheetTitle><p className="break-words text-left text-sm text-muted-foreground">{record.email ?? 'No email recorded'}{phone && <> · <PhoneLink phone={phone} /></>}</p></SheetHeader>
     <div className="my-4 flex flex-wrap gap-3 text-sm"><span>{type === 'donor' ? `${usd(record.total)} given` : `Joined ${fmtDate(record.created_at)}`}</span><span className="text-muted-foreground">{record.donor_id || type === 'user' ? 'Registered account' : 'Guest · no account'}</span></div>
     <Tabs value={kind} onValueChange={(v) => { setKind(v); setPage(0); }}><TabsList className="h-auto flex-wrap"><TabsTrigger value="donations">Donations</TabsTrigger><TabsTrigger value="sources">Outside coupons</TabsTrigger>{type === 'user' && <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>}<TabsTrigger value="work">Notes & follow-ups</TabsTrigger></TabsList></Tabs>
     {kind === 'work' ? <RecordWork type={type} recordKey={key} title={title} /> : <div className="mt-4"><DataTable columns={[

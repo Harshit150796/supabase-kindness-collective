@@ -34,6 +34,7 @@ import {
 } from "@/lib/draftStorage";
 import { markAgreement, recordAgreement } from "@/lib/legal";
 import { pingSearchEngines } from "@/lib/searchPing";
+import { PHONE_ERROR, phoneOk, showPhone, toStoredPhone, usPhoneDigits } from "@/lib/phone";
 import { SEO, breadcrumbJsonLd } from "@/components/SEO";
 
 
@@ -157,6 +158,22 @@ const ApplyRecipient = () => {
   const [titleSource, setTitleSource] = useState<"suggested" | "custom">("suggested");
   // The final step's required confirmation (truth, consent for photos, Terms). Never saved in drafts.
   const [confirmed, setConfirmed] = useState(false);
+  // Optional phone for the team (founder request, Nov 12, 2026). Kept on their account (profiles.phone),
+  // never on the fundraiser page and never in drafts; filled in from their account when they have one.
+  const [phone, setPhone] = useState("");
+  const savedPhone = useRef<string | null>(null);
+  useEffect(() => {
+    if (!user?.id) { savedPhone.current = null; return; }
+    let live = true;
+    supabase.from("profiles").select("phone").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      if (!live) return;
+      savedPhone.current = (data as { phone: string | null } | null)?.phone ?? null;
+      const shown = showPhone(savedPhone.current);
+      if (shown) setPhone((current) => current || shown);
+    });
+    return () => { live = false; };
+  }, [user?.id]);
+  const phoneError = phone.trim() && usPhoneDigits(phone).length >= 10 && !phoneOk(phone) ? PHONE_ERROR : null;
 
   // Account state (only used for non-authenticated users)
   const [accountOpen, setAccountOpen] = useState(false);
@@ -294,6 +311,7 @@ const ApplyRecipient = () => {
         return /^\d{5}$/.test(zipCode) ? null : "Enter your 5-digit ZIP code";
       case 4:
         if (!(title || "").trim()) return "Add a title";
+        if (!phoneOk(phone)) return "Finish your phone number, or leave it blank";
         return confirmed ? null : "Tick the confirmation to submit";
       default:
         return "Not ready";
@@ -452,6 +470,14 @@ const ApplyRecipient = () => {
       throw fundraiserError;
     }
 
+    // Their phone number goes on their account so the team can reach them (never on the page).
+    const storedPhone = toStoredPhone(phone);
+    if (storedPhone && storedPhone !== savedPhone.current) {
+      const { error: phoneError } = await supabase.from("profiles").update({ phone: storedPhone }).eq("user_id", userId);
+      if (phoneError) console.error("Phone save error:", phoneError);
+      else savedPhone.current = storedPhone;
+    }
+
     // Keep a record that they confirmed the request and accepted the Terms when submitting.
     void recordAgreement(userId, "fundraiser-submit", fundraiserData.id);
     // Let Bing-powered search know a new request is live.
@@ -549,7 +575,8 @@ const ApplyRecipient = () => {
         email,
         password,
         fullName,
-        code
+        code,
+        phoneOk(phone) ? phone : undefined
       );
 
 
@@ -849,6 +876,9 @@ const ApplyRecipient = () => {
             onEditLocation={() => goToStep(3)}
             confirmed={confirmed}
             setConfirmed={setConfirmed}
+            phone={phone}
+            setPhone={setPhone}
+            phoneError={phoneError}
           /></Suspense>
         )}
       </ApplyLayout>

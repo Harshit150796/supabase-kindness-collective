@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { showPhone } from '@/lib/phone';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Copy, Loader2, Mail, Phone, Send } from 'lucide-react';
@@ -73,7 +74,7 @@ export function FundraiserContactTab({ fundraiserId, title, canWrite }: { fundra
             <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => copy(o.email!)} aria-label="Copy email"><Copy className="h-3.5 w-3.5" /></Button>
           </> : <span className="text-muted-foreground">No email on file</span>}
           {o.phone && <>
-            <a href={`tel:${o.phone.replace(/[^\d+]/g, '')}`} className="inline-flex items-center gap-1.5 text-primary underline-offset-4 hover:underline"><Phone className="h-4 w-4" />{o.phone}</a>
+            <a href={`tel:${o.phone.replace(/[^\d+]/g, '')}`} className="inline-flex items-center gap-1.5 text-primary underline-offset-4 hover:underline"><Phone className="h-4 w-4" />{showPhone(o.phone) ?? o.phone}</a>
             <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => copy(o.phone!)} aria-label="Copy phone"><Copy className="h-3.5 w-3.5" /></Button>
           </>}
         </div>

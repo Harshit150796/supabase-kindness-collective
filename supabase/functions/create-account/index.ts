@@ -17,7 +17,16 @@ const Body = z.object({
   password: z.string().min(8).max(72),
   full_name: z.string().trim().max(120).optional().default(''),
   code: z.string().trim().regex(/^\d{6}$/),
+  // Optional US phone (founder request, Nov 12, 2026); anything that isn't a valid US number is dropped.
+  phone: z.string().trim().max(32).optional().default(''),
 });
+
+/** +1 and ten digits for a valid US number (area code and exchange start with 2-9), otherwise null. */
+function usPhone(raw: string): string | null {
+  const digits = raw.replace(/\D/g, '');
+  const ten = digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : digits;
+  return /^[2-9]\d{2}[2-9]\d{6}$/.test(ten) ? `+1${ten}` : null;
+}
 
 const cardNumber = () => {
   const r = crypto.getRandomValues(new Uint8Array(3));
@@ -87,6 +96,12 @@ Deno.serve(async (req) => {
   // card is made here because the browser isn't signed in yet.
   const { error: cardErr } = await admin.from('loyalty_cards').insert({ user_id: created.user.id, card_number: cardNumber() });
   if (cardErr) console.error('loyalty card insert failed', cardErr.message);
+  // The optional phone number goes on the profile the trigger just made (only the person and the team can read it).
+  const phone = usPhone(p.phone);
+  if (phone) {
+    const { error: phoneErr } = await admin.from('profiles').update({ phone }).eq('user_id', created.user.id);
+    if (phoneErr) console.error('profile phone save failed', phoneErr.message);
+  }
 
   return json({ ok: true, id: created.user.id });
 });

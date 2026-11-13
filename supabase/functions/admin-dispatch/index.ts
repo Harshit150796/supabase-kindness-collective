@@ -123,11 +123,11 @@ Deno.serve(async (req) => {
     const { data: frs } = await admin.from('fundraisers').select('id, title, status, created_at, user_id').gte('created_at', since).limit(200);
     // Who created it, so the team can reach them straight from the alert.
     const ids = [...new Set((frs ?? []).map((f) => f.user_id).filter(Boolean))];
-    const { data: owners } = ids.length ? await admin.from('profiles').select('user_id, full_name, email').in('user_id', ids) : { data: [] };
-    const byId = new Map((owners ?? []).map((o: { user_id: string; full_name: string | null; email: string | null }) => [o.user_id, o]));
+    const { data: owners } = ids.length ? await admin.from('profiles').select('user_id, full_name, email, phone').in('user_id', ids) : { data: [] };
+    const byId = new Map((owners ?? []).map((o: { user_id: string; full_name: string | null; email: string | null; phone: string | null }) => [o.user_id, o]));
     for (const f of frs ?? []) {
       const o = byId.get(f.user_id);
-      const by = o ? [o.full_name?.trim(), o.email ? `(${o.email})` : ''].filter(Boolean).join(' ') : '';
+      const by = o ? [o.full_name?.trim(), o.email ? `(${o.email})` : '', o.phone?.trim() ? `· ${o.phone.trim()}` : ''].filter(Boolean).join(' ') : '';
       claims.push({ kind: 'fundraiser', source_id: f.id, payload: { title: f.title, status: f.status ?? '', at: f.created_at, by } });
     }
   }

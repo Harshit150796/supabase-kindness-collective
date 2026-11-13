@@ -19,6 +19,8 @@ import { Navbar } from '@/components/layout/Navbar';
 import { GoogleSignIn } from '@/components/auth/GoogleSignIn';
 import { AgreementNotice } from '@/components/legal/AgreementNotice';
 import { markAgreement } from '@/lib/legal';
+import { PhoneField } from '@/components/forms/PhoneField';
+import { PHONE_ERROR, phoneOk } from '@/lib/phone';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -54,6 +56,8 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  // Optional (founder request, Nov 12, 2026): lets the team reach organizers and donors quickly.
+  const [phone, setPhone] = useState('');
   const [optIn, setOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -72,7 +76,7 @@ export default function Auth() {
     else if (desc && err !== 'access_denied') msg = `Google sign-in didn’t finish: ${desc.replace(/supabase/gi, 'our sign-in service')}`;
     toast.error(msg);
   }, []);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; fullName?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; fullName?: string; phone?: string }>({});
   const [authStep, setAuthStep] = useState<AuthStep>('form');
   const [authView, setAuthView] = useState<AuthView>('auth');
   const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
@@ -80,6 +84,7 @@ export default function Auth() {
     email: string;
     password: string;
     fullName: string;
+    phone: string;
   } | null>(null);
 
   // "Sign in" / "Create account" pressed while already on this page (the menu links
@@ -105,6 +110,7 @@ export default function Auth() {
     try {
       if (mode === 'signup') {
         authSchema.parse({ email, password, fullName });
+        if (!phoneOk(phone)) { setErrors({ phone: PHONE_ERROR }); return false; }
       } else {
         authSchema.pick({ email: true, password: true }).parse({ email, password });
       }
@@ -176,7 +182,7 @@ export default function Auth() {
 
         // Send OTP for email verification before signup
         await sendOTP(email);
-        setPendingSignupData({ email, password, fullName });
+        setPendingSignupData({ email, password, fullName, phone });
         setAuthStep('otp');
         toast.success('OTP sent to your email!', {
           description: `Check ${email} for your 6-digit verification code`,
@@ -208,7 +214,7 @@ export default function Auth() {
   const handleOTPVerified = async (code: string) => {
     if (!pendingSignupData) return;
 
-    const { email: signupEmail, password: signupPassword, fullName: signupFullName } = pendingSignupData;
+    const { email: signupEmail, password: signupPassword, fullName: signupFullName, phone: signupPhone } = pendingSignupData;
     setLoading(true);
 
     try {
@@ -217,7 +223,8 @@ export default function Auth() {
         signupEmail,
         signupPassword,
         signupFullName,
-        code
+        code,
+        signupPhone
       );
 
 
@@ -464,6 +471,11 @@ export default function Auth() {
                         {mode === 'signup' && <PasswordStrengthIndicator password={password} />}
                         {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                       </div>
+
+                      {mode === 'signup' && (
+                        <PhoneField id="signup-phone" value={phone} onChange={(v) => { setPhone(v); if (errors.phone) setErrors({ ...errors, phone: undefined }); }}
+                          error={errors.phone} hint="So our team can reach you quickly about your fundraiser or your gifts. Never shown publicly." />
+                      )}
 
                       {mode === 'signup' && <UpdatesOptIn id="signup-updates" checked={optIn} onChange={setOptIn} />}
 
