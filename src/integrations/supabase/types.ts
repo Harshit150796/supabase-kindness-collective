@@ -4061,6 +4061,7 @@ export type Database = {
           organizer_email: string
           organizer_id: string
           organizer_name: string
+          organizer_phone: string
           photo_count: number
           photo_url: string
           preferred_brands: string[]
@@ -4332,6 +4333,7 @@ export type Database = {
           organizer_email: string
           organizer_id: string
           organizer_name: string
+          organizer_phone: string
           photo_count: number
           photo_url: string
           preferred_brands: string[]
