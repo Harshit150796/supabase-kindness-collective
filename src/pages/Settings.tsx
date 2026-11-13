@@ -13,6 +13,7 @@ import { signInPath } from "@/lib/serverActions";
 import { PaymentMethods } from "@/components/donor/PaymentMethods";
 import { Bell, Shield, Trash2, Mail, Heart, LogOut } from "lucide-react";
 import { LEGAL_EMAIL } from "@/lib/legal";
+import { PhoneSettingsCard } from "@/components/account/PhoneSettingsCard";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -56,6 +57,8 @@ const Settings = () => {
               Manage your account preferences
             </p>
           </div>
+
+          {user && <PhoneSettingsCard userId={user.id} />}
 
           {/* Notifications */}
           <Card className="mb-6 rounded-md shadow-sm">

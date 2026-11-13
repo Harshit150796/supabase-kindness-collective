@@ -5,7 +5,7 @@ import { Copy, Download, ExternalLink, LayoutGrid, List as ListIcon, MoreHorizon
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
 import { DataTable, StatusBadge, Column } from '@/components/admin/DataTable';
-import { sb, rpc, fmtDate, downloadCsv } from '@/lib/adminApi';
+import { rpc, fmtDate, downloadCsv } from '@/lib/adminApi';
 import { fetchRpcPages } from '@/lib/adminWorkspace';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { HELP_NEEDS, cityState, needLabel } from '@/lib/helpNeeds';
 import { fundraiserPublicUrl, fundraiserShareUrl } from '@/lib/fundraiserSharing';
 import { FundraiserThumb } from '@/components/admin/fundraisers/FundraiserThumb';
+import { PhoneLink } from '@/components/admin/PhoneLink';
+import { showPhone } from '@/lib/phone';
 import { FundraiserGallery } from '@/components/admin/fundraisers/FundraiserGallery';
 import { FundraiserDrawer } from '@/components/admin/fundraisers/FundraiserDrawer';
 import {
@@ -126,15 +128,12 @@ export default function AdminFundraisers() {
     try {
       const ids = onlySelected ? Object.keys(selected) : null;
       const all = await fetchRpcPages<FundraiserRow>((offset, limit) => rpc<FundraiserRow[]>('admin_fundraiser_list', onlySelected ? { _ids: ids, _limit: limit, _offset: offset, _sort: sort, _dir: dir } : { ...filters, _limit: limit, _offset: offset }), 500);
-      const people = new Map<string, string | null>();
-      const owners = [...new Set(all.map((r) => r.organizer_id).filter(Boolean))] as string[];
-      for (let i = 0; i < owners.length; i += 200) { const { data } = await sb.from('profiles').select('user_id,phone').in('user_id', owners.slice(i, i + 200)); for (const p of (data ?? []) as Array<{ user_id: string; phone: string | null }>) people.set(p.user_id, p.phone); }
       downloadCsv(onlySelected ? 'fundraisers-selected' : 'fundraisers', all.map((r) => ({
         id: r.id, title: r.title, status: r.status, example: r.is_example ? 'yes' : '', needs: (r.help_categories.length ? r.help_categories : [r.category]).map(needLabel).join('; '),
         stores: r.preferred_brands.join('; '), city: r.city ?? '', state: r.state_code ?? '', goal: r.monthly_goal, raised: r.raised, percent_of_goal: Math.round(progressOf(r) * 100),
         gifts: r.gifts, last_gift_at: r.last_gift_at ?? '', coupons_to_send: r.coupons_waiting, coupons_ready: r.coupons_ready, coupons_used: r.coupons_used, open_reports: r.open_reports,
         photos: r.photo_count, story_characters: r.story_length, homepage_position: r.homepage_position ?? '', hidden_from_homepage: r.homepage_hidden ? 'yes' : '',
-        organizer_name: r.organizer_name ?? '', organizer_email: r.organizer_email ?? '', organizer_phone: (r.organizer_id && people.get(r.organizer_id)) ?? '',
+        organizer_name: r.organizer_name ?? '', organizer_email: r.organizer_email ?? '', organizer_phone: showPhone(r.organizer_phone) ?? '',
         created_at: r.created_at ?? '', updated_at: r.updated_at ?? '', public_page: fundraiserPublicUrl(r.unique_slug, r.id),
       })));
       toast({ title: `${all.length} fundraisers exported` });
@@ -161,7 +160,7 @@ export default function AdminFundraisers() {
         </div>
       </div>;
     } },
-    { key: 'organizer', header: 'Created by', sortable: true, cell: (r) => <div className="max-w-[200px]"><p className="truncate text-foreground">{r.organizer_name || 'No name'}</p><p className="truncate text-xs text-muted-foreground">{r.organizer_email || '—'}</p></div> },
+    { key: 'organizer', header: 'Created by', sortable: true, cell: (r) => <div className="max-w-[200px]"><p className="truncate text-foreground">{r.organizer_name || 'No name'}</p><p className="truncate text-xs text-muted-foreground">{r.organizer_email || '—'}</p><PhoneLink phone={r.organizer_phone} className="text-xs" empty={<p className="text-[11px] text-muted-foreground">No phone</p>} /></div> },
     { key: 'status', header: 'Status', sortable: true, cell: (r) => <StatusBadge value={r.status} /> },
     { key: 'raised', header: 'Raised', sortable: true, cell: (r) => { const p = progressOf(r); return <div className="w-36"><p className="text-xs"><span className="font-medium text-foreground">{usdWhole(r.raised)}</span> <span className="text-muted-foreground">of {usdWhole(r.monthly_goal)}</span></p><div className="mt-1 flex items-center gap-1.5"><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted" aria-hidden="true"><div className="h-full rounded-full bg-primary" style={{ width: `${p * 100}%` }} /></div><span className="w-8 text-right text-[11px] text-muted-foreground">{percent(p)}</span></div></div>; } },
     { key: 'gifts', header: 'Gifts', sortable: true, align: 'right', cell: (r) => <div><p className="text-foreground">{r.gifts}</p><p className="whitespace-nowrap text-[11px] text-muted-foreground">{r.last_gift_at ? ago(r.last_gift_at) : 'none yet'}</p></div> },
@@ -245,7 +244,7 @@ export default function AdminFundraisers() {
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, organizer, email, city or ID" aria-label="Search fundraisers" className="h-9 pl-8 pr-8" />
+          <Input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, organizer, email, phone, city or ID" aria-label="Search fundraisers" className="h-9 pl-8 pr-8" />
           {q && <button type="button" aria-label="Clear search" className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground" onClick={() => setQ('')}><X className="h-4 w-4" /></button>}
         </div>
         <Select value={need || 'all'} onValueChange={(v) => set({ need: v === 'all' ? null : v })}>

@@ -1,3 +1,4 @@
+import { PhoneLink } from '@/components/admin/PhoneLink';
 import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
@@ -32,9 +33,9 @@ export default function AdminVerifications() {
   // Who each person is (name and email) instead of an ID, looked up for this page in one query.
   const ids = [...new Set((t.rows ?? []).map((r: any) => r.user_id as string))].sort();
   const people = useQuery({ queryKey: ['adm-verif-people', ids], enabled: ids.length > 0, queryFn: async () => {
-    const { data, error } = await sb.from('profiles').select('user_id,full_name,email').in('user_id', ids);
+    const { data, error } = await sb.from('profiles').select('user_id,full_name,email,phone').in('user_id', ids);
     if (error) throw error;
-    return new Map<string, { full_name: string | null; email: string | null }>((data ?? []).map((p: any) => [p.user_id as string, p]));
+    return new Map<string, { full_name: string | null; email: string | null; phone: string | null }>((data ?? []).map((p: any) => [p.user_id as string, p]));
   } });
   const person = (id: string) => people.data?.get(id);
   // Their fundraisers, shown in the review panel with photos.
@@ -46,7 +47,7 @@ export default function AdminVerifications() {
   const photos = useFundraiserPhotos((theirs.data ?? []).map((f) => f.id));
   const cols: Column<any>[] = [
     { key: 'submitted_at', header: 'Submitted', sortable: true, cell: (r) => fmtDate(r.submitted_at) },
-    { key: 'user_id', header: 'Person', cell: (r) => <div className="max-w-[240px]"><p className="truncate text-foreground">{person(r.user_id)?.full_name || 'No name'}</p><p className="truncate text-xs text-muted-foreground">{person(r.user_id)?.email || `${r.user_id.slice(0, 8)}…`}</p></div> },
+    { key: 'user_id', header: 'Person', cell: (r) => <div className="max-w-[240px]"><p className="truncate text-foreground">{person(r.user_id)?.full_name || 'No name'}</p><p className="truncate text-xs text-muted-foreground">{person(r.user_id)?.email || `${r.user_id.slice(0, 8)}…`}</p><PhoneLink phone={person(r.user_id)?.phone} className="text-xs" /></div> },
     { key: 'verification_type', header: 'Type', sortable: true, cell: (r) => r.verification_type || 'Standard' },
     { key: 'status', header: 'Status', sortable: true, cell: (r) => <StatusBadge value={r.status} /> },
     { key: 'notes', header: 'Notes', cell: (r) => <span className="line-clamp-1 max-w-[260px] text-xs">{r.notes || '—'}</span> },
@@ -61,7 +62,8 @@ export default function AdminVerifications() {
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
           {open && <div className="space-y-4 text-sm">
             <SheetHeader><SheetTitle className="text-left font-serif text-2xl font-normal">{person(open.user_id)?.full_name || 'Verification'}</SheetTitle>
-              {person(open.user_id)?.email && <a className="text-left text-sm text-primary" href={`mailto:${person(open.user_id)?.email}`}>{person(open.user_id)?.email}</a>}</SheetHeader>
+              {person(open.user_id)?.email && <a className="text-left text-sm text-primary" href={`mailto:${person(open.user_id)?.email}`}>{person(open.user_id)?.email}</a>}
+              <PhoneLink phone={person(open.user_id)?.phone} className="text-left text-sm" empty={<p className="text-left text-sm text-muted-foreground">No phone number</p>} /></SheetHeader>
             <div><p className="mb-1.5 text-xs text-muted-foreground">Their fundraisers</p>
               {theirs.isLoading ? <p className="text-xs text-muted-foreground">Loading…</p> : !theirs.data?.length ? <p className="text-sm text-muted-foreground">No fundraisers yet.</p> : (
                 <ul className="space-y-1.5">{theirs.data.map((f) => <li key={f.id} className="flex items-center justify-between gap-2"><FundraiserChip id={f.id} title={f.title} photos={photos.data} size={36} /><StatusBadge value={f.status} /></li>)}</ul>

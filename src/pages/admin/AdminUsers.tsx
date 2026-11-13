@@ -9,6 +9,7 @@ import { rpc, fmtDate } from '@/lib/adminApi';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
+import { PhoneLink, useProfilePhones } from '@/components/admin/PhoneLink';
 
 const PAGE = 25;
 interface Row { user_id: string; email: string; full_name: string | null; city: string | null; country: string | null; created_at: string; roles: string[]; total_count: number }
@@ -26,9 +27,11 @@ export default function AdminUsers() {
     queryKey: ['adm-users', dq, role, page],
     queryFn: () => rpc<Row[]>('admin_list_users', { _search: dq || null, _role: role === 'all' ? null : role, _limit: PAGE, _offset: page * PAGE }),
   });
+  const phones = useProfilePhones((q.data ?? []).map((r) => r.user_id));
   const cols: Column<Row>[] = [
     { key: 'name', header: 'Name', cell: (r) => <div><p className="font-medium text-foreground">{r.full_name || 'No name'}</p><p className="text-xs text-muted-foreground">{r.email}</p></div> },
     { key: 'roles', header: 'Roles', cell: (r) => <div className="flex flex-wrap gap-1">{r.roles.map((x) => <span key={x} className={`rounded px-1.5 py-0.5 text-[11px] font-medium capitalize ${['admin', 'staff', 'viewer'].includes(x) ? 'bg-ink text-ink-foreground' : 'bg-muted text-foreground'}`}>{x}</span>)}</div> },
+    { key: 'phone', header: 'Phone', cell: (r) => <PhoneLink phone={phones.data?.get(r.user_id)} className="text-sm" empty={<span className="text-xs text-muted-foreground">—</span>} /> },
     { key: 'loc', header: 'Location', cell: (r) => [r.city, r.country].filter(Boolean).join(', ') || '—' },
     { key: 'created_at', header: 'Joined', cell: (r) => fmtDate(r.created_at) },
   ];

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ImagePlus, MapPin, Sparkles } from "lucide-react";
+import { ImagePlus, MapPin, Phone, Sparkles } from "lucide-react";
+import { formatUsPhone } from "@/lib/phone";
 import { getSuggestedTitles } from "@/lib/suggestedTitles";
 import { MediaItem, formatDuration } from "@/lib/mediaUpload";
 import { needLabel } from "@/lib/helpNeeds";
@@ -27,6 +28,10 @@ interface ReviewStepProps {
   onEditLocation: () => void;
   confirmed: boolean;
   setConfirmed: (value: boolean) => void;
+  /** Optional phone for the team (founder request, Nov 12, 2026); saved to their account, never on the page. */
+  phone: string;
+  setPhone: (value: string) => void;
+  phoneError?: string | null;
 }
 
 const whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
@@ -65,6 +70,9 @@ export const ReviewStep = ({
   onEditLocation,
   confirmed,
   setConfirmed,
+  phone,
+  setPhone,
+  phoneError,
 }: ReviewStepProps) => {
   const cover = media[0];
   const extras = media.slice(1);
@@ -216,6 +224,35 @@ export const ReviewStep = ({
         {story
           ? <p className="line-clamp-5 whitespace-pre-line text-[16px] leading-[1.7] text-foreground/85">{story}</p>
           : <p className="text-muted-foreground">No story written yet.</p>}
+      </section>
+
+      <section aria-labelledby="apply-phone-heading" className="space-y-3">
+        <h2 id="apply-phone-heading" className="font-display text-[1.5rem] font-normal leading-tight text-foreground sm:text-[1.75rem]">
+          Your phone number <span className="font-sans text-base text-muted-foreground">(optional)</span>
+        </h2>
+        <p className="max-w-[34rem] text-[15px] leading-relaxed text-muted-foreground">
+          So our team can reach you quickly about your fundraiser. It's never shown on your page.
+        </p>
+        <div className={`flex h-14 max-w-sm items-stretch overflow-hidden rounded-2xl bg-muted/60 transition-shadow focus-within:shadow-[inset_0_0_0_2px_hsl(var(--primary))] ${phoneError ? "shadow-[inset_0_0_0_2px_hsl(var(--destructive))]" : ""}`}>
+          <span className="flex shrink-0 items-center gap-2 border-r border-border/70 px-4 text-[15px] font-medium text-foreground">
+            <Phone className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            +1
+          </span>
+          <input
+            id="apply-phone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel-national"
+            placeholder="(555) 123-4567"
+            aria-labelledby="apply-phone-heading"
+            aria-invalid={!!phoneError}
+            aria-describedby={phoneError ? "apply-phone-error" : undefined}
+            value={phone}
+            onChange={(e) => setPhone(formatUsPhone(e.target.value))}
+            className="min-w-0 flex-1 bg-transparent px-4 text-lg font-medium tabular-nums text-foreground outline-none placeholder:text-muted-foreground/60"
+          />
+        </div>
+        {phoneError && <p id="apply-phone-error" className="text-sm text-destructive">{phoneError}</p>}
       </section>
 
       <div className="space-y-3">

@@ -21,6 +21,7 @@ export type FundraiserRow = {
   organizer_id: string | null;
   organizer_name: string | null;
   organizer_email: string | null;
+  organizer_phone: string | null;
   raised: number;
   gifts: number;
   last_gift_at: string | null;
@@ -109,8 +110,8 @@ export function ago(iso: string | null | undefined, now = Date.now()) {
 /** What a page needs before it goes live; shown in the drawer and as hints in the list. */
 export function pageChecks(f: {
   photo_count: number; story_length: number; help_categories: string[]; category?: string | null; preferred_brands: string[];
-  city: string | null; state_code: string | null; monthly_goal: number; organizer_email: string | null;
-}) {
+  city: string | null; state_code: string | null; monthly_goal: number; organizer_email: string | null; organizer_phone?: string | null;
+}): Array<{ id: string; label: string; ok: boolean; optional?: boolean }> {
   return [
     { id: 'photo', label: f.photo_count ? `${f.photo_count} photo${f.photo_count === 1 ? '' : 's'}` : 'No photo yet', ok: f.photo_count > 0 },
     { id: 'story', label: f.story_length >= 200 ? `Story of ${f.story_length} characters` : `Story is short (${f.story_length} characters, 200 or more reads better)`, ok: f.story_length >= 200 },
@@ -119,5 +120,7 @@ export function pageChecks(f: {
     { id: 'place', label: f.city || f.state_code ? 'City and state set' : 'No city or state', ok: !!(f.city || f.state_code) },
     { id: 'goal', label: f.monthly_goal > 0 ? 'Goal set' : 'No goal', ok: f.monthly_goal > 0 },
     { id: 'email', label: f.organizer_email ? 'Organizer has an email on file' : 'No organizer email on file', ok: !!f.organizer_email },
+    // Optional for organizers, so a missing number is a note, not a problem.
+    { id: 'phone', label: f.organizer_phone ? 'Organizer has a phone number on file' : 'No phone number (optional)', ok: !!f.organizer_phone, optional: true },
   ];
 }

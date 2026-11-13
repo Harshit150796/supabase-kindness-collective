@@ -13,7 +13,7 @@ interface AuthContextType {
   loading: boolean;
   roles: AppRole[];
   rolesLoaded: boolean;
-  signUp: (email: string, password: string, fullName: string, code: string) => Promise<{ error: Error | null; user?: any }>;
+  signUp: (email: string, password: string, fullName: string, code: string, phone?: string) => Promise<{ error: Error | null; user?: any }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   hasRole: (role: AppRole) => boolean;
@@ -107,10 +107,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
     fullName: string,
-    code: string
+    code: string,
+    phone?: string
   ) => {
+    // phone is optional; create-account keeps it only when it is a valid US number.
     const { data, error } = await supabase.functions.invoke('create-account', {
-      body: { email, password, full_name: fullName, code },
+      body: { email, password, full_name: fullName, code, ...(phone?.trim() ? { phone } : {}) },
     });
     if (!error) return { error: null, user: data };
     let message = 'We could not create your account. Please try again.';
