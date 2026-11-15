@@ -50,5 +50,6 @@ Clicks, CTR, search terms (add negatives), donations during the test (admin dash
 ## Video ads
 Illustrated, voiced dramatizations in 9:16, 16:9 and 1:1 (marketing/ad-video/README.md, script in SCRIPT.md):
 "Checkout" (30 s hero), "The List" (20 s), "One Pencil" (15 s, School & learning) and "Milk or Diapers?"
-(6 s bumper), plus the earlier receipt-only "What do you put back?". Start a Video campaign with the 30 s and
+(6 s bumper), the two-minute "Day 41" (phone-diary story, for skippable in-stream and organic posts), plus the
+earlier receipt-only "What do you put back?". Start a Video campaign with the 30 s and
 15 s in-stream and the bumper, about $5/day each for a week, and keep the one with the lowest cost per donation.

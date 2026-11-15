@@ -11,6 +11,7 @@ license and no real person's likeness or voice is used. Every story film says on
 | `list` | 20 s | Dad crosses things off the grocery list at night and hides it from his daughter. Then every item is checked. | In-stream, Shorts |
 | `pencil` | 15 s | The night before school a girl has one pencil. In the morning she walks in ready. Pushes School & learning. | Shorts, in-stream (non-skippable max is 15 s) |
 | `bumper` | 6 s | "Milk… or diapers?" | YouTube bumper (6 s max) |
+| `day41` | 2:00 | A working mother and her son living in their car, told like her phone diary. She asks for help; strangers give; three days later there is dinner. Script and research: [ugc/DAY-41.md](ugc/DAY-41.md). | YouTube (skippable in-stream, organic post), landing pages |
 
 Each comes as `out/<version>-9x16.mp4` (Shorts, phone placements), `-16x9.mp4` (in-stream) and `-1x1.mp4`
 (Demand Gen, feeds). Captions and spoken-line subtitles are burned in, so the ads work muted.
@@ -29,9 +30,10 @@ receipt. No tax-deductible, nonprofit/charity, "verified families", retailer nam
 - `versions/<name>.timeline.js`: shots, spoken lines (who, text, start time), sound cues, end card. The single
   source of timing for picture, voices and score.
 - `versions/<name>.html`: the choreography (poses, expressions, props, camera) for each shot.
-- `lib/`: `stage.js` (camera, captions and subtitles, end card), `cast.js` (characters with lip sync and props),
-  `sets.js` (store, kitchen, bedroom, street, phone close-up of the donate flow), `shots.js` (shared donor/phone
-  shots), `stage.css`.
+- `lib/`: `stage.js` (camera, captions and subtitles, phone-diary timestamp, end card), `cast.js` (characters with
+  lip sync and props), `sets.js` (store, kitchen, bedroom, street, phone close-up of the donate flow), `sets41.js`
+  (the car, gas-station bathroom, windshield, steering wheel, parking lot and the apply flow for "Day 41"),
+  `shots.js` (shared donor/phone shots), `stage.css`.
 - `voice.py`: makes each spoken line with the open Kokoro-82M voice model (Apache-2.0) on onnxruntime, and writes
   `versions/<name>.voice.js` (real line timings plus a 30 fps mouth envelope the characters lip-sync to).
 - `score.py`: piano/pad/bell score, foley (card reader, heartbeat, clock, pencil, birds…), ambience, the voices,

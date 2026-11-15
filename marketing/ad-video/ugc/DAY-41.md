@@ -1,7 +1,12 @@
 # "Day 41": two-minute phone-shot film
 
 A two-minute vertical film shot like someone's own phone footage: a working mother and her son living in their
-car, the night she finally asks for help, and the stranger who answers. Written to be made one of two ways:
+car, the night she finally asks for help, and the stranger who answers.
+
+**Made (Nov 2026):** the illustrated, voiced version is built in this repo (`../versions/day41.html`,
+`../out/day41-9x16.mp4`, `-16x9`, `-1x1`), labelled "Dramatization · illustrated characters · synthetic voices".
+It was made here because no outside generator was to be used and photoreal people cannot be generated in this
+environment. The two routes below are still open if a live-action or photoreal version is wanted later:
 
 - **Route A, real people (recommended).** A real creator and a real family with an open fundraiser on
   CouponDonation, filmed with consent. This is what actually goes viral, and it needs no disclaimer beyond "#ad".

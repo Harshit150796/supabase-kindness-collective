@@ -61,3 +61,12 @@ html[data-mode='landscape'] .end .logo { width: 24vmin; }
 .cap.say .lab { display: block; font-size: 0.5em; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.72; margin-bottom: 0.45em; }
 .cap.light.say .lab { color: #2e7d32; opacity: 1; }
 .cap.dark.say .lab { color: #a5d6a7; opacity: 1; }
+
+/* Phone-diary timestamp */
+.hud { position: absolute; z-index: 6; opacity: 0; color: #fff; font-weight: 650; letter-spacing: 0.09em; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55); pointer-events: none; white-space: nowrap; }
+.hud .dot { display: inline-block; width: 0.62em; height: 0.62em; border-radius: 50%; background: #fff; margin-right: 0.6em; vertical-align: 0.02em; }
+html[data-mode='portrait'] .hud { left: 5%; bottom: 5.2%; font-size: 2.7vw; }
+html[data-mode='landscape'] .hud { right: 3%; top: 4.5%; font-size: 1.35vw; }
+html[data-mode='square'] .hud { left: 3%; top: 2.2%; font-size: 2.1vw; }
+.end .eh.small { font-size: 8.2vmin; max-width: 86vmin; }
+#world { transform-origin: 50% 50%; }

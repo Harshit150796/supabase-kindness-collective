@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 versions=("$@")
-[ ${#versions[@]} -eq 0 ] && versions=(checkout list pencil bumper)
+[ ${#versions[@]} -eq 0 ] && versions=(checkout list pencil bumper day41)
 mkdir -p out/voice out/audio
 for v in "${versions[@]}"; do
   if [ -n "${KOKORO:-}" ]; then

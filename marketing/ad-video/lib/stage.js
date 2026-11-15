@@ -109,7 +109,7 @@
   /** How open a speaker's mouth is at time t (0..1), from the voice's loudness. */
   CD.talk = (who, t) => {
     for (const l of CD.lines()) {
-      if (l.who !== who || t < l.t0 || t >= l.t1) continue;
+      if (l.who !== who || l.vo || t < l.t0 || t >= l.t1) continue;
       if (!l.env) return 0.35 + 0.35 * Math.abs(Math.sin((t - l.t0) * 11));
       const f = (t - l.t0) * l.fps, i = Math.floor(f), k = f - i;
       const a = l.env[i] ?? 0, b = l.env[i + 1] ?? 0;
@@ -170,6 +170,9 @@
       return { ...c, el: box, spans };
     });
 
+    const hud = CD.html('div', 'hud', stage);
+    const hudDot = CD.html('span', 'dot', hud);
+    const hudTxt = CD.html('span', '', hud);
     const disc = CD.html('div', 'disc', stage, cfg.disclosure?.text || 'Dramatization · illustrated characters');
     const flash = CD.html('div', 'flash', stage);
 
@@ -183,7 +186,8 @@
       const wm = CD.html('div', 'wm', end);
       CD.html('span', 'c', wm, 'Coupon');
       CD.html('span', 'd', wm, 'Donation');
-      CD.html('div', 'eh', end, cfg.end.headline);
+      const eh = CD.html('div', 'eh', end, cfg.end.headline);
+      if (cfg.end.small) eh.classList.add('small');
       CD.html('div', 'btn', end, cfg.end.cta || 'coupondonation.com');
       if (cfg.end.fine) CD.html('div', 'fine', end, cfg.end.fine);
       endKids = [...end.children];
@@ -205,6 +209,8 @@
           box = [box[0] + Math.sin(t * 1.31) * a + Math.sin(t * 2.7) * a * 0.4, box[1] + Math.sin(t * 1.07 + 1) * a * 0.7, box[2], box[3]];
         }
         svg.setAttribute('viewBox', CD.viewBox(box, active.full));
+        // a hand-held phone is never quite level
+        svg.style.transform = active.roll ? `rotate(${(Math.sin(t * 0.9 + active.t0) * active.roll + Math.sin(t * 2.3) * active.roll * 0.3).toFixed(3)}deg) scale(1.035)` : '';
         document.body.style.background = active.bg || '#f4f6f2';
       }
 
@@ -239,6 +245,9 @@
       flash.style.opacity = f;
       flash.style.background = fc;
 
+      const h = (cfg.hud || []).find(([a, b]) => t >= a && t < b);
+      hud.style.opacity = h ? CD.win(t, h[0], h[1], 0.15) : 0;
+      if (h) { hudTxt.textContent = h[2]; hudDot.style.opacity = Math.floor(t * 1.6) % 2 ? 0.25 : 1; }
       const d = cfg.disclosure || {};
       disc.style.opacity = d.range ? CD.win(t, d.range[0], d.range[1], 0.2) * 0.85 : 0;
       disc.style.color = d.dark && d.dark(t) ? 'rgba(255,255,255,.8)' : 'rgba(20,32,25,.7)';

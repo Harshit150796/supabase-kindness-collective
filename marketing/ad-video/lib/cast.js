@@ -243,6 +243,11 @@
     const tear = el('ellipse', { rx: 2.4, ry: 3.4, fill: '#e3f1fb', opacity: 0 }, feat);
     const front = el('g', {}, head);
     drawHair(hs.front, front, hair, accent);
+    if (o.back) { // seen from behind: no face, just hair
+      feat.style.display = 'none';
+      el('ellipse', { cx: 0, cy: -1, rx: D.rx + 1.5, ry: D.ry + 1, fill: hair }, head);
+      el('ellipse', { cx: 0, cy: D.ry * 0.72, rx: D.rx * 0.5, ry: D.ry * 0.3, fill: skinS }, head);
+    }
     let glasses = null;
     if (o.glasses) {
       glasses = el('g', { fill: 'none', stroke: '#26323a', 'stroke-width': 2.4 }, head);
@@ -262,6 +267,11 @@
     const armL = mkArm(), armR = mkArm();
     if (!longSleeve) { armL.up.setAttribute('stroke', skin); armR.up.setAttribute('stroke', skin); armL.up.setAttribute('stroke-width', D.aw * 0.84); armR.up.setAttribute('stroke-width', D.aw * 0.84); }
 
+    if (o.back && o.pack) {
+      const pc = o.pack;
+      el('path', { d: `M ${-tw + 12} ${sy + 4} Q ${-tw + 8} ${sy - 12} 0 ${sy - 12} Q ${tw - 8} ${sy - 12} ${tw - 12} ${sy + 4} L ${tw - 8} ${hy - 4} Q 0 ${hy + 8} ${-tw + 8} ${hy - 4} Z`, fill: pc }, upper);
+      el('path', { d: `M ${-tw + 22} ${hy - 12} L ${-tw + 22} ${hy - 44} Q 0 ${hy - 54} ${tw - 22} ${hy - 44} L ${tw - 22} ${hy - 12} Z`, fill: shade(pc, -0.2) }, upper);
+    }
     const SL = [-D.shX, D.shY + 12], SR = [D.shX, D.shY + 12];
     const restL = [-D.shX - 7, D.shY + 12 + D.L1 + D.L2 - 9], restR = [D.shX + 7, D.shY + 12 + D.L1 + D.L2 - 9];
     let px = 0, py = 0, ps = 1, lastTy = 0, lastLean = 0, lastHead = [0, D.headY];

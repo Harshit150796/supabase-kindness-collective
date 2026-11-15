@@ -175,6 +175,32 @@ def sfx(mx, t0, kind):
         mx.add("fx", t0, noise(d, 2, hp=True) * mod * 0.05, pan=-0.2)
     elif kind == "check":
         mx.add("fx", t0, bell(0.9, 91, 0.3), pan=0.2)
+    elif kind == "breath":
+        d = 0.7
+        n = int(d * SR)
+        mx.add("fx", t0, lowpass(noise(d), 6) * np.sin(np.pi * np.arange(n) / n) ** 2 * 0.05)
+    elif kind == "brush":
+        d = 0.28
+        n = int(d * SR)
+        mx.add("fx", t0, noise(d, 3, hp=True) * np.sin(np.pi * np.arange(n) / n) ** 2 * 0.035, pan=-0.2)
+    elif kind == "bell":  # a school bell across the street
+        d = 1.5
+        t = tt(d)
+        ring = (np.sin(2 * np.pi * 2090 * t) + 0.6 * np.sin(2 * np.pi * 3140 * t)) * (0.55 + 0.45 * np.sign(np.sin(2 * np.pi * 22 * t)))
+        mx.add("fx", t0, ring * np.clip(t / 0.02, 0, 1) * np.clip((d - t) / 0.5, 0, 1) * 0.022, pan=0.3)
+    elif kind == "door":
+        mx.add("fx", t0, thump(0.3), pan=0.3)
+        mx.add("fx", t0, noise(0.06, 5) * np.exp(-np.arange(int(0.06 * SR)) / 500) * 0.08, pan=0.3)
+    elif kind == "paper":
+        mx.add("fx", t0, noise(0.07, 2, hp=True) * np.exp(-np.arange(int(0.07 * SR)) / 700) * 0.09, pan=-0.2)
+    elif kind == "coin":
+        mx.add("fx", t0, bell(0.5, 100, 0.2), pan=0.3)
+        mx.add("fx", t0 + 0.05, bell(0.4, 105, 0.12), pan=0.35)
+    elif kind == "buzz":  # a phone vibrating on metal
+        d = 0.42
+        t = tt(d)
+        v = np.sin(2 * np.pi * 155 * t) * (0.6 + 0.4 * np.sin(2 * np.pi * 31 * t)) + 0.3 * noise(d, 4)
+        mx.add("fx", t0, v * np.clip(t / 0.02, 0, 1) * np.clip((d - t) / 0.05, 0, 1) * 0.1, pan=0.1)
     elif kind == "pencil":
         mx.add("fx", t0, beep(0.02, 3200, 0.04))
         mx.add("fx", t0, thump(0.06))
@@ -209,6 +235,13 @@ def ambience(mx, kind, t0, t1):
                 ch = np.sin(2 * np.pi * (f0 + 1600 * np.sin(np.pi * tt_ / dd)) * tt_) * np.sin(np.pi * tt_ / dd) ** 2
                 mx.add("amb", t + j * 0.09, ch * 0.03, pan=r.uniform(-0.7, 0.7))
             t += r.uniform(0.6, 1.4)
+    elif kind == "crickets":
+        mx.add("amb", t0, lowpass(noise(d), 50) * env * 0.022)
+        t = tt(d)
+        chirp = np.sin(2 * np.pi * 4300 * t) * (np.sin(2 * np.pi * 34 * t) > 0.2) * (np.sin(2 * np.pi * 1.7 * t) > 0.35)
+        mx.add("amb", t0, chirp * env * 0.006, pan=-0.4)
+        chirp2 = np.sin(2 * np.pi * 3800 * t) * (np.sin(2 * np.pi * 29 * t) > 0.2) * (np.sin(2 * np.pi * 1.3 * t + 1.1) > 0.45)
+        mx.add("amb", t0, chirp2 * env * 0.005, pan=0.5)
     elif kind == "clock":
         t = t0
         i = 0
@@ -308,7 +341,43 @@ def music_bumper(mx):
     melody(mx, [(3.9, 84, 0.45), (4.1, 88, 0.35), (4.3, 91, 0.3)], vel=0.5, inst="bell")
 
 
-MUSIC = {"checkout": music_checkout, "list": music_list, "pencil": music_pencil, "bumper": music_bumper}
+def music_day41(mx):
+    # dawn in the car: almost nothing
+    play_chords(mx, [(0.6, 5.6, "Am"), (5.6, 11.1, "F"), (11.1, 16.6, "C")], vel=0.5, arp=0.92, pad_vel=0.34)
+    melody(mx, [(0.6, 76, 0.34), (3.4, 72, 0.26), (5.6, 69, 0.34), (8.4, 72, 0.26), (11.1, 67, 0.34), (13.9, 64, 0.26)], vel=0.6)
+    # the mirror: a little warmer
+    play_chords(mx, [(16.6, 20.3, "F"), (20.3, 24.0, "C"), (24.0, 27.6, "Am")], vel=0.52, arp=0.61, pad_vel=0.36, pad_bright=0.6)
+    melody(mx, [(16.6, 77, 0.34), (20.3, 79, 0.34), (22.2, 76, 0.26), (24.0, 72, 0.34)], vel=0.6)
+    # drop-off and the eleven dollars
+    play_chords(mx, [(27.6, 32.6, "Dm"), (32.6, 37.3, "Am"), (37.3, 42.0, "F")], vel=0.52, arp=0.78, pad_vel=0.34)
+    melody(mx, [(27.6, 74, 0.34), (30.1, 77, 0.28), (32.6, 76, 0.36), (35.0, 72, 0.28), (37.3, 69, 0.36), (39.6, 65, 0.28)], vel=0.6)
+    # one sandwich
+    play_chords(mx, [(42.0, 45.6, "Am"), (45.6, 49.2, "F"), (49.2, 52.8, "C"), (52.8, 56.4, "E")], vel=0.52, arp=0.9, pad_vel=0.4)
+    melody(mx, [(42.0, 76, 0.36), (45.6, 72, 0.3), (47.4, 69, 0.3), (49.2, 67, 0.36), (52.8, 68, 0.34), (54.6, 71, 0.3)], vel=0.62)
+    # night: one held chord, a few high notes, then quiet
+    mx.add("music", 56.2, pad(11.2, [45, 52, 57, 60], 0.3, 1.5, 2.0, 0.35))
+    melody(mx, [(57.0, 81, 0.26), (59.6, 84, 0.24), (62.2, 79, 0.24), (64.4, 76, 0.24)], vel=0.4, inst="bell")
+    melody(mx, [(65.8, 72, 0.36), (67.6, 76, 0.34), (69.0, 79, 0.36), (70.4, 84, 0.4)], vel=0.46)
+    mx.add("music", 67.0, pad(5.4, [48, 55, 64], 0.3, 2.2, 1.0, 0.6))
+    # strangers
+    play_chords(mx, [(72.0, 74.9, "C"), (74.9, 77.8, "G"), (77.8, 80.7, "Am"), (80.7, 83.6, "F")], vel=0.46, arp=0.29, pad_vel=0.42, pad_bright=0.9, bright=1.15)
+    melody(mx, [(72.0, 76, 0.4), (74.9, 79, 0.4), (77.8, 81, 0.42), (79.2, 79, 0.3), (80.7, 77, 0.42)], vel=0.52)
+    # three days later: a held breath, then the news
+    mx.add("music", 83.4, pad(7.2, [53, 60, 65, 69], 0.32, 1.0, 1.4, 0.6))
+    melody(mx, [(85.4, 77, 0.3), (87.4, 79, 0.3)], vel=0.42)
+    play_chords(mx, [(90.2, 92.4, "C"), (92.4, 94.6, "G")], vel=0.5, arp=0.275, pad_vel=0.48, pad_bright=1.0, bright=1.2)
+    melody(mx, [(90.2, 84, 0.52), (91.3, 83, 0.36), (92.4, 79, 0.42), (93.5, 81, 0.36)], vel=0.56)
+    # the cart
+    play_chords(mx, [(94.6, 96.3, "C"), (96.3, 98.0, "G"), (98.0, 99.7, "Am"), (99.7, 101.4, "F")], vel=0.52, arp=0.2125, pad_vel=0.46, pad_bright=1.0, bright=1.3)
+    melody(mx, [(94.6, 84, 0.46), (96.3, 86, 0.42), (98.0, 88, 0.46), (99.7, 84, 0.42)], vel=0.52)
+    # dinner
+    play_chords(mx, [(101.4, 104.4, "F"), (104.4, 107.4, "C"), (107.4, 110.4, "G"), (110.4, 113.4, "C")], vel=0.44, arp=0.5, pad_vel=0.44, pad_bright=0.8)
+    melody(mx, [(101.4, 81, 0.4), (104.4, 79, 0.42), (106.0, 76, 0.3), (107.4, 74, 0.4), (109.0, 79, 0.32), (110.4, 76, 0.44), (112.0, 72, 0.32)], vel=0.5)
+    play_chords(mx, [(113.4, 116.0, "F"), (116.0, 120.0, "C")], vel=0.5, arp=0.0, pad_vel=0.52, pad_bright=0.9)
+    melody(mx, [(113.4, 81, 0.4), (116.0, 84, 0.5), (116.3, 88, 0.3)], vel=0.5, inst="bell")
+
+
+MUSIC = {"day41": music_day41, "checkout": music_checkout, "list": music_list, "pencil": music_pencil, "bumper": music_bumper}
 
 
 def read_wav(path):

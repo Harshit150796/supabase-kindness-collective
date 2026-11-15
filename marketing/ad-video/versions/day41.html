@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Day 41 (2:00)</title>
+<link rel="stylesheet" href="../lib/stage.css">
+</head>
+<body>
+<div id="stage"></div>
+<script src="day41.timeline.js"></script>
+<script src="day41.voice.js"></script>
+<script src="../lib/stage.js"></script>
+<script src="../lib/cast.js"></script>
+<script src="../lib/sets.js"></script>
+<script src="../lib/sets41.js"></script>
+<script src="../lib/shots.js"></script>
+<script>
+// "Day 41": a working mother and her son are living in their car. Told like her own phone diary.
+// She asks for help, strangers give, three days later there is dinner. Illustrated dramatization.
+const { el, SKIN, HAIR, CLOTH } = CD;
+const S = CD.sets, put = (...a) => CD.put(...a);
+const RENEE = { who: 'renee', skin: SKIN.medium, hair: HAIR.dark, hairStyle: 'bun', top: CLOTH.slate, style: 'hoodie', seed: 41 };
+const SON = { who: 'son', kid: true, skin: SKIN.medium, hair: HAIR.dark, hairStyle: 'curly', top: CLOTH.navy, style: 'hoodie', seed: 42 };
+const SON_DAY = Object.assign({}, SON, { pack: CLOTH.steel });
+const KS = 1.18, SON_X = -330, MOM_X = -140, HOOD = -206;
+const sL = (x, y, sx = SON_X) => [(x - sx) / KS, y / KS];
+const mL = (x, y, mx = MOM_X) => [x - mx, y];
+const add = (g, p) => { g.appendChild(p.g || p); return p; };
+
+/** A parked car at dawn or night with Renee in the driver's seat. */
+function carScene(g, time) {
+  const night = time === 'night';
+  S.carFront(g, { time, lump: true });
+  if (night) S.tint(g, '#5d6d98');           // the car goes dark, she stays readable
+  const renee = add(g, CD.person(RENEE).place(0, 44, 1));
+  const breath = el('g', {}, g);
+  const phone = CD.prop('phone', { screen: '#f2f7ff' }); g.appendChild(phone);
+  S.carDash(g, { time, wash: !night });
+  let glow = null;
+  if (night) { S.tint(g, '#aab7d6', 0.62); glow = S.glow(g, 0, -326, 150, 185, 0.42); }
+  return { renee, breath, phone, glow };
+}
+/** The lot with the car as a table and the two of them behind the hood. */
+function lotScene(g, time, sonSpec) {
+  S.lot(g, { time });
+  const son = add(g, CD.person(sonSpec).place(SON_X, 0, KS));
+  const renee = add(g, CD.person(RENEE).place(MOM_X, 0, 1));
+  S.carSide(g, { time });
+  const table = el('g', {}, g);
+  return { son, renee, table };
+}
+/** A stranger who gives: home, phone, one tap, and the amount rising from the screen. */
+function giver(person, o, amount) {
+  return {
+    bg: o.wall || '#e6edf1',
+    build(g) {
+      S.home(g, { wall: o.wall, mugX: o.mugX ?? -230, window: o.window ?? -560, lampX: o.lampX ?? 260 });
+      this.p = add(g, CD.person(person).place(0, 0, 1));
+      const isl = el('g', {}, g);
+      el('rect', { x: -1600, y: -212, width: 3200, height: 18, fill: '#f3f5f4', rx: 3 }, isl);
+      el('rect', { x: -1600, y: -196, width: 3200, height: 1200, fill: CD.vgrad(o.front || '#355046', o.front2 || '#283d34') }, isl);
+      this.ph = CD.prop('phone', { screen: '#f7f9f6' }); g.appendChild(this.ph);
+      this.chip = el('g', {}, g);
+      el('rect', { x: -62, y: -30, width: 124, height: 60, rx: 30, fill: '#2e7d32' }, this.chip);
+      const t = el('text', { x: 0, y: 12, 'text-anchor': 'middle', 'font-family': 'IN', 'font-weight': 760, 'font-size': 34, fill: '#fff' }, this.chip);
+      t.textContent = amount;
+    },
+    update(t, lt) {
+      const d = this.t1 - this.t0, tap = d * 0.5;
+      this.a = this.a || CD.animate(this.p, [
+        [0, { ex: 'calm', gy: 0.95, nod: 6, lh: [-16, -276], rh: [18, -284] }],
+        [d * 0.3, { ex: 'worried', gy: 0.95, nod: 7, lh: [-16, -276], rh: [18, -284] }],
+        [tap, { ex: 'focused', gy: 0.95, nod: 7, lh: [-16, -276], rh: [14, -290] }],
+        [tap + 0.5, { ex: 'smile', gy: 0.6, nod: 3, tilt: 3, lh: [-16, -278], rh: [18, -286] }],
+        [d, { ex: 'relief', gy: 0.2, nod: 0, tilt: 4, lh: [-16, -278], rh: [18, -286] }],
+      ]);
+      this.a(lt, t);
+      const h = this.p.handWorld('l'), h2 = this.p.handWorld('r');
+      const px = (h[0] + h2[0]) / 2, py = (h[1] + h2[1]) / 2 - 12;
+      put(this.ph, px, py, 0, 1, 1.3);
+      const k = CD.prog(lt, tap + 0.1, d - 0.2);
+      put(this.chip, px + 4, py - 60 - CD.eo(k) * 170, 0, CD.win(lt, tap + 0.1, d, 0.25), 0.62 + 0.3 * CD.back(CD.prog(lt, tap + 0.1, tap + 0.5)));
+    },
+    cam: CD.cam({ landscape: [[0, [0, -340, 400, 320]], [4, [0, -346, 350, 285]]], portrait: [[0, [0, -340, 320, 400]], [4, [0, -346, 285, 360]]] }),
+  };
+}
+
+const shots = {
+  // 0:00 selfie at dawn
+  selfie: {
+    bg: '#1c262c', roll: 0.6, shake: 2.2,
+    build(g) { this.sc = carScene(g, 'dawn'); this.sc.phone.style.display = 'none'; this.puffs = [0, 1, 2].map(() => el('circle', { fill: CD.rgrad([[0, '#ffffff', 0.9], [1, '#ffffff', 0]]), opacity: 0 }, this.sc.breath)); },
+    update(t, lt) {
+      const { renee } = this.sc;
+      this.a = this.a || CD.animate(renee, [
+        [0, { ex: 'worried', brow: 9, smile: -0.1, rh: [150, -236] }],
+        [2.0, { ex: 'worried', brow: 9, smile: -0.1, rh: [150, -236] }],
+        [2.5, { ex: 'worried', brow: 8, gx: -0.9, gy: 0.2, turn: -0.55, tilt: -4, rh: [150, -236] }],
+        [3.6, { ex: 'worried', brow: 8, gx: -0.9, gy: 0.2, turn: -0.55, tilt: -4, rh: [150, -236] }],
+        [4.3, { ex: 'brave', smile: 0.3, tilt: 2, rh: [150, -236] }],
+        [6.4, { ex: 'brave', smile: 0.2, gy: 0.3, tilt: 2, rh: [150, -236] }],
+      ]);
+      this.a(lt, t);
+      const [hx, hy] = renee.headWorld();
+      this.puffs.forEach((p, i) => {
+        const k = CD.prog(lt, 0.7 + i * 1.5, 2.1 + i * 1.5);
+        p.setAttribute('cx', hx + 26 + k * 60); p.setAttribute('cy', hy + 24 - k * 46); p.setAttribute('r', 10 + k * 34);
+        p.setAttribute('opacity', (k > 0 && k < 1 ? 0.42 * Math.sin(Math.PI * k) : 0).toFixed(3));
+      });
+    },
+    cam: CD.cam({ landscape: [[0, [0, -350, 400, 310]], [6.4, [0, -356, 350, 280]]], portrait: [[0, [0, -352, 290, 370]], [6.4, [0, -358, 258, 336]]] }),
+  },
+  // 0:06 the back seat
+  backseat: {
+    bg: '#1c262c', roll: 0.5, shake: 2,
+    build(g) {
+      S.carBack(g);
+      const pillow = CD.prop('backpack', { color: '#7b8b99' }); pillow.setAttribute('transform', 'translate(-486 -254) scale(1.6) rotate(90)'); g.appendChild(pillow);
+      const w = el('g', { transform: 'translate(-330 -262) rotate(-82) scale(1.5) translate(0 236)' }, g);
+      this.kid = CD.person(SON).place(0, 0, 1); w.appendChild(this.kid.g);
+      this.bag = el('g', {}, g);
+      el('path', { d: 'M -285 -205 Q -292 -332 -170 -340 Q 150 -376 430 -332 Q 524 -312 524 -240 Q 524 -180 440 -178 L -230 -178 Q -285 -180 -285 -205 Z', fill: CD.vgrad('#3d8f44', '#246a2b') }, this.bag);
+      for (let i = 0; i < 6; i++) el('path', { d: `M ${-170 + i * 118} ${-338 - Math.sin(i * 0.6) * 14} L ${-160 + i * 118} -180`, fill: 'none', stroke: '#1f5a26', 'stroke-width': 4, opacity: 0.6 }, this.bag);
+      el('path', { d: 'M -282 -214 Q -240 -250 -150 -256', fill: 'none', stroke: '#a9d4ad', 'stroke-width': 6, 'stroke-linecap': 'round' }, this.bag);
+      el('circle', { cx: -258, cy: -232, r: 16, fill: SON.skin }, g);
+      S.carBackFront(g);
+    },
+    update(t, lt) {
+      this.kid.set(this.kid.P({ ex: 'closed', brow: 2, smile: 0.22, noBlink: true, lh: [-12, -172], rh: [12, -172] }), t);
+      this.bag.setAttribute('transform', `translate(0 -178) scale(1 ${(1 + 0.02 * Math.sin(t * 1.5)).toFixed(4)}) translate(0 178)`);
+    },
+    cam: CD.cam({ landscape: [[0, [150, -470, 760, 430]], [4.6, [-150, -320, 700, 400]], [10.2, [-210, -288, 590, 340]]],
+      portrait: [[0, [170, -480, 600, 540]], [4.6, [-170, -300, 560, 470]], [10.2, [-230, -280, 460, 400]]] }),
+  },
+  // 0:16 the gas-station mirror
+  mirror: {
+    bg: '#dde6e4', roll: 0.25, shake: 1.2,
+    build(g) {
+      S.bathroom(g);
+      this.son = add(g, CD.person(SON).place(-110, 0, KS));
+      this.renee = add(g, CD.person(RENEE).place(60, 0, 1));
+      this.brush = el('g', {}, g);
+      el('rect', { x: -6, y: 0, width: 12, height: 48, rx: 5, fill: '#4a5b6c' }, this.brush);
+      el('rect', { x: -17, y: -36, width: 34, height: 40, rx: 11, fill: '#33424a' }, this.brush);
+      for (let i = 0; i < 4; i++) el('line', { x1: -10 + i * 6.6, y1: -30, x2: -10 + i * 6.6, y2: -4, stroke: '#7b8b99', 'stroke-width': 2 }, this.brush);
+      S.sink(g);
+    },
+    update(t, lt) {
+      const m = (x, y) => mL(x, y, 60), k = (x, y) => sL(x, y, -110);
+      const stroke = lt < 2.7 ? Math.sin(lt * 5.2) * 34 : 0;
+      this.r = this.r || CD.animate(this.renee, [
+        [0, { ex: 'calm', gx: -0.7, gy: 0.5, turn: -0.3, tilt: -3, lh: m(-108, -334) }],
+        [2.7, { ex: 'calm', gx: -0.7, gy: 0.5, turn: -0.3, tilt: -3, lh: m(-108, -334) }],
+        [3.1, { ex: 'calm', gx: -0.7, gy: 0.6, turn: -0.3, tilt: -3, lh: m(-20, -236) }],
+        [3.6, { ex: 'calm', gx: -0.7, gy: 0.6, turn: -0.3, tilt: -4, lh: m(-70, -222) }],
+        [4.7, { ex: 'hurt', brow: 14, smile: 0, gx: -0.7, gy: 0.55, turn: -0.3, tilt: -4, lh: m(-70, -222) }],
+        [5.0, { ex: 'smile', brow: 7, gx: -0.2, gy: 0.1, turn: -0.1, tilt: -2, lh: m(-72, -222) }],
+        [6.6, { ex: 'smile', brow: 7, gx: -0.2, gy: 0.1, turn: -0.1, tilt: -2, lh: m(-72, -222) }],
+        [7.8, { ex: 'sad', brow: 13, smile: -0.2, gy: 0.8, nod: 5, lh: m(-72, -222) }],
+        [9.0, { ex: 'calm', eye: 0.1, gy: 0.8, nod: 8, hx: -8, tilt: -8, lean: -12, lh: m(-30, -226) }],
+        [11.0, { ex: 'calm', eye: 0.1, gy: 0.8, nod: 9, hx: -8, tilt: -9, lean: -13, lh: m(-30, -226) }],
+      ]);
+      this.r(lt, t);
+      if (stroke) this.renee.set(this.renee.P({ ex: 'calm', gx: -0.7, gy: 0.5, turn: -0.3, tilt: -3, lh: m(-108 + stroke, -334 + Math.abs(stroke) * 0.12) }), t);
+      this.s = this.s || CD.animate(this.son, [
+        [0, { ex: 'neutral', gy: 0.1 }],
+        [2.8, { ex: 'neutral', gy: 0.1 }],
+        [3.1, { ex: 'worried', brow: 9, gx: 0.7, gy: -0.7, turn: 0.3, tilt: 5 }],
+        [4.6, { ex: 'worried', brow: 9, gx: 0.7, gy: -0.7, turn: 0.3, tilt: 5 }],
+        [6.4, { ex: 'hopeful', gx: 0.7, gy: -0.7, turn: 0.3, tilt: 5 }],
+        [7.2, { ex: 'brave', smile: 0.5, gy: 0, tilt: 0 }],
+        [11.0, { ex: 'smile', gy: 0, tilt: 2 }],
+      ]);
+      this.s(lt, t);
+      const h = this.renee.handWorld('l');
+      if (lt < 2.95) put(this.brush, h[0], h[1] + 6, -12);
+      else put(this.brush, -8, -214, 84);
+    },
+    cam: CD.cam({ landscape: [[0, [-25, -300, 520, 330]], [11, [-35, -306, 450, 296]]], portrait: [[0, [-25, -300, 400, 400]], [11, [-35, -306, 350, 360]]] }),
+  },
+  // 0:27 school drop-off through the windshield
+  dropoff: {
+    bg: '#141b1f', roll: 0.5, shake: 2,
+    build(g) {
+      const out = S.windshieldOut(g);
+      this.front = CD.person(SON_DAY); out.appendChild(this.front.g);
+      this.back = CD.person(Object.assign({}, SON_DAY, { back: true })); out.appendChild(this.back.g);
+      S.windshieldIn(g);
+      this.tree = el('g', {}, g);
+      el('line', { x1: 0, y1: 0, x2: 0, y2: 70, stroke: '#9aa6ad', 'stroke-width': 3 }, this.tree);
+      el('path', { d: 'M 0 60 L 26 104 L 12 104 L 34 140 L -34 140 L -12 104 L -26 104 Z', fill: '#2e7d32' }, this.tree);
+    },
+    update(t, lt) {
+      const turned = lt >= 2.3;
+      this.front.g.style.display = turned ? 'none' : '';
+      this.back.g.style.display = turned ? '' : 'none';
+      this.front.place(70, -62, 1);
+      this.front.set(this.front.P({ ex: 'brave', smile: 0.45, rh: [64 + Math.sin(lt * 10) * 14, -300], tilt: 3 }), t);
+      const k = CD.prog(lt, 2.3, 5.0), ph = lt * Math.PI * 3.4;
+      this.back.place(CD.lerp(70, 10, k), CD.lerp(-62, -150, k), CD.lerp(1, 0.74, k));
+      this.back.set(this.back.P({ bob: -Math.abs(Math.sin(ph)) * 7, liftL: Math.max(0, Math.sin(ph)) * 15, liftR: Math.max(0, -Math.sin(ph)) * 15 }), t);
+      this.tree.setAttribute('transform', `translate(0 -722) rotate(${(Math.sin(t * 2.1) * 5).toFixed(2)})`);
+    },
+    cam: CD.cam({ landscape: [[0, [0, -520, 1500, 700]], [5, [0, -530, 1320, 620]]], portrait: [[0, [30, -450, 560, 620]], [5, [26, -462, 480, 550]]] }),
+  },
+  // 0:32 eleven dollars
+  coins: {
+    bg: '#12191d', roll: 0.4, shake: 1.6,
+    build(g) { this.u = S.wheel(g, { skin: RENEE.skin, sleeve: RENEE.top }); },
+    update(t, lt) { this.u(lt); },
+    cam: CD.cam({ landscape: [[0, [0, -40, 1180, 680]], [9.4, [0, -30, 1040, 600]]], portrait: [[0, [0, 30, 880, 920]], [9.4, [0, 40, 780, 820]]] }),
+  },
+  // 0:42 one sandwich
+  sandwich: {
+    bg: '#1f2832', roll: 0.3, shake: 1.4,
+    build(g) {
+      this.sc = lotScene(g, 'dusk', SON);
+      el('rect', { x: -292, y: HOOD - 4, width: 180, height: 8, rx: 3, fill: '#f1f4f2' }, this.sc.table);
+      this.his = S.sandwich(this.sc.table, 1);
+      this.hers = S.sandwich(this.sc.table, -1);
+      S.tint(g, '#93a6c8', 0.5);
+      S.glow(g, -330, -380, 420, 380, 0.22);
+    },
+    update(t, lt) {
+      const { son, renee } = this.sc;
+      this.s = this.s || CD.animate(son, [
+        [0, { ex: 'neutral', gx: 0.4, gy: 0.7, nod: 3, rh: sL(-244, -224) }],
+        [2.4, { ex: 'sad', brow: 10, smile: -0.1, gx: 0.4, gy: 0.7, nod: 3, rh: sL(-244, -224) }],
+        [3.3, { ex: 'brave', gx: 0.5, gy: 0.5, rh: sL(-190, -224) }],
+        [3.6, { ex: 'brave', gx: 0.7, gy: -0.7, turn: 0.3, tilt: 5, rh: sL(-190, -224) }],
+        [5.6, { ex: 'brave', gx: 0.7, gy: -0.7, turn: 0.3, tilt: 5, rh: sL(-262, -214) }],
+        [7.0, { ex: 'brave', gx: 0.6, gy: 0.5, turn: 0.2, rh: sL(-262, -214) }],
+        [7.6, { ex: 'neutral', gx: 0.4, gy: 0.6, rh: sL(-240, -226) }],
+        [9.6, { ex: 'neutral', gx: 0.4, gy: 0.6, rh: sL(-240, -226) }],
+        [10.3, { ex: 'calm', gy: 0.3, rh: sL(-316, -256) }],
+        [14.4, { ex: 'calm', gy: 0.3, rh: sL(-316, -256) }],
+      ]);
+      this.s(lt, t);
+      if (lt > 10.3) son.set(son.P({ ex: 'calm', gy: 0.3, open: 0.25 + 0.25 * Math.sin(lt * 9), rh: sL(-316, -256) }), t);
+      this.r = this.r || CD.animate(renee, [
+        [0, { ex: 'sad', brow: 10, gx: -0.5, gy: 0.8, nod: 5 }],
+        [3.4, { ex: 'sad', brow: 10, gx: -0.5, gy: 0.8, nod: 5 }],
+        [4.2, { ex: 'hurt', gx: -0.8, gy: 0.5, turn: -0.35, tilt: -5 }],
+        [5.8, { ex: 'hurt', gx: -0.8, gy: 0.5, turn: -0.35, tilt: -5, tear: 0.1 }],
+        [6.2, { ex: 'hurt', gx: -0.6, gy: 0.7, turn: -0.3, tilt: -5, lh: mL(-190, -224), tear: 0.3 }],
+        [7.0, { ex: 'brave', gx: -0.7, gy: 0.5, turn: -0.3, tilt: -5, lh: mL(-240, -224), tear: 0.5 }],
+        [7.8, { ex: 'brave', gx: -0.8, gy: 0.4, turn: -0.35, tilt: -7, lh: mL(-318, -322), tear: 0.7 }],
+        [10.4, { ex: 'brave', gx: -0.8, gy: 0.4, turn: -0.35, tilt: -8, lh: mL(-314, -324), tear: 1 }],
+        [11.6, { ex: 'closed', brow: 15, gy: -0.4, tilt: 2, nod: -5, lh: mL(-286, -222) }],
+        [14.4, { ex: 'closed', brow: 15, gy: -0.4, tilt: 3, nod: -6, lh: mL(-286, -222) }],
+      ]);
+      this.r(lt, t);
+      if (lt > 7.8 && lt < 10.4) renee.set(renee.P({ ex: 'brave', gx: -0.8, gy: 0.4, turn: -0.35, tilt: -7.5, lh: mL(-318 + Math.sin(lt * 4) * 12, -322), tear: CD.lerp(0.7, 1, CD.prog(lt, 7.8, 10.4)) }), t);
+      // his half: slid to her (2.4 to 3.3), slid back by her (6.2 to 7.0), then he eats it (9.6 on)
+      const sh = son.handWorld('r'), mh = renee.handWorld('l');
+      let hx = -244, hy = HOOD - 4;
+      if (lt >= 2.4 && lt < 3.3) hx = sh[0] + 2;
+      else if (lt >= 3.3 && lt < 6.2) hx = -188;
+      else if (lt >= 6.2 && lt < 7.0) hx = mh[0] + 2;
+      else if (lt >= 7.0 && lt < 9.6) hx = -238;
+      else if (lt >= 9.6) { hx = sh[0] + 4; hy = Math.min(HOOD - 4, sh[1] + 20); }
+      put(this.his, hx, hy, 0, 1, 0.8);
+      put(this.hers, -150, HOOD - 5, 0, 1, 0.8);
+    },
+    cam: CD.cam({ landscape: [[0, [-205, -322, 620, 340]], [8, [-225, -326, 540, 310]], [14.4, [-215, -334, 480, 290]]],
+      portrait: [[0, [-292, -322, 560, 440]], [8, [-272, -326, 500, 410]], [14.4, [-250, -334, 440, 380]]] }),
+  },
+  // 0:56 night, the phone
+  night: {
+    bg: '#0d141b', roll: 0.5, shake: 1.8,
+    build(g) { this.sc = carScene(g, 'night'); },
+    update(t, lt) {
+      const { renee, phone } = this.sc, j = Math.sin(lt * 21) * 2.5;
+      // she types, stops, shuts her eyes and shakes her head, then starts again
+      const stop = lt > 1.7 && lt < 2.6;
+      renee.set(renee.P({ ex: stop ? 'closed' : 'worried', brow: stop ? 17 : 14, gy: 0.95, nod: 7, turn: stop ? Math.sin((lt - 1.7) * 7) * 0.18 : 0,
+        lh: [-18 + (stop ? 0 : j), -262], rh: [20 - (stop ? 0 : j), -266 + (stop ? 0 : j)] }), t);
+      const a = renee.handWorld('l'), b = renee.handWorld('r');
+      put(phone, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2 - 12, 0, 1, 1.3);
+    },
+    cam: CD.cam({ landscape: [[0, [0, -340, 430, 330]], [3.6, [0, -346, 380, 300]]], portrait: [[0, [0, -344, 290, 370]], [3.6, [0, -350, 258, 336]]] }),
+  },
+  // 1:00 asking
+  apply: {
+    bg: '#0d1622',
+    build(g) { this.u = S.phoneApply(g, { skin: RENEE.skin, taps: TL.taps }); },
+    update(t, lt) { this.u(lt); },
+    cam: CD.cam({ landscape: [[0, [0, 30, 560, 860]], [7.2, [0, 10, 520, 800]]], portrait: [[0, [0, 40, 470, 840]], [7.2, [0, 20, 440, 790]]] }),
+  },
+  // 1:07 sent
+  night2: {
+    bg: '#0d141b', roll: 0.5, shake: 1.6,
+    build(g) { this.sc = carScene(g, 'night'); this.sc.phone.style.display = 'none'; this.sc.glow.setAttribute('opacity', 0.5); },
+    update(t, lt) {
+      this.a = this.a || CD.animate(this.sc.renee, [
+        [0, { ex: 'worried', gy: 0.9, nod: 6, shrug: 0.5 }],
+        [0.9, { ex: 'closed', brow: 12, smile: 0, nod: 2, shrug: -0.6 }],
+        [1.8, { ex: 'closed', brow: 10, smile: 0.05, nod: 0, shrug: -1 }],
+        [2.5, { ex: 'hopeful', gx: -0.9, gy: 0.3, turn: -0.6, tilt: -4 }],
+        [3.9, { ex: 'hopeful', smile: 0.4, gx: -0.9, gy: 0.3, turn: -0.6, tilt: -5 }],
+        [4.8, { ex: 'closed', brow: 6, smile: 0.2, tilt: 5, nod: -6 }],
+      ]);
+      this.a(lt, t);
+    },
+    cam: CD.cam({ landscape: [[0, [0, -346, 400, 310]], [4.8, [0, -350, 440, 340]]], portrait: [[0, [0, -346, 300, 370]], [4.8, [0, -350, 340, 410]]] }),
+  },
+  giver1: giver({ skin: SKIN.deep, hair: HAIR.black, hairStyle: 'ponytail', top: CLOTH.teal, style: 'tee', accent: CLOTH.mint, seed: 51 }, { wall: '#e3efec', window: 320, lampX: -300, front: '#3f5d6b', front2: '#2f4856' }, '$10'),
+  giver2: giver({ skin: SKIN.light, hair: HAIR.brown, hairStyle: 'short', top: CLOTH.forest, style: 'shirt', seed: 52 }, { wall: '#e6edf1' }, '$25'),
+  giver3: giver({ skin: SKIN.brown, hair: HAIR.silver, hairStyle: 'bun', glasses: true, top: CLOTH.blue, style: 'cardigan', seed: 53 }, { wall: '#eceff5', window: 300, lampX: -320, front: '#4a5b6c', front2: '#36444f' }, '$10'),
+  // 1:23 title
+  later: {
+    bg: '#16261b',
+    build(g) {
+      el('rect', { x: -5000, y: -4000, width: 10000, height: 8000, fill: '#16261b' }, g);
+      this.t = el('text', { x: 0, y: 20, 'text-anchor': 'middle', 'font-family': 'IS', 'font-size': 92, fill: '#f4f8f5' }, g);
+      this.t.textContent = 'Three days later.';
+    },
+    update(t, lt) { this.t.setAttribute('opacity', CD.win(lt, 0.05, 1.6, 0.3).toFixed(3)); },
+    cam: CD.cam({ landscape: [[0, [0, -10, 900, 520]], [1.6, [0, -10, 860, 500]]], portrait: [[0, [0, 160, 820, 900]], [1.6, [0, 160, 780, 860]]] }),
+  },
+  // 1:25 the phone buzzes
+  buzz: {
+    bg: '#aab3ba', roll: 0.35, shake: 1.6,
+    build(g) {
+      this.sc = lotScene(g, 'day', SON_DAY);
+      this.ph = CD.prop('phone', { screen: '#f2f7ff' }); this.sc.table.appendChild(this.ph);
+      this.waves = el('g', { fill: 'none', stroke: '#1d2723', 'stroke-width': 4, 'stroke-linecap': 'round' }, this.sc.table);
+      for (const s of [-1, 1]) for (const r of [1, 2]) el('path', { d: `M ${s * (26 + r * 12)} -18 q ${s * 8} 18 0 36` }, this.waves);
+    },
+    update(t, lt) {
+      const { son, renee } = this.sc;
+      this.r = this.r || CD.animate(renee, [
+        [0, { ex: 'neutral', brow: 6, gx: -0.3, gy: 0.5, rh: mL(-70, -224) }],
+        [0.7, { ex: 'neutral', brow: 6, gx: 0.5, gy: 0.9, nod: 5, rh: mL(-70, -224) }],
+        [1.5, { ex: 'worried', gy: 0.9, nod: 6, rh: mL(-112, -276) }],
+        [2.2, { ex: 'shock', gy: 0.9, nod: 5, rh: mL(-112, -278) }],
+        [2.7, { ex: 'shock', gy: 0.9, nod: 5, rh: mL(-112, -278), lh: mL(-146, -372) }],
+        [4.5, { ex: 'shock', eye: 0.9, gy: 0.9, nod: 5, rh: mL(-112, -278), lh: mL(-146, -372), tear: 0.2 }],
+        [5.0, { ex: 'happy', brow: 10, gx: -0.7, gy: 0.5, turn: -0.3, tilt: -4, rh: mL(-190, -262), lh: mL(-210, -250), tear: 0.5 }],
+        [7.6, { ex: 'happy', brow: 10, gx: -0.7, gy: 0.5, turn: -0.3, tilt: -4, rh: mL(-190, -262), lh: mL(-210, -250), tear: 1 }],
+        [8.3, { ex: 'relief', gx: -0.7, gy: 0.6, turn: -0.3, tilt: -9, hx: -14, lean: -4, rh: mL(-150, -250), lh: mL(-288, -224) }],
+        [9.4, { ex: 'relief', gx: -0.7, gy: 0.6, turn: -0.3, tilt: -10, hx: -16, lean: -5, rh: mL(-150, -250), lh: mL(-288, -224) }],
+      ]);
+      this.r(lt, t);
+      this.s = this.s || CD.animate(son, [
+        [0, { ex: 'neutral', gx: -0.4, gy: 0.2 }],
+        [2.4, { ex: 'neutral', gx: 0.4, gy: -0.2 }],
+        [2.9, { ex: 'worried', brow: 12, gx: 0.7, gy: -0.7, turn: 0.3, tilt: 5 }],
+        [5.2, { ex: 'worried', brow: 12, gx: 0.7, gy: -0.7, turn: 0.3, tilt: 5 }],
+        [6.4, { ex: 'shock', gx: 0.6, gy: -0.2, turn: 0.25 }],
+        [7.6, { ex: 'happy', gx: 0.7, gy: -0.6, turn: 0.3, tilt: 5, bob: -12 }],
+        [7.9, { ex: 'happy', gx: 0.7, gy: -0.6, turn: 0.3, tilt: 5, bob: 0 }],
+        [8.2, { ex: 'happy', gx: 0.7, gy: -0.6, turn: 0.3, tilt: 8, bob: -9 }],
+        [8.5, { ex: 'happy', gx: 0.6, gy: -0.5, turn: 0.3, tilt: 10, hx: 8, bob: 0 }],
+        [9.4, { ex: 'happy', eye: 0.2, gx: 0.6, gy: -0.5, turn: 0.3, tilt: 12, hx: 10 }],
+      ]);
+      this.s(lt, t);
+      const h = renee.handWorld('r');
+      const buzzing = lt > 0.45 && lt < 1.25;
+      if (lt < 0.9) put(this.ph, -70 + (buzzing ? Math.sin(lt * 80) * 2.5 : 0), HOOD - 6, 84, 1, 1.3);
+      else put(this.ph, h[0] + 2, h[1] - 14, lt > 5 ? -14 : 0, 1, 1.3);
+      put(this.waves, -70, HOOD - 30, 0, buzzing ? 0.5 + 0.5 * Math.sin(lt * 40) : 0);
+    },
+    cam: CD.cam({ landscape: [[0, [-200, -322, 620, 340]], [2.2, [-150, -350, 430, 290]], [4.6, [-150, -350, 430, 290]], [6.4, [-215, -324, 580, 320]], [9.4, [-225, -326, 520, 300]]],
+      portrait: [[0, [-292, -322, 560, 440]], [2.2, [-160, -346, 320, 370]], [4.6, [-160, -346, 320, 370]], [6.4, [-270, -322, 520, 430]], [9.4, [-262, -326, 470, 400]]] }),
+  },
+  // 1:34 a full cart
+  store: {
+    roll: 0.3, shake: 1.4,
+    build(g) {
+      S.aisle(g);
+      this.renee = add(g, CD.person(RENEE).place(170, 0, 1));
+      const food = el('g', {}, g);
+      for (const [k, x, sc] of [['milk', 50, 1.9], ['eggs', 140, 1.9], ['apples', 250, 2.0], ['formula', 320, 1.6], ['milk', 190, 1.7]]) { const p = CD.prop(k); food.appendChild(p); put(p, x, -122, 0, 1, sc); }
+      this.box = CD.prop('cereal'); food.appendChild(this.box);
+      S.cart(g, 150);
+      this.son = add(g, CD.person(SON_DAY).place(-190, 0, KS));
+      this.held = CD.prop('cereal'); g.appendChild(this.held);
+    },
+    update(t, lt) {
+      const k = (x, y) => sL(x, y, -190), m = (x, y) => mL(x, y, 170);
+      this.s = this.s || CD.animate(this.son, [
+        [0, { ex: 'hopeful', gx: 0.8, gy: -0.6, turn: 0.35, tilt: 4, rh: k(-128, -300) }],
+        [2.7, { ex: 'hopeful', gx: 0.8, gy: -0.6, turn: 0.35, tilt: 4, rh: k(-128, -300) }],
+        [3.0, { ex: 'happy', gx: 0.6, gy: 0.1, turn: 0.3, bob: -12, rh: k(-110, -330) }],
+        [3.6, { ex: 'happy', gx: 0.6, gy: 0.3, turn: 0.3, rh: k(-96, -318) }],
+        [4.3, { ex: 'happy', gx: 0.8, gy: -0.6, turn: 0.35, tilt: 6, bob: -10, rh: k(-120, -330), lh: k(-262, -330) }],
+        [4.6, { ex: 'happy', gx: 0.8, gy: -0.6, turn: 0.35, tilt: 6, bob: 0, rh: k(-120, -334), lh: k(-262, -334) }],
+        [6.8, { ex: 'happy', gx: 0.8, gy: -0.6, turn: 0.35, tilt: 8, rh: k(-120, -334), lh: k(-262, -334) }],
+      ]);
+      this.s(lt, t);
+      this.r = this.r || CD.animate(this.renee, [
+        [0, { ex: 'calm', brow: 8, gx: -0.8, gy: 0.5, turn: -0.35, tilt: -3, lh: m(70, -348), rh: m(250, -348) }],
+        [1.3, { ex: 'smile', brow: 9, gx: -0.8, gy: 0.5, turn: -0.35, tilt: -3, lh: m(70, -348), rh: m(250, -348) }],
+        [1.6, { ex: 'smile', brow: 9, gx: -0.8, gy: 0.6, turn: -0.35, tilt: -3, nod: 10, lh: m(70, -348), rh: m(250, -348) }],
+        [1.9, { ex: 'smile', brow: 9, gx: -0.8, gy: 0.5, turn: -0.35, tilt: -3, nod: 0, lh: m(70, -348), rh: m(250, -348), tear: 0.1 }],
+        [2.2, { ex: 'relief', brow: 9, gx: -0.8, gy: 0.6, turn: -0.35, tilt: -3, nod: 9, lh: m(70, -348), rh: m(250, -348), tear: 0.3 }],
+        [2.6, { ex: 'relief', gx: -0.8, gy: 0.5, turn: -0.35, tilt: -3, nod: 0, lh: m(70, -348), rh: m(250, -348), tear: 0.5 }],
+        [4.6, { ex: 'happy', gx: -0.8, gy: 0.5, turn: -0.35, tilt: -5, lh: m(144, -372), rh: m(250, -348), tear: 1 }],
+        [5.6, { ex: 'happy', gx: -0.8, gy: 0.5, turn: -0.35, tilt: -6, lh: m(70, -348), rh: m(250, -348) }],
+        [6.8, { ex: 'happy', gx: -0.8, gy: 0.5, turn: -0.35, tilt: -7, lh: m(70, -348), rh: m(250, -348) }],
+      ]);
+      this.r(lt, t);
+      // he holds the box up to ask; she nods; it lands in the cart
+      const h = this.son.handWorld('r');
+      const d = CD.eo(CD.prog(lt, 3.5, 3.95));
+      const inCart = lt >= 3.95;
+      this.held.style.display = inCart ? 'none' : '';
+      this.box.style.display = inCart ? '' : 'none';
+      put(this.held, CD.lerp(h[0] + 6, 90, d), CD.lerp(h[1] + 30, -300, d) - Math.sin(Math.PI * d) * 60, CD.lerp(0, -14, d), 1, 1.5);
+      put(this.box, 96, CD.lerp(-300, -124, CD.eo(CD.prog(lt, 3.95, 4.25))), -12, 1, 1.5);
+    },
+    cam: CD.cam({ landscape: [[0, [-10, -300, 720, 400]], [6.8, [-20, -306, 640, 360]]], portrait: [[0, [-20, -290, 600, 500]], [6.8, [-30, -296, 540, 460]]] }),
+  },
+  // 1:41 dinner on the hood
+  dinner: {
+    bg: '#1f2832', roll: 0.3, shake: 1.4,
+    build(g) {
+      this.sc = lotScene(g, 'evening', SON);
+      const tb = this.sc.table;
+      for (const [k, x, s] of [['tote', -52, 1.15], ['milk', -122, 1.05], ['apples', -398, 0.9]]) { const p = CD.prop(k); tb.appendChild(p); put(p, x, HOOD - (k === 'tote' ? 8 : 4), 0, 1, s); }
+      el('ellipse', { cx: -196, cy: HOOD - 6, rx: 44, ry: 9, fill: '#f1f4f2' }, tb);
+      this.hers = S.sandwich(tb, -1); put(this.hers, -196, HOOD - 9, 0, 1, 0.8);
+      this.his = S.sandwich(tb, 1);
+      S.tint(g, '#a3b0d0', 0.42);
+      S.glow(g, -300, -380, 440, 380, 0.2);
+    },
+    update(t, lt) {
+      const { son, renee } = this.sc;
+      const bite = lt < 12 ? Math.max(0, Math.sin(lt * 2.2 - 0.6)) : 0, chew = 0.2 + 0.25 * Math.abs(Math.sin(lt * 8));
+      const talking = (lt > 1.5 && lt < 2.7);
+      son.set(son.P({ ex: 'happy', squint: talking ? 0.2 : 0.75, open: talking ? 0 : chew, gx: talking ? 0.7 : 0.2, gy: talking ? -0.7 : 0.3, turn: talking ? 0.3 : 0.1, tilt: lt > 6.5 ? 9 : talking ? 5 : 2, hx: lt > 6.5 ? 8 : 0,
+        rh: sL(CD.lerp(-262, -318, talking ? 0.3 : bite), CD.lerp(-226, -258, talking ? 0.3 : bite)) }), t);
+      this.r = this.r || CD.animate(renee, [
+        [0, { ex: 'smile', brow: 6, gx: -0.7, gy: 0.5, turn: -0.3, tilt: -4 }],
+        [3.0, { ex: 'smile', brow: 6, gx: -0.7, gy: 0.5, turn: -0.3, tilt: -4 }],
+        [4.3, { ex: 'smile', brow: 9, gx: -0.7, gy: 0.5, turn: -0.3, tilt: -5, tear: 0.2 }],
+        [5.2, { ex: 'calm', brow: 9, smile: 0.4, gx: 0.3, gy: -0.6, tilt: 2, nod: -4, tear: 0.5 }],
+        [6.6, { ex: 'calm', brow: 9, smile: 0.4, gx: 0.3, gy: -0.6, tilt: -4, nod: -3, lh: mL(-286, -222), tear: 0.8 }],
+        [8.6, { ex: 'calm', brow: 8, smile: 0.45, gx: -0.4, gy: 0.4, tilt: -8, hx: -10, lean: -3, lh: mL(-286, -222), tear: 1 }],
+        [9.3, { ex: 'relief', squint: 0.3, brow: 8, gx: 0, gy: 0, tilt: -5, hx: -8, lean: -3, lh: mL(-286, -222) }],
+        [18.6, { ex: 'relief', squint: 0.35, brow: 8, gx: 0, gy: 0, tilt: -6, hx: -8, lean: -3, lh: mL(-286, -222) }],
+      ]);
+      this.r(lt, t);
+      const h = son.handWorld('r');
+      put(this.his, h[0] + 4, Math.min(HOOD - 4, h[1] + 20), 0, 1, 0.8);
+    },
+    cam: CD.cam({ landscape: [[0, [-205, -322, 620, 340]], [5.4, [-215, -326, 560, 320]], [9.2, [-175, -350, 420, 280]], [18.6, [-172, -352, 400, 270]]],
+      portrait: [[0, [-292, -322, 560, 440]], [5.4, [-270, -326, 500, 410]], [9.2, [-190, -346, 320, 360]], [18.6, [-186, -350, 300, 340]]] }),
+  },
+};
+
+const T0 = Object.fromEntries(Object.entries(TL.shots).map(([k, v]) => [k, v[0]]));
+const DARK = ['selfie', 'backseat', 'dropoff', 'coins', 'sandwich', 'night', 'apply', 'night2', 'later', 'dinner'];
+const shotAt = (t) => Object.entries(TL.shots).find(([, [a, b]]) => t >= a && t < b)?.[0];
+CD.run({
+  duration: TL.duration,
+  shots: Object.entries(TL.shots).map(([k, [t0, t1]]) => Object.assign(shots[k], { t0, t1, name: k })),
+  captions: TL.captions,
+  themeAt: (t) => (DARK.includes(shotAt(t)) ? 'dark' : 'light'),
+  end: { t: TL.end, headline: TL.headline, fine: TL.fine, small: true },
+  disclosure: { range: [0, TL.end], dark: (t) => !['mirror'].includes(shotAt(t)), text: 'Dramatization · illustrated characters · synthetic voices' },
+  hud: [
+    [0, T0.backseat, 'DAY 41 · 6:12 AM'], [T0.backseat, T0.mirror, 'DAY 41 · 6:13 AM'], [T0.mirror, T0.dropoff, 'DAY 41 · 7:05 AM'],
+    [T0.dropoff, T0.coins, 'DAY 41 · 7:48 AM'], [T0.coins, T0.sandwich, 'DAY 41 · 7:52 AM'], [T0.sandwich, T0.night, 'DAY 41 · 6:40 PM'],
+    [T0.night, T0.apply, 'DAY 41 · 11:26 PM'], [T0.night2, T0.giver1, 'DAY 41 · 11:31 PM'],
+    [T0.buzz, T0.store, 'DAY 44 · 3:20 PM'], [T0.store, T0.dinner, 'DAY 44 · 4:05 PM'], [T0.dinner, TL.end, 'DAY 44 · 6:10 PM'],
+  ],
+  vignette: [[0, 0.4], [T0.mirror - 0.1, 0.4], [T0.mirror, 0.15], [T0.dropoff, 0.3], [T0.giver1 - 0.1, 0.4], [T0.giver1, 0.05], [T0.later, 0.2], [T0.buzz, 0.1], [T0.dinner - 0.1, 0.1], [T0.dinner, 0.3], [120, 0.3]],
+  flashes: [[T0.sandwich, 0.5, '#0a120e', 'dip'], [T0.night, 0.5, '#05080c', 'dip'], [T0.giver1, 0.5, '#0a120e', 'dip'], [T0.later, 0.45, '#0a120e', 'dip'], [T0.buzz, 0.5, '#ffffff', 'dip', 0.7], [T0.dinner, 0.5, '#0a120e', 'dip', 0.8]],
+});
+</script>
+</body>
+</html>
