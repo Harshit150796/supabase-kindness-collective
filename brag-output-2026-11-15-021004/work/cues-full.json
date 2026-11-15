@@ -1,0 +1,516 @@
+{
+ "cut": "full",
+ "dur": 56,
+ "lines": [
+  {
+   "who": "you",
+   "t0": 0.25,
+   "t1": 3,
+   "text": "I donated last week… no idea what it actually did."
+  },
+  {
+   "who": "coupon",
+   "t0": 3.2,
+   "t1": 5.65,
+   "text": "Honestly? Most donors can't easily find out."
+  },
+  {
+   "who": "you",
+   "t0": 6.15,
+   "t1": 7.25,
+   "text": "Because of scams?"
+  },
+  {
+   "who": "coupon",
+   "t0": 7.45,
+   "t1": 8.45,
+   "text": "Rarely, actually."
+  },
+  {
+   "who": "coupon",
+   "t0": 8.55,
+   "t1": 11.05,
+   "text": "GoFundMe says *under 1 in 1,000* campaigns are fraud."
+  },
+  {
+   "who": "coupon",
+   "t0": 11.25,
+   "t1": 12.85,
+   "text": "But the fakes are convincing."
+  },
+  {
+   "who": "coupon",
+   "t0": 13.05,
+   "t1": 14.85,
+   "text": "One made-up story raised *$400,000*…"
+  },
+  {
+   "who": "coupon",
+   "t0": 14.95,
+   "t1": 17.15,
+   "text": "…and paid for a *BMW* and *casino trips*."
+  },
+  {
+   "who": "you",
+   "t0": 17.35,
+   "t1": 17.85,
+   "text": "Oof."
+  },
+  {
+   "who": "you",
+   "t0": 18.65,
+   "t1": 19.95,
+   "text": "Then what's the problem?"
+  },
+  {
+   "who": "coupon",
+   "t0": 20.15,
+   "t1": 20.95,
+   "text": "Not knowing."
+  },
+  {
+   "who": "coupon",
+   "t0": 21.05,
+   "t1": 23.2,
+   "text": "Cash is easy to give, *hard to follow*."
+  },
+  {
+   "who": "you",
+   "t0": 23.5,
+   "t1": 25.3,
+   "text": "So I'm just hoping for the best?"
+  },
+  {
+   "who": "coupon",
+   "t0": 25.5,
+   "t1": 26.3,
+   "text": "Pretty much."
+  },
+  {
+   "who": "you",
+   "t0": 27.1,
+   "t1": 30.4,
+   "text": "I don't need a thank-you. I just want to know it helped."
+  },
+  {
+   "who": "coupon",
+   "t0": 30.65,
+   "t1": 31.85,
+   "text": "Maybe that's why"
+  },
+  {
+   "who": "coupon",
+   "t0": 31.95,
+   "t1": 34.7,
+   "text": "*fewer than 1 in 5* first-time donors come back."
+  },
+  {
+   "who": "you",
+   "t0": 35.6,
+   "t1": 37.55,
+   "text": "So what does CouponDonation do differently?"
+  },
+  {
+   "who": "coupon",
+   "t0": 37.75,
+   "t1": 40.45,
+   "text": "Your donation becomes *gift cards for essentials*, not cash."
+  },
+  {
+   "who": "coupon",
+   "t0": 40.6,
+   "t1": 42.75,
+   "text": "You get a *receipt for every gift*."
+  },
+  {
+   "who": "you",
+   "t0": 43.35,
+   "t1": 45.2,
+   "text": "So it can't end up at a casino?"
+  },
+  {
+   "who": "coupon",
+   "t0": 45.4,
+   "t1": 47.6,
+   "text": "A grocery gift card can't buy a *BMW*."
+  },
+  {
+   "who": "you",
+   "t0": 49,
+   "t1": 50.65,
+   "text": "So I don't have to hope."
+  },
+  {
+   "who": "coupon",
+   "t0": 50.95,
+   "t1": 51.85,
+   "text": "You'll know."
+  }
+ ],
+ "plates": [
+  {
+   "type": "hook",
+   "t0": 0,
+   "t1": 3
+  },
+  {
+   "type": "stat",
+   "t0": 3,
+   "t1": 6
+  },
+  {
+   "type": "wall",
+   "t0": 6,
+   "t1": 7.8
+  },
+  {
+   "type": "stat",
+   "t0": 7.8,
+   "t1": 10.9
+  },
+  {
+   "type": "card",
+   "t0": 10.9,
+   "t1": 12.9
+  },
+  {
+   "type": "stat",
+   "t0": 12.9,
+   "t1": 14.9
+  },
+  {
+   "type": "card",
+   "t0": 14.9,
+   "t1": 18.5
+  },
+  {
+   "type": "cash",
+   "t0": 18.5,
+   "t1": 19.9
+  },
+  {
+   "type": "card",
+   "t0": 19.9,
+   "t1": 21.7
+  },
+  {
+   "type": "stat",
+   "t0": 21.7,
+   "t1": 24.4
+  },
+  {
+   "type": "guess",
+   "t0": 24.4,
+   "t1": 27
+  },
+  {
+   "type": "phoneTight",
+   "t0": 27,
+   "t1": 30.4
+  },
+  {
+   "type": "success",
+   "t0": 30.4,
+   "t1": 32.4
+  },
+  {
+   "type": "stat",
+   "t0": 32.4,
+   "t1": 35.5
+  },
+  {
+   "type": "stores",
+   "t0": 35.5,
+   "t1": 37.4
+  },
+  {
+   "type": "amount",
+   "t0": 37.4,
+   "t1": 39.2
+  },
+  {
+   "type": "review",
+   "t0": 39.2,
+   "t1": 41
+  },
+  {
+   "type": "trail",
+   "t0": 41,
+   "t1": 43.6
+  },
+  {
+   "type": "gag",
+   "t0": 43.6,
+   "t1": 48.5
+  },
+  {
+   "type": "hopeknow",
+   "t0": 48.5,
+   "t1": 52.5
+  },
+  {
+   "type": "end",
+   "t0": 52.5,
+   "t1": 56
+  }
+ ],
+ "cues": [
+  {
+   "t": 1.2,
+   "kind": "tap"
+  },
+  {
+   "t": 1.45,
+   "kind": "success"
+  },
+  {
+   "t": 3.3,
+   "kind": "fill"
+  },
+  {
+   "t": 8.1,
+   "kind": "fill"
+  },
+  {
+   "t": 13.200000000000001,
+   "kind": "fill"
+  },
+  {
+   "t": 22,
+   "kind": "fill"
+  },
+  {
+   "t": 32.699999999999996,
+   "kind": "fill"
+  },
+  {
+   "t": 35.88,
+   "kind": "tap"
+  },
+  {
+   "t": 36.336,
+   "kind": "tap"
+  },
+  {
+   "t": 37.248,
+   "kind": "tap"
+  },
+  {
+   "t": 38.084,
+   "kind": "tap"
+  },
+  {
+   "t": 40.604,
+   "kind": "tap"
+  },
+  {
+   "t": 41.312,
+   "kind": "step"
+  },
+  {
+   "t": 41.78,
+   "kind": "step"
+  },
+  {
+   "t": 42.43,
+   "kind": "step"
+  },
+  {
+   "t": 42.872,
+   "kind": "step"
+  },
+  {
+   "t": 47.716,
+   "kind": "strike"
+  },
+  {
+   "t": 50.95,
+   "kind": "know"
+  },
+  {
+   "t": 52.7,
+   "kind": "end"
+  },
+  {
+   "t": 0.25,
+   "kind": "line",
+   "who": "you",
+   "n": 10,
+   "em": false
+  },
+  {
+   "t": 3.2,
+   "kind": "line",
+   "who": "coupon",
+   "n": 7,
+   "em": false
+  },
+  {
+   "t": 6.15,
+   "kind": "line",
+   "who": "you",
+   "n": 3,
+   "em": false
+  },
+  {
+   "t": 7.45,
+   "kind": "line",
+   "who": "coupon",
+   "n": 2,
+   "em": false
+  },
+  {
+   "t": 8.55,
+   "kind": "line",
+   "who": "coupon",
+   "n": 9,
+   "em": true
+  },
+  {
+   "t": 11.25,
+   "kind": "line",
+   "who": "coupon",
+   "n": 5,
+   "em": false
+  },
+  {
+   "t": 13.05,
+   "kind": "line",
+   "who": "coupon",
+   "n": 5,
+   "em": true
+  },
+  {
+   "t": 14.95,
+   "kind": "line",
+   "who": "coupon",
+   "n": 8,
+   "em": true
+  },
+  {
+   "t": 17.35,
+   "kind": "line",
+   "who": "you",
+   "n": 1,
+   "em": false
+  },
+  {
+   "t": 18.65,
+   "kind": "line",
+   "who": "you",
+   "n": 4,
+   "em": false
+  },
+  {
+   "t": 20.15,
+   "kind": "line",
+   "who": "coupon",
+   "n": 2,
+   "em": false
+  },
+  {
+   "t": 21.05,
+   "kind": "line",
+   "who": "coupon",
+   "n": 8,
+   "em": true
+  },
+  {
+   "t": 23.5,
+   "kind": "line",
+   "who": "you",
+   "n": 7,
+   "em": false
+  },
+  {
+   "t": 25.5,
+   "kind": "line",
+   "who": "coupon",
+   "n": 2,
+   "em": false
+  },
+  {
+   "t": 27.1,
+   "kind": "line",
+   "who": "you",
+   "n": 12,
+   "em": false
+  },
+  {
+   "t": 30.65,
+   "kind": "line",
+   "who": "coupon",
+   "n": 3,
+   "em": false
+  },
+  {
+   "t": 31.95,
+   "kind": "line",
+   "who": "coupon",
+   "n": 9,
+   "em": true
+  },
+  {
+   "t": 35.6,
+   "kind": "line",
+   "who": "you",
+   "n": 6,
+   "em": false
+  },
+  {
+   "t": 37.75,
+   "kind": "line",
+   "who": "coupon",
+   "n": 9,
+   "em": true
+  },
+  {
+   "t": 40.6,
+   "kind": "line",
+   "who": "coupon",
+   "n": 7,
+   "em": true
+  },
+  {
+   "t": 43.35,
+   "kind": "line",
+   "who": "you",
+   "n": 8,
+   "em": false
+  },
+  {
+   "t": 45.4,
+   "kind": "line",
+   "who": "coupon",
+   "n": 8,
+   "em": true
+  },
+  {
+   "t": 49,
+   "kind": "line",
+   "who": "you",
+   "n": 6,
+   "em": false
+  },
+  {
+   "t": 50.95,
+   "kind": "line",
+   "who": "coupon",
+   "n": 2,
+   "em": false
+  },
+  {
+   "t": 2.85,
+   "kind": "enter"
+  },
+  {
+   "t": 17.35,
+   "kind": "oof"
+  },
+  {
+   "t": 40.6,
+   "kind": "receipt"
+  }
+ ],
+ "beat": 0.5
+}

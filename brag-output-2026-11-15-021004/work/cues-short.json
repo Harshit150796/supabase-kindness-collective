@@ -1,0 +1,325 @@
+{
+ "cut": "short",
+ "dur": 30,
+ "lines": [
+  {
+   "who": "you",
+   "t0": 0.25,
+   "t1": 2.85,
+   "text": "I donated last week… no idea what it actually did."
+  },
+  {
+   "who": "coupon",
+   "t0": 3.05,
+   "t1": 5.25,
+   "text": "Honestly? Most donors can't easily find out."
+  },
+  {
+   "who": "coupon",
+   "t0": 5.4,
+   "t1": 8,
+   "text": "Scams are rare, but one made-up story raised *$400,000*…"
+  },
+  {
+   "who": "coupon",
+   "t0": 8.1,
+   "t1": 10,
+   "text": "…and paid for a *BMW* and *casino trips*."
+  },
+  {
+   "who": "you",
+   "t0": 10.2,
+   "t1": 10.7,
+   "text": "Oof."
+  },
+  {
+   "who": "you",
+   "t0": 11.3,
+   "t1": 12.95,
+   "text": "So I'm just hoping for the best?"
+  },
+  {
+   "who": "coupon",
+   "t0": 13.2,
+   "t1": 14.3,
+   "text": "Not on CouponDonation."
+  },
+  {
+   "who": "coupon",
+   "t0": 14.4,
+   "t1": 16.5,
+   "text": "Your donation becomes *gift cards for essentials*,"
+  },
+  {
+   "who": "coupon",
+   "t0": 16.6,
+   "t1": 18.4,
+   "text": "with a *receipt for every gift*."
+  },
+  {
+   "who": "you",
+   "t0": 18.9,
+   "t1": 20.6,
+   "text": "So it can't end up at a casino?"
+  },
+  {
+   "who": "coupon",
+   "t0": 20.8,
+   "t1": 22.8,
+   "text": "A grocery gift card can't buy a *BMW*."
+  },
+  {
+   "who": "you",
+   "t0": 23.3,
+   "t1": 24.8,
+   "text": "So I don't have to hope."
+  },
+  {
+   "who": "coupon",
+   "t0": 25,
+   "t1": 25.9,
+   "text": "You'll know."
+  }
+ ],
+ "plates": [
+  {
+   "type": "hook",
+   "t0": 0,
+   "t1": 2.9
+  },
+  {
+   "type": "stat",
+   "t0": 2.9,
+   "t1": 5.2
+  },
+  {
+   "type": "stat",
+   "t0": 5.2,
+   "t1": 7
+  },
+  {
+   "type": "stat",
+   "t0": 7,
+   "t1": 9
+  },
+  {
+   "type": "card",
+   "t0": 9,
+   "t1": 11.3
+  },
+  {
+   "type": "guess",
+   "t0": 11.3,
+   "t1": 13.2
+  },
+  {
+   "type": "stores",
+   "t0": 13.2,
+   "t1": 14.5
+  },
+  {
+   "type": "amount",
+   "t0": 14.5,
+   "t1": 15.8
+  },
+  {
+   "type": "review",
+   "t0": 15.8,
+   "t1": 17.4
+  },
+  {
+   "type": "trail",
+   "t0": 17.4,
+   "t1": 19.8
+  },
+  {
+   "type": "gag",
+   "t0": 19.8,
+   "t1": 23.2
+  },
+  {
+   "type": "hopeknow",
+   "t0": 23.2,
+   "t1": 27
+  },
+  {
+   "type": "end",
+   "t0": 27,
+   "t1": 30
+  }
+ ],
+ "cues": [
+  {
+   "t": 1.2,
+   "kind": "tap"
+  },
+  {
+   "t": 1.45,
+   "kind": "success"
+  },
+  {
+   "t": 3.1999999999999997,
+   "kind": "fill"
+  },
+  {
+   "t": 5.5,
+   "kind": "fill"
+  },
+  {
+   "t": 7.3,
+   "kind": "fill"
+  },
+  {
+   "t": 13.459999999999999,
+   "kind": "tap"
+  },
+  {
+   "t": 13.772,
+   "kind": "tap"
+  },
+  {
+   "t": 14.396,
+   "kind": "tap"
+  },
+  {
+   "t": 14.994,
+   "kind": "tap"
+  },
+  {
+   "t": 17.048,
+   "kind": "tap"
+  },
+  {
+   "t": 17.688,
+   "kind": "step"
+  },
+  {
+   "t": 18.119999999999997,
+   "kind": "step"
+  },
+  {
+   "t": 18.72,
+   "kind": "step"
+  },
+  {
+   "t": 19.128,
+   "kind": "step"
+  },
+  {
+   "t": 22.656,
+   "kind": "strike"
+  },
+  {
+   "t": 25,
+   "kind": "know"
+  },
+  {
+   "t": 27.2,
+   "kind": "end"
+  },
+  {
+   "t": 0.25,
+   "kind": "line",
+   "who": "you",
+   "n": 10,
+   "em": false
+  },
+  {
+   "t": 3.05,
+   "kind": "line",
+   "who": "coupon",
+   "n": 7,
+   "em": false
+  },
+  {
+   "t": 5.4,
+   "kind": "line",
+   "who": "coupon",
+   "n": 9,
+   "em": true
+  },
+  {
+   "t": 8.1,
+   "kind": "line",
+   "who": "coupon",
+   "n": 8,
+   "em": true
+  },
+  {
+   "t": 10.2,
+   "kind": "line",
+   "who": "you",
+   "n": 1,
+   "em": false
+  },
+  {
+   "t": 11.3,
+   "kind": "line",
+   "who": "you",
+   "n": 7,
+   "em": false
+  },
+  {
+   "t": 13.2,
+   "kind": "line",
+   "who": "coupon",
+   "n": 3,
+   "em": false
+  },
+  {
+   "t": 14.4,
+   "kind": "line",
+   "who": "coupon",
+   "n": 7,
+   "em": true
+  },
+  {
+   "t": 16.6,
+   "kind": "line",
+   "who": "coupon",
+   "n": 6,
+   "em": true
+  },
+  {
+   "t": 18.9,
+   "kind": "line",
+   "who": "you",
+   "n": 8,
+   "em": false
+  },
+  {
+   "t": 20.8,
+   "kind": "line",
+   "who": "coupon",
+   "n": 8,
+   "em": true
+  },
+  {
+   "t": 23.3,
+   "kind": "line",
+   "who": "you",
+   "n": 6,
+   "em": false
+  },
+  {
+   "t": 25,
+   "kind": "line",
+   "who": "coupon",
+   "n": 2,
+   "em": false
+  },
+  {
+   "t": 2.7,
+   "kind": "enter"
+  },
+  {
+   "t": 10.2,
+   "kind": "oof"
+  },
+  {
+   "t": 16.6,
+   "kind": "receipt"
+  }
+ ],
+ "beat": 0.5
+}

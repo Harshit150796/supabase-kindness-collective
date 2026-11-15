@@ -1,0 +1,11 @@
+work/captures/*
+!work/captures/mobile/
+work/captures/mobile/*
+!work/captures/mobile/*.json
+work/stills*/
+work/node_modules
+work/*.mp4
+work/*.wav
+work/*.log
+work/__pycache__/
+work/vite-render.pid
