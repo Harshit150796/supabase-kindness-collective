@@ -1,0 +1,21 @@
+POST CAPTION (both cuts)
+Do you know what your last donation actually did? Fraud is rare. Not knowing is common. On CouponDonation, your donation becomes gift cards for essentials, and you get a receipt for every gift. Your generosity deserves visibility. Sources in the comments.
+
+HASHTAGS
+#CouponDonation #GivingTuesday #Charity #DonateSmart
+
+PINNED COMMENT (paste as is; from the source dossier)
+Our receipts:
+GoFundMe's fraud rate (NPR, 2018): https://www.nhpr.org/2018-12-26/gofundme-provides-refunds-to-donors-duped-by-viral-campaign
+The $400K fake fundraiser (U.S. Attorney, 2019): https://www.justice.gov/usao-nj/pr/bordentown-new-jersey-woman-and-philadelphia-man-admit-roles-scheme-launder-money-defraud
+Disaster appeals survey (BBB Give.org, 2019): https://give.org/news/public-calls-for-more-clarity-in-charity-disaster-appeals-says-new-survey-from-bbb-s-give-org
+First-time donor retention (FEP, 2025): https://bloomerang.com/nonprofit-glossary/donor-retention
+Donors seeing their impact (Zeffy, 2025): https://www.zeffy.com/research/donor-behavior-trends-2025
+FTC, find out where the money is going: https://www.consumer.ftc.gov/consumer-alerts/2025/09/you-donate-find-out-where-money-going
+
+CHANGES FROM THE SCRIPT'S CAPTION
+- "your donation becomes a voucher for essentials, and you get the receipt when it's used" -> "gift cards for essentials, and you get a receipt for every gift": the site's own words (Index.tsx, FAQ.tsx).
+- "Sources in the comments" stays: the film puts the outlet and year on every stat, and the pinned comment carries the links.
+
+POSTING (from the script)
+Lead with the 30-second cut on Reels, TikTok and Shorts; run the full version on LinkedIn, YouTube and Facebook; post both before GivingTuesday (Dec 1). Reply fast to anyone who shares where their last donation went.
