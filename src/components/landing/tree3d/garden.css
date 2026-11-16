@@ -48,7 +48,7 @@
 .gm-edge-l .gm-hang .gm-tag{align-items:flex-start;transform:translateX(-18px)}
 .gm-edge-r .gm-hang .gm-tag{align-items:flex-end;transform:translateX(calc(-100% + 18px))}
 @keyframes gm-swing{0%,42%{transform:rotate(14deg)}49%{transform:rotate(-7deg)}55%{transform:rotate(3deg)}61%,100%{transform:rotate(0)}}
-@keyframes gm-b-tag{0%,5%{opacity:0}9%,76%{opacity:1}80%,100%{opacity:0}}
+@keyframes gm-b-tag{0%,5%{opacity:0}9%,100%{opacity:1}}
 
 /* The site's gentle-motion setting: the tag alone, in place. */
 .gm-still .gm-exit,.gm-still .gm-flyer,.gm-still .gm-hang{animation:none}
