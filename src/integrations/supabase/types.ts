@@ -1819,6 +1819,30 @@ export type Database = {
         }
         Relationships: []
       }
+      email_automations: {
+        Row: {
+          enabled: boolean
+          enabled_at: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          enabled_at?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          enabled_at?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       email_campaigns: {
         Row: {
           audience_type: string
