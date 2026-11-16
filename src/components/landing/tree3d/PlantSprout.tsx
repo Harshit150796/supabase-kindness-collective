@@ -235,7 +235,7 @@ export function PlantSprout({ id, position, archetype, bornAt, fadingOut, onFade
       const headK = easeOutElastic((t - 0.85) / 0.8);
       headRef.current?.scale.setScalar(Math.max(0.0001, headK));
       // The seeds leave at BLOW_AT (the name rides them up); a few stay on the head.
-      const blown = clamp01((t - BLOW_AT) / 1.3);
+      const blown = clamp01((t - BLOW_AT) / 0.8);
       mats.rays.opacity = (0.95 - blown * 0.72) * fade;
       mats.tips.opacity = (1 - blown * 0.78) * fade;
       mats.fluff.opacity = (0.2 - blown * 0.15) * fade;

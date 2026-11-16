@@ -22,11 +22,8 @@ import { RecipientStoryPanel } from './tree3d/RecipientStoryPanel';
 import { TransparencyPopover } from './tree3d/TransparencyPopover';
 import { PlantsLayer } from './tree3d/PlantsLayer';
 import { HillLife } from './tree3d/HillLife';
-import { HalloweenMarshmallows } from './tree3d/HalloweenMarshmallows';
-import { isHalloweenSeason } from './tree3d/marshmallowSpots';
 
 /** Decided once per visit (Oct 1 to Nov 15, by the visitor's date). */
-const HALLOWEEN = typeof window !== 'undefined' && isHalloweenSeason(new Date(), window.location.search);
 import { PlantSprout } from './tree3d/PlantSprout';
 import { SparkleBurst } from './tree3d/SparkleBurst';
 import { prewarmTreeTextures } from './tree3d/textures';
@@ -36,8 +33,8 @@ import { createRefreshTracker, pacingDivisor } from '@/lib/framePacing';
 import { facing, pickDropSlot } from './tree3d/dropChoice';
 import { useDeviceTier, type DeviceTier, type TierSettings } from '@/hooks/useDeviceTier';
 
-/** The tree lets one coupon fall every 9s (see the auto-drop timer below). */
-const AUTO_DROP_MS = 9000;
+/** The tree lets one coupon fall every 5s (see the auto-drop timer below). */
+const AUTO_DROP_MS = 5000;
 
 // Start all opening SVG decodes alongside the model/Draco preload at module evaluation.
 const OPENING_LOGOS = [
@@ -677,7 +674,7 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
     hungAt: hungAtRef.current[i] ?? -100,
   })), [branchTips]);
 
-  // Auto drops on timer: one coupon every 9s, a little longer than its donor's name moment
+  // Auto drops on timer: one coupon every 5s, a little longer than its donor's name moment
   // (MOMENT_SECONDS), so one name plays at a time (founder request: fewer, calmer moments).
   // The logo facing the visitor falls (dropChoice), so every name follows a fall they can see.
   useEffect(() => {
@@ -780,7 +777,6 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
           (seeds or a butterfly, taking turns); life on the hill moves quietly behind it. */}
       <PlantsLayer cap={plantCap} isMobile={isMobile} gentle={gentle} />
       {!gentle && <HillLife isMobile={isMobile} lowPower={settings.tier === 'low'} />}
-      {HALLOWEEN && <HalloweenMarshmallows isMobile={isMobile} lowPower={settings.tier === 'low'} gentle={gentle} />}
       {/* Never drawn: puts the effects that appear later (a sprout where a coupon lands, the sparkle
           of a tap) into the first parallel compile, so their first appearance never stalls a frame. */}
       <group visible={false} position={[0, -40, 0]}>
