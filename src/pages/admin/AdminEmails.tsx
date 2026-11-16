@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Circle, PenLine, Reply, Search } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
@@ -10,6 +10,7 @@ import { TOPICS, topicLabel, type EmailRow } from '@/lib/emailTopics';
 import { CouponFollowups } from '@/components/admin/CouponFollowups';
 import { AutomaticEmails } from '@/components/admin/emails/AutomaticEmails';
 import { EmailComposer, type ComposerStart } from '@/components/admin/emails/EmailComposer';
+import { EmailInbox, inboxKey, loadInbox } from '@/components/admin/emails/EmailInbox';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -67,7 +68,10 @@ function followUp(e: EmailRow): ComposerStart {
 export default function AdminEmails() {
   const { isStaff, canWrite } = useTeamRole();
   const [params, setParams] = useSearchParams();
-  const view = params.get('view') === 'followups' ? 'followups' : params.get('view') === 'automatic' ? 'automatic' : 'all';
+  const view = params.get('view') === 'followups' ? 'followups' : params.get('view') === 'automatic' ? 'automatic' : params.get('view') === 'inbox' ? 'inbox' : 'all';
+  const qc = useQueryClient();
+  // How many replies are waiting, for the Inbox tab.
+  const waiting = useQuery({ queryKey: [...inboxKey, 'open', 0], queryFn: () => loadInbox('open', 0), enabled: isStaff, refetchInterval: 60_000 });
   const [compose, setCompose] = useState<ComposerStart | null>(null);
   const [search, setSearch] = useState(params.get('q') ?? '');
   const [dq, setDq] = useState(search);
@@ -101,15 +105,15 @@ export default function AdminEmails() {
 
   return (
     <DashboardLayout>
-      <PageHeader title="Emails" description="Every email the site has sent, and whether it was delivered and opened. Write to anyone from here, and preview or switch the automatic emails." />
+      <PageHeader title="Emails" description="Every email the site has sent, and whether it was delivered and opened. Read and answer replies, write to anyone, and preview or switch the automatic emails." />
       {!isStaff ? <p className="text-sm text-muted-foreground">Staff access is required to see emails.</p> : <>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <Tabs value={view} onValueChange={(v) => setParams((p) => { if (v === 'all') p.delete('view'); else p.set('view', v); p.delete('page'); p.delete('stage'); return p; })}>
-            <TabsList><TabsTrigger value="all">All emails</TabsTrigger><TabsTrigger value="automatic">Automatic emails</TabsTrigger><TabsTrigger value="followups">Coupon follow-ups</TabsTrigger></TabsList>
+            <TabsList><TabsTrigger value="all">Sent</TabsTrigger><TabsTrigger value="inbox">Inbox{waiting.data?.open ? ` (${waiting.data.open})` : ''}</TabsTrigger><TabsTrigger value="automatic">Automatic emails</TabsTrigger><TabsTrigger value="followups">Coupon follow-ups</TabsTrigger></TabsList>
           </Tabs>
           {canWrite && <Button onClick={() => setCompose({})}><PenLine className="mr-1.5 h-4 w-4" aria-hidden="true" />Write an email</Button>}
         </div>
-        {view === 'followups' ? <CouponFollowups /> : view === 'automatic' ? <AutomaticEmails canWrite={canWrite} /> : <>
+        {view === 'followups' ? <CouponFollowups /> : view === 'automatic' ? <AutomaticEmails canWrite={canWrite} /> : view === 'inbox' ? <EmailInbox canWrite={canWrite} onReply={setCompose} /> : <>
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <div className="relative w-full max-w-sm"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
               <Input className="h-9 pl-8" aria-label="Search emails" placeholder="Email address or subject" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
@@ -159,7 +163,7 @@ export default function AdminEmails() {
           </>}
         </SheetContent>
       </Sheet>
-      <EmailComposer open={!!compose} onOpenChange={(o) => !o && setCompose(null)} start={compose} onSent={() => q.refetch()} />
+      <EmailComposer open={!!compose} onOpenChange={(o) => !o && setCompose(null)} start={compose} onSent={() => { q.refetch(); qc.invalidateQueries({ queryKey: inboxKey }); }} />
     </DashboardLayout>
   );
 }
