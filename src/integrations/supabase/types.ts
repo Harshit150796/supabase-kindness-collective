@@ -1957,6 +1957,54 @@ export type Database = {
         }
         Relationships: []
       }
+      email_inbox: {
+        Row: {
+          body: string | null
+          created_at: string
+          from_email: string
+          from_name: string | null
+          from_user_id: string | null
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          received_at: string
+          resend_id: string
+          status: string
+          subject: string | null
+          to_email: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          from_email: string
+          from_name?: string | null
+          from_user_id?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          received_at: string
+          resend_id: string
+          status?: string
+          subject?: string | null
+          to_email?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          from_email?: string
+          from_name?: string | null
+          from_user_id?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          received_at?: string
+          resend_id?: string
+          status?: string
+          subject?: string | null
+          to_email?: string | null
+        }
+        Relationships: []
+      }
       email_log: {
         Row: {
           body: string | null
