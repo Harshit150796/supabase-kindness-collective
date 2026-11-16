@@ -675,7 +675,7 @@ function Scene({ settings, isMobile, onReady }: { settings: TierSettings; isMobi
   })), [branchTips]);
 
   // Auto drops on timer: one coupon every 5s, a little longer than its donor's name moment
-  // (MOMENT_SECONDS), so one name plays at a time (founder request: fewer, calmer moments).
+  // (MOMENT_SECONDS); each name then stays with its plant (founder request, Nov 16, 2026).
   // The logo facing the visitor falls (dropChoice), so every name follows a fall they can see.
   useEffect(() => {
     if (gentle || !logosReady || donations.length === 0) return;
