@@ -24,7 +24,7 @@ const firstName = (name: string | null | undefined) => (name ?? '').trim().split
 
 /** The email copy of a team message. The whole text is in the email (it comes from the company). */
 export function renderTeamEmail(opts: {
-  subject: string; body: string; name?: string | null; fundraiserTitle: string; replyUrl: string | null;
+  subject: string; body: string; name?: string | null; fundraiserTitle?: string | null; replyUrl: string | null;
 }): RenderedEmail {
   const hi = firstName(opts.name);
   const paragraphs = opts.body.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
@@ -35,14 +35,16 @@ export function renderTeamEmail(opts: {
   const replyLine = opts.replyUrl
     ? 'You can reply to this email or answer in your CouponDonation messages.'
     : 'You can reply to this email and a person on our team will answer.';
+  // A message to a person (no fundraiser) only says how to answer.
+  const about = opts.fundraiserTitle ? `This is about your fundraiser "${opts.fundraiserTitle}". ${replyLine}` : replyLine;
   const html = shell({
     preheader: paragraphs.join(' ').slice(0, 120), greeting, status: 'From the CouponDonation team',
-    headline: opts.subject, paragraphs: [...paragraphs, `This is about your fundraiser "${opts.fundraiserTitle}". ${replyLine}`],
+    headline: opts.subject, paragraphs: [...paragraphs, about],
     link: opts.replyUrl ? { label: 'Open your messages', url: opts.replyUrl } : undefined,
   }).replace(/(<td style="padding:0 0 15px;[^"]*">)([^<]*)(<\/td>)/g, (_m, a, t, c) => `${a}${t.replace(/\n/g, '<br>')}${c}`);
   const text = [
     `${greeting},`, '', ...paragraphs.flatMap((p) => [p, '']),
-    `This is about your fundraiser "${opts.fundraiserTitle}". ${replyLine}`,
+    about,
     ...(opts.replyUrl ? ['', `Open your messages: ${opts.replyUrl}`] : []),
     '', '— The CouponDonation team', SUPPORT_EMAIL,
   ].join('\n');

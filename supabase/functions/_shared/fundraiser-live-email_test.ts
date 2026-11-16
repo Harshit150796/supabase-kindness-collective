@@ -8,16 +8,19 @@ const base = { firstName: 'Maria', title: 'Groceries for the Ortiz family', slug
 
 Deno.test('the live email is the three-step checklist with one-tap sharing', () => {
   const mail = renderFundraiserLive(base);
-  assertEquals(mail.subject, 'Your fundraiser is live: 3 steps to your first gifts');
-  // Admin > Emails still files it under fundraiser emails.
-  assert(/(your fundraiser is live|update about your fundraiser)/i.test(mail.subject));
-  for (const step of ['Send it to five people who know you', 'Post it in your family group chat', 'Ask your church or community group']) {
+  assertEquals(mail.subject, 'You’re live. Send it to five people today.');
+  // Admin > Emails files it under fundraiser emails (email_topic in the Nov 15, 2026 migration).
+  assert(/(you.re live|your fundraiser is live)/i.test(mail.subject));
+  assertEquals(mail.html.includes('approved'), false, 'fundraisers go live at once; nothing is "approved"');
+  for (const step of ['Text it to five people', 'Post it in your family group chat', 'Ask your church or friends group to share it']) {
     assertStringIncludes(mail.html, step);
     assertStringIncludes(mail.text, step);
   }
   const share = 'https://share.coupondonation.com/f/groceries-ortiz';
   assertStringIncludes(mail.html, 'href="sms:?&amp;body=');
-  assertStringIncludes(mail.html, 'href="https://wa.me/?text=');
+  assertStringIncludes(mail.html, 'href="https://www.instagram.com/direct/inbox/"');
+  assertStringIncludes(mail.html, `href="https://www.snapchat.com/share?link=${encodeURIComponent(share)}"`);
+  assertEquals(mail.html.includes('wa.me'), false);
   assertStringIncludes(mail.html, `href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(share)}"`);
   assertStringIncludes(mail.html, 'href="mailto:?subject=Could%20you%20share%20my%20fundraiser%3F&amp;body=');
   assertStringIncludes(mail.html, share);
@@ -30,9 +33,9 @@ Deno.test('the live email is the three-step checklist with one-tap sharing', () 
 
 Deno.test('the ready-made message fits who the fundraiser is for and only names stores that were asked for', () => {
   const url = 'https://share.coupondonation.com/f/x';
-  assertStringIncludes(liveShareMessage({ title: 'T', stores: ['Walmart'], beneficiary: 'yourself' }, url).chat, 'a gift card for a store I need, like Walmart, and gifts start at $10');
+  assertStringIncludes(liveShareMessage({ title: 'T', stores: ['Walmart'], beneficiary: 'yourself' }, url).chat, 'a gift card for a store I need, like Walmart, so you can see where it goes. Gifts start at $10.');
   assertStringIncludes(liveShareMessage({ title: 'T', stores: ['Walmart', 'Kroger', 'Aldi'], beneficiary: 'family' }, url).chat, 'a store my family needs, like Walmart or Kroger,');
-  assertStringIncludes(liveShareMessage({ title: 'T', stores: [], beneficiary: 'organization' }, url).chat, 'Every gift becomes a store gift card for the people our group helps, and gifts start at $10');
+  assertStringIncludes(liveShareMessage({ title: 'T', stores: [], beneficiary: 'organization' }, url).chat, 'Every gift becomes a store gift card for the people our group helps, so you can see where it goes. Gifts start at $10.');
   assertEquals(liveShareMessage({ title: 'T', stores: [] }, url).chat.includes(' like '), false);
   assert(liveShareMessage({ title: 'T' }, url).chat.endsWith(`\n${url}`));
 });
@@ -53,15 +56,14 @@ Deno.test('the dispatcher fills the checklist from the fundraiser itself', () =>
 Deno.test('campaigns that were already live get the same checklist, worded for where they are', async () => {
   const { checklistDue, CHECKLIST_SINCE } = await import('./account-emails.ts');
   const none = renderFundraiserLive({ ...base, already: true });
-  assertEquals(none.subject, 'Your fundraiser is live: 3 steps to your first gifts');
-  assertStringIncludes(none.html, '“Groceries for the Ortiz family” is live on CouponDonation, and we’ve put together a short checklist');
+  assertEquals(none.subject, 'You’re live. Send it to five people today.');
+  assertStringIncludes(none.html, '“Groceries for the Ortiz family” is live on CouponDonation. Here is a short checklist');
   assertEquals(none.html.includes('approved'), false);
   const some = renderFundraiserLive({ ...base, already: true, hasGifts: true });
-  assertEquals(some.subject, 'Your fundraiser is live: 3 steps to more gifts');
+  assertEquals(some.subject, 'Your fundraiser is live: three steps to more gifts');
   assertStringIncludes(some.html, 'Three steps to more gifts');
-  assertStringIncludes(some.text, 'thank the people who have given');
-  assertEquals(some.html.includes('first gifts'), false);
-  for (const step of ['Send it to five people who know you', 'Post it in your family group chat', 'Ask your church or community group']) assertStringIncludes(some.html, step);
+  assertEquals(some.html.includes('First gifts'), false);
+  for (const step of ['Text it to five people', 'Post it in your family group chat', 'Ask your church or friends group to share it']) assertStringIncludes(some.html, step);
   // Who gets it: once each, retried after a failure, never twice, and not those already sent the checklist at approval.
   const after = new Date(Date.parse(CHECKLIST_SINCE) + 60_000).toISOString();
   const before = new Date(Date.parse(CHECKLIST_SINCE) - 60_000).toISOString();

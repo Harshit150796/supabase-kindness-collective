@@ -25,11 +25,16 @@ Deno.serve(async (req) => {
     const { data: fr } = await admin.from('fundraisers').select('title, unique_slug').eq('id', n.fundraiser_id).maybeSingle();
     const isTeam = n.kind === 'team_message';
     const isMsg = n.kind === 'message' || isTeam;
+    const title = fr?.title ?? '';
+    // An update email carries the update's first lines, so the news is read without a click.
+    const { data: upd } = isMsg ? { data: null } : await admin.from('fundraiser_updates').select('title, body').eq('id', n.ref_id).maybeSingle();
+    const excerpt = upd ? `${upd.title ? `${upd.title}: ` : ''}${String(upd.body ?? '').replace(/\s+/g, ' ').trim()}` : '';
     const mail = renderNoticeEmail({
-      subject: isTeam ? 'A message from the CouponDonation team' : isMsg ? 'A new message is waiting' : 'A fundraiser posted an update',
-      heading: isTeam ? 'The CouponDonation team sent you a message' : isMsg ? 'You have a new message' : 'A fundraiser you support posted an update',
-      intro: isTeam ? `We sent you a message about your fundraiser "${fr?.title ?? ''}". Open your messages on CouponDonation to read it and reply.`
-        : isMsg ? 'Someone sent you a message on CouponDonation. For your safety, the message is only shown on the site.' : `The organizer of "${fr?.title}" shared a new update.`,
+      subject: isTeam ? 'New message from the CouponDonation team' : isMsg ? (title ? `New message about “${title}”` : 'A new message is waiting') : `“${title}” posted an update`,
+      heading: isTeam ? 'A message from our team' : isMsg ? 'You have a new message' : 'A new update',
+      intro: isTeam ? `We sent you a message about your fundraiser “${title}”. Open your messages to read it and reply.`
+        : isMsg ? `Someone sent you a message${title ? ` about “${title}”` : ''}. For your safety, the message is only shown on the site.` : `“${title}”, a fundraiser you gave to, posted an update.`,
+      quote: excerpt ? `“${excerpt.length > 240 ? `${excerpt.slice(0, 240).trimEnd()}…` : excerpt}”` : undefined,
       ctaLabel: isMsg ? 'Open messages' : 'Read the update',
       ctaUrl: isMsg ? `${SITE}/messages?c=${n.ref_id}` : `${SITE}/f/${fr?.unique_slug ?? ''}`,
       footerNote: 'You can turn account notification emails off in Settings.',

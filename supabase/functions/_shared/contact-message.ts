@@ -111,16 +111,16 @@ export function renderContactConfirmation(m: Pick<ContactMessage, 'name' | 'topi
   const topic = CONTACT_TOPICS[m.topic];
   const when = `${WHEN.format(new Date(m.createdAt))} ET`;
   const paragraphs = [
-    'Thanks for writing to CouponDonation. Your message is with our support team, and a person will reply to this email address.',
+    'We got your message. A person on our team will reply to this email address within one working day.',
     'To add anything, reply to this email. Please leave out card numbers, coupon codes and PINs; we never ask for them by email.',
   ];
   const html = shell({
-    preheader: 'Your message is with our support team. A person will reply to this email address.',
-    greeting: first ? `Hi ${first}` : 'Hi there', status: 'Support', headline: 'We received your message',
+    preheader: 'A person on our team will reply within one working day.',
+    greeting: first ? `Hi ${first}` : 'Hi there', headline: 'We got your message',
     paragraphs, valueCard: { label: 'Your message', value: topic, details: [`Sent ${when}`, `State: ${US_REGIONS[m.state] ?? m.state}`] },
   });
   const text = [`${first ? `Hi ${first}` : 'Hi there'},`, '', ...paragraphs.flatMap((p) => [p, '']), `About: ${topic}`, `Sent: ${when}`, '', '— The CouponDonation team', '', SUPPORT_LINE].join('\n');
-  return { subject: 'We received your message', html, text };
+  return { subject: 'We got your message', html, text };
 }
 
 export { SUPPORT_EMAIL };

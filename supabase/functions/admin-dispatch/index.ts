@@ -6,6 +6,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { ADMIN_SENDER, shell } from '../_shared/email-layout.ts';
 import { dueChecklistEmails, processAccountEmail, type AccountEmailKind } from '../_shared/account-emails.ts';
 import { syncEmailLog } from '../_shared/email-log.ts';
+import { dueOrganizerEmails, processOrganizerEmail } from '../_shared/organizer-emails.ts';
 
 const SUPA = Deno.env.get('SUPABASE_URL')!;
 const SITE = 'https://coupondonation.com';
@@ -113,6 +114,18 @@ Deno.serve(async (req) => {
     await new Promise((done) => setTimeout(done, 700));
   }
   report.checklist_emails = checklist;
+
+  // 1f) Emails that help organizers market their own fundraiser (founder request, Nov 15, 2026): a gift came
+  // in, first week, halfway, goal reached… Each has a switch in Admin > Emails; a failure never stops the run.
+  const organizer: Record<string, number> = {};
+  try {
+    for (const due of await dueOrganizerEmails(admin)) {
+      const r = await processOrganizerEmail(admin, key, due, 'dispatcher');
+      organizer[`${due.kind}:${r}`] = (organizer[`${due.kind}:${r}`] ?? 0) + 1;
+      await new Promise((done) => setTimeout(done, 700));
+    }
+  } catch (e) { organizer.error = 1; console.error('organizer emails', e); }
+  report.organizer_emails = organizer;
 
   // 2) Claim new events since watermark (2h look-back overlap; unique markers prevent duplicates).
   const { data: st } = await admin.from('admin_dispatch_state').select('*').eq('id', 1).single();

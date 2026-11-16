@@ -9,11 +9,13 @@ const read = (path: string) => Deno.readTextFileSync(new URL(path, root));
 Deno.test('Outside-gift follow-ups say what happened, never the code', () => {
   const got = renderOutsideGiftEmail({ kind: 'received', brand: 'Walmart', value: 10, fundraiserTitle: 'Help Feed My Family', fundraiserUrl: 'https://coupondonation.com/f/help',
     organizer: 'Reigns R.', at: '2026-11-03T22:39:08Z', firstName: 'Dana' });
-  assertEquals(got.subject, 'Your gift reached the organizer');
-  assert(got.text.includes('Reigns R. opened the $10 Walmart card') && got.text.includes('November 3, 2026'));
+  assertEquals(got.subject, 'Your gift was received');
+  // No names in emails (founder decision, Nov 15, 2026).
+  assert(!got.text.includes('Reigns'));
+  assert(got.text.includes('The organizer of “Help Feed My Family” opened the $10 Walmart card') && got.text.includes('November 3, 2026'));
   assert(got.html.includes('never included in email'));
   const used = renderOutsideGiftEmail({ kind: 'used', brand: 'Walmart', value: 10, fundraiserTitle: 'T', fundraiserUrl: null, organizer: 'Reigns R.', at: '2026-11-04T15:00:00Z', category: 'Groceries' });
-  assertEquals(used.subject, 'Your gift made an impact');
+  assertEquals(used.subject, 'Your gift was used');
   assert(used.text.includes('went toward groceries') && !used.text.includes('See the fundraiser'));
 });
 

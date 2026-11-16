@@ -8,33 +8,35 @@ const SITE = 'https://coupondonation.com';
 const TOKEN_DAYS = 30;
 export const CHARITY_LINE = 'CouponDonation is not a registered charity, so this donation is not tax-deductible.';
 export const NO_FUNDRAISER_NEXT =
-  'Your donation becomes coupons for the retailers you chose. Once they are ready, they go into our shared pool, where families who have asked for help can claim them from their voucher wallet.';
-export const FUNDRAISER_NEXT = (organizer: string) =>
-  `Your donation becomes coupons for ${organizer}, and we will email you when they receive it.`;
+  'What happens next: your donation becomes coupons for the retailers you chose. Once they are ready, they go into our shared pool, where families who have asked for help can claim them.';
+export const FUNDRAISER_NEXT =
+  'What happens next: we turn it into a gift card for the store they asked for. We’ll email you when it’s received.';
 
 const first = (n?: string | null) => (n ?? '').trim().split(/\s+/)[0] || '';
 const money = (n: number) => `$${Number(n).toFixed(2)}`;
+const short = (n: number) => `$${Number(n).toFixed(Number(n) % 1 ? 2 : 0)}`;
 export const formatET = (iso: string) =>
   new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(iso)) + ' ET';
 export const shortRef = (id: string) => id.replace(/-/g, '').slice(0, 8).toUpperCase();
 
 export function renderDonationConfirmation(o: {
-  firstName?: string; amount: number; at: string; donationId: string; fundraiserTitle?: string | null; organizer?: string | null;
+  firstName?: string; amount: number; at: string; donationId: string; fundraiserTitle?: string | null; fundraiserUrl?: string | null;
   retailers?: string[]; coins?: { kind: 'credited' | 'pending'; coins: number } | null; link: { label: string; url: string }; test?: boolean;
 }): RenderedEmail {
   const forLine = o.fundraiserTitle ? `For: “${o.fundraiserTitle}”` : `For: ${(o.retailers?.length ? o.retailers : ['the retailers you chose']).join(', ')}`;
-  const next = o.fundraiserTitle ? FUNDRAISER_NEXT(o.organizer || 'the organizer') : NO_FUNDRAISER_NEXT;
+  const thanks = o.fundraiserTitle ? `Thank you. Your ${short(o.amount)} for “${o.fundraiserTitle}” is confirmed.` : `Thank you. Your ${short(o.amount)} donation is confirmed.`;
+  const next = o.fundraiserTitle ? FUNDRAISER_NEXT : NO_FUNDRAISER_NEXT;
   const coinLine = !o.coins || o.coins.coins <= 0 ? null : o.coins.kind === 'credited'
     ? `${o.coins.coins.toLocaleString('en-US')} Gold Coins were added to your account for this donation.`
     : `You have ${o.coins.coins.toLocaleString('en-US')} Gold Coins waiting. Sign in with this email address to claim them.`;
+  const shareLine = o.fundraiserTitle && o.fundraiserUrl ? `Want it to go further? Send the fundraiser to one person who would care: ${o.fundraiserUrl}` : null;
   const details = [`Amount charged: ${money(o.amount)}`, `Date: ${formatET(o.at)}`, forLine, `Reference: ${shortRef(o.donationId)}`];
-  const subject = o.fundraiserTitle ? 'Your fundraiser donation is confirmed' : 'Your direct donation is confirmed';
+  const subject = o.fundraiserTitle ? 'Thank you. Your donation is on its way.' : 'Thank you. Your donation is confirmed.';
   const footerLines = [CHARITY_LINE, 'Questions? Just reply to this email.', ...(o.test ? ['This is a test message.'] : [])];
   const greeting = o.firstName ? `Hi ${o.firstName}` : 'Hi there';
   const html = shell({
-    preheader: 'Thank you. Here are the details of your donation.', greeting,
-    status: 'Donation confirmed', headline: 'Your donation is recorded',
-    paragraphs: ['Thank you for your donation.', next, ...(coinLine ? [coinLine] : [])],
+    preheader: 'Here is what happens next, and the details of your donation.', greeting, headline: 'Thank you',
+    paragraphs: [thanks, next, ...(coinLine ? [coinLine] : [])],
     valueCard: { label: 'Donation record', value: money(o.amount), details: [formatET(o.at), forLine, `Reference ${shortRef(o.donationId)}`] },
     timeline: [
       { label: 'Donated', detail: formatET(o.at), complete: true },
@@ -42,10 +44,11 @@ export function renderDonationConfirmation(o: {
       { label: 'Received', complete: false },
       { label: 'Used', complete: false },
     ],
+    closing: shareLine ? [shareLine] : undefined,
     link: o.link, footer: footerLines.map(escapeHtml).join('<br>'), sample: o.test,
   });
-  const text = [`${greeting},`, '', 'Thank you for your donation.', '', ...details, '', next, ...(coinLine ? ['', coinLine] : []), '',
-    `${o.link.label}: ${o.link.url}`, '', '— The CouponDonation team', '', ...footerLines, SUPPORT_LINE].join('\n');
+  const text = [`${greeting},`, '', thanks, '', next, ...(coinLine ? ['', coinLine] : []), '', ...details, '',
+    `${o.link.label}: ${o.link.url}`, ...(shareLine ? ['', shareLine] : []), '', '— The CouponDonation team', '', ...footerLines, SUPPORT_LINE].join('\n');
   return { subject, html, text };
 }
 
@@ -64,19 +67,19 @@ export function liveShareMessage(o: { title: string; stores?: string[]; benefici
     : `Every gift becomes a gift card for ${o.beneficiary === 'family' ? 'a store my family needs' : 'a store I need'}${shops ? `, like ${shops}` : ''}`;
   return {
     becomes,
-    chat: `Hi! I’ve started a fundraiser on CouponDonation: “${o.title}”. ${becomes}, and gifts start at $10. Could you take a look, and pass it on if you can?\n${shareUrl}`,
+    chat: `Hi! I started a fundraiser on CouponDonation: “${o.title}”. ${becomes}, so you can see where it goes. Gifts start at $10. Would you take a look, and pass it on?\n${shareUrl}`,
   };
 }
 
 /**
- * "Your fundraiser is live" (founder request, Nov 9, 2026): sent once when a fundraiser is approved, with the
- * checklist that gets first gifts: send it to five people, post it in the family group chat, ask your church or
- * community group. Each step has one-tap links that open a text, WhatsApp, Facebook or an email draft with the
- * message already written, and the message itself is in the email to copy.
+ * "You're live" (rewritten Nov 15, 2026): sent once, minutes after a fundraiser goes live, with the three
+ * things that bring first gifts. Each has one-tap links: a text or an email draft with the message already
+ * written, Facebook and Snapchat with the link attached, and Instagram messages (Instagram can't be opened
+ * with words filled in, so the message is in the email to copy).
  */
 export function renderFundraiserLive(o: {
   firstName?: string; title: string; slug: string; id?: string; stores?: string[]; beneficiary?: Beneficiary; test?: boolean;
-  /** Sent to a fundraiser that was already live before the checklist existed (no "approved" news). */
+  /** Sent to a fundraiser that was already live before the checklist existed. */
   already?: boolean;
   /** It already has gifts: the email is about more gifts, not the first ones. */
   hasGifts?: boolean;
@@ -93,43 +96,39 @@ export function renderFundraiserLive(o: {
     `${becomes}, and gifts start at $10. Here’s the link:`, shareUrl, '',
     'Thank you,', o.firstName ?? '',
   ].join('\n').trim();
+  const instagram = { label: 'Instagram', url: 'https://www.instagram.com/direct/inbox/' };
+  const snapchat = { label: 'Snapchat', url: `https://www.snapchat.com/share?link=${enc(shareUrl)}` };
   const steps = [
     {
-      title: 'Send it to five people who know you',
-      detail: 'Family, close friends, a coworker you trust. Send it to each one yourself, with a line about why it matters to you. A personal message is harder to miss than a post.',
+      title: 'Text it to five people',
+      detail: 'One at a time, by name. A personal message is hard to ignore.',
       actions: [
-        { label: 'Text message', url: `sms:?&body=${enc(chat)}` },
-        { label: 'WhatsApp', url: `https://wa.me/?text=${enc(chat)}` },
-        { label: 'Email', url: `mailto:?subject=${enc(`“${o.title}” on CouponDonation`)}&body=${enc(chat)}` },
+        { label: 'Text message', url: `sms:?&body=${enc(chat)}` }, instagram,
+        { label: 'Email', url: `mailto:?subject=${enc(`“${o.title}” on CouponDonation`)}&body=${enc(chat)}` }, snapchat,
       ],
     },
     {
       title: 'Post it in your family group chat',
-      detail: 'Paste the message below into your family’s group chat and ask everyone to pass it on.',
-      actions: [
-        { label: 'WhatsApp', url: `https://wa.me/?text=${enc(chat)}` },
-        { label: 'Facebook', url: `https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}` },
-      ],
+      detail: 'Paste the message below and ask everyone to pass it on.',
+      actions: [instagram, { label: 'Facebook', url: `https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}` }, snapchat],
     },
     {
-      title: 'Ask your church or community group',
-      detail: 'Ask your pastor, faith leader or group organizer to share it in the bulletin, a newsletter or the group chat. We’ve written the note for you.',
+      title: 'Ask your church or friends group to share it',
+      detail: 'We wrote the note for you.',
       actions: [{ label: 'Email your church or group', url: `mailto:?subject=${enc('Could you share my fundraiser?')}&body=${enc(churchNote)}` }],
     },
   ];
   const p1 = o.already
-    ? `“${o.title}” is live on CouponDonation, and we’ve put together a short checklist to help more people see it.`
-    : `Good news: “${o.title}” is approved and live on CouponDonation.`;
+    ? `“${o.title}” is live on CouponDonation. Here is a short checklist to help more people see it.`
+    : `“${o.title}” is live on CouponDonation.`;
   const p2 = o.hasGifts
-    ? 'Gifts usually come from people who know you, or from the people they pass it on to, and each new gift helps your fundraiser show higher in the lists donors browse. These three steps help most:'
-    : 'First gifts usually come from people who already know you, and once someone gives, your fundraiser is shown ahead of ones with no gifts yet in the lists donors browse. These three steps help most:';
-  const hint = 'Your link shows your fundraiser’s photo and title when you paste it into a chat or a post.';
-  const after = o.hasGifts
-    ? 'Post an update from your dashboard to thank the people who have given. It also gives everyone a reason to share it again.'
-    : 'After your first gift, post an update from your dashboard to thank the people who gave. It also gives everyone a reason to share it again.';
+    ? 'Gifts usually come from people who know you, or from the people they pass it on to. Each new gift helps your fundraiser show higher in the lists donors browse.'
+    : 'First gifts usually come from people who know you. Once one person gives, your fundraiser is shown ahead of those with no gifts yet. So today matters most.';
+  const hint = 'For Instagram, copy this message and paste it in. Your link shows your fundraiser’s photo and title.';
+  const after = 'Not sure what to say to someone? Reply to this email and we’ll help you word it.';
   const html = shell({
-    preheader: 'Send it to five people, post it in your family chat and ask your church. We’ve written the message for you.',
-    greeting, status: 'Fundraiser live', headline: o.hasGifts ? 'Three steps to more gifts' : 'Three steps to your first gifts', paragraphs: [p1, p2],
+    preheader: 'Text it to five people, post it in your family chat and ask your church. We wrote the message for you.',
+    greeting, headline: o.hasGifts ? 'Three steps to more gifts' : 'You’re live', paragraphs: [p1, p2],
     checklist: steps, copyBox: { label: 'A message you can copy', body: chat, hint }, closing: [after],
     link: { label: 'See your fundraiser', url }, secondaryLink: { label: 'Share it from your dashboard', url: dashboardUrl },
     footer: o.test ? 'This is a test message.' : undefined, sample: o.test,
@@ -143,7 +142,7 @@ export function renderFundraiserLive(o: {
     `See your fundraiser: ${url}`, `Share it from your dashboard: ${dashboardUrl}`, '',
     '— The CouponDonation team', ...(o.test ? ['', 'This is a test message.'] : []), '', SUPPORT_LINE,
   ].join('\n');
-  return { subject: `Your fundraiser is live: 3 steps to ${o.hasGifts ? 'more gifts' : 'your first gifts'}`, html, text };
+  return { subject: o.hasGifts ? 'Your fundraiser is live: three steps to more gifts' : 'You’re live. Send it to five people today.', html, text };
 }
 
 export async function sendAccountMail(key: string, to: string, mail: RenderedEmail) {
@@ -164,16 +163,12 @@ const newToken = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Ui
 
 // deno-lint-ignore no-explicit-any
 async function buildDonation(admin: any, id: string): Promise<{ to: string | null; mail: RenderedEmail | null }> {
-  const { data: d } = await admin.from('donations').select('id, amount, created_at, donor_email, donor_id, donor_name, brand_partner, fundraiser_id, fundraisers(title, user_id)').eq('id', id).maybeSingle();
+  const { data: d } = await admin.from('donations').select('id, amount, created_at, donor_email, donor_id, donor_name, brand_partner, fundraiser_id, fundraisers(title, unique_slug)').eq('id', id).maybeSingle();
   if (!d) return { to: null, mail: null };
   const { data: prof } = d.donor_id ? await admin.from('profiles').select('email, full_name').eq('user_id', d.donor_id).maybeSingle() : { data: null };
   const to = d.donor_email || prof?.email || null;
   if (!to) return { to: null, mail: null };
-  let organizer: string | null = null;
-  if (d.fundraisers?.user_id) {
-    const { data: op } = await admin.from('profiles').select('full_name').eq('user_id', d.fundraisers.user_id).maybeSingle();
-    organizer = first(op?.full_name) || null;
-  }
+  const fundraiserUrl = d.fundraisers?.unique_slug ? `${SHARE_HOST}/f/${encodeURIComponent(d.fundraisers.unique_slug)}` : null;
   const { data: brands } = await admin.from('donation_brands').select('brand_name').eq('donation_id', id);
   const retailers = (brands ?? []).map((b: { brand_name: string }) => b.brand_name).filter(Boolean);
   if (!retailers.length && d.brand_partner) retailers.push(...String(d.brand_partner).split(',').map((s: string) => s.trim()).filter(Boolean));
@@ -186,7 +181,7 @@ async function buildDonation(admin: any, id: string): Promise<{ to: string | nul
     link = { label: 'Follow your donation', url: `${SITE}/impact/${token}` };
   }
   return { to, mail: renderDonationConfirmation({ firstName: first(d.donor_name) || first(prof?.full_name), amount: Number(d.amount), at: d.created_at, donationId: d.id,
-    fundraiserTitle: d.fundraisers?.title ?? null, organizer, retailers, coins, link }) };
+    fundraiserTitle: d.fundraisers?.title ?? null, fundraiserUrl, retailers, coins, link }) };
 }
 
 // deno-lint-ignore no-explicit-any
