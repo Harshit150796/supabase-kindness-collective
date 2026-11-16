@@ -16,6 +16,8 @@ interface Props {
   isMobile: boolean;
   /** The site's gentle-motion setting: the tag alone, no flight. */
   still?: boolean;
+  /** The plant is fading out: the tag fades with it. */
+  leaving?: boolean;
 }
 
 // Seed drift toward the canopy, in the 1440-wide hero's pixels (Html rescales them).
@@ -67,7 +69,7 @@ function Tag({ name, amount }: { name: string; amount: number }) {
  * butterfly. Drawn in the page (crisp at any size) and anchored to the plant in the scene; it plays
  * once (MOMENT_SECONDS) and the layer unmounts it. Below the hero's headline layer, never clickable.
  */
-export function NameMoment({ kind, donorName, amount, side, tagSide = side, edge = null, isMobile, still = false }: Props) {
+export function NameMoment({ kind, donorName, amount, side, tagSide = side, edge = null, isMobile, still = false, leaving = false }: Props) {
   const distanceFactor = useGardenDistanceFactor(isMobile);
   const name = displayDonor(donorName);
   const toward = -side; // the tree is on this side of the plant
@@ -77,7 +79,7 @@ export function NameMoment({ kind, donorName, amount, side, tagSide = side, edge
   return (
     <Html center distanceFactor={distanceFactor} zIndexRange={[20, 0]} pointerEvents="none" style={{ pointerEvents: 'none' }}>
       <div
-        className={`gm gm-${kind} gm-side-${tagSide > 0 ? 'r' : 'l'}${edge ? ` gm-edge-${edge}` : ''}${still ? ' gm-still' : ''}${isMobile ? ' gm-phone' : ''}`}
+        className={`gm gm-${kind} gm-side-${tagSide > 0 ? 'r' : 'l'}${edge ? ` gm-edge-${edge}` : ''}${still ? ' gm-still' : ''}${isMobile ? ' gm-phone' : ''}${leaving ? ' gm-leaving' : ''}`}
         style={{ ['--side' as string]: tagSide, ['--toward' as string]: toward } as CSSProperties}
         aria-hidden="true"
       >

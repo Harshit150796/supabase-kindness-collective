@@ -18,15 +18,19 @@
 .gm-dandelion .gm-tagwrap{position:absolute;top:0;left:calc(var(--side) * 32px);transform:translate(calc((var(--side) - 1) * 50%),-50%)}
 .gm-side-l .gm-tag{align-items:flex-end}
 .gm-dandelion .gm-tag{animation:gm-d-tag 4.6s cubic-bezier(.4,0,.2,1) both}
-@keyframes gm-d-tag{0%,7%{opacity:0;transform:translateY(8px)}12%,52%{opacity:1;transform:none}82%,100%{opacity:0;transform:translate(calc(var(--toward) * 40px),-72px)}}
+@keyframes gm-d-tag{0%,7%{opacity:0;transform:translateY(8px)}12%,100%{opacity:1;transform:none}}
 .gm-seed{position:absolute;width:14px;height:19px;margin:-10px 0 0 -7px;opacity:0;filter:drop-shadow(0 0 1px rgba(10,30,15,.45));animation:gm-seed 4.6s cubic-bezier(.3,.1,.4,1) both}
 .gm-seed svg{display:block;width:100%;height:100%}
 @keyframes gm-seed{0%,46%{opacity:0;transform:translate(0,0) rotate(0)}49%{opacity:1}84%{opacity:.9;transform:translate(var(--dx),var(--dy)) rotate(var(--r))}92%,100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--r))}}
 
 /* Butterfly: flies down from the tree's side carrying the tag, lands on the bloom (44%), rests with
    slow wings, the tag fades (80%), then it lifts away. */
-.gm-exit{position:absolute;left:0;top:0;animation:gm-b-exit 4.6s cubic-bezier(.5,0,.75,0) both}
-@keyframes gm-b-exit{0%,82%{transform:none;opacity:1}100%{transform:translate(calc(var(--toward) * -36px),-120px);opacity:0}}
+.gm-exit{position:absolute;left:0;top:0}
+/* The butterfly alone lifts away; its tag stays on the bloom while the plant stands. */
+.gm-fly{animation:gm-bob .9s ease-in-out infinite,gm-b-exit 4.6s cubic-bezier(.5,0,.75,0) both}
+@keyframes gm-b-exit{0%,82%{translate:0 0;opacity:1}100%{translate:calc(var(--toward) * -36px) -120px;opacity:0}}
+.gm{transition:opacity .9s ease}
+.gm-leaving{opacity:0}
 .gm-flyer{position:absolute;left:0;top:0;width:44px;height:37px;offset-rotate:0deg;offset-anchor:50% 50%;animation:gm-fly 4.6s cubic-bezier(.42,.05,.3,1) both}
 @keyframes gm-fly{0%,10%{offset-distance:0%;opacity:0}14%{opacity:1}44%,100%{offset-distance:100%;opacity:1}}
 .gm-fly{display:block;width:44px;height:37px;overflow:visible;animation:gm-bob .9s ease-in-out infinite}
