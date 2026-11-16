@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Check, Circle, Search } from 'lucide-react';
+import { Check, Circle, PenLine, Reply, Search } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
 import { DataTable, Column } from '@/components/admin/DataTable';
 import { EmailStatus } from '@/components/admin/EmailStatus';
 import { TOPICS, topicLabel, type EmailRow } from '@/lib/emailTopics';
 import { CouponFollowups } from '@/components/admin/CouponFollowups';
+import { AutomaticEmails } from '@/components/admin/emails/AutomaticEmails';
+import { EmailComposer, type ComposerStart } from '@/components/admin/emails/EmailComposer';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -48,15 +50,25 @@ function Timeline({ e, opensSince }: { e: EmailRow; opensSince: string | null })
   );
 }
 
+/** Who a follow-up to this email goes to: the fundraiser's organizer, the account, or the bare address. */
+function followUp(e: EmailRow): ComposerStart {
+  const subject = e.subject ? (/^re:/i.test(e.subject) ? e.subject : `Re: ${e.subject}`).slice(0, 150) : '';
+  if (e.category === 'team' && e.fundraiser) return { subject, to: { kind: 'fundraiser', fundraiserId: e.fundraiser.id, title: e.fundraiser.title, name: e.to?.name ?? null, email: e.to_email } };
+  if (e.to?.user_id) return { subject, to: { kind: 'person', userId: e.to.user_id, name: e.to.name ?? null, email: e.to_email } };
+  return { subject, to: { kind: 'address', email: e.to_email } };
+}
+
 /**
  * Every email the site sent (receipts, coupon notices, reminders, sign-in codes, team messages …), copied
  * from Resend every few minutes with its delivery status, plus the coupon follow-ups view. Only
- * team-written emails keep their text.
+ * team-written emails keep their text. Since Nov 15, 2026 (founder request) the team also writes emails
+ * here, follows up on any email in the list, and manages the automatic emails (previews, tests, switches).
  */
 export default function AdminEmails() {
-  const { isStaff } = useTeamRole();
+  const { isStaff, canWrite } = useTeamRole();
   const [params, setParams] = useSearchParams();
-  const view = params.get('view') === 'followups' ? 'followups' : 'all';
+  const view = params.get('view') === 'followups' ? 'followups' : params.get('view') === 'automatic' ? 'automatic' : 'all';
+  const [compose, setCompose] = useState<ComposerStart | null>(null);
   const [search, setSearch] = useState(params.get('q') ?? '');
   const [dq, setDq] = useState(search);
   const category = params.get('category') ?? 'not_outreach';
@@ -89,12 +101,15 @@ export default function AdminEmails() {
 
   return (
     <DashboardLayout>
-      <PageHeader title="Emails" description="Every email the site has sent: who got it, what it was about, and whether it was delivered and opened. Updated every 5 minutes." />
+      <PageHeader title="Emails" description="Every email the site has sent, and whether it was delivered and opened. Write to anyone from here, and preview or switch the automatic emails." />
       {!isStaff ? <p className="text-sm text-muted-foreground">Staff access is required to see emails.</p> : <>
-        <Tabs value={view} onValueChange={(v) => setParams((p) => { if (v === 'followups') p.set('view', 'followups'); else p.delete('view'); p.delete('page'); p.delete('stage'); return p; })} className="mb-4">
-          <TabsList><TabsTrigger value="all">All emails</TabsTrigger><TabsTrigger value="followups">Coupon follow-ups</TabsTrigger></TabsList>
-        </Tabs>
-        {view === 'followups' ? <CouponFollowups /> : <>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <Tabs value={view} onValueChange={(v) => setParams((p) => { if (v === 'all') p.delete('view'); else p.set('view', v); p.delete('page'); p.delete('stage'); return p; })}>
+            <TabsList><TabsTrigger value="all">All emails</TabsTrigger><TabsTrigger value="automatic">Automatic emails</TabsTrigger><TabsTrigger value="followups">Coupon follow-ups</TabsTrigger></TabsList>
+          </Tabs>
+          {canWrite && <Button onClick={() => setCompose({})}><PenLine className="mr-1.5 h-4 w-4" aria-hidden="true" />Write an email</Button>}
+        </div>
+        {view === 'followups' ? <CouponFollowups /> : view === 'automatic' ? <AutomaticEmails canWrite={canWrite} /> : <>
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <div className="relative w-full max-w-sm"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
               <Input className="h-9 pl-8" aria-label="Search emails" placeholder="Email address or subject" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
@@ -137,10 +152,14 @@ export default function AdminEmails() {
             <Timeline e={open} opensSince={q.data?.opens_since ?? '2026-11-04T16:40:00Z'} />
             {open.body ? <p className="mt-4 whitespace-pre-wrap break-words rounded-md bg-muted/50 p-3 text-sm">{open.body}</p>
               : <p className="mt-4 text-sm text-muted-foreground">The text of automatic emails isn't stored. They follow the site's standard templates.</p>}
-            {open.to?.user_id && <Button size="sm" variant="outline" className="mt-4" asChild><Link to={`/admin/emails?user=${open.to.user_id}`} onClick={() => setOpen(null)}>All emails to this person</Link></Button>}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {canWrite && open.category !== 'outreach' && open.topic !== 'alerts' && <Button size="sm" onClick={() => { setCompose(followUp(open)); setOpen(null); }}><Reply className="mr-1.5 h-4 w-4" aria-hidden="true" />Follow up</Button>}
+              {open.to?.user_id && <Button size="sm" variant="outline" asChild><Link to={`/admin/emails?user=${open.to.user_id}`} onClick={() => setOpen(null)}>All emails to this person</Link></Button>}
+            </div>
           </>}
         </SheetContent>
       </Sheet>
+      <EmailComposer open={!!compose} onOpenChange={(o) => !o && setCompose(null)} start={compose} onSent={() => q.refetch()} />
     </DashboardLayout>
   );
 }

@@ -131,15 +131,16 @@ export const EMAIL_SENDER = {
   replyTo: SUPPORT_EMAIL,
 };
 
-/** Generic notification email (messages, invites, updates). Text is escaped. */
+/** Generic notification email (messages, invites, updates). Text is escaped. `quote` is a second paragraph (the first lines of an update). */
 export function renderNoticeEmail(opts: {
-  subject: string; heading: string; intro: string; ctaLabel: string; ctaUrl: string; footerNote?: string; firstName?: string;
+  subject: string; heading?: string; intro: string; quote?: string; ctaLabel: string; ctaUrl: string; footerNote?: string; firstName?: string;
 }): RenderedEmail {
+  const paragraphs = [opts.intro, ...(opts.quote ? [opts.quote] : [])];
   const html = shell({
     preheader: opts.intro.slice(0, 120), greeting: opts.firstName ? `Hi ${opts.firstName}` : 'Hi there',
-    status: 'Account update', headline: opts.heading, paragraphs: [opts.intro], link: { label: opts.ctaLabel, url: opts.ctaUrl }, footer: opts.footerNote ? escapeHtml(opts.footerNote) : undefined,
+    headline: opts.heading, paragraphs, link: { label: opts.ctaLabel, url: opts.ctaUrl }, footer: opts.footerNote ? escapeHtml(opts.footerNote) : undefined,
   });
-  const text = [opts.firstName ? `Hi ${opts.firstName},` : 'Hi there,', '', opts.intro, '', `${opts.ctaLabel}: ${opts.ctaUrl}`, '', '— The CouponDonation team', '', opts.footerNote ?? '', SUPPORT_LINE].filter(Boolean).join('\n');
+  const text = [opts.firstName ? `Hi ${opts.firstName},` : 'Hi there,', '', ...paragraphs.flatMap((p) => [p, '']), `${opts.ctaLabel}: ${opts.ctaUrl}`, '', '— The CouponDonation team', '', opts.footerNote ?? '', SUPPORT_LINE].filter((l, i, all) => l !== '' || all[i - 1] !== '').join('\n');
   return { subject: opts.subject, html, text };
 }
 

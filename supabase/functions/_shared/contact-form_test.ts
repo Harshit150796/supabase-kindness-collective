@@ -67,7 +67,8 @@ Deno.test('support gets the whole message, escaped, with a link to the admin pan
 
 Deno.test('the confirmation never repeats what was written and names support@coupondonation.com', () => {
   const email = renderContactConfirmation(MESSAGE);
-  assertEquals(email.subject, 'We received your message');
+  assertEquals(email.subject, 'We got your message');
+  assert(email.text.includes('within one working day'));
   assertFalse(email.html.includes('Where did my donation go'));
   assertFalse(email.text.includes('Where did my donation go'));
   assert(email.html.includes('support@coupondonation.com'));
