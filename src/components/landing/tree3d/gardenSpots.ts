@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { signpostLayout, type Box } from '@/lib/heroSignpost';
+interface Box { x1: number; y1: number; x2: number; y2: number }
 import { gardenDistanceFactor } from './gardenMoments';
 
 /**
@@ -97,7 +97,7 @@ function phoneFit(camera: THREE.Camera, canvas: Canvas, p: Spot, place: TagPlace
   const head = toPx(camera, canvas, p.x, HEAD_Y, p.z);
   const fov = (camera as THREE.PerspectiveCamera).fov ?? 32;
   const s = gardenDistanceFactor(h, true) / (2 * Math.tan(THREE.MathUtils.degToRad(fov) / 2) * head.dist);
-  const keepOut = [grow(signpostLayout(w, h).rect, MARGIN), grow({ ...PAUSE, y1: h + PAUSE.y1, y2: h + PAUSE.y2 }, MARGIN)];
+  const keepOut = [grow({ ...PAUSE, y1: h + PAUSE.y1, y2: h + PAUSE.y2 }, MARGIN)];
   const ok = (b: Box) => b.x1 >= 4 && b.x2 <= w - 4 && b.y2 <= h - 4 && !keepOut.some((k) => hit(b, k));
   // How much of a box falls on the keep-outs or off the hero (used when no spot is fully clear).
   const spill = (b: Box) => {
