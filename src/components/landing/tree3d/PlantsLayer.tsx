@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useInteraction } from './InteractionContext';
 import { PlantSprout, type PlantArchetype } from './PlantSprout';
 import { NameMoment } from './NameMoment';
-import { MOMENT_LIFETIME_MS, MOMENT_SECONDS, nextMoment, type MomentKind } from './gardenMoments';
+import { nextMoment, type MomentKind } from './gardenMoments';
 import { holdSpot, releaseSpot, tagPlacement } from './gardenSpots';
 
 interface Plant {
@@ -28,14 +28,13 @@ interface Plant {
 /** A new plant this close to an older one takes its place: one plant per landing spot. */
 const SAME_SPOT = 0.95;
 /** Founder request: a few plants, spread evenly (gardenSpots), never a crowd. */
-const MAX_PLANTS = { wide: 8, narrow: 6, phone: 5 };
+const MAX_PLANTS = { wide: 4, narrow: 4, phone: 3 };
 
 /**
  * The garden: a landed coupon grows a plant where it fell and plays its donor's name moment,
- * dandelion and butterfly taking turns. One name plays at a time (the tree drops a coupon every
- * 9s, a little longer than a moment); a coupon landing mid-moment grows a quiet plant. A handful
- * of plants stay (8 on laptops, 6 on tablets, 5 on phones, fewer on low tiers), spread over the visible
- * hill by gardenSpots.
+ * dandelion and butterfly taking turns. Every plant keeps its name while it stands; a few plants
+ * stay (4 on laptops and tablets, 3 on phones, fewer on low tiers), and the oldest fades with its
+ * name when a new one lands. Spread over the visible hill by gardenSpots.
  */
 export function PlantsLayer({ cap = 40, isMobile = false, gentle = false }: { cap?: number; isMobile?: boolean; gentle?: boolean }) {
   const { plantEvent } = useInteraction();
@@ -43,7 +42,6 @@ export function PlantsLayer({ cap = 40, isMobile = false, gentle = false }: { ca
   const lastIdRef = useRef<number | null>(null);
   const momentRef = useRef<MomentKind>(Math.random() < 0.5 ? 'dandelion' : 'butterfly');
   const timersRef = useRef(new Set<number>());
-  const lastMomentRef = useRef(-Infinity);
   const camera = useThree((state) => state.camera);
   const width = useThree((state) => state.size.width);
   const height = useThree((state) => state.size.height);
@@ -61,13 +59,10 @@ export function PlantsLayer({ cap = 40, isMobile = false, gentle = false }: { ca
 
     // One name at a time: a coupon landing while a name is still playing (a shake, a tap) grows a
     // quiet plant with no tag.
-    const now = performance.now() / 1000;
-    const busy = now - lastMomentRef.current < MOMENT_SECONDS - 0.6;
-    const moment: MomentKind | null = busy ? null : momentRef.current;
-    if (moment) {
-      lastMomentRef.current = now;
-      momentRef.current = nextMoment(moment);
-    }
+    // Every plant carries its donor's name, and the name stays as long as the plant does
+    // (founder request, Nov 16, 2026: 3-4 names on the hill at once, no nameless plants).
+    const moment: MomentKind = momentRef.current;
+    momentRef.current = nextMoment(moment);
 
     let seed = 0;
     for (let i = 0; i < plantEvent.id.length; i++) seed = (seed + plantEvent.id.charCodeAt(i) * (i + 1)) | 0;
@@ -110,9 +105,9 @@ export function PlantsLayer({ cap = 40, isMobile = false, gentle = false }: { ca
         const near = Math.hypot(p.position[0] - px, p.position[2] - pz) < SAME_SPOT;
         if (near) {
           releaseSpot(`plant:${p.id}`);
-          return { ...p, fadingOut: true, moment: null };
+          return { ...p, fadingOut: true };
         }
-        return moment && p.moment ? { ...p, moment: null } : p;
+        return p;
       });
       merged = [...merged, next];
       // FIFO cap: the oldest standing plant fades, and its spot opens up again.
@@ -120,17 +115,11 @@ export function PlantsLayer({ cap = 40, isMobile = false, gentle = false }: { ca
       if (standing.length > limit) {
         const oldest = standing[0].id;
         releaseSpot(`plant:${oldest}`);
-        merged = merged.map((p) => (p.id === oldest ? { ...p, fadingOut: true, moment: null } : p));
+        merged = merged.map((p) => (p.id === oldest ? { ...p, fadingOut: true } : p));
       }
       return merged;
     });
 
-    if (!moment) return;
-    const timer = window.setTimeout(() => {
-      timersRef.current.delete(timer);
-      setPlants((prev) => prev.map((p) => (p.id === id && p.moment ? { ...p, moment: null } : p)));
-    }, MOMENT_LIFETIME_MS);
-    timersRef.current.add(timer);
   }, [plantEvent, limit, camera, isMobile, width, height]);
 
   const handleFaded = (uid: string) => {
@@ -152,7 +141,7 @@ export function PlantsLayer({ cap = 40, isMobile = false, gentle = false }: { ca
           seed={p.seed}
         >
           {p.moment && (
-            <NameMoment kind={p.moment} donorName={p.donorName} amount={p.amount} side={p.side} tagSide={p.tagSide} edge={p.edge} isMobile={isMobile} still={gentle} />
+            <NameMoment kind={p.moment} donorName={p.donorName} amount={p.amount} side={p.side} tagSide={p.tagSide} edge={p.edge} isMobile={isMobile} still={gentle} leaving={p.fadingOut} />
           )}
         </PlantSprout>
       ))}
