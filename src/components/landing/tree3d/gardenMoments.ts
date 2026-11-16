@@ -9,11 +9,11 @@ import { useThree } from '@react-three/fiber';
 export type MomentKind = 'dandelion' | 'butterfly';
 
 /** One name moment, landing to fade-out. The CSS keyframes in garden.css run over the same time. */
-export const MOMENT_SECONDS = 7.6;
+export const MOMENT_SECONDS = 4.6;
 /** How long a moment stays mounted: its timeline plus the last seed's stagger. */
-export const MOMENT_LIFETIME_MS = 9200;
+export const MOMENT_LIFETIME_MS = 5800;
 /** When the dandelion's seeds leave its head (47% of the CSS timeline). */
-export const BLOW_AT = 3.6;
+export const BLOW_AT = 2.2;
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 2 });
 

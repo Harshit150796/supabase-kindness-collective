@@ -32,9 +32,9 @@ const HANG_DROP = 0.34;
 /** Phones: coupons at 86% so neighbouring marks overlap less on the small canopy. */
 const PHONE_LOGO_SCALE = 0.86;
 /** The logo shivers on its branch this long before it lets go. */
-const LOOSEN_SECONDS = 0.5;
+const LOOSEN_SECONDS = 0.3;
 /** It rests on the grass, then sinks and fades, before a new brand buds on the branch. */
-const LANDED_SECONDS = 1.6;
+const LANDED_SECONDS = 1.0;
 // Keep the fruit attached to its branch-relative slot while placing its face
 // just beyond the nearest leaf layer, reducing partial foliage occlusion.
 function logoSize(aspect: number, alphaCoverage: number, mark: CouponData['mark']) {
