@@ -24,16 +24,15 @@
 @keyframes gm-seed{0%,46%{opacity:0;transform:translate(0,0) rotate(0)}49%{opacity:1}84%{opacity:.9;transform:translate(var(--dx),var(--dy)) rotate(var(--r))}92%,100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--r))}}
 
 /* Butterfly: flies down from the tree's side carrying the tag, lands on the bloom (44%), rests with
-   slow wings, the tag fades (80%), then it lifts away. */
+   slow wings, then it lifts away, leaving the tag. */
 .gm-exit{position:absolute;left:0;top:0}
 /* The butterfly alone lifts away; its tag stays on the bloom while the plant stands. */
-.gm-fly{animation:gm-bob .9s ease-in-out infinite,gm-b-exit 4.6s cubic-bezier(.5,0,.75,0) both}
 @keyframes gm-b-exit{0%,82%{translate:0 0;opacity:1}100%{translate:calc(var(--toward) * -36px) -120px;opacity:0}}
 .gm{transition:opacity .9s ease}
 .gm-leaving{opacity:0}
 .gm-flyer{position:absolute;left:0;top:0;width:44px;height:37px;offset-rotate:0deg;offset-anchor:50% 50%;animation:gm-fly 4.6s cubic-bezier(.42,.05,.3,1) both}
 @keyframes gm-fly{0%,10%{offset-distance:0%;opacity:0}14%{opacity:1}44%,100%{offset-distance:100%;opacity:1}}
-.gm-fly{display:block;width:44px;height:37px;overflow:visible;animation:gm-bob .9s ease-in-out infinite}
+.gm-fly{display:block;width:44px;height:37px;overflow:visible;animation:gm-bob .9s ease-in-out infinite,gm-b-exit 4.6s cubic-bezier(.5,0,.75,0) both}
 @keyframes gm-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
 .gm-wings-fast,.gm-wings-slow{transform-box:view-box;transform-origin:17px 14px}
 .gm-wings-fast{animation:gm-flap .22s ease-in-out infinite,gm-fast-on 4.6s linear both}
@@ -55,7 +54,7 @@
 .gm-still .gm-exit,.gm-still .gm-flyer,.gm-still .gm-hang{animation:none}
 .gm-still .gm-flyer{offset-path:none}
 .gm-still .gm-tag{animation:gm-still 4.6s ease both}
-@keyframes gm-still{0%,6%{opacity:0}12%,84%{opacity:1}92%,100%{opacity:0}}
+@keyframes gm-still{0%,6%{opacity:0}12%,100%{opacity:1}}
 
 /* Life on the hill: each actor stands on its anchor (the anchor is its feet). */
 .hl-actor{position:absolute;display:block;overflow:visible}

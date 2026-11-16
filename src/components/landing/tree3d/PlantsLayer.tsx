@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useInteraction } from './InteractionContext';
 import { PlantSprout, type PlantArchetype } from './PlantSprout';
 import { NameMoment } from './NameMoment';
-import { MOMENT_LIFETIME_MS, MOMENT_SECONDS, nextMoment, type MomentKind } from './gardenMoments';
+import { nextMoment, type MomentKind } from './gardenMoments';
 import { holdSpot, releaseSpot, tagPlacement } from './gardenSpots';
 
 interface Plant {
@@ -42,7 +42,6 @@ export function PlantsLayer({ cap = 40, isMobile = false, gentle = false }: { ca
   const lastIdRef = useRef<number | null>(null);
   const momentRef = useRef<MomentKind>(Math.random() < 0.5 ? 'dandelion' : 'butterfly');
   const timersRef = useRef(new Set<number>());
-  const lastMomentRef = useRef(-Infinity);
   const camera = useThree((state) => state.camera);
   const width = useThree((state) => state.size.width);
   const height = useThree((state) => state.size.height);
