@@ -7,6 +7,7 @@ import { ADMIN_SENDER, shell } from '../_shared/email-layout.ts';
 import { dueChecklistEmails, processAccountEmail, type AccountEmailKind } from '../_shared/account-emails.ts';
 import { syncEmailLog } from '../_shared/email-log.ts';
 import { dueOrganizerEmails, processOrganizerEmail } from '../_shared/organizer-emails.ts';
+import { syncInbox } from '../_shared/email-inbox.ts';
 
 const SUPA = Deno.env.get('SUPABASE_URL')!;
 const SITE = 'https://coupondonation.com';
@@ -175,6 +176,9 @@ Deno.serve(async (req) => {
 
   // 3b) Copy Resend's log of sent emails (with delivery status) into email_log for Admin > Emails.
   report.email_log = await syncEmailLog(admin, key);
+
+  // 3c) Copy replies people sent to the team into email_inbox for Admin > Emails > Inbox.
+  report.inbox = await syncInbox(admin, key);
 
   // 4) Fan out to the other dispatchers with the same secret.
   for (const fn of ['notify-dispatch', 'email-scheduler', 'impact-dispatch', 'followup-dispatch']) {

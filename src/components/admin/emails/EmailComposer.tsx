@@ -16,7 +16,8 @@ export type Recipient =
   | { kind: 'fundraiser'; fundraiserId: string; title: string; name: string | null; email: string | null }
   | { kind: 'person'; userId: string; name: string | null; email: string }
   | { kind: 'address'; email: string };
-export type ComposerStart = { to?: Recipient; subject?: string };
+/** `inboxId`: the Inbox message this answers; it is marked answered once the email is sent. */
+export type ComposerStart = { to?: Recipient; subject?: string; inboxId?: string };
 
 type FundraiserHit = { id: string; title: string; organizer_name: string | null; organizer_email: string | null };
 type PersonHit = { user_id: string; email: string; full_name: string | null };
@@ -67,6 +68,7 @@ export function EmailComposer({ open, onOpenChange, start, onSent }: { open: boo
     setBusy(false);
     if (r.error) return setErr(r.error);
     const parts = [r.data?.emailed ? `Emailed to ${address(to)}.` : null, r.data?.message_id ? 'Posted in their CouponDonation inbox.' : null, r.data?.email_error ? `Email not sent: ${r.data.email_error}` : null].filter(Boolean);
+    if (start?.inboxId && r.data?.emailed) await callFn('admin-contact', { action: 'inbox_set', id: start.inboxId, status: 'answered' });
     toast({ title: r.data?.emailed ? 'Email sent' : 'Message sent', description: parts.join(' ') });
     onSent?.();
     onOpenChange(false);

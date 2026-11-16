@@ -4,7 +4,7 @@
 // rate-limited, written to the audit log, and emails go into email_log with their text.
 // Since Nov 15, 2026 (Admin > Emails): "send" can also email one person directly (an account or an address,
 // no fundraiser), and the team can see, preview, test and switch the automatic emails
-// ("automations", "set_automation", "preview", "test").
+// ("automations", "set_automation", "preview", "test"), and read replies people sent ("inbox", "inbox_set").
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { requestUser, UUID_RE, teamRpc } from '../_shared/auth.ts';
@@ -12,6 +12,7 @@ import { overLimit, HOUR } from '../_shared/rate-limit.ts';
 import { checkTeamMessage, renderTeamEmail, SITE, TEAM_INBOX_ID, TEAM_SENDER } from '../_shared/team-contact.ts';
 import { sampleEmail } from '../_shared/email-catalog.ts';
 import { NOTIFY_SENDER } from '../_shared/email-layout.ts';
+import { INBOX_ADDRESS } from '../_shared/email-inbox.ts';
 
 const EMAIL_RE = /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[a-z]{2,}$/i;
 const AUTOMATION_KEYS = ['organizer_gift', 'organizer_nudge', 'organizer_week', 'organizer_halfway', 'organizer_goal', 'organizer_quiet'];
@@ -76,6 +77,31 @@ Deno.serve(async (req) => {
       const r = await resend(key, { from: NOTIFY_SENDER.from, reply_to: NOTIFY_SENDER.replyTo, to: [to], subject: `[Test] ${mail.subject}`, html: mail.html, text: mail.text });
       if (!r.ok) { console.error('test email', r.status, r.raw); return fail('The test could not be sent. Please try again.', 502); }
       return json({ ok: true, to });
+    }
+    // ---- Inbox: replies people sent to the team (copied from Resend by admin-dispatch) ----
+    if (action === 'inbox') {
+      const status = ['open', 'answered', 'done'].includes(String(body.status)) ? String(body.status) : null;
+      const limit = Math.min(50, Math.max(1, Number(body.limit) || 25));
+      const offset = Math.max(0, Number(body.offset) || 0);
+      let q = admin.from('email_inbox').select('id, from_email, from_name, to_email, subject, body, received_at, from_user_id, status, handled_at', { count: 'exact' })
+        .order('received_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (status) q = q.eq('status', status);
+      const { data: rows, count, error } = await q;
+      if (error) { console.error('inbox', error); return fail('Could not load the inbox.', 500); }
+      const ids = [...new Set((rows ?? []).map((r: { from_user_id: string | null }) => r.from_user_id).filter(Boolean))];
+      const { data: people } = ids.length ? await admin.from('profiles').select('user_id, full_name').in('user_id', ids) : { data: [] };
+      const names = new Map(((people ?? []) as { user_id: string; full_name: string | null }[]).map((p) => [p.user_id, p.full_name]));
+      const { count: open } = await admin.from('email_inbox').select('id', { count: 'exact', head: true }).eq('status', 'open');
+      return json({ ok: true, total: count ?? 0, open: open ?? 0, address: INBOX_ADDRESS,
+        rows: (rows ?? []).map((r: Record<string, unknown>) => ({ ...r, account_name: r.from_user_id ? names.get(r.from_user_id as string) ?? null : null })) });
+    }
+    if (action === 'inbox_set') {
+      const id = String(body.id ?? '');
+      const status = String(body.status ?? '');
+      if (!UUID_RE.test(id) || !['open', 'answered', 'done'].includes(status)) return fail('Unknown message.');
+      const { error } = await admin.from('email_inbox').update({ status, handled_by: status === 'open' ? null : user.id, handled_at: status === 'open' ? null : new Date().toISOString() }).eq('id', id);
+      if (error) { console.error('inbox_set', error); return fail('Could not save. Please try again.', 500); }
+      return json({ ok: true });
     }
     if (action !== 'send') return fail('Unknown action');
 
