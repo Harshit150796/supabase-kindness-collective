@@ -5,6 +5,7 @@ import { OwnerCouponsSection } from "@/components/fundraiser/OwnerCouponsSection
 import { Button } from "@/components/ui/button";
 import { ProductSkeleton as Skeleton, PageHeader, CardSurface, SectionLabel, Stat, StatusChip } from "@/components/ui/organizer";
 import { fundraiserPublicUrl, fundraiserShareUrl } from "@/lib/fundraiserSharing";
+import { prepareShareCard } from "@/lib/sharePreview";
 import { DonationCouponList, type OwnerCoupon } from "@/components/fundraiser/DonationCouponList";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -230,6 +231,9 @@ const FundraiserDashboard = () => {
 
   const shareUrl = fundraiserShareUrl(fundraiser?.unique_slug ?? null, id ?? "");
   const pageUrl = fundraiserPublicUrl(fundraiser?.unique_slug ?? null, id ?? "");
+  // Organizers share from here, so the link preview is made as the dashboard opens.
+  const previewSlug = fundraiser?.unique_slug || (fundraiser ? id : null);
+  useEffect(() => { prepareShareCard(previewSlug); }, [previewSlug]);
 
   const handleCopyLink = async () => {
     try {
@@ -429,7 +433,7 @@ const FundraiserDashboard = () => {
       <ShareModal open={showShareModal} onClose={() => setShowShareModal(false)} shareUrl={shareUrl} pageUrl={pageUrl} title={fundraiser.title}
         slug={fundraiser.unique_slug || undefined} amountRaised={ledger?.total ?? fundraiser.amount_raised} goalAmount={fundraiser.monthly_goal} />
 
-      <ImageUploadModal open={showImageModal} onClose={() => setShowImageModal(false)} fundraiserId={fundraiser.id} existingImages={images} onImagesUpdated={fetchImages} />
+      <ImageUploadModal open={showImageModal} onClose={() => setShowImageModal(false)} fundraiserId={fundraiser.id} existingImages={images} onImagesUpdated={() => { fetchImages(); prepareShareCard(previewSlug, true); }} />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

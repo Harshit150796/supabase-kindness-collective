@@ -27,6 +27,8 @@ import { resolveFundraiserImage } from "@/lib/fundraiserImages";
 import { RequestedHelp } from "@/components/fundraiser/campaign/RequestedHelp";
 import { cityState, needLabel, requestNeeds } from "@/lib/helpNeeds";
 import { useZipLocation } from "@/lib/zipLookup";
+import { FUNDRAISER_PAGE_SELECT, isFundraiserId, takeEarlyFundraiser } from "@/lib/fundraiserPageQuery";
+import { prepareShareCard } from "@/lib/sharePreview";
 
 interface Fundraiser {
   id: string; title: string; story: string; category: string; monthly_goal: number; cover_photo_url: string | null;
@@ -68,13 +70,21 @@ const PublicFundraiser = () => {
     if (!slug) return;
     setLoading(true); setError(null); setRequest(null); setRequestRead(false);
     (async () => {
-      const { data, error } = await supabase.from("fundraisers")
-        .select("id,title,story,category,monthly_goal,cover_photo_url,status,unique_slug,created_at,user_id,allow_messages,beneficiary_display_name,show_beneficiary_name,is_example,zip_code")
-        .eq(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug) ? "id" : "unique_slug", slug).maybeSingle();
+      // One request for the fundraiser and its photos. The page shell usually sent it already, while the app
+      // was downloading (src/lib/fundraiserPageQuery.ts); otherwise, or if that found nothing, ask now.
+      type Row = Fundraiser & { fundraiser_images?: FundraiserImage[] | null };
+      let data = (await takeEarlyFundraiser(slug)) as unknown as Row | null;
+      let error: unknown = null;
+      if (!data) {
+        const answer = await supabase.from("fundraisers").select(FUNDRAISER_PAGE_SELECT).eq(isFundraiserId(slug) ? "id" : "unique_slug", slug).maybeSingle();
+        data = answer.data as Row | null; error = answer.error;
+      }
       if (error || !data) setError("Fundraiser not found");
       else if (data.status !== "active" && data.status !== "pending") setError("This fundraiser is no longer active");
       else {
-        setFundraiser(data as Fundraiser); fetchImages(data.id);
+        const { fundraiser_images: gallery, ...row } = data;
+        setFundraiser(row as Fundraiser);
+        setImages((gallery ?? []).map((d) => ({ ...d, is_primary: !!d.is_primary })));
         supabase.from("fundraisers").select("help_categories,preferred_brands,similar_stores_ok,city,state_code").eq("id", data.id).maybeSingle()
           .then(({ data: extra, error: extraError }) => { setRequest(extraError ? null : (extra as FundraiserRequest | null)); setRequestRead(true); });
       }
@@ -237,7 +247,7 @@ const PublicFundraiser = () => {
 
       <ShareSheet open={share} onOpenChange={setShare} slug={fundraiser.unique_slug!} title={fundraiser.title} cover={resolvedCover} raised={live.totalRaised} goal={Number(fundraiser.monthly_goal)} organizer={organizer} />
       <ReportDialog open={report} onOpenChange={setReport} targetType="fundraiser" targetId={fundraiser.id} fundraiserId={fundraiser.id} />
-      {isOwner && <ImageUploadModal open={imgModal} onClose={() => setImgModal(false)} fundraiserId={fundraiser.id} existingImages={images} onImagesUpdated={() => fetchImages(fundraiser.id)} />}
+      {isOwner && <ImageUploadModal open={imgModal} onClose={() => setImgModal(false)} fundraiserId={fundraiser.id} existingImages={images} onImagesUpdated={() => { fetchImages(fundraiser.id); prepareShareCard(fundraiser.unique_slug || fundraiser.id, true); }} />}
     </div>
   );
 };

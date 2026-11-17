@@ -4,8 +4,13 @@
 // straight on to coupondonation.com/f/<slug>. The text follows GoFundMe's pattern:
 //   title        "Donate to <fundraiser>, organized by <organizer>"
 //   description  "<start of the story>… <organizer> needs your support for <fundraiser>"
-//   image        the fundraiser's main photo as a JPEG (4:3, and 16:9 for X), with exact sizes declared.
-// Public data only (read with the anon key under row-level security). Pure helpers live here so tests can run them.
+//   image        the fundraiser's main photo as the organizer framed it (never cropped further, so the person
+//                in it is always shown), as a JPEG no larger than 1200px, with its exact size declared.
+// The photo is made once per main photo and kept as a plain file in the public fundraiser-covers bucket under
+// share-cards/<fundraiser id>/<version>-<width>x<height>.jpg (the workspace blocks new public buckets), so apps
+// load it straight from the storage CDN in a fraction of a second instead of waiting for it to be built
+// (founder request, Nov 17 2026: share links were slow and some showed no picture). Public data only. Pure
+// helpers live here so tests can run them.
 
 export const SITE = 'https://coupondonation.com';
 export const SHARE_HOST = 'https://share.coupondonation.com';
@@ -13,10 +18,13 @@ export const FALLBACK_IMAGE = { url: `${SITE}/og-image.png`, width: 1200, height
 export const DEFAULT_TITLE = 'CouponDonation: Give Groceries & Gift Cards to Families in Need';
 export const DEFAULT_DESCRIPTION = 'Help someone with a real need. Your donation becomes gift cards for the groceries, medicine and rides they asked for, and you get a receipt for every gift.';
 
-/** og:image is 4:3 like GoFundMe's; X shows a 16:9 card. Neither is ever wider than 1200px. */
-export const SHAPES = { og: 4 / 3, wide: 16 / 9 } as const;
-export type Shape = keyof typeof SHAPES;
-const MAX_WIDTH = 1200;
+/** The longest side of a preview photo. Facebook, WhatsApp, iMessage, X and LinkedIn all show 1200px well. */
+export const MAX_EDGE = 1200;
+/** WhatsApp drops preview photos that are too heavy; anything above this is made again at lower quality. */
+export const MAX_CARD_BYTES = 280_000;
+export const CARD_BUCKET = 'fundraiser-covers';
+/** Folder for preview photos inside CARD_BUCKET; organizers' own uploads live in folders named by their user id. */
+export const CARD_FOLDER = 'share-cards';
 
 export type PreviewImage = { image_url: string; is_primary?: boolean | null; display_order?: number | null; created_at?: string | null };
 export type PreviewFundraiser = {
@@ -130,37 +138,13 @@ export function imageSize(b: Uint8Array): Size | null {
   return null;
 }
 
-/** Facebook and LinkedIn show a large card only for images at least 600×315; smaller ones become a thumbnail. */
-const LARGE_CARD = { width: 600, height: 315, ratio: 1.91 };
+export type PhotoSource = { kind: 'storage' | 'site'; original: string; whole: (quality: number) => string };
 
 /**
- * The largest crop of the photo in this shape, never wider than 1200px and never larger than the photo
- * (Storage doesn't enlarge). A photo too narrow for a large 4:3 card is cropped to 1.91:1 instead when that
- * keeps it large.
- */
-export function cropFor(size: Size | null, shape: Shape): Size {
-  const fit = (ratio: number): Size => {
-    if (!size) return { width: MAX_WIDTH, height: Math.round(MAX_WIDTH / ratio) };
-    const width = Math.max(1, Math.min(MAX_WIDTH, size.width, Math.floor(size.height * ratio)));
-    return { width, height: Math.max(1, Math.round(width / ratio)) };
-  };
-  const crop = fit(SHAPES[shape]);
-  if (shape === 'og' && crop.width < LARGE_CARD.width) {
-    const wider = fit(LARGE_CARD.ratio);
-    if (wider.width >= LARGE_CARD.width && wider.height >= LARGE_CARD.height) return wider;
-  }
-  return crop;
-}
-
-export type PhotoSource =
-  | { kind: 'storage'; original: string; render: (s: Size) => string }
-  | { kind: 'site'; original: string; render: (s: Size) => string };
-
-/**
- * Where a cropped JPEG of the photo comes from. Uploaded photos are WebP in Supabase Storage: its image
- * service crops them (never past the photo's own size) and answers JPEG when asked with Accept: image/jpeg.
- * Example campaigns use photos on the site's own file host (/__l5e/…), which crops, scales and converts with
- * w, h, fit=cover and format=jpg. Anything else (an outside link) isn't fetched.
+ * Where a JPEG of the whole photo comes from, scaled to fit MAX_EDGE and never cropped. Uploaded photos are
+ * WebP in Supabase Storage: its image service scales them (never past the photo's own size) and answers JPEG
+ * when asked with Accept: image/jpeg. Example campaigns use photos on the site's own file host (/__l5e/…),
+ * which scales and converts with w, h, fit=contain and format=jpg. Anything else (an outside link) isn't fetched.
  */
 export function photoSource(url: string | null, supabaseUrl: string): PhotoSource | null {
   if (!url) return null;
@@ -169,21 +153,29 @@ export function photoSource(url: string | null, supabaseUrl: string): PhotoSourc
   if (url.startsWith(storage)) {
     const path = url.slice(storage.length).split('?')[0];
     if (!/^[A-Za-z0-9._\-/]+$/.test(path) || path.includes('..')) return null;
-    return { kind: 'storage', original: `${storage}${path}`, render: (s) => `${base}/storage/v1/render/image/public/${path}?width=${s.width}&height=${s.height}&resize=cover&quality=82` };
+    return { kind: 'storage', original: `${storage}${path}`, whole: (q) => `${base}/storage/v1/render/image/public/${path}?width=${MAX_EDGE}&height=${MAX_EDGE}&resize=contain&quality=${q}` };
   }
   const site = url.startsWith(`${SITE}/__l5e/`) ? url.slice(SITE.length) : url.startsWith('/__l5e/') ? url : null;
   if (site) {
     const path = site.split('?')[0];
     if (!/^\/__l5e\/[A-Za-z0-9._\-/]+$/.test(path) || path.includes('..')) return null;
-    return { kind: 'site', original: `${SITE}${path}`, render: (s) => `${SITE}${path}?w=${s.width}&h=${s.height}&fit=cover&format=jpg` };
+    return { kind: 'site', original: `${SITE}${path}`, whole: (q) => `${SITE}${path}?w=${MAX_EDGE}&h=${MAX_EDGE}&fit=contain&format=jpg&quality=${q}` };
   }
   return null;
 }
 
-/** Image sizes as they will be served: the site's file host scales up to the full size; Storage only crops. */
-export function servedSize(source: PhotoSource, original: Size | null, shape: Shape): Size {
-  return source.kind === 'site' ? cropFor(null, shape) : cropFor(original, shape);
+/** A stored preview photo: <version>-<width>x<height>.jpg, so its size is known without opening it. */
+export const cardName = (v: string, s: Size) => `${v}-${s.width}x${s.height}.jpg`;
+
+export function parseCardName(name: string): { version: string; width: number; height: number } | null {
+  const m = /^([a-z0-9]{1,13})-(\d{1,5})x(\d{1,5})\.jpg$/.exec(name);
+  return m ? { version: m[1], width: Number(m[2]), height: Number(m[3]) } : null;
 }
+
+/** The public address of a stored preview photo (served from the storage CDN). */
+export const cardPath = (fundraiserId: string, name = '') => `${CARD_FOLDER}/${fundraiserId}${name ? `/${name}` : ''}`;
+export const cardUrl = (supabaseUrl: string, fundraiserId: string, name: string) =>
+  `${supabaseUrl.replace(/\/$/, '')}/storage/v1/object/public/${CARD_BUCKET}/${cardPath(fundraiserId, name)}`;
 
 /** A short version tag for the image URLs, so a new main photo is a new URL that apps fetch again. */
 export function version(s: string): string {
@@ -203,7 +195,6 @@ export type PreviewPage = {
   title: string;
   description: string;
   image: { url: string; width: number; height: number; type: string; alt: string };
-  wideImage: { url: string; width: number; height: number };
 };
 
 /** The page link-preview bots read. People who open it are sent on (script and link), never a meta refresh. */
@@ -236,7 +227,7 @@ ${meta('name', 'twitter:card', 'summary_large_image')}
 ${meta('name', 'twitter:site', '@CouponDonation')}
 ${meta('name', 'twitter:title', p.title)}
 ${meta('name', 'twitter:description', p.description)}
-${meta('name', 'twitter:image', p.wideImage.url)}
+${meta('name', 'twitter:image', p.image.url)}
 ${meta('name', 'twitter:image:alt', p.image.alt)}
 </head>
 <body style="font-family:system-ui,sans-serif;max-width:40rem;margin:2rem auto;padding:0 1rem;color:#14231a">

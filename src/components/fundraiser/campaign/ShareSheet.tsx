@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Copy, Check, Download, Mail, MessageSquare, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -7,6 +7,7 @@ import { ProgressRing } from './DonationPanel';
 import { usd } from '@/hooks/useFundraiserLive';
 import { FundraiserImageFallback, transformedFundraiserImage } from '@/lib/fundraiserImages';
 import { fundraiserPublicUrl, fundraiserShareUrl } from '@/lib/fundraiserSharing';
+import { prepareShareCard } from '@/lib/sharePreview';
 
 /** The link to share: share.coupondonation.com shows this fundraiser's own photo and title in link previews. */
 export function publicShareUrl(slug: string) {
@@ -31,6 +32,7 @@ export function ShareCardPreview({ title, cover, raised, goal, organizer }: { ti
 
 export function ShareSheet({ open, onOpenChange, slug, title, cover, raised, goal, organizer }: { open: boolean; onOpenChange: (o: boolean) => void; slug: string; title: string; cover: string | null; raised: number; goal: number; organizer: string }) {
   const { toast } = useToast(); const [copied, setCopied] = useState(false);
+  useEffect(() => { if (open) prepareShareCard(slug); }, [open, slug]);
   const url = publicShareUrl(slug);
   // QR codes open the page directly (one less hop for a phone camera).
   const page = fundraiserPublicUrl(slug, slug);

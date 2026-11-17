@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { 
   X, 
   Copy, 
@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
+import { prepareShareCard } from "@/lib/sharePreview";
 
 interface ShareModalProps {
   open: boolean;
@@ -53,6 +54,9 @@ export const ShareModal = ({
   const baseUrl = window.location.origin;
   const progressOverlayUrl = slug ? `${baseUrl}/overlay/progress/${slug}` : '';
   const alertsOverlayUrl = slug ? `${baseUrl}/overlay/alerts/${slug}` : '';
+
+  // The link preview (photo and title) is made while the person picks where to share.
+  useEffect(() => { if (open) prepareShareCard(slug || shareUrl.split("/").pop()); }, [open, slug, shareUrl]);
 
   if (!open) return null;
 

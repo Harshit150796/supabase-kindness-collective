@@ -1,7 +1,7 @@
 // Link previews for shared fundraisers (_shared/share-preview.ts, share-fundraiser).
 import { assert, assertEquals, assertStringIncludes } from 'jsr:@std/assert@1';
 import {
-  cleanSlug, cropFor, excerpt, FALLBACK_IMAGE, imageSize, mainPhoto, photoSource, previewHtml, previewText, servedSize, SHARE_HOST,
+  cardName, cardUrl, cleanSlug, excerpt, FALLBACK_IMAGE, imageSize, mainPhoto, parseCardName, photoSource, previewHtml, previewText,
   shareUrl, version,
 } from './share-preview.ts';
 
@@ -23,18 +23,14 @@ Deno.test('reads the size of JPEG, PNG and every kind of WebP', () => {
   assertEquals(imageSize(bytes(SAMPLES.jpegExif).subarray(0, 40)), null);
 });
 
-Deno.test('crops to 4:3 and 16:9, never past the photo or 1200px wide', () => {
-  assertEquals(cropFor({ width: 974, height: 609 }, 'og'), { width: 812, height: 609 });
-  assertEquals(cropFor({ width: 974, height: 609 }, 'wide'), { width: 974, height: 548 });
-  assertEquals(cropFor({ width: 1600, height: 1200 }, 'og'), { width: 1200, height: 900 });
-  assertEquals(cropFor({ width: 1200, height: 1600 }, 'wide'), { width: 1200, height: 675 });
-  assertEquals(cropFor(null, 'og'), { width: 1200, height: 900 });
-  // Too narrow for a large 4:3 card: 1.91:1 keeps it at least 600×315.
-  assertEquals(cropFor({ width: 667, height: 417 }, 'og'), { width: 667, height: 349 });
-  // Too small either way: stays 4:3.
-  assertEquals(cropFor({ width: 400, height: 300 }, 'og'), { width: 400, height: 300 });
-  const site = photoSource('/__l5e/assets-v1/abc/example-1.webp', SUPABASE)!;
-  assertEquals(servedSize(site, { width: 582, height: 329 }, 'og'), { width: 1200, height: 900 });
+Deno.test('the stored preview photo is named by photo version and size, and served from the storage CDN', () => {
+  const v = version(`${SUPABASE}/storage/v1/object/public/fundraiser-covers/u1/123-ab.webp`);
+  const name = cardName(v, { width: 1086, height: 679 });
+  assertEquals(name, `${v}-1086x679.jpg`);
+  assertEquals(parseCardName(name), { version: v, width: 1086, height: 679 });
+  assertEquals(parseCardName('.emptyFolderPlaceholder'), null);
+  assertEquals(parseCardName('x-1x1.png'), null);
+  assertEquals(cardUrl(SUPABASE, 'f-id', name), `${SUPABASE}/storage/v1/object/public/fundraiser-covers/share-cards/f-id/${name}`);
 });
 
 Deno.test('photo order matches the site: primary, then gallery order, then the old cover', () => {
@@ -49,12 +45,13 @@ Deno.test('photo order matches the site: primary, then gallery order, then the o
   assertEquals(mainPhoto({ cover_photo_url: null, fundraiser_images: null }), null);
 });
 
-Deno.test('photos come only from our storage or our own file host, as JPEG crops', () => {
+Deno.test('photos come only from our storage or our own file host, whole (never cropped), as JPEG', () => {
   const stored = photoSource(`${SUPABASE}/storage/v1/object/public/fundraiser-covers/u1/123-ab.webp`, SUPABASE)!;
   assertEquals(stored.kind, 'storage');
-  assertEquals(stored.render({ width: 812, height: 609 }), `${SUPABASE}/storage/v1/render/image/public/fundraiser-covers/u1/123-ab.webp?width=812&height=609&resize=cover&quality=82`);
+  assertEquals(stored.whole(82), `${SUPABASE}/storage/v1/render/image/public/fundraiser-covers/u1/123-ab.webp?width=1200&height=1200&resize=contain&quality=82`);
   const example = photoSource('/__l5e/assets-v1/abc/example-1.webp', SUPABASE)!;
-  assertEquals(example.render({ width: 1200, height: 900 }), 'https://coupondonation.com/__l5e/assets-v1/abc/example-1.webp?w=1200&h=900&fit=cover&format=jpg');
+  assertEquals(example.whole(82), 'https://coupondonation.com/__l5e/assets-v1/abc/example-1.webp?w=1200&h=1200&fit=contain&format=jpg&quality=82');
+  assert(!/resize=cover|fit=cover/.test(stored.whole(82) + example.whole(82)), 'no crop');
   assertEquals(photoSource('https://coupondonation.com/__l5e/assets-v1/abc/x.webp', SUPABASE)?.kind, 'site');
   assertEquals(photoSource('https://evil.example/x.jpg', SUPABASE), null);
   assertEquals(photoSource(`${SUPABASE}/storage/v1/object/public/../secret`, SUPABASE), null);
@@ -95,15 +92,15 @@ Deno.test('preview page: escaped tags, og:url is the shared link, no meta refres
   const page = previewHtml({
     url: shareUrl('help-x'), destination: 'https://coupondonation.com/f/help-x',
     pageTitle: 'Fundraiser by A : B', title: 'Donate to "B" <now>, organized by A', description: 'Story & more',
-    image: { url: `${SHARE_HOST}/f/help-x/photo.jpg?v=${version('p')}`, width: 812, height: 609, type: 'image/jpeg', alt: 'B' },
-    wideImage: { url: `${SHARE_HOST}/f/help-x/photo-wide.jpg?v=${version('p')}`, width: 974, height: 548 },
+    image: { url: cardUrl(SUPABASE, 'f-id', cardName(version('p'), { width: 812, height: 508 })), width: 812, height: 508, type: 'image/jpeg', alt: 'B' },
   });
   assertStringIncludes(page, '<meta property="og:url" content="https://share.coupondonation.com/f/help-x">');
   assertStringIncludes(page, '<meta property="og:title" content="Donate to &quot;B&quot; &lt;now&gt;, organized by A">');
   assertStringIncludes(page, '<meta property="og:image:width" content="812">');
+  assertStringIncludes(page, '<meta property="og:image:height" content="508">');
+  assertStringIncludes(page, `<meta name="twitter:image" content="${SUPABASE}/storage/v1/object/public/fundraiser-covers/share-cards/f-id/`);
   assertStringIncludes(page, '<meta property="og:image:type" content="image/jpeg">');
   assertStringIncludes(page, '<meta name="twitter:card" content="summary_large_image">');
-  assertStringIncludes(page, 'photo-wide.jpg');
   assertStringIncludes(page, 'location.replace("https://coupondonation.com/f/help-x")');
   assertStringIncludes(page, 'noindex');
   assert(!/http-equiv="refresh"/i.test(page));

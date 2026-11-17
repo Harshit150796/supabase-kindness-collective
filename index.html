@@ -31,6 +31,38 @@
     <!-- Preconnect to the backend so the first data request starts sooner on mobile -->
     <link rel="preconnect" href="https://vbnbacowuoeeojjdrzzp.supabase.co" crossorigin />
     <link rel="dns-prefetch" href="https://vbnbacowuoeeojjdrzzp.supabase.co" />
+    <!-- Fundraiser pages start at once (founder request, Nov 17 2026: share links were slow to open). On /f/<slug>
+         this preloads the page's own code beside the app bundle, asks for the fundraiser and its photos
+         (src/lib/fundraiserPageQuery.ts) and preloads the main photo at the sizes the gallery shows, all while the
+         app downloads. PublicFundraiser picks up window.__cdFundraiser; if anything here fails, the page asks again.
+         vite.config.ts fills in the three placeholders at build time (they stay strings in development). -->
+    <script data-fundraiser-fast-start>(function(){try{
+      var m=/^\/f\/([A-Za-z0-9-]{1,120})\/?$/.exec(location.pathname);if(!m)return;
+      var slug=m[1],chunks="__CD_FUNDRAISER_CHUNKS__",cfg="__CD_SUPABASE__",select="__CD_FUNDRAISER_SELECT__";
+      var add=function(attrs){var l=document.createElement("link");for(var k in attrs)l.setAttribute(k,attrs[k]);document.head.appendChild(l)};
+      if(Array.isArray(chunks))chunks.forEach(function(href){add({rel:"modulepreload",href:href})});
+      if(!cfg||typeof cfg!=="object"||select.indexOf("fundraiser_images")<0)return;
+      var col=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)?"id":"unique_slug";
+      var data=fetch(cfg.url+"/rest/v1/fundraisers?select="+encodeURIComponent(select)+"&"+col+"=eq."+encodeURIComponent(slug)+"&limit=1",{headers:{apikey:cfg.key,Authorization:"Bearer "+cfg.key,Accept:"application/json"}})
+        .then(function(r){return r.ok?r.json():null}).then(function(rows){return rows&&rows[0]||null}).catch(function(){return null});
+      window.__cdFundraiser={slug:slug,data:data};
+      // The same addresses src/lib/responsivePhotos.ts (gallery) and transformedFundraiserImage (old cover) build.
+      var stored=function(u){return u.indexOf("/storage/v1/object/public/")>=0||u.indexOf("/storage/v1/render/image/public/")>=0};
+      var photo=function(u,w){if(!stored(u))return u;var x=new URL(u);x.pathname=x.pathname.replace("/storage/v1/object/public/","/storage/v1/render/image/public/");x.searchParams.set("width",String(w));x.searchParams.set("quality","70");x.searchParams.set("resize","contain");return x.toString()};
+      var cover=function(u,w){return u.replace("/storage/v1/object/public/","/storage/v1/render/image/public/")+"?width="+w+"&quality=76&resize=contain"};
+      var set=function(list){return list.map(function(e){return e[0]+" "+e[1]+"w"}).join(", ")};
+      data.then(function(f){if(!f)return;
+        var imgs=(f.fundraiser_images||[]).filter(function(i){return i&&i.image_url}).sort(function(a,b){return (!!b.is_primary-!!a.is_primary)||((a.display_order==null?9e15:a.display_order)-(b.display_order==null?9e15:b.display_order))});
+        if(imgs.length){var u=imgs[0].image_url,sizes="(max-width: 1023px) calc(100vw - 2rem), 760px";
+          if(!stored(u)){add({rel:"preload",as:"image",href:u,fetchpriority:"high"});return}
+          add({rel:"preload",as:"image",fetchpriority:"high",media:"(max-width: 767px)",imagesrcset:set([[photo(u,400),400],[photo(u,800),800]]),imagesizes:sizes});
+          add({rel:"preload",as:"image",fetchpriority:"high",media:"(min-width: 768px)",imagesrcset:set([[photo(u,400),400],[photo(u,800),800],[photo(u,1200),1200]]),imagesizes:sizes});
+        }else if(f.cover_photo_url){var c=f.cover_photo_url;
+          if(c.indexOf("/storage/v1/object/public/")<0){add({rel:"preload",as:"image",href:c,fetchpriority:"high"});return}
+          add({rel:"preload",as:"image",fetchpriority:"high",imagesrcset:set([[cover(c,480),480],[cover(c,768),768],[cover(c,1200),1200],[cover(c,1600),1600]]),imagesizes:"(max-width: 767px) 100vw, (max-width: 1023px) calc(100vw - 2rem), min(760px, calc(100vw - 28rem))"});
+        }
+      });
+    }catch(e){}})();</script>
 
     <!-- Social previews -->
     <meta property="og:type" content="website" data-rh="true" />

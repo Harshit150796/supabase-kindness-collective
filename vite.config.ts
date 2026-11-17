@@ -1,14 +1,18 @@
 import { defineConfig, type Plugin, type Rollup } from "vite";
+import { readFileSync } from "fs";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { FUNDRAISER_PAGE_SELECT } from "./src/lib/fundraiserPageQuery";
 
 // The homepage opening downloads the page and live-tree code alongside the app bundle
 // instead of after it: their chunk lists are written into its inline script at build time.
 function openingPreloads(): Plugin {
+  let supabase: { url: string; key: string } | null = null;
   return {
     name: "cd-opening-preloads",
     apply: "build",
+    configResolved(config) { supabase = supabasePublic(config.env); },
     transformIndexHtml: {
       order: "post",
       handler(html, ctx) {
@@ -31,12 +35,26 @@ function openingPreloads(): Plugin {
         };
         const page = urls("/src/pages/Index.tsx");
         const tree = urls("/src/components/landing/Tree3DScene.tsx").filter((file) => !page.includes(file));
+        // Fundraiser pages (/f/<slug>): their code and first request start with the app (index.html fast start).
+        const fundraiser = urls("/src/pages/PublicFundraiser.tsx");
         return html
           .replace('"__CD_PAGE_CHUNKS__"', JSON.stringify(page))
-          .replace('"__CD_TREE_CHUNKS__"', JSON.stringify(tree));
+          .replace('"__CD_TREE_CHUNKS__"', JSON.stringify(tree))
+          .replace('"__CD_FUNDRAISER_CHUNKS__"', JSON.stringify(fundraiser))
+          .replace('"__CD_FUNDRAISER_SELECT__"', JSON.stringify(FUNDRAISER_PAGE_SELECT))
+          .replace('"__CD_SUPABASE__"', supabase ? JSON.stringify(supabase) : '"__CD_SUPABASE__"');
       },
     },
   };
+}
+
+/** The backend's public address and publishable key, as the app's client reads them (env, else its defaults). */
+function supabasePublic(env: Record<string, string>): { url: string; key: string } | null {
+  let client = "";
+  try { client = readFileSync(path.resolve(__dirname, "src/integrations/supabase/client.ts"), "utf8"); } catch { /* env only */ }
+  const url = env.VITE_SUPABASE_URL || /SUPABASE_URL = [^\n]*?['"](https:\/\/[^'"]+)['"]/.exec(client)?.[1];
+  const key = env.VITE_SUPABASE_PUBLISHABLE_KEY || /SUPABASE_PUBLISHABLE_KEY = [^\n]*?['"](eyJ[^'"]+)['"]/.exec(client)?.[1];
+  return url && key ? { url: url.replace(/\/$/, ""), key } : null;
 }
 
 // https://vitejs.dev/config/
