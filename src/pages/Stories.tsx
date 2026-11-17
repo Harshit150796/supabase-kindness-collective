@@ -1,32 +1,18 @@
-import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PlusCircle } from 'lucide-react';
 import { SEO, breadcrumbJsonLd } from '@/components/SEO';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
-import { useFundraisers } from '@/hooks/useFundraisers';
 import { useLandingStats, formatUSD } from '@/hooks/useLandingStats';
-import { FundraiserCard } from '@/components/stories/FundraiserCard';
-import { StartFundraiserCard } from '@/components/fundraiser/StartFundraiserCard';
 import { CompletedCampaigns } from '@/components/proof/ProofSections';
-import { FundraiserFilterBar, type FundraiserFilters } from '@/components/stories/FundraiserFilterBar';
-import { useZipStates } from '@/lib/zipStates';
+import { FundraiserSearch } from '@/components/search/FundraiserSearch';
 import { brandLogos } from '@/data/brandLogos';
 
 
 export default function Stories() {
-  const [fundraiserFilters, setFundraiserFilters] = useState<FundraiserFilters>({ category: 'all', state: 'all' });
-  const { data: fundraisers, isLoading, isError, refetch } = useFundraisers();
   const stats = useLandingStats();
-  const stateMap = useZipStates(fundraisers || []);
-  const filteredFundraisers = useMemo(() => (fundraisers || []).filter((item) => {
-    if (fundraiserFilters.category !== 'all' && item.category !== fundraiserFilters.category) return false;
-    if (fundraiserFilters.state !== 'all') return item.zip_code ? stateMap.get(item.zip_code) === fundraiserFilters.state : false;
-    return true;
-  }), [fundraisers, fundraiserFilters, stateMap]);
   const liveTotals = stats ? [
     { label: 'Completed donations', value: stats.donations_count.toLocaleString() },
     { label: 'Donated', value: formatUSD(stats.total_raised) },
@@ -59,14 +45,7 @@ export default function Stories() {
               <div><LineReveal><h2 className="font-display text-5xl font-normal text-foreground md:text-6xl">Fundraisers open now.</h2></LineReveal><Reveal delay={0.08}><p className="mt-4 text-lg text-muted-foreground">Every amount and progress figure below comes from its campaign record.</p></Reveal></div>
               <Button variant="outline" asChild><Link to="/apply"><PlusCircle className="mr-2 h-4 w-4" />Start a fundraiser</Link></Button>
             </div>
-            <FundraiserFilterBar filters={fundraiserFilters} onChange={setFundraiserFilters} />
-            {isLoading ? (
-              <div className="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3">{[1,2,3].map((item) => <div key={item}><Skeleton className="aspect-[4/3] w-full rounded-sm" /><Skeleton className="mt-4 h-5 w-3/4" /><Skeleton className="mt-3 h-2 w-full" /></div>)}</div>
-            ) : isError ? (<div className="mt-8 border-y border-border py-12"><p>Campaigns could not be loaded.</p><Button variant="outline" className="mt-4" onClick={() => refetch()}>Try again</Button></div>) : filteredFundraisers.length > 0 ? (
-              <div className="mt-8 grid gap-x-7 gap-y-12 md:grid-cols-2 lg:grid-cols-3">{filteredFundraisers.map((fundraiser) => <FundraiserCard key={fundraiser.id} fundraiser={fundraiser} />)}<StartFundraiserCard /></div>
-            ) : (
-              <div className="mt-8 border-y border-border py-14"><h3 className="font-display text-3xl text-foreground">No matching fundraisers yet.</h3><p className="mt-3 text-muted-foreground">Clear the filters or start a fundraiser of your own.</p></div>
-            )}
+            <FundraiserSearch />
           </div>
         </section>
         <CompletedCampaigns />

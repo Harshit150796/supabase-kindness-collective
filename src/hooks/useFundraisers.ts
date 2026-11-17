@@ -22,6 +22,11 @@ export interface Fundraiser {
   cover_photo_url: string | null;
   country: string | null;
   zip_code: string | null;
+  /** Read by search (src/lib/fundraiserSearch.ts): needs, stores and place. */
+  city?: string | null;
+  state_code?: string | null;
+  help_categories?: string[] | null;
+  preferred_brands?: string[] | null;
   status: string;
   created_at: string;
   is_example?: boolean;
@@ -54,7 +59,8 @@ export function useFundraisers(options?: { limit?: number; category?: string; ne
         .from('fundraisers')
         .select(`
           id, title, story, category, monthly_goal, amount_raised, donors_count, 
-          unique_slug, cover_photo_url, country, zip_code, status, created_at, is_example, featured_order,
+          unique_slug, cover_photo_url, country, zip_code, city, state_code, help_categories, preferred_brands,
+          status, created_at, is_example, featured_order,
           fundraiser_images (id, image_url, is_primary, display_order)
         `)
         .eq('status', 'active')

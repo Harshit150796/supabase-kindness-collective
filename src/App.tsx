@@ -48,6 +48,7 @@ const DonationSuccess = lazy(() => import("./pages/DonationSuccess"));
 const DonationCancelled = lazy(() => import("./pages/DonationCancelled"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Stories = lazy(() => import("./pages/Stories"));
+const SearchPage = lazy(() => import("./pages/Search"));
 const StoryDetail = lazy(() => import("./pages/StoryDetail"));
 const ApplyRecipient = lazy(loadApplyRecipient);
 // Shown only if the application isn't downloaded yet: an outline in the page's own colours, not a blank "Loading...".
@@ -144,6 +145,7 @@ const AppRoutes = () => (
       <Route path="/accessibility" element={<Accessibility />} />
       <Route path="/fundraiser-rules" element={<FundraiserRules />} />
       <Route path="/stories" element={<Stories />} />
+      <Route path="/search" element={<SearchPage />} />
       <Route path="/help/:need" element={<NeedPage />} />
       <Route path="/donate-gift-cards" element={<GivePage />} />
       <Route path="/buy-groceries-for-a-family" element={<GivePage />} />

@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { AccountMenu } from '@/components/navigation/AccountMenu';
@@ -75,6 +76,9 @@ export function Navbar({ autoHide = true }: { autoHide?: boolean } = {}) {
           <BrandLockup navBrand />
 
           <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
+            <Link to="/search" className="nav-search" aria-label="Search fundraisers" aria-current={pathname === '/search' ? 'page' : undefined}>
+              <Search aria-hidden="true" strokeWidth={1.75} />
+            </Link>
             {!loading && (user
               ? <AccountMenu className="hidden md:inline-flex" />
               : !onAuthPage && <Link to={signInHref(pathname, search)} className={`hidden md:inline-flex ${quietLink}`}>Sign in</Link>)}

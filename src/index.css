@@ -791,6 +791,11 @@ html[data-sky=day] .site-header[data-over-sky] [data-nav-brand] .text-muted-fore
 .nav-quiet-link:focus-visible{outline:2px solid currentColor;outline-offset:2px;border-radius:6px}
 @keyframes nav-rise{0%{opacity:0;transform:translateY(60%)}8%,100%{opacity:1;transform:none}}
 @keyframes nav-line{0%,18%{transform:scaleX(0);transform-origin:left}26%,40%{transform:scaleX(1);transform-origin:left}41%{transform:scaleX(1);transform-origin:right}48%,100%{transform:scaleX(0);transform-origin:right}}
+/* The header's search (founder request, Nov 17 2026, like GoFundMe's magnifier): an icon in the header's own ink, on every page and size. */
+.nav-search{display:inline-flex;align-items:center;justify-content:center;flex:none;width:2.75rem;height:2.75rem;border-radius:9999px;color:inherit;opacity:.82;transition:opacity .25s,background-color .25s}
+.nav-search svg{width:1.375rem;height:1.375rem}
+.nav-search:hover,.nav-search[aria-current=page]{opacity:1;background-color:rgb(127 127 127 / .14)}
+.nav-search:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .nav-word{position:relative;align-items:center;height:2.75rem;color:inherit;font-family:"Instrument Serif","Instrument Serif Fallback",Georgia,serif;font-size:1.5rem;line-height:1;white-space:nowrap}
 .nav-word-letters{display:inline-flex;padding:.3rem 0}
 .nav-word-letters>span{display:inline-block;animation:nav-rise 10s cubic-bezier(.16,1,.3,1) infinite both}
