@@ -2,6 +2,9 @@ import { createRoot } from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./index.css";
+import { watchForNewBuild } from "@/lib/staleBuild";
+
+watchForNewBuild();
 
 if (document.documentElement.classList.contains('cd-intro') && window.__cdWebGL) void import('@/components/landing/Tree3DScene');
 const root = document.getElementById('root');

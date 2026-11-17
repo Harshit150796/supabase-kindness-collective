@@ -39,7 +39,7 @@ const Index = () => {
     <div className="min-h-dvh bg-background">
       <SEO
         title="CouponDonation: Give Groceries & Gift Cards to Families in Need"
-        description="Help someone with a real need. Your donation becomes gift cards for the groceries, medicine and rides they asked for, and you get a receipt for every gift."
+        description="CouponDonation is transforming giving. We turn donated money into coupons for what families need, with trackable, transparent giving and a receipt for every gift."
         path="/"
       />
       <Navbar />

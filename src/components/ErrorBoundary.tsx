@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { isCrawler, isStaleBuildError, reloadForNewBuild } from '@/lib/staleBuild';
 
 interface Props {
   children: ReactNode;
@@ -24,6 +25,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // An old page asking for code a newer publish removed: load the new version once.
+    if (isStaleBuildError(error)) reloadForNewBuild();
   }
 
   private handleReload = () => {
@@ -38,6 +41,20 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
+      }
+
+      // Crawlers never get an error screen: search results showed "Something went wrong" as the
+      // homepage's description (Nov 17, 2026). They get what CouponDonation is and where to go.
+      if (isCrawler()) {
+        return (
+          <main className="mx-auto max-w-2xl p-6">
+            <h1 className="text-3xl font-bold text-foreground">CouponDonation: transforming giving</h1>
+            <p className="mt-4 text-muted-foreground">CouponDonation is transforming giving. We turn donated money into coupons for what families need, with trackable, transparent giving and a receipt for every gift.</p>
+            <nav className="mt-6 flex flex-wrap gap-4 text-primary">
+              <a href="/donate">Donate</a><a href="/stories">Fundraisers</a><a href="/how-it-works">How it works</a><a href="/about">About</a><a href="/apply">Start a fundraiser</a>
+            </nav>
+          </main>
+        );
       }
 
       return (
