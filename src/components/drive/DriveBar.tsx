@@ -1,5 +1,7 @@
 import { useLayoutEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { X } from 'lucide-react';
+import { closeThanksgivingBar, THANKSGIVING, THANKSGIVING_BAR_LIVE, thanksgivingBarClosed } from '@/lib/thanksgivingOffer';
 import { closeDriveBar, DRIVE, DRIVE_LIVE, driveBarClosed, driveMoney, openDriveTerms, prefetchDriveTerms } from '@/lib/givingDrive';
 import { GoldCoin } from './PrizeArt';
 
@@ -16,9 +18,15 @@ const CARD = driveMoney(DRIVE.giftCards.value);
  * and add "this holiday", "Ends Jan 15" and "Prizes and terms" as the width allows (index.css). The
  * whole message opens the prizes-and-terms pop-up; × hides the bar until the next visit. It goes away
  * by itself when the drive ends (src/lib/givingDrive.ts).
+ *
+ * On Nov 17, 2026 (Eastern Time) the same green bar carries the Thanksgiving offer instead
+ * (src/lib/thanksgivingOffer.ts, founder request): start a fundraiser by Nov 26 and get a free $10 gift
+ * card. It links to /apply and has its own ×; the drive bar returns by itself the next day.
  */
 export function DriveBar() {
-  const [open, setOpen] = useState(() => DRIVE_LIVE && !driveBarClosed());
+  const [offer, setOffer] = useState(() => THANKSGIVING_BAR_LIVE && !thanksgivingBarClosed());
+  const [drive, setDrive] = useState(() => DRIVE_LIVE && !driveBarClosed());
+  const open = offer || drive;
 
   // Pages that pin things under the header (account sections) add the bar's height (--drive-bar-h).
   useLayoutEffect(() => {
@@ -30,7 +38,27 @@ export function DriveBar() {
 
   if (!open) return null;
 
-  const hide = () => { closeDriveBar(); setOpen(false); };
+  if (offer) {
+    const value = driveMoney(THANKSGIVING.value);
+    return (
+      <div className="drive-bar" role="region" aria-label="Thanksgiving offer" data-nosnippet="">
+        <Link to={THANKSGIVING.href} className="drive-bar-main">
+          <span className="drive-bar-text">
+            <span className="drive-bar-offer">
+              <span className="drive-bar-l1"><strong>Thanksgiving:</strong> start a fundraiser by {THANKSGIVING.byShort}</span>{' '}
+              <span className="drive-bar-l2">and get a <strong>free {value} gift card</strong></span>
+            </span>
+          </span>
+          <span className="drive-bar-link"><span className="drive-bar-link-long">Start your fundraiser</span><span className="drive-bar-link-short">Start now</span></span>
+        </Link>
+        <button type="button" className="drive-bar-close" aria-label="Hide the Thanksgiving offer" onClick={() => { closeThanksgivingBar(); setOffer(false); }}>
+          <X aria-hidden="true" />
+        </button>
+      </div>
+    );
+  }
+
+  const hide = () => { closeDriveBar(); setDrive(false); };
 
   return (
     <div className="drive-bar" role="region" aria-label={DRIVE.name} data-nosnippet="">
