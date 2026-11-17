@@ -17,8 +17,8 @@ type EarlyFundraiser = { slug: string; data: Promise<unknown> };
  * there is none, it failed, or it found nothing visitors can see; the page then asks itself, signed in.
  */
 export function takeEarlyFundraiser(slug: string): Promise<Record<string, unknown> | null> | null {
-  if (typeof window === "undefined") return null;
-  const holder = window as unknown as { __cdFundraiser?: EarlyFundraiser };
+  if (typeof globalThis.document === "undefined") return null;
+  const holder = globalThis as unknown as { __cdFundraiser?: EarlyFundraiser };
   const early = holder.__cdFundraiser;
   if (!early || early.slug !== slug) return null;
   holder.__cdFundraiser = undefined;
