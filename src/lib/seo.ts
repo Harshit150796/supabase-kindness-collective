@@ -1,7 +1,7 @@
 /** Shared search helpers: the canonical address of a page, snippet trimming and structured data. */
 
 export const SITE = "https://coupondonation.com";
-export const DEFAULT_SHARE_IMAGE = `${SITE}/og-image.jpg?v=5`;
+export const DEFAULT_SHARE_IMAGE = `${SITE}/og-image.jpg?v=6`;
 /** Its exact size, declared so WhatsApp, Facebook and LinkedIn show the large card on the first share. */
 export const DEFAULT_SHARE_IMAGE_SIZE = { width: 2400, height: 1260, type: "image/jpeg" } as const;
 

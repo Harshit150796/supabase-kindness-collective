@@ -122,7 +122,7 @@ const html = (body: string | null, status = 200) => new Response(body, {
 async function previewPage(slug: string, head: boolean): Promise<Response> {
   const f = slug ? await loadFundraiser(slug) : null;
   if (!f) {
-    const fallback = { ...FALLBACK_IMAGE, alt: 'CouponDonation logo with the line Transform Lives Through Giving' };
+    const fallback = { ...FALLBACK_IMAGE, alt: 'CouponDonation logo: two hands around a heart-shaped Earth, with the name CouponDonation' };
     return html(head ? null : previewHtml({
       url: slug ? shareUrl(slug) : SHARE_HOST, destination: slug ? pageUrl(slug) : SITE,
       pageTitle: DEFAULT_TITLE, title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION, image: fallback,

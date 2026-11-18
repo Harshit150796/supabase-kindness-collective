@@ -31,7 +31,7 @@ export function SEO({
   description,
   path,
   image = DEFAULT_SHARE_IMAGE,
-  imageAlt = "CouponDonation logo with the line Transform Lives Through Giving",
+  imageAlt = "CouponDonation logo: two hands around a heart-shaped Earth, with the name CouponDonation",
   type = "website",
   noindex = false,
   status,

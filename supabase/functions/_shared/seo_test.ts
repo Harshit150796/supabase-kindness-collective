@@ -79,7 +79,7 @@ Deno.test('the HTML shell has true defaults that pages replace, and no per-route
   assert(/<meta name="description"[^>]*data-rh="true"/.test(html));
   assert(!/name="keywords"/.test(html));
   assert(!/js\.stripe\.com/.test(html));
-  assert(html.includes('https://coupondonation.com/og-image.jpg?v=5') && html.includes('<meta property="og:image:width" content="2400"'));
+  assert(html.includes('https://coupondonation.com/og-image.jpg?v=6') && html.includes('<meta property="og:image:width" content="2400"'));
   assert(!/verified families|95%\s*efficiency|partners"|partnering/i.test(html.split('<body>')[0]));
 });
 

@@ -14,7 +14,7 @@
 
 export const SITE = 'https://coupondonation.com';
 export const SHARE_HOST = 'https://share.coupondonation.com';
-export const FALLBACK_IMAGE = { url: `${SITE}/og-image.jpg?v=5`, width: 2400, height: 1260, type: 'image/jpeg' };
+export const FALLBACK_IMAGE = { url: `${SITE}/og-image.jpg?v=6`, width: 2400, height: 1260, type: 'image/jpeg' };
 export const DEFAULT_TITLE = "CouponDonation: World's Most Trusted Crowdfunding Platform";
 export const DEFAULT_DESCRIPTION = "World's most trusted crowdfunding platform. CouponDonation is transforming giving: donated money becomes coupons, with trackable, transparent giving for every donor.";
 
