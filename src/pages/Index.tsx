@@ -38,8 +38,8 @@ const Index = () => {
   return (
     <div className="min-h-dvh bg-background">
       <SEO
-        title="CouponDonation: Give Groceries & Gift Cards to Families in Need"
-        description="The world's most trusted crowdfunding platform. CouponDonation is transforming giving: donated money becomes coupons, with trackable, transparent giving for every donor."
+        title="CouponDonation: World's Most Trusted Crowdfunding Platform"
+        description="World's most trusted crowdfunding platform. CouponDonation is transforming giving: donated money becomes coupons, with trackable, transparent giving for every donor."
         path="/"
       />
       <Navbar />

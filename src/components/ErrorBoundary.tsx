@@ -49,7 +49,7 @@ export class ErrorBoundary extends Component<Props, State> {
         return (
           <main className="mx-auto max-w-2xl p-6">
             <h1 className="text-3xl font-bold text-foreground">CouponDonation: transforming giving</h1>
-            <p className="mt-4 text-muted-foreground">The world&apos;s most trusted crowdfunding platform. CouponDonation is transforming giving: donated money becomes coupons, with trackable, transparent giving for every donor.</p>
+            <p className="mt-4 text-muted-foreground">World&apos;s most trusted crowdfunding platform. CouponDonation is transforming giving: donated money becomes coupons, with trackable, transparent giving for every donor.</p>
             <nav className="mt-6 flex flex-wrap gap-4 text-primary">
               <a href="/donate">Donate</a><a href="/stories">Fundraisers</a><a href="/how-it-works">How it works</a><a href="/about">About</a><a href="/apply">Start a fundraiser</a>
             </nav>
