@@ -14,7 +14,7 @@
 
 export const SITE = 'https://coupondonation.com';
 export const SHARE_HOST = 'https://share.coupondonation.com';
-export const FALLBACK_IMAGE = { url: `${SITE}/og-image.png`, width: 1200, height: 630, type: 'image/png' };
+export const FALLBACK_IMAGE = { url: `${SITE}/og-image.png?v=2`, width: 1200, height: 630, type: 'image/png' };
 export const DEFAULT_TITLE = 'CouponDonation: Give Groceries & Gift Cards to Families in Need';
 export const DEFAULT_DESCRIPTION = 'CouponDonation is transforming giving. We turn donated money into coupons for what families need, with trackable, transparent giving and a receipt for every gift.';
 

@@ -1,7 +1,7 @@
 /** Shared search helpers: the canonical address of a page, snippet trimming and structured data. */
 
 export const SITE = "https://coupondonation.com";
-export const DEFAULT_SHARE_IMAGE = `${SITE}/og-image.png`;
+export const DEFAULT_SHARE_IMAGE = `${SITE}/og-image.png?v=2`;
 
 /** One canonical form per page: no query string, no hash, no trailing slash (except the homepage). */
 export function canonicalUrl(path: string) {
