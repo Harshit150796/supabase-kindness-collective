@@ -15,7 +15,7 @@ const RETIRED_QUESTIONS = new Set([
 
 const hardcodedFaqs = [
   { question: "How does CouponDonation work?", answer: "People in need post a fundraiser. Donors give to a fundraiser, or choose the stores their gift is used at, and our team turns each gift into store coupons and gift cards for stores like Walmart, Kroger and CVS. Nothing is paid out as cash." },
-  { question: "Is my donation tax-deductible?", answer: "No. CouponDonation Inc. is a company, not a registered 501(c)(3) charity, so we don't issue tax-deductible receipts. You do get a receipt for every gift that shows where it went." },
+  { question: "Is my donation tax-deductible?", answer: "No. As with most personal crowdfunding, gifts aren't tax-deductible and we don't issue tax receipts. You do get a receipt for every gift that shows where it went." },
   { question: "How much of my gift reaches the family?", answer: "100% of your gift goes to the family as store coupons and gift cards. We take no platform fee. You can add an optional tip, which pays for running CouponDonation, and choose to cover the card processing fee." },
   { question: "How are requests reviewed?", answer: "Our team reviews requests and can ask for more information, such as proof of identity. We remove requests that break our Fundraiser Rules, and anyone can report a fundraiser from its page." },
   { question: "What can recipients ask for?", answer: "Recipients choose what they need help with, such as groceries, health, school or bills, and the stores that would help most. Donors see those stores on the fundraiser page." },

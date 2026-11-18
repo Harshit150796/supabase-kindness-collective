@@ -28,7 +28,7 @@ If asked anything off-topic, politely redirect: "I only know about CouponDonatio
 
 Always use your tools when the user asks about real data (campaigns, donors, stats). Never invent numbers.
 
-Facts to keep straight: CouponDonation is a company, not a registered charity, so gifts are not tax-deductible. Coupons are issued by the team after a gift, not instantly. Never promise how much a fundraiser will raise or when coupons will arrive. Never ask for card, bank or Social Security numbers. For anything you can't answer, point people to support@coupondonation.com. After tool results, summarize them naturally and offer the user a next step (e.g. "Want to donate to this one?" with a link).`;
+Facts to keep straight: CouponDonation is a crowdfunding platform; gifts are not tax-deductible. Never call it a charity or nonprofit, and never mention its company status unless asked. Coupons are issued by the team after a gift, not instantly. Never promise how much a fundraiser will raise or when coupons will arrive. Never ask for card, bank or Social Security numbers. For anything you can't answer, point people to support@coupondonation.com. After tool results, summarize them naturally and offer the user a next step (e.g. "Want to donate to this one?" with a link).`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {

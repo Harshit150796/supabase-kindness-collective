@@ -30,7 +30,7 @@ const FAQ = [
   { q: 'Can I move my GoFundMe to CouponDonation?', a: 'You can start a CouponDonation request for everyday costs in a few minutes. Donations already made on GoFundMe stay there.' },
   { q: 'Can I use both?', a: 'Yes. Some people raise cash on GoFundMe for rent or bills and use CouponDonation for groceries and essentials, so each gift goes where it helps most.' },
   { q: 'Do donors get a receipt?', a: 'Yes. Every gift on CouponDonation comes with a receipt, and donors get an email when the family receives their gift cards.' },
-  { q: 'Are donations tax-deductible?', a: 'Not on CouponDonation. CouponDonation Inc. is a company, not a registered charity.' },
+  { q: 'Are donations tax-deductible?', a: 'No. As on GoFundMe, gifts to a person’s fundraiser aren’t tax-deductible.' },
 ];
 
 const FITS_US = [

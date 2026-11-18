@@ -64,7 +64,7 @@ export function Footer({ contact = true }: { contact?: boolean } = {}) {
         </nav>
       </Reveal>
       <p className="mt-4 max-w-3xl text-[12px] leading-5 text-primary-foreground/75">
-        Store names and logos shown on CouponDonation are trademarks of their owners. Those stores are not affiliated with, and do not sponsor or endorse, CouponDonation. CouponDonation Inc. is not a registered charity, and gifts are not tax-deductible.
+        Store names and logos shown on CouponDonation are trademarks of their owners. Those stores are not affiliated with, and do not sponsor or endorse, CouponDonation. Gifts are not tax-deductible.
       </p>
     </div>
   </footer>;

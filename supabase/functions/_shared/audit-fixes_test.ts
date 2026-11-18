@@ -27,7 +27,7 @@ Deno.test('unknown addresses and missing fundraisers tell search engines they ar
 });
 
 Deno.test('the plain facts sit where the decision is made: beside the donate button and the 100% promise', () => {
-  const facts = 'CouponDonation Inc. is a company, not a registered charity, so gifts aren’t tax-deductible.';
+  const facts = 'Gifts aren’t tax-deductible.'; // founder, Nov 17 2026: no "company, not a charity" wording
   assert(read('src/components/landing/donate/ReviewStep.tsx').includes(facts));
   assert(read('src/components/landing/TrustTransparency.tsx').includes(facts));
   assert(read('src/components/landing/LiveActivityBar.tsx').includes('These stores aren’t partners or sponsors of CouponDonation.'));

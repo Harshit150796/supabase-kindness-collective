@@ -6,7 +6,7 @@ import { isSuppressed } from './suppression.ts';
 
 const SITE = 'https://coupondonation.com';
 const TOKEN_DAYS = 30;
-export const CHARITY_LINE = 'CouponDonation is not a registered charity, so this donation is not tax-deductible.';
+export const CHARITY_LINE = 'This donation is not tax-deductible.';
 export const NO_FUNDRAISER_NEXT =
   'What happens next: your donation becomes coupons for the retailers you chose. Once they are ready, they go into our shared pool, where families who have asked for help can claim them.';
 export const FUNDRAISER_NEXT =

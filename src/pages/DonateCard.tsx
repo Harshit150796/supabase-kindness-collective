@@ -60,7 +60,7 @@ const FAQ = [
   { q: 'Can I give a card to a specific family?', a: 'Yes. Choose one of the open requests in the form. If that request closes before we finish checking the card, it goes to another family who asked for the same store, or to the shared pool.' },
   { q: 'Do I need an account to donate a card?', a: 'No. Anyone can donate a card, and you can do it anonymously. If you’re signed in, you can follow each card you give on this page and withdraw it while we check it.' },
   { q: 'Can I get my card back?', a: 'If you were signed in when you gave it, you can withdraw a card here while it says We’re checking it. Without an account, email support@coupondonation.com with the store and the day you sent it (never the code). Once we accept a card, it belongs to the person who receives it and can’t be returned.' },
-  { q: 'Is a donated card tax-deductible?', a: 'No. CouponDonation Inc. is a company, not a registered charity, so donated cards aren’t tax-deductible.' },
+  { q: 'Is a donated card tax-deductible?', a: 'No. Donated cards aren’t tax-deductible, as with most personal crowdfunding.' },
   { q: 'Do you buy gift cards or pay for them?', a: 'Never. We only accept cards given freely. If someone asked you to buy gift cards and send the codes, it may be a scam: don’t send them to anyone, and report it at reportfraud.ftc.gov.' },
   { q: 'Will the family know who gave the card?', a: 'Families never see your email address or other contact details. Tick Give anonymously and we won’t share your name with them; without an account, we won’t even ask for it.' },
 ];

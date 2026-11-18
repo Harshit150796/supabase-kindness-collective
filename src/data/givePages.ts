@@ -31,7 +31,7 @@ export interface GivePage {
 /** Questions every page for donors answers. */
 export const GIVING_FAQ: FaqItem[] = [
   { q: 'How much of my gift reaches the family?', a: 'All of it becomes gift cards and coupons for them; no platform fee comes out of your gift. At checkout you can add an optional tip for CouponDonation and choose to cover the card fee.' },
-  { q: 'Is my donation tax-deductible?', a: 'No. CouponDonation Inc. is a company, not a registered charity, so gifts aren’t tax-deductible. You get a receipt for every gift.' },
+  { q: 'Is my donation tax-deductible?', a: 'No. Gifts on CouponDonation aren’t tax-deductible, as with most personal crowdfunding. You get a receipt for every gift.' },
   { q: 'Will the family see my contact details?', a: 'No. Recipients never see your email address or other contact details.' },
 ];
 

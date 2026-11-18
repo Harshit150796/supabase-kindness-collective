@@ -16,7 +16,7 @@ export const SITE = 'https://coupondonation.com';
 export const SHARE_HOST = 'https://share.coupondonation.com';
 export const FALLBACK_IMAGE = { url: `${SITE}/og-image.png?v=2`, width: 1200, height: 630, type: 'image/png' };
 export const DEFAULT_TITLE = 'CouponDonation: Give Groceries & Gift Cards to Families in Need';
-export const DEFAULT_DESCRIPTION = 'CouponDonation is transforming giving. We turn donated money into coupons for what families need, with trackable, transparent giving and a receipt for every gift.';
+export const DEFAULT_DESCRIPTION = "The world's most trusted crowdfunding platform. CouponDonation is transforming giving: donated money becomes coupons, with trackable, transparent giving for every donor.";
 
 /** The longest side of a preview photo. Facebook, WhatsApp, iMessage, X and LinkedIn all show 1200px well. */
 export const MAX_EDGE = 1200;
