@@ -19,7 +19,7 @@ const CARD = driveMoney(DRIVE.giftCards.value);
  * whole message opens the prizes-and-terms pop-up; × hides the bar until the next visit. It goes away
  * by itself when the drive ends (src/lib/givingDrive.ts).
  *
- * On Nov 17, 2026 (Eastern Time) the same green bar carries the Thanksgiving offer instead
+ * From Nov 17 to Nov 26, 2026 (Eastern Time) the same green bar carries the Thanksgiving offer instead
  * (src/lib/thanksgivingOffer.ts, founder request): start a fundraiser by Nov 26 and get a free $10 gift
  * card. It links to /apply and has its own ×; the drive bar returns by itself the next day.
  */

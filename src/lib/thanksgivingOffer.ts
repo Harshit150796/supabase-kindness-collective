@@ -1,7 +1,7 @@
 /**
  * Thanksgiving offer (founder request, Nov 17, 2026): every family that starts a fundraiser by
  * Thanksgiving (Nov 26, 2026) gets a free $10 store gift card from CouponDonation, one per fundraiser,
- * added to the fundraiser by the team. The green bar at the top of the site shows it on Nov 17 only
+ * added to the fundraiser by the team. The green bar at the top of the site shows it from Nov 17 to Nov 26
  * (Eastern Time); after that the Holiday Giving Drive bar comes back by itself.
  */
 export const THANKSGIVING = {
@@ -10,8 +10,8 @@ export const THANKSGIVING = {
   /** Fundraisers started by this day qualify. */
   byShort: 'Nov 26',
   byLabel: 'November 26, 2026',
-  /** The bar shows until Nov 17, 2026, 11:59 PM Eastern Time. */
-  barEndsAt: '2026-11-18T04:59:59Z',
+  /** The bar shows until Nov 26, 2026, 11:59 PM Eastern Time. */
+  barEndsAt: '2026-11-27T04:59:59Z',
   href: '/apply',
 } as const;
 
