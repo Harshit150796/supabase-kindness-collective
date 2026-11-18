@@ -105,7 +105,7 @@ Deno.test('preview page: escaped tags, og:url is the shared link, no meta refres
   assertStringIncludes(page, 'noindex');
   assert(!/http-equiv="refresh"/i.test(page));
   assert(!page.includes('<now>'));
-  assertEquals(FALLBACK_IMAGE.url, 'https://coupondonation.com/og-image.png?v=3');
+  assertEquals(FALLBACK_IMAGE.url, 'https://coupondonation.com/og-image.png?v=4');
 });
 
 Deno.test('a new main photo gets a new image link', () => {
