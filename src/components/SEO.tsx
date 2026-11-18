@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { DEFAULT_SHARE_IMAGE, canonicalUrl, snippet } from "@/lib/seo";
+import { DEFAULT_SHARE_IMAGE, DEFAULT_SHARE_IMAGE_SIZE, canonicalUrl, snippet } from "@/lib/seo";
 
 // Older pages import breadcrumbJsonLd from here.
 export { breadcrumbJsonLd } from "@/lib/seo";
@@ -56,6 +56,9 @@ export function SEO({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={desc} />
       <meta property="og:image" content={image} />
+      {image === DEFAULT_SHARE_IMAGE && <meta property="og:image:type" content={DEFAULT_SHARE_IMAGE_SIZE.type} />}
+      {image === DEFAULT_SHARE_IMAGE && <meta property="og:image:width" content={String(DEFAULT_SHARE_IMAGE_SIZE.width)} />}
+      {image === DEFAULT_SHARE_IMAGE && <meta property="og:image:height" content={String(DEFAULT_SHARE_IMAGE_SIZE.height)} />}
       <meta property="og:image:alt" content={imageAlt} />
       <meta property="og:site_name" content="CouponDonation" />
       <meta property="og:locale" content="en_US" />
