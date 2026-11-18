@@ -22,7 +22,7 @@ export default function HowItWorks() {
   const navigate = useNavigate();
   return (
     <div className="min-h-dvh bg-background">
-      <SEO title="How Donating Gift Cards Works on CouponDonation" description="Pick a family's request and the stores they need. Your donation becomes gift cards and coupons for exactly those stores, and you get a receipt." path="/how-it-works" jsonLd={breadcrumbJsonLd([{ name:'Home', path:'/' },{ name:'How It Works', path:'/how-it-works' }])}/>
+      <SEO title="How Donation Coupons Work: Give in 3 Steps" description="See how your donation becomes coupons for the exact stores a family asked for, why 100% of your gift reaches them, and how you track it." path="/how-it-works" jsonLd={breadcrumbJsonLd([{ name:'Home', path:'/' },{ name:'How It Works', path:'/how-it-works' }])}/>
       <Navbar />
       <main>
         <section className="py-24 md:py-36"><div className="container mx-auto grid gap-10 px-4 lg:grid-cols-[1fr_.8fr] lg:items-center"><div><LineReveal><h1 className="max-w-5xl font-display text-6xl font-normal leading-none text-foreground md:text-8xl">How CouponDonation turns your donation into gift cards.</h1></LineReveal><Reveal delay={0.1}><p className="mt-8 max-w-2xl text-xl leading-relaxed text-muted-foreground">Donors choose the request and the stores. People who asked for help receive gift cards and coupons for exactly those stores.</p></Reveal></div><ProductTraceVisual mode="trace"/></div></section>

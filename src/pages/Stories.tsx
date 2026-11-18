@@ -22,13 +22,13 @@ export default function Stories() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <SEO title="Fundraisers for Families in Need: Help Someone Today" description="Browse open requests for groceries, medicine, rides and household essentials. Pick one and give gift cards for the stores they asked for." path="/stories" jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Stories', path: '/stories' }])} />
+      <SEO title="Coupon Fundraisers for Families in Need" description="Browse open coupon fundraisers for groceries, travel and health needs. Pick a family and give coupons for the stores they asked for, from $10." path="/stories" jsonLd={breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Stories', path: '/stories' }])} />
       <Navbar />
       <main>
         <section className="py-24 md:py-36">
           <div className="container mx-auto px-4">
             <div className="max-w-5xl">
-              <LineReveal><h1 className="max-w-4xl font-display text-6xl font-normal leading-none text-foreground md:text-8xl">Find a need you can help meet.</h1></LineReveal>
+              <LineReveal><h1 className="max-w-4xl font-display text-6xl font-normal leading-none text-foreground md:text-8xl">Coupon fundraisers for families in need.</h1></LineReveal>
               <Reveal delay={0.1}><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">Every fundraiser here is a live request, and every figure comes from completed donations.</p></Reveal>
             </div>
             {liveTotals.length > 0 && (

@@ -128,8 +128,8 @@ export default function About() {
   return (
     <div className="min-h-dvh overflow-x-hidden bg-background text-foreground">
       <SEO
-        title="About CouponDonation: Who We Are and Why We Built It"
-        description="CouponDonation turns donations into gift cards for the specific things people ask for, from groceries to rides. Meet the founder and see how every gift is traced."
+        title="About CouponDonation: Why We Turn Donations into Coupons"
+        description="Meet the founder and see why CouponDonation turns donations into coupons for groceries, travel and health needs, with every gift traceable."
         path="/about"
         jsonLd={aboutJsonLd}
       />
