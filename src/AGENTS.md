@@ -1,5 +1,9 @@
 # Frontend architecture
 
+## Public activity and monthly gifts
+- The hero reads only the bounded, public-name-only get_hero_donations RPC and never supplies fabricated fallback activity or email-derived identities; example-linked payments are excluded on the server.
+- MonthlyGifts uses monthlyGiftStatus.ts for every manageable state and scopes reads to the current user; pending, paused and payment-problem gifts retain cancellation.
+
 ## Search (SEO)
 - Every public page renders `<SEO>` (title under ~60 characters before " | CouponDonation", description under 155, canonical without query string); private, utility, example and empty pages pass `noindex` (account routes are wrapped in `Private` in App.tsx). Helpers live in src/lib/seo.ts.
 - index.html holds true defaults marked `data-rh` so Helmet replaces them; it never carries a canonical or og:url, because one file serves every route.
