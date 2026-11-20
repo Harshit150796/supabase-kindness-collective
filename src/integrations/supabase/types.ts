@@ -4929,6 +4929,14 @@ export type Database = {
           total_raised: number
         }[]
       }
+      get_hero_donations: {
+        Args: { _limit?: number }
+        Returns: {
+          amount: number
+          display_name: string
+          id: string
+        }[]
+      }
       get_impact_stats: {
         Args: never
         Returns: {
