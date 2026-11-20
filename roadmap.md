@@ -1,12 +1,5 @@
 # Roadmap
 
-## Project monitoring review (Nov 19)
-- [x] Verify receipt storage, live card totals and footer layout; missing-bucket report is false positive, totals/footer evidence is stale.
-- [x] Restore monthly gift controls for pending, paused and payment-problem gifts, with identity-scoped reads.
-- [x] Remove fabricated tree activity and use a bounded privacy-safe public read excluding example payments.
-- [x] Run 30 regression tests; preview build OK and anonymous public read verified (11 real gifts, name/id/amount only, no page errors).
-- [ ] Authenticated cancellation walkthrough — blocked by external unmanaged auth; no live gifts canceled during verification.
-
 ## Branded Google sign-in (Oct 14)
 - [x] Add prominent login logo/wordmark and nonce-protected direct Google sign-in.
 - [x] Four nonce/account-selection tests, real Google popup/cancellation, script and credential failure recovery, and 390/937/1280 layouts verified; automatic build OK. Local popup needs Google Cloud localhost origins. See docs/google-sign-in-setup.md.

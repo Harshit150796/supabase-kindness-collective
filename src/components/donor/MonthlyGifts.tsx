@@ -4,7 +4,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { manageableMonthlyGiftStatuses, monthlyGiftStatusLabel } from '@/lib/monthlyGiftStatus';
 
 type Row = { id: string; gift_cents: number; tip_cents: number; fee_cents: number; brand_name: string | null; status: string; created_at: string };
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
@@ -16,13 +15,10 @@ export function MonthlyGifts() {
   const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
-    let alive = true;
-    setRows([]);
-    if (!user) return;
+    if (!user) { setRows([]); return; }
     supabase.from('recurring_donations' as never).select('id, gift_cents, tip_cents, fee_cents, brand_name, status, created_at')
-      .eq('user_id', user.id).in('status', [...manageableMonthlyGiftStatuses]).order('created_at', { ascending: false })
-      .then(({ data }) => { if (alive) setRows((data as Row[] | null) ?? []); });
-    return () => { alive = false; };
+      .eq('status', 'active').order('created_at', { ascending: false })
+      .then(({ data }) => setRows((data as Row[] | null) ?? []));
   }, [user]);
 
   const cancel = async (id: string) => {
@@ -47,7 +43,6 @@ export function MonthlyGifts() {
               <p className="text-sm text-muted-foreground">
                 {usd.format(r.gift_cents / 100)} to families{r.brand_name ? ` via ${r.brand_name}` : ''}
               </p>
-              <p className="text-sm text-muted-foreground">{monthlyGiftStatusLabel(r.status)}</p>
             </div>
             <Button variant="outline" size="sm" disabled={busy === r.id} onClick={() => cancel(r.id)}>Cancel</Button>
           </div>
