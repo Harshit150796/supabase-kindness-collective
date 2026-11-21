@@ -9,3 +9,8 @@ work/*.wav
 work/*.log
 work/__pycache__/
 work/vite-render.pid
+kitchens/stills*/
+kitchens/*.mp4
+kitchens/*.wav
+kitchens/*.log
+kitchens/vite-render.pid

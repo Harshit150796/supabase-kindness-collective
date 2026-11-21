@@ -1,0 +1,342 @@
+{
+ "cut": "main",
+ "dur": 30,
+ "lines": [
+  {
+   "who": "coupon",
+   "t0": 4.3,
+   "t1": 6.7,
+   "text": "Not far away. *Right here.*"
+  },
+  {
+   "who": "coupon",
+   "t0": 7.25,
+   "t1": 9.75,
+   "text": "Meanwhile, *30–40%* of the food supply goes to waste."
+  },
+  {
+   "who": "coupon",
+   "t0": 10.3,
+   "t1": 12.3,
+   "text": "So here's how you can help."
+  },
+  {
+   "who": "coupon",
+   "t0": 12.6,
+   "t1": 13.7,
+   "text": "Your donation becomes | *gift cards*…"
+  },
+  {
+   "who": "coupon",
+   "t0": 13.8,
+   "t1": 14.85,
+   "text": "…for what families asked for."
+  },
+  {
+   "who": "coupon",
+   "t0": 15.2,
+   "t1": 16.85,
+   "text": "Pick the stores they need,"
+  },
+  {
+   "who": "coupon",
+   "t0": 17.15,
+   "t1": 18.55,
+   "text": "choose what to give,"
+  },
+  {
+   "who": "coupon",
+   "t0": 18.9,
+   "t1": 20.6,
+   "text": "and get a *receipt for every gift*."
+  },
+  {
+   "who": "coupon",
+   "t0": 20.95,
+   "t1": 22.85,
+   "text": "*100%* of your gift reaches families."
+  }
+ ],
+ "plates": [
+  {
+   "type": "hook",
+   "t0": 0,
+   "t1": 4
+  },
+  {
+   "type": "stat",
+   "t0": 4,
+   "t1": 7
+  },
+  {
+   "type": "stat",
+   "t0": 7,
+   "t1": 10
+  },
+  {
+   "type": "line",
+   "t0": 10,
+   "t1": 12.5
+  },
+  {
+   "type": "needs",
+   "t0": 12.5,
+   "t1": 15
+  },
+  {
+   "type": "stores",
+   "t0": 15,
+   "t1": 17
+  },
+  {
+   "type": "amount",
+   "t0": 17,
+   "t1": 18.75
+  },
+  {
+   "type": "review",
+   "t0": 18.75,
+   "t1": 20.75
+  },
+  {
+   "type": "stat",
+   "t0": 20.75,
+   "t1": 23
+  },
+  {
+   "type": "payoff",
+   "t0": 23,
+   "t1": 26.5
+  },
+  {
+   "type": "end",
+   "t0": 26.5,
+   "t1": 30
+  }
+ ],
+ "cues": [
+  {
+   "t": 0.75,
+   "kind": "toss"
+  },
+  {
+   "t": 1.05,
+   "kind": "flicker"
+  },
+  {
+   "t": 1.21,
+   "kind": "flicker"
+  },
+  {
+   "t": 1.25,
+   "kind": "toss"
+  },
+  {
+   "t": 1.75,
+   "kind": "toss"
+  },
+  {
+   "t": 2.25,
+   "kind": "toss"
+  },
+  {
+   "t": 2.42,
+   "kind": "flicker"
+  },
+  {
+   "t": 2.75,
+   "kind": "toss"
+  },
+  {
+   "t": 3.25,
+   "kind": "toss"
+  },
+  {
+   "t": 3.36,
+   "kind": "flicker"
+  },
+  {
+   "t": 4.15,
+   "kind": "enter"
+  },
+  {
+   "t": 4.3,
+   "kind": "fill"
+  },
+  {
+   "t": 4.3,
+   "kind": "line",
+   "who": "coupon",
+   "n": 5,
+   "em": true
+  },
+  {
+   "t": 7.25,
+   "kind": "line",
+   "who": "coupon",
+   "n": 9,
+   "em": true
+  },
+  {
+   "t": 7.3,
+   "kind": "fill"
+  },
+  {
+   "t": 10.3,
+   "kind": "line",
+   "who": "coupon",
+   "n": 6,
+   "em": false
+  },
+  {
+   "t": 12.6,
+   "kind": "step"
+  },
+  {
+   "t": 12.6,
+   "kind": "line",
+   "who": "coupon",
+   "n": 5,
+   "em": true
+  },
+  {
+   "t": 13.1,
+   "kind": "step"
+  },
+  {
+   "t": 13.6,
+   "kind": "step"
+  },
+  {
+   "t": 13.8,
+   "kind": "line",
+   "who": "coupon",
+   "n": 5,
+   "em": false
+  },
+  {
+   "t": 15.2,
+   "kind": "line",
+   "who": "coupon",
+   "n": 5,
+   "em": false
+  },
+  {
+   "t": 15.4,
+   "kind": "tap"
+  },
+  {
+   "t": 15.45,
+   "kind": "pop",
+   "i": 0
+  },
+  {
+   "t": 15.88,
+   "kind": "tap"
+  },
+  {
+   "t": 15.93,
+   "kind": "pop",
+   "i": 1
+  },
+  {
+   "t": 16.84,
+   "kind": "tap"
+  },
+  {
+   "t": 17.15,
+   "kind": "line",
+   "who": "coupon",
+   "n": 4,
+   "em": false
+  },
+  {
+   "t": 17.665,
+   "kind": "tap"
+  },
+  {
+   "t": 17.7,
+   "kind": "pop",
+   "i": 2
+  },
+  {
+   "t": 18,
+   "kind": "pop",
+   "i": 3
+  },
+  {
+   "t": 18.9,
+   "kind": "line",
+   "who": "coupon",
+   "n": 7,
+   "em": true
+  },
+  {
+   "t": 19,
+   "kind": "pop",
+   "i": 4
+  },
+  {
+   "t": 19.25,
+   "kind": "pop",
+   "i": 5
+  },
+  {
+   "t": 19.5,
+   "kind": "pop",
+   "i": 6
+  },
+  {
+   "t": 20.31,
+   "kind": "tap"
+  },
+  {
+   "t": 20.35,
+   "kind": "pop",
+   "i": 7
+  },
+  {
+   "t": 20.95,
+   "kind": "line",
+   "who": "coupon",
+   "n": 6,
+   "em": true
+  },
+  {
+   "t": 21.05,
+   "kind": "fill"
+  },
+  {
+   "t": 21.2,
+   "kind": "pop",
+   "i": 8
+  },
+  {
+   "t": 21.5,
+   "kind": "pop",
+   "i": 9
+  },
+  {
+   "t": 21.8,
+   "kind": "pop",
+   "i": 10
+  },
+  {
+   "t": 23.6,
+   "kind": "enter"
+  },
+  {
+   "t": 23.7,
+   "kind": "strike"
+  },
+  {
+   "t": 24,
+   "kind": "know"
+  },
+  {
+   "t": 26.7,
+   "kind": "end"
+  }
+ ],
+ "beat": 0.5
+}

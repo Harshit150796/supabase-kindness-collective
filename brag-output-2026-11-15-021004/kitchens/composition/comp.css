@@ -1,0 +1,7 @@
+/* "Same Country": additions to the Hope vs. Know stage styles (../../work/composition/comp.css). Brand colours only. */
+.win { position: absolute; left: 60px; width: 960px; height: 600px; border-radius: 48px; overflow: hidden; background: hsl(123 18% 92%); }
+.win .floor { position: absolute; left: 0; right: 0; bottom: 0; height: 74px; background: hsl(123 16% 84%); }
+.win .lbl { position: absolute; left: 40px; top: 30px; font-family: 'Instrument Sans', system-ui, sans-serif; font-weight: 600; font-size: 32px; color: var(--k-ink); letter-spacing: 0; }
+.item { position: absolute; left: 0; top: 0; transform-origin: 50% 100%; }
+.item svg { display: block; overflow: visible; }
+.headline { position: absolute; left: 60px; width: 960px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 112px; line-height: 1; letter-spacing: 0; white-space: nowrap; }
