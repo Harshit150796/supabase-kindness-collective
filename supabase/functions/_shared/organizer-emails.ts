@@ -52,7 +52,9 @@ function build(o: OrganizerBase, m: {
     '— The CouponDonation team', ...(o.test ? ['', 'This is a test message.'] : []), '', SUPPORT_LINE,
     ...(o.stopUrl ? [`Stop these tips: ${o.stopUrl}`] : []),
   ].join('\n');
-  return { subject: m.subject, html, text, ...(o.stopUrl ? { headers: { 'List-Unsubscribe': `<${o.stopUrl}>` } } : {}) };
+  // No List-Unsubscribe header (founder request, Nov 21, 2026): Gmail files mail carrying it under Promotions; the
+  // "Stop these tips" link in the email does the same job.
+  return { subject: m.subject, html, text };
 }
 
 /** A gift came in. `count` gifts worth `amount` since we last wrote; `first` when they are the fundraiser's first. */
@@ -67,10 +69,9 @@ export function renderOrganizerGift(o: OrganizerBase & Numbers & { amount: numbe
   return build(o, {
     subject, headline: o.first ? 'Your first gift' : one ? 'A new gift' : 'New gifts', preheader: p1,
     paragraphs: [p1,
-      `What happens next: we turn ${one ? 'it' : 'each gift'} into the store card you asked for, and email you when it’s ready to open.`,
-      'The best thing to do today is tell people. A fundraiser that just received a gift is the easiest one to give to.'],
-    copy: { label: 'A message you can copy', body: `Someone just gave to my fundraiser, “${o.title}”. ${becomes}, and gifts start at $10. Will you be next?\n${share}` },
-    closing: ['To thank the people who gave, post a short update from your dashboard.'],
+      `Next: ${one ? 'it becomes' : 'each gift becomes'} the store card you asked for. We’ll email you when it’s ready.`,
+      'Share it today. A fundraiser with a new gift is the easiest to give to.'],
+    copy: { label: 'Message to copy', body: `Someone just gave to my fundraiser, “${o.title}”. ${becomes}, and gifts start at $10. Will you be next?\n${share}` },
     link: { label: 'Share it now', url: dashboard },
   });
 }
@@ -82,12 +83,11 @@ export function renderOrganizerNudge(o: OrganizerBase): RenderedEmail {
   return build(o, {
     subject: 'One text can start it', headline: 'One text can start it', preheader: 'The first gift usually comes from one person you message directly.',
     paragraphs: [
-      `“${o.title}” has been live for two days and is waiting for its first gift. That’s normal. The first one is the hardest.`,
-      'It usually comes from one person you message directly. Not a post. A text, to someone by name.',
-      'Think of the one person most likely to say yes, and send them this:'],
-    copy: { label: 'A message you can copy', body: chat },
-    closing: ['Is something making it hard to share? Reply and tell us. A person reads every reply.'],
-    link: { label: 'Text it now', url: `sms:?&body=${enc(chat)}` }, secondary: { label: 'Or share it from your dashboard', url: dashboard },
+      `“${o.title}” is waiting for its first gift. That’s normal.`,
+      'The first gift usually comes from one person you text directly. Send this to the person most likely to say yes:'],
+    copy: { label: 'Message to copy', body: chat },
+    closing: ['Something making it hard to share? Reply and tell us.'],
+    link: { label: 'Send a text', url: `sms:?&body=${enc(chat)}` }, secondary: { label: 'Open your dashboard', url: dashboard },
   });
 }
 
@@ -105,11 +105,10 @@ export function renderOrganizerWeek(o: OrganizerBase & Numbers): RenderedEmail {
     paragraphs: [
       some ? `“${o.title}” has been live for a week: ${usd(o.raised)}${o.goal > 0 ? ` of ${usd(o.goal)}` : ''}, from ${people(o.givers)}.`
         : `“${o.title}” has been live for a week and is still waiting for its first gift.`,
-      'This week, try the group you haven’t asked yet. Your church, your children’s school, a friends, neighborhood or work group. One share from a leader reaches more people than you can text.',
-      'We wrote the note for you. It opens as an email you can send as it is.'],
-    closing: ['Want a second pair of eyes on your page? Reply and we’ll suggest one thing to improve.'],
+      'This week, ask a group you haven’t asked yet: your church, school or work. We wrote the note for you.'],
+    closing: ['Want one tip to improve your page? Reply to this email.'],
     link: { label: 'Email your church or group', url: `mailto:?subject=${enc('Could you share my fundraiser?')}&body=${enc(note)}` },
-    secondary: { label: 'Or share it from your dashboard', url: dashboard },
+    secondary: { label: 'Open your dashboard', url: dashboard },
   });
 }
 
@@ -120,8 +119,8 @@ export function renderOrganizerHalfway(o: OrganizerBase & Numbers): RenderedEmai
   const left = Math.max(0, o.goal - o.raised);
   return build(o, {
     subject: 'You’re halfway to your goal', headline: 'Halfway there', preheader: `${usd(o.raised)} of ${usd(o.goal)}. People like to help finish something.`,
-    paragraphs: [`“${o.title}” just passed halfway: ${usd(o.raised)} of ${usd(o.goal)}. ${people(o.givers)} ${o.givers === 1 ? 'has' : 'have'} given.`, 'People like to help finish something. Tell them how close you are:'],
-    copy: { label: 'A message you can copy', body: `We’re halfway there. ${people(o.givers)} ${o.givers === 1 ? 'has' : 'have'} given to “${o.title}”, and ${usd(left)} more gets us to the goal. ${becomes}.\n${share}` },
+    paragraphs: [`“${o.title}” just passed halfway: ${usd(o.raised)} of ${usd(o.goal)}, from ${people(o.givers)}.`, 'People like to help finish something. Tell them how close you are:'],
+    copy: { label: 'Message to copy', body: `We’re halfway there. ${people(o.givers)} ${o.givers === 1 ? 'has' : 'have'} given to “${o.title}”, and ${usd(left)} more gets us to the goal. ${becomes}.\n${share}` },
     link: { label: 'Share your progress', url: dashboard },
   });
 }
@@ -133,8 +132,8 @@ export function renderOrganizerGoal(o: OrganizerBase & Numbers): RenderedEmail {
     subject: 'You reached your goal', headline: 'You reached your goal', preheader: 'One thing left: thank the people who gave.',
     paragraphs: [
       `“${o.title}” reached its goal: ${usd(o.raised)} from ${people(o.givers)}.`,
-      'We email you as each gift becomes a card that’s ready to open.',
-      'One thing left: thank the people who gave. Post a short update, and donors who have an account are emailed.'],
+      'We’ll email you as each card is ready to open.',
+      'One thing left: thank the people who gave with a short update.'],
     link: { label: 'Post a thank-you', url: dashboard },
   });
 }
@@ -145,9 +144,9 @@ export function renderOrganizerQuiet(o: OrganizerBase): RenderedEmail {
   return build(o, {
     subject: 'A short update brings people back', headline: 'A short update brings people back', preheader: 'What restarts a fundraiser is news. Two or three sentences is enough.',
     paragraphs: [
-      `It’s been a while since “${o.title}” had a new gift. That’s common after the first week.`,
-      'What restarts it is news. Post two or three sentences: what has changed, what the gifts so far paid for, what is still needed. Then share your page again.'],
-    closing: ['If your situation has changed and you’d like to pause or close the fundraiser, reply and we’ll do it for you.'],
+      `It’s been a while since “${o.title}” had a new gift.`,
+      'A short update brings people back: what changed, what gifts paid for, what’s still needed. Then share it again.'],
+    closing: ['Want to pause or close it? Reply and we’ll do it for you.'],
     link: { label: 'Post an update', url: dashboard },
   });
 }

@@ -61,7 +61,9 @@ export function renderImpactEmail(o: ImpactEmailInput): RenderedEmail {
     `See your donation’s journey: ${o.impactUrl}`, '', '— The CouponDonation team', '',
     `We never email codes or card details.${o.sample ? ' This is a test message.' : ''}`, SUPPORT_LINE, `Stop impact emails: ${o.stopUrl}`,
   ].filter((line) => line !== '').join('\n');
-  return { subject, html, text, headers: { 'List-Unsubscribe': `<${o.stopUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } };
+  // No List-Unsubscribe header (founder request, Nov 21, 2026): it marks mail as bulk, and Gmail files bulk mail
+  // under Promotions. The "Stop impact emails" link in the footer and the text part does the same job.
+  return { subject, html, text };
 }
 
 /** Follow-up to the giver of an outside coupon (a company gift, a donated card, a gift handed over):
@@ -92,9 +94,9 @@ export function renderOutsideGiftEmail(o: {
 export function renderUseReminderEmail(o: { brand: string; fundraiserTitle: string; dashboardUrl: string; firstName?: string | null; sample?: boolean }) {
   const paragraphs = [
     `You opened your ${o.brand} card for “${o.fundraiserTitle}” a week ago. Did it work at the store?`,
-    'If you’ve used it, tap “Mark used”. The person who gave is told their gift was used. You can add a short note for them. That part is optional and never affects your help.',
+    'If you’ve used it, tap “Mark used” so the person who gave knows. A short thank-you note is optional.',
   ];
-  const closing = 'If anything went wrong with the card, reply and we’ll fix it.';
+  const closing = 'Card didn’t work? Reply and we’ll fix it.';
   const only = `This is the only reminder for this card.${o.sample ? ' This is a test message.' : ''}`;
   const subject = 'Did your card work?';
   const html = shell({ preheader: 'If you’ve used it, mark it used. The person who gave is told.', greeting: `Hi ${o.firstName || 'there'}`, headline: subject, paragraphs, closing: [closing],

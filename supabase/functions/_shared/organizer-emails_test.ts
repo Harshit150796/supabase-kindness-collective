@@ -91,7 +91,7 @@ Deno.test('the dispatcher sends them, each has a switch, and every automatic ema
   for (const k of ORGANIZER_KINDS) assert(SAMPLE_EMAILS[k], `sample for ${k}`);
   for (const [key, make] of Object.entries(SAMPLE_EMAILS)) {
     const m = make();
-    assert(m.subject && m.html.includes('role="presentation"') && m.text, key);
+    assert(m.subject && m.html.includes('font-family:Arial,Helvetica,sans-serif') && (m.html.match(/<img/g) ?? []).length === 1 && !/background|border-radius/.test(m.html) && m.text, key);
     // The contact receipt asks people to leave card numbers out, so it names them.
     if (key !== 'contact_receipt') assertEquals(/SECRETCODE|card number|PIN:/i.test(m.html + m.text), false, key);
   }

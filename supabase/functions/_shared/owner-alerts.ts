@@ -33,8 +33,8 @@ export function renderOwnerCouponEmail(o: { fundraiserTitle: string; items: Aler
   const subject = one ? `Your ${cardWord(one.type)} is ready to open` : `Your ${o.items.length} cards are ready to open`;
   const paragraphs = [
     one ? `Your ${what} from “${o.fundraiserTitle}” is ready.` : `${o.items.length} cards worth ${usd(total)} from “${o.fundraiserTitle}” are ready.`,
-    `Sign in to open ${one ? 'it' : 'them'}. The card details are shown only to you, on the site. We never send them by email.`,
-    `After you use ${one ? 'it' : 'a card'}, tap “Mark used”. The person who gave is told their gift was used. It’s the best thank-you there is.`,
+    `Sign in to open ${one ? 'it' : 'them'}. Card details are shown only to you, never by email.`,
+    `After you use ${one ? 'it' : 'a card'}, tap “Mark used” so the person who gave knows.`,
   ];
   const label = one ? 'Open your card' : 'Open your cards';
   const html = shell({ preheader: paragraphs[0], greeting: `Hi ${o.firstName || 'there'}`, headline: one ? `Your ${cardWord(one.type)} is ready` : 'Your cards are ready', paragraphs,

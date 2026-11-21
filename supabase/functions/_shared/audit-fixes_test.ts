@@ -13,7 +13,7 @@ Deno.test('heading reveals leave no second copy of the words: the painted lines 
 Deno.test('the four steps are in the page once: the laptop cards or the phone list, never both', () => {
   const src = read('src/components/landing/WhatWeDo.tsx');
   assert(src.includes('const laptop = useMinWidth(1024);'));
-  assert(src.includes('{!laptop && (') && src.includes('{laptop && <DesktopDeal still={still} />}'));
+  assert(src.includes('{laptop ? (') && src.includes('<PhoneGivingSteps steps={steps} />') && src.includes('{laptop && <DesktopDeal still={still} />}'));
 });
 
 Deno.test('every homepage block has a heading', () => {

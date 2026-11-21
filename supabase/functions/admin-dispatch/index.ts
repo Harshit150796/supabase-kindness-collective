@@ -4,7 +4,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { ADMIN_SENDER, shell } from '../_shared/email-layout.ts';
-import { dueChecklistEmails, processAccountEmail, type AccountEmailKind } from '../_shared/account-emails.ts';
+import { dueChecklistEmails, dueShareAgainEmails, processAccountEmail, type AccountEmailKind } from '../_shared/account-emails.ts';
 import { syncEmailLog } from '../_shared/email-log.ts';
 import { dueOrganizerEmails, processOrganizerEmail } from '../_shared/organizer-emails.ts';
 import { syncInbox } from '../_shared/email-inbox.ts';
@@ -115,6 +115,16 @@ Deno.serve(async (req) => {
     await new Promise((done) => setTimeout(done, 700));
   }
   report.checklist_emails = checklist;
+
+  // 1e2) The sharing checklist once more, in the new plain layout (founder request, Nov 21, 2026), to every open
+  // fundraiser, with a blind copy to support@. Up to 10 a run, spaced out; nothing is due once all are sent.
+  const again: Record<string, number> = {};
+  for (const id of await dueShareAgainEmails(admin)) {
+    const r = await processAccountEmail(admin, key, 'fundraiser_share_again', id, 'dispatcher');
+    again[r] = (again[r] ?? 0) + 1;
+    await new Promise((done) => setTimeout(done, 700));
+  }
+  report.share_again_emails = again;
 
   // 1f) Emails that help organizers market their own fundraiser (founder request, Nov 15, 2026): a gift came
   // in, first week, halfway, goal reached… Each has a switch in Admin > Emails; a failure never stops the run.

@@ -1,6 +1,6 @@
 // Donation confirmations and "fundraiser is live" emails. Exactly once per source via
 // claim_account_email (unique kind+source_id). Reads payment tables only; never writes them.
-import { shell, escapeHtml, NOTIFY_SENDER, SUPPORT_LINE, type RenderedEmail } from './email-layout.ts';
+import { shell, escapeHtml, NOTIFY_SENDER, SUPPORT_EMAIL, SUPPORT_LINE, type RenderedEmail } from './email-layout.ts';
 import { SHARE_HOST } from './share-preview.ts';
 import { isSuppressed } from './suppression.ts';
 
@@ -8,9 +8,9 @@ const SITE = 'https://coupondonation.com';
 const TOKEN_DAYS = 30;
 export const CHARITY_LINE = 'This donation is not tax-deductible.';
 export const NO_FUNDRAISER_NEXT =
-  'What happens next: your donation becomes coupons for the retailers you chose. Once they are ready, they go into our shared pool, where families who have asked for help can claim them.';
+  'Next: it becomes coupons for the stores you chose, for families who asked for help.';
 export const FUNDRAISER_NEXT =
-  'What happens next: we turn it into a gift card for the store they asked for. We’ll email you when it’s received.';
+  'Next: it becomes a gift card for the store they asked for. We’ll email you when they receive it.';
 
 const first = (n?: string | null) => (n ?? '').trim().split(/\s+/)[0] || '';
 const money = (n: number) => `$${Number(n).toFixed(2)}`;
@@ -29,21 +29,15 @@ export function renderDonationConfirmation(o: {
   const coinLine = !o.coins || o.coins.coins <= 0 ? null : o.coins.kind === 'credited'
     ? `${o.coins.coins.toLocaleString('en-US')} Gold Coins were added to your account for this donation.`
     : `You have ${o.coins.coins.toLocaleString('en-US')} Gold Coins waiting. Sign in with this email address to claim them.`;
-  const shareLine = o.fundraiserTitle && o.fundraiserUrl ? `Want it to go further? Send the fundraiser to one person who would care: ${o.fundraiserUrl}` : null;
+  const shareLine = null as string | null; // kept short (founder request, Nov 21, 2026)
   const details = [`Amount charged: ${money(o.amount)}`, `Date: ${formatET(o.at)}`, forLine, `Reference: ${shortRef(o.donationId)}`];
   const subject = o.fundraiserTitle ? 'Thank you. Your donation is on its way.' : 'Thank you. Your donation is confirmed.';
-  const footerLines = [CHARITY_LINE, 'Questions? Just reply to this email.', ...(o.test ? ['This is a test message.'] : [])];
+  const footerLines = [CHARITY_LINE, ...(o.test ? ['This is a test message.'] : [])];
   const greeting = o.firstName ? `Hi ${o.firstName}` : 'Hi there';
   const html = shell({
-    preheader: 'Here is what happens next, and the details of your donation.', greeting, headline: 'Thank you',
+    preheader: thanks, greeting, headline: 'Your donation is confirmed',
     paragraphs: [thanks, next, ...(coinLine ? [coinLine] : [])],
-    valueCard: { label: 'Donation record', value: money(o.amount), details: [formatET(o.at), forLine, `Reference ${shortRef(o.donationId)}`] },
-    timeline: [
-      { label: 'Donated', detail: formatET(o.at), complete: true },
-      { label: 'Coupon created', detail: 'We will update you when it is ready.', complete: false },
-      { label: 'Received', complete: false },
-      { label: 'Used', complete: false },
-    ],
+    valueCard: { label: 'Amount', value: money(o.amount), details: [formatET(o.at), forLine, `Reference ${shortRef(o.donationId)}`] },
     closing: shareLine ? [shareLine] : undefined,
     link: o.link, footer: footerLines.map(escapeHtml).join('<br>'), sample: o.test,
   });
@@ -86,7 +80,6 @@ export function renderFundraiserLive(o: {
 }): RenderedEmail {
   const url = `${SITE}/f/${encodeURIComponent(o.slug)}`;
   const shareUrl = `${SHARE_HOST}/f/${encodeURIComponent(o.slug)}`;
-  const dashboardUrl = o.id ? `${SITE}/fundraiser/${o.id}` : `${SITE}/dashboard`;
   const greeting = o.firstName ? `Hi ${o.firstName}` : 'Hi there';
   const { becomes, chat } = liveShareMessage(o, shareUrl);
   const enc = encodeURIComponent;
@@ -96,59 +89,37 @@ export function renderFundraiserLive(o: {
     `${becomes}, and gifts start at $10. Here’s the link:`, shareUrl, '',
     'Thank you,', o.firstName ?? '',
   ].join('\n').trim();
-  const instagram = { label: 'Instagram', url: 'https://www.instagram.com/direct/inbox/' };
-  const snapchat = { label: 'Snapchat', url: `https://www.snapchat.com/share?link=${enc(shareUrl)}` };
+  // Kept to the three steps and one link each (founder request, Nov 21, 2026: only the words that matter).
   const steps = [
-    {
-      title: 'Text it to five people',
-      detail: 'One at a time, by name. A personal message is hard to ignore.',
-      actions: [
-        { label: 'Text message', url: `sms:?&body=${enc(chat)}` }, instagram,
-        { label: 'Email', url: `mailto:?subject=${enc(`“${o.title}” on CouponDonation`)}&body=${enc(chat)}` }, snapchat,
-      ],
-    },
-    {
-      title: 'Post it in your family group chat',
-      detail: 'Paste the message below and ask everyone to pass it on.',
-      actions: [instagram, { label: 'Facebook', url: `https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}` }, snapchat],
-    },
-    {
-      title: 'Ask your church or friends group to share it',
-      detail: 'We wrote the note for you.',
-      actions: [{ label: 'Email your church or group', url: `mailto:?subject=${enc('Could you share my fundraiser?')}&body=${enc(churchNote)}` }],
-    },
+    { title: 'Text it to five people', detail: 'One at a time, by name.', actions: [{ label: 'Send a text', url: `sms:?&body=${enc(chat)}` }] },
+    { title: 'Post it in your family group chat', detail: 'Paste the message below.', actions: [{ label: 'Share on Facebook', url: `https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}` }] },
+    { title: 'Ask your church or group to share it', detail: 'We wrote the note for you.', actions: [{ label: 'Email your church or group', url: `mailto:?subject=${enc('Could you share my fundraiser?')}&body=${enc(churchNote)}` }] },
   ];
-  const p1 = o.already
-    ? `“${o.title}” is live on CouponDonation. Here is a short checklist to help more people see it.`
-    : `“${o.title}” is live on CouponDonation.`;
-  const p2 = o.hasGifts
-    ? 'Gifts usually come from people who know you, or from the people they pass it on to. Each new gift helps your fundraiser show higher in the lists donors browse.'
-    : 'First gifts usually come from people who know you. Once one person gives, your fundraiser is shown ahead of those with no gifts yet. So today matters most.';
-  const hint = 'For Instagram, copy this message and paste it in. Your link shows your fundraiser’s photo and title.';
-  const after = 'Not sure what to say to someone? Reply to this email and we’ll help you word it.';
+  const p1 = `“${o.title}” is live on CouponDonation.`;
+  const p2 = o.hasGifts ? 'More gifts come from people who know you. Share it again today.' : 'First gifts come from people who know you, so share it today.';
+  const after = 'Need help with the words? Reply to this email.';
   const html = shell({
-    preheader: 'Text it to five people, post it in your family chat and ask your church. We wrote the message for you.',
-    greeting, headline: o.hasGifts ? 'Three steps to more gifts' : 'You’re live', paragraphs: [p1, p2],
-    checklist: steps, copyBox: { label: 'A message you can copy', body: chat, hint }, closing: [after],
-    link: { label: 'See your fundraiser', url }, secondaryLink: { label: 'Share it from your dashboard', url: dashboardUrl },
+    preheader: p2, greeting, headline: o.hasGifts ? 'Three steps to more gifts' : 'Your fundraiser is live', paragraphs: [p1, p2],
+    checklist: steps, copyBox: { label: 'Message to copy', body: chat }, closing: [after],
+    link: { label: 'See your fundraiser', url },
     footer: o.test ? 'This is a test message.' : undefined, sample: o.test,
   });
   const text = [
     `${greeting},`, '', p1, '', p2, '',
     ...steps.flatMap((step, i) => [`[ ] ${i + 1}. ${step.title}`, `    ${step.detail}`, '']),
-    'A message you can copy:', '', chat, '', hint, '',
-    'A note for your church or group:', '', churchNote, '',
+    'Message to copy:', '', chat, '',
+    'Note for your church or group:', '', churchNote, '',
     after, '',
-    `See your fundraiser: ${url}`, `Share it from your dashboard: ${dashboardUrl}`, '',
+    `See your fundraiser: ${url}`, '',
     '— The CouponDonation team', ...(o.test ? ['', 'This is a test message.'] : []), '', SUPPORT_LINE,
   ].join('\n');
   return { subject: o.hasGifts ? 'Your fundraiser is live: three steps to more gifts' : 'You’re live. Send it to five people today.', html, text };
 }
 
-export async function sendAccountMail(key: string, to: string, mail: RenderedEmail) {
+export async function sendAccountMail(key: string, to: string, mail: RenderedEmail, bcc?: string[]) {
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: NOTIFY_SENDER.from, reply_to: NOTIFY_SENDER.replyTo, to: [to], ...mail }),
+    body: JSON.stringify({ from: NOTIFY_SENDER.from, reply_to: NOTIFY_SENDER.replyTo, to: [to], ...(bcc?.length ? { bcc } : {}), ...mail }),
   });
   const t = await r.text();
   if (!r.ok) throw new Error(`[${r.status}] ${t}`);
@@ -229,7 +200,7 @@ async function buildChecklist(admin: any, id: string): Promise<{ to: string | nu
   return { to: p.email, mail: renderFundraiserLive({ firstName: first(p.full_name), title: f.title, slug: f.unique_slug, id: f.id, stores: f.preferred_brands ?? [], beneficiary: f.beneficiary_type, already: true, hasGifts: gifts > 0 }) };
 }
 
-export type AccountEmailKind = 'donation_confirmation' | 'fundraiser_live' | 'fundraiser_checklist';
+export type AccountEmailKind = 'donation_confirmation' | 'fundraiser_live' | 'fundraiser_checklist' | 'fundraiser_share_again';
 
 /** Claim then send. Returns 'sent' | 'not_due' | 'no_recipient' | 'unsubscribed' | 'failed'. */
 // deno-lint-ignore no-explicit-any
@@ -240,16 +211,37 @@ export async function processAccountEmail(admin: any, key: string | undefined, k
   try {
     if (kind === 'donation_confirmation') await admin.rpc('credit_gold_coins');
     const built: { to: string | null; mail: RenderedEmail | null; unsubscribed?: boolean } = kind === 'donation_confirmation' ? await buildDonation(admin, id)
-      : kind === 'fundraiser_checklist' ? await buildChecklist(admin, id) : await buildLive(admin, id);
+      : kind === 'fundraiser_checklist' || kind === 'fundraiser_share_again' ? await buildChecklist(admin, id) : await buildLive(admin, id);
     const { to, mail } = built;
     if (built.unsubscribed) { await mark({ status: 'skipped', last_error: 'Unsubscribed' }); return 'unsubscribed'; }
     if (!to || !mail) { await mark({ status: 'skipped', last_error: 'No recipient email' }); return 'no_recipient'; }
     if (!key) throw new Error('Missing Resend key');
-    const rid = await sendAccountMail(key, to, mail);
+    // The one-time resend also goes to the support mailbox (blind copy), so the team sees each one in Zoho.
+    const rid = await sendAccountMail(key, to, mail, kind === 'fundraiser_share_again' ? [SUPPORT_EMAIL] : undefined);
     await mark({ status: 'sent', resend_id: rid, sent_at: new Date().toISOString(), last_error: null });
     return 'sent';
   } catch (e) {
     await mark({ status: 'failed', last_error: String(e).slice(0, 500) });
     return 'failed';
   }
+}
+
+/**
+ * The sharing checklist sent once more, in the new plain layout, to every open, non-example fundraiser
+ * (founder request, Nov 21, 2026). Claimed once per fundraiser as account email kind 'fundraiser_share_again';
+ * people who unsubscribed are skipped; a blind copy goes to support@ so the team sees each one in Zoho.
+ * Up to 10 a dispatcher run, so the whole batch goes out over the next hour or so.
+ */
+export function shareAgainDue(fundraisers: { id: string }[], rows: MailRow[], limit = 10): string[] {
+  const done = new Set(rows.filter((r) => r.kind === 'fundraiser_share_again' && r.status !== 'failed').map((r) => r.source_id));
+  return fundraisers.map((f) => f.id).filter((id) => !done.has(id)).slice(0, limit);
+}
+
+// deno-lint-ignore no-explicit-any
+export async function dueShareAgainEmails(admin: any): Promise<string[]> {
+  const { data: live } = await admin.from('fundraisers').select('id').eq('status', 'active').not('is_example', 'is', true).order('created_at', { ascending: true }).limit(500);
+  const ids = ((live ?? []) as { id: string }[]).map((f) => f.id);
+  if (!ids.length) return [];
+  const { data: rows } = await admin.from('account_emails').select('kind, source_id, status, sent_at').eq('kind', 'fundraiser_share_again').in('source_id', ids);
+  return shareAgainDue(live ?? [], (rows ?? []) as MailRow[]);
 }

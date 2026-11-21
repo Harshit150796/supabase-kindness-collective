@@ -49,7 +49,7 @@ Deno.test('impact subjects contain no amount, retailer, product term, or punctua
   }
 });
 
-Deno.test('all account templates use the shared table-only layout', () => {
+Deno.test('all account templates use the shared plain layout: the logo once, no panels, buttons or hidden text (founder request, Nov 21, 2026: Promotions tab)', () => {
   const mails = [
     renderDonationConfirmation({ amount: 20, at: old, donationId: '12345678-abcd', fundraiserTitle: 'Family Support', link: { label: 'View your donation', url: 'https://coupondonation.com/impact/example' } }),
     renderFundraiserLive({ title: 'Family Support', slug: 'family-support' }),
@@ -59,10 +59,9 @@ Deno.test('all account templates use the shared table-only layout', () => {
     renderNoticeEmail({ subject: 'A new message is waiting', heading: 'You have a new message', intro: 'Open CouponDonation to read it.', ctaLabel: 'Open messages', ctaUrl: 'https://coupondonation.com/messages' }),
   ];
   for (const mail of mails) {
-    assert(mail.html.includes('role="presentation"'));
-    assertEquals(/<style|display:flex|display:grid|<main/i.test(mail.html), false);
-    assert(mail.html.includes('cellpadding="0" cellspacing="0" border="0"'));
-    assert(mail.html.includes("'Instrument Serif',Georgia" ) || mail.subject.includes('verification'));
+    assert(mail.html.includes('font-family:Arial,Helvetica,sans-serif'));
+    assertEquals((mail.html.match(/<img/g) ?? []).length, 1, 'the logo, once');
+    assertEquals(/<style|display:none|background|border-radius|bgcolor|text-transform|<table/i.test(mail.html), false);
     assertEquals(/SECRETCODE|card number|PIN:/i.test(mail.html + mail.text), false);
   }
 });

@@ -1,17 +1,21 @@
-/** One email-safe renderer for every non-marketing message. */
+/**
+ * One renderer for every non-marketing message, written to read like a note from a person (founder request,
+ * Nov 21, 2026: our emails were landing in Gmail's Promotions tab). Gmail sorts by how a message looks, so
+ * this layout leaves out what newsletters carry: no coloured panels or background, no button-shaped links,
+ * no hidden preview text, no capitals labels, and one image only, the small logo at the top (founder's
+ * request). Plain left-aligned text: the logo, a bold line with the news, a few short lines, ordinary blue
+ * links, one signature and a small footer. Keep the words to what matters (founder request, same day).
+ */
 const LOGO_URL = 'https://coupondonation.com/favicon-192.png';
 export const SUPPORT_EMAIL = 'support@coupondonation.com';
 export const SUPPORT_LINE = 'Questions or concerns? Email support@coupondonation.com and a person will reply.';
 export const SECURITY_SUPPORT_LINE = "Didn't request this? Email support@coupondonation.com right away.";
-const INK = '#102017';
-const BODY = '#435149';
-const MUTED = '#6f7b74';
+const INK = '#1f2421';
+const MUTED = '#5f6662';
+const LINK = '#1a5fb4';
 const GREEN = '#2e7d32';
 const BLUE = '#1565c0';
-const SOFT = '#f2f7f3';
-const LINE = '#dbe5dd';
-const FONT = "'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif";
-const SERIF = "'Instrument Serif',Georgia,'Times New Roman',serif";
+const FONT = 'Arial,Helvetica,sans-serif';
 
 export interface RenderedEmail {
   subject: string;
@@ -36,8 +40,11 @@ export function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-const table = (content: string, attrs = '') => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" ${attrs}>${content}</table>`;
-const row = (content: string, style = '') => `<tr><td style="${style}">${content}</td></tr>`;
+const P = `margin:0 0 14px;font-family:${FONT};font-size:15px;line-height:22px;color:${INK};`;
+const para = (html: string, extra = '') => `<p style="${P}${extra}">${html}</p>`;
+/** Escaped text with its single line breaks kept (staff-written notes use them). */
+const lines = (value: string) => escapeHtml(value).replace(/\n/g, '<br>');
+const link = (label: string, url: string) => `<a href="${escapeHtml(url)}" style="color:${LINK};text-decoration:underline;">${escapeHtml(label)}</a>`;
 
 export function shell(opts: {
   preheader: string; greeting?: string; status?: string; headline?: string; paragraphs: string[];
@@ -46,43 +53,43 @@ export function shell(opts: {
   secondaryLink?: { label: string; url: string }; footer?: string; sample?: boolean; code?: string;
   recipient?: boolean; security?: boolean;
 }): string {
-  const greeting = `${opts.greeting ?? 'Hi there'},`;
-  const status = opts.status ? row(escapeHtml(opts.status.toUpperCase()), `padding:0 0 10px;font-family:${FONT};font-size:11px;line-height:16px;font-weight:700;letter-spacing:1.2px;color:${GREEN};`) : '';
-  const headline = opts.headline ? row(escapeHtml(opts.headline), `padding:0 0 22px;font-family:${SERIF};font-size:34px;line-height:39px;font-weight:400;color:${INK};`) : '';
-  const paragraphs = opts.paragraphs.map((p) => row(escapeHtml(p), `padding:0 0 15px;font-family:${FONT};font-size:15px;line-height:23px;color:${BODY};`)).join('');
-  const card = opts.valueCard ? row(table(
-    row(escapeHtml(opts.valueCard.label.toUpperCase()), `padding:20px 22px 5px;font-family:${FONT};font-size:10px;line-height:15px;font-weight:700;letter-spacing:1px;color:${MUTED};`) +
-    row(escapeHtml(opts.valueCard.value), `padding:0 22px 8px;font-family:${SERIF};font-size:30px;line-height:36px;color:${INK};`) +
-    (opts.valueCard.details ?? []).map((d) => row(escapeHtml(d), `padding:0 22px 7px;font-family:${FONT};font-size:13px;line-height:19px;color:${BODY};`)).join('') +
-    row('&nbsp;', 'height:12px;font-size:1px;line-height:1px;'), `bgcolor="${SOFT}" style="background:${SOFT};border:1px solid ${LINE};"`), 'padding:5px 0 22px;') : '';
-  const timeline = opts.timeline?.length ? row(table(opts.timeline.map((step, i) => {
-    const dot = `<div style="width:10px;height:10px;border-radius:10px;border:2px solid ${step.complete ? GREEN : '#aab5ae'};background:${step.complete ? GREEN : '#ffffff'};"></div>`;
-    const stem = i < (opts.timeline?.length ?? 0) - 1 ? `<div style="width:2px;height:27px;background:${step.complete ? '#9fc8a3' : LINE};margin:3px 0 0 5px;"></div>` : '';
-    return `<tr><td width="24" valign="top" style="width:24px;padding:2px 0 0;">${dot}${stem}</td><td valign="top" style="padding:0 0 15px;font-family:${FONT};font-size:14px;line-height:20px;color:${step.complete ? INK : MUTED};"><strong style="font-weight:600;">${escapeHtml(step.label)}</strong>${step.detail ? `<br><span style="font-size:12px;color:${MUTED};">${escapeHtml(step.detail)}</span>` : ''}</td></tr>`;
-  }).join('')), 'padding:0 4px 20px;') : '';
-  const checklist = opts.checklist?.length ? row(table(row(table(opts.checklist.map((step, i) => {
-    const box = `<div style="width:14px;height:14px;border:2px solid ${GREEN};border-radius:3px;background:#ffffff;"></div>`;
-    const actions = step.actions?.length ? `<div style="padding-top:10px;">${step.actions.map((a) => `<a href="${escapeHtml(a.url)}" style="display:inline-block;margin:0 6px 6px 0;padding:7px 12px;font-family:${FONT};font-size:13px;line-height:18px;font-weight:700;color:${GREEN};text-decoration:none;background:#ffffff;border:1px solid #b9d6bc;border-radius:4px;">${escapeHtml(a.label)}</a>`).join('')}</div>` : '';
-    const top = i ? 'padding-top:20px;' : '';
-    return `<tr><td width="30" valign="top" style="width:30px;${top}padding-right:0;"><div style="padding-top:3px;">${box}</div></td><td valign="top" style="${top}font-family:${FONT};"><div style="font-size:16px;line-height:22px;font-weight:700;color:${INK};">${escapeHtml(step.title)}</div><div style="padding-top:4px;font-size:14px;line-height:21px;color:${BODY};">${escapeHtml(step.detail)}</div>${actions}</td></tr>`;
-  }).join('')), 'padding:20px 20px 16px;'), `bgcolor="${SOFT}" style="background:${SOFT};border:1px solid ${LINE};"`), 'padding:5px 0 20px;') : '';
-  const copyBox = opts.copyBox ? row(table(
-    row(escapeHtml(opts.copyBox.label.toUpperCase()), `padding:18px 20px 8px;font-family:${FONT};font-size:10px;line-height:15px;font-weight:700;letter-spacing:1px;color:${MUTED};`) +
-    row(escapeHtml(opts.copyBox.body).replace(/\n/g, '<br>'), `padding:0 20px 14px;font-family:${FONT};font-size:15px;line-height:23px;color:${INK};`) +
-    (opts.copyBox.hint ? row(escapeHtml(opts.copyBox.hint), `padding:0 20px 18px;font-family:${FONT};font-size:12px;line-height:18px;color:${MUTED};`) : row('&nbsp;', 'height:4px;font-size:1px;line-height:1px;')),
-    `bgcolor="#ffffff" style="background:#ffffff;border:1px dashed #9fc8a3;"`), 'padding:0 0 22px;') : '';
-  const closing = (opts.closing ?? []).map((p) => row(escapeHtml(p), `padding:0 0 15px;font-family:${FONT};font-size:15px;line-height:23px;color:${BODY};`)).join('');
-  const code = opts.code ? row(`<span style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace;font-size:32px;line-height:40px;letter-spacing:4px;color:${INK};">${escapeHtml(opts.code)}</span>`, 'padding:8px 0 24px;') : '';
-  const cta = opts.link ? row(table(row(`<a href="${escapeHtml(opts.link.url)}" style="display:inline-block;padding:12px 20px;font-family:${FONT};font-size:14px;line-height:20px;font-weight:700;color:#ffffff;text-decoration:none;background:${GREEN};border-radius:4px;">${escapeHtml(opts.link.label)}</a>`), `bgcolor="${GREEN}" style="background:${GREEN};border-radius:4px;text-align:center;"`), 'padding:2px 0 18px;') : '';
-  const secondary = opts.secondaryLink ? row(`<a href="${escapeHtml(opts.secondaryLink.url)}" style="font-family:${FONT};font-size:13px;line-height:20px;color:${INK};text-decoration:underline;">${escapeHtml(opts.secondaryLink.label)}</a>`, 'padding:0 0 18px;') : '';
-  const banner = opts.sample ? row('SAMPLE EMAIL · sample data, not a real donation', `padding:9px 12px;font-family:${FONT};font-size:10px;line-height:15px;font-weight:700;letter-spacing:.7px;color:${INK};background:${SOFT};border:1px solid ${LINE};`) : '';
-  const lockup = table(`<tr><td width="44" valign="middle"><img src="${LOGO_URL}" width="36" height="36" alt="CouponDonation" style="display:block;width:36px;height:36px;border:0;"></td><td valign="middle" style="font-family:${FONT};font-size:17px;line-height:22px;font-weight:700;"><span style="color:${GREEN};">Coupon</span><span style="color:${BLUE};">Donation</span></td></tr>`);
+  // `preheader` and `status` stay in the signature for callers, but are not drawn: hidden preview text and
+  // small capitals labels are newsletter traits. The first line of the email is the preview.
+  const parts: string[] = [];
+  if (opts.sample) parts.push(para('SAMPLE EMAIL · sample data, not a real donation', `color:${MUTED};font-size:13px;`));
+  parts.push(`<p style="margin:0 0 22px;font-family:${FONT};font-size:16px;line-height:24px;font-weight:700;"><img src="${LOGO_URL}" width="28" height="28" alt="" style="width:28px;height:28px;border:0;vertical-align:middle;margin-right:8px;"><span style="vertical-align:middle;color:${GREEN};">Coupon</span><span style="vertical-align:middle;color:${BLUE};">Donation</span></p>`);
+  if (opts.headline) parts.push(`<p style="margin:0 0 16px;font-family:${FONT};font-size:20px;line-height:27px;font-weight:700;color:${INK};">${escapeHtml(opts.headline)}</p>`);
+  parts.push(para(`${escapeHtml(opts.greeting ?? 'Hi there')},`));
+  parts.push(...opts.paragraphs.map((p) => para(lines(p))));
+  if (opts.code) parts.push(para(`<strong style="font-size:24px;line-height:32px;letter-spacing:3px;">${escapeHtml(opts.code)}</strong>`));
+  if (opts.valueCard) {
+    const v = opts.valueCard;
+    parts.push(para([`${escapeHtml(v.label)}: <strong>${escapeHtml(v.value)}</strong>`, ...(v.details ?? []).map(escapeHtml)].join('<br>')));
+  }
+  if (opts.timeline?.length) {
+    parts.push(para(opts.timeline.map((t) => `${t.complete ? '&#10003;' : '&middot;'} ${escapeHtml(t.label)}${t.detail ? ` (${escapeHtml(t.detail)})` : ''}`).join('<br>')));
+  }
+  if (opts.checklist?.length) {
+    opts.checklist.forEach((step, i) => {
+      const actions = step.actions?.length ? `<br>${step.actions.map((a) => link(a.label, a.url)).join(' &middot; ')}` : '';
+      parts.push(para(`${i + 1}. <strong>${escapeHtml(step.title)}</strong><br>${escapeHtml(step.detail)}${actions}`));
+    });
+  }
+  if (opts.copyBox) {
+    const c = opts.copyBox;
+    parts.push(para(`${escapeHtml(c.label)}:`));
+    parts.push(`<p style="${P}margin-left:16px;color:${INK};">${escapeHtml(c.body).replace(/\n/g, '<br>')}</p>`);
+    if (c.hint) parts.push(para(escapeHtml(c.hint), `color:${MUTED};font-size:13px;`));
+  }
+  parts.push(...(opts.closing ?? []).map((p) => para(lines(p))));
+  if (opts.link) parts.push(para(`<strong>${link(opts.link.label, opts.link.url)}</strong>`));
+  if (opts.secondaryLink) parts.push(para(link(opts.secondaryLink.label, opts.secondaryLink.url)));
+  parts.push(para('— The CouponDonation team'));
   const supportCopy = opts.security ? "Didn't request this? Email " : 'Questions or concerns? Email ';
   const supportEnd = opts.security ? ' right away.' : ' and a person will reply.';
-  const support = opts.recipient === false ? '' : `${opts.footer ? '<br>' : ''}${escapeHtml(supportCopy)}<a href="mailto:${SUPPORT_EMAIL}" style="color:${MUTED};text-decoration:underline;">${SUPPORT_EMAIL}</a>${escapeHtml(supportEnd)}`;
-  const footer = opts.footer || support ? row(`${opts.footer ?? ''}${support}`, `padding:24px 0 0;font-family:${FONT};font-size:11px;line-height:17px;color:${MUTED};`) : '';
-  const body = banner + row(lockup, 'padding:22px 0 34px;') + status + headline + row(escapeHtml(greeting), `padding:0 0 16px;font-family:${FONT};font-size:15px;line-height:23px;color:${INK};`) + paragraphs + code + card + timeline + checklist + copyBox + closing + cta + secondary + row('— The CouponDonation team', `padding:3px 0 0;font-family:${FONT};font-size:15px;line-height:23px;color:${INK};`) + footer;
-  return `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"><title>CouponDonation</title></head><body bgcolor="#f4f7f5" style="margin:0;padding:0;background:#f4f7f5;">${table(row(`<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(opts.preheader)}&nbsp;&zwnj;&nbsp;&zwnj;</div>${table(row(table(body, 'style="max-width:600px;background:#ffffff;"'), 'padding:0 24px 34px;'), 'width="600" bgcolor="#ffffff" style="width:100%;max-width:600px;background:#ffffff;"')}`, 'padding:20px 0;background:#f4f7f5;',), 'bgcolor="#f4f7f5"')} </body></html>`;
+  const support = opts.recipient === false ? '' : `${opts.footer ? '<br>' : ''}${escapeHtml(supportCopy)}<a href="mailto:${SUPPORT_EMAIL}" style="color:${MUTED};">${SUPPORT_EMAIL}</a>${escapeHtml(supportEnd)}`;
+  if (opts.footer || support) parts.push(`<p style="margin:22px 0 0;font-family:${FONT};font-size:12px;line-height:18px;color:${MUTED};">${opts.footer ?? ''}${support}</p>`);
+  return `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CouponDonation</title></head><body style="margin:0;padding:16px;"><div style="max-width:560px;">${parts.join('')}</div></body></html>`;
 }
 
 /** Verification code (OTP) email. */

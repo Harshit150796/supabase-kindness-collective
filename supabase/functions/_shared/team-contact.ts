@@ -41,7 +41,7 @@ export function renderTeamEmail(opts: {
     preheader: paragraphs.join(' ').slice(0, 120), greeting, status: 'From the CouponDonation team',
     headline: opts.subject, paragraphs: [...paragraphs, about],
     link: opts.replyUrl ? { label: 'Open your messages', url: opts.replyUrl } : undefined,
-  }).replace(/(<td style="padding:0 0 15px;[^"]*">)([^<]*)(<\/td>)/g, (_m, a, t, c) => `${a}${t.replace(/\n/g, '<br>')}${c}`);
+  }); // shell keeps single line breaks as <br>
   const text = [
     `${greeting},`, '', ...paragraphs.flatMap((p) => [p, '']),
     about,
