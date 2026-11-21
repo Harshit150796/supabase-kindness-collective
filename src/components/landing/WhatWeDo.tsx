@@ -11,7 +11,7 @@ import { useMinWidth } from '@/hooks/useMinWidth';
 import { LineReveal, Reveal } from '@/components/ui/editorial-motion';
 import { CARD_DEAL_TIMING, cardDealEligible, cardDealThreshold } from '@/lib/cardDealTiming';
 import { TenYearBand } from './TenYearBand';
-import { PhoneCoinPath } from './PhoneCoinPath';
+import { GIVING_STATEMENT, PhoneGivingSteps } from './PhoneGivingSteps';
 
 const BLUE = 'hsl(var(--verify))';
 const EMERALD = 'hsl(var(--primary))';
@@ -398,16 +398,23 @@ export function WhatWeDo() {
         <div className="absolute inset-0" style={{ background: 'radial-gradient(60% 40% at 12% 18%, hsl(var(--verify) / 0.04), transparent 70%), radial-gradient(60% 40% at 88% 82%, hsl(var(--primary) / 0.05), transparent 70%)' }} />
       </div>
       <div className="container relative mx-auto px-4">
-        <div className="max-w-3xl">
-          <LineReveal><h2 className="font-display text-5xl font-normal leading-[1.02] text-foreground md:text-6xl">Give what people need.</h2></LineReveal>
-          <Reveal delay={0.06}><p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">CouponDonation turns your donation into coupons, gift cards and credits — so it arrives as food, medicine or transport, never as cash. And you can always see exactly where it went.</p></Reveal>
-        </div>
-
-        {/* One version of the four steps at a time: laptops (lg+) deal cards; phones and tablets get
-            "One coin's path" (founder's pick, Nov 12, 2026). */}
-        {!laptop && (
+        {/* One version at a time (founder's pick, Nov 21, 2026). Laptops (lg+): the heading, the homepage
+            description Google shows (its first sentence in blue italic serif, as on phones), then the dealt
+            cards. Phones and tablets: "Quiet luxury" (PhoneGivingSteps), which brings its own heading; it
+            replaced "One coin's path". */}
+        {laptop ? (
+          <div className="max-w-4xl">
+            <LineReveal><h2 className="font-display text-5xl font-normal leading-[1.02] text-foreground md:text-6xl">Give what people need.</h2></LineReveal>
+            <Reveal delay={0.06}>
+              <div className="mt-6" data-giving-statement>
+                <p className="font-display text-[2.25rem] italic leading-tight text-verify">{GIVING_STATEMENT.lead}</p>
+                <p className="mt-2 max-w-3xl text-xl leading-relaxed text-muted-foreground">{GIVING_STATEMENT.body}</p>
+              </div>
+            </Reveal>
+          </div>
+        ) : (
           <div className="lg:hidden">
-            <PhoneCoinPath steps={steps} still={still} />
+            <PhoneGivingSteps steps={steps} />
           </div>
         )}
 
