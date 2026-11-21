@@ -18,7 +18,7 @@ read -r I TP LRA TH OFF < <(ffmpeg -hide_banner -i "$SRC" -vn -af loudnorm=I=-14
 ffmpeg -y -loglevel error -i "$SRC" -vn -af "loudnorm=I=-14:TP=-1.5:LRA=11:measured_I=$I:measured_TP=$TP:measured_LRA=$LRA:measured_thresh=$TH:offset=$OFF:linear=true,aresample=48000,apad,atrim=0:$D" -ac 2 clip-audio.wav
 # 3. join: the ending wipes up over the clip; audio crossfades over the same 0.4 s
 OFFS=$(python3 -c "print(f'{$D-$X:.6f}')")
-ffmpeg -y -loglevel error -i clip-hd.mp4 -i video-main-30.mp4 -i clip-audio.wav -i score-main-norm.wav \
+ffmpeg -y -loglevel error -i clip-hd.mp4 -i video-main-30.mp4 -i clip-audio.wav -i ending-audio-norm.wav \
   -filter_complex "[0:v]settb=1/30,setpts=N/30/TB[a];[1:v]settb=1/30,setpts=N/30/TB[b];[a][b]xfade=transition=wipeup:duration=$X:offset=$OFFS,format=yuv420p[v];[2:a][3:a]acrossfade=d=$X:c1=tri:c2=tri[au]" \
   -map "[v]" -map "[au]" -c:v libx264 -preset slow -crf 18 -profile:v high -level 4.2 -r 30 -maxrate 14M -bufsize 28M \
   -c:a aac -b:a 320k -ar 48000 -movflags +faststart "$OUT"

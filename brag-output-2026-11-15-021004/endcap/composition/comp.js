@@ -23,32 +23,43 @@ const div = (cls, parent, html = '') => { const d = document.createElement('div'
 
 const INK = 'var(--k-ink)', PAPER = 'var(--k-paper)', FOREST = 'var(--k-forest)';
 const MOB = '../../work/captures/mobile/';
-const DUR = 15.0;
+const DUR = 18.0;
 
 // ------------------------------------------------------------------ script
 // Coupon's lines: [t0, t1, text]; *word* = emphasis. Product wording is the site's own (Index.tsx, FAQ.tsx, Terms.tsx).
-const LINES = [
-  [0.35, 2.3, "It's here in the U.S. too."],
-  [2.75, 4.8, 'You can help a family | *here, today*.'],
-  [5.1, 6.15, 'Your donation becomes | *gift cards*…'],
-  [6.25, 7.4, '…for what families asked for.'],
-  [7.75, 9.3, 'Pick the stores they need,'],
-  [9.7, 10.95, '*100%* of your gift reaches families.'],
+// The voiceover (voice.py, Kokoro "af_heart") drives the timing: every cut lands on a spoken beat.
+// VO: [start, text] with the measured length of each read; Coupon speaks it, and lines 2-5 are its subtitles.
+const VO = [
+  [0.35, 1.79, "Hunger isn't only far away."],
+  [2.75, 2.41, 'Eighteen million households... right here.'],
+  [5.6, 3.38, 'Your gift becomes groceries. Medicine. A ride.'],
+  [9.25, 1.36, 'You choose where it goes.'],
+  [11.25, 1.97, 'And every dollar reaches a family.'],
+  [13.75, 3.41, 'Help fill a kitchen. At Coupon Donation dot com.'],
 ];
+// subtitle bubbles (line 1 is the plate's own headline and line 6 is the end card, so they get no bubble)
+const LINES = [
+  [2.75, 5.16, 'Eighteen million households… | *right here*.'],
+  [5.6, 8.98, 'Your gift becomes *groceries*. | *Medicine*. *A ride*.'],
+  [9.25, 10.61, 'You choose where it goes.'],
+  [11.25, 13.22, 'And *every dollar* reaches a family.'],
+];
+// when Coupon's mouth moves: each read, split at its pauses
+const SPEAK = [[0.35, 2.14], [2.75, 4.19], [4.47, 5.16], [5.6, 7.22], [7.56, 8.18], [8.3, 8.98], [9.25, 10.61], [11.25, 13.22], [13.75, 14.73], [15.15, 17.16]];
 // USDA ERS, "Household Food Security in the United States in 2023" (ERR-337): 13.5 percent (18.0 million households)
 // were food insecure at some time in 2023.
 const PLATES = [
   { type: 'line', t0: 0.0, t1: 2.5 },
-  { type: 'stat', t0: 2.5, t1: 5.0, o: { bg: FOREST, num: '18 million', size: 220, cap: 'U.S. households were food insecure in 2023', credit: 'USDA Economic Research Service · 2023 data', note: '13.5% of all U.S. households, at some time during the year' } },
-  { type: 'needs', t0: 5.0, t1: 7.5 },
-  { type: 'stores', t0: 7.5, t1: 9.5 },
-  { type: 'stat', t0: 9.5, t1: 11.5, o: { bg: FOREST, num: '100%', size: 340, cap: 'of your gift goes to families as store coupons and gift cards', note: 'No platform fee. Optional tips keep us running.' } },
+  { type: 'stat', t0: 2.5, t1: 6.0, o: { bg: FOREST, num: '18 million', size: 220, cap: 'U.S. households were food insecure in 2023', credit: 'USDA Economic Research Service · 2023 data', note: '13.5% of all U.S. households, at some time during the year' } },
+  { type: 'needs', t0: 6.0, t1: 9.0, o: { rows: [6.5, 7.56, 8.3] } },
+  { type: 'stores', t0: 9.0, t1: 11.0 },
+  { type: 'stat', t0: 11.0, t1: 13.5, o: { bg: FOREST, num: '100%', size: 340, cap: 'of your gift goes to families as store coupons and gift cards', note: 'No platform fee. Optional tips keep us running.' } },
 ];
-const PAY = { t0: 11.5 };
-const END_T = 11.5;
-const ENTER = 0.3;
-// the panel's fridge fills as the ask goes on (one item per need and per store, then the 100% burst)
-const POPS = [5.2, 5.7, 6.2, 7.9, 8.38, 9.75, 10.0, 10.25, 10.5, 10.7, 10.9];
+const PAY = { t0: 13.5 };
+const END_T = 13.5;
+const ENTER = 0.1;
+// the panel's fridge fills as the voice names each need, as each store is picked, then the 100% burst
+const POPS = [6.5, 7.56, 8.3, 9.45, 9.93, 11.9, 12.15, 12.4, 12.65, 12.9, 13.15];
 
 const CUES = [];
 const cue = (t, kind, extra = {}) => CUES.push({ t, kind, ...extra });
@@ -308,7 +319,7 @@ function bNeeds(P) {
     r.innerHTML = `<svg viewBox="0 0 100 100" width="170" height="170" style="flex:none">${svg}</svg>`;
     const w = div('serif', r); w.style.cssText = 'font-size:150px;line-height:1;color:var(--k-paper)';
     const sp = words(w, word);
-    const at = P.t0 + 0.1 + i * 0.5;
+    const at = P.o && P.o.rows ? P.o.rows[i] : P.t0 + 0.1 + i * 0.5;
     cue(at, 'step');
     return { r, sp, ic: r.querySelector('svg'), at };
   });
@@ -437,8 +448,8 @@ function updateEnd(t) {
   fadeUp(END.tagl, t, t0 + 1.05, 0.5, 18);
   fadeUp(END.us, t, t0 + 1.2, 0.5, 14);
   fadeUp(END.fine, t, t0 + 1.4, 0.5, 10);
-  const pr = k(t, t0 + 0.6, t0 + 1.15, E.outBack);
-  setCouponTree(END.m, { x: 884 + (1 - pr) * 260, y: 1575 - Math.sin(Math.PI * Math.min(1, pr)) * 60, scale: 0.9 * Math.max(0.001, pr), squash: Math.max(0, 1 - Math.abs(tl - 1.05) / 0.12) * 0.4, sway: Math.sin(t * 2.1) * 2.5, blink: blinkAt(t, 5), ...WAVE(t), gaze: [-0.4, 0.1] });
+  const pr = k(t, t0 + 0.15, t0 + 0.65, E.outBack);
+  setCouponTree(END.m, { x: 884 + (1 - pr) * 260, y: 1575 - Math.sin(Math.PI * Math.min(1, pr)) * 60, scale: 0.9 * Math.max(0.001, pr), squash: Math.max(0, 1 - Math.abs(tl - 0.65) / 0.12) * 0.4, sway: Math.sin(t * 2.1) * 2.5, blink: blinkAt(t, 5), ...WAVE(t), gaze: [-0.4, 0.1], mouth: SPEAK.filter(([a]) => a >= END_T - 0.3).reduce((m, [a, b]) => Math.max(m, t >= a && t < b + 0.05 ? talk(t, a, b, 7.5) : 0), 0) });
 }
 
 // ------------------------------------------------------------------ the panel: Coupon, its subtitle bubble, and the kitchen it is filling
@@ -451,6 +462,7 @@ function buildChat() {
   CHAT.m = couponTree(host);
   CHAT.bub = mkBubble();
   CHAT.lines = LINES.map(([t0, t1, text], i) => prepLine({ who: 'coupon', t0, t1, text, i }));
+  VO.forEach(([t0, d, text], i) => cue(t0, 'vo', { i, d, text }));
   // the fill order: every slot but the jar that was already there
   CHAT.order = [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11];
   POPS.forEach((p, i) => cue(p, 'pop', { i }));
@@ -523,7 +535,9 @@ function updatePanel(t) {
   F.setLight(l);
   // Coupon: hops in on its first line, glances at the fridge when something lands in it, points when it names a number
   const pin = k(t, ENTER, ENTER + 0.55, E.outBack);
-  const speak = CHAT.lines.find((L) => t >= L.t0 && t < L.t1 + 0.3);
+  const sp = SPEAK.find(([a, b]) => t >= a && t < b + 0.05);
+  const bub = CHAT.lines.find((L) => t >= L.t0 && t < L.t1 + 0.3);
+  const speak = sp ? { t0: sp[0], t1: sp[1], has_em: !!(bub && bub.has_em) } : null;
   const sx = 780 + (1 - pin) * 330, sy = 1526 - Math.sin(Math.PI * Math.min(1, pin)) * 80;
   const pose = { sway: Math.sin(t * 2.1) * 2.5, blink: blinkAt(t, 3), gaze: [-0.9, 0.45], smile: 1, armL: 40, armR: 40, brows: 0.15 };
   if (speak) {
