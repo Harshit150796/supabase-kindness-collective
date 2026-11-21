@@ -133,23 +133,20 @@ Deno.test('homepage sections retain their approved motion entry points', async (
   assert(donation.includes('<Reveal className="mx-auto max-w-5xl"><div ref={cardRef} data-donate-card'));
   assert(footer.includes('<Reveal className="grid grid-cols-2'));
 });
-Deno.test('phones show the four steps as one coin\'s path (founder\'s pick, Nov 12, 2026), laptops keep the dealt cards', async () => {
+Deno.test('phones show the wide statement and a plain list of the four steps (founder request, Nov 21, 2026), laptops keep the dealt cards', async () => {
   const story = await Deno.readTextFile('src/components/landing/WhatWeDo.tsx');
-  const path = await Deno.readTextFile('src/components/landing/PhoneCoinPath.tsx');
-  assert(story.includes('<PhoneCoinPath steps={steps} still={still} />') && !story.includes('MobileInViewStep'));
+  const phone = await Deno.readTextFile('src/components/landing/PhoneGivingSteps.tsx');
+  const index = await Deno.readTextFile('index.html');
+  assert(story.includes('<PhoneGivingSteps steps={steps} />') && !story.includes('PhoneCoinPath'));
   assert(story.includes('data-desktop-step={index + 1}'));
-  assert(path.includes('data-giving-steps="coin-path"') && path.includes('data-coin-step={index + 1}'));
-  // It follows the scroll (founder request, Nov 12, 2026): no automatic loop. Layout is measured per layout,
-  // the scroll listener is attached only while the list is near, and a scroll frame never reads layout.
-  assert(path.includes('new ResizeObserver(measure)') && path.includes('resize.observe(document.body)') && path.includes('new IntersectionObserver('));
-  assert(path.includes("window.addEventListener('scroll', schedule, { passive: true })") && path.includes('requestAnimationFrame(frame)'));
-  assert(!path.includes('iterations: Infinity') && path.includes('const READ_AT = '));
-  const frame = path.slice(path.indexOf('const frame = () =>'), path.indexOf('const schedule ='));
-  assert(frame.length > 0 && !/getBoundingClientRect|getPointAtLength|getTotalLength|offsetTop|offsetHeight|innerHeight/.test(frame));
-  // The design's S-curve from tile centre to tile centre, rows 170px apart.
-  assert(path.includes('const HANDLE = 100 / 170;') && path.includes('min-h-[170px]'));
-  // Pause animations shows the finished picture.
-  assert(path.includes("lit!.style.opacity = still ? '1' : '0'") && path.includes('if (still) return;'));
+  assert(phone.includes('data-giving-steps="phone-list"') && phone.includes('data-phone-step={index + 1}'));
+  // The statement is the homepage description Google shows, word for word.
+  const described = `${"World's most trusted crowdfunding platform."} ${'CouponDonation is transforming giving: donated money becomes coupons, with trackable, transparent giving for every donor.'}`;
+  assert(index.includes(described.replace("'", '&#39;')) || index.includes(described));
+  assert(phone.includes(`lead: "World's most trusted crowdfunding platform."`));
+  assert(phone.includes("body: 'CouponDonation is transforming giving: donated money becomes coupons, with trackable, transparent giving for every donor.'"));
+  // Only one statement renders at a time (no duplicated words for search engines).
+  assert(story.includes('{laptop && (') && story.includes('{!laptop && ('));
 });
 Deno.test('full motion on every device regardless of the OS Reduce Motion setting, unless the visitor presses Pause', async () => {
   const hook = await Deno.readTextFile('src/hooks/useMotionPreference.tsx');
