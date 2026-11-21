@@ -1,0 +1,214 @@
+{
+ "cut": "main",
+ "dur": 15,
+ "lines": [
+  {
+   "who": "coupon",
+   "t0": 0.35,
+   "t1": 2.3,
+   "text": "It's here in the U.S. too."
+  },
+  {
+   "who": "coupon",
+   "t0": 2.75,
+   "t1": 4.8,
+   "text": "You can help a family | *here, today*."
+  },
+  {
+   "who": "coupon",
+   "t0": 5.1,
+   "t1": 6.15,
+   "text": "Your donation becomes | *gift cards*…"
+  },
+  {
+   "who": "coupon",
+   "t0": 6.25,
+   "t1": 7.4,
+   "text": "…for what families asked for."
+  },
+  {
+   "who": "coupon",
+   "t0": 7.75,
+   "t1": 9.3,
+   "text": "Pick the stores they need,"
+  },
+  {
+   "who": "coupon",
+   "t0": 9.7,
+   "t1": 10.95,
+   "text": "*100%* of your gift reaches families."
+  }
+ ],
+ "plates": [
+  {
+   "type": "line",
+   "t0": 0,
+   "t1": 2.5
+  },
+  {
+   "type": "stat",
+   "t0": 2.5,
+   "t1": 5
+  },
+  {
+   "type": "needs",
+   "t0": 5,
+   "t1": 7.5
+  },
+  {
+   "type": "stores",
+   "t0": 7.5,
+   "t1": 9.5
+  },
+  {
+   "type": "stat",
+   "t0": 9.5,
+   "t1": 11.5
+  },
+  {
+   "type": "end",
+   "t0": 11.5,
+   "t1": 15
+  }
+ ],
+ "cues": [
+  {
+   "t": 0.3,
+   "kind": "enter"
+  },
+  {
+   "t": 0.35,
+   "kind": "line",
+   "who": "coupon",
+   "n": 6,
+   "em": false
+  },
+  {
+   "t": 2.75,
+   "kind": "line",
+   "who": "coupon",
+   "n": 7,
+   "em": true
+  },
+  {
+   "t": 2.8,
+   "kind": "fill"
+  },
+  {
+   "t": 5.1,
+   "kind": "step"
+  },
+  {
+   "t": 5.1,
+   "kind": "line",
+   "who": "coupon",
+   "n": 5,
+   "em": true
+  },
+  {
+   "t": 5.2,
+   "kind": "pop",
+   "i": 0
+  },
+  {
+   "t": 5.6,
+   "kind": "step"
+  },
+  {
+   "t": 5.7,
+   "kind": "pop",
+   "i": 1
+  },
+  {
+   "t": 6.1,
+   "kind": "step"
+  },
+  {
+   "t": 6.2,
+   "kind": "pop",
+   "i": 2
+  },
+  {
+   "t": 6.25,
+   "kind": "line",
+   "who": "coupon",
+   "n": 5,
+   "em": false
+  },
+  {
+   "t": 7.75,
+   "kind": "line",
+   "who": "coupon",
+   "n": 5,
+   "em": false
+  },
+  {
+   "t": 7.9,
+   "kind": "tap"
+  },
+  {
+   "t": 7.9,
+   "kind": "pop",
+   "i": 3
+  },
+  {
+   "t": 8.38,
+   "kind": "tap"
+  },
+  {
+   "t": 8.38,
+   "kind": "pop",
+   "i": 4
+  },
+  {
+   "t": 9.34,
+   "kind": "tap"
+  },
+  {
+   "t": 9.7,
+   "kind": "line",
+   "who": "coupon",
+   "n": 6,
+   "em": true
+  },
+  {
+   "t": 9.75,
+   "kind": "pop",
+   "i": 5
+  },
+  {
+   "t": 9.8,
+   "kind": "fill"
+  },
+  {
+   "t": 10,
+   "kind": "pop",
+   "i": 6
+  },
+  {
+   "t": 10.25,
+   "kind": "pop",
+   "i": 7
+  },
+  {
+   "t": 10.5,
+   "kind": "pop",
+   "i": 8
+  },
+  {
+   "t": 10.7,
+   "kind": "pop",
+   "i": 9
+  },
+  {
+   "t": 10.9,
+   "kind": "pop",
+   "i": 10
+  },
+  {
+   "t": 11.7,
+   "kind": "end"
+  }
+ ],
+ "beat": 0.5
+}

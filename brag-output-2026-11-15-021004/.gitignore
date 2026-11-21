@@ -14,3 +14,10 @@ kitchens/*.mp4
 kitchens/*.wav
 kitchens/*.log
 kitchens/vite-render.pid
+endcap/stills*/
+endcap/*.mp4
+endcap/*.wav
+endcap/*.log
+endcap/vite-render.pid
+same-planet-*.mp4
+same-planet-*.jpg
