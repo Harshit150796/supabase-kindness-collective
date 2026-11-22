@@ -15,7 +15,7 @@ import { NOTIFY_SENDER } from '../_shared/email-layout.ts';
 import { INBOX_ADDRESS } from '../_shared/email-inbox.ts';
 
 const EMAIL_RE = /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[a-z]{2,}$/i;
-const AUTOMATION_KEYS = ['organizer_gift', 'organizer_nudge', 'organizer_week', 'organizer_halfway', 'organizer_goal', 'organizer_quiet'];
+const AUTOMATION_KEYS = ['organizer_gift', 'organizer_nudge', 'organizer_week', 'organizer_halfway', 'organizer_goal', 'organizer_quiet', 'welcome'];
 
 async function resend(key: string, payload: Record<string, unknown>): Promise<{ ok: boolean; id: string | null; raw: string; status: number }> {
   const r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });

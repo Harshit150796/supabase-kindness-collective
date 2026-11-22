@@ -10,6 +10,12 @@ const LOGO_URL = 'https://coupondonation.com/favicon-192.png';
 export const SUPPORT_EMAIL = 'support@coupondonation.com';
 export const SUPPORT_LINE = 'Questions or concerns? Email support@coupondonation.com and a person will reply.';
 export const SECURITY_SUPPORT_LINE = "Didn't request this? Email support@coupondonation.com right away.";
+/**
+ * For the emails people most need to see (welcome, fundraiser live, donation confirmed; founder request, Nov 22,
+ * 2026): a new reader's first email from us can land in Spam or Promotions, and moving it to the inbox teaches
+ * Gmail that our mail belongs there. Small, in the footer.
+ */
+export const INBOX_LINE = 'If this landed in Spam or Promotions, move it to your inbox so you don’t miss updates.';
 const INK = '#1f2421';
 const MUTED = '#5f6662';
 const LINK = '#1a5fb4';
@@ -54,6 +60,8 @@ export function shell(opts: {
   linkLine?: { lead: string; label: string; url: string };
   secondaryLink?: { label: string; url: string }; footer?: string; sample?: boolean; code?: string;
   recipient?: boolean; security?: boolean;
+  /** Adds INBOX_LINE to the footer. */
+  inboxLine?: boolean;
 }): string {
   // `preheader` and `status` stay in the signature for callers, but are not drawn: hidden preview text and
   // small capitals labels are newsletter traits. The first line of the email is the preview.
@@ -90,8 +98,9 @@ export function shell(opts: {
   parts.push(para('— The CouponDonation team'));
   const supportCopy = opts.security ? "Didn't request this? Email " : 'Questions or concerns? Email ';
   const supportEnd = opts.security ? ' right away.' : ' and a person will reply.';
-  const support = opts.recipient === false ? '' : `${opts.footer ? '<br>' : ''}${escapeHtml(supportCopy)}<a href="mailto:${SUPPORT_EMAIL}" style="color:${MUTED};">${SUPPORT_EMAIL}</a>${escapeHtml(supportEnd)}`;
-  if (opts.footer || support) parts.push(`<p style="margin:22px 0 0;font-family:${FONT};font-size:12px;line-height:18px;color:${MUTED};">${opts.footer ?? ''}${support}</p>`);
+  const support = opts.recipient === false ? '' : `${escapeHtml(supportCopy)}<a href="mailto:${SUPPORT_EMAIL}" style="color:${MUTED};">${SUPPORT_EMAIL}</a>${escapeHtml(supportEnd)}`;
+  const foot = [opts.footer, opts.inboxLine ? escapeHtml(INBOX_LINE) : '', support].filter(Boolean).join('<br>');
+  if (foot) parts.push(`<p style="margin:22px 0 0;font-family:${FONT};font-size:12px;line-height:18px;color:${MUTED};">${foot}</p>`);
   return `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CouponDonation</title></head><body style="margin:0;padding:16px;"><div style="max-width:560px;">${parts.join('')}</div></body></html>`;
 }
 

@@ -1,6 +1,6 @@
-// Donation confirmations and "fundraiser is live" emails. Exactly once per source via
+// Donation confirmations, "fundraiser is live" and welcome emails. Exactly once per source via
 // claim_account_email (unique kind+source_id). Reads payment tables only; never writes them.
-import { shell, escapeHtml, NOTIFY_SENDER, SUPPORT_EMAIL, SUPPORT_LINE, type RenderedEmail } from './email-layout.ts';
+import { shell, escapeHtml, INBOX_LINE, NOTIFY_SENDER, SUPPORT_EMAIL, SUPPORT_LINE, type RenderedEmail } from './email-layout.ts';
 import { SHARE_HOST } from './share-preview.ts';
 import { isSuppressed } from './suppression.ts';
 
@@ -39,10 +39,10 @@ export function renderDonationConfirmation(o: {
     paragraphs: [thanks, next, ...(coinLine ? [coinLine] : [])],
     valueCard: { label: 'Amount', value: money(o.amount), details: [formatET(o.at), forLine, `Reference ${shortRef(o.donationId)}`] },
     closing: shareLine ? [shareLine] : undefined,
-    link: o.link, footer: footerLines.map(escapeHtml).join('<br>'), sample: o.test,
+    link: o.link, footer: footerLines.map(escapeHtml).join('<br>'), sample: o.test, inboxLine: true,
   });
   const text = [`${greeting},`, '', thanks, '', next, ...(coinLine ? ['', coinLine] : []), '', ...details, '',
-    `${o.link.label}: ${o.link.url}`, ...(shareLine ? ['', shareLine] : []), '', '— The CouponDonation team', '', ...footerLines, SUPPORT_LINE].join('\n');
+    `${o.link.label}: ${o.link.url}`, ...(shareLine ? ['', shareLine] : []), '', '— The CouponDonation team', '', ...footerLines, INBOX_LINE, SUPPORT_LINE].join('\n');
   return { subject, html, text };
 }
 
@@ -96,14 +96,37 @@ export function renderFundraiserLive(o: {
     preheader: p1, greeting, headline: o.hasGifts ? 'Gifts are coming in' : 'Your fundraiser is live', paragraphs: [p1, p2],
     linkLine: { lead: 'Here’s your link:', label: shareUrl.replace(/^https:\/\//, ''), url: shareUrl },
     copyBox: { label: 'Message to copy', body: chat }, closing: [help],
-    footer: o.test ? 'This is a test message.' : undefined, sample: o.test,
+    footer: o.test ? 'This is a test message.' : undefined, sample: o.test, inboxLine: true,
   });
   const text = [
     `${greeting},`, '', p1, '', p2, '', `Here’s your link: ${shareUrl}`, '', 'Message to copy:', '', chat, '', help, '',
-    '— The CouponDonation team', ...(o.test ? ['', 'This is a test message.'] : []), '', SUPPORT_LINE,
+    '— The CouponDonation team', '', ...(o.test ? ['This is a test message.'] : []), INBOX_LINE, SUPPORT_LINE,
   ].join('\n');
   // Subjects say what happened and match email_topic() ('your fundraiser is live' → fundraiser emails).
   return { subject: o.hasGifts ? 'Your fundraiser is live and gifts are coming in' : 'Your fundraiser is live', html, text };
+}
+
+/**
+ * The welcome email (founder request, Nov 22, 2026): sent by the site, once, a few minutes after someone opens
+ * an account, while its switch in Admin > Emails > Automatic emails is on. The founder's approved wording, first
+ * sent by hand; people who unsubscribed are skipped. Its subject is filed under account emails (email_topic).
+ */
+export const WELCOME_PARAGRAPHS = [
+  'Welcome to CouponDonation. Thank you for joining us.',
+  'On CouponDonation, donations become store gift cards and coupons for what a family needs, like groceries, travel or health costs. You can start a fundraiser or give to one at coupondonation.com.',
+  'You can reply to this email and a person on our team will answer.',
+];
+export function renderWelcome(o: { firstName?: string; test?: boolean }): RenderedEmail {
+  const greeting = o.firstName ? `Hi ${o.firstName}` : 'Hi there';
+  const html = shell({
+    preheader: WELCOME_PARAGRAPHS[0], greeting, headline: 'Welcome to CouponDonation', paragraphs: WELCOME_PARAGRAPHS,
+    footer: o.test ? 'This is a test message.' : undefined, sample: o.test, inboxLine: true,
+  });
+  const text = [
+    `${greeting},`, '', ...WELCOME_PARAGRAPHS.flatMap((p) => [p, '']),
+    '— The CouponDonation team', '', ...(o.test ? ['This is a test message.'] : []), INBOX_LINE, SUPPORT_LINE,
+  ].join('\n');
+  return { subject: 'Welcome to CouponDonation', html, text };
 }
 
 export async function sendAccountMail(key: string, to: string, mail: RenderedEmail, bcc?: string[]) {
@@ -190,7 +213,15 @@ async function buildChecklist(admin: any, id: string): Promise<{ to: string | nu
   return { to: p.email, mail: renderFundraiserLive({ firstName: first(p.full_name), title: f.title, slug: f.unique_slug, id: f.id, stores: f.preferred_brands ?? [], beneficiary: f.beneficiary_type, already: true, hasGifts: gifts > 0 }) };
 }
 
-export type AccountEmailKind = 'donation_confirmation' | 'fundraiser_live' | 'fundraiser_checklist' | 'fundraiser_share_again';
+// deno-lint-ignore no-explicit-any
+async function buildWelcome(admin: any, userId: string): Promise<{ to: string | null; mail: RenderedEmail | null; unsubscribed?: boolean }> {
+  const { data: p } = await admin.from('profiles').select('email, full_name').eq('user_id', userId).maybeSingle();
+  if (!p?.email) return { to: null, mail: null };
+  if (await isSuppressed(admin, p.email)) return { to: p.email, mail: null, unsubscribed: true };
+  return { to: p.email, mail: renderWelcome({ firstName: first(p.full_name) }) };
+}
+
+export type AccountEmailKind = 'donation_confirmation' | 'fundraiser_live' | 'fundraiser_checklist' | 'fundraiser_share_again' | 'welcome';
 
 /** Claim then send. Returns 'sent' | 'not_due' | 'no_recipient' | 'unsubscribed' | 'failed'. */
 // deno-lint-ignore no-explicit-any
@@ -201,7 +232,8 @@ export async function processAccountEmail(admin: any, key: string | undefined, k
   try {
     if (kind === 'donation_confirmation') await admin.rpc('credit_gold_coins');
     const built: { to: string | null; mail: RenderedEmail | null; unsubscribed?: boolean } = kind === 'donation_confirmation' ? await buildDonation(admin, id)
-      : kind === 'fundraiser_checklist' || kind === 'fundraiser_share_again' ? await buildChecklist(admin, id) : await buildLive(admin, id);
+      : kind === 'fundraiser_checklist' || kind === 'fundraiser_share_again' ? await buildChecklist(admin, id)
+      : kind === 'welcome' ? await buildWelcome(admin, id) : await buildLive(admin, id);
     const { to, mail } = built;
     if (built.unsubscribed) { await mark({ status: 'skipped', last_error: 'Unsubscribed' }); return 'unsubscribed'; }
     if (!to || !mail) { await mark({ status: 'skipped', last_error: 'No recipient email' }); return 'no_recipient'; }

@@ -97,7 +97,8 @@ Deno.serve(async (req) => {
   for (const i of inq ?? []) await admin.rpc('admin_auto_task', { _key: `partner:${i.id}`, _title: `Partner inquiry: ${i.org_name}`, _priority: 'medium', _type: 'partner', _id: i.id, _link: `/admin/partners?id=${i.id}` });
   if (inqClaims.length) await admin.from('admin_email_events').upsert(inqClaims, { onConflict: 'kind,source_id', ignoreDuplicates: true });
 
-  // 1d) Donor confirmations + "fundraiser is live" emails (polling; exactly once via claim_account_email).
+  // 1d) Donor confirmations, "fundraiser is live" and welcome emails (polling; exactly once via claim_account_email).
+  // The welcome goes to accounts opened while its switch in Admin > Emails is on (founder request, Nov 22, 2026).
   const { data: dueMail } = await admin.rpc('due_account_emails');
   const acct: Record<string, number> = {};
   for (const m of (dueMail ?? []) as { kind: AccountEmailKind; source_id: string }[]) {

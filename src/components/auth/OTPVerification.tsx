@@ -150,6 +150,7 @@ export function OTPVerification({ email, onVerified, onBack }: OTPVerificationPr
         <p className="text-muted-foreground text-sm">
           We've sent a 6-digit code to <strong>{email}</strong>
         </p>
+        <p className="text-muted-foreground text-xs">Can't find it? Check your Spam and Promotions folders.</p>
       </div>
 
       {/* OTP Input */}

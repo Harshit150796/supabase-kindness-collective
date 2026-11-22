@@ -1,7 +1,7 @@
 // Every automatic email with sample data, for the previews and "send me a test" in Admin > Emails.
 // Sample names, titles and amounts only: nothing here reads the database.
 import { renderNoticeEmail, renderOtpEmail, renderPasswordResetEmail, type RenderedEmail } from './email-layout.ts';
-import { renderDonationConfirmation, renderFundraiserLive } from './account-emails.ts';
+import { renderDonationConfirmation, renderFundraiserLive, renderWelcome } from './account-emails.ts';
 import { renderOrganizerGift, renderOrganizerGoal, renderOrganizerHalfway, renderOrganizerNudge, renderOrganizerQuiet, renderOrganizerWeek } from './organizer-emails.ts';
 import { renderOwnerCouponEmail } from './owner-alerts.ts';
 import { renderImpactEmail, renderUseReminderEmail } from './impact-email.ts';
@@ -36,6 +36,7 @@ export const SAMPLE_EMAILS: Record<string, () => RenderedEmail> = {
   update_notice: () => renderNoticeEmail({ subject: `“${base.title}” posted an update`, heading: 'A new update', intro: `“${base.title}”, a fundraiser you gave to, posted an update.`, quote: '“Thank you: We did our first big shop on Saturday. Thank you all.”', ctaLabel: 'Read the update', ctaUrl: `${SITE}/f/sample`, footerNote: 'You can turn account notification emails off in Settings.', firstName: 'Sam' }),
   team_invite: () => renderNoticeEmail({ subject: `You’re invited to co-organize “${base.title}”`, heading: 'Join a fundraiser team', intro: `You’ve been invited to co-organize “${base.title}” on CouponDonation. Sign in with this email address to accept.`, quote: 'Don’t know this fundraiser? Ignore this email and nothing happens.', ctaLabel: 'Accept the invitation', ctaUrl: `${SITE}/team/accept` }),
   contact_receipt: () => renderContactConfirmation({ name: 'Sam Parker', topic: 'donation', state: 'NY', createdAt: hoursAgo(0) } as Parameters<typeof renderContactConfirmation>[0]),
+  welcome: () => renderWelcome({ firstName: 'Maria', test: true }),
   sign_in_code: () => renderOtpEmail({ code: '000000', expiresInMinutes: 10 }),
   password_reset: () => renderPasswordResetEmail({ resetUrl: `${SITE}/reset-password`, expiresInMinutes: 60 }),
 };
