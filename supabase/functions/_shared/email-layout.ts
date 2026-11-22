@@ -50,6 +50,8 @@ export function shell(opts: {
   preheader: string; greeting?: string; status?: string; headline?: string; paragraphs: string[];
   valueCard?: ValueCard; timeline?: TimelineStep[]; checklist?: ChecklistStep[]; copyBox?: CopyBox; closing?: string[];
   link?: { label: string; url: string };
+  /** One plain sentence with the link, right after the paragraphs ("Here’s your link: share.coupondonation.com/f/…"). */
+  linkLine?: { lead: string; label: string; url: string };
   secondaryLink?: { label: string; url: string }; footer?: string; sample?: boolean; code?: string;
   recipient?: boolean; security?: boolean;
 }): string {
@@ -57,10 +59,11 @@ export function shell(opts: {
   // small capitals labels are newsletter traits. The first line of the email is the preview.
   const parts: string[] = [];
   if (opts.sample) parts.push(para('SAMPLE EMAIL · sample data, not a real donation', `color:${MUTED};font-size:13px;`));
-  parts.push(`<p style="margin:0 0 22px;font-family:${FONT};font-size:16px;line-height:24px;font-weight:700;"><img src="${LOGO_URL}" width="28" height="28" alt="" style="width:28px;height:28px;border:0;vertical-align:middle;margin-right:8px;"><span style="vertical-align:middle;color:${GREEN};">Coupon</span><span style="vertical-align:middle;color:${BLUE};">Donation</span></p>`);
+  parts.push(`<p style="margin:0 0 22px;font-family:${FONT};font-size:18px;line-height:36px;font-weight:700;"><img src="${LOGO_URL}" width="36" height="36" alt="" style="width:36px;height:36px;border:0;vertical-align:middle;margin-right:10px;"><span style="vertical-align:middle;color:${GREEN};">Coupon</span><span style="vertical-align:middle;color:${BLUE};">Donation</span></p>`);
   if (opts.headline) parts.push(`<p style="margin:0 0 16px;font-family:${FONT};font-size:20px;line-height:27px;font-weight:700;color:${INK};">${escapeHtml(opts.headline)}</p>`);
   parts.push(para(`${escapeHtml(opts.greeting ?? 'Hi there')},`));
   parts.push(...opts.paragraphs.map((p) => para(lines(p))));
+  if (opts.linkLine) parts.push(para(`${escapeHtml(opts.linkLine.lead)} ${link(opts.linkLine.label, opts.linkLine.url)}`));
   if (opts.code) parts.push(para(`<strong style="font-size:24px;line-height:32px;letter-spacing:3px;">${escapeHtml(opts.code)}</strong>`));
   if (opts.valueCard) {
     const v = opts.valueCard;
@@ -133,8 +136,15 @@ export function renderPasswordResetEmail(opts: {
   return { subject: "Reset your CouponDonation password", html, text };
 }
 
+/**
+ * Every site email comes from support@, the address people reply to (founder request, Nov 21, 2026, Primary
+ * tab): Gmail learns a sender is someone you know when you write to it, and replies went to support@ while
+ * the mail came from notifications@, so that address never earned it. One address for both. The newsletter
+ * keeps its own sender (news@, send-newsletter).
+ */
+const SITE_SENDER = 'CouponDonation <support@coupondonation.com>';
 export const EMAIL_SENDER = {
-  from: "CouponDonation <notifications@coupondonation.com>",
+  from: SITE_SENDER,
   replyTo: SUPPORT_EMAIL,
 };
 
@@ -151,5 +161,5 @@ export function renderNoticeEmail(opts: {
   return { subject: opts.subject, html, text };
 }
 
-export const NOTIFY_SENDER = { from: 'CouponDonation <notifications@coupondonation.com>', replyTo: SUPPORT_EMAIL };
-export const ADMIN_SENDER = { from: 'CouponDonation <notifications@coupondonation.com>', replyTo: 'connect@coupondonation.com' };
+export const NOTIFY_SENDER = { from: SITE_SENDER, replyTo: SUPPORT_EMAIL };
+export const ADMIN_SENDER = { from: SITE_SENDER, replyTo: 'connect@coupondonation.com' };

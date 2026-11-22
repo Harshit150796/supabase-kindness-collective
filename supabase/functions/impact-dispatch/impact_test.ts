@@ -87,6 +87,9 @@ Deno.test('every recipient template includes support in HTML and text and never 
   }
   assertEquals(EMAIL_SENDER.replyTo, support);
   assertEquals(NOTIFY_SENDER.replyTo, support);
+  // Sent from the address people reply to, so Gmail treats it as someone they know (Nov 21, 2026).
+  assertEquals(EMAIL_SENDER.from, `CouponDonation <${support}>`);
+  assertEquals(NOTIFY_SENDER.from, `CouponDonation <${support}>`);
 });
 
 Deno.test('sample impact banner is explicit and production omits it', () => {

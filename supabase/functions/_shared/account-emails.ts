@@ -66,10 +66,14 @@ export function liveShareMessage(o: { title: string; stores?: string[]; benefici
 }
 
 /**
- * "You're live" (rewritten Nov 15, 2026): sent once, minutes after a fundraiser goes live, with the three
- * things that bring first gifts. Each has one-tap links: a text or an email draft with the message already
- * written, Facebook and Snapchat with the link attached, and Instagram messages (Instagram can't be opened
- * with words filled in, so the message is in the email to copy).
+ * "Your fundraiser is live" (rewritten Nov 21–22, 2026, founder request: our emails should reach Gmail's
+ * Primary tab, and the "Message to copy" stays). The old version (a three-step checklist with SMS, Facebook
+ * and email-draft links plus the message) went to Promotions from every sender. Tests of this note with and
+ * without the message to copy always landed in the same tab as each other: the reader's history with our
+ * sender decided it, not the message. So it is a short note: what happened, the one thing to do today (text
+ * the link to five people), the link, the message to copy, and an offer to help with the words. Same note,
+ * worded for where they are, for fundraisers that were already live (`already`) and for ones that have gifts
+ * (`hasGifts`).
  */
 export function renderFundraiserLive(o: {
   firstName?: string; title: string; slug: string; id?: string; stores?: string[]; beneficiary?: Beneficiary; test?: boolean;
@@ -78,42 +82,28 @@ export function renderFundraiserLive(o: {
   /** It already has gifts: the email is about more gifts, not the first ones. */
   hasGifts?: boolean;
 }): RenderedEmail {
-  const url = `${SITE}/f/${encodeURIComponent(o.slug)}`;
   const shareUrl = `${SHARE_HOST}/f/${encodeURIComponent(o.slug)}`;
   const greeting = o.firstName ? `Hi ${o.firstName}` : 'Hi there';
-  const { becomes, chat } = liveShareMessage(o, shareUrl);
-  const enc = encodeURIComponent;
-  const churchNote = [
-    'Hello,', '',
-    `I’ve started a fundraiser on CouponDonation: “${o.title}”. Would you be willing to share it with our community, in the bulletin, a newsletter or a group chat?`, '',
-    `${becomes}, and gifts start at $10. Here’s the link:`, shareUrl, '',
-    'Thank you,', o.firstName ?? '',
-  ].join('\n').trim();
-  // Kept to the three steps and one link each (founder request, Nov 21, 2026: only the words that matter).
-  const steps = [
-    { title: 'Text it to five people', detail: 'One at a time, by name.', actions: [{ label: 'Send a text', url: `sms:?&body=${enc(chat)}` }] },
-    { title: 'Post it in your family group chat', detail: 'Paste the message below.', actions: [{ label: 'Share on Facebook', url: `https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}` }] },
-    { title: 'Ask your church or group to share it', detail: 'We wrote the note for you.', actions: [{ label: 'Email your church or group', url: `mailto:?subject=${enc('Could you share my fundraiser?')}&body=${enc(churchNote)}` }] },
-  ];
-  const p1 = `“${o.title}” is live on CouponDonation.`;
-  const p2 = o.hasGifts ? 'More gifts come from people who know you. Share it again today.' : 'First gifts come from people who know you, so share it today.';
-  const after = 'Need help with the words? Reply to this email.';
+  const p1 = o.hasGifts ? `Gifts are coming in for “${o.title}”. Thank you for trusting us with it.`
+    : o.already ? `“${o.title}” is live on CouponDonation. Thank you for trusting us with it.`
+    : `“${o.title}” is live. Thank you for trusting us with it.`;
+  const p2 = o.hasGifts
+    ? 'More gifts almost always come from people who know you, so the best thing you can do today is text your link to five more people, one at a time.'
+    : 'The first gifts almost always come from people who know you, so the best thing you can do today is text your link to five people, one at a time.';
+  const { chat } = liveShareMessage(o, shareUrl);
+  const help = 'Want different words? Just reply and we’ll help you write them.';
   const html = shell({
-    preheader: p2, greeting, headline: o.hasGifts ? 'Three steps to more gifts' : 'Your fundraiser is live', paragraphs: [p1, p2],
-    checklist: steps, copyBox: { label: 'Message to copy', body: chat }, closing: [after],
-    link: { label: 'See your fundraiser', url },
+    preheader: p1, greeting, headline: o.hasGifts ? 'Gifts are coming in' : 'Your fundraiser is live', paragraphs: [p1, p2],
+    linkLine: { lead: 'Here’s your link:', label: shareUrl.replace(/^https:\/\//, ''), url: shareUrl },
+    copyBox: { label: 'Message to copy', body: chat }, closing: [help],
     footer: o.test ? 'This is a test message.' : undefined, sample: o.test,
   });
   const text = [
-    `${greeting},`, '', p1, '', p2, '',
-    ...steps.flatMap((step, i) => [`[ ] ${i + 1}. ${step.title}`, `    ${step.detail}`, '']),
-    'Message to copy:', '', chat, '',
-    'Note for your church or group:', '', churchNote, '',
-    after, '',
-    `See your fundraiser: ${url}`, '',
+    `${greeting},`, '', p1, '', p2, '', `Here’s your link: ${shareUrl}`, '', 'Message to copy:', '', chat, '', help, '',
     '— The CouponDonation team', ...(o.test ? ['', 'This is a test message.'] : []), '', SUPPORT_LINE,
   ].join('\n');
-  return { subject: o.hasGifts ? 'Your fundraiser is live: three steps to more gifts' : 'You’re live. Send it to five people today.', html, text };
+  // Subjects say what happened and match email_topic() ('your fundraiser is live' → fundraiser emails).
+  return { subject: o.hasGifts ? 'Your fundraiser is live and gifts are coming in' : 'Your fundraiser is live', html, text };
 }
 
 export async function sendAccountMail(key: string, to: string, mail: RenderedEmail, bcc?: string[]) {

@@ -1,4 +1,4 @@
-// "Your fundraiser is live" carries the first-gifts checklist (founder request, Nov 9, 2026).
+// "Your fundraiser is live": a short note with the share link (founder request, Nov 21, 2026; first written as a checklist, Nov 9).
 import { assert, assertEquals, assertStringIncludes } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { liveShareMessage, renderFundraiserLive } from './account-emails.ts';
 
@@ -6,25 +6,30 @@ const root = new URL('../../../', import.meta.url);
 const read = (path: string) => Deno.readTextFileSync(new URL(path, root));
 const base = { firstName: 'Maria', title: 'Groceries for the Ortiz family', slug: 'groceries-ortiz', id: '11111111-2222-4333-8444-555555555555', stores: ['Walmart', 'Kroger', 'Aldi'], beneficiary: 'family' };
 
-Deno.test('the live email is the three-step checklist with one link each (kept short, founder request, Nov 21, 2026)', () => {
+Deno.test('the live email is a short note with one link and the message to copy (founder request, Nov 21–22, 2026: Gmail Primary tab)', () => {
   const mail = renderFundraiserLive(base);
-  assertEquals(mail.subject, 'You’re live. Send it to five people today.');
+  assertEquals(mail.subject, 'Your fundraiser is live');
   // Admin > Emails files it under fundraiser emails (email_topic in the Nov 15, 2026 migration).
   assert(/(you.re live|your fundraiser is live)/i.test(mail.subject));
   assertEquals(mail.html.includes('approved'), false, 'fundraisers go live at once; nothing is "approved"');
-  for (const step of ['Text it to five people', 'Post it in your family group chat', 'Ask your church or group to share it']) {
-    assertStringIncludes(mail.html, step);
-    assertStringIncludes(mail.text, step);
-  }
   const share = 'https://share.coupondonation.com/f/groceries-ortiz';
-  assertStringIncludes(mail.html, 'href="sms:?&amp;body=');
-  assertEquals(/instagram|snapchat|wa\.me/.test(mail.html), false);
-  assertStringIncludes(mail.html, `href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(share)}"`);
-  assertStringIncludes(mail.html, 'href="mailto:?subject=Could%20you%20share%20my%20fundraiser%3F&amp;body=');
-  assertStringIncludes(mail.html, share);
-  assertStringIncludes(mail.html, 'href="https://coupondonation.com/f/groceries-ortiz"');
-  assertStringIncludes(mail.text, 'Note for your church or group:');
+  for (const line of ['“Groceries for the Ortiz family” is live. Thank you for trusting us with it.', 'text your link to five people, one at a time.', 'Want different words? Just reply and we’ll help you write them.']) {
+    assertStringIncludes(mail.html, line);
+    assertStringIncludes(mail.text, line);
+  }
+  assertStringIncludes(mail.html, `Here’s your link: <a href="${share}"`);
+  assertStringIncludes(mail.text, `Here’s your link: ${share}`);
+  // The message to copy stays (founder, Nov 22, 2026), as plain text with the link written out.
+  const { chat } = liveShareMessage(base, share);
+  assertStringIncludes(mail.text, `Message to copy:\n\n${chat}\n`);
+  assertStringIncludes(mail.html, 'Message to copy:');
+  assertStringIncludes(mail.html, chat.replace('\n', '<br>'));
+  // One link to the fundraiser plus the support address: no SMS, Facebook or email-draft links, which put
+  // the old checklist in Promotions.
+  assertEquals((mail.html.match(/href="/g) ?? []).length, 2);
   assertStringIncludes(mail.html, 'mailto:support@coupondonation.com');
+  assertEquals(/sms:|facebook|mailto:\?/i.test(mail.html + mail.text), false);
+  assertEquals((mail.html.match(/<img/g) ?? []).length, 1, 'the logo, once');
   assertEquals(/SECRETCODE|card number|PIN:/i.test(mail.html + mail.text), false);
 });
 
@@ -50,17 +55,18 @@ Deno.test('the dispatcher fills the checklist from the fundraiser itself', () =>
   assertStringIncludes(src, 'stores: f.preferred_brands ?? [], beneficiary: f.beneficiary_type');
 });
 
-Deno.test('campaigns that were already live get the same checklist, worded for where they are', async () => {
+Deno.test('campaigns that were already live get the same note, worded for where they are', async () => {
   const { checklistDue, CHECKLIST_SINCE } = await import('./account-emails.ts');
   const none = renderFundraiserLive({ ...base, already: true });
-  assertEquals(none.subject, 'You’re live. Send it to five people today.');
+  assertEquals(none.subject, 'Your fundraiser is live');
   assertStringIncludes(none.html, '“Groceries for the Ortiz family” is live on CouponDonation.');
+  assertStringIncludes(none.html, 'The first gifts almost always come from people who know you');
   assertEquals(none.html.includes('approved'), false);
   const some = renderFundraiserLive({ ...base, already: true, hasGifts: true });
-  assertEquals(some.subject, 'Your fundraiser is live: three steps to more gifts');
-  assertStringIncludes(some.html, 'Three steps to more gifts');
-  assertEquals(some.html.includes('First gifts'), false);
-  for (const step of ['Text it to five people', 'Post it in your family group chat', 'Ask your church or group to share it']) assertStringIncludes(some.html, step);
+  assertEquals(some.subject, 'Your fundraiser is live and gifts are coming in');
+  assertStringIncludes(some.html, 'Gifts are coming in for “Groceries for the Ortiz family”.');
+  assertStringIncludes(some.html, 'text your link to five more people');
+  assertEquals(some.html.includes('first gifts'), false);
   // Who gets it: once each, retried after a failure, never twice, and not those already sent the checklist at approval.
   const after = new Date(Date.parse(CHECKLIST_SINCE) + 60_000).toISOString();
   const before = new Date(Date.parse(CHECKLIST_SINCE) - 60_000).toISOString();
