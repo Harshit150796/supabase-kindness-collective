@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { prefetchWhenIdle } from "@/lib/idlePrefetch";
 import { useNavigate } from "react-router-dom";
+import type { User } from "@supabase/supabase-js";
 import { ApplyLayout } from "@/components/apply/ApplyLayout";
 import { BasicsStep } from "@/components/apply/steps/BasicsStep";
 import { GoalStep } from "@/components/apply/steps/GoalStep";
@@ -139,6 +140,12 @@ const ApplyRecipient = () => {
   const [screenState, setScreenState] = useState<ScreenState>("form");
   
   const [createdFundraiserId, setCreatedFundraiserId] = useState<string | null>(null);
+  // Its link, for the "Text it to 5 people now" screen.
+  const [createdSlug, setCreatedSlug] = useState<string | null>(null);
+  const rememberCreated = (f: { id: string; unique_slug?: string | null }) => {
+    setCreatedFundraiserId(f.id);
+    setCreatedSlug(f.unique_slug ?? null);
+  };
   const [initialized, setInitialized] = useState(false);
 
   // Form state
@@ -338,7 +345,7 @@ const ApplyRecipient = () => {
 
       // Create the fundraiser
       const fundraiserData = await createFundraiserForUser(user.id);
-      setCreatedFundraiserId(fundraiserData.id);
+      rememberCreated(fundraiserData);
 
       // Clear the draft for this user
       clearScopedDraft(user.id);
@@ -401,20 +408,51 @@ const ApplyRecipient = () => {
     setCurrentStep(step);
   };
 
-  const handleGoogleAuth = async () => {
-    markAgreement("google");
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/recipient/dashboard`,
-      },
-    });
-    if (error) {
+  // Google signs them in on this page, with no code email and no redirect (founder request, Nov 22, 2026), so
+  // everything they typed stays and the application carries on: to the last step, or straight to submitting.
+  const handleGoogleStart = () => {
+    preserveOnAuthRef.current = true;
+  };
+
+  const handleGoogleSignedIn = async (googleUser: User) => {
+    setAccountOpen(false);
+    setIsSubmitting(true);
+    try {
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .upsert({ user_id: googleUser.id, role: 'recipient' as const }, { onConflict: 'user_id,role' });
+      if (roleError) console.error("Role upsert error:", roleError);
+
+      if (authIntent === "advance") {
+        setScreenState("form");
+        setDirection("forward");
+        setCurrentStep(4);
+        toast({
+          title: "You're signed in",
+          description: "Everything you entered is saved. One last step.",
+        });
+        return;
+      }
+
+      const fundraiserData = await createFundraiserForUser(googleUser.id);
+      rememberCreated(fundraiserData);
+      clearScopedDraft(googleUser.id);
+      clearScopedDraft(null);
+      toast({
+        title: "Application submitted!",
+        description: "You're signed in with Google.",
+      });
+      setScreenState("success");
+    } catch (error: unknown) {
+      console.error("Google submit error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: (error as Error)?.message || "Failed to submit. Please try again.",
         variant: "destructive",
       });
+      setScreenState("form");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -617,7 +655,7 @@ const ApplyRecipient = () => {
 
       if (currentUser) {
         const fundraiserData = await createFundraiserForUser(currentUser.id);
-        setCreatedFundraiserId(fundraiserData.id);
+        rememberCreated(fundraiserData);
 
         // Clear drafts after successful submission
         clearScopedDraft(currentUser.id);
@@ -683,7 +721,7 @@ const ApplyRecipient = () => {
 
         // Create the fundraiser for this existing user
         const fundraiserData = await createFundraiserForUser(currentUser.id);
-        setCreatedFundraiserId(fundraiserData.id);
+        rememberCreated(fundraiserData);
 
         // Clear drafts
         clearScopedDraft(currentUser.id);
@@ -710,14 +748,6 @@ const ApplyRecipient = () => {
 
   const handleSuccessContinue = () => {
     setScreenState("share");
-  };
-
-  const handleGoToDashboardWithShare = () => {
-    if (createdFundraiserId) {
-      navigate(`/fundraiser/${createdFundraiserId}?share=true`);
-    } else {
-      navigate("/dashboard");
-    }
   };
 
   const handleGoToDashboard = () => {
@@ -776,8 +806,13 @@ const ApplyRecipient = () => {
   if (screenState === "share") {
     return (
       <Suspense fallback={null}><ShareScreen
-        onGoToDashboard={handleGoToDashboardWithShare}
-        onSkip={handleGoToDashboard}
+        fundraiserId={createdFundraiserId}
+        slug={createdSlug}
+        title={title}
+        beneficiary={beneficiaryType}
+        stores={stores.map((id) => findRetailer(id).name)}
+        email={userEmail || email || null}
+        onGoToFundraiser={handleGoToDashboard}
       /></Suspense>
     );
   }
@@ -900,7 +935,8 @@ const ApplyRecipient = () => {
           setPassword={setPassword}
           fullName={fullName}
           setFullName={setFullName}
-          onGoogleAuth={handleGoogleAuth}
+          onGoogleStart={handleGoogleStart}
+          onGoogleSignedIn={handleGoogleSignedIn}
           onSubmit={handleAccountSubmit}
           isLoading={isSubmitting}
           intent={authIntent}

@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
       if (!to) return fail('Your account has no email address.');
       if (!key) return fail('Email sending is not set up.');
       if (await overLimit(admin, 'admin-contact-test', user.id, 30, HOUR)) return fail('Too many test emails in an hour. Please wait a little.', 429);
-      const r = await resend(key, { from: NOTIFY_SENDER.from, reply_to: NOTIFY_SENDER.replyTo, to: [to], subject: `[Test] ${mail.subject}`, html: mail.html, text: mail.text });
+      const r = await resend(key, { from: NOTIFY_SENDER.from, reply_to: NOTIFY_SENDER.replyTo, to: [to], subject: `[Test] ${mail.subject}`, ...(mail.plainText ? {} : { html: mail.html }), text: mail.text });
       if (!r.ok) { console.error('test email', r.status, r.raw); return fail('The test could not be sent. Please try again.', 502); }
       return json({ ok: true, to });
     }

@@ -4,7 +4,8 @@ import { inspectImage } from '../_shared/image-meta.ts';
 import { renderImpactEmail, renderUseReminderEmail } from '../_shared/impact-email.ts';
 import { renderDonationConfirmation, renderFundraiserLive } from '../_shared/account-emails.ts';
 import { renderOwnerCouponEmail } from '../_shared/owner-alerts.ts';
-import { EMAIL_SENDER, NOTIFY_SENDER, renderOtpEmail, renderPasswordResetEmail, renderNoticeEmail } from '../_shared/email-layout.ts';
+// The sign-in code is plain text with no HTML layout (new-applicant-inbox_test.ts).
+import { EMAIL_SENDER, NOTIFY_SENDER, renderPasswordResetEmail, renderNoticeEmail } from '../_shared/email-layout.ts';
 
 const old = new Date(Date.now() - 3600_000).toISOString();
 const ev = (id: string, d: string, kind: string, at = old) => ({ id, donation_id: d, coupon_id: `c${id}`, kind, created_at: at });
@@ -54,7 +55,6 @@ Deno.test('all account templates use the shared plain layout: the logo once, no 
     renderDonationConfirmation({ amount: 20, at: old, donationId: '12345678-abcd', fundraiserTitle: 'Family Support', link: { label: 'View your donation', url: 'https://coupondonation.com/impact/example' } }),
     renderFundraiserLive({ title: 'Family Support', slug: 'family-support' }),
     renderOwnerCouponEmail({ fundraiserTitle: 'Family Support', items: [{ brand: 'DoorDash', value: 20 }], dashboardUrl: 'https://coupondonation.com/fundraiser/example#coupons' }),
-    renderOtpEmail({ code: '123456', expiresInMinutes: 10 }),
     renderPasswordResetEmail({ resetUrl: 'https://coupondonation.com/reset-password?token=x', expiresInMinutes: 60 }),
     renderNoticeEmail({ subject: 'A new message is waiting', heading: 'You have a new message', intro: 'Open CouponDonation to read it.', ctaLabel: 'Open messages', ctaUrl: 'https://coupondonation.com/messages' }),
   ];
@@ -74,7 +74,6 @@ Deno.test('every recipient template includes support in HTML and text and never 
     renderOwnerCouponEmail({ fundraiserTitle: 'Family Support', items: [{ brand: 'DoorDash', value: 20 }], dashboardUrl: 'https://coupondonation.com/fundraiser/example#coupons' }),
     renderImpactEmail({ kind: 'combined', fundraiserTitle: 'Family Support', organizer: 'Maria G.', donatedAt: old, impactUrl: 'https://coupondonation.com/impact/example', thankUrl: 'https://coupondonation.com/impact/example#thanks', stopUrl: 'https://coupondonation.com/impact/example?stop=1', items: [{ brand: 'DoorDash', value: 20, createdAt: old, receivedAt: old, usedAt: old }] }),
     renderUseReminderEmail({ brand: 'DoorDash', fundraiserTitle: 'Family Support', dashboardUrl: 'https://coupondonation.com/fundraiser/example#coupons' }),
-    renderOtpEmail({ code: '123456', expiresInMinutes: 10 }),
     renderPasswordResetEmail({ resetUrl: 'https://coupondonation.com/reset-password?token=x', expiresInMinutes: 60 }),
     renderNoticeEmail({ subject: 'A new message is waiting', heading: 'You have a new message', intro: 'Open CouponDonation to read it.', ctaLabel: 'Open messages', ctaUrl: 'https://coupondonation.com/messages' }),
   ];

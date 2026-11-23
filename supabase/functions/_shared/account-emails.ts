@@ -3,6 +3,7 @@
 import { shell, escapeHtml, INBOX_LINE, NOTIFY_SENDER, SUPPORT_EMAIL, SUPPORT_LINE, type RenderedEmail } from './email-layout.ts';
 import { SHARE_HOST } from './share-preview.ts';
 import { isSuppressed } from './suppression.ts';
+import { liveShareMessage, type Beneficiary } from './share-message.ts';
 
 const SITE = 'https://coupondonation.com';
 const TOKEN_DAYS = 30;
@@ -46,24 +47,8 @@ export function renderDonationConfirmation(o: {
   return { subject, html, text };
 }
 
-/** Who a fundraiser is for (apply flow): it decides how the organizer's ready-made message reads. */
-export type Beneficiary = 'yourself' | 'family' | 'organization' | string | null | undefined;
-
-/**
- * The message an organizer sends friends, family and their church: what the fundraiser is, what a gift becomes
- * and the share link (which shows the fundraiser's photo and title in chats). Every line is true of every
- * fundraiser: gifts become gift cards for the stores asked for, and the smallest gift is $10.
- */
-export function liveShareMessage(o: { title: string; stores?: string[]; beneficiary?: Beneficiary }, shareUrl: string) {
-  const shops = (o.stores ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 2).join(' or ');
-  const becomes = o.beneficiary === 'organization'
-    ? `Every gift becomes a store gift card${shops ? ` (like ${shops})` : ''} for the people our group helps`
-    : `Every gift becomes a gift card for ${o.beneficiary === 'family' ? 'a store my family needs' : 'a store I need'}${shops ? `, like ${shops}` : ''}`;
-  return {
-    becomes,
-    chat: `Hi! I started a fundraiser on CouponDonation: “${o.title}”. ${becomes}, so you can see where it goes. Gifts start at $10. Would you take a look, and pass it on?\n${shareUrl}`,
-  };
-}
+// The organizer's ready-made message lives in share-message.ts (the site's share screen uses it too).
+export { liveShareMessage, type Beneficiary } from './share-message.ts';
 
 /**
  * "Your fundraiser is live" (rewritten Nov 21–22, 2026, founder request: our emails should reach Gmail's

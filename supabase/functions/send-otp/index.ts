@@ -111,7 +111,8 @@ const handler = async (req: Request): Promise<Response> => {
         reply_to: EMAIL_SENDER.replyTo,
         to: [email],
         subject: rendered.subject,
-        html: rendered.html,
+        // Plain text only: no HTML part, logo or links (founder request, Nov 22, 2026; see renderOtpEmail).
+        ...(rendered.plainText ? {} : { html: rendered.html }),
         text: rendered.text,
       }),
     });

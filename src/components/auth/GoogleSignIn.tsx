@@ -1,13 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
+import type { User } from '@supabase/supabase-js';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { createGoogleNonce, googleIdentityOptions, googleTokenRequest, loadGoogleIdentity } from '@/lib/googleIdentity';
 import { markAgreement } from '@/lib/legal';
 
-/** Google's own button opens from this site's origin, not an OAuth redirect. */
-export function GoogleSignIn() {
+/**
+ * Google's own button opens from this site's origin, not an OAuth redirect. On the sign-in page the Auth listener
+ * moves on once they're signed in. A page that carries on in place (the apply form keeps their answers and goes
+ * on to submit) passes `onBeforeSignIn` and `onSignedIn`.
+ */
+export function GoogleSignIn({ onBeforeSignIn, onSignedIn }: { onBeforeSignIn?: () => void; onSignedIn?: (user: User) => void } = {}) {
   const hostRef = useRef<HTMLDivElement>(null);
+  // The latest callbacks, so Google's handler (set once) never calls an old one.
+  const before = useRef(onBeforeSignIn);
+  const after = useRef(onSignedIn);
+  before.current = onBeforeSignIn;
+  after.current = onSignedIn;
   const inFlight = useRef(false);
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<'loading' | 'ready' | 'signing-in' | 'failed'>('loading');
@@ -28,9 +38,12 @@ export function GoogleSignIn() {
           setState('signing-in');
           markAgreement('google');
           try {
+            before.current?.();
             const { data, error: authError } = await supabase.auth.signInWithIdToken(googleTokenRequest(response.credential, nonce.raw));
             if (authError || !data.user || !data.session) throw new Error('Google sign-in could not finish.');
-            // The existing Auth listener owns navigation and account access.
+            // Without onSignedIn, the existing Auth listener owns navigation and account access. The page may
+            // already have closed this button (it is signed in now), so the callback runs either way.
+            after.current?.(data.user);
           } catch {
             if (!disposed) {
               setError('Google sign-in could not finish. Please try again or use email.');

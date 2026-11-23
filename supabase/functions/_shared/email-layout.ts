@@ -28,6 +28,8 @@ export interface RenderedEmail {
   html: string;
   text: string;
   headers?: Record<string, string>;
+  /** Send `text` only, with no HTML part (the sign-in code). `html` is then only the Admin > Emails preview. */
+  plainText?: boolean;
 }
 
 export type TimelineStep = { label: string; detail?: string; complete: boolean };
@@ -104,19 +106,17 @@ export function shell(opts: {
   return `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CouponDonation</title></head><body style="margin:0;padding:16px;"><div style="max-width:560px;">${parts.join('')}</div></body></html>`;
 }
 
-/** Verification code (OTP) email. */
+/**
+ * Verification code (OTP) email: two short lines of plain text, no logo, links or HTML (founder request, Nov 22,
+ * 2026). In Gmail tests that day, every email with a link to coupondonation.com went to Spam for people who had
+ * never written to us, from every sender, while short plain notes with no links reached the inbox. send-otp sends
+ * `text` only (`plainText`); `html` is the same words for the Admin > Emails preview.
+ */
 export function renderOtpEmail(opts: { code: string; expiresInMinutes: number }): RenderedEmail {
   const { code, expiresInMinutes } = opts;
-  const html = shell({
-    preheader: `Use this code to confirm your CouponDonation account.`,
-    paragraphs: [`Use this verification code to confirm your email address. It expires in ${expiresInMinutes} minutes.`], code, security: true,
-  });
-
-  const text = [
-    "Hi there,", "", `Your verification code is ${code}. It expires in ${expiresInMinutes} minutes.`, "", "Enter it on CouponDonation to confirm your email address.", "", "— The CouponDonation team", "", SECURITY_SUPPORT_LINE,
-  ].join("\n");
-
-  return { subject: "Your CouponDonation verification code", html, text };
+  const text = `Your CouponDonation code is ${code}. It expires in ${expiresInMinutes} minutes.\n\nIf you didn't ask for it, you can ignore this email. Need help? Just reply to this email.`;
+  const html = `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CouponDonation</title></head><body style="margin:0;padding:16px;"><div style="max-width:560px;font-family:${FONT};font-size:15px;line-height:22px;color:${INK};white-space:pre-wrap;">${escapeHtml(text)}</div></body></html>`;
+  return { subject: "Your CouponDonation code", html, text, plainText: true };
 }
 
 /** Password reset email. */
