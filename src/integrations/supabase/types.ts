@@ -2010,6 +2010,10 @@ export type Database = {
           body: string | null
           category: string
           clicked_at: string | null
+          content_html: string | null
+          content_saved_at: string | null
+          content_state: string | null
+          content_text: string | null
           conversation_id: string | null
           delivered_at: string | null
           from_email: string | null
@@ -2017,7 +2021,9 @@ export type Database = {
           id: string
           last_event: string | null
           opened_at: string | null
+          opens_tracked: boolean | null
           problem_at: string | null
+          reply_to: string | null
           resend_id: string | null
           sent_at: string
           sent_by: string | null
@@ -2031,6 +2037,10 @@ export type Database = {
           body?: string | null
           category?: string
           clicked_at?: string | null
+          content_html?: string | null
+          content_saved_at?: string | null
+          content_state?: string | null
+          content_text?: string | null
           conversation_id?: string | null
           delivered_at?: string | null
           from_email?: string | null
@@ -2038,7 +2048,9 @@ export type Database = {
           id?: string
           last_event?: string | null
           opened_at?: string | null
+          opens_tracked?: boolean | null
           problem_at?: string | null
+          reply_to?: string | null
           resend_id?: string | null
           sent_at?: string
           sent_by?: string | null
@@ -2052,6 +2064,10 @@ export type Database = {
           body?: string | null
           category?: string
           clicked_at?: string | null
+          content_html?: string | null
+          content_saved_at?: string | null
+          content_state?: string | null
+          content_text?: string | null
           conversation_id?: string | null
           delivered_at?: string | null
           from_email?: string | null
@@ -2059,7 +2075,9 @@ export type Database = {
           id?: string
           last_event?: string | null
           opened_at?: string | null
+          opens_tracked?: boolean | null
           problem_at?: string | null
+          reply_to?: string | null
           resend_id?: string | null
           sent_at?: string
           sent_by?: string | null
@@ -2086,6 +2104,8 @@ export type Database = {
           id: number
           last_error: string | null
           last_run_at: string | null
+          open_tracking: boolean | null
+          open_tracking_checked_at: string | null
         }
         Insert: {
           backfill_after?: string | null
@@ -2093,6 +2113,8 @@ export type Database = {
           id: number
           last_error?: string | null
           last_run_at?: string | null
+          open_tracking?: boolean | null
+          open_tracking_checked_at?: string | null
         }
         Update: {
           backfill_after?: string | null
@@ -2100,6 +2122,8 @@ export type Database = {
           id?: number
           last_error?: string | null
           last_run_at?: string | null
+          open_tracking?: boolean | null
+          open_tracking_checked_at?: string | null
         }
         Relationships: []
       }
