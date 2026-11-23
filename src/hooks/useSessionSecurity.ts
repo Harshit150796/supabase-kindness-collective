@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { useIdleTimeout } from './useIdleTimeout';
 import { toast } from 'sonner';
+import { TEAM_ROLES } from '@/components/navigation/siteLinks';
 
 const SESSION_START_KEY = 'session_start_time';
 const ABSOLUTE_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours
@@ -9,7 +10,12 @@ const IDLE_TIMEOUT = 15 * 60 * 1000; // 15 minutes
 const WARNING_TIME = 2 * 60 * 1000; // 2 minutes before logout
 
 export function useSessionSecurity() {
-  const { user, signOut } = useAuth();
+  const { user, roles, rolesLoaded, signOut } = useAuth();
+  // Team members (admin, staff, viewer) are never signed out by these timers (founder request, Nov 23, 2026):
+  // the 15-minute idle sign-out kept ending admin work, including from an idle tab elsewhere on the site, since
+  // signing out one tab signs out every tab. The admin portal keeps its own 12-hour check (useTeamSession).
+  // Until roles load, nobody is timed (a team member must never be signed out in that moment).
+  const timed = !!user && rolesLoaded && !roles.some((role) => TEAM_ROLES.includes(role));
 
   // Handle idle timeout logout
   const handleIdleLogout = useCallback(async () => {
@@ -30,7 +36,7 @@ export function useSessionSecurity() {
     warningTime: WARNING_TIME,
     onIdle: handleIdleLogout,
     onWarning: handleWarning,
-    enabled: !!user,
+    enabled: timed,
   });
 
   // Track session start time
@@ -47,7 +53,7 @@ export function useSessionSecurity() {
 
   // Check absolute session timeout
   useEffect(() => {
-    if (!user) return;
+    if (!timed) return;
 
     const checkAbsoluteTimeout = () => {
       const sessionStart = sessionStorage.getItem(SESSION_START_KEY);
@@ -72,7 +78,7 @@ export function useSessionSecurity() {
     const interval = setInterval(checkAbsoluteTimeout, 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [user, signOut]);
+  }, [timed, signOut]);
 
   return {
     showWarning,

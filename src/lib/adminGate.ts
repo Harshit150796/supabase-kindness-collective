@@ -50,7 +50,7 @@ export async function teamSessionFresh(): Promise<boolean> {
 }
 
 /** The sign-in (session) a token belongs to; it stays the same when the token refreshes. */
-function sessionIdOf(token: string | null | undefined): string | null {
+export function sessionIdOf(token: string | null | undefined): string | null {
   try {
     const part = (token ?? '').split('.')[1] ?? '';
     const json = atob(part.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(part.length / 4) * 4, '='));
