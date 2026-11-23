@@ -253,15 +253,21 @@ export async function processAccountEmail(admin: any, key: string | undefined, k
  * (founder request, Nov 21, 2026). Claimed once per fundraiser as account email kind 'fundraiser_share_again';
  * people who unsubscribed are skipped; a blind copy goes to support@ so the team sees each one in Zoho.
  * Up to 10 a dispatcher run, so the whole batch goes out over the next hour or so.
+ * Only fundraisers that were open when it went out (created before SHARE_AGAIN_BEFORE): new ones already get
+ * "Your fundraiser is live", and without this cutoff they got the same email twice, a second apart (seen in
+ * Admin > Emails, Nov 23, 2026).
  */
-export function shareAgainDue(fundraisers: { id: string }[], rows: MailRow[], limit = 10): string[] {
+export const SHARE_AGAIN_BEFORE = '2026-11-21T15:31:01Z';
+export function shareAgainDue(fundraisers: { id: string; created_at?: string | null }[], rows: MailRow[], limit = 10, before = SHARE_AGAIN_BEFORE): string[] {
   const done = new Set(rows.filter((r) => r.kind === 'fundraiser_share_again' && r.status !== 'failed').map((r) => r.source_id));
-  return fundraisers.map((f) => f.id).filter((id) => !done.has(id)).slice(0, limit);
+  return fundraisers.filter((f) => !f.created_at || Date.parse(f.created_at) < Date.parse(before))
+    .map((f) => f.id).filter((id) => !done.has(id)).slice(0, limit);
 }
 
 // deno-lint-ignore no-explicit-any
 export async function dueShareAgainEmails(admin: any): Promise<string[]> {
-  const { data: live } = await admin.from('fundraisers').select('id').eq('status', 'active').not('is_example', 'is', true).order('created_at', { ascending: true }).limit(500);
+  const { data: live } = await admin.from('fundraisers').select('id, created_at').eq('status', 'active').not('is_example', 'is', true)
+    .lt('created_at', SHARE_AGAIN_BEFORE).order('created_at', { ascending: true }).limit(500);
   const ids = ((live ?? []) as { id: string }[]).map((f) => f.id);
   if (!ids.length) return [];
   const { data: rows } = await admin.from('account_emails').select('kind, source_id, status, sent_at').eq('kind', 'fundraiser_share_again').in('source_id', ids);

@@ -5,6 +5,7 @@
 // Since Nov 15, 2026 (Admin > Emails): "send" can also email one person directly (an account or an address,
 // no fundraiser), and the team can see, preview, test and switch the automatic emails
 // ("automations", "set_automation", "preview", "test"), and read replies people sent ("inbox", "inbox_set").
+// Since Nov 23, 2026: "email_view" shows one sent email as it went out (codes and one-time links hidden).
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { requestUser, UUID_RE, teamRpc } from '../_shared/auth.ts';
@@ -13,6 +14,8 @@ import { checkTeamMessage, renderTeamEmail, SITE, TEAM_INBOX_ID, TEAM_SENDER } f
 import { sampleEmail } from '../_shared/email-catalog.ts';
 import { NOTIFY_SENDER } from '../_shared/email-layout.ts';
 import { INBOX_ADDRESS } from '../_shared/email-inbox.ts';
+import { CONTENT_DAYS, contentColumns, fetchEmail } from '../_shared/email-log.ts';
+import { redactEmail } from '../_shared/email-redact.ts';
 
 const EMAIL_RE = /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[a-z]{2,}$/i;
 const AUTOMATION_KEYS = ['organizer_gift', 'organizer_nudge', 'organizer_week', 'organizer_halfway', 'organizer_goal', 'organizer_quiet', 'welcome'];
@@ -77,6 +80,33 @@ Deno.serve(async (req) => {
       const r = await resend(key, { from: NOTIFY_SENDER.from, reply_to: NOTIFY_SENDER.replyTo, to: [to], subject: `[Test] ${mail.subject}`, html: mail.html, text: mail.text });
       if (!r.ok) { console.error('test email', r.status, r.raw); return fail('The test could not be sent. Please try again.', 502); }
       return json({ ok: true, to });
+    }
+    // ---- One sent email as it went out (Admin > Emails, Nov 23, 2026): its saved copy, or Resend's while it
+    // still has it (about 30 days). Codes and one-time links are already hidden in the copy. Every view is audited.
+    if (action === 'email_view') {
+      const id = String(body.id ?? '');
+      if (!UUID_RE.test(id)) return fail('Unknown email.');
+      if (await overLimit(admin, 'admin-email-view', user.id, 600, HOUR)) return fail('Too many emails opened in an hour. Please wait a little.', 429);
+      const cols = 'id, resend_id, subject, from_email, reply_to, sent_at, body, content_html, content_text, content_state';
+      const { data: row } = await admin.from('email_log').select(cols).eq('id', id).maybeSingle();
+      if (!row) return fail('Unknown email.', 404);
+      let mail = row as Record<string, unknown>;
+      const recent = Date.parse(String(row.sent_at)) > Date.now() - CONTENT_DAYS * 86_400_000;
+      const key = Deno.env.get('RESEND_API_KEY');
+      if (!row.content_state && row.resend_id && recent && key) {
+        try {
+          const patch = contentColumns(await fetchEmail(key, String(row.resend_id)), row.subject);
+          await admin.from('email_log').update(patch).eq('id', id);
+          mail = { ...mail, ...patch };
+        } catch (e) { console.error('email_view fetch', e); }
+      }
+      await admin.from('admin_audit_log').insert({ actor_id: user.id, action: 'email.view', table_name: 'email_log', record_id: id });
+      const html = (mail.content_html as string | null) ?? null;
+      const text = (mail.content_text as string | null) ?? null;
+      const seen = redactEmail({ subject: row.subject, html, text });
+      const hidden = /\[hidden\]|••••••/.test(`${html ?? ''}${text ?? ''}`);
+      return json({ ok: true, html, text, reply_to: mail.reply_to ?? null, from_email: row.from_email, written: row.body ?? null,
+        state: html || text ? 'saved' : mail.content_state === 'gone' || !recent ? 'gone' : 'missing', links: seen.links, hidden });
     }
     // ---- Inbox: replies people sent to the team (copied from Resend by admin-dispatch) ----
     if (action === 'inbox') {

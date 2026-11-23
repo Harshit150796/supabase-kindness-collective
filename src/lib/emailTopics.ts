@@ -5,6 +5,10 @@ export type EmailRow = {
   subject: string | null; category: 'site' | 'team' | 'outreach'; topic?: string | null; last_event: string | null; fundraiser: { id: string; title: string } | null;
   sent_by: { name?: string | null; email?: string | null } | null; body: string | null;
   delivered_at?: string | null; opened_at?: string | null; clicked_at?: string | null; problem_at?: string | null;
+  /** Whether opens were tracked when it went out (Resend's switch, and HTML to carry the pixel). */
+  opens_tracked?: boolean;
+  /** Whether its text is saved (or it was written by the team), so the viewer can show it at once. */
+  has_content?: boolean;
 };
 
 /** What each email is about (email_topic() in the database). */

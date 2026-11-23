@@ -67,7 +67,7 @@ export function EmailInbox({ canWrite, onReply }: { canWrite: boolean; onReply: 
           <div className="rounded-md border border-border p-5 text-sm">
             <p className="font-medium">{status === 'open' ? 'Nothing is waiting for an answer.' : 'No messages here.'}</p>
             {q.data?.address && <>
-              <p className="mt-2 text-muted-foreground">Replies show up here when the support mailbox forwards a copy of its incoming mail to this address. Set that up once in the mailbox's forwarding settings:</p>
+              <p className="mt-2 text-muted-foreground">Replies show up here when the support mailbox (support@coupondonation.com in Zoho Mail) forwards a copy of its incoming mail to this address. If nothing has ever shown up here, that forwarding isn't set up yet. Set it up once in the mailbox's forwarding settings:</p>
               <p className="mt-2 flex flex-wrap items-center gap-2"><code className="rounded bg-muted px-2 py-1">{q.data.address}</code>
                 <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => copy(q.data!.address)} aria-label="Copy the address"><Copy className="h-3.5 w-3.5" /></Button></p>
             </>}

@@ -59,5 +59,7 @@ Deno.test('Contact paths stay staff-only, audited and kept apart from supporter 
   assert(dispatch.includes("case 'team_reply'"), 'team replies show in the digest');
   const log = read('supabase/functions/_shared/email-log.ts');
   assertEquals(log.match(/_rows: toLogRows\(/g)?.length, 2, 'the sync only writes the metadata rows');
-  assert(!log.includes('.html'), 'the sync never copies bodies');
+  // Since Nov 23, 2026 the sync saves each email's text, but only after codes and one-time links are hidden.
+  assert(log.includes("const r = redactEmail({ subject: e.subject ?? subject, html: e.html ?? null, text: e.text ?? null });"), 'bodies are redacted first');
+  assert(!/content_(html|text): e\./.test(log), 'never an unredacted body');
 });

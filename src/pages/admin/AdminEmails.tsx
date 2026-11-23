@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, Circle, PenLine, Reply, Search } from 'lucide-react';
+import { PenLine, Search, X } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader, useTeamRole } from '@/components/admin/AdminLayout';
 import { DataTable, Column } from '@/components/admin/DataTable';
@@ -11,10 +11,10 @@ import { CouponFollowups } from '@/components/admin/CouponFollowups';
 import { AutomaticEmails } from '@/components/admin/emails/AutomaticEmails';
 import { EmailComposer, type ComposerStart } from '@/components/admin/emails/EmailComposer';
 import { EmailInbox, inboxKey, loadInbox } from '@/components/admin/emails/EmailInbox';
+import { EmailViewer, splitSender } from '@/components/admin/emails/EmailViewer';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { rpc, fmtDate } from '@/lib/adminApi';
 
@@ -22,34 +22,13 @@ const PAGE = 25;
 const CATEGORIES: Array<[string, string]> = [['not_outreach', 'Site and team emails'], ['site', 'Sent by the site'], ['team', 'Written by the team'], ['outreach', 'Church outreach'], ['all', 'Everything']];
 const STATUSES: Array<[string, string]> = [['all', 'Any status'], ['opened', 'Opened'], ['not_opened', 'Delivered, not opened'], ['delivered', 'Delivered'], ['problem', 'Bounced or blocked'], ['pending', 'Not confirmed yet']];
 const PERIODS: Array<[string, string]> = [['all', 'Any time'], ['1', 'Last 24 hours'], ['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days']];
-type Log = { rows: EmailRow[]; total: number; totals: { sent: number; delivered: number; opened: number; problem: number }; synced_at: string | null; history_complete: boolean; oldest: string | null; opens_since: string | null };
-
-/** Sent, delivered, opened, clicked or bounced, with when we saw each. */
-function Timeline({ e, opensSince }: { e: EmailRow; opensSince: string | null }) {
-  const problem = e.last_event && ['bounced', 'complained', 'suppressed', 'failed', 'canceled'].includes(e.last_event);
-  const steps: Array<{ label: string; at: string | null | undefined; done: boolean; bad?: boolean }> = [
-    { label: 'Sent', at: e.sent_at, done: true },
-    ...(problem ? [{ label: e.last_event === 'complained' ? 'Marked as spam' : e.last_event === 'suppressed' ? 'Blocked (address bounced before)' : 'Bounced', at: e.problem_at, done: true, bad: true }]
-      : [{ label: 'Delivered', at: e.delivered_at, done: !!e.delivered_at }, { label: 'Opened', at: e.opened_at, done: !!e.opened_at }, ...(e.clicked_at ? [{ label: 'Link clicked', at: e.clicked_at, done: true }] : [])]),
-  ];
-  const tracked = opensSince && new Date(e.sent_at) >= new Date(opensSince);
-  return (
-    <div className="mt-4">
-      <ol className="space-y-2">
-        {steps.map((s) => (
-          <li key={s.label} className="flex items-center gap-2 text-sm">
-            {s.done ? <Check className={`h-4 w-4 ${s.bad ? 'text-destructive' : 'text-primary'}`} aria-hidden="true" /> : <Circle className="h-3.5 w-3.5 text-muted-foreground/60" aria-hidden="true" />}
-            <span className={s.done ? '' : 'text-muted-foreground'}>{s.label}</span>
-            <span className="ml-auto text-xs text-muted-foreground">{s.done && s.at ? fmtDate(s.at) : s.done ? '' : 'Not yet'}</span>
-          </li>
-        ))}
-      </ol>
-      {!problem && !e.opened_at && <p className="mt-2 text-xs text-muted-foreground">{tracked || e.category === 'outreach'
-        ? e.category === 'outreach' ? 'Opens are not tracked for church outreach.' : 'Not opened yet. Some mail apps hide opens, so “not opened” isn’t always certain.'
-        : 'Sent before open tracking started, so we can’t tell if it was opened.'}</p>}
-    </div>
-  );
-}
+type Totals = { sent: number; delivered: number; opened: number; tracked?: number; problem: number };
+type Log = { rows: EmailRow[]; total: number; totals: Totals; synced_at: string | null; history_complete: boolean; oldest: string | null; open_tracking?: boolean | null };
+const count = new Intl.NumberFormat('en-US');
+const time = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' });
+const day = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+/** "5:45 AM" today, "Nov 21" before. */
+const when = (s: string) => { const d = new Date(s); return d.toDateString() === new Date().toDateString() ? time.format(d) : day.format(d); };
 
 /** Who a follow-up to this email goes to: the fundraiser's organizer, the account, or the bare address. */
 function followUp(e: EmailRow): ComposerStart {
@@ -59,11 +38,21 @@ function followUp(e: EmailRow): ComposerStart {
   return { subject, to: { kind: 'address', email: e.to_email } };
 }
 
+function Stat({ label, value, note }: { label: string; value: string; note?: string }) {
+  return (
+    <div className="rounded-lg bg-muted/50 px-4 py-3">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 flex items-baseline gap-2"><span className="text-2xl font-medium tabular-nums text-foreground">{value}</span>{note && <span className="text-xs text-muted-foreground">{note}</span>}</dd>
+    </div>
+  );
+}
+
 /**
- * Every email the site sent (receipts, coupon notices, reminders, sign-in codes, team messages …), copied
- * from Resend every few minutes with its delivery status, plus the coupon follow-ups view. Only
- * team-written emails keep their text. Since Nov 15, 2026 (founder request) the team also writes emails
- * here, follows up on any email in the list, and manages the automatic emails (previews, tests, switches).
+ * Every email the site sent (receipts, coupon notices, reminders, sign-in codes, team messages, church outreach),
+ * copied from Resend every five minutes with its delivery status. Since Nov 23, 2026 (founder request) clicking one
+ * shows it exactly as it went out, from which address, with sign-in codes and one-time links hidden; "not opened"
+ * shows only where opens were tracked. The team also writes emails here, follows up on any of them, answers
+ * replies (Inbox), manages the automatic emails and follows coupons (Coupon follow-ups).
  */
 export default function AdminEmails() {
   const { isStaff, canWrite } = useTeamRole();
@@ -82,9 +71,11 @@ export default function AdminEmails() {
   const user = params.get('user');
   const fundraiser = params.get('fundraiser');
   const page = Math.max(0, Number(params.get('page')) || 0);
-  const [open, setOpen] = useState<EmailRow | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const set = (key: string, value: string | null) => setParams((p) => { if (value) p.set(key, value); else p.delete(key); if (key !== 'page') p.delete('page'); return p; });
   useEffect(() => { const t = setTimeout(() => { setDq(search); if (search !== (params.get('q') ?? '')) set('q', search || null); }, 300); return () => clearTimeout(t); }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
+  const filtered = !!(dq || status !== 'all' || topic !== 'all' || days !== 'all' || category !== 'not_outreach' || user || fundraiser);
+  const clear = () => { setSearch(''); setDq(''); setParams((p) => { for (const k of ['q', 'status', 'topic', 'days', 'category', 'user', 'fundraiser', 'page']) p.delete(k); return p; }); };
 
   const q = useQuery({
     queryKey: ['adm-emails', dq, category, status, topic, days, user, fundraiser, page], enabled: isStaff && view === 'all',
@@ -93,76 +84,81 @@ export default function AdminEmails() {
       _user: user, _fundraiser: fundraiser, _limit: PAGE, _offset: page * PAGE }),
     refetchInterval: 60_000,
   });
+  const rows = useMemo(() => q.data?.rows ?? [], [q.data]);
   const t = q.data?.totals;
-  const pct = (a?: number, b?: number) => (b ? `${Math.round(((a ?? 0) / b) * 100)}%` : '—');
+  const pct = (a?: number, b?: number) => (b ? `${Math.round(((a ?? 0) / b) * 100)}%` : undefined);
+  const trackingOff = q.data?.open_tracking === false;
+  const at = rows.findIndex((r) => r.id === openId);
+  const open = at >= 0 ? rows[at] : null;
 
   const cols: Column<EmailRow>[] = [
-    { key: 'sent_at', header: 'Sent', cell: (r) => <span className="whitespace-nowrap">{fmtDate(r.sent_at)}</span> },
-    { key: 'to', header: 'To', cell: (r) => <div className="max-w-[230px]"><p className="truncate font-medium">{r.to?.name || r.to_email}</p>{r.to?.name && <p className="truncate text-xs text-muted-foreground">{r.to_email}</p>}</div> },
-    { key: 'subject', header: 'Subject', cell: (r) => <div className="max-w-[360px]"><p className="truncate">{r.subject || '(no subject)'}</p><p className="truncate text-xs text-muted-foreground">{r.category === 'team' ? `Written by ${r.sent_by?.name || 'the team'}${r.fundraiser ? ` · ${r.fundraiser.title}` : ''}` : topicLabel(r.topic)}</p></div> },
-    { key: 'status', header: 'Status', cell: (r) => <div><EmailStatus row={r} />{r.opened_at && <p className="mt-0.5 text-xs text-muted-foreground">{fmtDate(r.opened_at)}</p>}</div> },
+    { key: 'to', header: 'To', className: 'hidden w-[30%] md:table-cell', cell: (r) => (
+      <div className="max-w-[260px]"><p className="truncate font-medium text-foreground">{r.to?.name || r.to_email}</p>
+        {r.to?.name && <p className="truncate text-xs text-muted-foreground">{r.to_email}</p>}</div>) },
+    { key: 'subject', header: 'Email', cell: (r) => {
+      const from = splitSender(r.from_email).address;
+      return (
+        <div className="max-w-[78vw] md:max-w-[420px]">
+          {/* Phones: one column with who, what, status and when. */}
+          <p className="truncate font-medium text-foreground md:hidden">{r.to?.name || r.to_email}</p>
+          <p className="truncate text-foreground">{r.subject || '(no subject)'}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {r.category === 'team' ? `Written by ${r.sent_by?.name || 'the team'}` : topicLabel(r.topic)}{from ? ` · from ${from}` : ''}
+          </p>
+          <p className="mt-1 flex items-center gap-2 md:hidden"><EmailStatus row={r} /><span className="text-xs text-muted-foreground">{when(r.sent_at)}</span></p>
+        </div>);
+    } },
+    { key: 'status', header: 'Status', className: 'hidden md:table-cell', cell: (r) => <EmailStatus row={r} /> },
+    { key: 'sent_at', header: 'Sent', align: 'right', className: 'hidden md:table-cell', cell: (r) => <span className="whitespace-nowrap text-muted-foreground" title={fmtDate(r.sent_at)}>{when(r.sent_at)}</span> },
   ];
 
   return (
     <DashboardLayout>
-      <PageHeader title="Emails" description="Every email the site has sent, and whether it was delivered and opened. Read and answer replies, write to anyone, and preview or switch the automatic emails." />
+      <PageHeader title="Emails" description="Every email the site has sent, as it went out, and what happened to it. Answer replies, write to anyone, and manage the automatic emails."
+        actions={isStaff && canWrite ? <Button onClick={() => setCompose({})}><PenLine className="mr-1.5 h-4 w-4" aria-hidden="true" />Write an email</Button> : undefined} />
       {!isStaff ? <p className="text-sm text-muted-foreground">Staff access is required to see emails.</p> : <>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <Tabs value={view} onValueChange={(v) => setParams((p) => { if (v === 'all') p.delete('view'); else p.set('view', v); p.delete('page'); p.delete('stage'); return p; })}>
-            <TabsList><TabsTrigger value="all">Sent</TabsTrigger><TabsTrigger value="inbox">Inbox{waiting.data?.open ? ` (${waiting.data.open})` : ''}</TabsTrigger><TabsTrigger value="automatic">Automatic emails</TabsTrigger><TabsTrigger value="followups">Coupon follow-ups</TabsTrigger></TabsList>
-          </Tabs>
-          {canWrite && <Button onClick={() => setCompose({})}><PenLine className="mr-1.5 h-4 w-4" aria-hidden="true" />Write an email</Button>}
-        </div>
+        <Tabs className="-mx-4 mb-5 overflow-x-auto px-4 sm:mx-0 sm:px-0" value={view} onValueChange={(v) => setParams((p) => { if (v === 'all') p.delete('view'); else p.set('view', v); p.delete('page'); p.delete('stage'); return p; })}>
+          <TabsList><TabsTrigger value="all">Sent</TabsTrigger><TabsTrigger value="inbox">Inbox{waiting.data?.open ? ` (${waiting.data.open})` : ''}</TabsTrigger><TabsTrigger value="automatic">Automatic emails</TabsTrigger><TabsTrigger value="followups">Coupon follow-ups</TabsTrigger></TabsList>
+        </Tabs>
         {view === 'followups' ? <CouponFollowups /> : view === 'automatic' ? <AutomaticEmails canWrite={canWrite} /> : view === 'inbox' ? <EmailInbox canWrite={canWrite} onReply={setCompose} /> : <>
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <div className="relative w-full max-w-sm"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
-              <Input className="h-9 pl-8" aria-label="Search emails" placeholder="Email address or subject" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
-            <Select value={topic} onValueChange={(v) => set('topic', v === 'all' ? null : v)}><SelectTrigger className="h-9 w-52" aria-label="Topic"><SelectValue /></SelectTrigger>
-              <SelectContent>{TOPICS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select>
-            <Select value={status} onValueChange={(v) => set('status', v === 'all' ? null : v)}><SelectTrigger className="h-9 w-52" aria-label="Status"><SelectValue /></SelectTrigger>
-              <SelectContent>{STATUSES.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select>
-            <Select value={days} onValueChange={(v) => set('days', v === 'all' ? null : v)}><SelectTrigger className="h-9 w-40" aria-label="When"><SelectValue /></SelectTrigger>
-              <SelectContent>{PERIODS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select>
-            {topic !== 'outreach' && <Select value={category} onValueChange={(v) => set('category', v)}><SelectTrigger className="h-9 w-48" aria-label="Sender"><SelectValue /></SelectTrigger>
-              <SelectContent>{CATEGORIES.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select>}
-            {(user || fundraiser) && <Button size="sm" variant="ghost" onClick={() => setParams((p) => { p.delete('user'); p.delete('fundraiser'); p.delete('page'); return p; })}>Show everyone</Button>}
-          </div>
-          {t && <dl className="mb-4 grid max-w-2xl grid-cols-4 gap-4 text-sm">
-            <div><dt className="text-xs text-muted-foreground">Sent</dt><dd className="text-lg font-medium tabular-nums">{t.sent.toLocaleString()}</dd></div>
-            <div><dt className="text-xs text-muted-foreground">Delivered</dt><dd className="text-lg font-medium tabular-nums">{t.delivered.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">{pct(t.delivered, t.sent)}</span></dd></div>
-            <div><dt className="text-xs text-muted-foreground">Opened</dt><dd className="text-lg font-medium tabular-nums">{t.opened.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">{pct(t.opened, t.delivered)}</span></dd></div>
-            <div><dt className="text-xs text-muted-foreground">Bounced or blocked</dt><dd className="text-lg font-medium tabular-nums">{t.problem.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">{pct(t.problem, t.sent)}</span></dd></div>
+          {t && <dl className="mb-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+            <Stat label="Sent" value={count.format(t.sent)} />
+            <Stat label="Delivered" value={count.format(t.delivered)} note={pct(t.delivered, t.sent)} />
+            <Stat label="Opened" value={t.tracked ? count.format(t.opened) : '—'} note={t.tracked ? `${pct(t.opened, t.tracked)} of tracked` : 'Not tracked'} />
+            <Stat label="Bounced or blocked" value={count.format(t.problem)} note={pct(t.problem, t.sent)} />
           </dl>}
+          {trackingOff && (
+            <p className="mb-4 rounded-lg bg-verify/10 px-4 py-3 text-sm text-foreground">
+              <span className="font-medium">Opens aren’t being tracked right now.</span> Open tracking is off in Resend for coupondonation.com, so emails sent since then show as Delivered, not “not opened”. Opens seen before stay as they were.
+            </p>
+          )}
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <div className="relative w-full sm:w-80"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <Input className="h-9 pl-8" aria-label="Search emails" placeholder="Search address, sender or subject" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
+            <Select value={topic} onValueChange={(v) => set('topic', v === 'all' ? null : v)}><SelectTrigger className="h-9 w-full sm:w-48" aria-label="Topic"><SelectValue /></SelectTrigger>
+              <SelectContent>{TOPICS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select>
+            <Select value={status} onValueChange={(v) => set('status', v === 'all' ? null : v)}><SelectTrigger className="h-9 w-[calc(50%-0.25rem)] sm:w-48" aria-label="Status"><SelectValue /></SelectTrigger>
+              <SelectContent>{STATUSES.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select>
+            <Select value={days} onValueChange={(v) => set('days', v === 'all' ? null : v)}><SelectTrigger className="h-9 w-[calc(50%-0.25rem)] sm:w-40" aria-label="When"><SelectValue /></SelectTrigger>
+              <SelectContent>{PERIODS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select>
+            {topic !== 'outreach' && <Select value={category} onValueChange={(v) => set('category', v)}><SelectTrigger className="h-9 w-full sm:w-48" aria-label="Sender"><SelectValue /></SelectTrigger>
+              <SelectContent>{CATEGORIES.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select>}
+            {filtered && <Button size="sm" variant="ghost" onClick={clear}><X className="mr-1 h-4 w-4" aria-hidden="true" />Clear</Button>}
+          </div>
           <DataTable columns={cols} rows={q.data?.rows} total={q.data?.total} loading={q.isLoading} error={q.error ? (q.error as Error).message : null} onRetry={() => q.refetch()}
-            page={page} pageSize={PAGE} onPage={(p) => set('page', String(p))} rowKey={(r) => r.id} onRowClick={(r) => setOpen(r)} empty="No emails match this view." />
+            page={page} pageSize={PAGE} onPage={(p) => set('page', String(p))} rowKey={(r) => r.id} onRowClick={(r) => setOpenId(r.id)}
+            rowClassName={(r) => (r.id === openId ? 'bg-muted/60' : undefined)} empty="No emails match this view." />
           {q.data && <p className="mt-3 text-xs text-muted-foreground">
-            {q.data.synced_at ? `Last updated ${fmtDate(q.data.synced_at)}.` : 'Waiting for the first update from our email service.'}
-            {q.data.oldest && ` Showing emails since ${fmtDate(q.data.oldest)}${q.data.history_complete ? '' : '; older history is still loading'}.`}
-            {' '}Opens are tracked for site emails sent from November 4, 2026; some mail apps hide them. Only emails the team writes keep their text, so sign-in codes and links are never stored here.</p>}
+            {q.data.synced_at ? `Updated ${fmtDate(q.data.synced_at)} from Resend.` : 'Waiting for the first update from our email service.'}
+            {q.data.oldest && ` Emails since ${fmtDate(q.data.oldest)}${q.data.history_complete ? '' : '; older history is still loading'}.`}
+            {' '}Click an email to see it as it went out. Sign-in codes and one-time links are always hidden.</p>}
         </>}
       </>}
 
-      <Sheet open={!!open} onOpenChange={(o) => !o && setOpen(null)}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
-          {open && <>
-            <SheetHeader><SheetTitle className="break-words text-left">{open.subject || '(no subject)'}</SheetTitle><SheetDescription>{topicLabel(open.topic)}</SheetDescription></SheetHeader>
-            <dl className="mt-4 grid grid-cols-[6rem_minmax(0,1fr)] gap-2 text-sm">
-              <dt className="text-muted-foreground">To</dt><dd className="break-words">{open.to?.name ? `${open.to.name} · ` : ''}{open.to_email}</dd>
-              <dt className="text-muted-foreground">From</dt><dd className="break-words">{open.from_email || '—'}</dd>
-              <dt className="text-muted-foreground">Status</dt><dd><EmailStatus row={open} /></dd>
-              {open.sent_by?.name && <><dt className="text-muted-foreground">Written by</dt><dd>{open.sent_by.name}</dd></>}
-              {open.fundraiser && <><dt className="text-muted-foreground">Fundraiser</dt><dd><Link className="text-primary" to={`/admin/fundraisers?id=${open.fundraiser.id}&tab=contact`}>{open.fundraiser.title}</Link></dd></>}
-            </dl>
-            <Timeline e={open} opensSince={q.data?.opens_since ?? '2026-11-04T16:40:00Z'} />
-            {open.body ? <p className="mt-4 whitespace-pre-wrap break-words rounded-md bg-muted/50 p-3 text-sm">{open.body}</p>
-              : <p className="mt-4 text-sm text-muted-foreground">The text of automatic emails isn't stored. They follow the site's standard templates.</p>}
-            <div className="mt-4 flex flex-wrap gap-2">
-              {canWrite && open.category !== 'outreach' && open.topic !== 'alerts' && <Button size="sm" onClick={() => { setCompose(followUp(open)); setOpen(null); }}><Reply className="mr-1.5 h-4 w-4" aria-hidden="true" />Follow up</Button>}
-              {open.to?.user_id && <Button size="sm" variant="outline" asChild><Link to={`/admin/emails?user=${open.to.user_id}`} onClick={() => setOpen(null)}>All emails to this person</Link></Button>}
-            </div>
-          </>}
-        </SheetContent>
-      </Sheet>
+      <EmailViewer email={open} onClose={() => setOpenId(null)}
+        onPrev={at > 0 ? () => setOpenId(rows[at - 1].id) : null}
+        onNext={at >= 0 && at < rows.length - 1 ? () => setOpenId(rows[at + 1].id) : null}
+        onFollowUp={canWrite && open && open.category !== 'outreach' && open.topic !== 'alerts' ? (e) => { setCompose(followUp(e)); setOpenId(null); } : null} />
       <EmailComposer open={!!compose} onOpenChange={(o) => !o && setCompose(null)} start={compose} onSent={() => { q.refetch(); qc.invalidateQueries({ queryKey: inboxKey }); }} />
     </DashboardLayout>
   );

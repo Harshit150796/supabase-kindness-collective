@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { EmailStatus, type EmailRow } from '@/components/admin/EmailStatus';
+import { EmailViewer } from '@/components/admin/emails/EmailViewer';
 
 type Contact = {
   organizer: {
@@ -31,6 +32,8 @@ const copy = async (text: string) => {
 /** Who runs this fundraiser, how to reach them, and everything the team has sent them. */
 export function FundraiserContactTab({ fundraiserId, title, canWrite }: { fundraiserId: string; title: string; canWrite: boolean }) {
   const c = useQuery({ queryKey: ['adm-fr-contact', fundraiserId], queryFn: () => rpc<Contact>('admin_fundraiser_contact', { _fid: fundraiserId }) });
+  // Clicking an email shows it as it went out (Nov 23, 2026), like Admin > Emails.
+  const [viewing, setViewing] = useState<EmailRow | null>(null);
   const emails = useQuery({ queryKey: ['adm-fr-emails', fundraiserId],
     queryFn: () => rpc<{ rows: EmailRow[]; total: number; synced_at: string | null }>('admin_email_log', { _fundraiser: fundraiserId, _category: 'not_outreach', _limit: 30, _offset: 0 }) });
   const [subject, setSubject] = useState('');
@@ -135,17 +138,18 @@ export function FundraiserContactTab({ fundraiserId, title, canWrite }: { fundra
         {emails.isLoading ? <p className="mt-2 text-muted-foreground">Loading…</p> : emails.error ? <p className="mt-2 text-destructive">{(emails.error as Error).message}</p>
           : !emails.data?.rows.length ? <p className="mt-2 text-muted-foreground">No emails recorded yet.</p> : (
           <ul className="mt-2 divide-y divide-border">{emails.data.rows.map((e) => (
-            <li key={e.id} className="flex flex-wrap items-start justify-between gap-2 py-2">
+            <li key={e.id}><button type="button" onClick={() => setViewing(e)} className="flex w-full flex-wrap items-start justify-between gap-2 py-2 text-left hover:bg-muted/40">
               <div className="min-w-0">
                 <p className="break-words font-medium">{e.subject || '(no subject)'}</p>
                 <p className="text-xs text-muted-foreground">{fmtDate(e.sent_at)} · {e.to_email}{e.category === 'team' && e.sent_by?.name ? ` · written by ${e.sent_by.name}` : ''}</p>
                 {e.body && <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-foreground/80">{e.body}</p>}
               </div>
               <EmailStatus row={e} />
-            </li>))}
+            </button></li>))}
           </ul>
         )}
         {(emails.data?.total ?? 0) > 30 && <Button size="sm" variant="link" className="px-0" asChild><Link to={`/admin/emails?fundraiser=${fundraiserId}`}>See all {emails.data!.total}</Link></Button>}
+        <EmailViewer email={viewing} onClose={() => setViewing(null)} />
       </section>
     </div>
   );
